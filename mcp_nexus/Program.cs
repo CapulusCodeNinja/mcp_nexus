@@ -7,6 +7,7 @@ builder.Logging.ClearProviders();
 builder.Logging.AddNLogWeb();
 
 builder.Services.AddSingleton<TimeTool>();
+builder.Services.AddSingleton<WindbgTool>();
 
 builder.Services
     .AddMcpServer()
