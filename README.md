@@ -1,6 +1,6 @@
 # mcp_nexus
 
-A Model Context Protocol (MCP) server that provides comprehensive Windows debugging capabilities, replicating the functionality of the [mcp-windbg](https://github.com/CapulusCodeNinja/mcp-windbg) Python implementation in C#.
+A Model Context Protocol (MCP) server that provides comprehensive Windows debugging capabilities.
 
 ## Features
 
