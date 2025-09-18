@@ -1,8 +1,12 @@
-using Microsoft.Extensions.Hosting;
-using ModelContextProtocol.Server;
-using Microsoft.Extensions.DependencyInjection;
+using NLog.Web;
+using mcp_nexus.Tools;
 
 var builder = Host.CreateApplicationBuilder(args);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddNLogWeb();
+
+builder.Services.AddSingleton<TimeTool>();
 
 builder.Services
     .AddMcpServer()
