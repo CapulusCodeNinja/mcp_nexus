@@ -46,6 +46,159 @@ Legacy time functionality for getting current time in different cities.
 3. Build the project: `dotnet build`
 4. Run the server: `dotnet run`
 
+## Integration with Cursor
+
+### Prerequisites
+- Cursor IDE installed
+- Windows Debugging Tools installed
+- .NET 8.0 or later
+
+### Step 1: Configure MCP in Cursor
+
+1. **Open Cursor Settings**:
+   - Press `Ctrl+,` (or `Cmd+,` on Mac) to open settings
+   - Search for "MCP" in the settings search bar
+
+2. **Enable MCP**:
+   - Find "Model Context Protocol" settings
+   - Enable MCP support if not already enabled
+
+### Step 2: Add the MCP Server
+
+1. **Open MCP Configuration**:
+   - Go to Cursor Settings → Extensions → Model Context Protocol
+   - Click "Add MCP Server" or "Configure MCP Servers"
+
+2. **Add Server Configuration**:
+   ```json
+   {
+     "mcpServers": {
+       "mcp-nexus": {
+         "command": "dotnet",
+         "args": [
+           "run",
+           "--project",
+           "C:\\Sources\\Github\\CapulusCodeNinja\\mcp_nexus\\mcp_nexus\\mcp_nexus.csproj"
+         ],
+         "cwd": "C:\\Sources\\Github\\CapulusCodeNinja\\mcp_nexus\\mcp_nexus"
+       }
+     }
+   }
+   ```
+
+3. **Update Paths**:
+   - Replace the paths with your actual project location
+   - Ensure the path points to your `mcp_nexus.csproj` file
+
+### Step 3: Alternative Configuration Methods
+
+#### Method 1: Global Configuration
+Add to your global Cursor settings:
+
+```json
+{
+  "mcp.servers": {
+    "mcp-nexus": {
+      "command": "dotnet",
+      "args": ["run", "--project", "C:\\path\\to\\your\\mcp_nexus\\mcp_nexus\\mcp_nexus.csproj"],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+#### Method 2: Workspace Configuration
+Create a `.cursor/mcp.json` file in your workspace root:
+
+```json
+{
+  "servers": {
+    "mcp-nexus": {
+      "command": "dotnet",
+      "args": ["run", "--project", "./mcp_nexus/mcp_nexus.csproj"],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+### Step 4: Verify Integration
+
+1. **Restart Cursor**: Close and reopen Cursor to load the new MCP configuration
+
+2. **Check MCP Status**:
+   - Look for MCP indicators in the Cursor interface
+   - Check the MCP panel or settings to see if the server is connected
+
+3. **Test Tools**:
+   - Open a chat or AI conversation in Cursor
+   - Try asking: "List the available MCP tools" or "Show me WinDBG tools"
+   - The AI should be able to access and use the WinDBG debugging tools
+
+### Step 5: Using the WinDBG Tools
+
+Once integrated, you can use the tools through natural language in Cursor:
+
+```
+# Example queries:
+"Open a crash dump file at C:\dumps\crash.dmp"
+"List all dump files in C:\dumps directory"
+"Connect to a remote debugging session at tcp:Port=5005,Server=192.168.0.100"
+"Analyze the call stack of the current debugging session"
+"Check for common crash patterns in the loaded dump"
+```
+
+### Troubleshooting
+
+#### Server Not Connecting
+- **Check Paths**: Ensure all file paths in the configuration are correct
+- **Build First**: Run `dotnet build` in the project directory before starting Cursor
+- **Check Logs**: Look at Cursor's developer console for MCP connection errors
+
+#### Tools Not Available
+- **Restart Cursor**: Sometimes a restart is needed after configuration changes
+- **Check MCP Status**: Verify the server shows as connected in MCP settings
+- **Test Manually**: Try running `dotnet run` in the project directory to ensure it starts correctly
+
+#### Permission Issues
+- **Run as Administrator**: If debugging system processes, Cursor may need elevated privileges
+- **Check CDB Path**: Ensure Windows Debugging Tools are properly installed and CDB.exe is accessible
+
+### Advanced Configuration
+
+#### Custom Symbol Path
+You can configure symbol paths by modifying the server arguments:
+
+```json
+{
+  "command": "dotnet",
+  "args": [
+    "run",
+    "--project",
+    "C:\\path\\to\\mcp_nexus\\mcp_nexus.csproj",
+    "--",
+    "--symbols-path",
+    "SRV*C:\\Symbols*https://msdl.microsoft.com/download/symbols"
+  ]
+}
+```
+
+#### Debug Mode
+Enable verbose logging for troubleshooting:
+
+```json
+{
+  "command": "dotnet",
+  "args": [
+    "run",
+    "--project",
+    "C:\\path\\to\\mcp_nexus\\mcp_nexus.csproj",
+    "--",
+    "--verbose"
+  ]
+}
+```
+
 ## Usage
 
 The MCP server exposes various tools that can be used by MCP clients. The WinDBG tool provides debugging capabilities identical to the Python `mcp-windbg` implementation, allowing you to:
