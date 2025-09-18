@@ -1,4 +1,4 @@
-# mcp_nexus
+# Nexus Model Context Protocol (MCP) server
 
 A Model Context Protocol (MCP) server that provides comprehensive Windows debugging capabilities.
 
