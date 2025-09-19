@@ -89,6 +89,7 @@ namespace mcp_nexus.Services
             public const string Install = "Install";
             public const string Uninstall = "Uninstall";
             public const string ForceUninstall = "ForceUninstall";
+            public const string Update = "Update";
             public const string Build = "Build";
             public const string Copy = "Copy";
             public const string Registry = "Registry";

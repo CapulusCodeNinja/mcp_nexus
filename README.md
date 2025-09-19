@@ -48,6 +48,9 @@ Install MCP Nexus as a Windows service for persistent operation:
 # Install as Windows service (requires administrator privileges)
 dotnet run -- --install
 
+# Update existing Windows service (stop, update files, restart)
+dotnet run -- --update
+
 # Uninstall the Windows service
 dotnet run -- --uninstall
 
@@ -61,6 +64,7 @@ dotnet run -- --service
 - **Program Files**: Installed to `C:\Program Files\MCP-Nexus`
 - **Event Logging**: Logs to Windows Event Log and files
 - **Management**: Use Windows Services console or command line
+- **Safe Updates**: Automatic backups to `C:\Program Files\MCP-Nexus\backups\[timestamp]`
 
 **Service Management:**
 ```bash
@@ -189,8 +193,13 @@ curl -X POST http://localhost:5000/mcp \
 ### Command Line Options
 
 - `--http`: Run in HTTP transport mode
+- `--service`: Run in Windows service mode (implies --http)
 - `--cdb-path <path>`: Custom path to CDB.exe for debugging tools
-- `--verbose`: Enable verbose logging
+- `--install`: Install MCP Nexus as Windows service (Windows only)
+- `--update`: Update existing Windows service files and restart (Windows only)
+- `--uninstall`: Uninstall MCP Nexus Windows service (Windows only)
+- `--force-uninstall`: Force uninstall service with registry cleanup (Windows only)
+- `--help`: Show command line help
 
 ### Environment Variables
 

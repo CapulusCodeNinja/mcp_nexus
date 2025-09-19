@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Principal;
@@ -696,8 +697,155 @@ namespace mcp_nexus.Services
                 return false;
             }
         }
+
+        public static async Task<bool> UpdateServiceAsync(ILogger? logger = null)
+        {
+            try
+            {
+                if (!IsRunAsAdministrator())
+                {
+                    var errorMsg = "Service update requires administrator privileges. Please run the command as administrator.";
+                    OperationLogger.LogError(logger, OperationLogger.Operations.Update, "{ErrorMsg}", errorMsg);
+                    Console.Error.WriteLine($"ERROR: {errorMsg}");
+                    return false;
+                }
+
+                OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Starting MCP Nexus service update");
+                Console.WriteLine("🔄 Starting MCP Nexus service update...");
+
+                // Check if service exists
+                if (!IsServiceInstalled())
+                {
+                    var errorMsg = "MCP Nexus service is not installed. Use --install to install it first.";
+                    OperationLogger.LogError(logger, OperationLogger.Operations.Update, "{ErrorMsg}", errorMsg);
+                    Console.Error.WriteLine($"ERROR: {errorMsg}");
+                    return false;
+                }
+
+                // Step 1: Stop the service
+                OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Stopping MCP Nexus service for update");
+                Console.WriteLine("📱 Stopping MCP Nexus service...");
+                var stopResult = await RunScCommandAsync($@"stop ""{ServiceName}""", logger, allowFailure: true);
+                if (stopResult)
+                {
+                    OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Service stopped successfully");
+                    Console.WriteLine("✅ Service stopped successfully");
+                }
+                else
+                {
+                    OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Service was not running or already stopped");
+                    Console.WriteLine("ℹ️ Service was not running");
+                }
+
+                // Wait for service to fully stop
+                await Task.Delay(3000);
+
+                // Step 2: Build the project in Release mode
+                OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Building project for deployment");
+                Console.WriteLine("🔨 Building project in Release mode...");
+                if (!await BuildProjectForDeploymentAsync(logger))
+                {
+                    OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Failed to build project for update");
+                    Console.Error.WriteLine("❌ Failed to build project for update");
+                    return false;
+                }
+
+                // Step 3: Update files
+                OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Updating application files");
+                Console.WriteLine("📁 Updating application files...");
+                
+                // Create backup of current installation
+                var backupsBaseFolder = Path.Combine(InstallFolder, "backups");
+                var backupFolder = Path.Combine(backupsBaseFolder, DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+                OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Creating backup: {BackupFolder}", backupFolder);
+                try
+                {
+                    if (Directory.Exists(InstallFolder))
+                    {
+                        // Create backups directory if it doesn't exist
+                        if (!Directory.Exists(backupsBaseFolder))
+                        {
+                            Directory.CreateDirectory(backupsBaseFolder);
+                        }
+
+                        // Create the specific backup folder
+                        Directory.CreateDirectory(backupFolder);
+
+                        // Copy all files except the backups folder itself
+                        var sourceFiles = Directory.GetFiles(InstallFolder, "*", SearchOption.TopDirectoryOnly);
+                        foreach (var sourceFile in sourceFiles)
+                        {
+                            var fileName = Path.GetFileName(sourceFile);
+                            var targetFile = Path.Combine(backupFolder, fileName);
+                            File.Copy(sourceFile, targetFile, true);
+                        }
+
+                        // Copy subdirectories except backups
+                        var sourceDirectories = Directory.GetDirectories(InstallFolder)
+                            .Where(dir => !string.Equals(Path.GetFileName(dir), "backups", StringComparison.OrdinalIgnoreCase))
+                            .ToArray();
+
+                        foreach (var sourceDir in sourceDirectories)
+                        {
+                            var dirName = Path.GetFileName(sourceDir);
+                            var targetDir = Path.Combine(backupFolder, dirName);
+                            await CopyDirectoryAsync(sourceDir, targetDir, logger);
+                        }
+
+                        OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Backup created successfully");
+                        Console.WriteLine($"💾 Backup created: {backupFolder}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    OperationLogger.LogWarning(logger, OperationLogger.Operations.Update, "Could not create backup: {Error}", ex.Message);
+                    Console.WriteLine($"⚠️ Warning: Could not create backup: {ex.Message}");
+                }
+
+                // Copy new files
+                await CopyApplicationFilesAsync(logger);
+                OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Application files updated successfully");
+                Console.WriteLine("✅ Application files updated");
+
+                // Step 4: Start the service
+                OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Starting MCP Nexus service");
+                Console.WriteLine("🚀 Starting MCP Nexus service...");
+                var startResult = await RunScCommandAsync($@"start ""{ServiceName}""", logger);
+                if (startResult)
+                {
+                    OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Service started successfully");
+                    Console.WriteLine("✅ Service started successfully");
+                }
+                else
+                {
+                    OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Failed to start service after update");
+                    Console.Error.WriteLine("❌ Failed to start service after update");
+                    Console.Error.WriteLine($"You can manually start it with: sc start \"{ServiceName}\"");
+                    Console.Error.WriteLine($"Or restore from backup: {backupFolder}");
+                    return false;
+                }
+
+                OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "MCP Nexus service updated successfully");
+                Console.WriteLine();
+                Console.WriteLine("✅ MCP Nexus service updated successfully!");
+                Console.WriteLine($"   Service Name: {ServiceName}");
+                Console.WriteLine($"   Install Path: {InstallFolder}");
+                Console.WriteLine("   HTTP Endpoint: http://localhost:5000/mcp");
+                Console.WriteLine($"   Backup Location: {backupFolder}");
+                Console.WriteLine();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                OperationLogger.LogError(logger, OperationLogger.Operations.Update, ex, "Service update failed");
+                Console.Error.WriteLine($"❌ Service update failed: {ex.Message}");
+                return false;
+            }
+        }
     }
 }
+
 
 
 

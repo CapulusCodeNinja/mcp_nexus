@@ -14,6 +14,13 @@ namespace mcp_nexus
     {
         private static async Task Main(string[] args)
         {
+            // Check if this is a help request first
+            if (args.Length > 0 && (args[0] == "--help" || args[0] == "-h" || args[0] == "help"))
+            {
+                await ShowHelpAsync();
+                return;
+            }
+
             // Parse command line arguments
             var commandLineArgs = ParseCommandLineArguments(args);
 
@@ -90,6 +97,30 @@ namespace mcp_nexus
                 return;
             }
 
+            if (commandLineArgs.Update)
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    // Create a logger using NLog configuration for the update process
+                    using var loggerFactory = LoggerFactory.Create(builder =>
+                    {
+                        builder.ClearProviders();
+                        builder.AddNLogWeb();
+                        builder.SetMinimumLevel(LogLevel.Information);
+                    });
+                    var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
+                    
+                    var success = await WindowsServiceInstaller.UpdateServiceAsync(logger);
+                    Environment.Exit(success ? 0 : 1);
+                }
+                else
+                {
+                    Console.Error.WriteLine("ERROR: Service update is only supported on Windows.");
+                    Environment.Exit(1);
+                }
+                return;
+            }
+
             // Determine transport mode
             bool useHttp = commandLineArgs.UseHttp || commandLineArgs.ServiceMode;
 
@@ -111,6 +142,44 @@ namespace mcp_nexus
             }
         }
 
+        private static async Task ShowHelpAsync()
+        {
+            Console.WriteLine("MCP Nexus - Comprehensive MCP Server Platform");
+            Console.WriteLine();
+            Console.WriteLine("USAGE:");
+            Console.WriteLine("  mcp_nexus [OPTIONS]");
+            Console.WriteLine();
+            Console.WriteLine("DESCRIPTION:");
+            Console.WriteLine("  MCP Nexus is a Model Context Protocol (MCP) server that provides various tools");
+            Console.WriteLine("  and utilities for development and debugging. It supports both stdio and HTTP transports.");
+            Console.WriteLine();
+            Console.WriteLine("OPTIONS:");
+            Console.WriteLine("  --http                 Use HTTP transport instead of stdio");
+            Console.WriteLine("  --service              Run in Windows service mode (implies --http)");
+            Console.WriteLine("  --cdb-path <PATH>      Custom path to CDB.exe debugger executable");
+            Console.WriteLine();
+            Console.WriteLine("SERVICE MANAGEMENT (Windows only):");
+            Console.WriteLine("  --install              Install MCP Nexus as Windows service");
+            Console.WriteLine("  --uninstall            Uninstall MCP Nexus Windows service");
+            Console.WriteLine("  --update               Update MCP Nexus service (stop, update files, restart)");
+            Console.WriteLine("  --force-uninstall      Force uninstall MCP Nexus service (removes registry entries)");
+            Console.WriteLine();
+            Console.WriteLine("EXAMPLES:");
+            Console.WriteLine("  mcp_nexus                          # Run in stdio mode");
+            Console.WriteLine("  mcp_nexus --http                   # Run HTTP server on localhost:5000");
+            Console.WriteLine("  mcp_nexus --install                # Install as Windows service");
+            Console.WriteLine("  mcp_nexus --update                 # Update installed service");
+            Console.WriteLine("  mcp_nexus --cdb-path \"C:\\WinDbg\"   # Use custom debugger path");
+            Console.WriteLine();
+            Console.WriteLine("NOTES:");
+            Console.WriteLine("  - Service commands require administrator privileges on Windows");
+            Console.WriteLine("  - Updates create backups in: C:\\Program Files\\MCP-Nexus\\backups\\[timestamp]");
+            Console.WriteLine("  - HTTP mode runs on localhost:5000/mcp");
+            Console.WriteLine();
+            Console.WriteLine("For more information, visit: https://github.com/your-repo/mcp_nexus");
+            await Task.CompletedTask;
+        }
+
         private static CommandLineArguments ParseCommandLineArguments(string[] args)
         {
             var result = new CommandLineArguments();
@@ -121,6 +190,7 @@ namespace mcp_nexus
             var installOption = new Option<bool>("--install", "Install MCP Nexus as Windows service");
             var uninstallOption = new Option<bool>("--uninstall", "Uninstall MCP Nexus Windows service");
             var forceUninstallOption = new Option<bool>("--force-uninstall", "Force uninstall MCP Nexus service (removes registry entries)");
+            var updateOption = new Option<bool>("--update", "Update MCP Nexus service (stop, update files, restart)");
             
             var rootCommand = new RootCommand("MCP Nexus - Comprehensive MCP Server Platform") 
             { 
@@ -129,7 +199,8 @@ namespace mcp_nexus
                 serviceOption,
                 installOption,
                 uninstallOption,
-                forceUninstallOption
+                forceUninstallOption,
+                updateOption
             };
 
             var parseResult = rootCommand.Parse(args);
@@ -141,6 +212,7 @@ namespace mcp_nexus
                 result.Install = parseResult.GetValueForOption(installOption);
                 result.Uninstall = parseResult.GetValueForOption(uninstallOption);
                 result.ForceUninstall = parseResult.GetValueForOption(forceUninstallOption);
+                result.Update = parseResult.GetValueForOption(updateOption);
             }
 
             return result;
@@ -154,6 +226,7 @@ namespace mcp_nexus
             public bool Install { get; set; }
             public bool Uninstall { get; set; }
             public bool ForceUninstall { get; set; }
+            public bool Update { get; set; }
         }
 
         private static async Task RunHttpServer(string[] args, CommandLineArguments commandLineArgs)
