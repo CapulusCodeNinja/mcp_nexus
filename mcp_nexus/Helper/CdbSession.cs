@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
 
 namespace mcp_nexus.Helper
 {
@@ -59,9 +60,21 @@ namespace mcp_nexus.Helper
 
                     // Determine if this is a crash dump file (ends with .dmp)
                     var isCrashDump = target.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase) || 
-                                     target.Contains(".dmp\"", StringComparison.OrdinalIgnoreCase);
+                                     target.Contains(".dmp\"", StringComparison.OrdinalIgnoreCase) ||
+                                     target.Contains(".dmp ", StringComparison.OrdinalIgnoreCase);
                     
-                    var cdbArguments = isCrashDump ? $"-z {target}" : target;
+                    // For crash dumps, ensure we use -z flag. The target may already contain other arguments.
+                    string cdbArguments;
+                    if (isCrashDump && !target.TrimStart().StartsWith("-z", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // If target doesn't already start with -z, add it
+                        cdbArguments = $"-z {target}";
+                    }
+                    else
+                    {
+                        // Target already has proper formatting or is not a crash dump
+                        cdbArguments = target;
+                    }
                     
                     m_Logger.LogDebug("CDB arguments: {Arguments} (isCrashDump: {IsCrashDump})", cdbArguments, isCrashDump);
                     
@@ -308,35 +321,100 @@ namespace mcp_nexus.Helper
             return isComplete;
         }
 
+        private string GetCurrentArchitecture()
+        {
+            var architecture = RuntimeInformation.ProcessArchitecture;
+            m_Logger.LogDebug("Detected process architecture: {Architecture}", architecture);
+            
+            return architecture switch
+            {
+                Architecture.X64 => "x64",
+                Architecture.X86 => "x86",
+                Architecture.Arm64 => "arm64",
+                Architecture.Arm => "arm",
+                _ => "x64" // Default to x64 for unknown architectures
+            };
+        }
+
         private string FindCDBPath()
         {
             m_Logger.LogDebug("FindCDBPath called - searching for CDB executable");
             
-            var possiblePaths = new[]
+            var currentArch = GetCurrentArchitecture();
+            m_Logger.LogInformation("Current machine architecture: {Architecture}", currentArch);
+            
+            // Create prioritized list based on current architecture
+            var possiblePaths = new List<string>();
+            
+            // Add paths for current architecture first
+            switch (currentArch)
             {
-                // ARM64 versions first (for ARM64 crash dumps)
-                @"C:\Program Files (x86)\Windows Kits\10\Debuggers\arm64\cdb.exe",
-                @"C:\Program Files\Windows Kits\10\Debuggers\arm64\cdb.exe",
-                // x64 versions
-                @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
-                @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe",
-                // x86 versions
-                @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\cdb.exe",
-                @"C:\Program Files\Windows Kits\10\Debuggers\x86\cdb.exe",
-                // Legacy debugging tools paths
-                @"C:\Program Files (x86)\Debugging Tools for Windows (x64)\cdb.exe",
-                @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe",
-                @"C:\Program Files (x86)\Debugging Tools for Windows (x86)\cdb.exe",
-                @"C:\Program Files\Debugging Tools for Windows (x86)\cdb.exe"
-            };
+                case "x64":
+                    possiblePaths.AddRange(new[]
+                    {
+                        @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
+                        @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe",
+                        @"C:\Program Files (x86)\Debugging Tools for Windows (x64)\cdb.exe",
+                        @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe"
+                    });
+                    break;
+                case "x86":
+                    possiblePaths.AddRange(new[]
+                    {
+                        @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\cdb.exe",
+                        @"C:\Program Files\Windows Kits\10\Debuggers\x86\cdb.exe",
+                        @"C:\Program Files (x86)\Debugging Tools for Windows (x86)\cdb.exe",
+                        @"C:\Program Files\Debugging Tools for Windows (x86)\cdb.exe"
+                    });
+                    break;
+                case "arm64":
+                    possiblePaths.AddRange(new[]
+                    {
+                        @"C:\Program Files (x86)\Windows Kits\10\Debuggers\arm64\cdb.exe",
+                        @"C:\Program Files\Windows Kits\10\Debuggers\arm64\cdb.exe"
+                    });
+                    break;
+            }
+            
+            // Add fallback paths for other architectures
+            if (currentArch != "x64")
+            {
+                possiblePaths.AddRange(new[]
+                {
+                    @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
+                    @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe",
+                    @"C:\Program Files (x86)\Debugging Tools for Windows (x64)\cdb.exe",
+                    @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe"
+                });
+            }
+            
+            if (currentArch != "x86")
+            {
+                possiblePaths.AddRange(new[]
+                {
+                    @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\cdb.exe",
+                    @"C:\Program Files\Windows Kits\10\Debuggers\x86\cdb.exe",
+                    @"C:\Program Files (x86)\Debugging Tools for Windows (x86)\cdb.exe",
+                    @"C:\Program Files\Debugging Tools for Windows (x86)\cdb.exe"
+                });
+            }
+            
+            if (currentArch != "arm64")
+            {
+                possiblePaths.AddRange(new[]
+                {
+                    @"C:\Program Files (x86)\Windows Kits\10\Debuggers\arm64\cdb.exe",
+                    @"C:\Program Files\Windows Kits\10\Debuggers\arm64\cdb.exe"
+                });
+            }
 
-            m_Logger.LogDebug("Checking {Count} standard CDB paths", possiblePaths.Length);
+            m_Logger.LogDebug("Checking {Count} prioritized CDB paths (current arch: {Architecture})", possiblePaths.Count, currentArch);
             foreach (var path in possiblePaths)
             {
                 m_Logger.LogTrace("Checking path: {Path}", path);
                 if (File.Exists(path))
                 {
-                    m_Logger.LogInformation("Found CDB at standard path: {Path}", path);
+                    m_Logger.LogInformation("Found CDB at path: {Path} (architecture-aware selection)", path);
                     return path;
                 }
             }

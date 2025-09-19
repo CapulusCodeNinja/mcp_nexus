@@ -57,7 +57,7 @@ namespace mcp_nexus.Tools
                     }
                 }
 
-                var target = symbolsPath != null ? $"-y \"{symbolsPath}\" \"{dumpPath}\"" : $"\"{dumpPath}\"";
+                var target = symbolsPath != null ? $"-y \"{symbolsPath}\" -z \"{dumpPath}\"" : $"-z \"{dumpPath}\"";
                 m_Logger.LogDebug("CDB target arguments: {Target}", target);
                 
                 m_Logger.LogInformation("Starting CDB session for crash dump analysis...");
