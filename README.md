@@ -1,121 +1,116 @@
-# Nexus Model Context Protocol (MCP) server
+# MCP Nexus
 
-A Model Context Protocol (MCP) server that provides comprehensive Windows debugging capabilities.
+**A comprehensive Model Context Protocol (MCP) server platform providing diverse tools for AI integration.**
 
-## Features
+MCP Nexus serves as a unified platform for exposing various tools and capabilities through the Model Context Protocol, enabling AI systems to interact with specialized tools and services seamlessly.
 
-### WinDBG Tool
-The WinDBG Tool provides comprehensive debugging capabilities through CDB (Console Debugger) integration, replicating all functionality from the original Python mcp-windbg project:
+## Overview
 
-#### Crash Dump Analysis
-- **OpenWindbgDump**: Analyze Windows crash dump files using common WinDBG commands
-- **CloseWindbgDump**: Unload crash dumps and release resources
+MCP Nexus implements the [Model Context Protocol](https://modelcontextprotocol.io/) specification, providing a standardized way for AI systems to access external tools and resources. The platform supports multiple transport modes and is designed to accommodate various tool categories beyond its initial debugging focus.
 
-#### Remote Debugging
-- **OpenWindbgRemote**: Connect to remote debugging sessions using connection strings (e.g., `tcp:Port=5005,Server=192.168.0.100`)
-- **CloseWindbgRemote**: Disconnect from remote debugging sessions and release resources
+### Key Features
 
-#### General Commands
-- **RunWindbgCmd**: Execute specific WinDBG commands on loaded crash dumps or active remote sessions
-- **ListWindbgDumps**: List Windows crash dump (.dmp) files in specified directories
+- **🔄 Dual Transport Support**: Both stdio and HTTP transport modes
+- **🛠 Modular Architecture**: Easy to extend with new tool categories  
+- **🎯 Standards Compliant**: Full JSON-RPC 2.0 and MCP specification compliance
+- **🔧 Production Ready**: Robust logging, error handling, and resource management
+- **🚀 AI Integration**: Seamless integration with AI tools like Cursor IDE
 
-#### Advanced Analysis Tools
-- **GetSessionInfo**: Get basic information about the current debugging session
-- **AnalyzeCallStack**: Analyze the current call stack with detailed information
-- **AnalyzeMemory**: Get memory information and analyze memory usage
-- **AnalyzeCrashPatterns**: Check for common crash patterns and provide automated analysis
-
-### CDB Session Management
-- **CdbSession**: Core class managing CDB process lifecycle, command execution, and output parsing
-- **Configurable CDB Path**: Multiple methods to specify custom CDB.exe locations (constructor, config, environment)
-- **Automatic CDB Detection**: Automatically finds CDB.exe in common Windows Debugging Tools locations as fallback
-- **Thread-Safe Operations**: All operations are thread-safe with proper locking
-- **Resource Management**: Proper cleanup and disposal of debugger processes
-
-### Time Tool
-Legacy time functionality for getting current time in different cities.
-
-## Prerequisites
-
-- Windows Debugging Tools (for WinDBG functionality)
-- .NET 8.0 or later
-
-## Installation
-
-1. Clone the repository
-2. Install Windows Debugging Tools from Microsoft
-3. Build the project: `dotnet build`
-4. Run the server: `dotnet run`
-
-## Integration with Cursor
+## Quick Start
 
 ### Prerequisites
-- Cursor IDE installed
-- Windows Debugging Tools installed
+
 - .NET 8.0 or later
+- Windows (for debugging tools)
 
-### Step 1: Configure MCP in Cursor
+### Installation
 
-1. **Open Cursor Settings**:
-   - Press `Ctrl+,` (or `Cmd+,` on Mac) to open settings
-   - Search for "MCP" in the settings search bar
+```bash
+# Clone the repository
+git clone https://github.com/your-username/mcp_nexus.git
+cd mcp_nexus
 
-2. **Enable MCP**:
-   - Find "Model Context Protocol" settings
-   - Enable MCP support if not already enabled
+# Build the project
+dotnet build
 
-### Step 2: Add the MCP Server
+# Run in stdio mode (default)
+dotnet run
 
-1. **Open MCP Configuration**:
-   - Go to Cursor Settings → Extensions → Model Context Protocol
-   - Click "Add MCP Server" or "Configure MCP Servers"
+# Run in HTTP mode
+dotnet run -- --http
+```
 
-2. **Add Server Configuration**:
-   ```json
-   {
-     "mcpServers": {
-       "mcp-nexus": {
-         "command": "dotnet",
-         "args": [
-           "run",
-           "--project",
-           "C:\\Sources\\Github\\CapulusCodeNinja\\mcp_nexus\\mcp_nexus\\mcp_nexus.csproj"
-         ],
-         "cwd": "C:\\Sources\\Github\\CapulusCodeNinja\\mcp_nexus\\mcp_nexus"
-       }
-     }
-   }
-   ```
+### Basic Usage
 
-3. **Update Paths**:
-   - Replace the paths with your actual project location
-   - Ensure the path points to your `mcp_nexus.csproj` file
+The server automatically exposes all available tools through the MCP protocol. Connect using any MCP-compatible client or integrate directly with AI tools like Cursor.
 
-### Step 3: Alternative Configuration Methods
+## Transport Modes
 
-#### Method 1: Global Configuration
-Add to your global Cursor settings:
+### Stdio Transport (Recommended)
+- **Protocol**: JSON-RPC over stdin/stdout
+- **Performance**: High performance, low latency
+- **Use Case**: Direct integration with AI tools
+- **Command**: `dotnet run`
 
+### HTTP Transport
+- **Protocol**: JSON-RPC over HTTP
+- **Endpoint**: `http://localhost:5000/mcp`
+- **Use Case**: Development, debugging, web integration
+- **Command**: `dotnet run -- --http`
+
+## Available Tools
+
+### Debugging Tools (10 tools)
+Windows debugging capabilities through WinDBG/CDB integration:
+
+- **Crash Dump Analysis**: `open_windbg_dump`, `close_windbg_dump`
+- **Remote Debugging**: `open_windbg_remote`, `close_windbg_remote`  
+- **Command Execution**: `run_windbg_cmd`
+- **File Management**: `list_windbg_dumps`
+- **Advanced Analysis**: `get_session_info`, `analyze_call_stack`, `analyze_memory`, `analyze_crash_patterns`
+
+### Utility Tools (1 tool)
+- **Time Services**: `get_current_time` - Get current time for any city
+
+### Future Tool Categories
+The platform is designed to support additional tool categories:
+- **System Administration Tools** (planned)
+- **Development Tools** (planned)
+- **Data Analysis Tools** (planned)
+- **Network Tools** (planned)
+
+## Integration with AI Tools
+
+### Cursor IDE Integration
+
+#### Configuration for Stdio Mode (Recommended)
+
+Create or edit your MCP configuration:
+
+**Global Configuration** (`~/.cursor/mcp.json`):
 ```json
 {
-  "mcp.servers": {
+  "mcpServers": {
     "mcp-nexus": {
       "command": "dotnet",
-      "args": ["run", "--project", "C:\\path\\to\\your\\mcp_nexus\\mcp_nexus\\mcp_nexus.csproj"],
+      "args": [
+        "run",
+        "--project",
+        "/path/to/mcp_nexus/mcp_nexus.csproj"
+      ],
+      "cwd": "/path/to/mcp_nexus",
       "type": "stdio"
     }
   }
 }
 ```
 
-#### Method 2: Workspace Configuration
-Create a `.cursor/mcp.json` file in your workspace root:
-
+**Workspace Configuration** (`.cursor/mcp.json`):
 ```json
 {
   "servers": {
     "mcp-nexus": {
-      "command": "dotnet",
+      "command": "dotnet", 
       "args": ["run", "--project", "./mcp_nexus/mcp_nexus.csproj"],
       "type": "stdio"
     }
@@ -123,165 +118,142 @@ Create a `.cursor/mcp.json` file in your workspace root:
 }
 ```
 
-### Step 4: Verify Integration
+#### Configuration for HTTP Mode
 
-1. **Restart Cursor**: Close and reopen Cursor to load the new MCP configuration
-
-2. **Check MCP Status**:
-   - Look for MCP indicators in the Cursor interface
-   - Check the MCP panel or settings to see if the server is connected
-
-3. **Test Tools**:
-   - Open a chat or AI conversation in Cursor
-   - Try asking: "List the available MCP tools" or "Show me WinDBG tools"
-   - The AI should be able to access and use the WinDBG debugging tools
-
-### Step 5: Using the WinDBG Tools
-
-Once integrated, you can use the tools through natural language in Cursor:
-
-```
-# Example queries:
-"Open a crash dump file at C:\dumps\crash.dmp"
-"List all dump files in C:\dumps directory"
-"Connect to a remote debugging session at tcp:Port=5005,Server=192.168.0.100"
-"Analyze the call stack of the current debugging session"
-"Check for common crash patterns in the loaded dump"
+```json
+{
+  "servers": {
+    "mcp-nexus-http": {
+      "url": "http://localhost:5000/mcp",
+      "type": "http"
+    }
+  }
+}
 ```
 
-### Troubleshooting
+Start the server first: `dotnet run -- --http`
 
-#### Server Not Connecting
-- **Check Paths**: Ensure all file paths in the configuration are correct
-- **Build First**: Run `dotnet build` in the project directory before starting Cursor
-- **Check Logs**: Look at Cursor's developer console for MCP connection errors
+### Other MCP Clients
 
-#### Tools Not Available
-- **Restart Cursor**: Sometimes a restart is needed after configuration changes
-- **Check MCP Status**: Verify the server shows as connected in MCP settings
-- **Test Manually**: Try running `dotnet run` in the project directory to ensure it starts correctly
+Any MCP-compatible client can connect to MCP Nexus:
 
-#### Permission Issues
-- **Run as Administrator**: If debugging system processes, Cursor may need elevated privileges
-- **Check CDB Path**: Ensure Windows Debugging Tools are properly installed and CDB.exe is accessible
+```bash
+# Test with curl (HTTP mode)
+curl -X POST http://localhost:5000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/list",
+    "params": {}
+  }'
+```
 
-#### CDB Path Configuration Issues
-- **Custom Path Not Found**: Verify the custom CDB path passed via `--cdb-path` exists and points to a valid executable
+## Configuration
+
+### Command Line Options
+
+- `--http`: Run in HTTP transport mode
+- `--cdb-path <path>`: Custom path to CDB.exe for debugging tools
+- `--verbose`: Enable verbose logging
+
+### Environment Variables
+
+- `MCP_NEXUS_CDB_PATH`: Default CDB.exe path
+- `MCP_NEXUS_LOG_LEVEL`: Logging level (Debug, Info, Warn, Error)
 
 ### Advanced Configuration
 
-#### CDB Path Configuration
+#### Debugging Tools Setup
 
-The MCP server supports two methods to configure the CDB.exe path:
+For Windows debugging capabilities:
 
-**1. Command Line Parameter (Recommended)**
-Use the `--cdb-path` parameter when starting the server:
-```json
-{
-  "command": "dotnet",
-  "args": [
-    "run",
-    "--project",
-    "C:\\path\\to\\mcp_nexus\\mcp_nexus.csproj",
-    "--",
-    "--cdb-path",
-    "C:\\Program Files\\Windows Kits\\10\\Debuggers\\x64\\cdb.exe"
-  ]
-}
+1. **Install Windows Debugging Tools**:
+   - Download from Microsoft
+   - Or install via Windows SDK
+
+2. **Configure CDB Path** (optional):
+   ```bash
+   dotnet run -- --cdb-path "C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe"
+   ```
+
+3. **Automatic Detection**: If no path specified, the system searches:
+   - Windows Kits installation paths
+   - System PATH environment
+   - Common installation directories
+
+## Development
+
+### Architecture
+
+The platform follows a modular architecture:
+
+```
+MCP Nexus
+├── Core Services
+│   ├── McpProtocolService    # MCP protocol handling
+│   ├── McpToolDefinitionService  # Tool definitions
+│   └── McpToolExecutionService   # Tool execution
+├── Transport Layer
+│   ├── Stdio Transport       # stdin/stdout communication
+│   └── HTTP Transport        # HTTP API endpoints
+└── Tool Modules
+    ├── Debugging Tools       # WinDBG/CDB integration
+    ├── Time Tools           # Time utilities
+    └── [Future Tools]       # Extensible tool system
 ```
 
-**2. Automatic Detection (Default)**
-If no `--cdb-path` is specified, the server automatically searches standard Windows Debugging Tools installation paths and system PATH.
+### Adding New Tools
 
-#### Custom Symbol Path
-You can configure symbol paths by modifying the server arguments:
+1. **Define Tool Schema**: Add tool definition to `McpToolDefinitionService`
+2. **Implement Logic**: Add execution logic to `McpToolExecutionService`  
+3. **Register Services**: Update dependency injection in `Program.cs`
+4. **Update Documentation**: Add tool description to README
 
-```json
-{
-  "command": "dotnet",
-  "args": [
-    "run",
-    "--project",
-    "C:\\path\\to\\mcp_nexus\\mcp_nexus.csproj",
-    "--",
-    "--cdb-path",
-    "C:\\MyTools\\cdb.exe",
-    "--symbols-path",
-    "SRV*C:\\Symbols*https://msdl.microsoft.com/download/symbols"
-  ]
-}
-```
+### Contributing
 
-#### Debug Mode
-Enable verbose logging for troubleshooting:
+1. Fork the repository
+2. Create a feature branch
+3. Add your tool implementation
+4. Update documentation
+5. Submit a pull request
 
-```json
-{
-  "command": "dotnet",
-  "args": [
-    "run",
-    "--project",
-    "C:\\path\\to\\mcp_nexus\\mcp_nexus.csproj",
-    "--",
-    "--cdb-path",
-    "C:\\MyTools\\cdb.exe",
-    "--verbose"
-  ]
-}
-```
+## Troubleshooting
 
-## Usage
+### Common Issues
 
-The MCP server exposes various tools that can be used by MCP clients. The WinDBG tool provides debugging capabilities identical to the Python `mcp-windbg` implementation, allowing you to:
+#### Connection Problems
+- **Stdio Mode**: Check file paths in MCP configuration
+- **HTTP Mode**: Ensure server is running before client connects
+- **Build Issues**: Run `dotnet build` before starting
 
-1. **Analyze crash dumps**: Open and analyze Windows crash dump files
-2. **Remote debugging**: Connect to live debugging sessions
-3. **Execute commands**: Run arbitrary WinDBG commands programmatically
-4. **Automated analysis**: Use built-in analysis tools for common debugging scenarios
-5. **Pattern detection**: Automatically detect common crash patterns and issues
+#### Tool-Specific Issues
+- **Debugging Tools**: Verify Windows Debugging Tools installation
+- **Permissions**: Run as administrator for system-level debugging
+- **Port Conflicts**: Use different port for HTTP mode if 5000 is occupied
 
-## Tools Available
+#### Performance Issues
+- **Stdio Mode**: Preferred for performance-critical applications
+- **HTTP Mode**: Better for development and debugging
+- **Logging**: Adjust log level in production environments
 
-### Crash Dump Analysis
-- `OpenWindbgDump` - Analyze a Windows crash dump file
-- `CloseWindbgDump` - Unload a crash dump and release resources
+### Getting Help
 
-### Remote Debugging
-- `OpenWindbgRemote` - Connect to a remote debugging session
-- `CloseWindbgRemote` - Disconnect from a remote debugging session
+1. **Check Logs**: Review application logs for detailed error information
+2. **Test Manually**: Use curl to test HTTP mode endpoints
+3. **Verify Tools**: Ensure all prerequisite tools are installed
+4. **Community**: Report issues on GitHub
 
-### General Commands
-- `RunWindbgCmd` - Execute a specific WinDBG command
-- `ListWindbgDumps` - List Windows crash dump files in a directory
+## License
 
-### Analysis Tools
-- `GetSessionInfo` - Get basic debugging session information
-- `AnalyzeCallStack` - Analyze call stack with detailed information
-- `AnalyzeMemory` - Analyze memory usage and information
-- `AnalyzeCrashPatterns` - Check for common crash patterns
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-### Time Tools
-- `GetCurrentTime` - Get current time for a city (legacy method)
+## Acknowledgments
 
-## Architecture
+- [Model Context Protocol](https://modelcontextprotocol.io/) specification
+- Windows Debugging Tools community
+- .NET and ASP.NET Core teams
 
-The implementation consists of two main classes:
+---
 
-1. **CdbSession**: Manages the CDB process lifecycle, command execution, and output parsing
-2. **WindbgTool**: Provides MCP tool methods that use CdbSession for debugging operations
-
-This architecture mirrors the Python implementation's structure while providing the benefits of C#'s type safety and performance.
-
-## Example Usage
-
-```csharp
-// The tools are automatically registered and available through MCP clients
-// Example: Open a crash dump for analysis
-var result = await windbgTool.OpenWindbgDump("C:\\dumps\\crash.dmp");
-
-// Execute a WinDBG command
-var callStack = await windbgTool.RunWindbgCmd("k");
-
-// Analyze crash patterns
-var analysis = await windbgTool.AnalyzeCrashPatterns();
-```
+**MCP Nexus** - Bridging AI and specialized tools through the Model Context Protocol.
