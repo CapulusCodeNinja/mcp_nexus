@@ -15,6 +15,7 @@ namespace mcp_nexus.Helper
         private bool m_IsActive;
         private readonly object m_SessionLock = new object();
         private readonly int m_CommandTimeoutMs;
+        private readonly string? m_CustomCdbPath;
 
         public bool IsActive
         {
@@ -27,10 +28,11 @@ namespace mcp_nexus.Helper
             }
         }
 
-        public CdbSession(ILogger<CdbSession> logger, int commandTimeoutMs = 30000)
+        public CdbSession(ILogger<CdbSession> logger, int commandTimeoutMs = 30000, string? customCdbPath = null)
         {
             m_Logger = logger;
             m_CommandTimeoutMs = commandTimeoutMs;
+            m_CustomCdbPath = customCdbPath;
         }
 
         public Task<bool> StartSession(string target, string? arguments = null)
@@ -340,6 +342,22 @@ namespace mcp_nexus.Helper
         {
             m_Logger.LogDebug("FindCDBPath called - searching for CDB executable");
             
+            // 1. Check custom path provided via --cdb-path parameter
+            if (!string.IsNullOrEmpty(m_CustomCdbPath))
+            {
+                m_Logger.LogInformation("Using custom CDB path from --cdb-path parameter: {Path}", m_CustomCdbPath);
+                if (File.Exists(m_CustomCdbPath))
+                {
+                    m_Logger.LogInformation("Custom CDB path verified: {Path}", m_CustomCdbPath);
+                    return m_CustomCdbPath;
+                }
+                else
+                {
+                    m_Logger.LogWarning("Custom CDB path does not exist: {Path}", m_CustomCdbPath);
+                }
+            }
+            
+            // 2. Continue with automatic path detection
             var currentArch = GetCurrentArchitecture();
             m_Logger.LogInformation("Current machine architecture: {Architecture}", currentArch);
             

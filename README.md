@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides comprehensive Windows debugg
 
 ## Features
 
-### WinDBG Tool - Complete mcp-windbg Replication
+### WinDBG Tool
 The WinDBG Tool provides comprehensive debugging capabilities through CDB (Console Debugger) integration, replicating all functionality from the original Python mcp-windbg project:
 
 #### Crash Dump Analysis
@@ -27,7 +27,8 @@ The WinDBG Tool provides comprehensive debugging capabilities through CDB (Conso
 
 ### CDB Session Management
 - **CdbSession**: Core class managing CDB process lifecycle, command execution, and output parsing
-- **Automatic CDB Detection**: Automatically finds CDB.exe in common Windows Debugging Tools locations
+- **Configurable CDB Path**: Multiple methods to specify custom CDB.exe locations (constructor, config, environment)
+- **Automatic CDB Detection**: Automatically finds CDB.exe in common Windows Debugging Tools locations as fallback
 - **Thread-Safe Operations**: All operations are thread-safe with proper locking
 - **Resource Management**: Proper cleanup and disposal of debugger processes
 
@@ -164,7 +165,33 @@ Once integrated, you can use the tools through natural language in Cursor:
 - **Run as Administrator**: If debugging system processes, Cursor may need elevated privileges
 - **Check CDB Path**: Ensure Windows Debugging Tools are properly installed and CDB.exe is accessible
 
+#### CDB Path Configuration Issues
+- **Custom Path Not Found**: Verify the custom CDB path passed via `--cdb-path` exists and points to a valid executable
+
 ### Advanced Configuration
+
+#### CDB Path Configuration
+
+The MCP server supports two methods to configure the CDB.exe path:
+
+**1. Command Line Parameter (Recommended)**
+Use the `--cdb-path` parameter when starting the server:
+```json
+{
+  "command": "dotnet",
+  "args": [
+    "run",
+    "--project",
+    "C:\\path\\to\\mcp_nexus\\mcp_nexus.csproj",
+    "--",
+    "--cdb-path",
+    "C:\\Program Files\\Windows Kits\\10\\Debuggers\\x64\\cdb.exe"
+  ]
+}
+```
+
+**2. Automatic Detection (Default)**
+If no `--cdb-path` is specified, the server automatically searches standard Windows Debugging Tools installation paths and system PATH.
 
 #### Custom Symbol Path
 You can configure symbol paths by modifying the server arguments:
@@ -177,6 +204,8 @@ You can configure symbol paths by modifying the server arguments:
     "--project",
     "C:\\path\\to\\mcp_nexus\\mcp_nexus.csproj",
     "--",
+    "--cdb-path",
+    "C:\\MyTools\\cdb.exe",
     "--symbols-path",
     "SRV*C:\\Symbols*https://msdl.microsoft.com/download/symbols"
   ]
@@ -194,6 +223,8 @@ Enable verbose logging for troubleshooting:
     "--project",
     "C:\\path\\to\\mcp_nexus\\mcp_nexus.csproj",
     "--",
+    "--cdb-path",
+    "C:\\MyTools\\cdb.exe",
     "--verbose"
   ]
 }
