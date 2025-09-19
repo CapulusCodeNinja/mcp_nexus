@@ -22,7 +22,7 @@ namespace mcp_nexus.Tools
         [McpServerTool, Description("Analyze a Windows crash dump file using common WinDBG commands")]
         public async Task<string> OpenWindbgDump(string dumpPath, string? symbolsPath = null)
         {
-            m_Logger.LogInformation("OpenWindbgDump called with dumpPath: {DumpPath}, symbolsPath: {SymbolsPath}", dumpPath, symbolsPath);
+            m_Logger.LogDebug("OpenWindbgDump called with dumpPath: {DumpPath}, symbolsPath: {SymbolsPath}", dumpPath, symbolsPath);
             
             try
             {
@@ -41,7 +41,7 @@ namespace mcp_nexus.Tools
                 }
 
                 var fileInfo = new FileInfo(dumpPath);
-                m_Logger.LogInformation("Dump file found - Size: {Size} bytes, LastModified: {LastModified}", fileInfo.Length, fileInfo.LastWriteTime);
+                m_Logger.LogDebug("Dump file found - Size: {Size} bytes, LastModified: {LastModified}", fileInfo.Length, fileInfo.LastWriteTime);
 
                 // Check if symbols path is valid if provided
                 if (!string.IsNullOrEmpty(symbolsPath))

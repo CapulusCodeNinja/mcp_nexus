@@ -37,7 +37,7 @@ namespace mcp_nexus.Helper
 
         public Task<bool> StartSession(string target, string? arguments = null)
         {
-            m_Logger.LogInformation("StartSession called with target: {Target}, arguments: {Arguments}", target, arguments);
+            m_Logger.LogDebug("StartSession called with target: {Target}, arguments: {Arguments}", target, arguments);
             
             try
             {
@@ -142,7 +142,7 @@ namespace mcp_nexus.Helper
 
         public Task<string> ExecuteCommand(string command)
         {
-            m_Logger.LogInformation("ExecuteCommand called with command: {Command}", command);
+            m_Logger.LogDebug("ExecuteCommand called with command: {Command}", command);
             
             try
             {
