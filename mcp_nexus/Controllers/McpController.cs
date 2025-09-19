@@ -24,8 +24,8 @@ namespace mcp_nexus.Controllers
             var sessionId = Request.Headers["Mcp-Session-Id"].FirstOrDefault() ?? Guid.NewGuid().ToString();
             Response.Headers["Mcp-Session-Id"] = sessionId;
 
-            _logger.LogInformation("=== NEW MCP REQUEST (Session: {SessionId}) ===", sessionId);
-            _logger.LogDebug("Request Headers: {Headers}", string.Join(", ", Request.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value.ToArray())}"))); 
+            OperationLogger.LogInfo(_logger, OperationLogger.Operations.Http, "NEW MCP REQUEST (Session: {SessionId})", sessionId);
+            OperationLogger.LogDebug(_logger, OperationLogger.Operations.Http, "Request Headers: {Headers}", string.Join(", ", Request.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value.ToArray())}"))); 
 
             // Set up standard JSON response headers (NOT SSE)
             Response.Headers["Access-Control-Allow-Origin"] = "*";
@@ -43,11 +43,11 @@ namespace mcp_nexus.Controllers
                 var requestElement = JsonSerializer.Deserialize<JsonElement>(requestBody);
                 
                 // Extract and log key request details
-                var method = requestElement.TryGetProperty("method", out var methodProp) ? methodProp.GetString() : "unknown";
-                var id = requestElement.TryGetProperty("id", out var idProp) ? idProp.ToString() : "unknown";
-                var jsonrpc = requestElement.TryGetProperty("jsonrpc", out var jsonrpcProp) ? jsonrpcProp.GetString() : "unknown";
+                var method = requestElement.TryGetProperty("method", out var methodProp) ? methodProp.GetString() ?? "unknown" : "unknown";
+                var id = requestElement.TryGetProperty("id", out var idProp) ? idProp.ToString() ?? "unknown" : "unknown";
+                var jsonrpc = requestElement.TryGetProperty("jsonrpc", out var jsonrpcProp) ? jsonrpcProp.GetString() ?? "unknown" : "unknown";
                 
-                _logger.LogInformation("Parsed JSON successfully - Method: '{Method}', ID: '{Id}', JsonRPC: '{JsonRpc}'", method, id, jsonrpc);
+                OperationLogger.LogInfo(_logger, OperationLogger.Operations.MCP, "Parsed JSON successfully - Method: '{Method}', ID: '{Id}', JsonRPC: '{JsonRpc}'", method, id, jsonrpc);
                 
                 if (requestElement.TryGetProperty("params", out var paramsProp))
                 {

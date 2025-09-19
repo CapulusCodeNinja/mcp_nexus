@@ -40,6 +40,41 @@ dotnet run
 dotnet run -- --http
 ```
 
+### Windows Service Installation
+
+Install MCP Nexus as a Windows service for persistent operation:
+
+```bash
+# Install as Windows service (requires administrator privileges)
+dotnet run -- --install
+
+# Uninstall the Windows service
+dotnet run -- --uninstall
+
+# Manual service mode testing
+dotnet run -- --service
+```
+
+**Service Features:**
+- **Auto-start**: Service starts automatically on system boot
+- **HTTP Mode**: Service runs in HTTP transport mode
+- **Program Files**: Installed to `C:\Program Files\MCP-Nexus`
+- **Event Logging**: Logs to Windows Event Log and files
+- **Management**: Use Windows Services console or command line
+
+**Service Management:**
+```bash
+# Check service status
+sc query "MCP-Nexus"
+
+# Start/stop service manually
+sc start "MCP-Nexus"
+sc stop "MCP-Nexus"
+
+# Access HTTP endpoint when service is running
+# http://localhost:5000/mcp
+```
+
 ### Basic Usage
 
 The server automatically exposes all available tools through the MCP protocol. Connect using any MCP-compatible client or integrate directly with AI tools like Cursor.

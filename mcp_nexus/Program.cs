@@ -1,9 +1,12 @@
 using NLog.Web;
 using mcp_nexus.Tools;
 using mcp_nexus.Helper;
+using mcp_nexus.Services;
 using System.CommandLine;
 using System.CommandLine.Parsing;
+using System.Runtime.Versioning;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace mcp_nexus
 {
@@ -12,68 +15,186 @@ namespace mcp_nexus
         private static async Task Main(string[] args)
         {
             // Parse command line arguments
-            var (customCdbPath, useHttp) = ParseCommandLineArguments(args);
+            var commandLineArgs = ParseCommandLineArguments(args);
+
+            // Handle special commands first (Windows only)
+            if (commandLineArgs.Install)
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    // Create a logger using NLog configuration for the installation process
+                    using var loggerFactory = LoggerFactory.Create(builder =>
+                    {
+                        builder.ClearProviders();
+                        builder.AddNLogWeb();
+                        builder.SetMinimumLevel(LogLevel.Information);
+                    });
+                    var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
+                    
+                    var success = await WindowsServiceInstaller.InstallServiceAsync(logger);
+                    Environment.Exit(success ? 0 : 1);
+                }
+                else
+                {
+                    Console.Error.WriteLine("ERROR: Service installation is only supported on Windows.");
+                    Environment.Exit(1);
+                }
+                return;
+            }
+
+            if (commandLineArgs.Uninstall)
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    // Create a logger using NLog configuration for the uninstallation process
+                    using var loggerFactory = LoggerFactory.Create(builder =>
+                    {
+                        builder.ClearProviders();
+                        builder.AddNLogWeb();
+                        builder.SetMinimumLevel(LogLevel.Information);
+                    });
+                    var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
+                    
+                    var success = await WindowsServiceInstaller.UninstallServiceAsync(logger);
+                    Environment.Exit(success ? 0 : 1);
+                }
+                else
+                {
+                    Console.Error.WriteLine("ERROR: Service uninstallation is only supported on Windows.");
+                    Environment.Exit(1);
+                }
+                return;
+            }
+
+            if (commandLineArgs.ForceUninstall)
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    // Create a logger using NLog configuration for the force uninstallation process
+                    using var loggerFactory = LoggerFactory.Create(builder =>
+                    {
+                        builder.ClearProviders();
+                        builder.AddNLogWeb();
+                        builder.SetMinimumLevel(LogLevel.Information);
+                    });
+                    var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
+                    
+                    var success = await WindowsServiceInstaller.ForceUninstallServiceAsync(logger);
+                    Environment.Exit(success ? 0 : 1);
+                }
+                else
+                {
+                    Console.Error.WriteLine("ERROR: Service uninstallation is only supported on Windows.");
+                    Environment.Exit(1);
+                }
+                return;
+            }
+
+            // Determine transport mode
+            bool useHttp = commandLineArgs.UseHttp || commandLineArgs.ServiceMode;
+
+            // Validate service mode is only used on Windows
+            if (commandLineArgs.ServiceMode && !OperatingSystem.IsWindows())
+            {
+                Console.Error.WriteLine("ERROR: Service mode is only supported on Windows.");
+                Environment.Exit(1);
+                return;
+            }
 
             if (useHttp)
             {
-                await RunHttpServer(args, customCdbPath);
+                await RunHttpServer(args, commandLineArgs);
             }
             else
             {
-                await RunStdioServer(args, customCdbPath);
+                await RunStdioServer(args, commandLineArgs);
             }
         }
 
-        private static (string? customCdbPath, bool useHttp) ParseCommandLineArguments(string[] args)
+        private static CommandLineArguments ParseCommandLineArguments(string[] args)
         {
-            string? customCdbPath = null;
-            bool useHttp = false;
+            var result = new CommandLineArguments();
 
             var cdbPathOption = new Option<string?>("--cdb-path", "Custom path to CDB.exe debugger executable");
             var httpOption = new Option<bool>("--http", "Use HTTP transport instead of stdio");
-            var rootCommand = new RootCommand("MCP Nexus - Windows Debugging MCP Server") 
+            var serviceOption = new Option<bool>("--service", "Run in Windows service mode (implies --http)");
+            var installOption = new Option<bool>("--install", "Install MCP Nexus as Windows service");
+            var uninstallOption = new Option<bool>("--uninstall", "Uninstall MCP Nexus Windows service");
+            var forceUninstallOption = new Option<bool>("--force-uninstall", "Force uninstall MCP Nexus service (removes registry entries)");
+            
+            var rootCommand = new RootCommand("MCP Nexus - Comprehensive MCP Server Platform") 
             { 
                 cdbPathOption, 
-                httpOption 
+                httpOption,
+                serviceOption,
+                installOption,
+                uninstallOption,
+                forceUninstallOption
             };
 
             var parseResult = rootCommand.Parse(args);
             if (parseResult.Errors.Count == 0)
             {
-                customCdbPath = parseResult.GetValueForOption(cdbPathOption);
-                useHttp = parseResult.GetValueForOption(httpOption);
+                result.CustomCdbPath = parseResult.GetValueForOption(cdbPathOption);
+                result.UseHttp = parseResult.GetValueForOption(httpOption);
+                result.ServiceMode = parseResult.GetValueForOption(serviceOption);
+                result.Install = parseResult.GetValueForOption(installOption);
+                result.Uninstall = parseResult.GetValueForOption(uninstallOption);
+                result.ForceUninstall = parseResult.GetValueForOption(forceUninstallOption);
             }
 
-            return (customCdbPath, useHttp);
+            return result;
         }
 
-        private static async Task RunHttpServer(string[] args, string? customCdbPath)
+        private class CommandLineArguments
         {
-            Console.WriteLine("Configuring for HTTP transport...");
+            public string? CustomCdbPath { get; set; }
+            public bool UseHttp { get; set; }
+            public bool ServiceMode { get; set; }
+            public bool Install { get; set; }
+            public bool Uninstall { get; set; }
+            public bool ForceUninstall { get; set; }
+        }
+
+        private static async Task RunHttpServer(string[] args, CommandLineArguments commandLineArgs)
+        {
+            var logMessage = commandLineArgs.ServiceMode ? 
+                "Configuring for Windows service mode (HTTP)..." : 
+                "Configuring for HTTP transport...";
+            Console.WriteLine(logMessage);
+
             var webBuilder = WebApplication.CreateBuilder(args);
 
-            ConfigureLogging(webBuilder.Logging);
-            RegisterServices(webBuilder.Services, customCdbPath);
+            // Add Windows service support if in service mode
+            if (commandLineArgs.ServiceMode && OperatingSystem.IsWindows())
+            {
+                webBuilder.Host.UseWindowsService();
+            }
+
+            ConfigureLogging(webBuilder.Logging, commandLineArgs.ServiceMode);
+            RegisterServices(webBuilder.Services, commandLineArgs.CustomCdbPath);
             ConfigureHttpServices(webBuilder.Services);
 
             var app = webBuilder.Build();
             ConfigureHttpPipeline(app);
 
-            Console.WriteLine("Starting MCP Nexus HTTP server on {0}...", 
-                string.Join(", ", app.Urls.DefaultIfEmpty("default URLs")));
+            var startMessage = commandLineArgs.ServiceMode ?
+                "Starting MCP Nexus as Windows service..." :
+                $"Starting MCP Nexus HTTP server on {string.Join(", ", app.Urls.DefaultIfEmpty("default URLs"))}...";
+            Console.WriteLine(startMessage);
             
             await app.RunAsync();
         }
 
-        private static async Task RunStdioServer(string[] args, string? customCdbPath)
+        private static async Task RunStdioServer(string[] args, CommandLineArguments commandLineArgs)
         {
             // CRITICAL: In stdio mode, stdout is reserved for MCP protocol
             // All console output must go to stderr
             Console.Error.WriteLine("Configuring for stdio transport...");
             var builder = Host.CreateApplicationBuilder(args);
 
-            ConfigureLogging(builder.Logging);
-            RegisterServices(builder.Services, customCdbPath);
+            ConfigureLogging(builder.Logging, false);
+            RegisterServices(builder.Services, commandLineArgs.CustomCdbPath);
             ConfigureStdioServices(builder.Services);
 
             Console.Error.WriteLine("Building application host...");
@@ -83,13 +204,32 @@ namespace mcp_nexus
             await host.RunAsync();
         }
 
-        private static void ConfigureLogging(ILoggingBuilder logging)
+        private static void ConfigureLogging(ILoggingBuilder logging, bool isServiceMode)
         {
             // Note: We use Console.Error for stdio mode compatibility
-            Console.Error.WriteLine("Configuring logging...");
+            var logMessage = "Configuring logging...";
+            if (isServiceMode)
+            {
+                // For service mode, logging will go to Windows Event Log and files
+                Console.WriteLine(logMessage);
+            }
+            else
+            {
+                Console.Error.WriteLine(logMessage);
+            }
+            
             logging.ClearProviders();
             logging.AddNLogWeb();
-            Console.Error.WriteLine("Logging configured with NLog");
+            
+            var completeMessage = "Logging configured with NLog";
+            if (isServiceMode)
+            {
+                Console.WriteLine(completeMessage);
+            }
+            else
+            {
+                Console.Error.WriteLine(completeMessage);
+            }
         }
 
         private static void RegisterServices(IServiceCollection services, string? customCdbPath)
