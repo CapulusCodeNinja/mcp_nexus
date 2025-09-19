@@ -155,6 +155,7 @@ namespace mcp_nexus
             Console.WriteLine();
             Console.WriteLine("OPTIONS:");
             Console.WriteLine("  --http                 Use HTTP transport instead of stdio");
+            Console.WriteLine("  --port <PORT>          HTTP server port (default: 5117 dev, 5000 production)");
             Console.WriteLine("  --service              Run in Windows service mode (implies --http)");
             Console.WriteLine("  --cdb-path <PATH>      Custom path to CDB.exe debugger executable");
             Console.WriteLine();
@@ -166,15 +167,17 @@ namespace mcp_nexus
             Console.WriteLine();
             Console.WriteLine("EXAMPLES:");
             Console.WriteLine("  mcp_nexus                          # Run in stdio mode");
-            Console.WriteLine("  mcp_nexus --http                   # Run HTTP server on localhost:5000");
+            Console.WriteLine("  mcp_nexus --http                   # Run HTTP server on default port");
+            Console.WriteLine("  mcp_nexus --http --port 8080       # Run HTTP server on port 8080");
             Console.WriteLine("  mcp_nexus --install                # Install as Windows service");
+            Console.WriteLine("  mcp_nexus --install --port 9000    # Install service on port 9000");
             Console.WriteLine("  mcp_nexus --update                 # Update installed service");
             Console.WriteLine("  mcp_nexus --cdb-path \"C:\\WinDbg\"   # Use custom debugger path");
             Console.WriteLine();
             Console.WriteLine("NOTES:");
             Console.WriteLine("  - Service commands require administrator privileges on Windows");
             Console.WriteLine("  - Updates create backups in: C:\\Program Files\\MCP-Nexus\\backups\\[timestamp]");
-            Console.WriteLine("  - HTTP mode runs on localhost:5000/mcp");
+            Console.WriteLine("  - HTTP mode runs on localhost:5000/mcp (or custom port if specified)");
             Console.WriteLine();
             Console.WriteLine("For more information, visit: https://github.com/your-repo/mcp_nexus");
             await Task.CompletedTask;
@@ -184,13 +187,14 @@ namespace mcp_nexus
         {
             var result = new CommandLineArguments();
 
-            var cdbPathOption = new Option<string?>("--cdb-path", "Custom path to CDB.exe debugger executable");
+var cdbPathOption = new Option<string?>("--cdb-path", "Custom path to CDB.exe debugger executable");
             var httpOption = new Option<bool>("--http", "Use HTTP transport instead of stdio");
             var serviceOption = new Option<bool>("--service", "Run in Windows service mode (implies --http)");
             var installOption = new Option<bool>("--install", "Install MCP Nexus as Windows service");
             var uninstallOption = new Option<bool>("--uninstall", "Uninstall MCP Nexus Windows service");
             var forceUninstallOption = new Option<bool>("--force-uninstall", "Force uninstall MCP Nexus service (removes registry entries)");
             var updateOption = new Option<bool>("--update", "Update MCP Nexus service (stop, update files, restart)");
+            var portOption = new Option<int?>("--port", "HTTP server port (default: 5117 dev, 5000 production)");
             
             var rootCommand = new RootCommand("MCP Nexus - Comprehensive MCP Server Platform") 
             { 
@@ -200,12 +204,13 @@ namespace mcp_nexus
                 installOption,
                 uninstallOption,
                 forceUninstallOption,
-                updateOption
+                updateOption,
+                portOption
             };
 
-            var parseResult = rootCommand.Parse(args);
-            if (parseResult.Errors.Count == 0)
-            {
+var parseResult = rootCommand.Parse(args);
+if (parseResult.Errors.Count == 0)
+{
                 result.CustomCdbPath = parseResult.GetValueForOption(cdbPathOption);
                 result.UseHttp = parseResult.GetValueForOption(httpOption);
                 result.ServiceMode = parseResult.GetValueForOption(serviceOption);
@@ -213,6 +218,7 @@ namespace mcp_nexus
                 result.Uninstall = parseResult.GetValueForOption(uninstallOption);
                 result.ForceUninstall = parseResult.GetValueForOption(forceUninstallOption);
                 result.Update = parseResult.GetValueForOption(updateOption);
+                result.Port = parseResult.GetValueForOption(portOption);
             }
 
             return result;
@@ -227,6 +233,7 @@ namespace mcp_nexus
             public bool Uninstall { get; set; }
             public bool ForceUninstall { get; set; }
             public bool Update { get; set; }
+            public int? Port { get; set; }
         }
 
         private static async Task RunHttpServer(string[] args, CommandLineArguments commandLineArgs)
@@ -237,6 +244,14 @@ namespace mcp_nexus
             Console.WriteLine(logMessage);
 
             var webBuilder = WebApplication.CreateBuilder(args);
+
+            // Configure custom port if specified
+            if (commandLineArgs.Port.HasValue)
+            {
+                var customUrl = $"http://localhost:{commandLineArgs.Port.Value}";
+                webBuilder.WebHost.UseUrls(customUrl);
+                Console.WriteLine($"Using custom port: {commandLineArgs.Port.Value}");
+            }
 
             // Add Windows service support if in service mode
             if (commandLineArgs.ServiceMode && OperatingSystem.IsWindows())
@@ -264,7 +279,7 @@ namespace mcp_nexus
             // CRITICAL: In stdio mode, stdout is reserved for MCP protocol
             // All console output must go to stderr
             Console.Error.WriteLine("Configuring for stdio transport...");
-            var builder = Host.CreateApplicationBuilder(args);
+var builder = Host.CreateApplicationBuilder(args);
 
             ConfigureLogging(builder.Logging, false);
             RegisterServices(builder.Services, commandLineArgs.CustomCdbPath);
@@ -313,10 +328,10 @@ namespace mcp_nexus
             Console.Error.WriteLine("Registered TimeTool as singleton");
 
             services.AddSingleton<CdbSession>(serviceProvider =>
-            {
-                var logger = serviceProvider.GetRequiredService<ILogger<CdbSession>>();
-                return new CdbSession(logger, customCdbPath: customCdbPath);
-            });
+{
+    var logger = serviceProvider.GetRequiredService<ILogger<CdbSession>>();
+    return new CdbSession(logger, customCdbPath: customCdbPath);
+});
             Console.Error.WriteLine("Registered CdbSession as singleton with custom CDB path: {0}", 
                 customCdbPath ?? "auto-detect");
 
@@ -360,8 +375,8 @@ namespace mcp_nexus
             services.AddSingleton<mcp_nexus.Services.McpProtocolService>();
 
             services.AddMcpServer()
-                    .WithStdioServerTransport()
-                    .WithToolsFromAssembly();
+    .WithStdioServerTransport()
+    .WithToolsFromAssembly();
 
             Console.Error.WriteLine("MCP server configured with stdio transport and tools from assembly");
         }
