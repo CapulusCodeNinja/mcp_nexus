@@ -258,7 +258,22 @@ namespace mcp_nexus.Services
         {
             m_logger.LogInformation("Shutting down CommandQueueService");
 
-            m_serviceCts.Cancel();
+            // Check if already disposed
+            if (m_serviceCts.Token.IsCancellationRequested)
+            {
+                m_logger.LogWarning("CommandQueueService already disposed");
+                return;
+            }
+
+            try
+            {
+                m_serviceCts.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                m_logger.LogWarning("CancellationTokenSource already disposed during shutdown");
+                return;
+            }
 
             try
             {
@@ -269,17 +284,55 @@ namespace mcp_nexus.Services
                 m_logger.LogError(ex, "Error waiting for processing task to complete");
             }
 
-            // Cancel all pending commands
+            // Cancel all pending commands with disposal guards
             foreach (var command in m_activeCommands.Values)
             {
-                command.CancellationTokenSource.Cancel();
-                command.CompletionSource.TrySetResult("Service is shutting down.");
-                command.CancellationTokenSource.Dispose();
+                try
+                {
+                    if (!command.CancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        command.CancellationTokenSource.Cancel();
+                    }
+                    command.CompletionSource.TrySetResult("Service is shutting down.");
+                }
+                catch (ObjectDisposedException)
+                {
+                    // CancellationTokenSource already disposed, ignore
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogError(ex, "Error cancelling command {CommandId}", command.Id);
+                }
+
+                try
+                {
+                    command.CancellationTokenSource.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Already disposed, ignore
+                }
             }
 
             m_activeCommands.Clear();
-            m_serviceCts.Dispose();
-            m_queueSemaphore.Dispose();
+
+            try
+            {
+                m_serviceCts.Dispose();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Already disposed, ignore
+            }
+
+            try
+            {
+                m_queueSemaphore.Dispose();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Already disposed, ignore
+            }
 
             m_logger.LogInformation("CommandQueueService disposed");
         }
