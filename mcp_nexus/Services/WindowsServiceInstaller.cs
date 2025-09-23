@@ -37,10 +37,10 @@ namespace mcp_nexus.Services
                 {
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Service already installed. Uninstalling first");
                     await UninstallServiceAsync(logger); // Continue even if uninstall has issues
-                    
+
                     // Wait and check again
                     await Task.Delay(2000);
-                    
+
                     if (IsServiceInstalled())
                     {
                         OperationLogger.LogWarning(logger, OperationLogger.Operations.Install, "Service still exists after uninstall attempt. This may be normal if it's marked for deletion");
@@ -71,7 +71,7 @@ namespace mcp_nexus.Services
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Registering Windows service");
                 var executablePath = Path.Combine(InstallFolder, "mcp_nexus.exe");
                 var arguments = "--service";
-                
+
                 var installCommand = $@"create ""{ServiceName}"" binPath= ""{executablePath} {arguments}"" " +
                                    $@"start= auto DisplayName= ""{ServiceDisplayName}""";
 
@@ -79,18 +79,18 @@ namespace mcp_nexus.Services
                 if (!result)
                 {
                     OperationLogger.LogWarning(logger, OperationLogger.Operations.Install, "Service creation failed. Attempting to clear 'marked for deletion' state");
-                    
+
                     // Try to force cleanup the service registration
                     if (await ForceCleanupServiceAsync(logger))
                     {
                         OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Service cleanup successful. Retrying installation");
                         result = await RunScCommandAsync(installCommand, logger);
                     }
-                    
+
                     if (!result)
                     {
                         OperationLogger.LogWarning(logger, OperationLogger.Operations.Install, "Trying alternative service cleanup methods");
-                        
+
                         // Alternative method: Try to start and then delete again
                         await RunScCommandAsync($@"start ""{ServiceName}""", logger, allowFailure: true);
                         await Task.Delay(2000);
@@ -98,11 +98,11 @@ namespace mcp_nexus.Services
                         await Task.Delay(2000);
                         await RunScCommandAsync($@"delete ""{ServiceName}""", logger, allowFailure: true);
                         await Task.Delay(3000);
-                        
+
                         // Try one more time
                         result = await RunScCommandAsync(installCommand, logger);
                     }
-                    
+
                     if (!result)
                     {
                         OperationLogger.LogError(logger, OperationLogger.Operations.Install, "Failed to install service after all cleanup attempts");
@@ -184,15 +184,15 @@ namespace mcp_nexus.Services
                 // Delete the service (retry if marked for deletion)
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Uninstall, "Removing service registration");
                 var deleteResult = await RunScCommandAsync($@"delete ""{ServiceName}""", logger, allowFailure: true);
-                
+
                 if (!deleteResult)
                 {
                     OperationLogger.LogWarning(logger, OperationLogger.Operations.Uninstall, "Service might be marked for deletion. Waiting and retrying");
                     await Task.Delay(5000); // Wait longer
-                    
+
                     // Try again
                     deleteResult = await RunScCommandAsync($@"delete ""{ServiceName}""", logger, allowFailure: true);
-                    
+
                     if (!deleteResult)
                     {
                         OperationLogger.LogWarning(logger, OperationLogger.Operations.Uninstall, "Could not remove service registration. Continuing with installation");
@@ -205,7 +205,7 @@ namespace mcp_nexus.Services
                 {
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Uninstall, "Removing installation files");
                     await Task.Delay(1000); // Give the service time to fully stop
-                    
+
                     try
                     {
                         Directory.Delete(InstallFolder, true);
@@ -248,7 +248,7 @@ namespace mcp_nexus.Services
 
                 // Use the force cleanup method
                 var cleanupSuccess = await ForceCleanupServiceAsync(logger);
-                
+
                 // Remove installation directory regardless
                 if (Directory.Exists(InstallFolder))
                 {
@@ -268,7 +268,7 @@ namespace mcp_nexus.Services
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.ForceUninstall, "Force uninstall completed");
                 Console.WriteLine("✅ Force uninstall completed!");
                 Console.WriteLine("The service should now be completely removed from the system.");
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -286,7 +286,7 @@ namespace mcp_nexus.Services
                 // Find the project directory (go up from the current executable location)
                 var currentDir = AppContext.BaseDirectory;
                 var projectDir = FindProjectDirectory(currentDir);
-                
+
                 if (string.IsNullOrEmpty(projectDir))
                 {
                     OperationLogger.LogError(logger, OperationLogger.Operations.Build, "Could not find project directory containing .csproj file");
@@ -315,7 +315,7 @@ namespace mcp_nexus.Services
                 }
 
                 await process.WaitForExitAsync();
-                
+
                 var output = await process.StandardOutput.ReadToEndAsync();
                 var error = await process.StandardError.ReadToEndAsync();
 
@@ -338,7 +338,7 @@ namespace mcp_nexus.Services
         private static string? FindProjectDirectory(string startPath)
         {
             var dir = new DirectoryInfo(startPath);
-            
+
             // Go up the directory tree looking for a .csproj file
             while (dir != null)
             {
@@ -346,10 +346,10 @@ namespace mcp_nexus.Services
                 {
                     return dir.FullName;
                 }
-                
+
                 dir = dir.Parent;
             }
-            
+
             return null;
         }
 
@@ -357,7 +357,7 @@ namespace mcp_nexus.Services
         {
             var buildOutputDirectory = AppContext.BaseDirectory;
             OperationLogger.LogDebug(logger, OperationLogger.Operations.Copy, "Copying files from build output: {BuildOutputDirectory}", buildOutputDirectory);
-            
+
             // Get all files from the build output directory
             var sourceFiles = Directory.GetFiles(buildOutputDirectory, "*", SearchOption.AllDirectories)
                 .Where(f => !Path.GetFileName(f).EndsWith(".pdb", StringComparison.OrdinalIgnoreCase) && // Skip debug symbols
@@ -370,7 +370,7 @@ namespace mcp_nexus.Services
             {
                 var fileName = Path.GetFileName(sourceFile);
                 var targetFile = Path.Combine(InstallFolder, fileName);
-                
+
                 OperationLogger.LogDebug(logger, OperationLogger.Operations.Copy, "Copying: {FileName}", fileName);
                 await Task.Run(() => File.Copy(sourceFile, targetFile, true));
             }
@@ -383,7 +383,7 @@ namespace mcp_nexus.Services
                 // Skip common development directories
                 if (dirName.Equals("ref", StringComparison.OrdinalIgnoreCase))
                     continue;
-                    
+
                 var targetSubDir = Path.Combine(InstallFolder, dirName);
                 await CopyDirectoryAsync(subDir, targetSubDir, logger);
             }
@@ -402,7 +402,7 @@ namespace mcp_nexus.Services
                 var relativePath = Path.GetRelativePath(sourceDir, file);
                 var targetFile = Path.Combine(targetDir, relativePath);
                 var targetFileDir = Path.GetDirectoryName(targetFile);
-                
+
                 if (!string.IsNullOrEmpty(targetFileDir))
                 {
                     Directory.CreateDirectory(targetFileDir);
@@ -417,14 +417,14 @@ namespace mcp_nexus.Services
             try
             {
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Cleanup, "Attempting to force cleanup service registration");
-                
+
                 // Method 1: Try to query the service and get its state
                 var queryResult = await RunScCommandAsync($@"query ""{ServiceName}""", logger, allowFailure: true);
                 if (queryResult)
                 {
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Cleanup, "Service is still visible. Attempting forced deletion");
                 }
-                
+
                 // Method 2: Comprehensive PowerShell cleanup
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Cleanup, "Using PowerShell for comprehensive service cleanup");
                 var psCommand = $@"
@@ -498,7 +498,7 @@ namespace mcp_nexus.Services
 
                 // Wait a bit for cleanup to take effect
                 await Task.Delay(5000);
-                
+
                 // Method 3: Direct registry manipulation if PowerShell didn't work
                 var finalCheck = await RunScCommandAsync($@"query ""{ServiceName}""", logger, allowFailure: true);
                 if (finalCheck)
@@ -510,7 +510,7 @@ namespace mcp_nexus.Services
                         finalCheck = await RunScCommandAsync($@"query ""{ServiceName}""", logger, allowFailure: true);
                     }
                 }
-                
+
                 if (!finalCheck)
                 {
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Cleanup, "Service successfully cleaned up");
@@ -534,7 +534,7 @@ namespace mcp_nexus.Services
             try
             {
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Registry, "Attempting direct registry cleanup");
-                
+
                 // Direct registry access for service cleanup
                 var serviceKeys = new[]
                 {
@@ -566,7 +566,7 @@ namespace mcp_nexus.Services
                 if (deletedAny)
                 {
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Registry, "Registry entries deleted. Refreshing service control manager");
-                    
+
                     // Try to restart the service control manager to refresh the cache
                     var refreshProcess = new ProcessStartInfo
                     {
@@ -640,7 +640,7 @@ namespace mcp_nexus.Services
                 }
 
                 await process.WaitForExitAsync();
-                
+
                 var output = await process.StandardOutput.ReadToEndAsync();
                 var error = await process.StandardError.ReadToEndAsync();
 
@@ -753,7 +753,7 @@ namespace mcp_nexus.Services
                 // Step 3: Update files
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Updating application files");
                 Console.WriteLine("📁 Updating application files...");
-                
+
                 // Create backup of current installation
                 var backupsBaseFolder = Path.Combine(InstallFolder, "backups");
                 var backupFolder = Path.Combine(backupsBaseFolder, DateTime.Now.ToString("yyyyMMdd_HHmmss"));

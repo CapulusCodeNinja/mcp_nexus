@@ -72,8 +72,10 @@ namespace mcp_nexus.Services
             return request.Method switch
             {
                 "initialize" => HandleInitialize(),
+                "notifications/initialized" => HandleNotificationInitialized(),
                 "tools/list" => HandleToolsList(),
                 "tools/call" => await HandleToolsCall(request.Params),
+                "notifications/cancelled" => HandleNotificationCancelled(request.Params),
                 _ => CreateMethodNotFoundError(request.Method)
             };
         }
@@ -82,6 +84,36 @@ namespace mcp_nexus.Services
         {
             // Return initialization response
             return new McpInitializeResult();
+        }
+
+        private object HandleNotificationInitialized()
+        {
+            _logger.LogInformation("Received MCP initialization notification");
+            // For notifications, we typically return an empty success response
+            return new { };
+        }
+
+        private object HandleNotificationCancelled(JsonElement? paramsElement)
+        {
+            if (paramsElement != null && paramsElement.Value.TryGetProperty("requestId", out var requestIdProp))
+            {
+                var requestId = requestIdProp.ToString();
+                _logger.LogWarning("Received cancellation notification for request ID: {RequestId}", requestId);
+
+                if (paramsElement.Value.TryGetProperty("reason", out var reasonProp))
+                {
+                    var reason = reasonProp.GetString();
+                    _logger.LogWarning("Cancellation reason: {Reason}", reason);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Received cancellation notification without request ID");
+            }
+
+            // For notifications, we return an empty success response
+            // Note: In the future, we could implement actual cancellation logic here
+            return new { };
         }
 
         private object HandleToolsList()
@@ -98,7 +130,7 @@ namespace mcp_nexus.Services
             }
 
             var @params = paramsElement.Value;
-            
+
             if (!@params.TryGetProperty("name", out var nameProperty))
             {
                 return CreateParameterError("Missing tool name");
@@ -110,8 +142,8 @@ namespace mcp_nexus.Services
                 return CreateParameterError("Invalid tool name");
             }
 
-            var arguments = @params.TryGetProperty("arguments", out var argsProperty) 
-                ? argsProperty 
+            var arguments = @params.TryGetProperty("arguments", out var argsProperty)
+                ? argsProperty
                 : new JsonElement();
 
             return await _toolExecutionService.ExecuteTool(toolName, arguments);

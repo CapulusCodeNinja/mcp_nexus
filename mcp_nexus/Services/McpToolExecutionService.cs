@@ -57,7 +57,7 @@ namespace mcp_nexus.Services
 
             var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
             var result = await _windbgTool.OpenWindbgDump(dumpPath, symbolsPath);
-            
+
             return CreateTextResult(result);
         }
 
@@ -69,7 +69,7 @@ namespace mcp_nexus.Services
 
             var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
             var result = await _windbgTool.OpenWindbgRemote(connectionString, symbolsPath);
-            
+
             return CreateTextResult(result);
         }
 

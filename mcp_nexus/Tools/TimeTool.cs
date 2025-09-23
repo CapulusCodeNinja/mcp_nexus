@@ -18,7 +18,7 @@ namespace mcp_nexus.Tools
         public string GetCurrentTime(string city)
         {
             m_Logger.LogInformation("GetCurrentTime called with city: {City}", city);
-            
+
             try
             {
                 // Validate input
@@ -30,11 +30,11 @@ namespace mcp_nexus.Tools
 
                 var currentTime = DateTime.Now;
                 var timeString = $"It is {currentTime.Hour}:{currentTime.Minute} in {city}.";
-                
+
                 m_Logger.LogInformation("Successfully generated time for city: {City} -> {TimeString}", city, timeString);
-                m_Logger.LogDebug("Current time details - Hour: {Hour}, Minute: {Minute}, Full DateTime: {DateTime}", 
+                m_Logger.LogDebug("Current time details - Hour: {Hour}, Minute: {Minute}, Full DateTime: {DateTime}",
                     currentTime.Hour, currentTime.Minute, currentTime);
-                
+
                 return timeString;
             }
             catch (Exception ex)

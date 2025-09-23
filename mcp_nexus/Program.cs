@@ -37,7 +37,7 @@ namespace mcp_nexus
                         builder.SetMinimumLevel(LogLevel.Information);
                     });
                     var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
-                    
+
                     var success = await WindowsServiceInstaller.InstallServiceAsync(logger);
                     Environment.Exit(success ? 0 : 1);
                 }
@@ -61,7 +61,7 @@ namespace mcp_nexus
                         builder.SetMinimumLevel(LogLevel.Information);
                     });
                     var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
-                    
+
                     var success = await WindowsServiceInstaller.UninstallServiceAsync(logger);
                     Environment.Exit(success ? 0 : 1);
                 }
@@ -85,7 +85,7 @@ namespace mcp_nexus
                         builder.SetMinimumLevel(LogLevel.Information);
                     });
                     var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
-                    
+
                     var success = await WindowsServiceInstaller.ForceUninstallServiceAsync(logger);
                     Environment.Exit(success ? 0 : 1);
                 }
@@ -109,7 +109,7 @@ namespace mcp_nexus
                         builder.SetMinimumLevel(LogLevel.Information);
                     });
                     var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
-                    
+
                     var success = await WindowsServiceInstaller.UpdateServiceAsync(logger);
                     Environment.Exit(success ? 0 : 1);
                 }
@@ -187,7 +187,7 @@ namespace mcp_nexus
         {
             var result = new CommandLineArguments();
 
-var cdbPathOption = new Option<string?>("--cdb-path", "Custom path to CDB.exe debugger executable");
+            var cdbPathOption = new Option<string?>("--cdb-path", "Custom path to CDB.exe debugger executable");
             var httpOption = new Option<bool>("--http", "Use HTTP transport instead of stdio");
             var serviceOption = new Option<bool>("--service", "Run in Windows service mode (implies --http)");
             var installOption = new Option<bool>("--install", "Install MCP Nexus as Windows service");
@@ -196,10 +196,10 @@ var cdbPathOption = new Option<string?>("--cdb-path", "Custom path to CDB.exe de
             var updateOption = new Option<bool>("--update", "Update MCP Nexus service (stop, update files, restart)");
             var portOption = new Option<int?>("--port", "HTTP server port (default: 5117 dev, 5000 production)");
             var hostOption = new Option<string?>("--host", "HTTP server host binding (default: localhost, use 0.0.0.0 for all interfaces)");
-            
-            var rootCommand = new RootCommand("MCP Nexus - Comprehensive MCP Server Platform") 
-            { 
-                cdbPathOption, 
+
+            var rootCommand = new RootCommand("MCP Nexus - Comprehensive MCP Server Platform")
+            {
+                cdbPathOption,
                 httpOption,
                 serviceOption,
                 installOption,
@@ -210,9 +210,9 @@ var cdbPathOption = new Option<string?>("--cdb-path", "Custom path to CDB.exe de
                 hostOption
             };
 
-var parseResult = rootCommand.Parse(args);
-if (parseResult.Errors.Count == 0)
-{
+            var parseResult = rootCommand.Parse(args);
+            if (parseResult.Errors.Count == 0)
+            {
                 result.CustomCdbPath = parseResult.GetValueForOption(cdbPathOption);
                 result.UseHttp = parseResult.GetValueForOption(httpOption);
                 result.ServiceMode = parseResult.GetValueForOption(serviceOption);
@@ -222,7 +222,7 @@ if (parseResult.Errors.Count == 0)
                 result.Update = parseResult.GetValueForOption(updateOption);
                 result.Port = parseResult.GetValueForOption(portOption);
                 result.Host = parseResult.GetValueForOption(hostOption);
-                
+
                 // Track which values came from command line
                 result.PortFromCommandLine = result.Port.HasValue;
                 result.HostFromCommandLine = result.Host != null;
@@ -237,10 +237,10 @@ if (parseResult.Errors.Count == 0)
             var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
             var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            
+
             const int bannerWidth = 69; // Total width including asterisks
             const int contentWidth = bannerWidth - 4; // Width for content (excluding "* " and " *")
-            
+
             var banner = new System.Text.StringBuilder();
             banner.AppendLine("*********************************************************************");
             banner.AppendLine(FormatCenteredBannerLine("MCP NEXUS", contentWidth));
@@ -250,7 +250,7 @@ if (parseResult.Errors.Count == 0)
             banner.AppendLine(FormatBannerLine("Environment:", environment, contentWidth));
             banner.AppendLine(FormatBannerLine("Started:", timestamp, contentWidth));
             banner.AppendLine(FormatBannerLine("PID:", Environment.ProcessId.ToString(), contentWidth));
-            
+
             if (host == "stdio")
             {
                 banner.AppendLine(FormatBannerLine("Transport:", "STDIO Mode", contentWidth));
@@ -262,38 +262,48 @@ if (parseResult.Errors.Count == 0)
                 banner.AppendLine(FormatBannerLine("Host:", host, contentWidth));
                 banner.AppendLine(FormatBannerLine("Port:", port?.ToString() ?? "Default", contentWidth));
             }
-            
+
             // Show configuration sources
             var configSources = new List<string>();
             if (args.HostFromCommandLine || args.PortFromCommandLine)
                 configSources.Add("Command Line");
             configSources.Add("Configuration File");
             banner.AppendLine(FormatBannerLine("Config:", string.Join(", ", configSources), contentWidth));
-            
+
             // Show custom CDB path if specified
             if (!string.IsNullOrEmpty(args.CustomCdbPath))
             {
-                var cdbPath = args.CustomCdbPath.Length > (contentWidth - 12) ? 
-                    "..." + args.CustomCdbPath.Substring(args.CustomCdbPath.Length - (contentWidth - 15)) : 
+                var cdbPath = args.CustomCdbPath.Length > (contentWidth - 12) ?
+                    "..." + args.CustomCdbPath.Substring(args.CustomCdbPath.Length - (contentWidth - 15)) :
                     args.CustomCdbPath;
                 banner.AppendLine(FormatBannerLine("CDB Path:", cdbPath, contentWidth));
             }
-            
+
             banner.AppendLine("*********************************************************************");
-            
+
             // Log the banner to both console and log file
             var bannerText = banner.ToString();
             Console.WriteLine(bannerText);
-            
-            foreach (var line in bannerText.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+
+            // Log a clean startup message instead of the messy formatted banner
+            logger.Info("======== MCP NEXUS STARTUP ========");
+            logger.Info("Version: {Version}, Environment: {Environment}, PID: {PID}", version, environment, Environment.ProcessId);
+            if (host == "stdio")
             {
-                logger.Info(line);
+                logger.Info("Transport: STDIO Mode");
             }
+            else
+            {
+                var transport = args.ServiceMode ? "HTTP (Service Mode)" : "HTTP (Interactive)";
+                logger.Info("Transport: {Transport}, Host: {Host}, Port: {Port}", transport, host, port);
+            }
+            logger.Info("Started at: {Timestamp}", timestamp);
+            logger.Info("===================================");
         }
 
         private static string FormatBannerLine(string label, string value, int contentWidth)
         {
-            var content = $"{label,-11} {value}";
+            var content = $"{label,-12} {value}";
             if (content.Length > contentWidth)
             {
                 content = content.Substring(0, contentWidth);
@@ -326,7 +336,7 @@ if (parseResult.Errors.Count == 0)
             public bool Update { get; set; }
             public int? Port { get; set; }
             public string? Host { get; set; }
-            
+
             // Track original command line values for source reporting
             public bool HostFromCommandLine { get; set; }
             public bool PortFromCommandLine { get; set; }
@@ -334,24 +344,31 @@ if (parseResult.Errors.Count == 0)
 
         private static async Task RunHttpServer(string[] args, CommandLineArguments commandLineArgs)
         {
-            var logMessage = commandLineArgs.ServiceMode ? 
-                "Configuring for Windows service mode (HTTP)..." : 
+            var logMessage = commandLineArgs.ServiceMode ?
+                "Configuring for Windows service mode (HTTP)..." :
                 "Configuring for HTTP transport...";
             Console.WriteLine(logMessage);
 
             var webBuilder = WebApplication.CreateBuilder(args);
 
-            // Configure host and port (already resolved from config file + command line)
-            var host = commandLineArgs.Host ?? "localhost";
-            var port = commandLineArgs.Port ?? (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" ? 5117 : 5000);
-            
+            // Read configuration from appsettings files first, then apply command line overrides
+            var configHost = webBuilder.Configuration["McpNexus:Server:Host"];
+            var configPortStr = webBuilder.Configuration["McpNexus:Server:Port"];
+            int.TryParse(configPortStr, out var configPort);
+
+            // Apply configuration hierarchy: config file -> command line
+            var host = commandLineArgs.Host ?? configHost ?? "localhost";
+            var port = commandLineArgs.Port ?? (configPort > 0 ? configPort : (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" ? 5117 : 5000));
+
             var customUrl = $"http://{host}:{port}";
             webBuilder.WebHost.UseUrls(customUrl);
-            
+
             // Show the actual configuration being used with source information
-            var hostSource = commandLineArgs.HostFromCommandLine ? "command line" : "configuration";
-            var portSource = commandLineArgs.PortFromCommandLine ? "command line" : "configuration";
-            
+            var hostSource = commandLineArgs.HostFromCommandLine ? "command line" :
+                            (!string.IsNullOrEmpty(configHost) ? "configuration file" : "default");
+            var portSource = commandLineArgs.PortFromCommandLine ? "command line" :
+                            (configPort > 0 ? "configuration file" : "default");
+
             if (hostSource == portSource)
             {
                 Console.WriteLine($"Using host: {host}, port: {port} (from {hostSource})");
@@ -360,7 +377,7 @@ if (parseResult.Errors.Count == 0)
             {
                 Console.WriteLine($"Using host: {host} (from {hostSource}), port: {port} (from {portSource})");
             }
-            
+
             // Log startup banner
             LogStartupBanner(commandLineArgs, host, port);
 
@@ -381,7 +398,7 @@ if (parseResult.Errors.Count == 0)
                 "Starting MCP Nexus as Windows service..." :
                 $"Starting MCP Nexus HTTP server on {string.Join(", ", app.Urls.DefaultIfEmpty("default URLs"))}...";
             Console.WriteLine(startMessage);
-            
+
             await app.RunAsync();
         }
 
@@ -390,13 +407,13 @@ if (parseResult.Errors.Count == 0)
             // CRITICAL: In stdio mode, stdout is reserved for MCP protocol
             // All console output must go to stderr
             Console.Error.WriteLine("Configuring for stdio transport...");
-var builder = Host.CreateApplicationBuilder(args);
+            var builder = Host.CreateApplicationBuilder(args);
 
             ConfigureLogging(builder.Logging, false);
-            
+
             // Log startup banner for stdio mode
             LogStartupBanner(commandLineArgs, "stdio", null);
-            
+
             RegisterServices(builder.Services, commandLineArgs.CustomCdbPath);
             ConfigureStdioServices(builder.Services);
 
@@ -420,10 +437,10 @@ var builder = Host.CreateApplicationBuilder(args);
             {
                 Console.Error.WriteLine(logMessage);
             }
-            
+
             logging.ClearProviders();
             logging.AddNLogWeb();
-            
+
             var completeMessage = "Logging configured with NLog";
             if (isServiceMode)
             {
@@ -443,11 +460,11 @@ var builder = Host.CreateApplicationBuilder(args);
             Console.Error.WriteLine("Registered TimeTool as singleton");
 
             services.AddSingleton<CdbSession>(serviceProvider =>
-{
-    var logger = serviceProvider.GetRequiredService<ILogger<CdbSession>>();
-    return new CdbSession(logger, customCdbPath: customCdbPath);
-});
-            Console.Error.WriteLine("Registered CdbSession as singleton with custom CDB path: {0}", 
+            {
+                var logger = serviceProvider.GetRequiredService<ILogger<CdbSession>>();
+                return new CdbSession(logger, customCdbPath: customCdbPath);
+            });
+            Console.Error.WriteLine("Registered CdbSession as singleton with custom CDB path: {0}",
                 customCdbPath ?? "auto-detect");
 
             services.AddSingleton<WindbgTool>();

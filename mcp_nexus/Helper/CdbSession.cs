@@ -38,7 +38,7 @@ namespace mcp_nexus.Helper
         public async Task<bool> StartSession(string target, string? arguments = null)
         {
             m_Logger.LogDebug("StartSession called with target: {Target}, arguments: {Arguments}", target, arguments);
-            
+
             try
             {
                 // Add overall timeout to prevent hanging
@@ -64,7 +64,7 @@ namespace mcp_nexus.Helper
                 lock (m_SessionLock)
                 {
                     m_Logger.LogDebug("Acquired session lock for StartSession");
-                    
+
                     if (m_IsActive)
                     {
                         m_Logger.LogWarning("Session is already active - cannot start new session");
@@ -81,10 +81,10 @@ namespace mcp_nexus.Helper
                     m_Logger.LogInformation("Found CDB at: {CdbPath}", cdbPath);
 
                     // Determine if this is a crash dump file (ends with .dmp)
-                    var isCrashDump = target.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase) || 
+                    var isCrashDump = target.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase) ||
                                      target.Contains(".dmp\"", StringComparison.OrdinalIgnoreCase) ||
                                      target.Contains(".dmp ", StringComparison.OrdinalIgnoreCase);
-                    
+
                     // For crash dumps, ensure we use -z flag. The target may already contain other arguments.
                     string cdbArguments;
                     if (isCrashDump && !target.TrimStart().StartsWith("-z", StringComparison.OrdinalIgnoreCase))
@@ -97,9 +97,9 @@ namespace mcp_nexus.Helper
                         // Target already has proper formatting or is not a crash dump
                         cdbArguments = target;
                     }
-                    
+
                     m_Logger.LogDebug("CDB arguments: {Arguments} (isCrashDump: {IsCrashDump})", cdbArguments, isCrashDump);
-                    
+
                     var startInfo = new ProcessStartInfo
                     {
                         FileName = cdbPath,
@@ -113,7 +113,7 @@ namespace mcp_nexus.Helper
 
                     m_Logger.LogDebug("Creating CDB process with arguments: {Arguments}", startInfo.Arguments);
                     m_DebuggerProcess = new Process { StartInfo = startInfo };
-                    
+
                     m_Logger.LogInformation("Starting CDB process...");
                     var processStarted = m_DebuggerProcess.Start();
                     m_Logger.LogInformation("CDB process start result: {Started}", processStarted);
@@ -146,10 +146,10 @@ namespace mcp_nexus.Helper
 
                 m_Logger.LogInformation("Successfully started CDB session with target: {Target}", target);
                 m_Logger.LogInformation("Session active: {IsActive}, Process running: {IsRunning}", m_IsActive, m_DebuggerProcess?.HasExited == false);
-                
+
                 // Don't wait for full initialization - CDB will be ready when we send commands
                 m_Logger.LogInformation("CDB process started successfully. Session will be ready for commands.");
-                
+
                 m_Logger.LogInformation("StartSession completed successfully");
                 return true;
             }
@@ -163,14 +163,14 @@ namespace mcp_nexus.Helper
         public Task<string> ExecuteCommand(string command)
         {
             m_Logger.LogDebug("ExecuteCommand called with command: {Command}", command);
-            
+
             try
             {
                 lock (m_SessionLock)
                 {
                     m_Logger.LogDebug("Acquired session lock for ExecuteCommand");
                     m_Logger.LogInformation("ExecuteCommand - IsActive: {IsActive}, ProcessExited: {ProcessExited}", m_IsActive, m_DebuggerProcess?.HasExited);
-                    
+
                     if (!m_IsActive || m_DebuggerProcess?.HasExited == true)
                     {
                         m_Logger.LogWarning("No active debug session - cannot execute command");
@@ -194,7 +194,7 @@ namespace mcp_nexus.Helper
                     var output = ReadDebuggerOutput(15000); // 15 seconds for large dumps
                     m_Logger.LogInformation("Command execution completed, output length: {Length} characters", output.Length);
                     m_Logger.LogDebug("Command output: {Output}", output);
-                    
+
                     return Task.FromResult(output);
                 }
             }
@@ -208,13 +208,13 @@ namespace mcp_nexus.Helper
         public Task<bool> StopSession()
         {
             m_Logger.LogInformation("StopSession called");
-            
+
             try
             {
                 lock (m_SessionLock)
                 {
                     m_Logger.LogDebug("Acquired session lock for StopSession");
-                    
+
                     if (!m_IsActive)
                     {
                         m_Logger.LogWarning("No active session to stop");
@@ -258,7 +258,7 @@ namespace mcp_nexus.Helper
                     m_DebuggerOutput = null;
                     m_DebuggerError = null;
                     m_IsActive = false;
-                    
+
                     m_Logger.LogInformation("CDB session resources cleaned up");
                 }
 
@@ -275,7 +275,7 @@ namespace mcp_nexus.Helper
         private string ReadDebuggerOutput(int timeoutMs)
         {
             m_Logger.LogDebug("ReadDebuggerOutput called with timeout: {TimeoutMs}ms", timeoutMs);
-            
+
             if (m_DebuggerOutput == null)
             {
                 m_Logger.LogError("No output stream available for reading");
@@ -290,7 +290,7 @@ namespace mcp_nexus.Helper
             try
             {
                 m_Logger.LogDebug("Starting to read debugger output...");
-                
+
                 while ((DateTime.Now - startTime).TotalMilliseconds < timeoutMs)
                 {
                     if (m_DebuggerOutput.Peek() == -1)
@@ -320,7 +320,7 @@ namespace mcp_nexus.Helper
                         }
                     }
                 }
-                
+
                 var elapsed = (DateTime.Now - startTime).TotalMilliseconds;
                 m_Logger.LogDebug("Finished reading debugger output after {ElapsedMs}ms, read {LinesRead} lines", elapsed, linesRead);
             }
@@ -347,7 +347,7 @@ namespace mcp_nexus.Helper
         {
             var architecture = RuntimeInformation.ProcessArchitecture;
             m_Logger.LogDebug("Detected process architecture: {Architecture}", architecture);
-            
+
             return architecture switch
             {
                 Architecture.X64 => "x64",
@@ -361,7 +361,7 @@ namespace mcp_nexus.Helper
         private string FindCDBPath()
         {
             m_Logger.LogDebug("FindCDBPath called - searching for CDB executable");
-            
+
             // 1. Check custom path provided via --cdb-path parameter
             if (!string.IsNullOrEmpty(m_CustomCdbPath))
             {
@@ -376,14 +376,14 @@ namespace mcp_nexus.Helper
                     m_Logger.LogWarning("Custom CDB path does not exist: {Path}", m_CustomCdbPath);
                 }
             }
-            
+
             // 2. Continue with automatic path detection
             var currentArch = GetCurrentArchitecture();
             m_Logger.LogInformation("Current machine architecture: {Architecture}", currentArch);
-            
+
             // Create prioritized list based on current architecture
             var possiblePaths = new List<string>();
-            
+
             // Add paths for current architecture first
             switch (currentArch)
             {
@@ -413,7 +413,7 @@ namespace mcp_nexus.Helper
                     });
                     break;
             }
-            
+
             // Add fallback paths for other architectures
             if (currentArch != "x64")
             {
@@ -425,7 +425,7 @@ namespace mcp_nexus.Helper
                     @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe"
                 });
             }
-            
+
             if (currentArch != "x86")
             {
                 possiblePaths.AddRange(new[]
@@ -436,7 +436,7 @@ namespace mcp_nexus.Helper
                     @"C:\Program Files\Debugging Tools for Windows (x86)\cdb.exe"
                 });
             }
-            
+
             if (currentArch != "arm64")
             {
                 possiblePaths.AddRange(new[]
@@ -476,17 +476,17 @@ namespace mcp_nexus.Helper
                     // Use timeout to prevent hanging
                     const int timeoutMs = 5000; // 5 second timeout
                     m_Logger.LogDebug("Executing 'where cdb.exe' with {TimeoutMs}ms timeout", timeoutMs);
-                    
+
                     if (result.WaitForExit(timeoutMs))
                     {
                         var output = result.StandardOutput.ReadToEnd();
                         m_Logger.LogDebug("'where cdb.exe' command exit code: {ExitCode}", result.ExitCode);
-                        
+
                         if (result.ExitCode == 0 && !string.IsNullOrEmpty(output))
                         {
                             var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
                             m_Logger.LogDebug("Found {Count} CDB paths in PATH", lines.Length);
-                            
+
                             if (lines.Length > 0)
                             {
                                 var cdbPath = lines[0].Trim();
@@ -525,7 +525,7 @@ namespace mcp_nexus.Helper
         public void Dispose()
         {
             m_Logger.LogDebug("Dispose called on CdbSession");
-            
+
             if (m_IsActive)
             {
                 m_Logger.LogInformation("Disposing active CDB session...");
@@ -535,7 +535,7 @@ namespace mcp_nexus.Helper
             {
                 m_Logger.LogDebug("No active session to dispose");
             }
-            
+
             m_Logger.LogDebug("CdbSession disposal completed");
         }
     }
