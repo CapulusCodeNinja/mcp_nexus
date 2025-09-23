@@ -151,47 +151,6 @@ namespace mcp_nexus.tests.Services
 			Assert.NotNull(result);
 		}
 
-		[Fact]
-		public async Task ExecuteTool_AnalyzeCallStack_CallsWindbgTool()
-		{
-			// Arrange
-			var args = JsonDocument.Parse("{}").RootElement;
-			m_mockCdbSession.Setup(s => s.IsActive).Returns(false);
-
-			// Act
-			var result = await m_service.ExecuteTool("analyze_call_stack", args);
-
-			// Assert
-			Assert.NotNull(result);
-		}
-
-		[Fact]
-		public async Task ExecuteTool_AnalyzeMemory_CallsWindbgTool()
-		{
-			// Arrange
-			var args = JsonDocument.Parse("{}").RootElement;
-			m_mockCdbSession.Setup(s => s.IsActive).Returns(false);
-
-			// Act
-			var result = await m_service.ExecuteTool("analyze_memory", args);
-
-			// Assert
-			Assert.NotNull(result);
-		}
-
-		[Fact]
-		public async Task ExecuteTool_AnalyzeCrashPatterns_CallsWindbgTool()
-		{
-			// Arrange
-			var args = JsonDocument.Parse("{}").RootElement;
-			m_mockCdbSession.Setup(s => s.IsActive).Returns(false);
-
-			// Act
-			var result = await m_service.ExecuteTool("analyze_crash_patterns", args);
-
-			// Assert
-			Assert.NotNull(result);
-		}
 
 		[Fact]
 		public async Task ExecuteTool_GetCurrentTime_CallsTimeTool()

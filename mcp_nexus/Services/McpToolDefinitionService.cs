@@ -16,9 +16,6 @@ namespace mcp_nexus.Services
                 CreateCloseWindbgRemoteTool(),
                 CreateListWindbgDumpsTool(),
                 CreateGetSessionInfoTool(),
-                CreateAnalyzeCallStackTool(),
-                CreateAnalyzeMemoryTool(),
-                CreateAnalyzeCrashPatternsTool(),
                 CreateGetCommandStatusTool(),
                 CreateCancelCommandTool(),
                 CreateListCommandsTool(),
@@ -145,50 +142,6 @@ namespace mcp_nexus.Services
             };
         }
 
-        private static McpToolSchema CreateAnalyzeCallStackTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "analyze_call_stack",
-                Description = "Analyze the current call stack with detailed information",
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new { },
-                    required = Array.Empty<string>()
-                }
-            };
-        }
-
-        private static McpToolSchema CreateAnalyzeMemoryTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "analyze_memory",
-                Description = "Get memory information and analyze memory usage",
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new { },
-                    required = Array.Empty<string>()
-                }
-            };
-        }
-
-        private static McpToolSchema CreateAnalyzeCrashPatternsTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "analyze_crash_patterns",
-                Description = "Check for common crash patterns and provide automated analysis",
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new { },
-                    required = Array.Empty<string>()
-                }
-            };
-        }
 
         private static McpToolSchema CreateGetCommandStatusTool()
         {

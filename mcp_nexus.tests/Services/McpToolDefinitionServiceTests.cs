@@ -16,7 +16,7 @@ namespace mcp_nexus.tests.Services
 			var tools = service.GetAllTools();
 
 			// Assert
-			Assert.Equal(14, tools.Length); // All non-deprecated tools
+			Assert.Equal(11, tools.Length); // All non-deprecated tools
 		}
 
 		[Fact]
@@ -31,7 +31,7 @@ namespace mcp_nexus.tests.Services
 			// Assert
 			var asyncTool = tools.FirstOrDefault(t => t.Name == "run_windbg_cmd_async");
 			Assert.NotNull(asyncTool);
-			Assert.Contains("PURE ASYNC", asyncTool.Description);
+			Assert.Contains("ASYNC QUEUE", asyncTool.Description);
 		}
 
 		[Fact]
@@ -67,7 +67,7 @@ namespace mcp_nexus.tests.Services
 		}
 
 		[Fact]
-		public void GetAllTools_ContainsAllAnalysisTools()
+		public void GetAllTools_ContainsAnalysisTools()
 		{
 			// Arrange
 			var service = new McpToolDefinitionService();
@@ -78,9 +78,6 @@ namespace mcp_nexus.tests.Services
 
 			// Assert
 			Assert.Contains("get_session_info", toolNames);
-			Assert.Contains("analyze_call_stack", toolNames);
-			Assert.Contains("analyze_memory", toolNames);
-			Assert.Contains("analyze_crash_patterns", toolNames);
 		}
 
 		[Fact]
