@@ -31,7 +31,7 @@ namespace mcp_nexus.Services
             return new McpToolSchema
             {
                 Name = "open_windbg_dump",
-                Description = "Analyze a Windows crash dump file using common WinDBG commands",
+                Description = "Analyze a Windows crash dump file using common WinDBG commands. Automatically replaces any existing session with the new dump file.",
                 InputSchema = new
                 {
                     type = "object",
@@ -50,7 +50,7 @@ namespace mcp_nexus.Services
             return new McpToolSchema
             {
                 Name = "open_windbg_remote",
-                Description = "Connect to a remote debugging session using a connection string (e.g., tcp:Port=5005,Server=192.168.0.100)",
+                Description = "Connect to a remote debugging session using a connection string (e.g., tcp:Port=5005,Server=192.168.0.100). Automatically replaces any existing session with the new remote connection.",
                 InputSchema = new
                 {
                     type = "object",

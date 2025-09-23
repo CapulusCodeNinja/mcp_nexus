@@ -95,15 +95,22 @@ namespace mcp_nexus.Helper
         {
             try
             {
+                // Check if we need to stop current session (outside lock to avoid deadlock)
+                bool needsStop = false;
+                lock (m_SessionLock)
+                {
+                    needsStop = m_IsActive;
+                }
+
+                if (needsStop)
+                {
+                    logger.LogInformation("Session is already active - stopping current session before starting new one");
+                    StopSession().Wait(); // Synchronous wait since we're in a non-async method
+                }
+
                 lock (m_SessionLock)
                 {
                     logger.LogDebug("Acquired session lock for StartSession");
-
-                    if (m_IsActive)
-                    {
-                        logger.LogWarning("Session is already active - cannot start new session");
-                        return false;
-                    }
 
                     logger.LogInformation("Searching for CDB executable...");
                     var cdbPath = FindCdbPath();
