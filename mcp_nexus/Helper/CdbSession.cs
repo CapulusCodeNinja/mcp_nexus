@@ -174,13 +174,12 @@ namespace mcp_nexus.Helper
                     }
 
                     // Add startup arguments with symbol server timeout controls
-                    var enhancedArguments = $"-lines -n {cdbArguments}";
-                    logger.LogDebug("CDB arguments: {Arguments} (isCrashDump: {IsCrashDump})", enhancedArguments, isCrashDump);
+                    logger.LogDebug("CDB arguments: {Arguments} (isCrashDump: {IsCrashDump})", cdbArguments, isCrashDump);
 
                     var startInfo = new ProcessStartInfo
                     {
                         FileName = cdbPath,
-                        Arguments = enhancedArguments,
+                        Arguments = cdbArguments,
                         RedirectStandardInput = true,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
@@ -378,10 +377,9 @@ namespace mcp_nexus.Helper
                 {
                     logger.LogInformation("🔥 [LOCKLESS-STOP] StopSession Task.Run started - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 
-                    // First, cancel any ongoing operations (lockless now!)
-                    logger.LogInformation("🛑 [LOCKLESS-STOP] Starting CancelCurrentOperationAsync - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    await CancelCurrentOperationAsync();
-                    logger.LogInformation("✅ [LOCKLESS-STOP] CancelCurrentOperationAsync completed - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    // Note: CancelCurrentOperationAsync is already called by CommandQueueService.CancelAllCommands
+                    // No need to call it again here to avoid duplicate cancellation
+                    logger.LogInformation("ℹ️ [LOCKLESS-STOP] Command cancellation already handled by CommandQueueService - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 
                     // Give cancellation a moment to take effect
                     logger.LogInformation("⏳ [LOCKLESS-STOP] Starting 200ms delay - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);

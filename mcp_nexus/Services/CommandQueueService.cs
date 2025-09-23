@@ -278,20 +278,38 @@ namespace mcp_nexus.Services
 
                             m_logger.LogInformation("✅ BACKGROUND PROCESSOR: CdbSession.ExecuteCommand completed for {CommandId}", queuedCommand.Id);
 
-                            queuedCommand.CompletionSource.SetResult(
+                            // RACE CONDITION FIX: Use TrySetResult to prevent double-completion
+                            var wasCompleted = queuedCommand.CompletionSource.TrySetResult(
                                 queuedCommand.CancellationTokenSource.Token.IsCancellationRequested
                                     ? "Command execution was cancelled."
                                     : result);
+                            
+                            if (!wasCompleted)
+                            {
+                                m_logger.LogDebug("Command {CommandId} was already completed by another thread (race condition handled)", queuedCommand.Id);
+                            }
                         }
                         catch (OperationCanceledException)
                         {
                             m_logger.LogInformation("Command {CommandId} was cancelled during execution", queuedCommand.Id);
-                            queuedCommand.CompletionSource.SetResult("Command execution was cancelled.");
+                            
+                            // RACE CONDITION FIX: Use TrySetResult to prevent double-completion
+                            var wasCompleted = queuedCommand.CompletionSource.TrySetResult("Command execution was cancelled.");
+                            if (!wasCompleted)
+                            {
+                                m_logger.LogDebug("Command {CommandId} was already completed by another thread during cancellation", queuedCommand.Id);
+                            }
                         }
                         catch (Exception ex)
                         {
                             m_logger.LogError(ex, "Error executing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
-                            queuedCommand.CompletionSource.SetResult($"Command execution failed: {ex.Message}");
+                            
+                            // RACE CONDITION FIX: Use TrySetResult to prevent double-completion
+                            var wasCompleted = queuedCommand.CompletionSource.TrySetResult($"Command execution failed: {ex.Message}");
+                            if (!wasCompleted)
+                            {
+                                m_logger.LogDebug("Command {CommandId} was already completed by another thread during error handling", queuedCommand.Id);
+                            }
                         }
                         finally
                         {
