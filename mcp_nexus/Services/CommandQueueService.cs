@@ -122,6 +122,67 @@ namespace mcp_nexus.Services
             return false;
         }
 
+        public int CancelAllCommands(string? reason = null)
+        {
+            var reasonText = string.IsNullOrWhiteSpace(reason) ? "No reason provided" : reason;
+            m_logger.LogWarning("Cancelling ALL commands. Reason: {Reason}", reasonText);
+
+            var cancelledCount = 0;
+
+            // Snapshot current command for targeted cancellation
+            string? currentId;
+            lock (m_currentCommandLock)
+            {
+                currentId = m_currentCommand?.Id;
+            }
+
+            // Cancel everything currently tracked
+            var commandsSnapshot = new List<QueuedCommand>(m_activeCommands.Values);
+            foreach (var cmd in commandsSnapshot)
+            {
+                try
+                {
+                    // Skip commands that already completed
+                    if (!cmd.CompletionSource.Task.IsCompleted)
+                    {
+                        try
+                        {
+                            cmd.CancellationTokenSource.Cancel();
+                            cancelledCount++;
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            // CTS already disposed; nothing to cancel
+                        }
+
+                        // Ensure waiters get a result if not already completed
+                        cmd.CompletionSource.TrySetResult($"Command was cancelled. Reason: {reasonText}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogError(ex, "Error cancelling command {CommandId}", cmd.Id);
+                }
+            }
+
+            // If one is executing, request debugger-side cancellation
+            if (!string.IsNullOrEmpty(currentId))
+            {
+                try
+                {
+                    m_logger.LogWarning("Requesting CDB cancellation for currently executing command: {CommandId}", currentId);
+                    m_cdbSession.CancelCurrentOperation();
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogError(ex, "Error requesting CDB cancellation for current command: {CommandId}", currentId);
+                }
+            }
+
+            m_logger.LogInformation("Cancelled {Count} command(s)", cancelledCount);
+            return cancelledCount;
+        }
+
         public QueuedCommand? GetCurrentCommand()
         {
             lock (m_currentCommandLock)

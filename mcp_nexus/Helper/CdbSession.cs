@@ -377,32 +377,54 @@ namespace mcp_nexus.Helper
         {
             logger.LogInformation("StopSession called");
 
-            try
+            // Run the stop process asynchronously to prevent blocking the HTTP request
+            return Task.Run(async () =>
             {
-                // First, cancel any ongoing operations (outside of session lock to avoid deadlock)
-                logger.LogInformation("🛑 Cancelling any ongoing operations...");
-                CancelCurrentOperation();
-
-                lock (m_SessionLock)
+                try
                 {
-                    logger.LogDebug("Acquired session lock for StopSession");
+                    // First, cancel any ongoing operations (outside of session lock to avoid deadlock)
+                    logger.LogInformation("🛑 Cancelling any ongoing operations...");
+                    CancelCurrentOperation();
 
-                    if (!m_IsActive)
+                    // Give cancellation a moment to take effect
+                    await Task.Delay(500);
+
+                    // Get process reference and basic info while holding lock briefly
+                    Process? processToStop = null;
+                    StreamWriter? inputToStop = null;
+                    int processId = 0;
+                    bool wasActive = false;
+
+                    lock (m_SessionLock)
                     {
-                        logger.LogWarning("No active session to stop");
-                        return Task.FromResult(false);
+                        logger.LogDebug("Acquired session lock for StopSession");
+
+                        if (!m_IsActive)
+                        {
+                            logger.LogWarning("No active session to stop");
+                            return false;
+                        }
+
+                        wasActive = true;
+                        logger.LogInformation("🔄 Stopping CDB session...");
+
+                        if (m_DebuggerProcess is { HasExited: false })
+                        {
+                            processToStop = m_DebuggerProcess;
+                            inputToStop = m_DebuggerInput;
+                            processId = m_DebuggerProcess.Id;
+                        }
                     }
 
-                    logger.LogInformation("🔄 Stopping CDB session...");
-
-                    if (m_DebuggerProcess is { HasExited: false })
+                    // Do the potentially blocking operations outside the lock
+                    if (processToStop != null && !processToStop.HasExited)
                     {
-                        logger.LogInformation("📝 Sending quit command to CDB (PID: {ProcessId})...", m_DebuggerProcess.Id);
+                        logger.LogInformation("📝 Sending quit command to CDB (PID: {ProcessId})...", processId);
                         // Send quit command
                         try
                         {
-                            m_DebuggerInput?.WriteLine("q");
-                            m_DebuggerInput?.Flush();
+                            inputToStop?.WriteLine("q");
+                            inputToStop?.Flush();
                             logger.LogInformation("✅ Quit command sent successfully");
                         }
                         catch (Exception ex)
@@ -410,86 +432,71 @@ namespace mcp_nexus.Helper
                             logger.LogError(ex, "❌ Failed to send quit command");
                         }
 
-                        logger.LogInformation("⏳ Waiting for CDB process to exit gracefully (PID: {ProcessId})...", m_DebuggerProcess.Id);
-                        // Wait for process to exit with a shorter timeout (2 seconds)
-                        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                        
-                        bool exited = false;
-                        try
+                        // Short grace period (non-blocking)
+                        await Task.Delay(500);
+
+                        if (!processToStop.HasExited)
                         {
-                            exited = m_DebuggerProcess.WaitForExit(2000);
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogError(ex, "💥 Exception during WaitForExit");
-                            exited = false;
-                        }
-                        
-                        stopwatch.Stop();
-                        
-                        if (!exited)
-                        {
-                            logger.LogWarning("❌ CDB process did not exit gracefully after {ElapsedMs}ms, forcing termination", stopwatch.ElapsedMilliseconds);
+                            logger.LogWarning("❌ CDB did not exit after quit. Force-killing entire process tree...");
                             try
                             {
-                                if (!m_DebuggerProcess.HasExited)
-                                {
-                                    m_DebuggerProcess.Kill();
-                                    logger.LogInformation("🔪 Force-killed CDB process");
-                                    
-                                    // Wait a bit more for the kill to take effect
-                                    if (!m_DebuggerProcess.WaitForExit(1000))
-                                    {
-                                        logger.LogError("💀 Process still running even after Kill()");
-                                    }
-                                    else
-                                    {
-                                        logger.LogInformation("💀 Process terminated after Kill()");
-                                    }
-                                }
-                                else
-                                {
-                                    logger.LogInformation("🎯 Process had already exited during WaitForExit timeout");
-                                }
+                                processToStop.Kill(entireProcessTree: true);
                             }
                             catch (Exception ex)
                             {
                                 logger.LogError(ex, "💥 Failed to force-kill CDB process");
                             }
+
+                            // Best effort short wait (non-blocking)
+                            try
+                            {
+                                using var killTimeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+                                var killWaitTask = Task.Run(() => processToStop.WaitForExit(), killTimeoutCts.Token);
+                                await killWaitTask;
+                                logger.LogInformation("💀 Process terminated after Kill()");
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                logger.LogWarning("💀 Process may still be terminating after Kill() - continuing cleanup");
+                            }
                         }
                         else
                         {
-                            logger.LogInformation("✅ CDB process exited gracefully after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                            logger.LogInformation("✅ CDB process exited gracefully after quit command");
                         }
                     }
-                    else
+                    else if (wasActive)
                     {
                         logger.LogInformation("CDB process already exited or is null");
                     }
 
-                    logger.LogDebug("Disposing of CDB resources...");
-                    m_DebuggerProcess?.Dispose();
-                    m_DebuggerInput?.Dispose();
-                    m_DebuggerOutput?.Dispose();
-                    m_DebuggerError?.Dispose();
+                    // Clean up resources while holding lock
+                    lock (m_SessionLock)
+                    {
+                        logger.LogDebug("Disposing of CDB resources...");
+                        m_DebuggerProcess?.Dispose();
+                        m_DebuggerInput?.Dispose();
+                        m_DebuggerOutput?.Dispose();
+                        m_DebuggerError?.Dispose();
 
-                    m_DebuggerProcess = null;
-                    m_DebuggerInput = null;
-                    m_DebuggerOutput = null;
-                    m_DebuggerError = null;
-                    m_IsActive = false;
+                        m_DebuggerProcess = null;
+                        m_DebuggerInput = null;
+                        m_DebuggerOutput = null;
+                        m_DebuggerError = null;
+                        m_IsActive = false;
 
-                    logger.LogInformation("🧹 CDB session resources cleaned up");
+                        logger.LogInformation("🧹 CDB session resources cleaned up");
+                    }
+
+                    logger.LogInformation("🎯 CDB session stopped successfully");
+                    return true;
                 }
-
-                logger.LogInformation("🎯 CDB session stopped successfully");
-                return Task.FromResult(true);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to stop CDB session");
-                return Task.FromResult(false);
-            }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to stop CDB session");
+                    return false;
+                }
+            });
         }
 
         private string ReadDebuggerOutputWithCancellation(int timeoutMs, CancellationToken cancellationToken)

@@ -88,6 +88,8 @@ namespace mcp_nexus.Tools
                 }
 
                 logger.LogInformation("Stopping CDB session...");
+                var cancelled = commandQueueService.CancelAllCommands("Session stop requested");
+                logger.LogInformation("Cancelled {Count} queued/executing command(s) before session stop", cancelled);
                 var success = await cdbSession.StopSession();
 
                 if (success)
@@ -177,6 +179,8 @@ namespace mcp_nexus.Tools
                 }
 
                 logger.LogInformation("Stopping CDB remote session...");
+                var cancelled = commandQueueService.CancelAllCommands("Remote session stop requested");
+                logger.LogInformation("Cancelled {Count} queued/executing command(s) before remote session stop", cancelled);
                 var success = await cdbSession.StopSession();
 
                 if (success)
