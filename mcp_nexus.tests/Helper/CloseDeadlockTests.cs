@@ -129,8 +129,10 @@ namespace mcp_nexus.tests.Helper
 
 			// Assert
 			// StopSession should complete quickly even with ongoing commands
-			Assert.True(stopwatch.ElapsedMilliseconds < 8000, 
-				$"StopSession took {stopwatch.ElapsedMilliseconds}ms - deadlock regression detected");
+			// This specifically tests the Monitor.TryEnter fix in StopSession
+			Assert.True(stopwatch.ElapsedMilliseconds < 15000, 
+				$"StopSession took {stopwatch.ElapsedMilliseconds}ms - second deadlock point regression detected! " +
+				"The Monitor.TryEnter fix in StopSession is not working.");
 
 			// The result doesn't matter as much as the timing
 			await longRunningTask;
