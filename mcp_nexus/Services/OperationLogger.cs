@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-
 namespace mcp_nexus.Services
 {
     /// <summary>

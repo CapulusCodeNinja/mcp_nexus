@@ -1,10 +1,7 @@
 using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Principal;
 using System.ServiceProcess;
-using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 
 namespace mcp_nexus.Services

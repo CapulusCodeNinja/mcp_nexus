@@ -92,7 +92,7 @@ namespace mcp_nexus.Services
         private Task<object> ExecuteRunWindbgCmdDeprecated(JsonElement arguments)
         {
             var command = GetRequiredStringArgument(arguments, "command");
-            
+
             // Return an extremely aggressive deprecation message that's impossible to ignore
             var aggressiveMessage = $@"🚨🚨🚨 COMMAND REMOVED! 🚨🚨🚨
 
@@ -121,7 +121,7 @@ MIGRATION REQUIRED: run_windbg_cmd → run_windbg_cmd_async";
         private Task<object> ExecuteRunWindbgCmdSyncDeprecated(JsonElement arguments)
         {
             var command = GetRequiredStringArgument(arguments, "command");
-            
+
             var aggressiveMessage = $@"🚨🚨🚨 COMMAND REMOVED! 🚨🚨🚨
 
 ❌ 'run_windbg_cmd_sync' HAS BEEN PERMANENTLY REMOVED!
@@ -234,14 +234,14 @@ MIGRATION REQUIRED: run_windbg_cmd_sync → run_windbg_cmd_async";
         {
             return new McpToolResult
             {
-                Content = new[]
-                {
+                Content =
+                [
                     new McpContent
                     {
                         Type = "text",
                         Text = text
                     }
-                }
+                ]
             };
         }
 

@@ -6,8 +6,8 @@ namespace mcp_nexus.Services
     {
         public McpToolSchema[] GetAllTools()
         {
-            return new[]
-            {
+            return
+            [
                 // ✅ WORKING COMMANDS ONLY - DEPRECATED COMMANDS HIDDEN FROM AI!
                 CreateRunWindbgCmdAsyncTool(),
                 CreateOpenWindbgDumpTool(),
@@ -23,7 +23,7 @@ namespace mcp_nexus.Services
                 CreateCancelCommandTool(),
                 CreateListCommandsTool(),
                 CreateGetCurrentTimeTool()
-            };
+            ];
         }
 
         private static McpToolSchema CreateOpenWindbgDumpTool()
@@ -237,42 +237,6 @@ namespace mcp_nexus.Services
                     type = "object",
                     properties = new { },
                     required = Array.Empty<string>()
-                }
-            };
-        }
-
-        private static McpToolSchema CreateRunWindbgCmdDeprecatedTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "run_windbg_cmd",
-                Description = "🚨 REMOVED! This command has been PERMANENTLY REMOVED! Use 'run_windbg_cmd_async' instead. Will return aggressive error message until you switch!",
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        command = new { type = "string", description = "WinDBG command to execute" }
-                    },
-                    required = new[] { "command" }
-                }
-            };
-        }
-
-        private static McpToolSchema CreateRunWindbgCmdSyncDeprecatedTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "run_windbg_cmd_sync",
-                Description = "🚨 REMOVED! This command has been PERMANENTLY REMOVED! Use 'run_windbg_cmd_async' instead. Will return aggressive error message until you switch!",
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        command = new { type = "string", description = "WinDBG command to execute" }
-                    },
-                    required = new[] { "command" }
                 }
             };
         }

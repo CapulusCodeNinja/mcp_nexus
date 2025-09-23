@@ -225,9 +225,9 @@ namespace mcp_nexus.Tools
 
                 // Queue the command for sequential execution
                 var commandId = commandQueueService.QueueCommand(command);
-                
+
                 logger.LogInformation("Queued command {CommandId}: {Command}", commandId, command);
-                
+
                 // PURE ASYNC: Always return command ID immediately, never wait
                 var response = $@"{{
   ""⚠️ IMPORTANT"": ""THIS RESPONSE CONTAINS NO COMMAND RESULTS!"",
@@ -260,7 +260,7 @@ namespace mcp_nexus.Tools
 
   ""🔴 WARNING"": ""Command results are NOT in this JSON! Use get_command_status!""
 }}";
-                
+
                 return Task.FromResult(response);
             }
             catch (Exception ex)
@@ -604,7 +604,7 @@ namespace mcp_nexus.Tools
             try
             {
                 var commandResult = await commandQueueService.GetCommandResult(commandId);
-                
+
                 if (commandResult.StartsWith("Command not found"))
                 {
                     return $@"{{""error"": ""Command not found: {commandId}""}}";
@@ -635,12 +635,12 @@ namespace mcp_nexus.Tools
 
                 var waitTime = (DateTime.UtcNow - queueStatus.QueueTime).TotalSeconds;
                 var status = queueStatus.Status.ToLower();
-                
+
                 var instructions = status switch
                 {
                     "queued" => $@"""instructions"": ""Command is waiting in queue. Check again in 5-10 seconds with get_command_status(commandId='{commandId}'). Use cancel_command(commandId='{commandId}') to stop if needed."",",
                     "executing" => $@"""instructions"": ""Command is currently executing. Check again in 10-15 seconds with get_command_status(commandId='{commandId}'). Use cancel_command(commandId='{commandId}') to stop if needed."",",
-                    "cancelled" => $@"""instructions"": ""Command was cancelled. You may start a new command if needed."",",
+                    "cancelled" => @"""instructions"": ""Command was cancelled. You may start a new command if needed."",",
                     _ => $@"""instructions"": ""Command status: {status}. Check again in 10 seconds."","
                 };
 
@@ -697,8 +697,9 @@ namespace mcp_nexus.Tools
             {
                 var queueStatus = commandQueueService.GetQueueStatus();
                 var currentCommand = commandQueueService.GetCurrentCommand();
-                
-                var commandsJson = string.Join(",\n  ", queueStatus.Select(cmd =>
+
+                var valueTuples = queueStatus as (string Id, string Command, DateTime QueueTime, string Status)[] ?? queueStatus.ToArray();
+                var commandsJson = string.Join(",\n  ", valueTuples.Select(cmd =>
                 {
                     var waitTime = (DateTime.UtcNow - cmd.QueueTime).TotalSeconds;
                     return $@"{{
@@ -710,7 +711,7 @@ namespace mcp_nexus.Tools
   }}";
                 }));
 
-                var currentInfo = currentCommand != null 
+                var currentInfo = currentCommand != null
                     ? $@"""currentlyExecuting"": {{
     ""commandId"": ""{currentCommand.Id}"",
     ""command"": ""{currentCommand.Command.Replace("\"", "\\\"")}"",
@@ -723,7 +724,7 @@ namespace mcp_nexus.Tools
   ""queuedCommands"": [
   {commandsJson}
   ],
-  ""queueSize"": {queueStatus.Count()},
+  ""queueSize"": {valueTuples.Length},
   ""instructions"": ""Use get_command_status(commandId) to get detailed status and results for any specific command. Commands execute sequentially in order.""
 }}");
             }
@@ -731,33 +732,6 @@ namespace mcp_nexus.Tools
             {
                 logger.LogError(ex, "Error listing commands");
                 return Task.FromResult($@"{{""error"": ""Error listing commands: {ex.Message}""}}");
-            }
-        }
-
-        // Legacy method for backward compatibility
-        [McpServerTool, Description("Gets the current time for a city (legacy method)")]
-        public string GetCurrentTime(string city)
-        {
-            logger.LogInformation("GetCurrentTime called with city: {City}", city);
-
-            try
-            {
-                if (string.IsNullOrWhiteSpace(city))
-                {
-                    logger.LogError("City parameter is null or empty");
-                    return "City cannot be null or empty";
-                }
-
-                var currentTime = DateTime.Now;
-                var timeString = $"It is {currentTime.Hour}:{currentTime.Minute} in {city}.";
-
-                logger.LogInformation("Successfully generated time for city: {City} -> {TimeString}", city, timeString);
-                return timeString;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error getting current time for city: {City}", city);
-                return $"Error getting current time: {ex.Message}";
             }
         }
     }

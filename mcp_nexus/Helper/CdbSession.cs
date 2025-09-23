@@ -24,14 +24,14 @@ namespace mcp_nexus.Helper
                 // LOCK-FREE VERSION: Don't block on m_SessionLock to avoid deadlocks
                 // This is safe to read without locks since these are just status checks
                 logger.LogTrace("IsActive: Checking status (lock-free)...");
-                
+
                 var isActive = m_IsActive;  // This is a simple bool read, thread-safe
                 var process = m_DebuggerProcess;  // Get reference once
                 var hasExited = process?.HasExited ?? true;  // Safe even if process is null
-                
-                logger.LogTrace("IsActive: m_IsActive={IsActive}, processExists={ProcessExists}, hasExited={HasExited}", 
+
+                logger.LogTrace("IsActive: m_IsActive={IsActive}, processExists={ProcessExists}, hasExited={HasExited}",
                     isActive, process != null, hasExited);
-                
+
                 var result = isActive && !hasExited;
                 logger.LogTrace("IsActive: Returning {Result} (lock-free)", result);
                 return result;
@@ -48,17 +48,17 @@ namespace mcp_nexus.Helper
                     logger.LogWarning("Cancelling current CDB operation due to client request");
                     m_CurrentOperationCts?.Cancel();
                 }
-                
+
                 // If we have an active process, try to kill it
                 if (m_DebuggerProcess is { HasExited: false })
                 {
                     try
                     {
                         logger.LogWarning("Force-killing CDB process PID: {ProcessId}", m_DebuggerProcess.Id);
-                        
+
                         // Capture any available output before killing
                         CaptureAvailableOutput("Force cancellation requested by client");
-                        
+
                         m_DebuggerProcess.Kill(entireProcessTree: true);
                     }
                     catch (Exception ex)
@@ -275,11 +275,11 @@ namespace mcp_nexus.Helper
                             // Read output with cancellation support and process monitoring
                             var commandStartTime = DateTime.Now;
                             logger.LogInformation("Command sent at {StartTime}, timeout: {TimeoutMs}ms", commandStartTime, commandTimeoutMs);
-                            
+
                             var output = ReadDebuggerOutputWithCancellation(commandTimeoutMs, operationCts.Token);
-                            
+
                             var commandDuration = (DateTime.Now - commandStartTime).TotalMilliseconds;
-                            logger.LogInformation("Command execution completed in {Duration}ms, output length: {Length} characters", 
+                            logger.LogInformation("Command execution completed in {Duration}ms, output length: {Length} characters",
                                 commandDuration, output.Length);
                             logger.LogDebug("Command output: {Output}", output);
 
@@ -289,11 +289,11 @@ namespace mcp_nexus.Helper
                     catch (OperationCanceledException)
                     {
                         logger.LogWarning("Command execution was cancelled: {Command}", command);
-                        
+
                         // Capture any available output before reporting cancellation
                         CaptureAvailableOutput("Command execution cancelled");
                         LogProcessDiagnostics("Command execution cancelled");
-                        
+
                         return "Command execution was cancelled due to timeout or client request.";
                     }
                     finally
@@ -464,12 +464,12 @@ namespace mcp_nexus.Helper
             try
             {
                 logger.LogInformation("");
-                
+
                 logger.LogInformation("╔═══════════════════════════════════════════════════════════════════╗");
                 logger.LogInformation("                         CDB OUTPUT CAPTURE");
                 logger.LogInformation($"  Context: {context}");
                 logger.LogInformation("╚═══════════════════════════════════════════════════════════════════╝");
-                
+
                 // Try to read any available stdout
                 if (m_DebuggerOutput != null)
                 {
@@ -490,7 +490,7 @@ namespace mcp_nexus.Helper
                         logger.LogDebug(ex, "Could not read stdout lines (stream may be closed): {Context}", context);
                         stdoutLines.Add($"[Error reading stdout: {ex.Message}]");
                     }
-                    
+
                     if (stdoutLines.Count > 0)
                     {
                         logger.LogInformation("");
@@ -515,7 +515,7 @@ namespace mcp_nexus.Helper
                         logger.LogInformation("└─────────────────────────────────────────────────────────────────────");
                     }
                 }
-                
+
                 // Try to read any available stderr
                 if (m_DebuggerError != null)
                 {
@@ -536,7 +536,7 @@ namespace mcp_nexus.Helper
                         logger.LogDebug(ex, "Could not read stderr lines (stream may be closed): {Context}", context);
                         stderrLines.Add($"[Error reading stderr: {ex.Message}]");
                     }
-                    
+
                     if (stderrLines.Count > 0)
                     {
                         logger.LogWarning("");
@@ -561,7 +561,7 @@ namespace mcp_nexus.Helper
                         logger.LogInformation("└─────────────────────────────────────────────────────────────────────");
                     }
                 }
-                
+
                 logger.LogInformation("");
             }
             catch (Exception ex)
@@ -573,16 +573,16 @@ namespace mcp_nexus.Helper
         private void LogProcessDiagnostics(string context)
         {
             if (m_DebuggerProcess == null) return;
-            
+
             try
             {
                 // Use debug level for progress messages, info level for errors/crashes
                 var isProgressUpdate = context.Contains("in progress") || context.Contains("Symbol download");
                 var logLevel = isProgressUpdate ? LogLevel.Debug : LogLevel.Information;
-                
+
                 var process = m_DebuggerProcess;
                 logger.Log(logLevel, "");
-                
+
                 logger.Log(logLevel, "╔═══════════════════════════════════════════════════════════════════╗");
                 logger.Log(logLevel, "                        PROCESS DIAGNOSTICS");
                 logger.Log(logLevel, $"  Context: {context}");
@@ -590,7 +590,7 @@ namespace mcp_nexus.Helper
                 logger.Log(logLevel, $"  PID:          {process.Id}");
                 logger.Log(logLevel, $"  Process Name: {process.ProcessName}");
                 logger.Log(logLevel, $"  Has Exited:   {process.HasExited}");
-                
+
                 if (!process.HasExited)
                 {
                     logger.Log(logLevel, $"  Start Time:   {process.StartTime}");
@@ -598,7 +598,7 @@ namespace mcp_nexus.Helper
                     var memoryInfo = $"{process.WorkingSet64:N0} bytes ({process.WorkingSet64 / 1024.0 / 1024.0:F1} MB)";
                     logger.Log(logLevel, $"  Memory Usage: {memoryInfo}");
                     logger.Log(logLevel, $"  Threads:      {process.Threads.Count}");
-                    
+
                     // Log command line if we can get it
                     try
                     {
@@ -619,7 +619,7 @@ namespace mcp_nexus.Helper
                     logger.Log(logLevel, $"  Exit Code:    {process.ExitCode}");
                     logger.Log(logLevel, $"  Exit Time:    {process.ExitTime}");
                 }
-                
+
                 logger.Log(logLevel, "╚═══════════════════════════════════════════════════════════════════╝");
                 logger.Log(logLevel, "");
             }
@@ -628,7 +628,7 @@ namespace mcp_nexus.Helper
                 logger.LogWarning(ex, "Failed to gather process diagnostics for {Context}", context);
             }
         }
-        
+
         private static string GetProcessCommandLine(int processId)
         {
             try
@@ -642,7 +642,7 @@ namespace mcp_nexus.Helper
                     UseShellExecute = false,
                     CreateNoWindow = true
                 });
-                
+
                 if (process != null && process.WaitForExit(5000))
                 {
                     var output = process.StandardOutput.ReadToEnd();
