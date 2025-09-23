@@ -13,25 +13,25 @@ namespace mcp_nexus.Tools
         private async Task<string> WaitForCommandCompletion(string commandId, string commandDescription)
         {
             logger.LogDebug("⏳ Waiting for {Description} command {CommandId} to complete...", commandDescription, commandId);
-            
+
             var maxWaitTime = TimeSpan.FromMinutes(5); // 5 minute timeout
             var startTime = DateTime.UtcNow;
-            
+
             while ((DateTime.UtcNow - startTime) < maxWaitTime)
             {
                 var result = await commandQueueService.GetCommandResult(commandId);
-                
+
                 // If command completed successfully, return the result
                 if (!result.StartsWith("Command is still") && !result.StartsWith("Command not found"))
                 {
                     logger.LogDebug("✅ {Description} command {CommandId} completed", commandDescription, commandId);
                     return result;
                 }
-                
+
                 // Wait a bit before checking again
                 await Task.Delay(1000);
             }
-            
+
             // Timeout - cancel the command and return error
             logger.LogError("⏰ {Description} command {CommandId} timed out after 5 minutes", commandDescription, commandId);
             commandQueueService.CancelCommand(commandId);

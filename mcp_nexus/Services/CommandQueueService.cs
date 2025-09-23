@@ -103,7 +103,7 @@ namespace mcp_nexus.Services
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
                 m_logger.LogInformation("Cancelling command {CommandId}: {Command}", commandId, command.Command);
-                
+
                 try
                 {
                     command.CancellationTokenSource.Cancel();
