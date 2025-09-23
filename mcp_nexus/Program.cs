@@ -617,9 +617,6 @@ namespace mcp_nexus
             services.AddSingleton<ICommandQueueService, CommandQueueService>();
             Console.Error.WriteLine("Registered CommandQueueService as singleton");
 
-            services.AddSingleton<TimeTool>();
-            Console.Error.WriteLine("Registered TimeTool as singleton");
-
             services.AddSingleton<ICdbSession>(serviceProvider =>
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<CdbSession>>();

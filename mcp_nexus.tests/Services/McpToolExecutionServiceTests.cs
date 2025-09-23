@@ -16,7 +16,6 @@ namespace mcp_nexus.tests.Services
 		private readonly Mock<ICdbSession> m_mockCdbSession;
 		private readonly Mock<ICommandQueueService> m_mockCommandQueueService;
 		private readonly WindbgTool m_windbgTool;
-		private readonly TimeTool m_timeTool;
 		private readonly McpToolExecutionService m_service;
 
 		public McpToolExecutionServiceTests()
@@ -25,12 +24,10 @@ namespace mcp_nexus.tests.Services
 			m_mockCommandQueueService = new Mock<ICommandQueueService>();
 			
 			var mockWindbgLogger = LoggerFactory.Create(b => { }).CreateLogger<WindbgTool>();
-			var mockTimeLogger = LoggerFactory.Create(b => { }).CreateLogger<TimeTool>();
 			
 			m_windbgTool = new WindbgTool(mockWindbgLogger, m_mockCdbSession.Object, m_mockCommandQueueService.Object);
-			m_timeTool = new TimeTool(mockTimeLogger);
 			
-			m_service = new McpToolExecutionService(m_windbgTool, m_timeTool, CreateNullLogger());
+			m_service = new McpToolExecutionService(m_windbgTool, CreateNullLogger());
 		}
 
 		[Fact]
