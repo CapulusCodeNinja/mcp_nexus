@@ -40,7 +40,16 @@ namespace mcp_nexus.Helper
 
         public void CancelCurrentOperation()
         {
+            // Synchronous version for backward compatibility
+            _ = CancelCurrentOperationAsync();
+        }
+
+        private async Task CancelCurrentOperationAsync()
+        {
             // FIX: Maintain consistent lock ordering - acquire m_SessionLock first, then m_CancellationLock
+            StreamWriter? inputToCancel = null;
+            int processId = 0;
+            
             lock (m_SessionLock)
             {
                 lock (m_CancellationLock)
@@ -52,65 +61,56 @@ namespace mcp_nexus.Helper
                 // Try to interrupt CDB gracefully without killing the entire session
                 if (m_DebuggerProcess is { HasExited: false })
                 {
-                    var processId = m_DebuggerProcess.Id;
-                    
-                    // Run interruption attempts in the background to avoid blocking the HTTP request
-                    Task.Run(async () =>
-                    {
-                        try
-                        {
-                            logger.LogWarning("Attempting to interrupt CDB command for PID: {ProcessId} (preserving session)", processId);
-
-                            // Step 1: Try sending Ctrl+C to interrupt the current command
-                            try
-                            {
-                                logger.LogInformation("Sending Ctrl+C to CDB process to interrupt command");
-                                var input = m_DebuggerInput;
-                                if (input != null)
-                                {
-                                    // Send Ctrl+C equivalent - this should interrupt most commands
-                                    await input.WriteLineAsync("\x03"); // ASCII ETX (Ctrl+C)
-                                    await input.FlushAsync();
-                                    
-                                    // Give it a moment to respond
-                                    await Task.Delay(1000);
-                                    
-                                    // Try to get back to prompt with a simple command
-                                    await input.WriteLineAsync(".");  // Current instruction
-                                    await input.FlushAsync();
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                logger.LogDebug(ex, "Could not send interrupt signal to CDB");
-                            }
-
-                            // Step 2: Wait a bit more and check if CDB is responsive
-                            await Task.Delay(2000);
-                            
-                            // Step 3: If still unresponsive after 3 seconds total, escalate if needed
-                            logger.LogWarning("Command cancellation attempted for PID: {ProcessId}.", processId);
-                            
-                            // TODO: Future enhancement - could add escalation logic here:
-                            // - Check if CDB is still responsive with a simple command
-                            // - If completely hung for 30+ seconds, offer to restart session
-                            // - For now, we preserve the session and let the cancellation token handle it
-                            
-                            logger.LogInformation("Session preserved. If CDB becomes unresponsive, " +
-                                                "use close_windbg_dump and reopen to reset the session.");
-
-                            // Note: We intentionally do NOT kill the process here to preserve the debugging session
-                            // The cancellation token should cause the ExecuteCommand loop to exit gracefully
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogError(ex, "Failed to interrupt CDB command for PID: {ProcessId}", processId);
-                        }
-                    });
+                    processId = m_DebuggerProcess.Id;
+                    inputToCancel = m_DebuggerInput;
                 }
                 else
                 {
                     logger.LogWarning("No active CDB process to cancel");
+                    return;
+                }
+            }
+
+            // Do the potentially blocking operations outside the lock
+            if (inputToCancel != null)
+            {
+                try
+                {
+                    logger.LogWarning("Attempting to interrupt CDB command for PID: {ProcessId} (preserving session)", processId);
+
+                    // Step 1: Try sending Ctrl+C to interrupt the current command
+                    try
+                    {
+                        logger.LogInformation("Sending Ctrl+C to CDB process to interrupt command");
+                        
+                        // Send Ctrl+C equivalent - this should interrupt most commands
+                        await inputToCancel.WriteLineAsync("\x03"); // ASCII ETX (Ctrl+C)
+                        await inputToCancel.FlushAsync();
+                        
+                        // Give it a moment to respond
+                        await Task.Delay(1000);
+                        
+                        // Try to get back to prompt with a simple command
+                        await inputToCancel.WriteLineAsync(".");  // Current instruction
+                        await inputToCancel.FlushAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogDebug(ex, "Could not send interrupt signal to CDB");
+                    }
+
+                    // Step 2: Wait a bit more and check if CDB is responsive
+                    await Task.Delay(2000);
+                    
+                    // Step 3: If still unresponsive after 3 seconds total, escalate if needed
+                    logger.LogWarning("Command cancellation attempted for PID: {ProcessId}.", processId);
+                    
+                    logger.LogInformation("Session preserved. If CDB becomes unresponsive, " +
+                                        "use close_windbg_dump and reopen to reset the session.");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to interrupt CDB command for PID: {ProcessId}", processId);
                 }
             }
         }
@@ -384,10 +384,10 @@ namespace mcp_nexus.Helper
                 {
                     // First, cancel any ongoing operations (outside of session lock to avoid deadlock)
                     logger.LogInformation("🛑 Cancelling any ongoing operations...");
-                    CancelCurrentOperation();
+                    await CancelCurrentOperationAsync();
 
-                    // Give cancellation a moment to take effect
-                    await Task.Delay(500);
+                    // Give cancellation a moment to take effect after it completes
+                    await Task.Delay(200);
 
                     // Get process reference and basic info while holding lock briefly
                     Process? processToStop = null;

@@ -7,7 +7,7 @@ namespace mcp_nexus.Services
     public class McpProtocolService(
         McpToolDefinitionService m_toolDefinitionService,
         McpToolExecutionService m_toolExecutionService,
-        CdbSession m_cdbSession,
+        ICdbSession m_cdbSession,
         ILogger<McpProtocolService> m_logger)
     {
         public async Task<object> ProcessRequest(JsonElement requestElement)
