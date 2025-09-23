@@ -21,10 +21,20 @@ namespace mcp_nexus.Helper
         {
             get
             {
-                lock (m_SessionLock)
-                {
-                    return m_IsActive && m_DebuggerProcess is { HasExited: false };
-                }
+                // LOCK-FREE VERSION: Don't block on m_SessionLock to avoid deadlocks
+                // This is safe to read without locks since these are just status checks
+                logger.LogTrace("IsActive: Checking status (lock-free)...");
+                
+                var isActive = m_IsActive;  // This is a simple bool read, thread-safe
+                var process = m_DebuggerProcess;  // Get reference once
+                var hasExited = process?.HasExited ?? true;  // Safe even if process is null
+                
+                logger.LogTrace("IsActive: m_IsActive={IsActive}, processExists={ProcessExists}, hasExited={HasExited}", 
+                    isActive, process != null, hasExited);
+                
+                var result = isActive && !hasExited;
+                logger.LogTrace("IsActive: Returning {Result} (lock-free)", result);
+                return result;
             }
         }
 
@@ -210,7 +220,7 @@ namespace mcp_nexus.Helper
 
         public Task<string> ExecuteCommand(string command, CancellationToken externalCancellationToken)
         {
-            logger.LogDebug("ExecuteCommand called with command: {Command}", command);
+            logger.LogInformation("🎯 CDB ExecuteCommand START: {Command}", command);
 
             try
             {
@@ -464,13 +474,21 @@ namespace mcp_nexus.Helper
                 if (m_DebuggerOutput != null)
                 {
                     var stdoutLines = new List<string>();
-                    while (m_DebuggerOutput.Peek() != -1)
+                    try
                     {
-                        var line = m_DebuggerOutput.ReadLine();
-                        if (line != null)
+                        while (m_DebuggerOutput.Peek() != -1)
                         {
-                            stdoutLines.Add(line);
+                            var line = m_DebuggerOutput.ReadLine();
+                            if (line != null)
+                            {
+                                stdoutLines.Add(line);
+                            }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogDebug(ex, "Could not read stdout lines (stream may be closed): {Context}", context);
+                        stdoutLines.Add($"[Error reading stdout: {ex.Message}]");
                     }
                     
                     if (stdoutLines.Count > 0)
@@ -502,13 +520,21 @@ namespace mcp_nexus.Helper
                 if (m_DebuggerError != null)
                 {
                     var stderrLines = new List<string>();
-                    while (m_DebuggerError.Peek() != -1)
+                    try
                     {
-                        var line = m_DebuggerError.ReadLine();
-                        if (line != null)
+                        while (m_DebuggerError.Peek() != -1)
                         {
-                            stderrLines.Add(line);
+                            var line = m_DebuggerError.ReadLine();
+                            if (line != null)
+                            {
+                                stderrLines.Add(line);
+                            }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogDebug(ex, "Could not read stderr lines (stream may be closed): {Context}", context);
+                        stderrLines.Add($"[Error reading stderr: {ex.Message}]");
                     }
                     
                     if (stderrLines.Count > 0)

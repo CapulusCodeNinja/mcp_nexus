@@ -28,34 +28,71 @@ namespace mcp_nexus.Services
             m_cdbSession = cdbSession;
             m_logger = logger;
             
+            m_logger.LogInformation("🚀 CommandQueueService CONSTRUCTOR started");
+            
             // Start the background processing task
-            m_processingTask = Task.Run(ProcessCommandQueue, m_serviceCts.Token);
-            m_logger.LogInformation("CommandQueueService started with background processing");
+            try
+            {
+                m_processingTask = Task.Run(ProcessCommandQueue, m_serviceCts.Token);
+                m_logger.LogInformation("✅ CommandQueueService background task started successfully");
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogError(ex, "❌ FAILED to start CommandQueueService background task");
+                throw;
+            }
+            
+            m_logger.LogInformation("🎯 CommandQueueService fully initialized");
         }
 
         public string QueueCommand(string command)
         {
             var commandId = Guid.NewGuid().ToString();
+            m_logger.LogInformation("🔄 QueueCommand START: {CommandId} for command: {Command}", commandId, command);
+            
             var tcs = new TaskCompletionSource<string>();
             var cts = new CancellationTokenSource();
             
             var queuedCommand = new QueuedCommand(commandId, command, DateTime.UtcNow, tcs, cts);
             
+            m_logger.LogInformation("📝 Adding to activeCommands dictionary: {CommandId}", commandId);
             m_activeCommands[commandId] = queuedCommand;
+            
+            m_logger.LogInformation("📋 Enqueueing command: {CommandId}", commandId);
             m_commandQueue.Enqueue(queuedCommand);
+            
+            m_logger.LogInformation("🔔 Releasing semaphore for command: {CommandId}", commandId);
             m_queueSemaphore.Release(); // Signal that a command is available
             
-            m_logger.LogInformation("Queued command {CommandId}: {Command} (Queue size: {QueueSize})", 
-                commandId, command, m_commandQueue.Count);
+            m_logger.LogInformation("✅ QueueCommand COMPLETE: {CommandId} (Queue size: {QueueSize})", 
+                commandId, m_commandQueue.Count);
             
             return commandId;
         }
 
         public Task<string> GetCommandResult(string commandId)
         {
+            // NOTE: Completed commands stay in m_activeCommands for result retrieval
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
-                return command.CompletionSource.Task;
+                // DON'T WAIT! Check if completed, return status immediately
+                if (command.CompletionSource.Task.IsCompleted)
+                {
+                    try
+                    {
+                        var result = command.CompletionSource.Task.Result;
+                        return Task.FromResult(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        return Task.FromResult($"Command failed: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    // Command still running - return status immediately, don't wait!
+                    return Task.FromResult($"Command is still executing... Please call get_command_status(commandId='{commandId}') again in 5-10 seconds to check if completed.");
+                }
             }
             
             return Task.FromResult($"Command not found: {commandId}");
@@ -124,21 +161,28 @@ namespace mcp_nexus.Services
 
         private async Task ProcessCommandQueue()
         {
-            m_logger.LogInformation("Command queue processing started");
+            m_logger.LogInformation("🔥 BACKGROUND PROCESSOR: ProcessCommandQueue started");
             
             try
             {
                 while (!m_serviceCts.Token.IsCancellationRequested)
                 {
+                    m_logger.LogInformation("⏳ BACKGROUND PROCESSOR: Waiting for command (semaphore)...");
+                    
                     // Wait for a command to be available
                     await m_queueSemaphore.WaitAsync(m_serviceCts.Token);
                     
+                    m_logger.LogInformation("🔔 BACKGROUND PROCESSOR: Semaphore released, checking queue...");
+                    
                     if (m_commandQueue.TryDequeue(out var queuedCommand))
                     {
+                        m_logger.LogInformation("📦 BACKGROUND PROCESSOR: Dequeued command {CommandId}: {Command}", 
+                            queuedCommand.Id, queuedCommand.Command);
+                        
                         // Check if command was cancelled while queued
                         if (queuedCommand.CancellationTokenSource.Token.IsCancellationRequested)
                         {
-                            m_logger.LogInformation("Skipping cancelled command {CommandId}: {Command}", 
+                            m_logger.LogInformation("❌ BACKGROUND PROCESSOR: Skipping cancelled command {CommandId}: {Command}", 
                                 queuedCommand.Id, queuedCommand.Command);
                             
                             queuedCommand.CompletionSource.SetResult("Command was cancelled while queued.");
@@ -152,14 +196,21 @@ namespace mcp_nexus.Services
                             m_currentCommand = queuedCommand;
                         }
                         
-                        m_logger.LogInformation("Executing command {CommandId}: {Command} (waited {WaitTime:F1}s in queue)", 
-                            queuedCommand.Id, queuedCommand.Command, 
-                            (DateTime.UtcNow - queuedCommand.QueueTime).TotalSeconds);
+                        var waitTime = (DateTime.UtcNow - queuedCommand.QueueTime).TotalSeconds;
+                        m_logger.LogInformation("🚀 BACKGROUND PROCESSOR: Starting execution of {CommandId}: {Command} (waited {WaitTime:F1}s in queue)", 
+                            queuedCommand.Id, queuedCommand.Command, waitTime);
+                        
+                        m_logger.LogInformation("🔧 BACKGROUND PROCESSOR: Checking CDB session status...");
+                        m_logger.LogInformation("🔧 BACKGROUND PROCESSOR: CdbSession.IsActive = {IsActive}", m_cdbSession.IsActive);
                         
                         try
                         {
+                            m_logger.LogInformation("⚡ BACKGROUND PROCESSOR: Calling CdbSession.ExecuteCommand for {CommandId}", queuedCommand.Id);
+                            
                             // Execute the command
                             var result = await m_cdbSession.ExecuteCommand(queuedCommand.Command, queuedCommand.CancellationTokenSource.Token);
+                            
+                            m_logger.LogInformation("✅ BACKGROUND PROCESSOR: CdbSession.ExecuteCommand completed for {CommandId}", queuedCommand.Id);
                             
                             if (queuedCommand.CancellationTokenSource.Token.IsCancellationRequested)
                             {
@@ -205,10 +256,11 @@ namespace mcp_nexus.Services
 
         private void CleanupCommand(QueuedCommand command)
         {
-            m_activeCommands.TryRemove(command.Id, out _);
+            // DON'T remove from m_activeCommands - let completed commands stay for retrieval!
+            // Only dispose the cancellation token to free resources
             command.CancellationTokenSource.Dispose();
             
-            m_logger.LogDebug("Cleaned up command {CommandId}", command.Id);
+            m_logger.LogDebug("Cleaned up command resources for {CommandId} (kept in activeCommands for result retrieval)", command.Id);
         }
 
         public void Dispose()
