@@ -47,37 +47,63 @@ namespace mcp_nexus.Helper
         private async Task CancelCurrentOperationAsync()
         {
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            logger.LogWarning("🚨 [CANCEL-TIMING] CancelCurrentOperationAsync started - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+            logger.LogWarning("🚨 [CANCEL-TIMING] CancelCurrentOperationAsync started - DEADLOCK FIX ACTIVE - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 
-            // FIX: Maintain consistent lock ordering - acquire m_SessionLock first, then m_CancellationLock
+            // DEADLOCK FIX: Cancel the operation token first WITHOUT acquiring session lock
+            // This allows cancellation to work even if ExecuteCommand is holding the session lock
+            logger.LogInformation("🎯 [CANCEL-TIMING] Cancelling operation token (no session lock needed) - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+            lock (m_CancellationLock)
+            {
+                logger.LogWarning("🚨 [CANCEL-TIMING] Cancelling current CDB operation due to client request - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                m_CurrentOperationCts?.Cancel();
+                logger.LogInformation("✅ [CANCEL-TIMING] Operation token cancelled successfully - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+            }
+
+            // Try to get process info for interrupt commands (with timeout to avoid deadlock)
             StreamWriter? inputToCancel = null;
             int processId = 0;
             
-            logger.LogInformation("🔒 [CANCEL-TIMING] Acquiring session lock for cancellation - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-            lock (m_SessionLock)
+            logger.LogInformation("🔒 [CANCEL-TIMING] Attempting to acquire session lock (with 5s timeout) - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+            
+            // Use TryEnter with timeout to avoid deadlock
+            bool lockAcquired = false;
+            try
             {
-                logger.LogInformation("✅ [CANCEL-TIMING] Session lock acquired - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                lock (m_CancellationLock)
+                Monitor.TryEnter(m_SessionLock, TimeSpan.FromSeconds(5), ref lockAcquired);
+                
+                if (lockAcquired)
                 {
-                    logger.LogWarning("🚨 [CANCEL-TIMING] Cancelling current CDB operation due to client request - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    m_CurrentOperationCts?.Cancel();
-                }
-
-                // Try to interrupt CDB gracefully without killing the entire session
-                if (m_DebuggerProcess is { HasExited: false })
-                {
-                    processId = m_DebuggerProcess.Id;
-                    inputToCancel = m_DebuggerInput;
-                    logger.LogInformation("📋 [CANCEL-TIMING] Process details captured for cancellation (PID: {ProcessId}) - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
+                    logger.LogInformation("✅ [CANCEL-TIMING] Session lock acquired - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    
+                    // Try to interrupt CDB gracefully without killing the entire session
+                    if (m_DebuggerProcess is { HasExited: false })
+                    {
+                        processId = m_DebuggerProcess.Id;
+                        inputToCancel = m_DebuggerInput;
+                        logger.LogInformation("📋 [CANCEL-TIMING] Process details captured for cancellation (PID: {ProcessId}) - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
+                    }
+                    else
+                    {
+                        logger.LogWarning("❌ [CANCEL-TIMING] No active CDB process to cancel - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                        return;
+                    }
                 }
                 else
                 {
-                    logger.LogWarning("❌ [CANCEL-TIMING] No active CDB process to cancel - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    logger.LogWarning("⏰ [CANCEL-TIMING] Could not acquire session lock after 5s timeout - ExecuteCommand likely holding it - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    logger.LogInformation("🎯 [CANCEL-TIMING] Operation token was cancelled, which should interrupt the running command - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     stopwatch.Stop();
                     return;
                 }
             }
-            logger.LogInformation("🔓 [CANCEL-TIMING] Session lock released - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+            finally
+            {
+                if (lockAcquired)
+                {
+                    Monitor.Exit(m_SessionLock);
+                    logger.LogInformation("🔓 [CANCEL-TIMING] Session lock released - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                }
+            }
 
             // Do the potentially blocking operations outside the lock
             if (inputToCancel != null)
