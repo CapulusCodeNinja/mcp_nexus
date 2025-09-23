@@ -9,6 +9,35 @@ namespace mcp_nexus.Tools
     [McpServerToolType]
     public class WindbgTool(ILogger<WindbgTool> logger, ICdbSession cdbSession, ICommandQueueService commandQueueService)
     {
+        // Helper method to wait for async command completion and extract result
+        private async Task<string> WaitForCommandCompletion(string commandId, string commandDescription)
+        {
+            logger.LogDebug("⏳ Waiting for {Description} command {CommandId} to complete...", commandDescription, commandId);
+            
+            var maxWaitTime = TimeSpan.FromMinutes(5); // 5 minute timeout
+            var startTime = DateTime.UtcNow;
+            
+            while ((DateTime.UtcNow - startTime) < maxWaitTime)
+            {
+                var result = await commandQueueService.GetCommandResult(commandId);
+                
+                // If command completed successfully, return the result
+                if (!result.StartsWith("Command is still") && !result.StartsWith("Command not found"))
+                {
+                    logger.LogDebug("✅ {Description} command {CommandId} completed", commandDescription, commandId);
+                    return result;
+                }
+                
+                // Wait a bit before checking again
+                await Task.Delay(1000);
+            }
+            
+            // Timeout - cancel the command and return error
+            logger.LogError("⏰ {Description} command {CommandId} timed out after 5 minutes", commandDescription, commandId);
+            commandQueueService.CancelCommand(commandId);
+            return $"Command timed out after 5 minutes: {commandDescription}";
+        }
+
         // Crash Dump Analysis Tools
 
         [McpServerTool, Description("Analyze a Windows crash dump file using common WinDBG commands")]
@@ -392,7 +421,7 @@ namespace mcp_nexus.Tools
         [McpServerTool, Description("Analyze the current call stack with detailed information")]
         public async Task<string> AnalyzeCallStack()
         {
-            logger.LogInformation("AnalyzeCallStack called");
+            logger.LogInformation("🔥 AnalyzeCallStack called - USING ASYNC QUEUE TO AVOID RACE CONDITION");
 
             try
             {
@@ -403,19 +432,21 @@ namespace mcp_nexus.Tools
                     return "No active debugging session.";
                 }
 
-                logger.LogInformation("Analyzing call stack...");
+                logger.LogInformation("Analyzing call stack using async queue...");
                 var result = new StringBuilder();
 
-                // Get call stack
-                logger.LogDebug("Getting call stack...");
-                var callStack = await cdbSession.ExecuteCommand("k");
+                // Get call stack using async queue
+                logger.LogDebug("🚀 Queueing call stack command...");
+                var callStackCommandId = commandQueueService.QueueCommand("k");
+                var callStack = await WaitForCommandCompletion(callStackCommandId, "call stack");
                 result.AppendLine("=== Call Stack ===");
                 result.AppendLine(callStack);
                 result.AppendLine();
 
-                // Get exception information if available
-                logger.LogDebug("Getting exception context...");
-                var exceptionInfo = await cdbSession.ExecuteCommand(".ecxr");
+                // Get exception information if available using async queue
+                logger.LogDebug("🚀 Queueing exception context command...");
+                var exceptionCommandId = commandQueueService.QueueCommand(".ecxr");
+                var exceptionInfo = await WaitForCommandCompletion(exceptionCommandId, "exception context");
                 if (!exceptionInfo.Contains("No exception context available"))
                 {
                     logger.LogDebug("Exception context available, adding to result");
@@ -428,13 +459,14 @@ namespace mcp_nexus.Tools
                     logger.LogDebug("No exception context available");
                 }
 
-                // Get registers
-                logger.LogDebug("Getting register information...");
-                var registers = await cdbSession.ExecuteCommand("r");
+                // Get registers using async queue
+                logger.LogDebug("🚀 Queueing register command...");
+                var registersCommandId = commandQueueService.QueueCommand("r");
+                var registers = await WaitForCommandCompletion(registersCommandId, "registers");
                 result.AppendLine("=== Registers ===");
                 result.AppendLine(registers);
 
-                logger.LogInformation("Call stack analysis completed successfully");
+                logger.LogInformation("✅ Call stack analysis completed successfully using async queue");
                 return result.ToString();
             }
             catch (Exception ex)
@@ -494,7 +526,7 @@ namespace mcp_nexus.Tools
         [McpServerTool, Description("Check for common crash patterns and provide analysis")]
         public async Task<string> AnalyzeCrashPatterns()
         {
-            logger.LogInformation("AnalyzeCrashPatterns called");
+            logger.LogInformation("🔥 AnalyzeCrashPatterns called - USING ASYNC QUEUE TO AVOID RACE CONDITION");
 
             try
             {
@@ -505,14 +537,15 @@ namespace mcp_nexus.Tools
                     return "No active debugging session.";
                 }
 
-                logger.LogInformation("Analyzing crash patterns...");
+                logger.LogInformation("Analyzing crash patterns using async queue...");
                 var result = new StringBuilder();
                 result.AppendLine("=== Crash Pattern Analysis ===");
                 result.AppendLine();
 
-                // Check for access violations
-                logger.LogDebug("Checking for access violations...");
-                var exceptionInfo = await cdbSession.ExecuteCommand(".ecxr");
+                // Check for access violations using async queue
+                logger.LogDebug("🚀 Queueing exception context command for access violation check...");
+                var exceptionCommandId = commandQueueService.QueueCommand(".ecxr");
+                var exceptionInfo = await WaitForCommandCompletion(exceptionCommandId, "exception context");
                 if (exceptionInfo.Contains("Access violation"))
                 {
                     logger.LogWarning("Access violation detected in exception context");
@@ -529,9 +562,10 @@ namespace mcp_nexus.Tools
                     logger.LogDebug("No access violation detected");
                 }
 
-                // Check for stack overflow
-                logger.LogDebug("Checking for stack overflow...");
-                var callStack = await cdbSession.ExecuteCommand("k");
+                // Check for stack overflow using async queue
+                logger.LogDebug("🚀 Queueing call stack command for stack overflow check...");
+                var callStackCommandId = commandQueueService.QueueCommand("k");
+                var callStack = await WaitForCommandCompletion(callStackCommandId, "call stack");
                 if (callStack.Contains("Stack overflow") || callStack.Split('\n').Length > 100)
                 {
                     logger.LogWarning("Potential stack overflow detected");
@@ -547,9 +581,10 @@ namespace mcp_nexus.Tools
                     logger.LogDebug("No stack overflow detected");
                 }
 
-                // Check for heap corruption
-                logger.LogDebug("Checking for heap corruption...");
-                var heapInfo = await cdbSession.ExecuteCommand("!heap -s");
+                // Check for heap corruption using async queue
+                logger.LogDebug("🚀 Queueing heap info command for heap corruption check...");
+                var heapCommandId = commandQueueService.QueueCommand("!heap -s");
+                var heapInfo = await WaitForCommandCompletion(heapCommandId, "heap info");
                 if (heapInfo.Contains("corrupted") || heapInfo.Contains("invalid"))
                 {
                     logger.LogWarning("Heap corruption detected");
@@ -566,9 +601,10 @@ namespace mcp_nexus.Tools
                     logger.LogDebug("No heap corruption detected");
                 }
 
-                // Check for deadlocks
-                logger.LogDebug("Checking for deadlocks...");
-                var threadInfo = await cdbSession.ExecuteCommand("~*k");
+                // Check for deadlocks using async queue
+                logger.LogDebug("🚀 Queueing thread info command for deadlock check...");
+                var threadCommandId = commandQueueService.QueueCommand("~*k");
+                var threadInfo = await WaitForCommandCompletion(threadCommandId, "thread info");
                 if (threadInfo.Contains("WaitForSingleObject") || threadInfo.Contains("WaitForMultipleObjects"))
                 {
                     logger.LogWarning("Potential deadlock detected");
@@ -588,7 +624,7 @@ namespace mcp_nexus.Tools
                     result.AppendLine("Consider analyzing the call stack and exception context manually");
                 }
 
-                logger.LogInformation("Crash pattern analysis completed successfully");
+                logger.LogInformation("✅ Crash pattern analysis completed successfully using async queue");
                 return result.ToString();
             }
             catch (Exception ex)
