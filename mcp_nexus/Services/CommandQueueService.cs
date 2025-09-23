@@ -320,9 +320,17 @@ namespace mcp_nexus.Services
             m_logger.LogInformation("Shutting down CommandQueueService");
 
             // Check if already disposed
-            if (m_serviceCts.Token.IsCancellationRequested)
+            try
             {
-                m_logger.LogWarning("CommandQueueService already disposed");
+                if (m_serviceCts.Token.IsCancellationRequested)
+                {
+                    m_logger.LogWarning("CommandQueueService already disposed");
+                    return;
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                m_logger.LogWarning("CommandQueueService already disposed (CTS disposed)");
                 return;
             }
 
