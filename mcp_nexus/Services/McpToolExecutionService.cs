@@ -22,14 +22,16 @@ namespace mcp_nexus.Services
                     "close_windbg_dump" => await ExecuteCloseWindbgDump(),
                     "close_windbg_remote" => await ExecuteCloseWindbgRemote(),
                     "run_windbg_cmd" => await ExecuteRunWindbgCmd(arguments),
+                    "run_windbg_cmd_async" => ExecuteRunWindbgCmdAsyncDeprecated(arguments),
+                    "run_windbg_cmd_sync" => ExecuteRunWindbgCmdSyncDeprecated(arguments),
                     "list_windbg_dumps" => await ExecuteListWindbgDumps(arguments),
                     "get_session_info" => await ExecuteGetSessionInfo(),
                     "analyze_call_stack" => await ExecuteAnalyzeCallStack(),
                     "analyze_memory" => await ExecuteAnalyzeMemory(),
                     "analyze_crash_patterns" => await ExecuteAnalyzeCrashPatterns(),
-                    "get_job_status" => await ExecuteGetJobStatus(arguments),
-                    "cancel_job" => await ExecuteCancelJob(arguments),
-                    "list_jobs" => await ExecuteListJobs(),
+                    "get_command_status" => await ExecuteGetCommandStatus(arguments),
+                    "cancel_command" => await ExecuteCancelCommand(arguments),
+                    "list_commands" => await ExecuteListCommands(),
                     "get_current_time" => ExecuteGetCurrentTime(arguments),
                     _ => CreateErrorResult(-32602, $"Unknown tool: {toolName}")
                 };
@@ -87,6 +89,18 @@ namespace mcp_nexus.Services
             return CreateTextResult(result);
         }
 
+        private Task<object> ExecuteRunWindbgCmdAsyncDeprecated(JsonElement arguments)
+        {
+            // Return the specific deprecation error format requested by user
+            return Task.FromResult(CreateErrorResult(-32602, "Deprecated tool: run_windbg_cmd_async. Please use run_windbg_cmd instead"));
+        }
+
+        private Task<object> ExecuteRunWindbgCmdSyncDeprecated(JsonElement arguments)
+        {
+            // Return the specific deprecation error format requested by user  
+            return Task.FromResult(CreateErrorResult(-32602, "Deprecated tool: run_windbg_cmd_sync. Please use run_windbg_cmd instead"));
+        }
+
         private async Task<object> ExecuteListWindbgDumps(JsonElement arguments)
         {
             var directoryPath = GetRequiredStringArgument(arguments, "directoryPath");
@@ -121,29 +135,29 @@ namespace mcp_nexus.Services
             return CreateTextResult(result);
         }
 
-        private async Task<object> ExecuteGetJobStatus(JsonElement arguments)
+        private async Task<object> ExecuteGetCommandStatus(JsonElement arguments)
         {
-            var jobId = GetRequiredStringArgument(arguments, "jobId");
-            if (jobId == null)
-                return CreateErrorResult(-32602, "Missing or invalid jobId argument");
+            var commandId = GetRequiredStringArgument(arguments, "commandId");
+            if (commandId == null)
+                return CreateErrorResult(-32602, "Missing or invalid commandId argument");
 
-            var result = await windbgTool.GetJobStatus(jobId);
+            var result = await windbgTool.GetCommandStatus(commandId);
             return CreateTextResult(result);
         }
 
-        private async Task<object> ExecuteCancelJob(JsonElement arguments)
+        private async Task<object> ExecuteCancelCommand(JsonElement arguments)
         {
-            var jobId = GetRequiredStringArgument(arguments, "jobId");
-            if (jobId == null)
-                return CreateErrorResult(-32602, "Missing or invalid jobId argument");
+            var commandId = GetRequiredStringArgument(arguments, "commandId");
+            if (commandId == null)
+                return CreateErrorResult(-32602, "Missing or invalid commandId argument");
 
-            var result = await windbgTool.CancelJob(jobId);
+            var result = await windbgTool.CancelCommand(commandId);
             return CreateTextResult(result);
         }
 
-        private async Task<object> ExecuteListJobs()
+        private async Task<object> ExecuteListCommands()
         {
-            var result = await windbgTool.ListJobs();
+            var result = await windbgTool.ListCommands();
             return CreateTextResult(result);
         }
 

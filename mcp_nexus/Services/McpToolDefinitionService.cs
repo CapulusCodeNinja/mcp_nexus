@@ -13,11 +13,16 @@ namespace mcp_nexus.Services
                 CreateCloseWindbgDumpTool(),
                 CreateCloseWindbgRemoteTool(),
                 CreateRunWindbgCmdTool(),
+                CreateRunWindbgCmdAsyncDeprecatedTool(),
+                CreateRunWindbgCmdSyncDeprecatedTool(),
                 CreateListWindbgDumpsTool(),
                 CreateGetSessionInfoTool(),
                 CreateAnalyzeCallStackTool(),
                 CreateAnalyzeMemoryTool(),
                 CreateAnalyzeCrashPatternsTool(),
+                CreateGetCommandStatusTool(),
+                CreateCancelCommandTool(),
+                CreateListCommandsTool(),
                 CreateGetCurrentTimeTool()
             };
         }
@@ -182,6 +187,93 @@ namespace mcp_nexus.Services
                     type = "object",
                     properties = new { },
                     required = Array.Empty<string>()
+                }
+            };
+        }
+
+        private static McpToolSchema CreateGetCommandStatusTool()
+        {
+            return new McpToolSchema
+            {
+                Name = "get_command_status",
+                Description = "Check status of queued command from run_windbg_cmd_async. Returns JSON with status: 'queued', 'executing', 'completed' (extract 'result' field), or 'cancelled'. CRITICAL for getting command results!",
+                InputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        commandId = new { type = "string", description = "Command ID from run_windbg_cmd_async" }
+                    },
+                    required = new[] { "commandId" }
+                }
+            };
+        }
+
+        private static McpToolSchema CreateCancelCommandTool()
+        {
+            return new McpToolSchema
+            {
+                Name = "cancel_command",
+                Description = "Cancel a queued or running command. Useful for stopping long-running commands.",
+                InputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        commandId = new { type = "string", description = "Command ID to cancel" }
+                    },
+                    required = new[] { "commandId" }
+                }
+            };
+        }
+
+        private static McpToolSchema CreateListCommandsTool()
+        {
+            return new McpToolSchema
+            {
+                Name = "list_commands",
+                Description = "List current command queue status. Shows queued, executing, and recent commands.",
+                InputSchema = new
+                {
+                    type = "object",
+                    properties = new { },
+                    required = Array.Empty<string>()
+                }
+            };
+        }
+
+        private static McpToolSchema CreateRunWindbgCmdAsyncDeprecatedTool()
+        {
+            return new McpToolSchema
+            {
+                Name = "run_windbg_cmd_async",
+                Description = "DEPRECATED: Use 'run_windbg_cmd' instead. This tool will return a deprecation error.",
+                InputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        command = new { type = "string", description = "WinDBG command to execute" }
+                    },
+                    required = new[] { "command" }
+                }
+            };
+        }
+
+        private static McpToolSchema CreateRunWindbgCmdSyncDeprecatedTool()
+        {
+            return new McpToolSchema
+            {
+                Name = "run_windbg_cmd_sync",
+                Description = "DEPRECATED: Use 'run_windbg_cmd' instead. This tool will return a deprecation error.",
+                InputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        command = new { type = "string", description = "WinDBG command to execute" }
+                    },
+                    required = new[] { "command" }
                 }
             };
         }

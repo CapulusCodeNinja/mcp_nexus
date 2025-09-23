@@ -614,8 +614,8 @@ namespace mcp_nexus
         {
             Console.Error.WriteLine("Registering services...");
 
-            services.AddSingleton<BackgroundJobService>();
-            Console.Error.WriteLine("Registered BackgroundJobService as singleton");
+            services.AddSingleton<CommandQueueService>();
+            Console.Error.WriteLine("Registered CommandQueueService as singleton");
 
             services.AddSingleton<TimeTool>();
             Console.Error.WriteLine("Registered TimeTool as singleton");

@@ -7,7 +7,7 @@ using System.Text;
 namespace mcp_nexus.Tools
 {
     [McpServerToolType]
-    public class WindbgTool(ILogger<WindbgTool> logger, CdbSession cdbSession, BackgroundJobService backgroundJobService)
+    public class WindbgTool(ILogger<WindbgTool> logger, CdbSession cdbSession, CommandQueueService commandQueueService)
     {
         // Crash Dump Analysis Tools
 
@@ -200,73 +200,56 @@ namespace mcp_nexus.Tools
         // General Commands
 
 
-        [McpServerTool, Description("Execute any WinDBG command with smart timeout handling. HYBRID BEHAVIOR: Quick commands (<5s) return results immediately. Long commands (>5s) return job ID for polling. NO TIMEOUTS EVER. For job polling: call get_job_status(jobId) every 10-15 seconds until status='completed', then extract 'result' field. Works for ALL commands: version, lsa, !analyze -v, !process, etc.")]
-        public async Task<string> RunWindbgCmdAsync(string command)
+        [McpServerTool, Description("Execute any WinDBG command in a sequential queue. ALL commands are queued and executed one after another. Returns command ID immediately, then poll get_command_status(commandId) to get results. NO TIMEOUTS EVER. Works for ALL commands: version, lsa, !analyze -v, !process, etc.")]
+        public Task<string> RunWindbgCmdAsync(string command)
         {
-            logger.LogInformation("RunWindbgCmdAsync called with command: {Command} [ASYNCHRONOUS MODE]", command);
+            logger.LogInformation("RunWindbgCmdAsync called with command: {Command} [QUEUE MODE]", command);
 
             try
             {
                 // Validate command
                 if (string.IsNullOrWhiteSpace(command))
                 {
-                    logger.LogError("Command is null or empty in async method");
-                    return "Command cannot be null or empty";
+                    logger.LogError("Command is null or empty");
+                    return Task.FromResult("Command cannot be null or empty");
                 }
 
-                logger.LogDebug("Checking if CDB session is active for async command...");
+                logger.LogDebug("Checking if CDB session is active...");
                 logger.LogInformation("CdbSession.IsActive: {IsActive}", cdbSession.IsActive);
 
                 if (!cdbSession.IsActive)
                 {
-                    logger.LogWarning("No active debugging session for async command - cannot execute");
-                    return "No active debugging session. Please open a crash dump or connect to a remote session first.";
+                    logger.LogWarning("No active debugging session - cannot execute");
+                    return Task.FromResult("No active debugging session. Please open a crash dump or connect to a remote session first.");
                 }
 
-                // Start async execution with hybrid approach
-                var jobId = backgroundJobService.StartJob(command, async (cancellationToken) =>
-                {
-                    logger.LogInformation("Executing WinDBG command asynchronously: {Command}", command);
-                    return await cdbSession.ExecuteCommand(command, cancellationToken);
-                });
-
-                logger.LogInformation("Started async job {JobId} for command: {Command}", jobId, command);
-
-                // Hybrid approach: Wait briefly for quick completion
-                await Task.Delay(5000); // Wait 5 seconds
-
-                var job = backgroundJobService.GetJob(jobId);
-                if (job is { Status: JobStatus.Completed, Result: not null })
-                {
-                    logger.LogInformation("Job {JobId} completed quickly, returning result directly", jobId);
-                    return $@"{{
-  ""status"": ""completed"",
-  ""result"": ""{job.Result.Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "")}"",
-  ""message"": ""✅ COMPLETED: Command finished quickly, results ready!"",
-  ""executionTime"": ""{(job.EndTime - job.StartTime)?.TotalSeconds:F1} seconds"",
-  ""ai_guidance"": ""SUCCESS: The 'result' field above contains the complete command output. No further polling needed!""
-}}";
-                }
-
-                // Still running, return job ID for polling
-                return $@"{{
-  ""jobId"": ""{jobId}"",
-  ""status"": ""running"",
-  ""message"": ""⏳ RUNNING: Command needs more time, polling required"",
-  ""ai_guidance"": ""CRITICAL: This response contains NO RESULTS. You MUST call get_job_status(jobId='{jobId}') to get the actual command output!"",
+                // Queue the command for sequential execution
+                var commandId = commandQueueService.QueueCommand(command);
+                
+                logger.LogInformation("Queued command {CommandId}: {Command}", commandId, command);
+                
+                // Return command ID immediately - client must poll for results
+                var response = $@"{{
+  ""commandId"": ""{commandId}"",
+  ""status"": ""queued"",
+  ""message"": ""✅ QUEUED: Command added to execution queue"",
+  ""command"": ""{command.Replace("\"", "\\\"")}"",
+  ""ai_guidance"": ""IMPORTANT: Command is queued for execution. You MUST call get_command_status(commandId='{commandId}') to get the actual results!"",
   ""next_action"": {{
-    ""required_call"": ""get_job_status"",
-    ""parameters"": {{""jobId"": ""{jobId}""}},
-    ""when"": ""Poll every 10-15 seconds until status='completed'"",
-    ""then"": ""Extract 'result' field from completed job for the actual WinDBG output""
+    ""required_call"": ""get_command_status"",
+    ""parameters"": {{""commandId"": ""{commandId}""}},
+    ""when"": ""Poll every 5-10 seconds until status='completed'"",
+    ""then"": ""Extract 'result' field from completed command for the actual WinDBG output""
   }},
-  ""warning"": ""The command is running in background. Results are NOT in this response!""
+  ""warning"": ""The command will execute in order. Results are NOT in this response!""
 }}";
+                
+                return Task.FromResult(response);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error executing async WinDBG command: {Command}", command);
-                return $"Error executing async command: {ex.Message}";
+                logger.LogError(ex, "Error queueing WinDBG command: {Command}", command);
+                return Task.FromResult($"Error queueing command: {ex.Message}");
             }
         }
 
@@ -596,111 +579,141 @@ namespace mcp_nexus.Tools
 
         // Async Job Management Tools
 
-        [McpServerTool, Description("Check status of async job from run_windbg_cmd. Returns JSON with status: 'running' (keep polling every 10-15s), 'completed' (extract 'result' field for command output), 'failed' (check 'error' field), or 'cancelled'. CRITICAL: You must call this to get actual results from long-running commands!")]
-        public Task<string> GetJobStatus(string jobId)
+        [McpServerTool, Description("Check status of queued command from run_windbg_cmd_async. Returns JSON with status: 'queued' (waiting in line), 'executing' (running now), 'completed' (extract 'result' field for command output), or 'cancelled'. CRITICAL: You must call this to get actual results from commands!")]
+        public async Task<string> GetCommandStatus(string commandId)
         {
-            logger.LogInformation("GetJobStatus called with jobId: {JobId}", jobId);
+            logger.LogInformation("GetCommandStatus called with commandId: {CommandId}", commandId);
 
             try
             {
-                var job = backgroundJobService.GetJob(jobId);
-                if (job == null)
+                var commandResult = await commandQueueService.GetCommandResult(commandId);
+                
+                if (commandResult.StartsWith("Command not found"))
                 {
-                    return Task.FromResult($"{{\"error\": \"Job not found: {jobId}\"}}");
+                    return $@"{{""error"": ""Command not found: {commandId}""}}";
                 }
 
-                var elapsed = job.EndTime?.Subtract(job.StartTime) ?? DateTime.UtcNow.Subtract(job.StartTime);
-
-                // Add helpful instructions based on job status
-                var instructions = job.Status switch
+                // Check if command is completed
+                if (!commandResult.StartsWith("Command is still"))
                 {
-                    JobStatus.Running => $@"""instructions"": ""Job is still running. Check again in 10-30 seconds with get_job_status(jobId='{job.Id}'). Use cancel_job(jobId='{job.Id}') to stop if needed."",",
-                    JobStatus.Completed => $@"""instructions"": ""Job completed successfully! The 'result' field contains the full command output."",",
-                    JobStatus.Failed => $@"""instructions"": ""Job failed. Check the 'error' field for details. You may retry with a new async command."",",
-                    JobStatus.Cancelled => $@"""instructions"": ""Job was cancelled. You may start a new async command if needed."",",
-                    _ => ""
+                    // Command completed, return the result
+                    return $@"{{
+  ""commandId"": ""{commandId}"",
+  ""status"": ""completed"",
+  ""message"": ""✅ COMPLETED: Command finished successfully"",
+  ""result"": ""{commandResult.Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "")}"",
+  ""instructions"": ""Command completed successfully! The 'result' field contains the full command output."",
+  ""ai_guidance"": ""SUCCESS: The command has finished. Use the 'result' field above for the actual WinDBG output.""
+}}";
+                }
+
+                // Command still in progress, check queue status
+                var queueStatus = commandQueueService.GetQueueStatus()
+                    .FirstOrDefault(cmd => cmd.Id == commandId);
+
+                if (queueStatus == default)
+                {
+                    return $@"{{""error"": ""Command not found in queue: {commandId}""}}";
+                }
+
+                var waitTime = (DateTime.UtcNow - queueStatus.QueueTime).TotalSeconds;
+                var status = queueStatus.Status.ToLower();
+                
+                var instructions = status switch
+                {
+                    "queued" => $@"""instructions"": ""Command is waiting in queue. Check again in 5-10 seconds with get_command_status(commandId='{commandId}'). Use cancel_command(commandId='{commandId}') to stop if needed."",",
+                    "executing" => $@"""instructions"": ""Command is currently executing. Check again in 10-15 seconds with get_command_status(commandId='{commandId}'). Use cancel_command(commandId='{commandId}') to stop if needed."",",
+                    "cancelled" => $@"""instructions"": ""Command was cancelled. You may start a new command if needed."",",
+                    _ => $@"""instructions"": ""Command status: {status}. Check again in 10 seconds."","
                 };
 
-                var statusJson = $@"{{
-  ""jobId"": ""{job.Id}"",
-  ""command"": ""{job.Command.Replace("\"", "\\\"")}"",
-  ""status"": ""{job.Status}"",
-  ""startTime"": ""{job.StartTime:yyyy-MM-ddTHH:mm:ss.fffZ}"",
-  ""endTime"": {(job.EndTime.HasValue ? $"\"{job.EndTime:yyyy-MM-ddTHH:mm:ss.fffZ}\"" : "null")},
-  ""elapsedSeconds"": {elapsed.TotalSeconds:F1},
+                return $@"{{
+  ""commandId"": ""{commandId}"",
+  ""command"": ""{queueStatus.Command.Replace("\"", "\\\"")}"",
+  ""status"": ""{status}"",
+  ""queueTime"": ""{queueStatus.QueueTime:yyyy-MM-ddTHH:mm:ss.fffZ}"",
+  ""waitTimeSeconds"": {waitTime:F1},
   {instructions}
-  ""result"": {(job.Result != null ? $"\"{job.Result.Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "")}\"" : "null")},
-  ""error"": {(job.Error != null ? $"\"{job.Error.Replace("\"", "\\\"")}\"" : "null")}
+  ""ai_guidance"": ""Command is {status}. Keep polling this method every 5-15 seconds until status='completed', then use 'result' field.""
 }}";
-
-                return Task.FromResult(statusJson);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error getting job status: {JobId}", jobId);
-                return Task.FromResult($"{{\"error\": \"Error getting job status: {ex.Message}\"}}");
+                logger.LogError(ex, "Error getting command status: {CommandId}", commandId);
+                return $@"{{""error"": ""Error getting command status: {ex.Message}""}}";
             }
         }
 
-        [McpServerTool, Description("Cancel a running async job. Useful for stopping long-running commands that are taking too long.")]
-        public Task<string> CancelJob(string jobId)
+        [McpServerTool, Description("Cancel a queued or running command. Useful for stopping long-running commands that are taking too long.")]
+        public Task<string> CancelCommand(string commandId)
         {
-            logger.LogInformation("CancelJob called with jobId: {JobId}", jobId);
+            logger.LogInformation("CancelCommand called with commandId: {CommandId}", commandId);
 
             try
             {
-                var job = backgroundJobService.GetJob(jobId);
-                if (job == null)
+                var cancelled = commandQueueService.CancelCommand(commandId);
+                if (!cancelled)
                 {
-                    return Task.FromResult($"{{\"error\": \"Job not found: {jobId}\"}}");
+                    return Task.FromResult($@"{{""error"": ""Command not found or already completed: {commandId}""}}");
                 }
-
-                if (job.Status != JobStatus.Running)
-                {
-                    return Task.FromResult($"{{\"error\": \"Job is not running: {jobId} (status: {job.Status})\"}}");
-                }
-
-                backgroundJobService.CancelJob(jobId);
-                return Task.FromResult($"{{\"success\": true, \"message\": \"Job {jobId} has been cancelled\"}}");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error cancelling job: {JobId}", jobId);
-                return Task.FromResult($"{{\"error\": \"Error cancelling job: {ex.Message}\"}}");
-            }
-        }
-
-        [McpServerTool, Description("List recent async jobs and their status. Shows the last 20 jobs with their completion status and timing.")]
-        public Task<string> ListJobs()
-        {
-            logger.LogInformation("ListJobs called");
-
-            try
-            {
-                var jobs = backgroundJobService.GetAllJobs().OrderByDescending(j => j.StartTime).Take(20);
-                var jobsJson = string.Join(",\n  ", jobs.Select(job =>
-                {
-                    var elapsed = job.EndTime?.Subtract(job.StartTime) ?? DateTime.UtcNow.Subtract(job.StartTime);
-                    return $@"{{
-    ""jobId"": ""{job.Id}"",
-    ""command"": ""{job.Command.Replace("\"", "\\\"")}"",
-    ""status"": ""{job.Status}"",
-    ""startTime"": ""{job.StartTime:yyyy-MM-ddTHH:mm:ss.fffZ}"",
-    ""elapsedSeconds"": {elapsed.TotalSeconds:F1}
-  }}";
-                }));
 
                 return Task.FromResult($@"{{
-  ""jobs"": [
-  {jobsJson}
-  ],
-  ""instructions"": ""Use get_job_status(jobId) to get detailed status and results for any specific job. Jobs are automatically cleaned up after 1 hour.""
+  ""success"": true, 
+  ""message"": ""✅ CANCELLED: Command {commandId} has been cancelled"",
+  ""commandId"": ""{commandId}"",
+  ""ai_guidance"": ""Command successfully cancelled. You can start a new command now.""
 }}");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error listing jobs");
-                return Task.FromResult($"{{\"error\": \"Error listing jobs: {ex.Message}\"}}");
+                logger.LogError(ex, "Error cancelling command: {CommandId}", commandId);
+                return Task.FromResult($@"{{""error"": ""Error cancelling command: {ex.Message}""}}");
+            }
+        }
+
+        [McpServerTool, Description("List current command queue status. Shows queued, executing, and recent commands with their status.")]
+        public Task<string> ListCommands()
+        {
+            logger.LogInformation("ListCommands called");
+
+            try
+            {
+                var queueStatus = commandQueueService.GetQueueStatus();
+                var currentCommand = commandQueueService.GetCurrentCommand();
+                
+                var commandsJson = string.Join(",\n  ", queueStatus.Select(cmd =>
+                {
+                    var waitTime = (DateTime.UtcNow - cmd.QueueTime).TotalSeconds;
+                    return $@"{{
+    ""commandId"": ""{cmd.Id}"",
+    ""command"": ""{cmd.Command.Replace("\"", "\\\"")}"",
+    ""status"": ""{cmd.Status.ToLower()}"",
+    ""queueTime"": ""{cmd.QueueTime:yyyy-MM-ddTHH:mm:ss.fffZ}"",
+    ""waitTimeSeconds"": {waitTime:F1}
+  }}";
+                }));
+
+                var currentInfo = currentCommand != null 
+                    ? $@"""currentlyExecuting"": {{
+    ""commandId"": ""{currentCommand.Id}"",
+    ""command"": ""{currentCommand.Command.Replace("\"", "\\\"")}"",
+    ""queueTime"": ""{currentCommand.QueueTime:yyyy-MM-ddTHH:mm:ss.fffZ}""
+  }},"
+                    : @"""currentlyExecuting"": null,";
+
+                return Task.FromResult($@"{{
+  {currentInfo}
+  ""queuedCommands"": [
+  {commandsJson}
+  ],
+  ""queueSize"": {queueStatus.Count()},
+  ""instructions"": ""Use get_command_status(commandId) to get detailed status and results for any specific command. Commands execute sequentially in order.""
+}}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error listing commands");
+                return Task.FromResult($@"{{""error"": ""Error listing commands: {ex.Message}""}}");
             }
         }
 
