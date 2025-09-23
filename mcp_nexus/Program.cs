@@ -4,6 +4,8 @@ using mcp_nexus.Helper;
 using mcp_nexus.Services;
 using System.CommandLine;
 using System.Text.Json;
+using Microsoft.AspNetCore.Server.IIS;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace mcp_nexus
 {
@@ -643,6 +645,19 @@ namespace mcp_nexus
                     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
                     options.JsonSerializerOptions.WriteIndented = true;
                 });
+
+            // Configure HTTP request timeout to 15 minutes (longer than command timeout)
+            services.Configure<IISServerOptions>(options =>
+            {
+                options.MaxRequestBodySize = null; // Remove request body size limit
+            });
+
+            services.Configure<KestrelServerOptions>(options =>
+            {
+                options.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(15);
+                options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(15);
+            });
+            
             services.AddCors(options =>
             {
                 options.AddDefaultPolicy(builder =>
