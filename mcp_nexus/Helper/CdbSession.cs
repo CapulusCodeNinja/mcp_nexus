@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace mcp_nexus.Helper
 {
-    public class CdbSession(ILogger<CdbSession> logger, int commandTimeoutMs = 30000, string? customCdbPath = null, int symbolServerTimeoutMs = 30000, int symbolServerMaxRetries = 1, string? symbolSearchPath = null)
+    public class CdbSession(ILogger<CdbSession> logger, int commandTimeoutMs = 30000, string? customCdbPath = null, int symbolServerTimeoutMs = 30000, int symbolServerMaxRetries = 1, string? symbolSearchPath = null, int startupDelayMs = 2000)
         : IDisposable
     {
         private Process? m_DebuggerProcess;
@@ -173,12 +173,9 @@ namespace mcp_nexus.Helper
                         return false;
                     }
 
-                    // Enhanced process initialization monitoring with timeout
-                    logger.LogDebug("Monitoring CDB process initialization (PID: {ProcessId})...", m_DebuggerProcess.Id);
-                    if (!WaitForCdbInitialization(processStartTime))
-                    {
-                        return false;
-                    }
+                    // Give CDB a moment to start up (configurable delay)
+                    logger.LogDebug("Allowing CDB process to start up (PID: {ProcessId}), waiting {DelayMs}ms...", m_DebuggerProcess.Id, startupDelayMs);
+                    Thread.Sleep(startupDelayMs);
 
                     logger.LogDebug("Setting up input/output streams...");
                     m_DebuggerInput = m_DebuggerProcess.StandardInput;
@@ -443,6 +440,7 @@ namespace mcp_nexus.Helper
             const int checkIntervalMs = 500;  // Check every 500ms
             
             var lastLogTime = DateTime.Now;
+            var outputBuffer = new StringBuilder();
             
             while ((DateTime.Now - processStartTime).TotalMilliseconds < maxInitTimeMs)
             {
@@ -455,6 +453,36 @@ namespace mcp_nexus.Helper
                     return false;
                 }
                 
+                // Check for available output and look for the command prompt
+                if (m_DebuggerOutput?.Peek() != -1)
+                {
+                    try
+                    {
+                        while (m_DebuggerOutput?.Peek() != -1)
+                        {
+                            var line = m_DebuggerOutput?.ReadLine();
+                            if (line != null)
+                            {
+                                outputBuffer.AppendLine(line);
+                                
+                                // Look for CDB command prompt patterns
+                                if (line.Contains(":") && line.Contains(">") && 
+                                    (line.EndsWith("> ") || line.EndsWith(">") || line.Trim().EndsWith(">")))
+                                {
+                                    var elapsed = (DateTime.Now - processStartTime).TotalMilliseconds;
+                                    logger.LogInformation("CDB initialization completed successfully. Ready for commands after {Elapsed}ms", elapsed);
+                                    logger.LogDebug("CDB prompt detected: '{Prompt}'", line.Trim());
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Error reading CDB output during initialization");
+                    }
+                }
+                
                 // Log progress every 30 seconds during symbol downloads (reduce noise)
                 if ((DateTime.Now - lastLogTime).TotalMilliseconds > 30000)
                 {
@@ -462,12 +490,7 @@ namespace mcp_nexus.Helper
                     logger.LogDebug("CDB still initializing (likely downloading symbols)... Elapsed: {Elapsed}ms, PID: {ProcessId}", 
                         elapsed, m_DebuggerProcess?.Id);
                     
-                    // Check if we can peek at any output to see symbol download progress
-                    if (m_DebuggerOutput?.Peek() != -1)
-                    {
-                        logger.LogDebug("CDB is producing output - symbol downloads in progress");
-                    }
-                    else if (elapsed > 120000) // After 2 minutes, show detailed diagnostics but less frequently
+                    if (elapsed > 120000) // After 2 minutes, show detailed diagnostics but less frequently
                     {
                         logger.LogDebug("CDB initialization taking longer than expected: {Elapsed}ms", elapsed);
                         // Only show full diagnostics every 2 minutes and at debug level
@@ -514,17 +537,10 @@ namespace mcp_nexus.Helper
             try
             {
                 logger.LogInformation("");
-                // Helper method to ensure exact 63-character width
-                static string FormatBoxLine(string content)
-                {
-                    if (content.Length > 63)
-                        content = content.Substring(0, 60) + "...";
-                    return content.PadRight(63);
-                }
                 
                 logger.LogInformation("╔═══════════════════════════════════════════════════════════════════╗");
-                logger.LogInformation("║                        CDB OUTPUT CAPTURE                        ║");
-                logger.LogInformation($"║ {FormatBoxLine($"Context: {context}")} ║");
+                logger.LogInformation("                         CDB OUTPUT CAPTURE");
+                logger.LogInformation($"  Context: {context}");
                 logger.LogInformation("╚═══════════════════════════════════════════════════════════════════╝");
                 
                 // Try to read any available stdout
@@ -623,29 +639,22 @@ namespace mcp_nexus.Helper
                 
                 var process = m_DebuggerProcess;
                 logger.Log(logLevel, "");
-                // Helper method to ensure exact 63-character width
-                static string FormatBoxLine(string content)
-                {
-                    if (content.Length > 63)
-                        content = content.Substring(0, 60) + "...";
-                    return content.PadRight(63);
-                }
                 
                 logger.Log(logLevel, "╔═══════════════════════════════════════════════════════════════════╗");
-                logger.Log(logLevel, "║                       PROCESS DIAGNOSTICS                        ║");
-                logger.Log(logLevel, $"║ {FormatBoxLine($"Context: {context}")} ║");
-                logger.Log(logLevel, "╠═══════════════════════════════════════════════════════════════════╣");
-                logger.Log(logLevel, $"║ {FormatBoxLine($"PID:          {process.Id}")} ║");
-                logger.Log(logLevel, $"║ {FormatBoxLine($"Process Name: {process.ProcessName}")} ║");
-                logger.Log(logLevel, $"║ {FormatBoxLine($"Has Exited:   {process.HasExited}")} ║");
+                logger.Log(logLevel, "                        PROCESS DIAGNOSTICS");
+                logger.Log(logLevel, $"  Context: {context}");
+                logger.Log(logLevel, "");
+                logger.Log(logLevel, $"  PID:          {process.Id}");
+                logger.Log(logLevel, $"  Process Name: {process.ProcessName}");
+                logger.Log(logLevel, $"  Has Exited:   {process.HasExited}");
                 
                 if (!process.HasExited)
                 {
-                    logger.Log(logLevel, $"║ {FormatBoxLine($"Start Time:   {process.StartTime}")} ║");
-                    logger.Log(logLevel, $"║ {FormatBoxLine($"CPU Time:     {process.TotalProcessorTime}")} ║");
+                    logger.Log(logLevel, $"  Start Time:   {process.StartTime}");
+                    logger.Log(logLevel, $"  CPU Time:     {process.TotalProcessorTime}");
                     var memoryInfo = $"{process.WorkingSet64:N0} bytes ({process.WorkingSet64 / 1024.0 / 1024.0:F1} MB)";
-                    logger.Log(logLevel, $"║ {FormatBoxLine($"Memory Usage: {memoryInfo}")} ║");
-                    logger.Log(logLevel, $"║ {FormatBoxLine($"Threads:      {process.Threads.Count}")} ║");
+                    logger.Log(logLevel, $"  Memory Usage: {memoryInfo}");
+                    logger.Log(logLevel, $"  Threads:      {process.Threads.Count}");
                     
                     // Log command line if we can get it
                     try
@@ -653,19 +662,19 @@ namespace mcp_nexus.Helper
                         var commandLine = GetProcessCommandLine(process.Id);
                         if (!string.IsNullOrEmpty(commandLine))
                         {
-                            logger.Log(logLevel, $"║ {FormatBoxLine($"Command Line: {commandLine}")} ║");
+                            logger.Log(logLevel, $"  Command Line: {commandLine}");
                         }
                     }
                     catch (Exception ex)
                     {
                         logger.LogDebug(ex, "Could not retrieve command line for process {ProcessId}", process.Id);
-                        logger.Log(logLevel, $"║ {FormatBoxLine("Command Line: Unable to retrieve")} ║");
+                        logger.Log(logLevel, $"  Command Line: Unable to retrieve");
                     }
                 }
                 else
                 {
-                    logger.Log(logLevel, $"║ {FormatBoxLine($"Exit Code:    {process.ExitCode}")} ║");
-                    logger.Log(logLevel, $"║ {FormatBoxLine($"Exit Time:    {process.ExitTime}")} ║");
+                    logger.Log(logLevel, $"  Exit Code:    {process.ExitCode}");
+                    logger.Log(logLevel, $"  Exit Time:    {process.ExitTime}");
                 }
                 
                 logger.Log(logLevel, "╚═══════════════════════════════════════════════════════════════════╝");
