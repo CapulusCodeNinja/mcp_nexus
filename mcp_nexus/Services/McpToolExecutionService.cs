@@ -24,11 +24,7 @@ namespace mcp_nexus.Services
                     "run_windbg_cmd_async" => await ExecuteRunWindbgCmdAsync(arguments),
                     "run_windbg_cmd" => ExecuteRunWindbgCmdDeprecated(arguments),
                     "run_windbg_cmd_sync" => ExecuteRunWindbgCmdSyncDeprecated(arguments),
-                    "list_windbg_dumps" => await ExecuteListWindbgDumps(arguments),
                     "get_session_info" => await ExecuteGetSessionInfo(),
-                    "analyze_call_stack" => await ExecuteAnalyzeCallStack(),
-                    "analyze_memory" => await ExecuteAnalyzeMemory(),
-                    "analyze_crash_patterns" => await ExecuteAnalyzeCrashPatterns(),
                     "get_command_status" => await ExecuteGetCommandStatus(arguments),
                     "cancel_command" => await ExecuteCancelCommand(arguments),
                     "list_commands" => await ExecuteListCommands(),
@@ -146,37 +142,9 @@ MIGRATION REQUIRED: run_windbg_cmd_sync → run_windbg_cmd_async";
             return Task.FromResult(CreateTextResult(aggressiveMessage));
         }
 
-        private async Task<object> ExecuteListWindbgDumps(JsonElement arguments)
-        {
-            var directoryPath = GetRequiredStringArgument(arguments, "directoryPath");
-            if (directoryPath == null)
-                return CreateErrorResult(-32602, "Missing or invalid directoryPath argument");
-
-            var result = await windbgTool.ListWindbgDumps(directoryPath);
-            return CreateTextResult(result);
-        }
-
         private async Task<object> ExecuteGetSessionInfo()
         {
             var result = await windbgTool.GetSessionInfo();
-            return CreateTextResult(result);
-        }
-
-        private async Task<object> ExecuteAnalyzeCallStack()
-        {
-            var result = await windbgTool.AnalyzeCallStack();
-            return CreateTextResult(result);
-        }
-
-        private async Task<object> ExecuteAnalyzeMemory()
-        {
-            var result = await windbgTool.AnalyzeMemory();
-            return CreateTextResult(result);
-        }
-
-        private async Task<object> ExecuteAnalyzeCrashPatterns()
-        {
-            var result = await windbgTool.AnalyzeCrashPatterns();
             return CreateTextResult(result);
         }
 

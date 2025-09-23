@@ -73,21 +73,47 @@ namespace mcp_nexus.Helper
                     logger.LogWarning("🚨 [LOCKLESS-CANCEL] Attempting to interrupt CDB command for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
 
                     logger.LogInformation("📡 [LOCKLESS-CANCEL] Sending Ctrl+C to CDB process - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    await debuggerInput.WriteLineAsync("\x03"); // ASCII ETX (Ctrl+C)
-                    await debuggerInput.FlushAsync();
+                    
+                    // RACE CONDITION FIX: Check if stream is still valid before writing
+                    if (debuggerInput.BaseStream?.CanWrite == true)
+                    {
+                        await debuggerInput.WriteLineAsync("\x03"); // ASCII ETX (Ctrl+C)
+                        await debuggerInput.FlushAsync();
+                        logger.LogInformation("✅ [LOCKLESS-CANCEL] Ctrl+C sent, starting 1s wait - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    }
+                    else
+                    {
+                        logger.LogWarning("⚠️ [LOCKLESS-CANCEL] Debugger input stream is not writable, skipping Ctrl+C - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    }
 
-                    logger.LogInformation("✅ [LOCKLESS-CANCEL] Ctrl+C sent, starting 1s wait - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     await Task.Delay(1000);
 
                     logger.LogInformation("📡 [LOCKLESS-CANCEL] Sending '.' command to get back to prompt - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    await debuggerInput.WriteLineAsync(".");  // Current instruction
-                    await debuggerInput.FlushAsync();
-                    logger.LogInformation("✅ [LOCKLESS-CANCEL] '.' command sent - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    
+                    // RACE CONDITION FIX: Check if stream is still valid before writing
+                    if (debuggerInput.BaseStream?.CanWrite == true)
+                    {
+                        await debuggerInput.WriteLineAsync(".");  // Current instruction
+                        await debuggerInput.FlushAsync();
+                        logger.LogInformation("✅ [LOCKLESS-CANCEL] '.' command sent - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    }
+                    else
+                    {
+                        logger.LogWarning("⚠️ [LOCKLESS-CANCEL] Debugger input stream is not writable, skipping '.' command - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    }
 
                     logger.LogInformation("⏳ [LOCKLESS-CANCEL] Starting final 2s wait - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     await Task.Delay(2000);
 
                     logger.LogWarning("✅ [LOCKLESS-CANCEL] Command cancellation completed for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
+                }
+                catch (ObjectDisposedException)
+                {
+                    logger.LogWarning("⚠️ [LOCKLESS-CANCEL] CDB streams already disposed during cancellation for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
+                }
+                catch (InvalidOperationException)
+                {
+                    logger.LogWarning("⚠️ [LOCKLESS-CANCEL] CDB streams in invalid state during cancellation for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
                 }
                 catch (Exception ex)
                 {
@@ -156,10 +182,10 @@ namespace mcp_nexus.Helper
                     logger.LogInformation("Found CDB at: {CdbPath}", cdbPath);
 
                     // Determine if this is a crash dump file (ends with .dmp)
-                    var isCrashDump = target.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase) ||
+                    var isCrashDump = target.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase) || 
                                      target.Contains(".dmp\"", StringComparison.OrdinalIgnoreCase) ||
                                      target.Contains(".dmp ", StringComparison.OrdinalIgnoreCase);
-
+                    
                     // For crash dumps, ensure we use -z flag. The target may already contain other arguments.
                     string cdbArguments;
                     if (isCrashDump && !target.TrimStart().StartsWith("-z", StringComparison.OrdinalIgnoreCase))
@@ -172,10 +198,10 @@ namespace mcp_nexus.Helper
                         // Target already has proper formatting or is not a crash dump
                         cdbArguments = target;
                     }
-
+                    
                     // Add startup arguments with symbol server timeout controls
                     logger.LogDebug("CDB arguments: {Arguments} (isCrashDump: {IsCrashDump})", cdbArguments, isCrashDump);
-
+                    
                     var startInfo = new ProcessStartInfo
                     {
                         FileName = cdbPath,
@@ -213,7 +239,7 @@ namespace mcp_nexus.Helper
 
                     logger.LogDebug("Creating CDB process with arguments: {Arguments}", startInfo.Arguments);
                     m_DebuggerProcess = new Process { StartInfo = startInfo };
-
+                    
                     logger.LogInformation("Starting CDB process...");
                     var processStarted = m_DebuggerProcess.Start();
                     logger.LogInformation("CDB process start result: {Started}, PID: {ProcessId}", processStarted, m_DebuggerProcess.Id);
@@ -239,10 +265,10 @@ namespace mcp_nexus.Helper
 
                 logger.LogInformation("Successfully started CDB session with target: {Target}", target);
                 logger.LogInformation("Session active: {IsActive}, Process running: {IsRunning}", m_IsActive, m_DebuggerProcess?.HasExited == false);
-
+                
                 // Don't wait for full initialization - CDB will be ready when we send commands
                 logger.LogInformation("CDB process started successfully. Session will be ready for commands.");
-
+                
                 logger.LogInformation("StartSession completed successfully");
                 return true;
             }
@@ -454,38 +480,38 @@ namespace mcp_nexus.Helper
                     lock (m_LifecycleLock)
                     {
                         logger.LogInformation("🧹 [LOCKLESS-STOP] Disposing of CDB resources - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                        m_DebuggerProcess?.Dispose();
-                        m_DebuggerInput?.Dispose();
-                        m_DebuggerOutput?.Dispose();
-                        m_DebuggerError?.Dispose();
+                    m_DebuggerProcess?.Dispose();
+                    m_DebuggerInput?.Dispose();
+                    m_DebuggerOutput?.Dispose();
+                    m_DebuggerError?.Dispose();
 
-                        m_DebuggerProcess = null;
-                        m_DebuggerInput = null;
-                        m_DebuggerOutput = null;
-                        m_DebuggerError = null;
-                        m_IsActive = false;
-
+                    m_DebuggerProcess = null;
+                    m_DebuggerInput = null;
+                    m_DebuggerOutput = null;
+                    m_DebuggerError = null;
+                    m_IsActive = false;
+                    
                         logger.LogInformation("✅ [LOCKLESS-STOP] CDB session resources cleaned up - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    }
+                }
                     logger.LogInformation("🔓 [LOCKLESS-STOP] Lifecycle lock released - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 
                     stopwatch.Stop();
                     logger.LogInformation("🎯 [LOCKLESS-STOP] CDB session stopped successfully - TOTAL TIME: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     return true;
-                }
-                catch (Exception ex)
-                {
+            }
+            catch (Exception ex)
+            {
                     stopwatch.Stop();
                     logger.LogError(ex, "💥 [LOCKLESS-STOP] Failed to stop CDB session - TOTAL TIME: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     return false;
-                }
+            }
             });
         }
 
         private string ReadDebuggerOutputWithCancellation(int timeoutMs, CancellationToken cancellationToken)
         {
             logger.LogDebug("ReadDebuggerOutputWithCancellation called with timeout: {TimeoutMs}ms", timeoutMs);
-
+            
             if (m_DebuggerOutput == null)
             {
                 logger.LogError("No output stream available for reading");
@@ -500,7 +526,7 @@ namespace mcp_nexus.Helper
             try
             {
                 logger.LogDebug("Starting to read debugger output with cancellation support...");
-
+                
                 while ((DateTime.Now - startTime).TotalMilliseconds < timeoutMs)
                 {
                     // Check for cancellation first
@@ -533,7 +559,7 @@ namespace mcp_nexus.Helper
                         }
                     }
                 }
-
+                
                 var elapsed = (DateTime.Now - startTime).TotalMilliseconds;
                 logger.LogDebug("Finished reading debugger output after {ElapsedMs}ms, read {LineCount} lines", elapsed, linesRead);
             }
@@ -765,7 +791,7 @@ namespace mcp_nexus.Helper
         {
             var architecture = RuntimeInformation.ProcessArchitecture;
             logger.LogDebug("Detected process architecture: {Architecture}", architecture);
-
+            
             return architecture switch
             {
                 Architecture.X64 => "x64",
@@ -779,7 +805,7 @@ namespace mcp_nexus.Helper
         private string FindCdbPath()
         {
             logger.LogDebug("FindCDBPath called - searching for CDB executable");
-
+            
             // 1. Check custom path provided via --cdb-path parameter
             if (!string.IsNullOrEmpty(customCdbPath))
             {
@@ -794,14 +820,14 @@ namespace mcp_nexus.Helper
                     logger.LogWarning("Custom CDB path does not exist: {Path}", customCdbPath);
                 }
             }
-
+            
             // 2. Continue with automatic path detection
             var currentArch = GetCurrentArchitecture();
             logger.LogInformation("Current machine architecture: {Architecture}", currentArch);
-
+            
             // Create prioritized list based on current architecture
             var possiblePaths = new List<string>();
-
+            
             // Add paths for current architecture first
             switch (currentArch)
             {
@@ -831,7 +857,7 @@ namespace mcp_nexus.Helper
                     });
                     break;
             }
-
+            
             // Add fallback paths for other architectures
             if (currentArch != "x64")
             {
@@ -843,7 +869,7 @@ namespace mcp_nexus.Helper
                     @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe"
                 });
             }
-
+            
             if (currentArch != "x86")
             {
                 possiblePaths.AddRange(new[]
@@ -854,7 +880,7 @@ namespace mcp_nexus.Helper
                     @"C:\Program Files\Debugging Tools for Windows (x86)\cdb.exe"
                 });
             }
-
+            
             if (currentArch != "arm64")
             {
                 possiblePaths.AddRange(new[]
@@ -896,24 +922,24 @@ namespace mcp_nexus.Helper
                     logger.LogDebug("Executing 'where cdb.exe' with {TimeoutMs}ms timeout", timeoutMs);
 
                     if (result.WaitForExit(timeoutMs))
-                    {
-                        var output = result.StandardOutput.ReadToEnd();
+                {
+                    var output = result.StandardOutput.ReadToEnd();
                         logger.LogDebug("'where cdb.exe' command exit code: {ExitCode}", result.ExitCode);
-
-                        if (result.ExitCode == 0 && !string.IsNullOrEmpty(output))
-                        {
-                            var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                    
+                    if (result.ExitCode == 0 && !string.IsNullOrEmpty(output))
+                    {
+                        var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
                             logger.LogDebug("Found {Count} CDB paths in PATH", lines.Length);
-
-                            if (lines.Length > 0)
-                            {
-                                var cdbPath = lines[0].Trim();
-                                logger.LogInformation("Found CDB in PATH: {Path}", cdbPath);
-                                return cdbPath;
-                            }
-                        }
-                        else
+                        
+                        if (lines.Length > 0)
                         {
+                            var cdbPath = lines[0].Trim();
+                                logger.LogInformation("Found CDB in PATH: {Path}", cdbPath);
+                            return cdbPath;
+                        }
+                    }
+                    else
+                    {
                             logger.LogDebug("'where cdb.exe' found no results");
                         }
                     }
@@ -953,7 +979,7 @@ namespace mcp_nexus.Helper
                     m_CurrentOperationCts.Cancel();
                 }
             }
-
+            
             if (m_IsActive)
             {
                 logger.LogInformation("Disposing active CDB session...");
@@ -963,7 +989,7 @@ namespace mcp_nexus.Helper
             {
                 logger.LogDebug("No active session to dispose");
             }
-
+            
             logger.LogDebug("CdbSession disposal completed");
         }
     }

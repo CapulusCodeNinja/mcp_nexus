@@ -267,61 +267,6 @@ namespace mcp_nexus.tests.Tools
 		}
 
 		[Fact]
-		public async Task ListWindbgDumps_EmptyDirectory_ReturnsError()
-		{
-			// Arrange
-			var cdbMock = new Mock<ICdbSession>();
-			var queueMock = new Mock<ICommandQueueService>();
-			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
-
-			// Act
-			var result = await tool.ListWindbgDumps("");
-
-			// Assert
-			Assert.Contains("cannot be null or empty", result);
-		}
-
-		[Fact]
-		public async Task ListWindbgDumps_NonExistentDirectory_ReturnsError()
-		{
-			// Arrange
-			var cdbMock = new Mock<ICdbSession>();
-			var queueMock = new Mock<ICommandQueueService>();
-			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
-
-			// Act
-			var result = await tool.ListWindbgDumps("C:\\NonExistent\\Directory");
-
-			// Assert
-			Assert.Contains("not found", result);
-		}
-
-		[Fact]
-		public async Task ListWindbgDumps_EmptyDirectory_ReturnsNoDumpsFound()
-		{
-			// Arrange
-			var cdbMock = new Mock<ICdbSession>();
-			var queueMock = new Mock<ICommandQueueService>();
-			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
-
-			var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-			Directory.CreateDirectory(tempDir);
-
-			try
-			{
-				// Act
-				var result = await tool.ListWindbgDumps(tempDir);
-
-				// Assert
-				Assert.Contains("No .dmp files found", result);
-			}
-			finally
-			{
-				Directory.Delete(tempDir);
-			}
-		}
-
-		[Fact]
 		public async Task GetSessionInfo_NoActiveSession_ReturnsError()
 		{
 			// Arrange
@@ -334,60 +279,6 @@ namespace mcp_nexus.tests.Tools
 
 			// Act
 			var result = await tool.GetSessionInfo();
-
-			// Assert
-			Assert.Contains("No active debugging session", result);
-		}
-
-		[Fact]
-		public async Task AnalyzeCallStack_NoActiveSession_ReturnsError()
-		{
-			// Arrange
-			var cdbMock = new Mock<ICdbSession>();
-			var queueMock = new Mock<ICommandQueueService>();
-			
-			cdbMock.SetupGet(x => x.IsActive).Returns(false);
-
-			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
-
-			// Act
-			var result = await tool.AnalyzeCallStack();
-
-			// Assert
-			Assert.Contains("No active debugging session", result);
-		}
-
-		[Fact]
-		public async Task AnalyzeMemory_NoActiveSession_ReturnsError()
-		{
-			// Arrange
-			var cdbMock = new Mock<ICdbSession>();
-			var queueMock = new Mock<ICommandQueueService>();
-			
-			cdbMock.SetupGet(x => x.IsActive).Returns(false);
-
-			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
-
-			// Act
-			var result = await tool.AnalyzeMemory();
-
-			// Assert
-			Assert.Contains("No active debugging session", result);
-		}
-
-		[Fact]
-		public async Task AnalyzeCrashPatterns_NoActiveSession_ReturnsError()
-		{
-			// Arrange
-			var cdbMock = new Mock<ICdbSession>();
-			var queueMock = new Mock<ICommandQueueService>();
-			
-			cdbMock.SetupGet(x => x.IsActive).Returns(false);
-
-			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
-
-			// Act
-			var result = await tool.AnalyzeCrashPatterns();
 
 			// Assert
 			Assert.Contains("No active debugging session", result);
