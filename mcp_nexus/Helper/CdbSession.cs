@@ -35,10 +35,30 @@ namespace mcp_nexus.Helper
             m_CustomCdbPath = customCdbPath;
         }
 
-        public Task<bool> StartSession(string target, string? arguments = null)
+        public async Task<bool> StartSession(string target, string? arguments = null)
         {
             m_Logger.LogDebug("StartSession called with target: {Target}, arguments: {Arguments}", target, arguments);
             
+            try
+            {
+                // Add overall timeout to prevent hanging
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                return await Task.Run(() => StartSessionInternal(target, arguments), cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                m_Logger.LogError("StartSession timed out after 30 seconds for target: {Target}", target);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogError(ex, "Failed to start CDB session with target: {Target}", target);
+                return false;
+            }
+        }
+
+        private bool StartSessionInternal(string target, string? arguments = null)
+        {
             try
             {
                 lock (m_SessionLock)
@@ -48,7 +68,7 @@ namespace mcp_nexus.Helper
                     if (m_IsActive)
                     {
                         m_Logger.LogWarning("Session is already active - cannot start new session");
-                        return Task.FromResult(false);
+                        return false;
                     }
 
                     m_Logger.LogInformation("Searching for CDB executable...");
@@ -56,7 +76,7 @@ namespace mcp_nexus.Helper
                     if (string.IsNullOrEmpty(cdbPath))
                     {
                         m_Logger.LogError("CDB.exe not found. Please ensure Windows Debugging Tools are installed.");
-                        return Task.FromResult(false);
+                        return false;
                     }
                     m_Logger.LogInformation("Found CDB at: {CdbPath}", cdbPath);
 
@@ -101,7 +121,7 @@ namespace mcp_nexus.Helper
                     if (!processStarted)
                     {
                         m_Logger.LogError("Failed to start CDB process");
-                        return Task.FromResult(false);
+                        return false;
                     }
 
                     // Wait a moment for the process to initialize
@@ -112,7 +132,7 @@ namespace mcp_nexus.Helper
                     if (m_DebuggerProcess.HasExited)
                     {
                         m_Logger.LogError("CDB process exited immediately after starting. Exit code: {ExitCode}", m_DebuggerProcess.ExitCode);
-                        return Task.FromResult(false);
+                        return false;
                     }
 
                     m_Logger.LogDebug("Setting up input/output streams...");
@@ -131,12 +151,12 @@ namespace mcp_nexus.Helper
                 m_Logger.LogInformation("CDB process started successfully. Session will be ready for commands.");
                 
                 m_Logger.LogInformation("StartSession completed successfully");
-                return Task.FromResult(true);
+                return true;
             }
             catch (Exception ex)
             {
                 m_Logger.LogError(ex, "Failed to start CDB session with target: {Target}", target);
-                return Task.FromResult(false);
+                return false;
             }
         }
 
@@ -438,40 +458,58 @@ namespace mcp_nexus.Helper
             }
 
             m_Logger.LogDebug("CDB not found in standard paths, searching PATH...");
-            // Try to find in PATH
+            // Try to find in PATH with timeout
             try
             {
-                var result = Process.Start(new ProcessStartInfo
+                using var result = Process.Start(new ProcessStartInfo
                 {
                     FileName = "where",
                     Arguments = "cdb.exe",
                     RedirectStandardOutput = true,
+                    RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 });
 
                 if (result != null)
                 {
-                    var output = result.StandardOutput.ReadToEnd();
-                    result.WaitForExit();
-
-                    m_Logger.LogDebug("'where cdb.exe' command exit code: {ExitCode}", result.ExitCode);
+                    // Use timeout to prevent hanging
+                    const int timeoutMs = 5000; // 5 second timeout
+                    m_Logger.LogDebug("Executing 'where cdb.exe' with {TimeoutMs}ms timeout", timeoutMs);
                     
-                    if (result.ExitCode == 0 && !string.IsNullOrEmpty(output))
+                    if (result.WaitForExit(timeoutMs))
                     {
-                        var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-                        m_Logger.LogDebug("Found {Count} CDB paths in PATH", lines.Length);
+                        var output = result.StandardOutput.ReadToEnd();
+                        m_Logger.LogDebug("'where cdb.exe' command exit code: {ExitCode}", result.ExitCode);
                         
-                        if (lines.Length > 0)
+                        if (result.ExitCode == 0 && !string.IsNullOrEmpty(output))
                         {
-                            var cdbPath = lines[0].Trim();
-                            m_Logger.LogInformation("Found CDB in PATH: {Path}", cdbPath);
-                            return cdbPath;
+                            var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                            m_Logger.LogDebug("Found {Count} CDB paths in PATH", lines.Length);
+                            
+                            if (lines.Length > 0)
+                            {
+                                var cdbPath = lines[0].Trim();
+                                m_Logger.LogInformation("Found CDB in PATH: {Path}", cdbPath);
+                                return cdbPath;
+                            }
+                        }
+                        else
+                        {
+                            m_Logger.LogDebug("'where cdb.exe' found no results");
                         }
                     }
                     else
                     {
-                        m_Logger.LogDebug("'where cdb.exe' found no results");
+                        m_Logger.LogWarning("'where cdb.exe' command timed out after {TimeoutMs}ms", timeoutMs);
+                        try
+                        {
+                            result.Kill();
+                        }
+                        catch (Exception killEx)
+                        {
+                            m_Logger.LogDebug(killEx, "Error killing timed-out 'where' process");
+                        }
                     }
                 }
             }
