@@ -103,7 +103,17 @@ namespace mcp_nexus.Services
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
                 m_logger.LogInformation("Cancelling command {CommandId}: {Command}", commandId, command.Command);
-                command.CancellationTokenSource.Cancel();
+                
+                try
+                {
+                    command.CancellationTokenSource.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Token was already disposed, which means command completed/cancelled already
+                    m_logger.LogDebug("CancellationTokenSource already disposed for command {CommandId}", commandId);
+                    return false;
+                }
 
                 // If this is the currently executing command, also cancel the CDB operation
                 lock (m_currentCommandLock)
