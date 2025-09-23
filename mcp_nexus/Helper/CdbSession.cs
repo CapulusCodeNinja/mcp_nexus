@@ -2,10 +2,11 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 
 namespace mcp_nexus.Helper
 {
-    public class CdbSession(ILogger<CdbSession> logger, int commandTimeoutMs = 30000, string? customCdbPath = null)
+    public class CdbSession(ILogger<CdbSession> logger, int commandTimeoutMs = 30000, string? customCdbPath = null, int symbolServerTimeoutMs = 30000, int symbolServerMaxRetries = 1, string? symbolSearchPath = null)
         : IDisposable
     {
         private Process? m_DebuggerProcess;
@@ -43,6 +44,10 @@ namespace mcp_nexus.Helper
                         try
                         {
                             logger.LogWarning("Force-killing CDB process PID: {ProcessId}", m_DebuggerProcess.Id);
+                            
+                            // Capture any available output before killing
+                            CaptureAvailableOutput("Force cancellation requested by client");
+                            
                             m_DebuggerProcess.Kill(entireProcessTree: true);
                         }
                         catch (Exception ex)
@@ -117,25 +122,50 @@ namespace mcp_nexus.Helper
                         cdbArguments = target;
                     }
 
-                    logger.LogDebug("CDB arguments: {Arguments} (isCrashDump: {IsCrashDump})", cdbArguments, isCrashDump);
+                    // Add startup arguments with symbol server timeout controls
+                    var enhancedArguments = $"-lines -n {cdbArguments}";
+                    logger.LogDebug("CDB arguments: {Arguments} (isCrashDump: {IsCrashDump})", enhancedArguments, isCrashDump);
 
                     var startInfo = new ProcessStartInfo
                     {
                         FileName = cdbPath,
-                        Arguments = cdbArguments,
+                        Arguments = enhancedArguments,
                         RedirectStandardInput = true,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                         UseShellExecute = false,
                         CreateNoWindow = true
                     };
+                    
+                    // Set timeout controls from configuration
+                    startInfo.EnvironmentVariables["DBGHELP_SYMSRV_TIMEOUT"] = symbolServerTimeoutMs.ToString();
+                    startInfo.EnvironmentVariables["DBGHELP_SYMSRV_MAX_RETRIES"] = symbolServerMaxRetries.ToString();
+
+                    // Override symbol search path if configured (otherwise preserve existing _NT_SYMBOL_PATH)
+                    string actualSymbolPath;
+                    if (!string.IsNullOrWhiteSpace(symbolSearchPath))
+                    {
+                        startInfo.EnvironmentVariables["_NT_SYMBOL_PATH"] = symbolSearchPath;
+                        actualSymbolPath = symbolSearchPath;
+                        logger.LogInformation("Using configured symbol search path: {SymbolSearchPath}", symbolSearchPath);
+                    }
+                    else
+                    {
+                        // Get the current environment variable value
+                        actualSymbolPath = Environment.GetEnvironmentVariable("_NT_SYMBOL_PATH") ?? "Not set";
+                        logger.LogInformation("Using existing _NT_SYMBOL_PATH from environment: {SymbolSearchPath}", actualSymbolPath);
+                    }
+
+                    // Log the effective symbol search path that CDB will use
+                    logger.LogInformation("Effective symbol search path for CDB session: {EffectiveSymbolPath}", actualSymbolPath);
 
                     logger.LogDebug("Creating CDB process with arguments: {Arguments}", startInfo.Arguments);
                     m_DebuggerProcess = new Process { StartInfo = startInfo };
 
                     logger.LogInformation("Starting CDB process...");
+                    var processStartTime = DateTime.Now;
                     var processStarted = m_DebuggerProcess.Start();
-                    logger.LogInformation("CDB process start result: {Started}", processStarted);
+                    logger.LogInformation("CDB process start result: {Started}, PID: {ProcessId}", processStarted, m_DebuggerProcess.Id);
 
                     if (!processStarted)
                     {
@@ -143,14 +173,10 @@ namespace mcp_nexus.Helper
                         return false;
                     }
 
-                    // Wait a moment for the process to initialize
-                    logger.LogDebug("Waiting for CDB process to initialize...");
-                    Thread.Sleep(1000);
-
-                    // Check if process is still running
-                    if (m_DebuggerProcess.HasExited)
+                    // Enhanced process initialization monitoring with timeout
+                    logger.LogDebug("Monitoring CDB process initialization (PID: {ProcessId})...", m_DebuggerProcess.Id);
+                    if (!WaitForCdbInitialization(processStartTime))
                     {
-                        logger.LogError("CDB process exited immediately after starting. Exit code: {ExitCode}", m_DebuggerProcess.ExitCode);
                         return false;
                     }
 
@@ -227,9 +253,15 @@ namespace mcp_nexus.Helper
                             m_DebuggerInput.Flush();
                             logger.LogDebug("Command sent to CDB, waiting for output...");
 
-                            // Read output with cancellation support
+                            // Read output with cancellation support and process monitoring
+                            var commandStartTime = DateTime.Now;
+                            logger.LogInformation("Command sent at {StartTime}, timeout: {TimeoutMs}ms", commandStartTime, commandTimeoutMs);
+                            
                             var output = ReadDebuggerOutputWithCancellation(commandTimeoutMs, operationCts.Token);
-                            logger.LogInformation("Command execution completed, output length: {Length} characters", output.Length);
+                            
+                            var commandDuration = (DateTime.Now - commandStartTime).TotalMilliseconds;
+                            logger.LogInformation("Command execution completed in {Duration}ms, output length: {Length} characters", 
+                                commandDuration, output.Length);
                             logger.LogDebug("Command output: {Output}", output);
 
                             return output;
@@ -238,6 +270,11 @@ namespace mcp_nexus.Helper
                     catch (OperationCanceledException)
                     {
                         logger.LogWarning("Command execution was cancelled: {Command}", command);
+                        
+                        // Capture any available output before reporting cancellation
+                        CaptureAvailableOutput("Command execution cancelled");
+                        LogProcessDiagnostics("Command execution cancelled");
+                        
                         return "Command execution was cancelled due to timeout or client request.";
                     }
                     finally
@@ -397,6 +434,276 @@ namespace mcp_nexus.Helper
             var result = output.ToString();
             logger.LogDebug("ReadDebuggerOutputWithCancellation returning {Length} characters", result.Length);
             return result;
+        }
+
+        private bool WaitForCdbInitialization(DateTime processStartTime)
+        {
+            // Allow extra time for symbol downloads during initialization
+            var maxInitTimeMs = Math.Max(commandTimeoutMs, 180000); // At least 3 minutes for symbol downloads
+            const int checkIntervalMs = 500;  // Check every 500ms
+            
+            var lastLogTime = DateTime.Now;
+            
+            while ((DateTime.Now - processStartTime).TotalMilliseconds < maxInitTimeMs)
+            {
+                // Check if process has exited (could be immediate crash)
+                if (m_DebuggerProcess?.HasExited == true)
+                {
+                    logger.LogError("CDB process exited during initialization. Exit code: {ExitCode}, Runtime: {Runtime}ms", 
+                        m_DebuggerProcess.ExitCode, (DateTime.Now - processStartTime).TotalMilliseconds);
+                    LogProcessDiagnostics("Process crashed during initialization");
+                    return false;
+                }
+                
+                // Log progress every 30 seconds during symbol downloads (reduce noise)
+                if ((DateTime.Now - lastLogTime).TotalMilliseconds > 30000)
+                {
+                    var elapsed = (DateTime.Now - processStartTime).TotalMilliseconds;
+                    logger.LogDebug("CDB still initializing (likely downloading symbols)... Elapsed: {Elapsed}ms, PID: {ProcessId}", 
+                        elapsed, m_DebuggerProcess?.Id);
+                    
+                    // Check if we can peek at any output to see symbol download progress
+                    if (m_DebuggerOutput?.Peek() != -1)
+                    {
+                        logger.LogDebug("CDB is producing output - symbol downloads in progress");
+                    }
+                    else if (elapsed > 120000) // After 2 minutes, show detailed diagnostics but less frequently
+                    {
+                        logger.LogDebug("CDB initialization taking longer than expected: {Elapsed}ms", elapsed);
+                        // Only show full diagnostics every 2 minutes and at debug level
+                        if (elapsed % 120000 < 30000) // Show diagnostics only once per 2-minute window
+                        {
+                            LogProcessDiagnostics($"Symbol download in progress ({elapsed:F0}ms)");
+                        }
+                    }
+                    lastLogTime = DateTime.Now;
+                }
+                
+                Thread.Sleep(checkIntervalMs);
+            }
+            
+            // Timeout reached
+            var totalElapsed = (DateTime.Now - processStartTime).TotalMilliseconds;
+            logger.LogError("CDB process initialization timed out after {TimeoutMs}ms", totalElapsed);
+            LogProcessDiagnostics("Process hanging during initialization - terminating");
+            
+            // Capture any available output before killing the process
+            if (m_DebuggerProcess != null && !m_DebuggerProcess.HasExited)
+            {
+                try
+                {
+                    logger.LogWarning("Force-killing hanging CDB process PID: {ProcessId}", m_DebuggerProcess.Id);
+                    
+                    // Try to capture any available output/error streams before killing
+                    CaptureAvailableOutput("Before termination");
+                    
+                    m_DebuggerProcess.Kill(entireProcessTree: true);
+                    logger.LogInformation("Successfully terminated hanging CDB process");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to kill hanging CDB process");
+                }
+            }
+            
+            return false;
+        }
+        
+        private void CaptureAvailableOutput(string context)
+        {
+            try
+            {
+                logger.LogInformation("");
+                // Helper method to ensure exact 63-character width
+                static string FormatBoxLine(string content)
+                {
+                    if (content.Length > 63)
+                        content = content.Substring(0, 60) + "...";
+                    return content.PadRight(63);
+                }
+                
+                logger.LogInformation("╔═══════════════════════════════════════════════════════════════════╗");
+                logger.LogInformation("║                        CDB OUTPUT CAPTURE                        ║");
+                logger.LogInformation($"║ {FormatBoxLine($"Context: {context}")} ║");
+                logger.LogInformation("╚═══════════════════════════════════════════════════════════════════╝");
+                
+                // Try to read any available stdout
+                if (m_DebuggerOutput != null)
+                {
+                    var stdoutLines = new List<string>();
+                    while (m_DebuggerOutput.Peek() != -1)
+                    {
+                        var line = m_DebuggerOutput.ReadLine();
+                        if (line != null)
+                        {
+                            stdoutLines.Add(line);
+                        }
+                    }
+                    
+                    if (stdoutLines.Count > 0)
+                    {
+                        logger.LogInformation("");
+                        logger.LogInformation("┌─ CDB Standard Output ──────────────────────────────────────────────");
+                        logger.LogInformation("│ Captured {LineCount} lines from stdout buffer", stdoutLines.Count);
+                        logger.LogInformation("├─────────────────────────────────────────────────────────────────────");
+                        foreach (var line in stdoutLines.Take(20)) // Limit to first 20 lines
+                        {
+                            logger.LogInformation("│ {Line}", line);
+                        }
+                        if (stdoutLines.Count > 20)
+                        {
+                            logger.LogInformation("│ ... and {MoreLines} more lines (truncated for brevity)", stdoutLines.Count - 20);
+                        }
+                        logger.LogInformation("└─────────────────────────────────────────────────────────────────────");
+                    }
+                    else
+                    {
+                        logger.LogInformation("");
+                        logger.LogInformation("┌─ CDB Standard Output ──────────────────────────────────────────────");
+                        logger.LogInformation("│ No output available in stdout buffer");
+                        logger.LogInformation("└─────────────────────────────────────────────────────────────────────");
+                    }
+                }
+                
+                // Try to read any available stderr
+                if (m_DebuggerError != null)
+                {
+                    var stderrLines = new List<string>();
+                    while (m_DebuggerError.Peek() != -1)
+                    {
+                        var line = m_DebuggerError.ReadLine();
+                        if (line != null)
+                        {
+                            stderrLines.Add(line);
+                        }
+                    }
+                    
+                    if (stderrLines.Count > 0)
+                    {
+                        logger.LogWarning("");
+                        logger.LogWarning("┌─ CDB Standard Error ───────────────────────────────────────────────");
+                        logger.LogWarning("│ Captured {LineCount} lines from stderr buffer", stderrLines.Count);
+                        logger.LogWarning("├─────────────────────────────────────────────────────────────────────");
+                        foreach (var line in stderrLines.Take(20)) // Limit to first 20 lines
+                        {
+                            logger.LogWarning("│ {Line}", line);
+                        }
+                        if (stderrLines.Count > 20)
+                        {
+                            logger.LogWarning("│ ... and {MoreLines} more lines (truncated for brevity)", stderrLines.Count - 20);
+                        }
+                        logger.LogWarning("└─────────────────────────────────────────────────────────────────────");
+                    }
+                    else
+                    {
+                        logger.LogInformation("");
+                        logger.LogInformation("┌─ CDB Standard Error ───────────────────────────────────────────────");
+                        logger.LogInformation("│ No errors available in stderr buffer");
+                        logger.LogInformation("└─────────────────────────────────────────────────────────────────────");
+                    }
+                }
+                
+                logger.LogInformation("");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to capture CDB output for {Context}", context);
+            }
+        }
+
+        private void LogProcessDiagnostics(string context)
+        {
+            if (m_DebuggerProcess == null) return;
+            
+            try
+            {
+                // Use debug level for progress messages, info level for errors/crashes
+                var isProgressUpdate = context.Contains("in progress") || context.Contains("Symbol download");
+                var logLevel = isProgressUpdate ? LogLevel.Debug : LogLevel.Information;
+                
+                var process = m_DebuggerProcess;
+                logger.Log(logLevel, "");
+                // Helper method to ensure exact 63-character width
+                static string FormatBoxLine(string content)
+                {
+                    if (content.Length > 63)
+                        content = content.Substring(0, 60) + "...";
+                    return content.PadRight(63);
+                }
+                
+                logger.Log(logLevel, "╔═══════════════════════════════════════════════════════════════════╗");
+                logger.Log(logLevel, "║                       PROCESS DIAGNOSTICS                        ║");
+                logger.Log(logLevel, $"║ {FormatBoxLine($"Context: {context}")} ║");
+                logger.Log(logLevel, "╠═══════════════════════════════════════════════════════════════════╣");
+                logger.Log(logLevel, $"║ {FormatBoxLine($"PID:          {process.Id}")} ║");
+                logger.Log(logLevel, $"║ {FormatBoxLine($"Process Name: {process.ProcessName}")} ║");
+                logger.Log(logLevel, $"║ {FormatBoxLine($"Has Exited:   {process.HasExited}")} ║");
+                
+                if (!process.HasExited)
+                {
+                    logger.Log(logLevel, $"║ {FormatBoxLine($"Start Time:   {process.StartTime}")} ║");
+                    logger.Log(logLevel, $"║ {FormatBoxLine($"CPU Time:     {process.TotalProcessorTime}")} ║");
+                    var memoryInfo = $"{process.WorkingSet64:N0} bytes ({process.WorkingSet64 / 1024.0 / 1024.0:F1} MB)";
+                    logger.Log(logLevel, $"║ {FormatBoxLine($"Memory Usage: {memoryInfo}")} ║");
+                    logger.Log(logLevel, $"║ {FormatBoxLine($"Threads:      {process.Threads.Count}")} ║");
+                    
+                    // Log command line if we can get it
+                    try
+                    {
+                        var commandLine = GetProcessCommandLine(process.Id);
+                        if (!string.IsNullOrEmpty(commandLine))
+                        {
+                            logger.Log(logLevel, $"║ {FormatBoxLine($"Command Line: {commandLine}")} ║");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogDebug(ex, "Could not retrieve command line for process {ProcessId}", process.Id);
+                        logger.Log(logLevel, $"║ {FormatBoxLine("Command Line: Unable to retrieve")} ║");
+                    }
+                }
+                else
+                {
+                    logger.Log(logLevel, $"║ {FormatBoxLine($"Exit Code:    {process.ExitCode}")} ║");
+                    logger.Log(logLevel, $"║ {FormatBoxLine($"Exit Time:    {process.ExitTime}")} ║");
+                }
+                
+                logger.Log(logLevel, "╚═══════════════════════════════════════════════════════════════════╝");
+                logger.Log(logLevel, "");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to gather process diagnostics for {Context}", context);
+            }
+        }
+        
+        private static string GetProcessCommandLine(int processId)
+        {
+            try
+            {
+                using var process = Process.Start(new ProcessStartInfo
+                {
+                    FileName = "wmic",
+                    Arguments = $"process where processid={processId} get commandline /format:value",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+                
+                if (process != null && process.WaitForExit(5000))
+                {
+                    var output = process.StandardOutput.ReadToEnd();
+                    var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                    var commandLineLine = lines.FirstOrDefault(l => l.StartsWith("CommandLine="));
+                    return commandLineLine?.Substring("CommandLine=".Length).Trim() ?? "";
+                }
+            }
+            catch
+            {
+                // Ignore errors - this is just for diagnostics
+            }
+            return "";
         }
 
         private bool IsCommandComplete(string line)

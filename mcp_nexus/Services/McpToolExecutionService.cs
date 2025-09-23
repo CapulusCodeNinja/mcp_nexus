@@ -6,23 +6,23 @@ namespace mcp_nexus.Services
 {
     public class McpToolExecutionService
     {
-        private readonly WindbgTool _windbgTool;
-        private readonly TimeTool _timeTool;
-        private readonly ILogger<McpToolExecutionService> _logger;
+        private readonly WindbgTool m_windbgTool;
+        private readonly TimeTool m_timeTool;
+        private readonly ILogger<McpToolExecutionService> m_logger;
 
         public McpToolExecutionService(
             WindbgTool windbgTool,
             TimeTool timeTool,
             ILogger<McpToolExecutionService> logger)
         {
-            _windbgTool = windbgTool;
-            _timeTool = timeTool;
-            _logger = logger;
+            m_windbgTool = windbgTool;
+            m_timeTool = timeTool;
+            m_logger = logger;
         }
 
         public async Task<object> ExecuteTool(string toolName, JsonElement arguments)
         {
-            _logger.LogDebug("Executing tool: {ToolName}", toolName);
+            m_logger.LogDebug("Executing tool: {ToolName}", toolName);
 
             try
             {
@@ -44,7 +44,7 @@ namespace mcp_nexus.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing tool: {ToolName}", toolName);
+                m_logger.LogError(ex, "Error executing tool: {ToolName}", toolName);
                 return CreateErrorResult(-32603, ex.Message);
             }
         }
@@ -56,7 +56,7 @@ namespace mcp_nexus.Services
                 return CreateErrorResult(-32602, "Missing or invalid dumpPath argument");
 
             var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
-            var result = await _windbgTool.OpenWindbgDump(dumpPath, symbolsPath);
+            var result = await m_windbgTool.OpenWindbgDump(dumpPath, symbolsPath);
 
             return CreateTextResult(result);
         }
@@ -68,20 +68,20 @@ namespace mcp_nexus.Services
                 return CreateErrorResult(-32602, "Missing or invalid connectionString argument");
 
             var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
-            var result = await _windbgTool.OpenWindbgRemote(connectionString, symbolsPath);
+            var result = await m_windbgTool.OpenWindbgRemote(connectionString, symbolsPath);
 
             return CreateTextResult(result);
         }
 
         private async Task<object> ExecuteCloseWindbgDump()
         {
-            var result = await _windbgTool.CloseWindbgDump();
+            var result = await m_windbgTool.CloseWindbgDump();
             return CreateTextResult(result);
         }
 
         private async Task<object> ExecuteCloseWindbgRemote()
         {
-            var result = await _windbgTool.CloseWindbgRemote();
+            var result = await m_windbgTool.CloseWindbgRemote();
             return CreateTextResult(result);
         }
 
@@ -91,7 +91,7 @@ namespace mcp_nexus.Services
             if (command == null)
                 return CreateErrorResult(-32602, "Missing or invalid command argument");
 
-            var result = await _windbgTool.RunWindbgCmd(command);
+            var result = await m_windbgTool.RunWindbgCmd(command);
             return CreateTextResult(result);
         }
 
@@ -101,31 +101,31 @@ namespace mcp_nexus.Services
             if (directoryPath == null)
                 return CreateErrorResult(-32602, "Missing or invalid directoryPath argument");
 
-            var result = await _windbgTool.ListWindbgDumps(directoryPath);
+            var result = await m_windbgTool.ListWindbgDumps(directoryPath);
             return CreateTextResult(result);
         }
 
         private async Task<object> ExecuteGetSessionInfo()
         {
-            var result = await _windbgTool.GetSessionInfo();
+            var result = await m_windbgTool.GetSessionInfo();
             return CreateTextResult(result);
         }
 
         private async Task<object> ExecuteAnalyzeCallStack()
         {
-            var result = await _windbgTool.AnalyzeCallStack();
+            var result = await m_windbgTool.AnalyzeCallStack();
             return CreateTextResult(result);
         }
 
         private async Task<object> ExecuteAnalyzeMemory()
         {
-            var result = await _windbgTool.AnalyzeMemory();
+            var result = await m_windbgTool.AnalyzeMemory();
             return CreateTextResult(result);
         }
 
         private async Task<object> ExecuteAnalyzeCrashPatterns()
         {
-            var result = await _windbgTool.AnalyzeCrashPatterns();
+            var result = await m_windbgTool.AnalyzeCrashPatterns();
             return CreateTextResult(result);
         }
 
@@ -135,7 +135,7 @@ namespace mcp_nexus.Services
             if (city == null)
                 return CreateErrorResult(-32602, "Missing or invalid city argument");
 
-            var result = _timeTool.GetCurrentTime(city);
+            var result = m_timeTool.GetCurrentTime(city);
             return CreateTextResult(result);
         }
 

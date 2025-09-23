@@ -5,10 +5,10 @@ using mcp_nexus.Helper;
 namespace mcp_nexus.Services
 {
     public class McpProtocolService(
-        McpToolDefinitionService toolDefinitionService,
-        McpToolExecutionService toolExecutionService,
-        CdbSession cdbSession,
-        ILogger<McpProtocolService> logger)
+        McpToolDefinitionService m_toolDefinitionService,
+        McpToolExecutionService m_toolExecutionService,
+        CdbSession m_cdbSession,
+        ILogger<McpProtocolService> m_logger)
     {
         public async Task<object> ProcessRequest(JsonElement requestElement)
         {
@@ -20,14 +20,14 @@ namespace mcp_nexus.Services
                     return CreateErrorResponse(0, -32600, "Invalid Request - malformed JSON-RPC");
                 }
 
-                logger.LogInformation("Processing MCP request: {Method}", request.Method);
+                m_logger.LogInformation("Processing MCP request: {Method}", request.Method);
 
                 var result = await ExecuteMethod(request);
                 return CreateSuccessResponse(request.Id, result);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error processing MCP request");
+                m_logger.LogError(ex, "Error processing MCP request");
                 return CreateErrorResponse(0, -32603, "Internal error", ex.Message);
             }
         }
@@ -79,7 +79,7 @@ namespace mcp_nexus.Services
 
         private object HandleNotificationInitialized()
         {
-            logger.LogInformation("Received MCP initialization notification");
+            m_logger.LogInformation("Received MCP initialization notification");
             // For notifications, we typically return an empty success response
             return new { };
         }
@@ -89,28 +89,28 @@ namespace mcp_nexus.Services
             if (paramsElement != null && paramsElement.Value.TryGetProperty("requestId", out var requestIdProp))
             {
                 var requestId = requestIdProp.ToString();
-                logger.LogWarning("Received cancellation notification for request ID: {RequestId}", requestId);
+                m_logger.LogWarning("Received cancellation notification for request ID: {RequestId}", requestId);
                 
                 if (paramsElement.Value.TryGetProperty("reason", out var reasonProp))
                 {
                     var reason = reasonProp.GetString();
-                    logger.LogWarning("Cancellation reason: {Reason}", reason);
+                    m_logger.LogWarning("Cancellation reason: {Reason}", reason);
                 }
                 
                 // Actually cancel any running CDB operations
                 try
                 {
-                    logger.LogWarning("Cancelling current CDB operations due to client request");
-                    cdbSession.CancelCurrentOperation();
+                    m_logger.LogWarning("Cancelling current CDB operations due to client request");
+                    m_cdbSession.CancelCurrentOperation();
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Failed to cancel CDB operation for request ID: {RequestId}", requestId);
+                    m_logger.LogError(ex, "Failed to cancel CDB operation for request ID: {RequestId}", requestId);
                 }
             }
             else
             {
-                logger.LogWarning("Received cancellation notification without request ID");
+                m_logger.LogWarning("Received cancellation notification without request ID");
             }
             
             // Return empty success response for notifications
@@ -119,7 +119,7 @@ namespace mcp_nexus.Services
 
         private object HandleToolsList()
         {
-            var tools = toolDefinitionService.GetAllTools();
+            var tools = m_toolDefinitionService.GetAllTools();
             return new McpToolsListResult { Tools = tools };
         }
 
@@ -147,7 +147,7 @@ namespace mcp_nexus.Services
                 ? argsProperty
                 : new JsonElement();
 
-            return await toolExecutionService.ExecuteTool(toolName, arguments);
+            return await m_toolExecutionService.ExecuteTool(toolName, arguments);
         }
 
         private static McpSuccessResponse CreateSuccessResponse(int id, object result)

@@ -283,19 +283,33 @@ namespace mcp_nexus
             Console.WriteLine(bannerText);
 
             // Log a clean startup message instead of the messy formatted banner
-            logger.Info("======== MCP NEXUS STARTUP ========");
-            logger.Info("Version: {Version}, Environment: {Environment}, PID: {PID}", version, environment, Environment.ProcessId);
+            // Helper method to ensure exact 63-character width
+            static string FormatBoxLine(string content)
+            {
+                if (content.Length > 63)
+                    content = content.Substring(0, 60) + "...";
+                return content.PadRight(63);
+            }
+            
+            logger.Info("╔═══════════════════════════════════════════════════════════════════╗");
+            logger.Info("║                           MCP NEXUS STARTUP                      ║");
+            logger.Info("╠═══════════════════════════════════════════════════════════════════╣");
+            logger.Info($"║ {FormatBoxLine($"Version:     {version}")} ║");
+            logger.Info($"║ {FormatBoxLine($"Environment: {environment}")} ║");
+            logger.Info($"║ {FormatBoxLine($"Process ID:  {Environment.ProcessId}")} ║");
             if (host == "stdio")
             {
-                logger.Info("Transport: STDIO Mode");
+                logger.Info($"║ {FormatBoxLine("Transport:   STDIO Mode")} ║");
             }
             else
             {
                 var transport = args.ServiceMode ? "HTTP (Service Mode)" : "HTTP (Interactive)";
-                logger.Info("Transport: {Transport}, Host: {Host}, Port: {Port}", transport, host, port);
+                logger.Info($"║ {FormatBoxLine($"Transport:   {transport}")} ║");
+                logger.Info($"║ {FormatBoxLine($"Host:        {host}")} ║");
+                logger.Info($"║ {FormatBoxLine($"Port:        {port?.ToString() ?? "Default"}")} ║");
             }
-            logger.Info("Started at: {Timestamp}", timestamp);
-            logger.Info("===================================");
+            logger.Info($"║ {FormatBoxLine($"Started:     {timestamp}")} ║");
+            logger.Info("╚═══════════════════════════════════════════════════════════════════╝");
         }
 
         private static string FormatBannerLine(string label, string value, int contentWidth)
@@ -320,6 +334,164 @@ namespace mcp_nexus
             var rightPadding = totalPadding - leftPadding;
             var centeredContent = new string(' ', leftPadding) + text + new string(' ', rightPadding);
             return $"* {centeredContent} *";
+        }
+
+        private static void LogConfigurationSettings(IConfiguration configuration, CommandLineArguments commandLineArgs)
+        {
+            var logger = NLog.LogManager.GetCurrentClassLogger();
+            
+            // Helper method to ensure exact 66-character width for config box lines
+            static string FormatBoxLine(string content)
+            {
+                if (content.Length > 66)
+                    content = content.Substring(0, 63) + "...";
+                return content.PadRight(66);
+            }
+
+            logger.Info("");
+            logger.Info("╔═══════════════════════════════════════════════════════════════════╗");
+            logger.Info("║                      CONFIGURATION SETTINGS                      ║");
+            logger.Info("╚═══════════════════════════════════════════════════════════════════╝");
+            
+            // Application Settings
+            logger.Info("");
+            logger.Info("┌─ Application ──────────────────────────────────────────────────────");
+            logger.Info($"│ {FormatBoxLine($"Environment:       {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}")}");
+            logger.Info($"│ {FormatBoxLine($"Working Directory: {Directory.GetCurrentDirectory()}")}");
+            logger.Info($"│ {FormatBoxLine($"Assembly Location: {System.Reflection.Assembly.GetExecutingAssembly().Location}")}");
+            
+            // Command Line Arguments
+            logger.Info("");
+            logger.Info("┌─ Command Line Arguments ───────────────────────────────────────────");
+            logger.Info($"│ {FormatBoxLine($"Custom CDB Path: {commandLineArgs.CustomCdbPath ?? "Not specified"}")}");
+            logger.Info($"│ {FormatBoxLine($"Use HTTP:        {commandLineArgs.UseHttp}")}");
+            logger.Info($"│ {FormatBoxLine($"Service Mode:    {commandLineArgs.ServiceMode}")}");
+            logger.Info($"│ {FormatBoxLine($"Host:            {commandLineArgs.Host ?? "Not specified"} (from CLI: {commandLineArgs.HostFromCommandLine})")}");
+            logger.Info($"│ {FormatBoxLine($"Port:            {commandLineArgs.Port?.ToString() ?? "Not specified"} (from CLI: {commandLineArgs.PortFromCommandLine})")}");
+            
+            // Server Configuration
+            logger.Info("");
+            logger.Info("┌─ Server Configuration ─────────────────────────────────────────────");
+            logger.Info($"│ {FormatBoxLine($"Host: {configuration["McpNexus:Server:Host"] ?? "Not configured"}")}");
+            logger.Info($"│ {FormatBoxLine($"Port: {configuration["McpNexus:Server:Port"] ?? "Not configured"}")}");
+            
+            // Transport Configuration
+            logger.Info("");
+            logger.Info("┌─ Transport Configuration ──────────────────────────────────────────");
+            logger.Info($"│ {FormatBoxLine($"Mode:         {configuration["McpNexus:Transport:Mode"] ?? "Not configured"}")}");
+            logger.Info($"│ {FormatBoxLine($"Service Mode: {configuration["McpNexus:Transport:ServiceMode"] ?? "Not configured"}")}");
+            
+            // Debugging Configuration
+            logger.Info("");
+            logger.Info("┌─ Debugging Configuration ──────────────────────────────────────────");
+            logger.Info($"│ {FormatBoxLine($"CDB Path:                {configuration["McpNexus:Debugging:CdbPath"] ?? "Not configured"}")}");
+            logger.Info($"│ {FormatBoxLine($"Command Timeout:         {configuration["McpNexus:Debugging:CommandTimeoutMs"] ?? "Not configured"}ms")}");
+            logger.Info($"│ {FormatBoxLine($"Symbol Server Timeout:   {configuration["McpNexus:Debugging:SymbolServerTimeoutMs"] ?? "Not configured"}ms")}");
+            logger.Info($"│ {FormatBoxLine($"Symbol Server Retries:   {configuration["McpNexus:Debugging:SymbolServerMaxRetries"] ?? "Not configured"}")}");
+            
+            // Show both configured and effective symbol search paths
+            var configuredSymbolPath = configuration["McpNexus:Debugging:SymbolSearchPath"];
+            var effectiveSymbolPath = !string.IsNullOrWhiteSpace(configuredSymbolPath) 
+                ? configuredSymbolPath 
+                : Environment.GetEnvironmentVariable("_NT_SYMBOL_PATH") ?? "Not set";
+            
+            logger.Info($"│ {FormatBoxLine($"Symbol Search Path:      {configuredSymbolPath ?? "Not configured (using environment)"}")}");
+            logger.Info($"│ {FormatBoxLine($"Effective Symbol Path:   {effectiveSymbolPath}")}");
+            
+            // Service Configuration
+            logger.Info("");
+            logger.Info("┌─ Service Configuration ────────────────────────────────────────────");
+            logger.Info($"│ {FormatBoxLine($"Install Path: {configuration["McpNexus:Service:InstallPath"] ?? "Not configured"}")}");
+            logger.Info($"│ {FormatBoxLine($"Backup Path:  {configuration["McpNexus:Service:BackupPath"] ?? "Not configured"}")}");
+            
+            // Logging Configuration
+            logger.Info("");
+            logger.Info("┌─ Logging Configuration ────────────────────────────────────────────");
+            logger.Info($"│ {FormatBoxLine($"Default Level:     {configuration["Logging:LogLevel:Default"] ?? "Not configured"}")}");
+            logger.Info($"│ {FormatBoxLine($"ASP.NET Core Level: {configuration["Logging:LogLevel:Microsoft.AspNetCore"] ?? "Not configured"}")}");
+            
+            // Environment Variables (relevant ones)
+            logger.Info("");
+            logger.Info("┌─ Environment Variables ────────────────────────────────────────────");
+            logger.Info($"│ {FormatBoxLine($"ASPNETCORE_ENVIRONMENT: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Not set"}")}");
+            logger.Info($"│ {FormatBoxLine($"ASPNETCORE_URLS:        {Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "Not set"}")}");
+            logger.Info($"│ {FormatBoxLine($"CDB Paths in PATH:      {GetCdbPathInfo()}")}");
+            
+            // System Information
+            logger.Info("");
+            logger.Info("┌─ System Information ───────────────────────────────────────────────");
+            logger.Info($"│ {FormatBoxLine($"OS:              {Environment.OSVersion}")}");
+            logger.Info($"│ {FormatBoxLine($".NET Runtime:    {Environment.Version}")}");
+            logger.Info($"│ {FormatBoxLine($"Machine Name:    {Environment.MachineName}")}");
+            logger.Info($"│ {FormatBoxLine($"User Account:    {Environment.UserName}")}");
+            logger.Info($"│ {FormatBoxLine($"Processor Count: {Environment.ProcessorCount}")}");
+            
+            // Configuration Sources
+            logger.Info("");
+            logger.Info("┌─ Configuration Sources ────────────────────────────────────────────");
+            if (configuration is IConfigurationRoot configRoot)
+            {
+                var providerIndex = 1;
+                foreach (var provider in configRoot.Providers)
+                {
+                    logger.Info($"│ {FormatBoxLine($"{providerIndex++}. {provider.GetType().Name}: {GetProviderInfo(provider)}")}");
+                }
+            }
+            
+            logger.Info("└────────────────────────────────────────────────────────────────────");
+            logger.Info("");
+        }
+        
+        private static string GetCdbPathInfo()
+        {
+            try
+            {
+                var pathVar = Environment.GetEnvironmentVariable("PATH") ?? "";
+                var pathDirs = pathVar.Split(';');
+                var cdbPaths = pathDirs.Where(dir => 
+                    dir.Contains("Windows Kits", StringComparison.OrdinalIgnoreCase) && 
+                    dir.Contains("Debuggers", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                
+                return cdbPaths.Count > 0 ? string.Join("; ", cdbPaths) : "No CDB paths found in PATH";
+            }
+            catch
+            {
+                return "Unable to check PATH";
+            }
+        }
+        
+        private static string GetProviderInfo(IConfigurationProvider provider)
+        {
+            try
+            {
+                // Try to get useful information about the provider
+                var providerType = provider.GetType();
+                
+                if (providerType.Name.Contains("Json"))
+                {
+                    // Try to get the source property for JSON providers
+                    var sourceProperty = providerType.GetProperty("Source");
+                    if (sourceProperty?.GetValue(provider) is Microsoft.Extensions.Configuration.Json.JsonConfigurationSource jsonSource)
+                    {
+                        return $"Path: {jsonSource.Path}, Optional: {jsonSource.Optional}";
+                    }
+                }
+                else if (providerType.Name.Contains("Environment"))
+                {
+                    return "Environment Variables";
+                }
+                else if (providerType.Name.Contains("CommandLine"))
+                {
+                    return "Command Line Arguments";
+                }
+                
+                return providerType.Name;
+            }
+            catch
+            {
+                return "Unknown";
+            }
         }
 
         private class CommandLineArguments
@@ -372,6 +544,9 @@ namespace mcp_nexus
 
             // Log startup banner
             LogStartupBanner(commandLineArgs, host, port);
+            
+            // Log detailed configuration settings
+            LogConfigurationSettings(webBuilder.Configuration, commandLineArgs);
 
             // Add Windows service support if in service mode
             if (commandLineArgs.ServiceMode && OperatingSystem.IsWindows())
@@ -405,6 +580,9 @@ namespace mcp_nexus
 
             // Log startup banner for stdio mode
             LogStartupBanner(commandLineArgs, "stdio", null);
+            
+            // Log detailed configuration settings for stdio mode
+            LogConfigurationSettings(builder.Configuration, commandLineArgs);
 
             RegisterServices(builder.Services, commandLineArgs.CustomCdbPath);
             ConfigureStdioServices(builder.Services);
@@ -456,7 +634,10 @@ namespace mcp_nexus
                 var logger = serviceProvider.GetRequiredService<ILogger<CdbSession>>();
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var commandTimeoutMs = configuration.GetValue("McpNexus:Debugging:CommandTimeoutMs", 30000);
-                return new CdbSession(logger, commandTimeoutMs, customCdbPath);
+                var symbolServerTimeoutMs = configuration.GetValue("McpNexus:Debugging:SymbolServerTimeoutMs", 30000);
+                var symbolServerMaxRetries = configuration.GetValue("McpNexus:Debugging:SymbolServerMaxRetries", 1);
+                var symbolSearchPath = configuration.GetValue<string?>("McpNexus:Debugging:SymbolSearchPath");
+                return new CdbSession(logger, commandTimeoutMs, customCdbPath, symbolServerTimeoutMs, symbolServerMaxRetries, symbolSearchPath);
             });
             Console.Error.WriteLine("Registered CdbSession as singleton with custom CDB path: {0}",
                 customCdbPath ?? "auto-detect");
