@@ -11,7 +11,7 @@ namespace mcp_nexus.Services
         CancellationTokenSource CancellationTokenSource
     );
 
-    public class CommandQueueService : IDisposable
+    public class CommandQueueService : IDisposable, ICommandQueueService
     {
         private readonly ICdbSession m_cdbSession;
         private readonly ILogger<CommandQueueService> m_logger;
