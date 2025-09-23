@@ -15,43 +15,34 @@ namespace mcp_nexus.tests.Helper
 		// which may succeed or fail depending on CDB availability, so we skip these tests
 
 		[Fact]
-		public async Task ExecuteCommand_EmptyCommand_ReturnsError()
+		public async Task ExecuteCommand_EmptyCommand_ThrowsArgumentException()
 		{
 			// Arrange
 			var session = new CdbSession(CreateNullLogger());
 
-			// Act
-			var result = await session.ExecuteCommand("");
-
-			// Assert
-			Assert.Contains("No active debug session", result);
+			// Act & Assert
+			await Assert.ThrowsAsync<ArgumentException>(() => session.ExecuteCommand(""));
 		}
 
 		[Fact]
-		public async Task ExecuteCommand_WhitespaceCommand_ReturnsError()
+		public async Task ExecuteCommand_WhitespaceCommand_ThrowsArgumentException()
 		{
 			// Arrange
 			var session = new CdbSession(CreateNullLogger());
 
-			// Act
-			var result = await session.ExecuteCommand("   ");
-
-			// Assert
-			Assert.Contains("No active debug session", result);
+			// Act & Assert
+			await Assert.ThrowsAsync<ArgumentException>(() => session.ExecuteCommand("   "));
 		}
 
 		[Fact]
-		public async Task ExecuteCommand_WithCancellationToken_EmptyCommand_ReturnsError()
+		public async Task ExecuteCommand_WithCancellationToken_EmptyCommand_ThrowsArgumentException()
 		{
 			// Arrange
 			var session = new CdbSession(CreateNullLogger());
 			using var cts = new CancellationTokenSource();
 
-			// Act
-			var result = await session.ExecuteCommand("", cts.Token);
-
-			// Assert
-			Assert.Contains("No active debug session", result);
+			// Act & Assert
+			await Assert.ThrowsAsync<ArgumentException>(() => session.ExecuteCommand("", cts.Token));
 		}
 
 		[Fact]

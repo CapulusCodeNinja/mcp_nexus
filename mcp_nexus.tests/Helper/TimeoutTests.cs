@@ -182,43 +182,31 @@ namespace mcp_nexus.tests.Helper
 		}
 
 		[Fact]
-		public void CdbSession_IsActiveAfterDispose_ReturnsFalse()
+		public void CdbSession_IsActiveAfterDispose_ThrowsObjectDisposedException()
 		{
 			// Arrange
 			var session = new CdbSession(CreateNullLogger());
 
 			// Act
 			session.Dispose();
-			var isActive = session.IsActive;
 
 			// Assert
-			Assert.False(isActive);
+			Assert.Throws<ObjectDisposedException>(() => _ = session.IsActive);
 		}
 
 		[Fact]
-		public async Task CdbSession_OperationsAfterDispose_DoNotHang()
+		public async Task CdbSession_OperationsAfterDispose_ThrowObjectDisposedException()
 		{
 			// Arrange
 			var session = new CdbSession(CreateNullLogger());
 			session.Dispose();
 
-			// Act - All these operations should complete quickly and not hang
-			var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-			
-			var isActive = session.IsActive;
-			session.CancelCurrentOperation();
-			var executeResult = await session.ExecuteCommand("test");
-			var stopResult = await session.StopSession();
-			var startResult = await session.StartSession("test");
-			
-			stopwatch.Stop();
-
-			// Assert
-			Assert.False(isActive);
-			Assert.Contains("No active debug session", executeResult);
-			Assert.False(stopResult);
-			Assert.False(startResult);
-			Assert.True(stopwatch.ElapsedMilliseconds < 1000, $"Operations after dispose took too long: {stopwatch.ElapsedMilliseconds}ms");
+			// Act & Assert - Should throw ObjectDisposedException
+			Assert.Throws<ObjectDisposedException>(() => _ = session.IsActive);
+			Assert.Throws<ObjectDisposedException>(() => session.CancelCurrentOperation());
+			await Assert.ThrowsAsync<ObjectDisposedException>(() => session.ExecuteCommand("test"));
+			await Assert.ThrowsAsync<ObjectDisposedException>(() => session.StopSession());
+			await Assert.ThrowsAsync<ObjectDisposedException>(() => session.StartSession("test"));
 		}
 
 		[Fact]

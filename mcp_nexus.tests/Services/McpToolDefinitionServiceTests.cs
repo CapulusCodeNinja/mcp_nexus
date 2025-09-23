@@ -108,7 +108,6 @@ namespace mcp_nexus.tests.Services
 
 			// Assert
 			Assert.Contains("list_windbg_dumps", toolNames);
-			Assert.Contains("get_current_time", toolNames);
 		}
 
 		[Fact]

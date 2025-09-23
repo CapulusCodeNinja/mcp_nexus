@@ -22,6 +22,7 @@ namespace mcp_nexus.Services
         private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands = new();
         private QueuedCommand? m_currentCommand;
         private readonly object m_currentCommandLock = new();
+        private bool m_disposed;
 
         public CommandQueueService(ICdbSession cdbSession, ILogger<CommandQueueService> logger)
         {
@@ -47,6 +48,12 @@ namespace mcp_nexus.Services
 
         public string QueueCommand(string command)
         {
+            if (m_disposed)
+                throw new ObjectDisposedException(nameof(CommandQueueService));
+                
+            if (string.IsNullOrWhiteSpace(command))
+                throw new ArgumentException("Command cannot be null or empty", nameof(command));
+            
             var commandId = Guid.NewGuid().ToString();
             m_logger.LogInformation("🔄 QueueCommand START: {CommandId} for command: {Command}", commandId, command);
 
@@ -72,6 +79,12 @@ namespace mcp_nexus.Services
 
         public Task<string> GetCommandResult(string commandId)
         {
+            if (m_disposed)
+                throw new ObjectDisposedException(nameof(CommandQueueService));
+                
+            if (string.IsNullOrEmpty(commandId))
+                return Task.FromResult($"Command not found: {commandId}");
+                
             // NOTE: Completed commands stay in m_activeCommands for result retrieval
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
@@ -100,6 +113,12 @@ namespace mcp_nexus.Services
 
         public bool CancelCommand(string commandId)
         {
+            if (m_disposed)
+                throw new ObjectDisposedException(nameof(CommandQueueService));
+                
+            if (string.IsNullOrEmpty(commandId))
+                return false;
+                
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
                 m_logger.LogInformation("Cancelling command {CommandId}: {Command}", commandId, command.Command);
@@ -134,6 +153,9 @@ namespace mcp_nexus.Services
 
         public int CancelAllCommands(string? reason = null)
         {
+            if (m_disposed)
+                throw new ObjectDisposedException(nameof(CommandQueueService));
+                
             var reasonText = string.IsNullOrWhiteSpace(reason) ? "No reason provided" : reason;
             m_logger.LogWarning("Cancelling ALL commands. Reason: {Reason}", reasonText);
 
@@ -195,6 +217,9 @@ namespace mcp_nexus.Services
 
         public QueuedCommand? GetCurrentCommand()
         {
+            if (m_disposed)
+                throw new ObjectDisposedException(nameof(CommandQueueService));
+                
             lock (m_currentCommandLock)
             {
                 return m_currentCommand;
@@ -203,6 +228,9 @@ namespace mcp_nexus.Services
 
         public IEnumerable<(string Id, string Command, DateTime QueueTime, string Status)> GetQueueStatus()
         {
+            if (m_disposed)
+                throw new ObjectDisposedException(nameof(CommandQueueService));
+                
             var results = new List<(string, string, DateTime, string)>();
 
             // Add current command
@@ -431,6 +459,7 @@ namespace mcp_nexus.Services
                 // Already disposed, ignore
             }
 
+            m_disposed = true;
             m_logger.LogInformation("CommandQueueService disposed");
         }
     }

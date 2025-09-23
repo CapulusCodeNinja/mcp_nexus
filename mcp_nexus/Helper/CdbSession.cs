@@ -8,6 +8,30 @@ namespace mcp_nexus.Helper
     public class CdbSession(ILogger<CdbSession> logger, int commandTimeoutMs = 30000, string? customCdbPath = null, int symbolServerTimeoutMs = 30000, int symbolServerMaxRetries = 1, string? symbolSearchPath = null, int startupDelayMs = 2000)
         : IDisposable, ICdbSession
     {
+        // Validation logic
+        private static void ValidateParameters(int commandTimeoutMs, int symbolServerTimeoutMs, int symbolServerMaxRetries, int startupDelayMs)
+        {
+            if (commandTimeoutMs <= 0)
+                throw new ArgumentOutOfRangeException(nameof(commandTimeoutMs), "Command timeout must be positive");
+            if (symbolServerTimeoutMs < 0)
+                throw new ArgumentOutOfRangeException(nameof(symbolServerTimeoutMs), "Symbol server timeout cannot be negative");
+            if (symbolServerMaxRetries < 0)
+                throw new ArgumentOutOfRangeException(nameof(symbolServerMaxRetries), "Symbol server max retries cannot be negative");
+            if (startupDelayMs < 0)
+                throw new ArgumentOutOfRangeException(nameof(startupDelayMs), "Startup delay cannot be negative");
+        }
+
+        private static bool ValidateParametersAndReturn(int commandTimeoutMs, int symbolServerTimeoutMs, int symbolServerMaxRetries, int startupDelayMs)
+        {
+            ValidateParameters(commandTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
+            return true;
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (m_Disposed)
+                throw new ObjectDisposedException(nameof(CdbSession));
+        }
         private Process? m_DebuggerProcess;
         private StreamWriter? m_DebuggerInput;
         private StreamReader? m_DebuggerOutput;
@@ -16,11 +40,17 @@ namespace mcp_nexus.Helper
         private readonly object m_LifecycleLock = new();  // Only for start/stop operations, not command execution
         private CancellationTokenSource? m_CurrentOperationCts;
         private readonly object m_CancellationLock = new();
+        private bool m_Disposed;
+
+        // Validate parameters after field initialization
+        private readonly bool m_ValidatedParameters = ValidateParametersAndReturn(commandTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
 
         public bool IsActive
         {
             get
             {
+                ThrowIfDisposed();
+                
                 // LOCK-FREE VERSION: Don't block on m_SessionLock to avoid deadlocks
                 // This is safe to read without locks since these are just status checks
                 logger.LogTrace("IsActive: Checking status (lock-free)...");
@@ -40,6 +70,8 @@ namespace mcp_nexus.Helper
 
         public void CancelCurrentOperation()
         {
+            ThrowIfDisposed();
+            
             // Synchronous version for backward compatibility
             _ = CancelCurrentOperationAsync();
         }
@@ -131,6 +163,13 @@ namespace mcp_nexus.Helper
 
         public async Task<bool> StartSession(string target, string? arguments = null)
         {
+            ThrowIfDisposed();
+            
+            if (string.IsNullOrWhiteSpace(target))
+            {
+                throw new ArgumentException("Target cannot be null or empty", nameof(target));
+            }
+            
             logger.LogDebug("StartSession called with target: {Target}, arguments: {Arguments}", target, arguments);
 
             try
@@ -286,6 +325,18 @@ namespace mcp_nexus.Helper
 
         public Task<string> ExecuteCommand(string command, CancellationToken externalCancellationToken)
         {
+            ThrowIfDisposed();
+            
+            if (string.IsNullOrWhiteSpace(command))
+            {
+                throw new ArgumentException("Command cannot be null or empty", nameof(command));
+            }
+            
+            if (!IsActive)
+            {
+                throw new InvalidOperationException("No active debugging session");
+            }
+            
             logger.LogInformation("🎯 [LOCKLESS] CDB ExecuteCommand START: {Command} - QUEUE PROVIDES SERIALIZATION", command);
 
             try
@@ -393,6 +444,8 @@ namespace mcp_nexus.Helper
 
         public Task<bool> StopSession()
         {
+            ThrowIfDisposed();
+            
             logger.LogInformation("🔥 [LOCKLESS-STOP] StopSession called - ARCHITECTURAL FIX ACTIVE");
             var stopwatch = Stopwatch.StartNew();
 
@@ -980,14 +1033,35 @@ namespace mcp_nexus.Helper
                 }
             }
             
-            if (m_IsActive)
+            if (!m_Disposed)
             {
-                logger.LogInformation("Disposing active CDB session...");
-                StopSession().Wait();
-            }
-            else
-            {
-                logger.LogDebug("No active session to dispose");
+                if (m_IsActive)
+                {
+                    logger.LogInformation("Disposing active CDB session...");
+                    try
+                    {
+                        // Don't use StopSession() as it would call ThrowIfDisposed()
+                        // Just do the basic cleanup
+                        lock (m_LifecycleLock)
+                        {
+                            m_DebuggerProcess?.Dispose();
+                            m_DebuggerInput?.Dispose();
+                            m_DebuggerOutput?.Dispose();
+                            m_DebuggerError?.Dispose();
+                            m_IsActive = false;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Error during CDB session disposal");
+                    }
+                }
+                else
+                {
+                    logger.LogDebug("No active session to dispose");
+                }
+                
+                m_Disposed = true;
             }
             
             logger.LogDebug("CdbSession disposal completed");

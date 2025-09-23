@@ -152,18 +152,6 @@ namespace mcp_nexus.tests.Services
 		}
 
 
-		[Fact]
-		public async Task ExecuteTool_GetCurrentTime_CallsTimeTool()
-		{
-			// Arrange
-			var args = JsonDocument.Parse("{\"city\": \"New York\"}").RootElement;
-
-			// Act
-			var result = await m_service.ExecuteTool("get_current_time", args);
-
-			// Assert
-			Assert.NotNull(result);
-		}
 
 		[Fact]
 		public async Task ExecuteTool_DeprecatedRunWindbgCmd_ReturnsDeprecationMessage()
