@@ -49,22 +49,68 @@ namespace mcp_nexus.Helper
                     m_CurrentOperationCts?.Cancel();
                 }
 
-                // If we have an active process, try to kill it
+                // Try to interrupt CDB gracefully without killing the entire session
                 if (m_DebuggerProcess is { HasExited: false })
                 {
-                    try
+                    var processId = m_DebuggerProcess.Id;
+                    
+                    // Run interruption attempts in the background to avoid blocking the HTTP request
+                    Task.Run(async () =>
                     {
-                        logger.LogWarning("Force-killing CDB process PID: {ProcessId}", m_DebuggerProcess.Id);
+                        try
+                        {
+                            logger.LogWarning("Attempting to interrupt CDB command for PID: {ProcessId} (preserving session)", processId);
 
-                        // Capture any available output before killing
-                        CaptureAvailableOutput("Force cancellation requested by client");
+                            // Step 1: Try sending Ctrl+C to interrupt the current command
+                            try
+                            {
+                                logger.LogInformation("Sending Ctrl+C to CDB process to interrupt command");
+                                var input = m_DebuggerInput;
+                                if (input != null)
+                                {
+                                    // Send Ctrl+C equivalent - this should interrupt most commands
+                                    await input.WriteLineAsync("\x03"); // ASCII ETX (Ctrl+C)
+                                    await input.FlushAsync();
+                                    
+                                    // Give it a moment to respond
+                                    await Task.Delay(1000);
+                                    
+                                    // Try to get back to prompt with a simple command
+                                    await input.WriteLineAsync(".");  // Current instruction
+                                    await input.FlushAsync();
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.LogDebug(ex, "Could not send interrupt signal to CDB");
+                            }
 
-                        m_DebuggerProcess.Kill(entireProcessTree: true);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "Failed to kill CDB process");
-                    }
+                            // Step 2: Wait a bit more and check if CDB is responsive
+                            await Task.Delay(2000);
+                            
+                            // Step 3: If still unresponsive after 3 seconds total, escalate if needed
+                            logger.LogWarning("Command cancellation attempted for PID: {ProcessId}.", processId);
+                            
+                            // TODO: Future enhancement - could add escalation logic here:
+                            // - Check if CDB is still responsive with a simple command
+                            // - If completely hung for 30+ seconds, offer to restart session
+                            // - For now, we preserve the session and let the cancellation token handle it
+                            
+                            logger.LogInformation("Session preserved. If CDB becomes unresponsive, " +
+                                                "use close_windbg_dump and reopen to reset the session.");
+
+                            // Note: We intentionally do NOT kill the process here to preserve the debugging session
+                            // The cancellation token should cause the ExecuteCommand loop to exit gracefully
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(ex, "Failed to interrupt CDB command for PID: {ProcessId}", processId);
+                        }
+                    });
+                }
+                else
+                {
+                    logger.LogWarning("No active CDB process to cancel");
                 }
             }
         }
