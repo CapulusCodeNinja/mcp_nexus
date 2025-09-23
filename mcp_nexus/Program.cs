@@ -195,6 +195,7 @@ var cdbPathOption = new Option<string?>("--cdb-path", "Custom path to CDB.exe de
             var forceUninstallOption = new Option<bool>("--force-uninstall", "Force uninstall MCP Nexus service (removes registry entries)");
             var updateOption = new Option<bool>("--update", "Update MCP Nexus service (stop, update files, restart)");
             var portOption = new Option<int?>("--port", "HTTP server port (default: 5117 dev, 5000 production)");
+            var hostOption = new Option<string?>("--host", "HTTP server host binding (default: localhost, use 0.0.0.0 for all interfaces)");
             
             var rootCommand = new RootCommand("MCP Nexus - Comprehensive MCP Server Platform") 
             { 
@@ -205,7 +206,8 @@ var cdbPathOption = new Option<string?>("--cdb-path", "Custom path to CDB.exe de
                 uninstallOption,
                 forceUninstallOption,
                 updateOption,
-                portOption
+                portOption,
+                hostOption
             };
 
 var parseResult = rootCommand.Parse(args);
@@ -219,9 +221,98 @@ if (parseResult.Errors.Count == 0)
                 result.ForceUninstall = parseResult.GetValueForOption(forceUninstallOption);
                 result.Update = parseResult.GetValueForOption(updateOption);
                 result.Port = parseResult.GetValueForOption(portOption);
+                result.Host = parseResult.GetValueForOption(hostOption);
+                
+                // Track which values came from command line
+                result.PortFromCommandLine = result.Port.HasValue;
+                result.HostFromCommandLine = result.Host != null;
             }
 
             return result;
+        }
+
+        private static void LogStartupBanner(CommandLineArguments args, string host, int? port)
+        {
+            var logger = NLog.LogManager.GetCurrentClassLogger();
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
+            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+            var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            
+            const int bannerWidth = 69; // Total width including asterisks
+            const int contentWidth = bannerWidth - 4; // Width for content (excluding "* " and " *")
+            
+            var banner = new System.Text.StringBuilder();
+            banner.AppendLine("*********************************************************************");
+            banner.AppendLine(FormatCenteredBannerLine("MCP NEXUS", contentWidth));
+            banner.AppendLine(FormatCenteredBannerLine("Model Context Protocol Server", contentWidth));
+            banner.AppendLine("*********************************************************************");
+            banner.AppendLine(FormatBannerLine("Version:", version, contentWidth));
+            banner.AppendLine(FormatBannerLine("Environment:", environment, contentWidth));
+            banner.AppendLine(FormatBannerLine("Started:", timestamp, contentWidth));
+            banner.AppendLine(FormatBannerLine("PID:", Environment.ProcessId.ToString(), contentWidth));
+            
+            if (host == "stdio")
+            {
+                banner.AppendLine(FormatBannerLine("Transport:", "STDIO Mode", contentWidth));
+            }
+            else
+            {
+                var transport = args.ServiceMode ? "HTTP (Service Mode)" : "HTTP (Interactive)";
+                banner.AppendLine(FormatBannerLine("Transport:", transport, contentWidth));
+                banner.AppendLine(FormatBannerLine("Host:", host, contentWidth));
+                banner.AppendLine(FormatBannerLine("Port:", port?.ToString() ?? "Default", contentWidth));
+            }
+            
+            // Show configuration sources
+            var configSources = new List<string>();
+            if (args.HostFromCommandLine || args.PortFromCommandLine)
+                configSources.Add("Command Line");
+            configSources.Add("Configuration File");
+            banner.AppendLine(FormatBannerLine("Config:", string.Join(", ", configSources), contentWidth));
+            
+            // Show custom CDB path if specified
+            if (!string.IsNullOrEmpty(args.CustomCdbPath))
+            {
+                var cdbPath = args.CustomCdbPath.Length > (contentWidth - 12) ? 
+                    "..." + args.CustomCdbPath.Substring(args.CustomCdbPath.Length - (contentWidth - 15)) : 
+                    args.CustomCdbPath;
+                banner.AppendLine(FormatBannerLine("CDB Path:", cdbPath, contentWidth));
+            }
+            
+            banner.AppendLine("*********************************************************************");
+            
+            // Log the banner to both console and log file
+            var bannerText = banner.ToString();
+            Console.WriteLine(bannerText);
+            
+            foreach (var line in bannerText.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                logger.Info(line);
+            }
+        }
+
+        private static string FormatBannerLine(string label, string value, int contentWidth)
+        {
+            var content = $"{label,-11} {value}";
+            if (content.Length > contentWidth)
+            {
+                content = content.Substring(0, contentWidth);
+            }
+            return $"* {content.PadRight(contentWidth)} *";
+        }
+
+        private static string FormatCenteredBannerLine(string text, int contentWidth)
+        {
+            if (text.Length > contentWidth)
+            {
+                text = text.Substring(0, contentWidth);
+            }
+            // Center the text within the content width
+            var totalPadding = contentWidth - text.Length;
+            var leftPadding = totalPadding / 2;
+            var rightPadding = totalPadding - leftPadding;
+            var centeredContent = new string(' ', leftPadding) + text + new string(' ', rightPadding);
+            return $"* {centeredContent} *";
         }
 
         private class CommandLineArguments
@@ -234,6 +325,11 @@ if (parseResult.Errors.Count == 0)
             public bool ForceUninstall { get; set; }
             public bool Update { get; set; }
             public int? Port { get; set; }
+            public string? Host { get; set; }
+            
+            // Track original command line values for source reporting
+            public bool HostFromCommandLine { get; set; }
+            public bool PortFromCommandLine { get; set; }
         }
 
         private static async Task RunHttpServer(string[] args, CommandLineArguments commandLineArgs)
@@ -245,13 +341,28 @@ if (parseResult.Errors.Count == 0)
 
             var webBuilder = WebApplication.CreateBuilder(args);
 
-            // Configure custom port if specified
-            if (commandLineArgs.Port.HasValue)
+            // Configure host and port (already resolved from config file + command line)
+            var host = commandLineArgs.Host ?? "localhost";
+            var port = commandLineArgs.Port ?? (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" ? 5117 : 5000);
+            
+            var customUrl = $"http://{host}:{port}";
+            webBuilder.WebHost.UseUrls(customUrl);
+            
+            // Show the actual configuration being used with source information
+            var hostSource = commandLineArgs.HostFromCommandLine ? "command line" : "configuration";
+            var portSource = commandLineArgs.PortFromCommandLine ? "command line" : "configuration";
+            
+            if (hostSource == portSource)
             {
-                var customUrl = $"http://localhost:{commandLineArgs.Port.Value}";
-                webBuilder.WebHost.UseUrls(customUrl);
-                Console.WriteLine($"Using custom port: {commandLineArgs.Port.Value}");
+                Console.WriteLine($"Using host: {host}, port: {port} (from {hostSource})");
             }
+            else
+            {
+                Console.WriteLine($"Using host: {host} (from {hostSource}), port: {port} (from {portSource})");
+            }
+            
+            // Log startup banner
+            LogStartupBanner(commandLineArgs, host, port);
 
             // Add Windows service support if in service mode
             if (commandLineArgs.ServiceMode && OperatingSystem.IsWindows())
@@ -282,6 +393,10 @@ if (parseResult.Errors.Count == 0)
 var builder = Host.CreateApplicationBuilder(args);
 
             ConfigureLogging(builder.Logging, false);
+            
+            // Log startup banner for stdio mode
+            LogStartupBanner(commandLineArgs, "stdio", null);
+            
             RegisterServices(builder.Services, commandLineArgs.CustomCdbPath);
             ConfigureStdioServices(builder.Services);
 
