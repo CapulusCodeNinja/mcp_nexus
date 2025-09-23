@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using mcp_nexus.Helper;
 using Xunit;
 
-namespace mcp_nexus.tests
+namespace mcp_nexus.tests.Helper
 {
 	public class ExtendedCdbSessionTests
 	{

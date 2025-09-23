@@ -6,7 +6,7 @@ using mcp_nexus.Helper;
 using mcp_nexus.Services;
 using Xunit;
 
-namespace mcp_nexus.tests
+namespace mcp_nexus.tests.Services
 {
 	public class CommandQueueServiceTests
 	{
