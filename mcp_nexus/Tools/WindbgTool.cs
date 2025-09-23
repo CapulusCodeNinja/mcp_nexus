@@ -7,7 +7,7 @@ using System.Text;
 namespace mcp_nexus.Tools
 {
     [McpServerToolType]
-    public class WindbgTool(ILogger<WindbgTool> logger, CdbSession cdbSession, CommandQueueService commandQueueService)
+    public class WindbgTool(ILogger<WindbgTool> logger, ICdbSession cdbSession, CommandQueueService commandQueueService)
     {
         // Crash Dump Analysis Tools
 

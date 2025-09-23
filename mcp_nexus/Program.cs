@@ -620,7 +620,7 @@ namespace mcp_nexus
             services.AddSingleton<TimeTool>();
             Console.Error.WriteLine("Registered TimeTool as singleton");
 
-            services.AddSingleton<CdbSession>(serviceProvider =>
+            services.AddSingleton<ICdbSession>(serviceProvider =>
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<CdbSession>>();
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();

@@ -13,7 +13,7 @@ namespace mcp_nexus.Services
 
     public class CommandQueueService : IDisposable
     {
-        private readonly CdbSession m_cdbSession;
+        private readonly ICdbSession m_cdbSession;
         private readonly ILogger<CommandQueueService> m_logger;
         private readonly ConcurrentQueue<QueuedCommand> m_commandQueue = new();
         private readonly SemaphoreSlim m_queueSemaphore = new(0);
@@ -23,7 +23,7 @@ namespace mcp_nexus.Services
         private QueuedCommand? m_currentCommand;
         private readonly object m_currentCommandLock = new();
 
-        public CommandQueueService(CdbSession cdbSession, ILogger<CommandQueueService> logger)
+        public CommandQueueService(ICdbSession cdbSession, ILogger<CommandQueueService> logger)
         {
             m_cdbSession = cdbSession;
             m_logger = logger;

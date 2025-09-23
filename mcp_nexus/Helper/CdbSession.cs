@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 namespace mcp_nexus.Helper
 {
     public class CdbSession(ILogger<CdbSession> logger, int commandTimeoutMs = 30000, string? customCdbPath = null, int symbolServerTimeoutMs = 30000, int symbolServerMaxRetries = 1, string? symbolSearchPath = null, int startupDelayMs = 2000)
-        : IDisposable
+        : IDisposable, ICdbSession
     {
         private Process? m_DebuggerProcess;
         private StreamWriter? m_DebuggerInput;
