@@ -462,7 +462,9 @@ namespace mcp_nexus
             services.AddSingleton<CdbSession>(serviceProvider =>
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<CdbSession>>();
-                return new CdbSession(logger, customCdbPath: customCdbPath);
+                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+                var commandTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:CommandTimeoutMs", 30000);
+                return new CdbSession(logger, commandTimeoutMs, customCdbPath);
             });
             Console.Error.WriteLine("Registered CdbSession as singleton with custom CDB path: {0}",
                 customCdbPath ?? "auto-detect");

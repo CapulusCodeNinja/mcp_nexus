@@ -42,12 +42,12 @@ namespace mcp_nexus.Helper
             try
             {
                 // Add overall timeout to prevent hanging
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(m_CommandTimeoutMs));
                 return await Task.Run(() => StartSessionInternal(target, arguments), cts.Token);
             }
             catch (OperationCanceledException)
             {
-                m_Logger.LogError("StartSession timed out after 30 seconds for target: {Target}", target);
+                m_Logger.LogError("StartSession timed out after {TimeoutMs}ms for target: {Target}", m_CommandTimeoutMs, target);
                 return false;
             }
             catch (Exception ex)
@@ -190,8 +190,8 @@ namespace mcp_nexus.Helper
                     m_DebuggerInput.Flush();
                     m_Logger.LogDebug("Command sent to CDB, waiting for output...");
 
-                    // Read output with extended timeout for large dumps
-                    var output = ReadDebuggerOutput(15000); // 15 seconds for large dumps
+                    // Read output with configurable timeout for complex commands
+                    var output = ReadDebuggerOutput(m_CommandTimeoutMs);
                     m_Logger.LogInformation("Command execution completed, output length: {Length} characters", output.Length);
                     m_Logger.LogDebug("Command output: {Output}", output);
 
