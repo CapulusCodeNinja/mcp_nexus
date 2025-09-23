@@ -5,17 +5,17 @@ using System.Runtime.InteropServices;
 
 namespace mcp_nexus.Helper
 {
-    public class CdbSession : IDisposable
+    public class CdbSession(ILogger<CdbSession> logger, int commandTimeoutMs = 30000, string? customCdbPath = null)
+        : IDisposable
     {
-        private readonly ILogger<CdbSession> m_Logger;
         private Process? m_DebuggerProcess;
         private StreamWriter? m_DebuggerInput;
         private StreamReader? m_DebuggerOutput;
         private StreamReader? m_DebuggerError;
         private bool m_IsActive;
-        private readonly object m_SessionLock = new object();
-        private readonly int m_CommandTimeoutMs;
-        private readonly string? m_CustomCdbPath;
+        private readonly object m_SessionLock = new();
+        private CancellationTokenSource? m_CurrentOperationCts;
+        private readonly object m_CancellationLock = new();
 
         public bool IsActive
         {
@@ -23,62 +23,81 @@ namespace mcp_nexus.Helper
             {
                 lock (m_SessionLock)
                 {
-                    return m_IsActive && m_DebuggerProcess != null && !m_DebuggerProcess.HasExited;
+                    return m_IsActive && m_DebuggerProcess is { HasExited: false };
                 }
             }
         }
 
-        public CdbSession(ILogger<CdbSession> logger, int commandTimeoutMs = 30000, string? customCdbPath = null)
+        public void CancelCurrentOperation()
         {
-            m_Logger = logger;
-            m_CommandTimeoutMs = commandTimeoutMs;
-            m_CustomCdbPath = customCdbPath;
+            lock (m_CancellationLock)
+            {
+                logger.LogWarning("Cancelling current CDB operation due to client request");
+                m_CurrentOperationCts?.Cancel();
+                
+                // If we have an active process, try to kill it
+                lock (m_SessionLock)
+                {
+                    if (m_DebuggerProcess is { HasExited: false })
+                    {
+                        try
+                        {
+                            logger.LogWarning("Force-killing CDB process PID: {ProcessId}", m_DebuggerProcess.Id);
+                            m_DebuggerProcess.Kill(entireProcessTree: true);
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(ex, "Failed to kill CDB process");
+                        }
+                    }
+                }
+            }
         }
 
         public async Task<bool> StartSession(string target, string? arguments = null)
         {
-            m_Logger.LogDebug("StartSession called with target: {Target}, arguments: {Arguments}", target, arguments);
+            logger.LogDebug("StartSession called with target: {Target}, arguments: {Arguments}", target, arguments);
 
             try
             {
                 // Add overall timeout to prevent hanging
-                using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(m_CommandTimeoutMs));
-                return await Task.Run(() => StartSessionInternal(target, arguments), cts.Token);
+                using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(commandTimeoutMs));
+                return await Task.Run(() => StartSessionInternal(target), cts.Token);
             }
             catch (OperationCanceledException)
             {
-                m_Logger.LogError("StartSession timed out after {TimeoutMs}ms for target: {Target}", m_CommandTimeoutMs, target);
+                logger.LogError("StartSession timed out after {TimeoutMs}ms for target: {Target}", commandTimeoutMs, target);
                 return false;
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Failed to start CDB session with target: {Target}", target);
+                logger.LogError(ex, "Failed to start CDB session with target: {Target}", target);
                 return false;
             }
         }
 
-        private bool StartSessionInternal(string target, string? arguments = null)
+        private bool StartSessionInternal(string target)
         {
             try
             {
                 lock (m_SessionLock)
                 {
-                    m_Logger.LogDebug("Acquired session lock for StartSession");
+                    logger.LogDebug("Acquired session lock for StartSession");
 
                     if (m_IsActive)
                     {
-                        m_Logger.LogWarning("Session is already active - cannot start new session");
+                        logger.LogWarning("Session is already active - cannot start new session");
                         return false;
                     }
 
-                    m_Logger.LogInformation("Searching for CDB executable...");
-                    var cdbPath = FindCDBPath();
+                    logger.LogInformation("Searching for CDB executable...");
+                    var cdbPath = FindCdbPath();
                     if (string.IsNullOrEmpty(cdbPath))
                     {
-                        m_Logger.LogError("CDB.exe not found. Please ensure Windows Debugging Tools are installed.");
+                        logger.LogError("CDB.exe not found. Please ensure Windows Debugging Tools are installed.");
                         return false;
                     }
-                    m_Logger.LogInformation("Found CDB at: {CdbPath}", cdbPath);
+                    logger.LogInformation("Found CDB at: {CdbPath}", cdbPath);
 
                     // Determine if this is a crash dump file (ends with .dmp)
                     var isCrashDump = target.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase) ||
@@ -98,7 +117,7 @@ namespace mcp_nexus.Helper
                         cdbArguments = target;
                     }
 
-                    m_Logger.LogDebug("CDB arguments: {Arguments} (isCrashDump: {IsCrashDump})", cdbArguments, isCrashDump);
+                    logger.LogDebug("CDB arguments: {Arguments} (isCrashDump: {IsCrashDump})", cdbArguments, isCrashDump);
 
                     var startInfo = new ProcessStartInfo
                     {
@@ -111,143 +130,179 @@ namespace mcp_nexus.Helper
                         CreateNoWindow = true
                     };
 
-                    m_Logger.LogDebug("Creating CDB process with arguments: {Arguments}", startInfo.Arguments);
+                    logger.LogDebug("Creating CDB process with arguments: {Arguments}", startInfo.Arguments);
                     m_DebuggerProcess = new Process { StartInfo = startInfo };
 
-                    m_Logger.LogInformation("Starting CDB process...");
+                    logger.LogInformation("Starting CDB process...");
                     var processStarted = m_DebuggerProcess.Start();
-                    m_Logger.LogInformation("CDB process start result: {Started}", processStarted);
+                    logger.LogInformation("CDB process start result: {Started}", processStarted);
 
                     if (!processStarted)
                     {
-                        m_Logger.LogError("Failed to start CDB process");
+                        logger.LogError("Failed to start CDB process");
                         return false;
                     }
 
                     // Wait a moment for the process to initialize
-                    m_Logger.LogDebug("Waiting for CDB process to initialize...");
+                    logger.LogDebug("Waiting for CDB process to initialize...");
                     Thread.Sleep(1000);
 
                     // Check if process is still running
                     if (m_DebuggerProcess.HasExited)
                     {
-                        m_Logger.LogError("CDB process exited immediately after starting. Exit code: {ExitCode}", m_DebuggerProcess.ExitCode);
+                        logger.LogError("CDB process exited immediately after starting. Exit code: {ExitCode}", m_DebuggerProcess.ExitCode);
                         return false;
                     }
 
-                    m_Logger.LogDebug("Setting up input/output streams...");
+                    logger.LogDebug("Setting up input/output streams...");
                     m_DebuggerInput = m_DebuggerProcess.StandardInput;
                     m_DebuggerOutput = m_DebuggerProcess.StandardOutput;
                     m_DebuggerError = m_DebuggerProcess.StandardError;
 
                     m_IsActive = true;
-                    m_Logger.LogInformation("CDB session marked as active");
+                    logger.LogInformation("CDB session marked as active");
                 }
 
-                m_Logger.LogInformation("Successfully started CDB session with target: {Target}", target);
-                m_Logger.LogInformation("Session active: {IsActive}, Process running: {IsRunning}", m_IsActive, m_DebuggerProcess?.HasExited == false);
+                logger.LogInformation("Successfully started CDB session with target: {Target}", target);
+                logger.LogInformation("Session active: {IsActive}, Process running: {IsRunning}", m_IsActive, m_DebuggerProcess?.HasExited == false);
 
                 // Don't wait for full initialization - CDB will be ready when we send commands
-                m_Logger.LogInformation("CDB process started successfully. Session will be ready for commands.");
+                logger.LogInformation("CDB process started successfully. Session will be ready for commands.");
 
-                m_Logger.LogInformation("StartSession completed successfully");
+                logger.LogInformation("StartSession completed successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Failed to start CDB session with target: {Target}", target);
+                logger.LogError(ex, "Failed to start CDB session with target: {Target}", target);
                 return false;
             }
         }
 
         public Task<string> ExecuteCommand(string command)
         {
-            m_Logger.LogDebug("ExecuteCommand called with command: {Command}", command);
+            logger.LogDebug("ExecuteCommand called with command: {Command}", command);
 
             try
             {
-                lock (m_SessionLock)
+                // Create cancellation token for this operation
+                CancellationTokenSource operationCts;
+                lock (m_CancellationLock)
                 {
-                    m_Logger.LogDebug("Acquired session lock for ExecuteCommand");
-                    m_Logger.LogInformation("ExecuteCommand - IsActive: {IsActive}, ProcessExited: {ProcessExited}", m_IsActive, m_DebuggerProcess?.HasExited);
-
-                    if (!m_IsActive || m_DebuggerProcess?.HasExited == true)
-                    {
-                        m_Logger.LogWarning("No active debug session - cannot execute command");
-                        return Task.FromResult("No active debug session. Please start a session first.");
-                    }
-
-                    if (m_DebuggerInput == null)
-                    {
-                        m_Logger.LogError("Debug session input stream is not available");
-                        return Task.FromResult("Debug session input stream is not available.");
-                    }
-
-                    m_Logger.LogInformation("Sending command to CDB: {Command}", command);
-
-                    // Send command to debugger
-                    m_DebuggerInput.WriteLine(command);
-                    m_DebuggerInput.Flush();
-                    m_Logger.LogDebug("Command sent to CDB, waiting for output...");
-
-                    // Read output with configurable timeout for complex commands
-                    var output = ReadDebuggerOutput(m_CommandTimeoutMs);
-                    m_Logger.LogInformation("Command execution completed, output length: {Length} characters", output.Length);
-                    m_Logger.LogDebug("Command output: {Output}", output);
-
-                    return Task.FromResult(output);
+                    operationCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(commandTimeoutMs));
+                    m_CurrentOperationCts = operationCts;
                 }
+
+                return Task.Run(() =>
+                {
+                    try
+                    {
+                        lock (m_SessionLock)
+                        {
+                            // Check for cancellation before proceeding
+                            operationCts.Token.ThrowIfCancellationRequested();
+
+                            logger.LogDebug("Acquired session lock for ExecuteCommand");
+                            logger.LogInformation("ExecuteCommand - IsActive: {IsActive}, ProcessExited: {ProcessExited}", m_IsActive, m_DebuggerProcess?.HasExited);
+
+                            if (!m_IsActive || m_DebuggerProcess?.HasExited == true)
+                            {
+                                logger.LogWarning("No active debug session - cannot execute command");
+                                return "No active debug session. Please start a session first.";
+                            }
+
+                            if (m_DebuggerInput == null)
+                            {
+                                logger.LogError("Debug session input stream is not available");
+                                return "Debug session input stream is not available.";
+                            }
+
+                            // Check for cancellation before sending command
+                            operationCts.Token.ThrowIfCancellationRequested();
+
+                            logger.LogInformation("Sending command to CDB: {Command}", command);
+
+                            // Send command to debugger
+                            m_DebuggerInput.WriteLine(command);
+                            m_DebuggerInput.Flush();
+                            logger.LogDebug("Command sent to CDB, waiting for output...");
+
+                            // Read output with cancellation support
+                            var output = ReadDebuggerOutputWithCancellation(commandTimeoutMs, operationCts.Token);
+                            logger.LogInformation("Command execution completed, output length: {Length} characters", output.Length);
+                            logger.LogDebug("Command output: {Output}", output);
+
+                            return output;
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        logger.LogWarning("Command execution was cancelled: {Command}", command);
+                        return "Command execution was cancelled due to timeout or client request.";
+                    }
+                    finally
+                    {
+                        lock (m_CancellationLock)
+                        {
+                            if (m_CurrentOperationCts == operationCts)
+                            {
+                                m_CurrentOperationCts = null;
+                            }
+                        }
+                        operationCts.Dispose();
+                    }
+                }, operationCts.Token);
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Failed to execute command: {Command}", command);
+                logger.LogError(ex, "Failed to execute command: {Command}", command);
                 return Task.FromResult($"Command execution failed: {ex.Message}");
             }
         }
 
         public Task<bool> StopSession()
         {
-            m_Logger.LogInformation("StopSession called");
+            logger.LogInformation("StopSession called");
 
             try
             {
                 lock (m_SessionLock)
                 {
-                    m_Logger.LogDebug("Acquired session lock for StopSession");
+                    logger.LogDebug("Acquired session lock for StopSession");
 
                     if (!m_IsActive)
                     {
-                        m_Logger.LogWarning("No active session to stop");
+                        logger.LogWarning("No active session to stop");
                         return Task.FromResult(false);
                     }
 
-                    m_Logger.LogInformation("Stopping CDB session...");
+                    logger.LogInformation("Stopping CDB session...");
 
-                    if (m_DebuggerProcess != null && !m_DebuggerProcess.HasExited)
+                    if (m_DebuggerProcess is { HasExited: false })
                     {
-                        m_Logger.LogDebug("Sending quit command to CDB...");
+                        logger.LogDebug("Sending quit command to CDB...");
                         // Send quit command
                         m_DebuggerInput?.WriteLine("q");
                         m_DebuggerInput?.Flush();
 
-                        m_Logger.LogDebug("Waiting for CDB process to exit gracefully...");
+                        logger.LogDebug("Waiting for CDB process to exit gracefully...");
                         // Wait for process to exit
                         if (!m_DebuggerProcess.WaitForExit(5000))
                         {
-                            m_Logger.LogWarning("CDB process did not exit gracefully, forcing termination");
+                            logger.LogWarning("CDB process did not exit gracefully, forcing termination");
                             m_DebuggerProcess.Kill();
                         }
                         else
                         {
-                            m_Logger.LogInformation("CDB process exited gracefully");
+                            logger.LogInformation("CDB process exited gracefully");
                         }
                     }
                     else
                     {
-                        m_Logger.LogInformation("CDB process already exited or is null");
+                        logger.LogInformation("CDB process already exited or is null");
                     }
 
-                    m_Logger.LogDebug("Disposing of CDB resources...");
+                    logger.LogDebug("Disposing of CDB resources...");
                     m_DebuggerProcess?.Dispose();
                     m_DebuggerInput?.Dispose();
                     m_DebuggerOutput?.Dispose();
@@ -259,26 +314,26 @@ namespace mcp_nexus.Helper
                     m_DebuggerError = null;
                     m_IsActive = false;
 
-                    m_Logger.LogInformation("CDB session resources cleaned up");
+                    logger.LogInformation("CDB session resources cleaned up");
                 }
 
-                m_Logger.LogInformation("CDB session stopped successfully");
+                logger.LogInformation("CDB session stopped successfully");
                 return Task.FromResult(true);
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Failed to stop CDB session");
+                logger.LogError(ex, "Failed to stop CDB session");
                 return Task.FromResult(false);
             }
         }
 
-        private string ReadDebuggerOutput(int timeoutMs)
+        private string ReadDebuggerOutputWithCancellation(int timeoutMs, CancellationToken cancellationToken)
         {
-            m_Logger.LogDebug("ReadDebuggerOutput called with timeout: {TimeoutMs}ms", timeoutMs);
+            logger.LogDebug("ReadDebuggerOutputWithCancellation called with timeout: {TimeoutMs}ms", timeoutMs);
 
             if (m_DebuggerOutput == null)
             {
-                m_Logger.LogError("No output stream available for reading");
+                logger.LogError("No output stream available for reading");
                 return "No output stream available";
             }
 
@@ -289,16 +344,19 @@ namespace mcp_nexus.Helper
 
             try
             {
-                m_Logger.LogDebug("Starting to read debugger output...");
+                logger.LogDebug("Starting to read debugger output with cancellation support...");
 
                 while ((DateTime.Now - startTime).TotalMilliseconds < timeoutMs)
                 {
+                    // Check for cancellation first
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     if (m_DebuggerOutput.Peek() == -1)
                     {
                         // Check if we've been waiting too long without any output
                         if ((DateTime.Now - lastOutputTime).TotalMilliseconds > 5000)
                         {
-                            m_Logger.LogWarning("No output received for 5 seconds, continuing to wait...");
+                            logger.LogWarning("No output received for 5 seconds, continuing to wait...");
                         }
                         Thread.Sleep(50); // Increased sleep time for better performance
                         continue;
@@ -310,28 +368,34 @@ namespace mcp_nexus.Helper
                         linesRead++;
                         lastOutputTime = DateTime.Now;
                         output.AppendLine(line);
-                        m_Logger.LogTrace("Read line {LineNumber}: {Line}", linesRead, line);
+                        logger.LogTrace("Read line {LineNumber}: {Line}", linesRead, line);
 
                         // Check for command completion indicators
                         if (IsCommandComplete(line))
                         {
-                            m_Logger.LogDebug("Command completion detected in line: {Line}", line);
+                            logger.LogDebug("Command completion detected in line: {Line}", line);
                             break;
                         }
                     }
                 }
 
                 var elapsed = (DateTime.Now - startTime).TotalMilliseconds;
-                m_Logger.LogDebug("Finished reading debugger output after {ElapsedMs}ms, read {LinesRead} lines", elapsed, linesRead);
+                logger.LogDebug("Finished reading debugger output after {ElapsedMs}ms, read {LineCount} lines", elapsed, linesRead);
+            }
+            catch (OperationCanceledException)
+            {
+                logger.LogWarning("ReadDebuggerOutput was cancelled after {ElapsedMs}ms", (DateTime.Now - startTime).TotalMilliseconds);
+                output.AppendLine("Command execution was cancelled.");
+                throw; // Re-throw to propagate cancellation
             }
             catch (Exception ex)
             {
-                m_Logger.LogWarning(ex, "Error reading debugger output after {ElapsedMs}ms", (DateTime.Now - startTime).TotalMilliseconds);
+                logger.LogWarning(ex, "Error reading debugger output after {ElapsedMs}ms", (DateTime.Now - startTime).TotalMilliseconds);
                 output.AppendLine($"Error reading output: {ex.Message}");
             }
 
             var result = output.ToString();
-            m_Logger.LogDebug("ReadDebuggerOutput returning {Length} characters", result.Length);
+            logger.LogDebug("ReadDebuggerOutputWithCancellation returning {Length} characters", result.Length);
             return result;
         }
 
@@ -339,14 +403,14 @@ namespace mcp_nexus.Helper
         {
             // CDB typically shows "0:000>" prompt when ready for next command
             var isComplete = line.Contains(">") && Regex.IsMatch(line, @"\d+:\d+>");
-            m_Logger.LogTrace("IsCommandComplete checking line: '{Line}' -> {IsComplete}", line, isComplete);
+            logger.LogTrace("IsCommandComplete checking line: '{Line}' -> {IsComplete}", line, isComplete);
             return isComplete;
         }
 
         private string GetCurrentArchitecture()
         {
             var architecture = RuntimeInformation.ProcessArchitecture;
-            m_Logger.LogDebug("Detected process architecture: {Architecture}", architecture);
+            logger.LogDebug("Detected process architecture: {Architecture}", architecture);
 
             return architecture switch
             {
@@ -358,28 +422,28 @@ namespace mcp_nexus.Helper
             };
         }
 
-        private string FindCDBPath()
+        private string FindCdbPath()
         {
-            m_Logger.LogDebug("FindCDBPath called - searching for CDB executable");
+            logger.LogDebug("FindCDBPath called - searching for CDB executable");
 
             // 1. Check custom path provided via --cdb-path parameter
-            if (!string.IsNullOrEmpty(m_CustomCdbPath))
+            if (!string.IsNullOrEmpty(customCdbPath))
             {
-                m_Logger.LogInformation("Using custom CDB path from --cdb-path parameter: {Path}", m_CustomCdbPath);
-                if (File.Exists(m_CustomCdbPath))
+                logger.LogInformation("Using custom CDB path from --cdb-path parameter: {Path}", customCdbPath);
+                if (File.Exists(customCdbPath))
                 {
-                    m_Logger.LogInformation("Custom CDB path verified: {Path}", m_CustomCdbPath);
-                    return m_CustomCdbPath;
+                    logger.LogInformation("Custom CDB path verified: {Path}", customCdbPath);
+                    return customCdbPath;
                 }
                 else
                 {
-                    m_Logger.LogWarning("Custom CDB path does not exist: {Path}", m_CustomCdbPath);
+                    logger.LogWarning("Custom CDB path does not exist: {Path}", customCdbPath);
                 }
             }
 
             // 2. Continue with automatic path detection
             var currentArch = GetCurrentArchitecture();
-            m_Logger.LogInformation("Current machine architecture: {Architecture}", currentArch);
+            logger.LogInformation("Current machine architecture: {Architecture}", currentArch);
 
             // Create prioritized list based on current architecture
             var possiblePaths = new List<string>();
@@ -446,18 +510,18 @@ namespace mcp_nexus.Helper
                 });
             }
 
-            m_Logger.LogDebug("Checking {Count} prioritized CDB paths (current arch: {Architecture})", possiblePaths.Count, currentArch);
+            logger.LogDebug("Checking {Count} prioritized CDB paths (current arch: {Architecture})", possiblePaths.Count, currentArch);
             foreach (var path in possiblePaths)
             {
-                m_Logger.LogTrace("Checking path: {Path}", path);
+                logger.LogTrace("Checking path: {Path}", path);
                 if (File.Exists(path))
                 {
-                    m_Logger.LogInformation("Found CDB at path: {Path} (architecture-aware selection)", path);
+                    logger.LogInformation("Found CDB at path: {Path} (architecture-aware selection)", path);
                     return path;
                 }
             }
 
-            m_Logger.LogDebug("CDB not found in standard paths, searching PATH...");
+            logger.LogDebug("CDB not found in standard paths, searching PATH...");
             // Try to find in PATH with timeout
             try
             {
@@ -475,68 +539,78 @@ namespace mcp_nexus.Helper
                 {
                     // Use timeout to prevent hanging
                     const int timeoutMs = 5000; // 5 second timeout
-                    m_Logger.LogDebug("Executing 'where cdb.exe' with {TimeoutMs}ms timeout", timeoutMs);
+                    logger.LogDebug("Executing 'where cdb.exe' with {TimeoutMs}ms timeout", timeoutMs);
 
                     if (result.WaitForExit(timeoutMs))
                     {
                         var output = result.StandardOutput.ReadToEnd();
-                        m_Logger.LogDebug("'where cdb.exe' command exit code: {ExitCode}", result.ExitCode);
+                        logger.LogDebug("'where cdb.exe' command exit code: {ExitCode}", result.ExitCode);
 
                         if (result.ExitCode == 0 && !string.IsNullOrEmpty(output))
                         {
                             var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-                            m_Logger.LogDebug("Found {Count} CDB paths in PATH", lines.Length);
+                            logger.LogDebug("Found {Count} CDB paths in PATH", lines.Length);
 
                             if (lines.Length > 0)
                             {
                                 var cdbPath = lines[0].Trim();
-                                m_Logger.LogInformation("Found CDB in PATH: {Path}", cdbPath);
+                                logger.LogInformation("Found CDB in PATH: {Path}", cdbPath);
                                 return cdbPath;
                             }
                         }
                         else
                         {
-                            m_Logger.LogDebug("'where cdb.exe' found no results");
+                            logger.LogDebug("'where cdb.exe' found no results");
                         }
                     }
                     else
                     {
-                        m_Logger.LogWarning("'where cdb.exe' command timed out after {TimeoutMs}ms", timeoutMs);
+                        logger.LogWarning("'where cdb.exe' command timed out after {TimeoutMs}ms", timeoutMs);
                         try
                         {
                             result.Kill();
                         }
                         catch (Exception killEx)
                         {
-                            m_Logger.LogDebug(killEx, "Error killing timed-out 'where' process");
+                            logger.LogDebug(killEx, "Error killing timed-out 'where' process");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                m_Logger.LogDebug(ex, "Error searching for CDB in PATH");
+                logger.LogDebug(ex, "Error searching for CDB in PATH");
             }
 
-            m_Logger.LogError("CDB executable not found in any standard location or PATH");
+            logger.LogError("CDB executable not found in any standard location or PATH");
             return string.Empty;
         }
 
         public void Dispose()
         {
-            m_Logger.LogDebug("Dispose called on CdbSession");
+            logger.LogDebug("Dispose called on CdbSession");
+
+            // Cancel any running operations first
+            lock (m_CancellationLock)
+            {
+                if (m_CurrentOperationCts != null)
+                {
+                    logger.LogWarning("Cancelling running operation during dispose");
+                    m_CurrentOperationCts.Cancel();
+                }
+            }
 
             if (m_IsActive)
             {
-                m_Logger.LogInformation("Disposing active CDB session...");
+                logger.LogInformation("Disposing active CDB session...");
                 StopSession().Wait();
             }
             else
             {
-                m_Logger.LogDebug("No active session to dispose");
+                logger.LogDebug("No active session to dispose");
             }
 
-            m_Logger.LogDebug("CdbSession disposal completed");
+            logger.LogDebug("CdbSession disposal completed");
         }
     }
 }

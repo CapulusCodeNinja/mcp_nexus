@@ -3,10 +3,7 @@ using mcp_nexus.Tools;
 using mcp_nexus.Helper;
 using mcp_nexus.Services;
 using System.CommandLine;
-using System.CommandLine.Parsing;
-using System.Runtime.Versioning;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 
 namespace mcp_nexus
 {
@@ -43,7 +40,7 @@ namespace mcp_nexus
                 }
                 else
                 {
-                    Console.Error.WriteLine("ERROR: Service installation is only supported on Windows.");
+                    await Console.Error.WriteLineAsync("ERROR: Service installation is only supported on Windows.");
                     Environment.Exit(1);
                 }
                 return;
@@ -67,7 +64,7 @@ namespace mcp_nexus
                 }
                 else
                 {
-                    Console.Error.WriteLine("ERROR: Service uninstallation is only supported on Windows.");
+                    await Console.Error.WriteLineAsync("ERROR: Service uninstallation is only supported on Windows.");
                     Environment.Exit(1);
                 }
                 return;
@@ -91,7 +88,7 @@ namespace mcp_nexus
                 }
                 else
                 {
-                    Console.Error.WriteLine("ERROR: Service uninstallation is only supported on Windows.");
+                    await Console.Error.WriteLineAsync("ERROR: Service uninstallation is only supported on Windows.");
                     Environment.Exit(1);
                 }
                 return;
@@ -115,7 +112,7 @@ namespace mcp_nexus
                 }
                 else
                 {
-                    Console.Error.WriteLine("ERROR: Service update is only supported on Windows.");
+                    await Console.Error.WriteLineAsync("ERROR: Service update is only supported on Windows.");
                     Environment.Exit(1);
                 }
                 return;
@@ -127,7 +124,7 @@ namespace mcp_nexus
             // Validate service mode is only used on Windows
             if (commandLineArgs.ServiceMode && !OperatingSystem.IsWindows())
             {
-                Console.Error.WriteLine("ERROR: Service mode is only supported on Windows.");
+                await Console.Error.WriteLineAsync("ERROR: Service mode is only supported on Windows.");
                 Environment.Exit(1);
                 return;
             }
@@ -369,14 +366,9 @@ namespace mcp_nexus
             var portSource = commandLineArgs.PortFromCommandLine ? "command line" :
                             (configPort > 0 ? "configuration file" : "default");
 
-            if (hostSource == portSource)
-            {
-                Console.WriteLine($"Using host: {host}, port: {port} (from {hostSource})");
-            }
-            else
-            {
-                Console.WriteLine($"Using host: {host} (from {hostSource}), port: {port} (from {portSource})");
-            }
+            Console.WriteLine(hostSource == portSource
+                ? $"Using host: {host}, port: {port} (from {hostSource})"
+                : $"Using host: {host} (from {hostSource}), port: {port} (from {portSource})");
 
             // Log startup banner
             LogStartupBanner(commandLineArgs, host, port);
@@ -406,7 +398,7 @@ namespace mcp_nexus
         {
             // CRITICAL: In stdio mode, stdout is reserved for MCP protocol
             // All console output must go to stderr
-            Console.Error.WriteLine("Configuring for stdio transport...");
+            await Console.Error.WriteLineAsync("Configuring for stdio transport...");
             var builder = Host.CreateApplicationBuilder(args);
 
             ConfigureLogging(builder.Logging, false);
@@ -417,10 +409,10 @@ namespace mcp_nexus
             RegisterServices(builder.Services, commandLineArgs.CustomCdbPath);
             ConfigureStdioServices(builder.Services);
 
-            Console.Error.WriteLine("Building application host...");
+            await Console.Error.WriteLineAsync("Building application host...");
             var host = builder.Build();
 
-            Console.Error.WriteLine("Starting MCP Nexus stdio server...");
+            await Console.Error.WriteLineAsync("Starting MCP Nexus stdio server...");
             await host.RunAsync();
         }
 
@@ -463,7 +455,7 @@ namespace mcp_nexus
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<CdbSession>>();
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-                var commandTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:CommandTimeoutMs", 30000);
+                var commandTimeoutMs = configuration.GetValue("McpNexus:Debugging:CommandTimeoutMs", 30000);
                 return new CdbSession(logger, commandTimeoutMs, customCdbPath);
             });
             Console.Error.WriteLine("Registered CdbSession as singleton with custom CDB path: {0}",
@@ -494,9 +486,9 @@ namespace mcp_nexus
             });
 
             // Register MCP services
-            services.AddSingleton<mcp_nexus.Services.McpToolDefinitionService>();
-            services.AddSingleton<mcp_nexus.Services.McpToolExecutionService>();
-            services.AddSingleton<mcp_nexus.Services.McpProtocolService>();
+            services.AddSingleton<McpToolDefinitionService>();
+            services.AddSingleton<McpToolExecutionService>();
+            services.AddSingleton<McpProtocolService>();
 
             Console.WriteLine("MCP server configured for HTTP with controllers, CORS, and services");
         }
@@ -506,7 +498,7 @@ namespace mcp_nexus
             Console.Error.WriteLine("Configuring MCP server for stdio...");
 
             // Add the MCP protocol service for logging comparison
-            services.AddSingleton<mcp_nexus.Services.McpProtocolService>();
+            services.AddSingleton<McpProtocolService>();
 
             services.AddMcpServer()
     .WithStdioServerTransport()

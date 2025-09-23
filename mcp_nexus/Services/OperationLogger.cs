@@ -97,7 +97,7 @@ namespace mcp_nexus.Services
             public const string Cleanup = "Cleanup";
             public const string Http = "HTTP";
             public const string Stdio = "Stdio";
-            public const string MCP = "MCP";
+            public const string Mcp = "MCP";
             public const string Tool = "Tool";
             public const string Protocol = "Protocol";
             public const string Debug = "Debug";

@@ -1,24 +1,15 @@
 using System.Text.Json;
 using mcp_nexus.Models;
+using mcp_nexus.Helper;
 
 namespace mcp_nexus.Services
 {
-    public class McpProtocolService
+    public class McpProtocolService(
+        McpToolDefinitionService toolDefinitionService,
+        McpToolExecutionService toolExecutionService,
+        CdbSession cdbSession,
+        ILogger<McpProtocolService> logger)
     {
-        private readonly McpToolDefinitionService _toolDefinitionService;
-        private readonly McpToolExecutionService _toolExecutionService;
-        private readonly ILogger<McpProtocolService> _logger;
-
-        public McpProtocolService(
-            McpToolDefinitionService toolDefinitionService,
-            McpToolExecutionService toolExecutionService,
-            ILogger<McpProtocolService> logger)
-        {
-            _toolDefinitionService = toolDefinitionService;
-            _toolExecutionService = toolExecutionService;
-            _logger = logger;
-        }
-
         public async Task<object> ProcessRequest(JsonElement requestElement)
         {
             try
@@ -29,14 +20,14 @@ namespace mcp_nexus.Services
                     return CreateErrorResponse(0, -32600, "Invalid Request - malformed JSON-RPC");
                 }
 
-                _logger.LogInformation("Processing MCP request: {Method}", request.Method);
+                logger.LogInformation("Processing MCP request: {Method}", request.Method);
 
                 var result = await ExecuteMethod(request);
                 return CreateSuccessResponse(request.Id, result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing MCP request");
+                logger.LogError(ex, "Error processing MCP request");
                 return CreateErrorResponse(0, -32603, "Internal error", ex.Message);
             }
         }
@@ -88,7 +79,7 @@ namespace mcp_nexus.Services
 
         private object HandleNotificationInitialized()
         {
-            _logger.LogInformation("Received MCP initialization notification");
+            logger.LogInformation("Received MCP initialization notification");
             // For notifications, we typically return an empty success response
             return new { };
         }
@@ -98,27 +89,37 @@ namespace mcp_nexus.Services
             if (paramsElement != null && paramsElement.Value.TryGetProperty("requestId", out var requestIdProp))
             {
                 var requestId = requestIdProp.ToString();
-                _logger.LogWarning("Received cancellation notification for request ID: {RequestId}", requestId);
-
+                logger.LogWarning("Received cancellation notification for request ID: {RequestId}", requestId);
+                
                 if (paramsElement.Value.TryGetProperty("reason", out var reasonProp))
                 {
                     var reason = reasonProp.GetString();
-                    _logger.LogWarning("Cancellation reason: {Reason}", reason);
+                    logger.LogWarning("Cancellation reason: {Reason}", reason);
+                }
+                
+                // Actually cancel any running CDB operations
+                try
+                {
+                    logger.LogWarning("Cancelling current CDB operations due to client request");
+                    cdbSession.CancelCurrentOperation();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to cancel CDB operation for request ID: {RequestId}", requestId);
                 }
             }
             else
             {
-                _logger.LogWarning("Received cancellation notification without request ID");
+                logger.LogWarning("Received cancellation notification without request ID");
             }
-
-            // For notifications, we return an empty success response
-            // Note: In the future, we could implement actual cancellation logic here
+            
+            // Return empty success response for notifications
             return new { };
         }
 
         private object HandleToolsList()
         {
-            var tools = _toolDefinitionService.GetAllTools();
+            var tools = toolDefinitionService.GetAllTools();
             return new McpToolsListResult { Tools = tools };
         }
 
@@ -146,7 +147,7 @@ namespace mcp_nexus.Services
                 ? argsProperty
                 : new JsonElement();
 
-            return await _toolExecutionService.ExecuteTool(toolName, arguments);
+            return await toolExecutionService.ExecuteTool(toolName, arguments);
         }
 
         private static McpSuccessResponse CreateSuccessResponse(int id, object result)

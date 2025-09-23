@@ -26,7 +26,7 @@ namespace mcp_nexus.Services
                 {
                     var errorMsg = "Installation requires administrator privileges. Please run the command as administrator.";
                     OperationLogger.LogError(logger, OperationLogger.Operations.Install, "{ErrorMsg}", errorMsg);
-                    Console.Error.WriteLine($"ERROR: {errorMsg}");
+                    await Console.Error.WriteLineAsync($"ERROR: {errorMsg}");
                     return false;
                 }
 
@@ -113,7 +113,7 @@ namespace mcp_nexus.Services
                                      "   reg delete \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\MCP-Nexus\" /f\n" +
                                      "3. Then retry installation";
                         OperationLogger.LogError(logger, OperationLogger.Operations.Install, "{ErrorMsg}", errorMsg);
-                        Console.Error.WriteLine(errorMsg);
+                        await Console.Error.WriteLineAsync(errorMsg);
                         return false;
                     }
                 }
@@ -142,7 +142,7 @@ namespace mcp_nexus.Services
             catch (Exception ex)
             {
                 OperationLogger.LogError(logger, OperationLogger.Operations.Install, ex, "Installation failed");
-                Console.Error.WriteLine($"Installation failed: {ex.Message}");
+                await Console.Error.WriteLineAsync($"Installation failed: {ex.Message}");
                 return false;
             }
         }
@@ -155,7 +155,7 @@ namespace mcp_nexus.Services
                 {
                     var errorMsg = "Uninstallation requires administrator privileges. Please run the command as administrator.";
                     OperationLogger.LogError(logger, OperationLogger.Operations.Uninstall, "{ErrorMsg}", errorMsg);
-                    Console.Error.WriteLine($"ERROR: {errorMsg}");
+                    await Console.Error.WriteLineAsync($"ERROR: {errorMsg}");
                     return false;
                 }
 
@@ -226,7 +226,7 @@ namespace mcp_nexus.Services
             catch (Exception ex)
             {
                 OperationLogger.LogError(logger, OperationLogger.Operations.Uninstall, ex, "Uninstallation failed");
-                Console.Error.WriteLine($"Uninstallation failed: {ex.Message}");
+                await Console.Error.WriteLineAsync($"Uninstallation failed: {ex.Message}");
                 return false;
             }
         }
@@ -239,7 +239,7 @@ namespace mcp_nexus.Services
                 {
                     var errorMsg = "Force uninstallation requires administrator privileges. Please run the command as administrator.";
                     OperationLogger.LogError(logger, OperationLogger.Operations.ForceUninstall, "{ErrorMsg}", errorMsg);
-                    Console.Error.WriteLine($"ERROR: {errorMsg}");
+                    await Console.Error.WriteLineAsync($"ERROR: {errorMsg}");
                     return false;
                 }
 
@@ -247,7 +247,7 @@ namespace mcp_nexus.Services
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.ForceUninstall, "This will remove all service registrations and registry entries");
 
                 // Use the force cleanup method
-                var cleanupSuccess = await ForceCleanupServiceAsync(logger);
+                var unused = await ForceCleanupServiceAsync(logger);
 
                 // Remove installation directory regardless
                 if (Directory.Exists(InstallFolder))
@@ -274,7 +274,7 @@ namespace mcp_nexus.Services
             catch (Exception ex)
             {
                 OperationLogger.LogError(logger, OperationLogger.Operations.ForceUninstall, ex, "Force uninstallation failed");
-                Console.Error.WriteLine($"Force uninstallation failed: {ex.Message}");
+                await Console.Error.WriteLineAsync($"Force uninstallation failed: {ex.Message}");
                 return false;
             }
         }
@@ -316,7 +316,7 @@ namespace mcp_nexus.Services
 
                 await process.WaitForExitAsync();
 
-                var output = await process.StandardOutput.ReadToEndAsync();
+                var unused = await process.StandardOutput.ReadToEndAsync();
                 var error = await process.StandardError.ReadToEndAsync();
 
                 if (process.ExitCode != 0)
@@ -385,13 +385,13 @@ namespace mcp_nexus.Services
                     continue;
 
                 var targetSubDir = Path.Combine(InstallFolder, dirName);
-                await CopyDirectoryAsync(subDir, targetSubDir, logger);
+                await CopyDirectoryAsync(subDir, targetSubDir);
             }
 
             OperationLogger.LogInfo(logger, OperationLogger.Operations.Copy, "Copied application files to installation directory");
         }
 
-        private static async Task CopyDirectoryAsync(string sourceDir, string targetDir, ILogger? logger = null)
+        private static async Task CopyDirectoryAsync(string sourceDir, string targetDir)
         {
             Directory.CreateDirectory(targetDir);
 
@@ -641,7 +641,7 @@ namespace mcp_nexus.Services
 
                 await process.WaitForExitAsync();
 
-                var output = await process.StandardOutput.ReadToEndAsync();
+                var unused = await process.StandardOutput.ReadToEndAsync();
                 var error = await process.StandardError.ReadToEndAsync();
 
                 if (process.ExitCode != 0)
@@ -706,7 +706,7 @@ namespace mcp_nexus.Services
                 {
                     var errorMsg = "Service update requires administrator privileges. Please run the command as administrator.";
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "{ErrorMsg}", errorMsg);
-                    Console.Error.WriteLine($"ERROR: {errorMsg}");
+                    await Console.Error.WriteLineAsync($"ERROR: {errorMsg}");
                     return false;
                 }
 
@@ -718,7 +718,7 @@ namespace mcp_nexus.Services
                 {
                     var errorMsg = "MCP Nexus service is not installed. Use --install to install it first.";
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "{ErrorMsg}", errorMsg);
-                    Console.Error.WriteLine($"ERROR: {errorMsg}");
+                    await Console.Error.WriteLineAsync($"ERROR: {errorMsg}");
                     return false;
                 }
 
@@ -746,7 +746,7 @@ namespace mcp_nexus.Services
                 if (!await BuildProjectForDeploymentAsync(logger))
                 {
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Failed to build project for update");
-                    Console.Error.WriteLine("❌ Failed to build project for update");
+                    await Console.Error.WriteLineAsync("❌ Failed to build project for update");
                     return false;
                 }
 
@@ -789,7 +789,7 @@ namespace mcp_nexus.Services
                         {
                             var dirName = Path.GetFileName(sourceDir);
                             var targetDir = Path.Combine(backupFolder, dirName);
-                            await CopyDirectoryAsync(sourceDir, targetDir, logger);
+                            await CopyDirectoryAsync(sourceDir, targetDir);
                         }
 
                         OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Backup created successfully");
@@ -819,9 +819,9 @@ namespace mcp_nexus.Services
                 else
                 {
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Failed to start service after update");
-                    Console.Error.WriteLine("❌ Failed to start service after update");
-                    Console.Error.WriteLine($"You can manually start it with: sc start \"{ServiceName}\"");
-                    Console.Error.WriteLine($"Or restore from backup: {backupFolder}");
+                    await Console.Error.WriteLineAsync("❌ Failed to start service after update");
+                    await Console.Error.WriteLineAsync($"You can manually start it with: sc start \"{ServiceName}\"");
+                    await Console.Error.WriteLineAsync($"Or restore from backup: {backupFolder}");
                     return false;
                 }
 
@@ -839,7 +839,7 @@ namespace mcp_nexus.Services
             catch (Exception ex)
             {
                 OperationLogger.LogError(logger, OperationLogger.Operations.Update, ex, "Service update failed");
-                Console.Error.WriteLine($"❌ Service update failed: {ex.Message}");
+                await Console.Error.WriteLineAsync($"❌ Service update failed: {ex.Message}");
                 return false;
             }
         }
