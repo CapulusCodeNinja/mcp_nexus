@@ -8,11 +8,7 @@ namespace mcp_nexus.Services
         {
             return new[]
             {
-                // ⚠️ PUT DEPRECATED COMMANDS FIRST SO AI SEES THE SCARY WARNINGS! ⚠️
-                CreateRunWindbgCmdDeprecatedTool(),
-                CreateRunWindbgCmdSyncDeprecatedTool(),
-                
-                // ✅ PRIMARY WORKING COMMANDS
+                // ✅ WORKING COMMANDS ONLY - DEPRECATED COMMANDS HIDDEN FROM AI!
                 CreateRunWindbgCmdAsyncTool(),
                 CreateOpenWindbgDumpTool(),
                 CreateOpenWindbgRemoteTool(),
