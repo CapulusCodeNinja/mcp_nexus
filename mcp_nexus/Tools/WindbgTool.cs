@@ -1,4 +1,5 @@
 ﻿using mcp_nexus.Helper;
+using mcp_nexus.Services;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Text;
 namespace mcp_nexus.Tools
 {
     [McpServerToolType]
-    public class WindbgTool(ILogger<WindbgTool> logger, CdbSession cdbSession)
+    public class WindbgTool(ILogger<WindbgTool> logger, CdbSession cdbSession, BackgroundJobService backgroundJobService)
     {
         // Crash Dump Analysis Tools
 
@@ -198,41 +199,74 @@ namespace mcp_nexus.Tools
 
         // General Commands
 
-        [McpServerTool, Description("Execute a specific WinDBG command on either a loaded crash dump or active remote session")]
-        public async Task<string> RunWindbgCmd(string command)
+
+        [McpServerTool, Description("Execute any WinDBG command with smart timeout handling. HYBRID BEHAVIOR: Quick commands (<5s) return results immediately. Long commands (>5s) return job ID for polling. NO TIMEOUTS EVER. For job polling: call get_job_status(jobId) every 10-15 seconds until status='completed', then extract 'result' field. Works for ALL commands: version, lsa, !analyze -v, !process, etc.")]
+        public async Task<string> RunWindbgCmdAsync(string command)
         {
-            logger.LogInformation("RunWindbgCmd called with command: {Command}", command);
+            logger.LogInformation("RunWindbgCmdAsync called with command: {Command} [ASYNCHRONOUS MODE]", command);
 
             try
             {
                 // Validate command
                 if (string.IsNullOrWhiteSpace(command))
                 {
-                    logger.LogError("Command is null or empty");
+                    logger.LogError("Command is null or empty in async method");
                     return "Command cannot be null or empty";
                 }
 
-                logger.LogDebug("Checking if CDB session is active...");
+                logger.LogDebug("Checking if CDB session is active for async command...");
                 logger.LogInformation("CdbSession.IsActive: {IsActive}", cdbSession.IsActive);
 
                 if (!cdbSession.IsActive)
                 {
-                    logger.LogWarning("No active debugging session - cannot execute command");
+                    logger.LogWarning("No active debugging session for async command - cannot execute");
                     return "No active debugging session. Please open a crash dump or connect to a remote session first.";
                 }
 
-                logger.LogInformation("Executing WinDBG command: {Command}", command);
-                var result = await cdbSession.ExecuteCommand(command);
+                // Start async execution with hybrid approach
+                var jobId = backgroundJobService.StartJob(command, async (cancellationToken) =>
+                {
+                    logger.LogInformation("Executing WinDBG command asynchronously: {Command}", command);
+                    return await cdbSession.ExecuteCommand(command, cancellationToken);
+                });
 
-                logger.LogInformation("Command execution completed, result length: {Length} characters", result.Length);
-                logger.LogDebug("Command result: {Result}", result);
+                logger.LogInformation("Started async job {JobId} for command: {Command}", jobId, command);
 
-                return result;
+                // Hybrid approach: Wait briefly for quick completion
+                await Task.Delay(5000); // Wait 5 seconds
+
+                var job = backgroundJobService.GetJob(jobId);
+                if (job is { Status: JobStatus.Completed, Result: not null })
+                {
+                    logger.LogInformation("Job {JobId} completed quickly, returning result directly", jobId);
+                    return $@"{{
+  ""status"": ""completed"",
+  ""result"": ""{job.Result.Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "")}"",
+  ""message"": ""✅ COMPLETED: Command finished quickly, results ready!"",
+  ""executionTime"": ""{(job.EndTime - job.StartTime)?.TotalSeconds:F1} seconds"",
+  ""ai_guidance"": ""SUCCESS: The 'result' field above contains the complete command output. No further polling needed!""
+}}";
+                }
+
+                // Still running, return job ID for polling
+                return $@"{{
+  ""jobId"": ""{jobId}"",
+  ""status"": ""running"",
+  ""message"": ""⏳ RUNNING: Command needs more time, polling required"",
+  ""ai_guidance"": ""CRITICAL: This response contains NO RESULTS. You MUST call get_job_status(jobId='{jobId}') to get the actual command output!"",
+  ""next_action"": {{
+    ""required_call"": ""get_job_status"",
+    ""parameters"": {{""jobId"": ""{jobId}""}},
+    ""when"": ""Poll every 10-15 seconds until status='completed'"",
+    ""then"": ""Extract 'result' field from completed job for the actual WinDBG output""
+  }},
+  ""warning"": ""The command is running in background. Results are NOT in this response!""
+}}";
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error executing WinDBG command: {Command}", command);
-                return $"Error executing command: {ex.Message}";
+                logger.LogError(ex, "Error executing async WinDBG command: {Command}", command);
+                return $"Error executing async command: {ex.Message}";
             }
         }
 
@@ -263,7 +297,7 @@ namespace mcp_nexus.Tools
                     .OrderByDescending(f => f.LastWriteTime)
                     .Select(f => new
                     {
-                        Name = f.Name,
+                        f.Name,
                         Path = f.FullName,
                         Size = f.Length,
                         LastModified = f.LastWriteTime
@@ -557,6 +591,116 @@ namespace mcp_nexus.Tools
             {
                 logger.LogError(ex, "Error analyzing crash patterns");
                 return $"Error analyzing crash patterns: {ex.Message}";
+            }
+        }
+
+        // Async Job Management Tools
+
+        [McpServerTool, Description("Check status of async job from run_windbg_cmd. Returns JSON with status: 'running' (keep polling every 10-15s), 'completed' (extract 'result' field for command output), 'failed' (check 'error' field), or 'cancelled'. CRITICAL: You must call this to get actual results from long-running commands!")]
+        public Task<string> GetJobStatus(string jobId)
+        {
+            logger.LogInformation("GetJobStatus called with jobId: {JobId}", jobId);
+
+            try
+            {
+                var job = backgroundJobService.GetJob(jobId);
+                if (job == null)
+                {
+                    return Task.FromResult($"{{\"error\": \"Job not found: {jobId}\"}}");
+                }
+
+                var elapsed = job.EndTime?.Subtract(job.StartTime) ?? DateTime.UtcNow.Subtract(job.StartTime);
+
+                // Add helpful instructions based on job status
+                var instructions = job.Status switch
+                {
+                    JobStatus.Running => $@"""instructions"": ""Job is still running. Check again in 10-30 seconds with get_job_status(jobId='{job.Id}'). Use cancel_job(jobId='{job.Id}') to stop if needed."",",
+                    JobStatus.Completed => $@"""instructions"": ""Job completed successfully! The 'result' field contains the full command output."",",
+                    JobStatus.Failed => $@"""instructions"": ""Job failed. Check the 'error' field for details. You may retry with a new async command."",",
+                    JobStatus.Cancelled => $@"""instructions"": ""Job was cancelled. You may start a new async command if needed."",",
+                    _ => ""
+                };
+
+                var statusJson = $@"{{
+  ""jobId"": ""{job.Id}"",
+  ""command"": ""{job.Command.Replace("\"", "\\\"")}"",
+  ""status"": ""{job.Status}"",
+  ""startTime"": ""{job.StartTime:yyyy-MM-ddTHH:mm:ss.fffZ}"",
+  ""endTime"": {(job.EndTime.HasValue ? $"\"{job.EndTime:yyyy-MM-ddTHH:mm:ss.fffZ}\"" : "null")},
+  ""elapsedSeconds"": {elapsed.TotalSeconds:F1},
+  {instructions}
+  ""result"": {(job.Result != null ? $"\"{job.Result.Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "")}\"" : "null")},
+  ""error"": {(job.Error != null ? $"\"{job.Error.Replace("\"", "\\\"")}\"" : "null")}
+}}";
+
+                return Task.FromResult(statusJson);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error getting job status: {JobId}", jobId);
+                return Task.FromResult($"{{\"error\": \"Error getting job status: {ex.Message}\"}}");
+            }
+        }
+
+        [McpServerTool, Description("Cancel a running async job. Useful for stopping long-running commands that are taking too long.")]
+        public Task<string> CancelJob(string jobId)
+        {
+            logger.LogInformation("CancelJob called with jobId: {JobId}", jobId);
+
+            try
+            {
+                var job = backgroundJobService.GetJob(jobId);
+                if (job == null)
+                {
+                    return Task.FromResult($"{{\"error\": \"Job not found: {jobId}\"}}");
+                }
+
+                if (job.Status != JobStatus.Running)
+                {
+                    return Task.FromResult($"{{\"error\": \"Job is not running: {jobId} (status: {job.Status})\"}}");
+                }
+
+                backgroundJobService.CancelJob(jobId);
+                return Task.FromResult($"{{\"success\": true, \"message\": \"Job {jobId} has been cancelled\"}}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error cancelling job: {JobId}", jobId);
+                return Task.FromResult($"{{\"error\": \"Error cancelling job: {ex.Message}\"}}");
+            }
+        }
+
+        [McpServerTool, Description("List recent async jobs and their status. Shows the last 20 jobs with their completion status and timing.")]
+        public Task<string> ListJobs()
+        {
+            logger.LogInformation("ListJobs called");
+
+            try
+            {
+                var jobs = backgroundJobService.GetAllJobs().OrderByDescending(j => j.StartTime).Take(20);
+                var jobsJson = string.Join(",\n  ", jobs.Select(job =>
+                {
+                    var elapsed = job.EndTime?.Subtract(job.StartTime) ?? DateTime.UtcNow.Subtract(job.StartTime);
+                    return $@"{{
+    ""jobId"": ""{job.Id}"",
+    ""command"": ""{job.Command.Replace("\"", "\\\"")}"",
+    ""status"": ""{job.Status}"",
+    ""startTime"": ""{job.StartTime:yyyy-MM-ddTHH:mm:ss.fffZ}"",
+    ""elapsedSeconds"": {elapsed.TotalSeconds:F1}
+  }}";
+                }));
+
+                return Task.FromResult($@"{{
+  ""jobs"": [
+  {jobsJson}
+  ],
+  ""instructions"": ""Use get_job_status(jobId) to get detailed status and results for any specific job. Jobs are automatically cleaned up after 1 hour.""
+}}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error listing jobs");
+                return Task.FromResult($"{{\"error\": \"Error listing jobs: {ex.Message}\"}}");
             }
         }
 

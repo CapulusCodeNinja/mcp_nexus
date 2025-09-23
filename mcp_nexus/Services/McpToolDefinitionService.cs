@@ -95,7 +95,7 @@ namespace mcp_nexus.Services
             return new McpToolSchema
             {
                 Name = "run_windbg_cmd",
-                Description = "Execute a specific WinDBG command on the loaded crash dump or active remote session",
+                Description = "Execute any WinDBG command with smart timeout handling. HYBRID BEHAVIOR: Quick commands (<5s) return results immediately in 'result' field. Long commands (>5s) return jobId for polling with get_job_status(jobId)",
                 InputSchema = new
                 {
                     type = "object",

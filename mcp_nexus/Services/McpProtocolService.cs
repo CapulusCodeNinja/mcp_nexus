@@ -90,13 +90,13 @@ namespace mcp_nexus.Services
             {
                 var requestId = requestIdProp.ToString();
                 m_logger.LogWarning("Received cancellation notification for request ID: {RequestId}", requestId);
-                
+
                 if (paramsElement.Value.TryGetProperty("reason", out var reasonProp))
                 {
                     var reason = reasonProp.GetString();
                     m_logger.LogWarning("Cancellation reason: {Reason}", reason);
                 }
-                
+
                 // Actually cancel any running CDB operations
                 try
                 {
@@ -112,7 +112,7 @@ namespace mcp_nexus.Services
             {
                 m_logger.LogWarning("Received cancellation notification without request ID");
             }
-            
+
             // Return empty success response for notifications
             return new { };
         }

@@ -104,7 +104,7 @@ Windows debugging capabilities through WinDBG/CDB integration:
 
 - **Crash Dump Analysis**: `open_windbg_dump`, `close_windbg_dump`
 - **Remote Debugging**: `open_windbg_remote`, `close_windbg_remote`  
-- **Command Execution**: `run_windbg_cmd`
+- **Command Execution**: `run_windbg_cmd_async` (smart hybrid: immediate results for quick commands, job polling for long commands)
 - **File Management**: `list_windbg_dumps`
 - **Advanced Analysis**: `get_session_info`, `analyze_call_stack`, `analyze_memory`, `analyze_crash_patterns`
 

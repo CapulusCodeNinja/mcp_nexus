@@ -247,7 +247,7 @@ namespace mcp_nexus.Services
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.ForceUninstall, "This will remove all service registrations and registry entries");
 
                 // Use the force cleanup method
-                var unused = await ForceCleanupServiceAsync(logger);
+                _ = await ForceCleanupServiceAsync(logger);
 
                 // Remove installation directory regardless
                 if (Directory.Exists(InstallFolder))
@@ -316,7 +316,7 @@ namespace mcp_nexus.Services
 
                 await process.WaitForExitAsync();
 
-                var unused = await process.StandardOutput.ReadToEndAsync();
+                _ = await process.StandardOutput.ReadToEndAsync();
                 var error = await process.StandardError.ReadToEndAsync();
 
                 if (process.ExitCode != 0)
@@ -641,7 +641,7 @@ namespace mcp_nexus.Services
 
                 await process.WaitForExitAsync();
 
-                var unused = await process.StandardOutput.ReadToEndAsync();
+                _ = await process.StandardOutput.ReadToEndAsync();
                 var error = await process.StandardError.ReadToEndAsync();
 
                 if (process.ExitCode != 0)

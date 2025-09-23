@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
-using Microsoft.Extensions.Logging;
 
 namespace mcp_nexus.Helper
 {
@@ -31,29 +30,30 @@ namespace mcp_nexus.Helper
 
         public void CancelCurrentOperation()
         {
-            lock (m_CancellationLock)
+            // FIX: Maintain consistent lock ordering - acquire m_SessionLock first, then m_CancellationLock
+            lock (m_SessionLock)
             {
-                logger.LogWarning("Cancelling current CDB operation due to client request");
-                m_CurrentOperationCts?.Cancel();
+                lock (m_CancellationLock)
+                {
+                    logger.LogWarning("Cancelling current CDB operation due to client request");
+                    m_CurrentOperationCts?.Cancel();
+                }
                 
                 // If we have an active process, try to kill it
-                lock (m_SessionLock)
+                if (m_DebuggerProcess is { HasExited: false })
                 {
-                    if (m_DebuggerProcess is { HasExited: false })
+                    try
                     {
-                        try
-                        {
-                            logger.LogWarning("Force-killing CDB process PID: {ProcessId}", m_DebuggerProcess.Id);
-                            
-                            // Capture any available output before killing
-                            CaptureAvailableOutput("Force cancellation requested by client");
-                            
-                            m_DebuggerProcess.Kill(entireProcessTree: true);
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogError(ex, "Failed to kill CDB process");
-                        }
+                        logger.LogWarning("Force-killing CDB process PID: {ProcessId}", m_DebuggerProcess.Id);
+                        
+                        // Capture any available output before killing
+                        CaptureAvailableOutput("Force cancellation requested by client");
+                        
+                        m_DebuggerProcess.Kill(entireProcessTree: true);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Failed to kill CDB process");
                     }
                 }
             }
@@ -134,12 +134,14 @@ namespace mcp_nexus.Helper
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                         UseShellExecute = false,
-                        CreateNoWindow = true
+                        CreateNoWindow = true,
+                        EnvironmentVariables =
+                        {
+                            // Set timeout controls from configuration
+                            ["DBGHELP_SYMSRV_TIMEOUT"] = symbolServerTimeoutMs.ToString(),
+                            ["DBGHELP_SYMSRV_MAX_RETRIES"] = symbolServerMaxRetries.ToString()
+                        }
                     };
-                    
-                    // Set timeout controls from configuration
-                    startInfo.EnvironmentVariables["DBGHELP_SYMSRV_TIMEOUT"] = symbolServerTimeoutMs.ToString();
-                    startInfo.EnvironmentVariables["DBGHELP_SYMSRV_MAX_RETRIES"] = symbolServerMaxRetries.ToString();
 
                     // Override symbol search path if configured (otherwise preserve existing _NT_SYMBOL_PATH)
                     string actualSymbolPath;
@@ -163,7 +165,6 @@ namespace mcp_nexus.Helper
                     m_DebuggerProcess = new Process { StartInfo = startInfo };
 
                     logger.LogInformation("Starting CDB process...");
-                    var processStartTime = DateTime.Now;
                     var processStarted = m_DebuggerProcess.Start();
                     logger.LogInformation("CDB process start result: {Started}, PID: {ProcessId}", processStarted, m_DebuggerProcess.Id);
 
@@ -204,16 +205,27 @@ namespace mcp_nexus.Helper
 
         public Task<string> ExecuteCommand(string command)
         {
+            return ExecuteCommand(command, CancellationToken.None);
+        }
+
+        public Task<string> ExecuteCommand(string command, CancellationToken externalCancellationToken)
+        {
             logger.LogDebug("ExecuteCommand called with command: {Command}", command);
 
             try
             {
-                // Create cancellation token for this operation
+                // Create cancellation token for this operation - combine external token with timeout
+                // FIX: Ensure consistent lock ordering - always acquire m_SessionLock first, then m_CancellationLock
                 CancellationTokenSource operationCts;
-                lock (m_CancellationLock)
+                lock (m_SessionLock)
                 {
-                    operationCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(commandTimeoutMs));
-                    m_CurrentOperationCts = operationCts;
+                    lock (m_CancellationLock)
+                    {
+                        operationCts = CancellationTokenSource.CreateLinkedTokenSource(
+                            externalCancellationToken,
+                            new CancellationTokenSource(TimeSpan.FromMilliseconds(commandTimeoutMs)).Token);
+                        m_CurrentOperationCts = operationCts;
+                    }
                 }
 
                 return Task.Run(() =>
@@ -276,11 +288,15 @@ namespace mcp_nexus.Helper
                     }
                     finally
                     {
-                        lock (m_CancellationLock)
+                        // FIX: Maintain lock ordering - acquire m_SessionLock first, then m_CancellationLock
+                        lock (m_SessionLock)
                         {
-                            if (m_CurrentOperationCts == operationCts)
+                            lock (m_CancellationLock)
                             {
-                                m_CurrentOperationCts = null;
+                                if (m_CurrentOperationCts == operationCts)
+                                {
+                                    m_CurrentOperationCts = null;
+                                }
                             }
                         }
                         operationCts.Dispose();
@@ -433,105 +449,6 @@ namespace mcp_nexus.Helper
             return result;
         }
 
-        private bool WaitForCdbInitialization(DateTime processStartTime)
-        {
-            // Allow extra time for symbol downloads during initialization
-            var maxInitTimeMs = Math.Max(commandTimeoutMs, 180000); // At least 3 minutes for symbol downloads
-            const int checkIntervalMs = 500;  // Check every 500ms
-            
-            var lastLogTime = DateTime.Now;
-            var outputBuffer = new StringBuilder();
-            
-            while ((DateTime.Now - processStartTime).TotalMilliseconds < maxInitTimeMs)
-            {
-                // Check if process has exited (could be immediate crash)
-                if (m_DebuggerProcess?.HasExited == true)
-                {
-                    logger.LogError("CDB process exited during initialization. Exit code: {ExitCode}, Runtime: {Runtime}ms", 
-                        m_DebuggerProcess.ExitCode, (DateTime.Now - processStartTime).TotalMilliseconds);
-                    LogProcessDiagnostics("Process crashed during initialization");
-                    return false;
-                }
-                
-                // Check for available output and look for the command prompt
-                if (m_DebuggerOutput?.Peek() != -1)
-                {
-                    try
-                    {
-                        while (m_DebuggerOutput?.Peek() != -1)
-                        {
-                            var line = m_DebuggerOutput?.ReadLine();
-                            if (line != null)
-                            {
-                                outputBuffer.AppendLine(line);
-                                
-                                // Look for CDB command prompt patterns
-                                if (line.Contains(":") && line.Contains(">") && 
-                                    (line.EndsWith("> ") || line.EndsWith(">") || line.Trim().EndsWith(">")))
-                                {
-                                    var elapsed = (DateTime.Now - processStartTime).TotalMilliseconds;
-                                    logger.LogInformation("CDB initialization completed successfully. Ready for commands after {Elapsed}ms", elapsed);
-                                    logger.LogDebug("CDB prompt detected: '{Prompt}'", line.Trim());
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(ex, "Error reading CDB output during initialization");
-                    }
-                }
-                
-                // Log progress every 30 seconds during symbol downloads (reduce noise)
-                if ((DateTime.Now - lastLogTime).TotalMilliseconds > 30000)
-                {
-                    var elapsed = (DateTime.Now - processStartTime).TotalMilliseconds;
-                    logger.LogDebug("CDB still initializing (likely downloading symbols)... Elapsed: {Elapsed}ms, PID: {ProcessId}", 
-                        elapsed, m_DebuggerProcess?.Id);
-                    
-                    if (elapsed > 120000) // After 2 minutes, show detailed diagnostics but less frequently
-                    {
-                        logger.LogDebug("CDB initialization taking longer than expected: {Elapsed}ms", elapsed);
-                        // Only show full diagnostics every 2 minutes and at debug level
-                        if (elapsed % 120000 < 30000) // Show diagnostics only once per 2-minute window
-                        {
-                            LogProcessDiagnostics($"Symbol download in progress ({elapsed:F0}ms)");
-                        }
-                    }
-                    lastLogTime = DateTime.Now;
-                }
-                
-                Thread.Sleep(checkIntervalMs);
-            }
-            
-            // Timeout reached
-            var totalElapsed = (DateTime.Now - processStartTime).TotalMilliseconds;
-            logger.LogError("CDB process initialization timed out after {TimeoutMs}ms", totalElapsed);
-            LogProcessDiagnostics("Process hanging during initialization - terminating");
-            
-            // Capture any available output before killing the process
-            if (m_DebuggerProcess != null && !m_DebuggerProcess.HasExited)
-            {
-                try
-                {
-                    logger.LogWarning("Force-killing hanging CDB process PID: {ProcessId}", m_DebuggerProcess.Id);
-                    
-                    // Try to capture any available output/error streams before killing
-                    CaptureAvailableOutput("Before termination");
-                    
-                    m_DebuggerProcess.Kill(entireProcessTree: true);
-                    logger.LogInformation("Successfully terminated hanging CDB process");
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to kill hanging CDB process");
-                }
-            }
-            
-            return false;
-        }
-        
         private void CaptureAvailableOutput(string context)
         {
             try
@@ -668,7 +585,7 @@ namespace mcp_nexus.Helper
                     catch (Exception ex)
                     {
                         logger.LogDebug(ex, "Could not retrieve command line for process {ProcessId}", process.Id);
-                        logger.Log(logLevel, $"  Command Line: Unable to retrieve");
+                        logger.Log(logLevel, "  Command Line: Unable to retrieve");
                     }
                 }
                 else
