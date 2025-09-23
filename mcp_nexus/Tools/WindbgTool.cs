@@ -200,10 +200,10 @@ namespace mcp_nexus.Tools
         // General Commands
 
 
-        [McpServerTool, Description("Execute any WinDBG command in a sequential queue. ALL commands are queued and executed one after another. Returns command ID immediately, then poll get_command_status(commandId) to get results. NO TIMEOUTS EVER. Works for ALL commands: version, lsa, !analyze -v, !process, etc.")]
+        [McpServerTool, Description("🔄 ASYNC QUEUE: Execute WinDBG command in background queue. ⚠️ NEVER returns command results directly! Always returns commandId. You MUST call get_command_status(commandId) to get results. NO EXCEPTIONS! Works for ALL commands: version, lsa, !analyze -v, !process, etc.")]
         public Task<string> RunWindbgCmdAsync(string command)
         {
-            logger.LogInformation("RunWindbgCmdAsync called with command: {Command} [QUEUE MODE]", command);
+            logger.LogInformation("RunWindbgCmdAsync called with command: {Command} [PURE ASYNC QUEUE MODE]", command);
 
             try
             {
@@ -228,20 +228,37 @@ namespace mcp_nexus.Tools
                 
                 logger.LogInformation("Queued command {CommandId}: {Command}", commandId, command);
                 
-                // Return command ID immediately - client must poll for results
+                // PURE ASYNC: Always return command ID immediately, never wait
                 var response = $@"{{
+  ""⚠️ IMPORTANT"": ""THIS RESPONSE CONTAINS NO COMMAND RESULTS!"",
   ""commandId"": ""{commandId}"",
   ""status"": ""queued"",
   ""message"": ""✅ QUEUED: Command added to execution queue"",
   ""command"": ""{command.Replace("\"", "\\\"")}"",
-  ""ai_guidance"": ""IMPORTANT: Command is queued for execution. You MUST call get_command_status(commandId='{commandId}') to get the actual results!"",
-  ""next_action"": {{
-    ""required_call"": ""get_command_status"",
-    ""parameters"": {{""commandId"": ""{commandId}""}},
-    ""when"": ""Poll every 5-10 seconds until status='completed'"",
-    ""then"": ""Extract 'result' field from completed command for the actual WinDBG output""
+  
+  ""🚨 CRITICAL_INSTRUCTIONS"": {{
+    ""step_1"": ""The command '{command}' is now queued for execution"",
+    ""step_2"": ""You MUST call get_command_status(commandId='{commandId}') to get results"",
+    ""step_3"": ""Keep calling get_command_status every 5-10 seconds until status='completed'"",
+    ""step_4"": ""Extract 'result' field from completed response for actual WinDBG output"",
+    ""no_exceptions"": ""NEVER expect results in this response - they don't exist here!""
   }},
-  ""warning"": ""The command will execute in order. Results are NOT in this response!""
+
+  ""next_required_call"": {{
+    ""function"": ""get_command_status"",
+    ""parameters"": {{""commandId"": ""{commandId}""}},
+    ""when"": ""Call immediately, then every 5-10 seconds"",
+    ""until"": ""status field equals 'completed'""
+  }},
+
+  ""example_workflow"": [
+    ""1. You just called run_windbg_cmd_async → Got this commandId"",
+    ""2. Now call get_command_status('{commandId}') → Check if done"",
+    ""3. If status='queued' or 'executing' → Wait 5-10s, call again"",
+    ""4. If status='completed' → Extract 'result' field = your answer!""
+  ],
+
+  ""🔴 WARNING"": ""Command results are NOT in this JSON! Use get_command_status!""
 }}";
                 
                 return Task.FromResult(response);

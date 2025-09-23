@@ -8,13 +8,16 @@ namespace mcp_nexus.Services
         {
             return new[]
             {
+                // ⚠️ PUT DEPRECATED COMMANDS FIRST SO AI SEES THE SCARY WARNINGS! ⚠️
+                CreateRunWindbgCmdDeprecatedTool(),
+                CreateRunWindbgCmdSyncDeprecatedTool(),
+                
+                // ✅ PRIMARY WORKING COMMANDS
+                CreateRunWindbgCmdAsyncTool(),
                 CreateOpenWindbgDumpTool(),
                 CreateOpenWindbgRemoteTool(),
                 CreateCloseWindbgDumpTool(),
                 CreateCloseWindbgRemoteTool(),
-                CreateRunWindbgCmdTool(),
-                CreateRunWindbgCmdAsyncDeprecatedTool(),
-                CreateRunWindbgCmdSyncDeprecatedTool(),
                 CreateListWindbgDumpsTool(),
                 CreateGetSessionInfoTool(),
                 CreateAnalyzeCallStackTool(),
@@ -95,12 +98,12 @@ namespace mcp_nexus.Services
             };
         }
 
-        private static McpToolSchema CreateRunWindbgCmdTool()
+        private static McpToolSchema CreateRunWindbgCmdAsyncTool()
         {
             return new McpToolSchema
             {
-                Name = "run_windbg_cmd",
-                Description = "Execute any WinDBG command with smart timeout handling. HYBRID BEHAVIOR: Quick commands (<5s) return results immediately in 'result' field. Long commands (>5s) return jobId for polling with get_job_status(jobId)",
+                Name = "run_windbg_cmd_async",
+                Description = "🔄 ASYNC QUEUE: Execute WinDBG command in background queue. ⚠️ NEVER returns results directly! Always returns commandId for polling. You MUST call get_command_status(commandId) to get actual results. NO EXCEPTIONS!",
                 InputSchema = new
                 {
                     type = "object",
@@ -196,7 +199,7 @@ namespace mcp_nexus.Services
             return new McpToolSchema
             {
                 Name = "get_command_status",
-                Description = "Check status of queued command from run_windbg_cmd_async. Returns JSON with status: 'queued', 'executing', 'completed' (extract 'result' field), or 'cancelled'. CRITICAL for getting command results!",
+                Description = "✅ REQUIRED: Get results from run_windbg_cmd_async. Call this repeatedly until status='completed', then extract 'result' field for actual WinDBG output. This is the ONLY way to get command results!",
                 InputSchema = new
                 {
                     type = "object",
@@ -242,12 +245,12 @@ namespace mcp_nexus.Services
             };
         }
 
-        private static McpToolSchema CreateRunWindbgCmdAsyncDeprecatedTool()
+        private static McpToolSchema CreateRunWindbgCmdDeprecatedTool()
         {
             return new McpToolSchema
             {
-                Name = "run_windbg_cmd_async",
-                Description = "DEPRECATED: Use 'run_windbg_cmd' instead. This tool will return a deprecation error.",
+                Name = "run_windbg_cmd",
+                Description = "🚨 REMOVED! This command has been PERMANENTLY REMOVED! Use 'run_windbg_cmd_async' instead. Will return aggressive error message until you switch!",
                 InputSchema = new
                 {
                     type = "object",
@@ -265,7 +268,7 @@ namespace mcp_nexus.Services
             return new McpToolSchema
             {
                 Name = "run_windbg_cmd_sync",
-                Description = "DEPRECATED: Use 'run_windbg_cmd' instead. This tool will return a deprecation error.",
+                Description = "🚨 REMOVED! This command has been PERMANENTLY REMOVED! Use 'run_windbg_cmd_async' instead. Will return aggressive error message until you switch!",
                 InputSchema = new
                 {
                     type = "object",

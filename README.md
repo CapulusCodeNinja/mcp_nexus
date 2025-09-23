@@ -104,9 +104,27 @@ Windows debugging capabilities through WinDBG/CDB integration:
 
 - **Crash Dump Analysis**: `open_windbg_dump`, `close_windbg_dump`
 - **Remote Debugging**: `open_windbg_remote`, `close_windbg_remote`  
-- **Command Execution**: `run_windbg_cmd_async` (smart hybrid: immediate results for quick commands, job polling for long commands)
+- **Command Execution**: `run_windbg_cmd_async` (🔄 ASYNC QUEUE: Always returns commandId, use `get_command_status` for results)
+- **Queue Management**: `get_command_status`, `cancel_command`, `list_commands`  
 - **File Management**: `list_windbg_dumps`
 - **Advanced Analysis**: `get_session_info`, `analyze_call_stack`, `analyze_memory`, `analyze_crash_patterns`
+
+#### 🔄 Async Command Execution Workflow
+
+**IMPORTANT**: All WinDBG commands use an async queue system:
+
+```bash
+1. Call run_windbg_cmd_async {"command": "!analyze -v"}
+   → Returns: {"commandId": "abc-123", "status": "queued", ...}
+
+2. Poll get_command_status {"commandId": "abc-123"}  
+   → Returns: {"status": "executing", ...} (keep polling)
+   → Returns: {"status": "completed", "result": "ACTUAL_OUTPUT"}
+
+3. Extract the "result" field for your WinDBG command output
+```
+
+**⚠️ CRITICAL**: `run_windbg_cmd_async` NEVER returns command results directly. You MUST use `get_command_status` to get results!
 
 ### Utility Tools (1 tool)
 - **Time Services**: `get_current_time` - Get current time for any city

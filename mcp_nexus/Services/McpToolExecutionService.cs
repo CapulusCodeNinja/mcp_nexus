@@ -21,8 +21,8 @@ namespace mcp_nexus.Services
                     "open_windbg_remote" => await ExecuteOpenWindbgRemote(arguments),
                     "close_windbg_dump" => await ExecuteCloseWindbgDump(),
                     "close_windbg_remote" => await ExecuteCloseWindbgRemote(),
-                    "run_windbg_cmd" => await ExecuteRunWindbgCmd(arguments),
-                    "run_windbg_cmd_async" => ExecuteRunWindbgCmdAsyncDeprecated(arguments),
+                    "run_windbg_cmd_async" => await ExecuteRunWindbgCmdAsync(arguments),
+                    "run_windbg_cmd" => ExecuteRunWindbgCmdDeprecated(arguments),
                     "run_windbg_cmd_sync" => ExecuteRunWindbgCmdSyncDeprecated(arguments),
                     "list_windbg_dumps" => await ExecuteListWindbgDumps(arguments),
                     "get_session_info" => await ExecuteGetSessionInfo(),
@@ -79,7 +79,7 @@ namespace mcp_nexus.Services
             return CreateTextResult(result);
         }
 
-        private async Task<object> ExecuteRunWindbgCmd(JsonElement arguments)
+        private async Task<object> ExecuteRunWindbgCmdAsync(JsonElement arguments)
         {
             var command = GetRequiredStringArgument(arguments, "command");
             if (command == null)
@@ -89,16 +89,61 @@ namespace mcp_nexus.Services
             return CreateTextResult(result);
         }
 
-        private Task<object> ExecuteRunWindbgCmdAsyncDeprecated(JsonElement arguments)
+        private Task<object> ExecuteRunWindbgCmdDeprecated(JsonElement arguments)
         {
-            // Return the specific deprecation error format requested by user
-            return Task.FromResult(CreateErrorResult(-32602, "Deprecated tool: run_windbg_cmd_async. Please use run_windbg_cmd instead"));
+            var command = GetRequiredStringArgument(arguments, "command");
+            
+            // Return an extremely aggressive deprecation message that's impossible to ignore
+            var aggressiveMessage = $@"🚨🚨🚨 COMMAND REMOVED! 🚨🚨🚨
+
+❌ 'run_windbg_cmd' HAS BEEN PERMANENTLY REMOVED!
+
+🔄 YOU MUST USE: run_windbg_cmd_async
+
+Your command: '{command}'
+
+✅ CORRECT USAGE:
+{{""name"": ""run_windbg_cmd_async"", ""arguments"": {{""command"": ""{command}""}}}}
+
+⚠️ AFTER calling run_windbg_cmd_async:
+1. You get a commandId (NOT the result!)
+2. Call get_command_status with that commandId
+3. Keep polling until status='completed'
+4. Extract 'result' field for actual output
+
+🚨 THIS ERROR WILL NEVER GO AWAY UNTIL YOU SWITCH! 🚨
+
+MIGRATION REQUIRED: run_windbg_cmd → run_windbg_cmd_async";
+
+            return Task.FromResult(CreateTextResult(aggressiveMessage));
         }
 
         private Task<object> ExecuteRunWindbgCmdSyncDeprecated(JsonElement arguments)
         {
-            // Return the specific deprecation error format requested by user  
-            return Task.FromResult(CreateErrorResult(-32602, "Deprecated tool: run_windbg_cmd_sync. Please use run_windbg_cmd instead"));
+            var command = GetRequiredStringArgument(arguments, "command");
+            
+            var aggressiveMessage = $@"🚨🚨🚨 COMMAND REMOVED! 🚨🚨🚨
+
+❌ 'run_windbg_cmd_sync' HAS BEEN PERMANENTLY REMOVED!
+
+🔄 YOU MUST USE: run_windbg_cmd_async
+
+Your command: '{command}'
+
+✅ CORRECT USAGE:
+{{""name"": ""run_windbg_cmd_async"", ""arguments"": {{""command"": ""{command}""}}}}
+
+⚠️ AFTER calling run_windbg_cmd_async:
+1. You get a commandId (NOT the result!)
+2. Call get_command_status with that commandId
+3. Keep polling until status='completed'
+4. Extract 'result' field for actual output
+
+🚨 THIS ERROR WILL NEVER GO AWAY UNTIL YOU SWITCH! 🚨
+
+MIGRATION REQUIRED: run_windbg_cmd_sync → run_windbg_cmd_async";
+
+            return Task.FromResult(CreateTextResult(aggressiveMessage));
         }
 
         private async Task<object> ExecuteListWindbgDumps(JsonElement arguments)
