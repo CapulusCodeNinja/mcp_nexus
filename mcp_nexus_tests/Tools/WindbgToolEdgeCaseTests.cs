@@ -24,8 +24,17 @@ namespace mcp_nexus_tests.Tools
 			m_tool = new WindbgTool(m_mockLogger.Object, m_mockCdbSession.Object, m_mockCommandQueueService.Object);
 		}
 
+		[Fact]
+		public async Task OpenWindbgDump_WithNullDumpPath_ReturnsErrorMessage()
+		{
+			// Act
+			var result = await m_tool.OpenWindbgDump(null!);
+
+			// Assert
+			Assert.Contains("cannot be null or empty", result, StringComparison.OrdinalIgnoreCase);
+		}
+
 		[Theory]
-		[InlineData(null)]
 		[InlineData("")]
 		[InlineData("   ")]
 		public async Task OpenWindbgDump_WithInvalidDumpPath_ReturnsErrorMessage(string invalidPath)
@@ -50,8 +59,17 @@ namespace mcp_nexus_tests.Tools
 			Assert.Contains("not found", result, StringComparison.OrdinalIgnoreCase);
 		}
 
+		[Fact]
+		public async Task OpenWindbgRemote_WithNullConnectionString_ReturnsErrorMessage()
+		{
+			// Act
+			var result = await m_tool.OpenWindbgRemote(null!);
+
+			// Assert
+			Assert.Contains("cannot be null or empty", result, StringComparison.OrdinalIgnoreCase);
+		}
+
 		[Theory]
-		[InlineData(null)]
 		[InlineData("")]
 		[InlineData("   ")]
 		public async Task OpenWindbgRemote_WithInvalidConnectionString_ReturnsErrorMessage(string invalidConnectionString)
@@ -63,8 +81,17 @@ namespace mcp_nexus_tests.Tools
 			Assert.Contains("cannot be null or empty", result, StringComparison.OrdinalIgnoreCase);
 		}
 
+	[Fact]
+	public async Task RunWindbgCmdAsync_WithNullCommand_ReturnsErrorResponse()
+	{
+		// Act
+		var result = await m_tool.RunWindbgCmdAsync(null!);
+
+		// Assert
+		Assert.Contains("Command cannot be null or empty", result);
+	}
+
 	[Theory]
-	[InlineData(null)]
 	[InlineData("")]
 	[InlineData("   ")]
 	public async Task RunWindbgCmdAsync_WithInvalidCommand_ReturnsErrorResponse(string invalidCommand)

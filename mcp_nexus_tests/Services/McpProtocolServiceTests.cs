@@ -1,21 +1,13 @@
 using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Moq;
-using mcp_nexus.Helper;
-using mcp_nexus.Services;
-using mcp_nexus.Tools;
 using Xunit;
 
 namespace mcp_nexus_tests.Services
 {
 	public class McpProtocolServiceTests
 	{
-		private static ILogger<McpProtocolService> CreateNullLogger() => LoggerFactory.Create(b => { }).CreateLogger<McpProtocolService>();
-
-		// Test just the JSON parsing and error handling rather than full integration
+		// Test basic JSON parsing scenarios that the service handles
 		[Fact]
-		public void JsonElement_ParseValidJson_WorksCorrectly()
+		public void JsonElement_ParseValidMcpRequest_WorksCorrectly()
 		{
 			// Arrange
 			var jsonString = """{"jsonrpc":"2.0","id":1,"method":"initialize"}""";
@@ -38,19 +30,19 @@ namespace mcp_nexus_tests.Services
 			// Arrange
 			var invalidJson = """{"jsonrpc":"2.0","id":1,invalid}""";
 
-		// Act & Assert
-		// JsonDocument.Parse throws JsonReaderException for invalid JSON
-		bool exceptionThrown = false;
-		try
-		{
-			JsonDocument.Parse(invalidJson);
-		}
-		catch (Exception ex) when (ex.GetType().Name == "JsonReaderException")
-		{
-			exceptionThrown = true;
-			Assert.Contains("invalid start of a property name", ex.Message);
-		}
-		Assert.True(exceptionThrown, "Expected JsonReaderException to be thrown");
+			// Act & Assert
+			// JsonDocument.Parse throws JsonReaderException for invalid JSON
+			bool exceptionThrown = false;
+			try
+			{
+				JsonDocument.Parse(invalidJson);
+			}
+			catch (Exception ex) when (ex.GetType().Name == "JsonReaderException")
+			{
+				exceptionThrown = true;
+				Assert.Contains("invalid start of a property name", ex.Message);
+			}
+			Assert.True(exceptionThrown, "Expected JsonReaderException to be thrown");
 		}
 
 		[Fact]
@@ -99,7 +91,6 @@ namespace mcp_nexus_tests.Services
 			Assert.Equal("value1", param1Element.GetString());
 		}
 
-		// Additional JSON parsing edge case tests
 		[Fact]
 		public void JsonElement_ArrayProperties_ParseCorrectly()
 		{

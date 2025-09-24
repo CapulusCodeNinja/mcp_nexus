@@ -18,8 +18,14 @@ namespace mcp_nexus_tests.Helper
 			m_session = new CdbSession(m_mockLogger.Object, 30000, null, 30000, 1, null, 2000);
 		}
 
+		[Fact]
+		public async Task StartSession_WithNullTarget_ThrowsArgumentException()
+		{
+			// Act & Assert
+			await Assert.ThrowsAsync<ArgumentException>(() => m_session.StartSession(null!));
+		}
+
 		[Theory]
-		[InlineData(null)]
 		[InlineData("")]
 		[InlineData("   ")]
 		public async Task StartSession_WithInvalidTarget_ThrowsArgumentException(string invalidTarget)
@@ -28,8 +34,14 @@ namespace mcp_nexus_tests.Helper
 			await Assert.ThrowsAsync<ArgumentException>(() => m_session.StartSession(invalidTarget));
 		}
 
+		[Fact]
+		public async Task ExecuteCommand_WithNullCommand_ThrowsArgumentException()
+		{
+			// Act & Assert
+			await Assert.ThrowsAsync<ArgumentException>(() => m_session.ExecuteCommand(null!));
+		}
+
 		[Theory]
-		[InlineData(null)]
 		[InlineData("")]
 		[InlineData("   ")]
 		public async Task ExecuteCommand_WithInvalidCommand_ThrowsArgumentException(string invalidCommand)

@@ -70,7 +70,7 @@ namespace mcp_nexus_tests.Services
 			await Task.Delay(50); // Small delay to let command be processed
 			
 			var cancelTasks = Enumerable.Range(1, 3) // Reduced count
-				.Select(i => Task.Run(async () => 
+				.Select(i => Task.Run(() => 
 				{
 					try
 					{

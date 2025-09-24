@@ -21,13 +21,19 @@ namespace mcp_nexus_tests.Services
 			m_service = new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object);
 		}
 
-		public void Dispose()
+		private void Dispose()
 		{
 			m_service?.Dispose();
 		}
 
+		[Fact]
+		public void QueueCommand_WithNullCommand_ThrowsArgumentException()
+		{
+			// Act & Assert
+			Assert.Throws<ArgumentException>(() => m_service.QueueCommand(null!));
+		}
+
 		[Theory]
-		[InlineData(null)]
 		[InlineData("")]
 		[InlineData("   ")]
 		public void QueueCommand_WithInvalidCommand_ThrowsArgumentException(string invalidCommand)
@@ -91,8 +97,17 @@ namespace mcp_nexus_tests.Services
 			Assert.Contains("Command not found", result);
 		}
 
+		[Fact]
+		public async Task GetCommandResult_WithNullId_ReturnsNotFoundMessage()
+		{
+			// Act
+			var result = await m_service.GetCommandResult(null!);
+
+			// Assert
+			Assert.Contains("Command not found", result);
+		}
+
 		[Theory]
-		[InlineData(null)]
 		[InlineData("")]
 		[InlineData("   ")]
 		public async Task GetCommandResult_WithInvalidId_ReturnsNotFoundMessage(string invalidId)
@@ -117,8 +132,17 @@ namespace mcp_nexus_tests.Services
 			Assert.False(result);
 		}
 
+		[Fact]
+		public void CancelCommand_WithNullId_ReturnsFalse()
+		{
+			// Act
+			var result = m_service.CancelCommand(null!);
+
+			// Assert
+			Assert.False(result);
+		}
+
 		[Theory]
-		[InlineData(null)]
 		[InlineData("")]
 		[InlineData("   ")]
 		public void CancelCommand_WithInvalidId_ReturnsFalse(string invalidId)
@@ -280,7 +304,7 @@ namespace mcp_nexus_tests.Services
 		}
 
 		[Fact]
-		public void CancelCommand_ConcurrentCalls_HandlesGracefully()
+		public async Task CancelCommand_ConcurrentCalls_HandlesGracefully()
 		{
 			// Arrange
 			var commandId = m_service.QueueCommand("test command");
@@ -292,7 +316,7 @@ namespace mcp_nexus_tests.Services
 				tasks.Add(Task.Run(() => m_service.CancelCommand(commandId)));
 			}
 
-			Task.WaitAll(tasks.ToArray());
+			await Task.WhenAll(tasks);
 
 			// Assert
 			// At least one should succeed, others may return false (already cancelled)
