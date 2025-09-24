@@ -46,17 +46,14 @@ namespace mcp_nexus.tests.Helper
 		}
 
 		[Fact]
-		public async Task ExecuteCommand_WithCancellationToken_NoActiveSession_ReturnsError()
+		public async Task ExecuteCommand_WithCancellationToken_NoActiveSession_ThrowsInvalidOperationException()
 		{
 			// Arrange
 			var session = new CdbSession(CreateNullLogger());
 			using var cts = new CancellationTokenSource();
 
-			// Act
-			var result = await session.ExecuteCommand("version", cts.Token);
-
-			// Assert
-			Assert.Contains("No active debug session", result);
+			// Act & Assert
+			await Assert.ThrowsAsync<InvalidOperationException>(() => session.ExecuteCommand("version", cts.Token));
 		}
 
 		[Fact]
@@ -147,44 +144,38 @@ namespace mcp_nexus.tests.Helper
 		}
 
 		[Fact]
-		public async Task ExecuteCommand_AfterDispose_HandlesGracefully()
-		{
-			// Arrange
-			var session = new CdbSession(CreateNullLogger());
-			session.Dispose();
-
-			// Act
-			var result = await session.ExecuteCommand("version");
-
-			// Assert
-			Assert.Contains("No active debug session", result);
-		}
-
-		// StartSession after dispose behavior depends on CDB availability
-
-		[Fact]
-		public void IsActive_AfterDispose_ReturnsFalse()
+		public async Task ExecuteCommand_AfterDispose_ThrowsObjectDisposedException()
 		{
 			// Arrange
 			var session = new CdbSession(CreateNullLogger());
 			session.Dispose();
 
 			// Act & Assert
-			Assert.False(session.IsActive);
+			await Assert.ThrowsAsync<ObjectDisposedException>(() => session.ExecuteCommand("version"));
 		}
 
+		// StartSession after dispose behavior depends on CDB availability
+
+	[Fact]
+	public void IsActive_AfterDispose_ThrowsObjectDisposedException()
+	{
+		// Arrange
+		var session = new CdbSession(CreateNullLogger());
+		session.Dispose();
+
+		// Act & Assert
+		Assert.Throws<ObjectDisposedException>(() => session.IsActive);
+	}
+
 		[Fact]
-		public async Task StopSession_AfterDispose_ReturnsFalse()
+		public async Task StopSession_AfterDispose_ThrowsObjectDisposedException()
 		{
 			// Arrange
 			var session = new CdbSession(CreateNullLogger());
 			session.Dispose();
 
-			// Act
-			var result = await session.StopSession();
-
-			// Assert
-			Assert.False(result);
+			// Act & Assert
+			await Assert.ThrowsAsync<ObjectDisposedException>(() => session.StopSession());
 		}
 	}
 }

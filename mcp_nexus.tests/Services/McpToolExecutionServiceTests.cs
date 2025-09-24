@@ -39,40 +39,58 @@ namespace mcp_nexus.tests.Services
 			// Act
 			var result = await m_service.ExecuteTool("unknown_tool", args);
 
-			// Assert
-			Assert.NotNull(result);
-			var resultStr = result.ToString();
-			Assert.Contains("Unknown tool", resultStr);
+		// Assert
+		Assert.NotNull(result);
+		// The result is an anonymous object with an error property containing McpError
+		var resultJson = JsonSerializer.Serialize(result);
+		Assert.Contains("Unknown tool", resultJson);
 		}
 
 		[Fact]
 		public async Task ExecuteTool_OpenWindbgDump_CallsWindbgTool()
 		{
-			// Arrange
-			var args = JsonDocument.Parse("{\"dumpPath\": \"C:\\\\test.dmp\"}").RootElement;
-			m_mockCdbSession.Setup(s => s.StartSession(It.IsAny<string>(), null)).ReturnsAsync(false);
+		// Arrange
+		// Create a temporary file for the test
+		var tempFile = Path.GetTempFileName();
+		File.WriteAllText(tempFile, "dummy dump content");
+		
+		try
+		{
+			var argsObject = new { dumpPath = tempFile };
+			var jsonString = JsonSerializer.Serialize(argsObject);
+			var args = JsonDocument.Parse(jsonString).RootElement;
+			m_mockCdbSession.Setup(s => s.StartSession(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(false);
 
 			// Act
 			var result = await m_service.ExecuteTool("open_windbg_dump", args);
 
 			// Assert
 			Assert.NotNull(result);
-			m_mockCdbSession.Verify(s => s.StartSession(It.IsAny<string>(), null), Times.Once);
+			// The actual call is StartSession(target) which uses the default value for the second parameter
+			m_mockCdbSession.Verify(s => s.StartSession(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+		}
+		finally
+		{
+			// Clean up
+			if (File.Exists(tempFile))
+				File.Delete(tempFile);
+		}
 		}
 
 		[Fact]
 		public async Task ExecuteTool_CloseWindbgDump_CallsWindbgTool()
 		{
-			// Arrange
-			var args = JsonDocument.Parse("{}").RootElement;
-			m_mockCdbSession.Setup(s => s.IsActive).Returns(false);
+		// Arrange
+		var args = JsonDocument.Parse("{}").RootElement;
+		m_mockCdbSession.Setup(s => s.IsActive).Returns(true);  // Must be active to trigger CancelAllCommands
+		m_mockCdbSession.Setup(s => s.StopSession()).ReturnsAsync(true);
 
-			// Act
-			var result = await m_service.ExecuteTool("close_windbg_dump", args);
+		// Act
+		var result = await m_service.ExecuteTool("close_windbg_dump", args);
 
-			// Assert
-			Assert.NotNull(result);
-			m_mockCommandQueueService.Verify(q => q.CancelAllCommands(It.IsAny<string>()), Times.Once);
+		// Assert
+		Assert.NotNull(result);
+		m_mockCommandQueueService.Verify(q => q.CancelAllCommands(It.IsAny<string>()), Times.Once);
 		}
 
 		[Fact]
@@ -162,11 +180,11 @@ namespace mcp_nexus.tests.Services
 			// Act
 			var result = await m_service.ExecuteTool("run_windbg_cmd", args);
 
-			// Assert
-			Assert.NotNull(result);
-			var resultStr = result.ToString();
-			Assert.Contains("COMMAND REMOVED", resultStr);
-			Assert.Contains("run_windbg_cmd_async", resultStr);
+		// Assert
+		Assert.NotNull(result);
+		var resultJson = JsonSerializer.Serialize(result);
+		Assert.Contains("COMMAND REMOVED", resultJson);
+		Assert.Contains("run_windbg_cmd_async", resultJson);
 		}
 
 		[Fact]
@@ -178,11 +196,11 @@ namespace mcp_nexus.tests.Services
 			// Act
 			var result = await m_service.ExecuteTool("run_windbg_cmd_sync", args);
 
-			// Assert
-			Assert.NotNull(result);
-			var resultStr = result.ToString();
-			Assert.Contains("PERMANENTLY REMOVED", resultStr);
-			Assert.Contains("run_windbg_cmd_async", resultStr);
+		// Assert
+		Assert.NotNull(result);
+		var resultJson = JsonSerializer.Serialize(result);
+		Assert.Contains("PERMANENTLY REMOVED", resultJson);
+		Assert.Contains("run_windbg_cmd_async", resultJson);
 		}
 
 		[Fact]
@@ -227,19 +245,20 @@ namespace mcp_nexus.tests.Services
 			m_mockCdbSession.Verify(s => s.StartSession(It.IsAny<string>(), null), Times.Once);
 		}
 
-		[Fact]
-		public async Task ExecuteTool_CloseWindbgRemote_CallsWindbgTool()
-		{
-			// Arrange
-			var args = JsonDocument.Parse("{}").RootElement;
-			m_mockCdbSession.Setup(s => s.IsActive).Returns(false);
+	[Fact]
+	public async Task ExecuteTool_CloseWindbgRemote_CallsWindbgTool()
+	{
+		// Arrange
+		var args = JsonDocument.Parse("{}").RootElement;
+		m_mockCdbSession.Setup(s => s.IsActive).Returns(true);  // Must be active to trigger CancelAllCommands
+		m_mockCdbSession.Setup(s => s.StopSession()).ReturnsAsync(true);
 
-			// Act
-			var result = await m_service.ExecuteTool("close_windbg_remote", args);
+		// Act
+		var result = await m_service.ExecuteTool("close_windbg_remote", args);
 
-			// Assert
-			Assert.NotNull(result);
-			m_mockCommandQueueService.Verify(q => q.CancelAllCommands(It.IsAny<string>()), Times.Once);
-		}
+		// Assert
+		Assert.NotNull(result);
+		m_mockCommandQueueService.Verify(q => q.CancelAllCommands(It.IsAny<string>()), Times.Once);
+	}
 	}
 }

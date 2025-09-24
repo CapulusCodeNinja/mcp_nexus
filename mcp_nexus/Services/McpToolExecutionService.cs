@@ -24,6 +24,9 @@ namespace mcp_nexus.Services
                     "get_command_status" => await ExecuteGetCommandStatus(arguments),
                     "cancel_command" => await ExecuteCancelCommand(arguments),
                     "list_commands" => await ExecuteListCommands(),
+                    // Deprecated commands
+                    "run_windbg_cmd" => CreateErrorResult(-32602, "COMMAND REMOVED: run_windbg_cmd has been permanently removed. Use run_windbg_cmd_async instead for all commands."),
+                    "run_windbg_cmd_sync" => CreateErrorResult(-32602, "PERMANENTLY REMOVED: run_windbg_cmd_sync has been removed. Use run_windbg_cmd_async for all commands."),
                     _ => CreateErrorResult(-32602, $"Unknown tool: {toolName}")
                 };
             }

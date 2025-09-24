@@ -38,8 +38,19 @@ namespace mcp_nexus.tests.Services
 			// Arrange
 			var invalidJson = """{"jsonrpc":"2.0","id":1,invalid}""";
 
-			// Act & Assert
-			Assert.Throws<JsonException>(() => JsonDocument.Parse(invalidJson));
+		// Act & Assert
+		// JsonDocument.Parse throws JsonReaderException for invalid JSON
+		bool exceptionThrown = false;
+		try
+		{
+			JsonDocument.Parse(invalidJson);
+		}
+		catch (Exception ex) when (ex.GetType().Name == "JsonReaderException")
+		{
+			exceptionThrown = true;
+			Assert.Contains("invalid start of a property name", ex.Message);
+		}
+		Assert.True(exceptionThrown, "Expected JsonReaderException to be thrown");
 		}
 
 		[Fact]

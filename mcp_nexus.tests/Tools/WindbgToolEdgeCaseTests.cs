@@ -63,18 +63,18 @@ namespace mcp_nexus.tests.Tools
 			Assert.Contains("cannot be null or empty", result, StringComparison.OrdinalIgnoreCase);
 		}
 
-		[Theory]
-		[InlineData(null)]
-		[InlineData("")]
-		[InlineData("   ")]
-		public async Task RunWindbgCmdAsync_WithInvalidCommand_ReturnsErrorResponse(string invalidCommand)
-		{
-			// Act
-			var result = await m_tool.RunWindbgCmdAsync(invalidCommand);
+	[Theory]
+	[InlineData(null)]
+	[InlineData("")]
+	[InlineData("   ")]
+	public async Task RunWindbgCmdAsync_WithInvalidCommand_ReturnsErrorResponse(string invalidCommand)
+	{
+		// Act
+		var result = await m_tool.RunWindbgCmdAsync(invalidCommand);
 
-			// Assert
-			Assert.Contains("error", result, StringComparison.OrdinalIgnoreCase);
-		}
+		// Assert
+		Assert.Contains("Command cannot be null or empty", result);
+	}
 
 		[Fact]
 		public async Task RunWindbgCmdAsync_WithNoActiveSession_ReturnsErrorResponse()

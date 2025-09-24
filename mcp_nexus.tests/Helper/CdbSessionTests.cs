@@ -44,16 +44,13 @@ namespace mcp_nexus.tests.Helper
 		}
 
 		[Fact]
-		public async Task ExecuteCommand_NoActiveSession_ReturnsErrorMessage()
+		public async Task ExecuteCommand_NoActiveSession_ThrowsInvalidOperationException()
 		{
 			// Arrange
 			var session = new CdbSession(CreateNullLogger());
 
-			// Act
-			var result = await session.ExecuteCommand("version");
-
-			// Assert
-			Assert.Contains("No active debug session", result);
+			// Act & Assert
+			await Assert.ThrowsAsync<InvalidOperationException>(() => session.ExecuteCommand("version"));
 		}
 
 		[Fact]

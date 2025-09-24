@@ -182,15 +182,17 @@ namespace mcp_nexus.tests.Services
 			// Act
 			OperationLogger.LogInfo(m_mockLogger.Object, operation, messageTemplate, count);
 
-			// Assert
-			m_mockLogger.Verify(
-				x => x.Log(
-					LogLevel.Information,
-					It.IsAny<EventId>(),
-					It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"[{operation}]") && v.ToString()!.Contains(messageTemplate)),
-					It.IsAny<Exception>(),
-					It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-				Times.Once);
+		// Assert
+		// The logged message will have the parameter substituted, so check for the formatted result
+		var expectedFormattedMessage = "Processing 42 items";
+		m_mockLogger.Verify(
+			x => x.Log(
+				LogLevel.Information,
+				It.IsAny<EventId>(),
+				It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"[{operation}]") && v.ToString()!.Contains(expectedFormattedMessage)),
+				It.IsAny<Exception>(),
+				It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+			Times.Once);
 		}
 	}
 }

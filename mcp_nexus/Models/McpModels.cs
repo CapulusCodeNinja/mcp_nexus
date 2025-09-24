@@ -7,6 +7,7 @@ namespace mcp_nexus.Models
     {
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; } = "2.0";
+        [JsonPropertyName("method")]
         public string Method { get; set; } = string.Empty;
         public JsonElement? Params { get; set; }
         public int Id { get; set; }
