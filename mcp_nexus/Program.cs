@@ -614,8 +614,16 @@ namespace mcp_nexus
         {
             Console.Error.WriteLine("Registering services...");
 
-            services.AddSingleton<ICommandQueueService, CommandQueueService>();
-            Console.Error.WriteLine("Registered CommandQueueService as singleton");
+            // Register automated recovery services for unattended operation
+            services.AddSingleton<ICommandTimeoutService, CommandTimeoutService>();
+            Console.Error.WriteLine("Registered CommandTimeoutService for automated timeouts");
+
+            services.AddSingleton<ICdbSessionRecoveryService, CdbSessionRecoveryService>();
+            Console.Error.WriteLine("Registered CdbSessionRecoveryService for automated recovery");
+
+            // Use resilient command queue for automated recovery
+            services.AddSingleton<ICommandQueueService, ResilientCommandQueueService>();
+            Console.Error.WriteLine("Registered ResilientCommandQueueService for automated recovery");
 
             services.AddSingleton<ICdbSession>(serviceProvider =>
             {
