@@ -25,7 +25,7 @@ namespace mcp_nexus_tests.Services
             m_service = new CdbSessionRecoveryService(
                 m_mockCdbSession.Object,
                 m_logger,
-                m_mockCommandQueueService.Object);
+                reason => m_mockCommandQueueService.Object.CancelAllCommands(reason));
         }
 
         [Fact]

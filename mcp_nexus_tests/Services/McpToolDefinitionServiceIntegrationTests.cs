@@ -33,7 +33,7 @@ namespace mcp_nexus_tests.Services
 
 			// Assert
 			// Should have 11 tools based on the implementation
-			Assert.Equal(11, tools.Length);
+			Assert.Equal(8, tools.Length); // 3 tools removed: list_windbg_dumps, get_session_info, get_current_time
 		}
 
 		[Fact]
@@ -60,7 +60,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var asyncTool = tools.FirstOrDefault(t => t.Name == "run_windbg_cmd_async");
+			var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_exec_debugger_command_async");
 			Assert.NotNull(asyncTool);
 			Assert.Contains("ASYNC QUEUE", asyncTool.Description);
 			Assert.Contains("commandId", asyncTool.Description);
@@ -73,7 +73,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var dumpTool = tools.FirstOrDefault(t => t.Name == "open_windbg_dump");
+			var dumpTool = tools.FirstOrDefault(t => t.Name == "nexus_open_dump");
 			Assert.NotNull(dumpTool);
 			Assert.Contains("crash dump", dumpTool.Description);
 		}
@@ -85,7 +85,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var remoteTool = tools.FirstOrDefault(t => t.Name == "open_windbg_remote");
+			var remoteTool = tools.FirstOrDefault(t => t.Name == "nexus_start_remote_debug");
 			Assert.NotNull(remoteTool);
 			Assert.Contains("remote", remoteTool.Description);
 		}
@@ -97,8 +97,8 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			Assert.Contains(tools, t => t.Name == "close_windbg_dump");
-			Assert.Contains(tools, t => t.Name == "close_windbg_remote");
+			Assert.Contains(tools, t => t.Name == "nexus_close_dump");
+			Assert.Contains(tools, t => t.Name == "nexus_stop_remote_debug");
 		}
 
 		[Fact]
@@ -159,7 +159,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var dumpTool = tools.First(t => t.Name == "open_windbg_dump");
+			var dumpTool = tools.First(t => t.Name == "nexus_open_dump");
 			Assert.NotNull(dumpTool.InputSchema);
 			
 			// InputSchema should be a properly structured object
@@ -176,7 +176,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var remoteTool = tools.First(t => t.Name == "open_windbg_remote");
+			var remoteTool = tools.First(t => t.Name == "nexus_start_remote_debug");
 			Assert.NotNull(remoteTool.InputSchema);
 			
 			var schemaJson = System.Text.Json.JsonSerializer.Serialize(remoteTool.InputSchema);
@@ -191,7 +191,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var statusTool = tools.First(t => t.Name == "get_command_status");
+			var statusTool = tools.First(t => t.Name == "nexus_debugger_command_status");
 			Assert.Contains("REQUIRED", statusTool.Description);
 			Assert.Contains("ONLY way", statusTool.Description);
 		}
@@ -203,7 +203,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var listTool = tools.First(t => t.Name == "list_commands");
+			var listTool = tools.First(t => t.Name == "nexus_list_debugger_commands");
 			Assert.Contains("queue status", listTool.Description);
 			Assert.Contains("queued", listTool.Description);
 		}
@@ -215,7 +215,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var cancelTool = tools.First(t => t.Name == "cancel_command");
+			var cancelTool = tools.First(t => t.Name == "nexus_debugger_command_cancel");
 			Assert.Contains("Cancel", cancelTool.Description);
 			Assert.Contains("long-running", cancelTool.Description);
 		}
@@ -227,12 +227,9 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var timeTool = tools.FirstOrDefault(t => t.Name == "get_current_time");
-			Assert.NotNull(timeTool);
-			Assert.Contains("current time", timeTool.Description);
-			
-			var schemaJson = System.Text.Json.JsonSerializer.Serialize(timeTool.InputSchema);
-			Assert.Contains("city", schemaJson);
+		// get_current_time tool was removed - test skipped
+		var timeTool = tools.FirstOrDefault(t => t.Name == "get_current_time");
+		Assert.Null(timeTool); // Tool should not exist
 		}
 	}
 }

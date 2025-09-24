@@ -51,7 +51,7 @@ namespace mcp_nexus_tests.Services
             m_recoveryService = new CdbSessionRecoveryService(
                 m_mockCdbSession.Object, 
                 recoveryLogger, 
-                basicQueueService,
+                reason => basicQueueService.CancelAllCommands(reason),
                 m_notificationService);
 
             // Setup resilient queue service

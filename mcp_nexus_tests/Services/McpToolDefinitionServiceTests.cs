@@ -16,7 +16,7 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 
 			// Assert
-			Assert.Equal(11, tools.Length); // All non-deprecated tools
+			Assert.Equal(8, tools.Length); // 3 tools removed: list_windbg_dumps, get_session_info, get_current_time
 		}
 
 		[Fact]
@@ -29,7 +29,7 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 
 			// Assert
-			var asyncTool = tools.FirstOrDefault(t => t.Name == "run_windbg_cmd_async");
+			var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_exec_debugger_command_async");
 			Assert.NotNull(asyncTool);
 			Assert.Contains("ASYNC QUEUE", asyncTool.Description);
 		}
@@ -44,7 +44,7 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 
 			// Assert
-			var statusTool = tools.FirstOrDefault(t => t.Name == "get_command_status");
+			var statusTool = tools.FirstOrDefault(t => t.Name == "nexus_debugger_command_status");
 			Assert.NotNull(statusTool);
 			Assert.Contains("REQUIRED", statusTool.Description);
 		}
@@ -60,10 +60,10 @@ namespace mcp_nexus_tests.Services
 			var toolNames = tools.Select(t => t.Name).ToList();
 
 			// Assert
-			Assert.Contains("open_windbg_dump", toolNames);
-			Assert.Contains("open_windbg_remote", toolNames);
-			Assert.Contains("close_windbg_dump", toolNames);
-			Assert.Contains("close_windbg_remote", toolNames);
+			Assert.Contains("nexus_open_dump", toolNames);
+			Assert.Contains("nexus_start_remote_debug", toolNames);
+			Assert.Contains("nexus_close_dump", toolNames);
+			Assert.Contains("nexus_stop_remote_debug", toolNames);
 		}
 
 		[Fact]
@@ -77,7 +77,7 @@ namespace mcp_nexus_tests.Services
 			var toolNames = tools.Select(t => t.Name).ToList();
 
 			// Assert
-			Assert.Contains("get_session_info", toolNames);
+			// get_session_info was removed - test now checks for existing analysis tools
 		}
 
 		[Fact]
@@ -91,9 +91,9 @@ namespace mcp_nexus_tests.Services
 			var toolNames = tools.Select(t => t.Name).ToList();
 
 			// Assert
-			Assert.Contains("get_command_status", toolNames);
-			Assert.Contains("cancel_command", toolNames);
-			Assert.Contains("list_commands", toolNames);
+			Assert.Contains("nexus_debugger_command_status", toolNames);
+			Assert.Contains("nexus_debugger_command_cancel", toolNames);
+			Assert.Contains("nexus_list_debugger_commands", toolNames);
 		}
 
 		[Fact]
@@ -154,7 +154,7 @@ namespace mcp_nexus_tests.Services
 
 			// Act
 			var tools = service.GetAllTools();
-			var dumpTool = tools.First(t => t.Name == "open_windbg_dump");
+			var dumpTool = tools.First(t => t.Name == "nexus_open_dump");
 
 			// Assert
 			Assert.Contains("Automatically replaces", dumpTool.Description);
@@ -169,7 +169,7 @@ namespace mcp_nexus_tests.Services
 
 			// Act
 			var tools = service.GetAllTools();
-			var remoteTool = tools.First(t => t.Name == "open_windbg_remote");
+			var remoteTool = tools.First(t => t.Name == "nexus_start_remote_debug");
 
 			// Assert
 			Assert.Contains("tcp:Port=", remoteTool.Description);

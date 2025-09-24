@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.Tools
 		private static ILogger<WindbgTool> CreateNullLogger() => LoggerFactory.Create(b => { }).CreateLogger<WindbgTool>();
 
 		[Fact]
-		public async Task RunWindbgCmdAsync_EmptyCommand_ReturnsError()
+		public async Task NexusExecDebuggerCommandAsync_EmptyCommand_ReturnsError()
 		{
 			// Arrange
 			var cdbMock = new Mock<ICdbSession>();
@@ -22,14 +22,14 @@ namespace mcp_nexus_tests.Tools
 			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
 
 			// Act
-			var result = await tool.RunWindbgCmdAsync("");
+			var result = await tool.NexusExecDebuggerCommandAsync("");
 
 			// Assert
 			Assert.Contains("cannot be null or empty", result);
 		}
 
 		[Fact]
-		public async Task RunWindbgCmdAsync_WhitespaceCommand_ReturnsError()
+		public async Task NexusExecDebuggerCommandAsync_WhitespaceCommand_ReturnsError()
 		{
 			// Arrange
 			var cdbMock = new Mock<ICdbSession>();
@@ -37,14 +37,14 @@ namespace mcp_nexus_tests.Tools
 			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
 
 			// Act
-			var result = await tool.RunWindbgCmdAsync("   ");
+			var result = await tool.NexusExecDebuggerCommandAsync("   ");
 
 			// Assert
 			Assert.Contains("cannot be null or empty", result);
 		}
 
 		[Fact]
-		public async Task GetCommandStatus_NonExistentCommand_ReturnsError()
+		public async Task NexusDebuggerCommandStatus_NonExistentCommand_ReturnsError()
 		{
 			// Arrange
 			var cdbMock = new Mock<ICdbSession>();
@@ -54,7 +54,7 @@ namespace mcp_nexus_tests.Tools
 			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
 
 			// Act
-			var result = await tool.GetCommandStatus("invalid");
+			var result = await tool.NexusDebuggerCommandStatus("invalid");
 
 			// Assert
 			Assert.Contains("error", result);
@@ -62,7 +62,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task GetCommandStatus_QueuedCommand_ReturnsQueuedStatus()
+		public async Task NexusDebuggerCommandStatus_QueuedCommand_ReturnsQueuedStatus()
 		{
 			// Arrange
 			var cdbMock = new Mock<ICdbSession>();
@@ -77,7 +77,7 @@ namespace mcp_nexus_tests.Tools
 			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
 
 			// Act
-			var result = await tool.GetCommandStatus("test-id");
+			var result = await tool.NexusDebuggerCommandStatus("test-id");
 
 			// Assert
 			Assert.Contains("queued", result);
@@ -85,7 +85,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task GetCommandStatus_CancelledCommand_ReturnsCancelledStatus()
+		public async Task NexusDebuggerCommandStatus_CancelledCommand_ReturnsCancelledStatus()
 		{
 			// Arrange
 			var cdbMock = new Mock<ICdbSession>();
@@ -100,7 +100,7 @@ namespace mcp_nexus_tests.Tools
 			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
 
 			// Act
-			var result = await tool.GetCommandStatus("test-id");
+			var result = await tool.NexusDebuggerCommandStatus("test-id");
 
 			// Assert
 			Assert.Contains("cancelled", result);
@@ -108,7 +108,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task ListCommands_WithCurrentAndQueuedCommands_ReturnsFormattedList()
+		public async Task NexusListDebuggerCommands_WithCurrentAndQueuedCommands_ReturnsFormattedList()
 		{
 			// Arrange
 			var cdbMock = new Mock<ICdbSession>();
@@ -127,7 +127,7 @@ namespace mcp_nexus_tests.Tools
 			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
 
 			// Act
-			var result = await tool.ListCommands();
+			var result = await tool.NexusListDebuggerCommands();
 
 			// Assert
 			Assert.Contains("currentlyExecuting", result);
@@ -139,7 +139,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task ListCommands_NoCommands_ReturnsEmptyList()
+		public async Task NexusListDebuggerCommands_NoCommands_ReturnsEmptyList()
 		{
 			// Arrange
 			var cdbMock = new Mock<ICdbSession>();
@@ -151,7 +151,7 @@ namespace mcp_nexus_tests.Tools
 			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
 
 			// Act
-			var result = await tool.ListCommands();
+			var result = await tool.NexusListDebuggerCommands();
 
 			// Assert
 			Assert.Contains("currentlyExecuting\": null", result);
@@ -159,7 +159,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task OpenWindbgDump_EmptyPath_ReturnsError()
+		public async Task NexusOpenDump_EmptyPath_ReturnsError()
 		{
 			// Arrange
 			var cdbMock = new Mock<ICdbSession>();
@@ -167,14 +167,14 @@ namespace mcp_nexus_tests.Tools
 			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
 
 			// Act
-			var result = await tool.OpenWindbgDump("");
+			var result = await tool.NexusOpenDump("");
 
 			// Assert
 			Assert.Contains("cannot be null or empty", result);
 		}
 
 		[Fact]
-		public async Task OpenWindbgDump_WithSymbolsPath_CallsStartSessionWithSymbols()
+		public async Task NexusOpenDump_WithSymbolsPath_CallsStartSessionWithSymbols()
 		{
 			// Arrange
 			var cdbMock = new Mock<ICdbSession>();
@@ -191,7 +191,7 @@ namespace mcp_nexus_tests.Tools
 			try
 			{
 				// Act
-				var result = await tool.OpenWindbgDump(tempDump, tempSymbols);
+				var result = await tool.NexusOpenDump(tempDump, tempSymbols);
 
 				// Assert
 				Assert.Contains("Successfully opened", result);
@@ -204,7 +204,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task OpenWindbgDump_StartSessionFails_ReturnsError()
+		public async Task NexusOpenDump_StartSessionFails_ReturnsError()
 		{
 			// Arrange
 			var cdbMock = new Mock<ICdbSession>();
@@ -219,7 +219,7 @@ namespace mcp_nexus_tests.Tools
 			try
 			{
 				// Act
-				var result = await tool.OpenWindbgDump(tempDump);
+				var result = await tool.NexusOpenDump(tempDump);
 
 				// Assert
 				Assert.Contains("Failed to open", result);
@@ -231,7 +231,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task OpenWindbgRemote_EmptyConnectionString_ReturnsError()
+		public async Task NexusStartRemoteDebug_EmptyConnectionString_ReturnsError()
 		{
 			// Arrange
 			var cdbMock = new Mock<ICdbSession>();
@@ -239,14 +239,14 @@ namespace mcp_nexus_tests.Tools
 			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
 
 			// Act
-			var result = await tool.OpenWindbgRemote("");
+			var result = await tool.NexusStartRemoteDebug("");
 
 			// Assert
 			Assert.Contains("cannot be null or empty", result);
 		}
 
 		[Fact]
-		public async Task OpenWindbgRemote_WithSymbolsPath_CallsStartSessionWithSymbols()
+		public async Task NexusStartRemoteDebug_WithSymbolsPath_CallsStartSessionWithSymbols()
 		{
 			// Arrange
 			var cdbMock = new Mock<ICdbSession>();
@@ -259,29 +259,13 @@ namespace mcp_nexus_tests.Tools
 			var tempSymbols = Path.GetTempPath();
 
 			// Act
-			var result = await tool.OpenWindbgRemote("tcp:Port=5005,Server=localhost", tempSymbols);
+			var result = await tool.NexusStartRemoteDebug("tcp:Port=5005,Server=localhost", tempSymbols);
 
 			// Assert
 			Assert.Contains("Successfully connected", result);
 			cdbMock.Verify(x => x.StartSession(It.Is<string>(s => s.Contains(tempSymbols) && s.Contains("tcp:Port=5005")), null), Times.Once);
 		}
 
-		[Fact]
-		public async Task GetSessionInfo_NoActiveSession_ReturnsError()
-		{
-			// Arrange
-			var cdbMock = new Mock<ICdbSession>();
-			var queueMock = new Mock<ICommandQueueService>();
-			
-			cdbMock.SetupGet(x => x.IsActive).Returns(false);
-
-			var tool = new WindbgTool(CreateNullLogger(), cdbMock.Object, queueMock.Object);
-
-			// Act
-			var result = await tool.GetSessionInfo();
-
-			// Assert
-			Assert.Contains("No active debugging session", result);
-		}
+		// GetSessionInfo test removed - method is obsolete
 	}
 }

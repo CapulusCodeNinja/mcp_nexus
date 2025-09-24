@@ -23,17 +23,17 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task OpenWindbgDump_FileNotExists_ReturnsErrorMessage()
+		public async Task NexusOpenDump_FileNotExists_ReturnsErrorMessage()
 		{
 			// Act
-			var result = await m_tool.OpenWindbgDump("nonexistent_file.dmp");
+			var result = await m_tool.NexusOpenDump("nonexistent_file.dmp");
 
 			// Assert
 			Assert.Contains("not found", result, StringComparison.OrdinalIgnoreCase);
 		}
 
 		[Fact]
-		public async Task OpenWindbgDump_CdbSessionStartSessionThrowsException_ReturnsErrorMessage()
+		public async Task NexusOpenDump_CdbSessionStartSessionThrowsException_ReturnsErrorMessage()
 		{
 			// Arrange
 			var tempFile = Path.GetTempFileName();
@@ -45,7 +45,7 @@ namespace mcp_nexus_tests.Tools
 					.ThrowsAsync(new InvalidOperationException("Test CDB exception"));
 
 				// Act
-				var result = await m_tool.OpenWindbgDump(tempFile);
+				var result = await m_tool.NexusOpenDump(tempFile);
 
 				// Assert
 				Assert.Contains("Error opening crash dump", result);
@@ -58,37 +58,37 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task OpenWindbgDump_FileIOException_ReturnsErrorMessage()
+		public async Task NexusOpenDump_FileIOException_ReturnsErrorMessage()
 		{
 			// Arrange - Use a path that will cause IO issues
 			var invalidPath = Path.Combine(Path.GetTempPath(), "nonexistent_directory", "file.dmp");
 
 			// Act
-			var result = await m_tool.OpenWindbgDump(invalidPath);
+			var result = await m_tool.NexusOpenDump(invalidPath);
 
 			// Assert
 			Assert.Contains("not found", result, StringComparison.OrdinalIgnoreCase);
 		}
 
 		[Fact]
-		public async Task OpenWindbgRemote_WithInvalidConnectionString_ReturnsErrorMessage()
+		public async Task NexusStartRemoteDebug_WithInvalidConnectionString_ReturnsErrorMessage()
 		{
 			// Act
-			var result = await m_tool.OpenWindbgRemote("invalid_connection_string");
+			var result = await m_tool.NexusStartRemoteDebug("invalid_connection_string");
 
 			// Assert
 			Assert.Contains("Failed to connect", result, StringComparison.OrdinalIgnoreCase);
 		}
 
 		[Fact]
-		public async Task OpenWindbgRemote_CdbSessionThrowsException_ReturnsErrorMessage()
+		public async Task NexusStartRemoteDebug_CdbSessionThrowsException_ReturnsErrorMessage()
 		{
 			// Arrange
 			m_mockCdbSession.Setup(s => s.StartSession(It.IsAny<string>(), It.IsAny<string>()))
 				.ThrowsAsync(new TimeoutException("Connection timeout"));
 
 			// Act
-			var result = await m_tool.OpenWindbgRemote("tcp:Port=1234,Server=localhost");
+			var result = await m_tool.NexusStartRemoteDebug("tcp:Port=1234,Server=localhost");
 
 			// Assert
 			Assert.Contains("Error connecting", result);
@@ -96,7 +96,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task CloseWindbgDump_CdbSessionThrowsException_ReturnsErrorMessage()
+		public async Task NexusCloseDump_CdbSessionThrowsException_ReturnsErrorMessage()
 		{
 			// Arrange
 			m_mockCdbSession.Setup(s => s.IsActive).Returns(true);
@@ -104,7 +104,7 @@ namespace mcp_nexus_tests.Tools
 				.ThrowsAsync(new InvalidOperationException("Stop session error"));
 
 			// Act
-			var result = await m_tool.CloseWindbgDump();
+			var result = await m_tool.NexusCloseDump();
 
 			// Assert
 			Assert.Contains("Error closing", result);
@@ -112,7 +112,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task CloseWindbgRemote_CdbSessionThrowsException_ReturnsErrorMessage()
+		public async Task NexusStopRemoteDebug_CdbSessionThrowsException_ReturnsErrorMessage()
 		{
 			// Arrange
 			m_mockCdbSession.Setup(s => s.IsActive).Returns(true);
@@ -120,7 +120,7 @@ namespace mcp_nexus_tests.Tools
 				.ThrowsAsync(new UnauthorizedAccessException("Access denied"));
 
 			// Act
-			var result = await m_tool.CloseWindbgRemote();
+			var result = await m_tool.NexusStopRemoteDebug();
 
 			// Assert
 			Assert.Contains("Error disconnecting", result);
@@ -128,7 +128,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task RunWindbgCmdAsync_CommandQueueThrowsException_ReturnsErrorMessage()
+		public async Task NexusExecDebuggerCommandAsync_CommandQueueThrowsException_ReturnsErrorMessage()
 		{
 			// Arrange
 			m_mockCdbSession.Setup(s => s.IsActive).Returns(true);
@@ -136,40 +136,24 @@ namespace mcp_nexus_tests.Tools
 				.Throws(new InvalidOperationException("Queue is full"));
 
 			// Act
-			var result = await m_tool.RunWindbgCmdAsync("test command");
+			var result = await m_tool.NexusExecDebuggerCommandAsync("test command");
 
 			// Assert
 			Assert.Contains("Error queueing command", result);
 			Assert.Contains("Queue is full", result);
 		}
 
-		[Fact]
-		public async Task GetSessionInfo_CdbSessionThrowsException_ReturnsErrorMessage()
-		{
-			// Arrange
-			m_mockCdbSession.Setup(s => s.IsActive).Returns(true);
-			m_mockCommandQueueService.Setup(s => s.QueueCommand(It.IsAny<string>()))
-				.Throws(new OutOfMemoryException("System out of memory"));
-
-			// Act
-			var result = await m_tool.GetSessionInfo();
-
-			// Assert
-			// The method might still return some session info or an error
-			Assert.NotNull(result);
-			// Just verify it doesn't crash - the exact format may vary
-			Assert.True(result.Length > 0);
-		}
+	// GetSessionInfo test removed - method is obsolete
 
 		[Fact]
-		public async Task GetCommandStatus_CommandQueueThrowsException_ReturnsErrorJson()
+		public async Task NexusDebuggerCommandStatus_CommandQueueThrowsException_ReturnsErrorJson()
 		{
 			// Arrange
 			m_mockCommandQueueService.Setup(s => s.GetCommandResult(It.IsAny<string>()))
 				.ThrowsAsync(new ArgumentException("Invalid command ID"));
 
 			// Act
-			var result = await m_tool.GetCommandStatus("test-id");
+			var result = await m_tool.NexusDebuggerCommandStatus("test-id");
 
 			// Assert
 			Assert.Contains("Error getting command status", result);
@@ -177,14 +161,14 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task CancelCommand_CommandQueueThrowsException_ReturnsErrorJson()
+		public async Task NexusDebuggerCommandCancel_CommandQueueThrowsException_ReturnsErrorJson()
 		{
 			// Arrange
 			m_mockCommandQueueService.Setup(s => s.CancelCommand(It.IsAny<string>()))
 				.Throws(new InvalidCastException("Type conversion error"));
 
 			// Act
-			var result = await m_tool.CancelCommand("test-id");
+			var result = await m_tool.NexusDebuggerCommandCancel("test-id");
 
 			// Assert
 			Assert.Contains("Error cancelling command", result);
@@ -192,14 +176,14 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task ListCommands_CommandQueueThrowsException_ReturnsErrorMessage()
+		public async Task NexusListDebuggerCommands_CommandQueueThrowsException_ReturnsErrorMessage()
 		{
 			// Arrange
 			m_mockCommandQueueService.Setup(s => s.GetQueueStatus())
 				.Throws(new NotSupportedException("Feature not supported"));
 
 			// Act
-			var result = await m_tool.ListCommands();
+			var result = await m_tool.NexusListDebuggerCommands();
 
 			// Assert
 			Assert.Contains("Error listing commands", result);
@@ -239,7 +223,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task OpenWindbgDump_WithSymbolsPath_ValidatesSymbolsPath()
+		public async Task NexusOpenDump_WithSymbolsPath_ValidatesSymbolsPath()
 		{
 			// Arrange
 			var tempFile = Path.GetTempFileName();
@@ -252,7 +236,7 @@ namespace mcp_nexus_tests.Tools
 					.ReturnsAsync(true);
 
 				// Act
-				var result = await m_tool.OpenWindbgDump(tempFile, nonExistentSymbolsPath);
+				var result = await m_tool.NexusOpenDump(tempFile, nonExistentSymbolsPath);
 
 				// Assert
 				// Should still succeed even with non-existent symbols path (just logs warning)
@@ -265,7 +249,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task OpenWindbgRemote_WithSymbolsPath_ValidatesSymbolsPath()
+		public async Task NexusStartRemoteDebug_WithSymbolsPath_ValidatesSymbolsPath()
 		{
 			// Arrange
 			var nonExistentSymbolsPath = Path.Combine(Path.GetTempPath(), "nonexistent_symbols");
@@ -273,7 +257,7 @@ namespace mcp_nexus_tests.Tools
 				.ReturnsAsync(true);
 
 			// Act
-			var result = await m_tool.OpenWindbgRemote("tcp:Port=1234,Server=localhost", nonExistentSymbolsPath);
+			var result = await m_tool.NexusStartRemoteDebug("tcp:Port=1234,Server=localhost", nonExistentSymbolsPath);
 
 			// Assert
 			// Should still succeed even with non-existent symbols path (just logs warning)
@@ -281,7 +265,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task OpenWindbgDump_FileExistsButAccessDenied_ReturnsErrorMessage()
+		public async Task NexusOpenDump_FileExistsButAccessDenied_ReturnsErrorMessage()
 		{
 			// This test simulates file access issues that might occur in real scenarios
 			// We can't easily create a file that exists but can't be accessed in a unit test,
@@ -299,7 +283,7 @@ namespace mcp_nexus_tests.Tools
 					.ReturnsAsync(false); // Failed to start
 
 				// Act
-				var result = await m_tool.OpenWindbgDump(tempFile);
+				var result = await m_tool.NexusOpenDump(tempFile);
 
 				// Assert
 				Assert.Contains("Failed to open", result);

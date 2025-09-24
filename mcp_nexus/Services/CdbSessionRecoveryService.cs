@@ -13,7 +13,7 @@ namespace mcp_nexus.Services
     {
         private readonly ICdbSession m_cdbSession;
         private readonly ILogger<CdbSessionRecoveryService> m_logger;
-        private readonly ICommandQueueService m_commandQueueService;
+        private readonly Func<string, int> m_cancelAllCommandsCallback;
         private readonly IMcpNotificationService? m_notificationService;
         private DateTime m_lastHealthCheck = DateTime.UtcNow;
         private int m_recoveryAttempts = 0;
@@ -22,12 +22,12 @@ namespace mcp_nexus.Services
         public CdbSessionRecoveryService(
             ICdbSession cdbSession, 
             ILogger<CdbSessionRecoveryService> logger,
-            ICommandQueueService commandQueueService,
+            Func<string, int> cancelAllCommandsCallback,
             IMcpNotificationService? notificationService = null)
         {
             m_cdbSession = cdbSession;
             m_logger = logger;
-            m_commandQueueService = commandQueueService;
+            m_cancelAllCommandsCallback = cancelAllCommandsCallback;
             m_notificationService = notificationService;
         }
 
@@ -57,7 +57,7 @@ namespace mcp_nexus.Services
             {
                 // Step 1: Cancel all pending commands
                 m_logger.LogInformation("Recovery Step 1: Cancelling all pending commands");
-                var cancelledCount = m_commandQueueService.CancelAllCommands($"Recovery: {reason}");
+                var cancelledCount = m_cancelAllCommandsCallback($"Recovery: {reason}");
                 m_logger.LogDebug("Cancelled {Count} pending commands", cancelledCount);
 
                 // Step 2: Try gentle CDB cancellation first
@@ -113,7 +113,7 @@ namespace mcp_nexus.Services
             try
             {
                 // Step 1: Cancel all commands
-                m_commandQueueService.CancelAllCommands($"Force restart: {reason}");
+                m_cancelAllCommandsCallback($"Force restart: {reason}");
 
                 // Step 2: Stop current session forcefully
                 m_logger.LogDebug("Force stopping CDB session");

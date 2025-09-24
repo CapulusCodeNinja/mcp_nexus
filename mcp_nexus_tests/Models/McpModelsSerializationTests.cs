@@ -404,12 +404,20 @@ namespace mcp_nexus_tests.Models
 		public void McpInitializeResult_Serialization_IncludesAllProperties()
 		{
 			// Arrange
-			var result = new McpInitializeResult
+		var result = new McpInitializeResult
+		{
+			ProtocolVersion = "2025-06-18",
+			Capabilities = new McpCapabilities
 			{
-				ProtocolVersion = "2025-06-18",
-				Capabilities = new { tools = new { listChanged = true }, resources = new { subscribe = false } },
-				ServerInfo = new { name = "test-nexus", version = "2.1.0", description = "Test server" }
-			};
+				Tools = new { listChanged = true },
+				Notifications = new { commandStatus = true, sessionRecovery = true, serverHealth = true }
+			},
+			ServerInfo = new McpServerDetails
+			{
+				Name = "test-nexus",
+				Version = "2.1.0"
+			}
+		};
 
 			// Act
 			var json = JsonSerializer.Serialize(result);

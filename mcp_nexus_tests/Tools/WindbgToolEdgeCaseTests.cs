@@ -25,10 +25,10 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task OpenWindbgDump_WithNullDumpPath_ReturnsErrorMessage()
+		public async Task NexusOpenDump_WithNullDumpPath_ReturnsErrorMessage()
 		{
 			// Act
-			var result = await m_tool.OpenWindbgDump(null!);
+			var result = await m_tool.NexusOpenDump(null!);
 
 			// Assert
 			Assert.Contains("cannot be null or empty", result, StringComparison.OrdinalIgnoreCase);
@@ -37,33 +37,33 @@ namespace mcp_nexus_tests.Tools
 		[Theory]
 		[InlineData("")]
 		[InlineData("   ")]
-		public async Task OpenWindbgDump_WithInvalidDumpPath_ReturnsErrorMessage(string invalidPath)
+		public async Task NexusOpenDump_WithInvalidDumpPath_ReturnsErrorMessage(string invalidPath)
 		{
 			// Act
-			var result = await m_tool.OpenWindbgDump(invalidPath);
+			var result = await m_tool.NexusOpenDump(invalidPath);
 
 			// Assert
 			Assert.Contains("cannot be null or empty", result, StringComparison.OrdinalIgnoreCase);
 		}
 
 		[Fact]
-		public async Task OpenWindbgDump_WithNonExistentFile_ReturnsFileNotFoundError()
+		public async Task NexusOpenDump_WithNonExistentFile_ReturnsFileNotFoundError()
 		{
 			// Arrange
 			var nonExistentPath = @"C:\NonExistent\File.dmp";
 
 			// Act
-			var result = await m_tool.OpenWindbgDump(nonExistentPath);
+			var result = await m_tool.NexusOpenDump(nonExistentPath);
 
 			// Assert
 			Assert.Contains("not found", result, StringComparison.OrdinalIgnoreCase);
 		}
 
 		[Fact]
-		public async Task OpenWindbgRemote_WithNullConnectionString_ReturnsErrorMessage()
+		public async Task NexusStartRemoteDebug_WithNullConnectionString_ReturnsErrorMessage()
 		{
 			// Act
-			var result = await m_tool.OpenWindbgRemote(null!);
+			var result = await m_tool.NexusStartRemoteDebug(null!);
 
 			// Assert
 			Assert.Contains("cannot be null or empty", result, StringComparison.OrdinalIgnoreCase);
@@ -72,20 +72,20 @@ namespace mcp_nexus_tests.Tools
 		[Theory]
 		[InlineData("")]
 		[InlineData("   ")]
-		public async Task OpenWindbgRemote_WithInvalidConnectionString_ReturnsErrorMessage(string invalidConnectionString)
+		public async Task NexusStartRemoteDebug_WithInvalidConnectionString_ReturnsErrorMessage(string invalidConnectionString)
 		{
 			// Act
-			var result = await m_tool.OpenWindbgRemote(invalidConnectionString);
+			var result = await m_tool.NexusStartRemoteDebug(invalidConnectionString);
 
 			// Assert
 			Assert.Contains("cannot be null or empty", result, StringComparison.OrdinalIgnoreCase);
 		}
 
 	[Fact]
-	public async Task RunWindbgCmdAsync_WithNullCommand_ReturnsErrorResponse()
+	public async Task NexusExecDebuggerCommandAsync_WithNullCommand_ReturnsErrorResponse()
 	{
 		// Act
-		var result = await m_tool.RunWindbgCmdAsync(null!);
+		var result = await m_tool.NexusExecDebuggerCommandAsync(null!);
 
 		// Assert
 		Assert.Contains("Command cannot be null or empty", result);
@@ -94,53 +94,42 @@ namespace mcp_nexus_tests.Tools
 	[Theory]
 	[InlineData("")]
 	[InlineData("   ")]
-	public async Task RunWindbgCmdAsync_WithInvalidCommand_ReturnsErrorResponse(string invalidCommand)
+	public async Task NexusExecDebuggerCommandAsync_WithInvalidCommand_ReturnsErrorResponse(string invalidCommand)
 	{
 		// Act
-		var result = await m_tool.RunWindbgCmdAsync(invalidCommand);
+		var result = await m_tool.NexusExecDebuggerCommandAsync(invalidCommand);
 
 		// Assert
 		Assert.Contains("Command cannot be null or empty", result);
 	}
 
 		[Fact]
-		public async Task RunWindbgCmdAsync_WithNoActiveSession_ReturnsErrorResponse()
+		public async Task NexusExecDebuggerCommandAsync_WithNoActiveSession_ReturnsErrorResponse()
 		{
 			// Arrange
 			m_mockCdbSession.Setup(x => x.IsActive).Returns(false);
 
 			// Act
-			var result = await m_tool.RunWindbgCmdAsync("version");
+			var result = await m_tool.NexusExecDebuggerCommandAsync("version");
 
 			// Assert
 			Assert.Contains("No active debugging session", result);
 		}
 
-		[Fact]
-		public async Task GetSessionInfo_WithNoActiveSession_ReturnsNoSessionMessage()
-		{
-			// Arrange
-			m_mockCdbSession.Setup(x => x.IsActive).Returns(false);
-
-			// Act
-			var result = await m_tool.GetSessionInfo();
-
-			// Assert
-			Assert.Contains("No active debugging session", result);
-		}
+		// GetSessionInfo test removed - method is obsolete
 
 		[Theory]
 		[InlineData("")]
 		[InlineData("   ")]
 		[InlineData("invalid-id")]
-		public async Task GetCommandStatus_WithInvalidCommandId_ReturnsErrorResponse(string invalidCommandId)
+		public async Task NexusDebuggerCommandStatus_WithInvalidCommandId_ReturnsErrorResponse(string invalidCommandId)
 		{
 			// Arrange
 			m_mockCommandQueueService.Setup(x => x.GetCommandResult(invalidCommandId))
 				.ReturnsAsync("Command not found");
 
 			// Act
-			var result = await m_tool.GetCommandStatus(invalidCommandId);
+			var result = await m_tool.NexusDebuggerCommandStatus(invalidCommandId);
 
 			// Assert
 			Assert.Contains("error", result, StringComparison.OrdinalIgnoreCase);
@@ -150,27 +139,27 @@ namespace mcp_nexus_tests.Tools
 		[InlineData("")]
 		[InlineData("   ")]
 		[InlineData("invalid-id")]
-		public async Task CancelCommand_WithInvalidCommandId_ReturnsErrorResponse(string invalidCommandId)
+		public async Task NexusDebuggerCommandCancel_WithInvalidCommandId_ReturnsErrorResponse(string invalidCommandId)
 		{
 			// Arrange
 			m_mockCommandQueueService.Setup(x => x.CancelCommand(invalidCommandId))
 				.Returns(false);
 
 			// Act
-			var result = await m_tool.CancelCommand(invalidCommandId);
+			var result = await m_tool.NexusDebuggerCommandCancel(invalidCommandId);
 
 			// Assert
 			Assert.Contains("error", result, StringComparison.OrdinalIgnoreCase);
 		}
 
 		[Fact]
-		public async Task OpenWindbgDump_WithVeryLongPath_HandlesGracefully()
+		public async Task NexusOpenDump_WithVeryLongPath_HandlesGracefully()
 		{
 			// Arrange
 			var longPath = new string('a', 300) + ".dmp"; // Very long path
 
 			// Act
-			var result = await m_tool.OpenWindbgDump(longPath);
+			var result = await m_tool.NexusOpenDump(longPath);
 
 			// Assert
 			Assert.NotNull(result);
@@ -178,13 +167,13 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task OpenWindbgDump_WithSpecialCharactersInPath_HandlesGracefully()
+		public async Task NexusOpenDump_WithSpecialCharactersInPath_HandlesGracefully()
 		{
 			// Arrange
 			var specialCharPath = @"C:\Test\File With Spaces & Special @#$%.dmp";
 
 			// Act
-			var result = await m_tool.OpenWindbgDump(specialCharPath);
+			var result = await m_tool.NexusOpenDump(specialCharPath);
 
 			// Assert
 			Assert.NotNull(result);
@@ -192,7 +181,7 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task RunWindbgCmdAsync_WithVeryLongCommand_HandlesGracefully()
+		public async Task NexusExecDebuggerCommandAsync_WithVeryLongCommand_HandlesGracefully()
 		{
 			// Arrange
 			m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
@@ -201,7 +190,7 @@ namespace mcp_nexus_tests.Tools
 				.Returns("cmd-123");
 
 			// Act
-			var result = await m_tool.RunWindbgCmdAsync(longCommand);
+			var result = await m_tool.NexusExecDebuggerCommandAsync(longCommand);
 
 			// Assert
 			Assert.NotNull(result);
@@ -209,14 +198,14 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task CloseWindbgDump_WhenAlreadyClosed_HandlesGracefully()
+		public async Task NexusCloseDump_WhenAlreadyClosed_HandlesGracefully()
 		{
 			// Arrange
 			m_mockCdbSession.Setup(x => x.IsActive).Returns(false);
 			m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(false);
 
 			// Act
-			var result = await m_tool.CloseWindbgDump();
+			var result = await m_tool.NexusCloseDump();
 
 			// Assert
 			Assert.NotNull(result);
@@ -224,14 +213,14 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task CloseWindbgRemote_WhenAlreadyClosed_HandlesGracefully()
+		public async Task NexusStopRemoteDebug_WhenAlreadyClosed_HandlesGracefully()
 		{
 			// Arrange
 			m_mockCdbSession.Setup(x => x.IsActive).Returns(false);
 			m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(false);
 
 			// Act
-			var result = await m_tool.CloseWindbgRemote();
+			var result = await m_tool.NexusStopRemoteDebug();
 
 			// Assert
 			Assert.NotNull(result);
@@ -240,7 +229,7 @@ namespace mcp_nexus_tests.Tools
 
 
 		[Fact]
-		public async Task RunWindbgCmdAsync_WithCommandContainingNewlines_HandlesGracefully()
+		public async Task NexusExecDebuggerCommandAsync_WithCommandContainingNewlines_HandlesGracefully()
 		{
 			// Arrange
 			m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
@@ -249,7 +238,7 @@ namespace mcp_nexus_tests.Tools
 				.Returns("cmd-123");
 
 			// Act
-			var result = await m_tool.RunWindbgCmdAsync(commandWithNewlines);
+			var result = await m_tool.NexusExecDebuggerCommandAsync(commandWithNewlines);
 
 			// Assert
 			Assert.NotNull(result);
@@ -257,10 +246,10 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task GetCommandStatus_WithNullCommandId_HandlesGracefully()
+		public async Task NexusDebuggerCommandStatus_WithNullCommandId_HandlesGracefully()
 		{
 			// Act
-			var result = await m_tool.GetCommandStatus(null!);
+			var result = await m_tool.NexusDebuggerCommandStatus(null!);
 
 			// Assert
 			Assert.NotNull(result);
@@ -268,10 +257,10 @@ namespace mcp_nexus_tests.Tools
 		}
 
 		[Fact]
-		public async Task CancelCommand_WithNullCommandId_HandlesGracefully()
+		public async Task NexusDebuggerCommandCancel_WithNullCommandId_HandlesGracefully()
 		{
 			// Act
-			var result = await m_tool.CancelCommand(null!);
+			var result = await m_tool.NexusDebuggerCommandCancel(null!);
 
 			// Assert
 			Assert.NotNull(result);

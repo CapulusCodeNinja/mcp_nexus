@@ -24,7 +24,7 @@ namespace mcp_nexus_tests.Helper
 		}
 
 		[Fact]
-		public async Task CloseWindbgDump_WhileLongRunningCommand_DoesNotDeadlock()
+		public async Task NexusCloseDump_WhileLongRunningCommand_DoesNotDeadlock()
 		{
 			// Arrange
 			var mockCdbSession = new Mock<ICdbSession>();
@@ -46,14 +46,14 @@ namespace mcp_nexus_tests.Helper
 			var stopwatch = Stopwatch.StartNew();
 
 			// Act
-			var result = await tool.CloseWindbgDump();
+			var result = await tool.NexusCloseDump();
 
 			// Assert
 			stopwatch.Stop();
 			
 			// CRITICAL: This must complete in under 10 seconds, not 60+ seconds
 			Assert.True(stopwatch.ElapsedMilliseconds < 10000, 
-				$"CloseWindbgDump took {stopwatch.ElapsedMilliseconds}ms, indicating a potential deadlock regression");
+				$"NexusCloseDump took {stopwatch.ElapsedMilliseconds}ms, indicating a potential deadlock regression");
 			
 			Assert.Contains("Successfully closed", result);
 			mockCommandQueue.Verify(x => x.CancelAllCommands("Session stop requested"), Times.Once);
@@ -157,7 +157,7 @@ namespace mcp_nexus_tests.Helper
 			var closeTasks = new Task<string>[3];
 			for (int i = 0; i < 3; i++)
 			{
-				closeTasks[i] = tool.CloseWindbgDump();
+				closeTasks[i] = tool.NexusCloseDump();
 			}
 
 			await Task.WhenAll(closeTasks);
@@ -240,13 +240,13 @@ namespace mcp_nexus_tests.Helper
 
 			// Act - This represents the exact call that was timing out
 			var stopwatch = Stopwatch.StartNew();
-			var result = await tool.CloseWindbgDump();
+			var result = await tool.NexusCloseDump();
 			stopwatch.Stop();
 
 			// Assert
 			// CRITICAL: This is the core regression test - must complete in reasonable time
 			Assert.True(stopwatch.ElapsedMilliseconds < 10000, 
-				$"CloseWindbgDump took {stopwatch.ElapsedMilliseconds}ms - DEADLOCK REGRESSION DETECTED! " +
+				$"NexusCloseDump took {stopwatch.ElapsedMilliseconds}ms - DEADLOCK REGRESSION DETECTED! " +
 				"The original 60+ second timeout bug has returned.");
 			
 			Assert.Contains("Successfully closed", result);
