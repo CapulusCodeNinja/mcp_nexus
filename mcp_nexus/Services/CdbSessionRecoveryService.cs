@@ -14,6 +14,7 @@ namespace mcp_nexus.Services
         private readonly ICdbSession m_cdbSession;
         private readonly ILogger<CdbSessionRecoveryService> m_logger;
         private readonly ICommandQueueService m_commandQueueService;
+        private readonly IMcpNotificationService? m_notificationService;
         private DateTime m_lastHealthCheck = DateTime.UtcNow;
         private int m_recoveryAttempts = 0;
         private readonly object m_recoveryLock = new();
@@ -21,11 +22,13 @@ namespace mcp_nexus.Services
         public CdbSessionRecoveryService(
             ICdbSession cdbSession, 
             ILogger<CdbSessionRecoveryService> logger,
-            ICommandQueueService commandQueueService)
+            ICommandQueueService commandQueueService,
+            IMcpNotificationService? notificationService = null)
         {
             m_cdbSession = cdbSession;
             m_logger = logger;
             m_commandQueueService = commandQueueService;
+            m_notificationService = notificationService;
         }
 
         public async Task<bool> RecoverStuckSession(string reason)
@@ -35,6 +38,20 @@ namespace mcp_nexus.Services
                 m_recoveryAttempts++;
                 m_logger.LogError("🚨 RECOVERY ATTEMPT #{Attempt}: {Reason}", m_recoveryAttempts, reason);
             }
+
+            // Send recovery start notification
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await m_notificationService?.NotifySessionRecoveryAsync(
+                        reason, "Recovery Started", false, $"Starting recovery attempt #{m_recoveryAttempts}")!;
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogWarning(ex, "Failed to send recovery start notification");
+                }
+            });
 
             try
             {
@@ -60,6 +77,21 @@ namespace mcp_nexus.Services
                 {
                     m_logger.LogInformation("✅ Session recovered successfully after cancellation");
                     ResetRecoveryCounter();
+                    
+                    // Send successful recovery notification
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await m_notificationService?.NotifySessionRecoveryAsync(
+                                reason, "Recovery Completed", true, "Session recovered successfully after cancellation")!;
+                        }
+                        catch (Exception ex)
+                        {
+                            m_logger.LogWarning(ex, "Failed to send recovery success notification");
+                        }
+                    });
+                    
                     return true;
                 }
 

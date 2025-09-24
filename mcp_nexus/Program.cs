@@ -679,6 +679,8 @@ namespace mcp_nexus
             services.AddSingleton<McpToolDefinitionService>();
             services.AddSingleton<McpToolExecutionService>();
             services.AddSingleton<McpProtocolService>();
+            services.AddSingleton<IMcpNotificationService, McpNotificationService>();
+            Console.WriteLine("Registered McpNotificationService for server-initiated notifications");
 
             Console.WriteLine("MCP server configured for HTTP with controllers, CORS, and services");
         }

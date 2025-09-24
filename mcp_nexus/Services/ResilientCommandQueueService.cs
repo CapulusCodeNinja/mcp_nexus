@@ -12,6 +12,7 @@ namespace mcp_nexus.Services
         private readonly ILogger<ResilientCommandQueueService> m_logger;
         private readonly ICommandTimeoutService m_timeoutService;
         private readonly ICdbSessionRecoveryService m_recoveryService;
+        private readonly IMcpNotificationService? m_notificationService;
         
         private readonly ConcurrentQueue<QueuedCommand> m_commandQueue = new();
         private readonly SemaphoreSlim m_queueSemaphore = new(0);
@@ -31,12 +32,14 @@ namespace mcp_nexus.Services
             ICdbSession cdbSession, 
             ILogger<ResilientCommandQueueService> logger,
             ICommandTimeoutService timeoutService,
-            ICdbSessionRecoveryService recoveryService)
+            ICdbSessionRecoveryService recoveryService,
+            IMcpNotificationService? notificationService = null)
         {
             m_cdbSession = cdbSession;
             m_logger = logger;
             m_timeoutService = timeoutService;
             m_recoveryService = recoveryService;
+            m_notificationService = notificationService;
 
             m_logger.LogInformation("🚀 ResilientCommandQueueService starting with automated recovery");
 
@@ -76,6 +79,20 @@ namespace mcp_nexus.Services
 
             m_logger.LogInformation("📋 Queued command {CommandId}: {Command} (queue depth: {QueueDepth})", 
                 commandId, command, m_commandQueue.Count);
+
+            // Send notification about command being queued
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await m_notificationService?.NotifyCommandStatusAsync(
+                        commandId, command, "queued", 0, "Command queued for execution")!;
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogWarning(ex, "Failed to send queued notification for command {CommandId}", commandId);
+                }
+            });
 
             return commandId;
         }
@@ -309,6 +326,20 @@ namespace mcp_nexus.Services
             m_logger.LogInformation("🚀 Starting command {CommandId}: {Command} (waited {WaitTime:F1}s)", 
                 queuedCommand.Id, queuedCommand.Command, waitTime);
 
+            // Send notification about command starting execution
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await m_notificationService?.NotifyCommandStatusAsync(
+                        queuedCommand.Id, queuedCommand.Command, "executing", 10, "Command started execution")!;
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogWarning(ex, "Failed to send executing notification for command {CommandId}", queuedCommand.Id);
+                }
+            });
+
             // Determine timeout based on command complexity
             var timeout = DetermineCommandTimeout(queuedCommand.Command);
             
@@ -326,6 +357,39 @@ namespace mcp_nexus.Services
                     $"Command timed out after {timeout.TotalMinutes:F1} minutes and session was recovered. " +
                     "This may indicate a complex analysis that requires breaking into smaller commands.");
             });
+
+            // Start heartbeat notifications for long-running commands
+            var heartbeatCts = new CancellationTokenSource();
+            var commandStartTime = DateTime.UtcNow;
+            var heartbeatInterval = TimeSpan.FromSeconds(30); // Send heartbeat every 30 seconds
+            
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    while (!heartbeatCts.Token.IsCancellationRequested && !queuedCommand.CompletionSource.Task.IsCompleted)
+                    {
+                        await Task.Delay(heartbeatInterval, heartbeatCts.Token);
+                        
+                        if (!heartbeatCts.Token.IsCancellationRequested && !queuedCommand.CompletionSource.Task.IsCompleted)
+                        {
+                            var elapsed = DateTime.UtcNow - commandStartTime;
+                            var details = DetermineHeartbeatDetails(queuedCommand.Command, elapsed);
+                            
+                            await m_notificationService?.NotifyCommandHeartbeatAsync(
+                                queuedCommand.Id, queuedCommand.Command, elapsed, details)!;
+                        }
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Normal cancellation, ignore
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogWarning(ex, "Error in heartbeat sender for command {CommandId}", queuedCommand.Id);
+                }
+            }, heartbeatCts.Token);
 
             try
             {
@@ -350,12 +414,40 @@ namespace mcp_nexus.Services
 
                 m_logger.LogInformation("✅ Command {CommandId} completed successfully", queuedCommand.Id);
                 queuedCommand.CompletionSource.TrySetResult(result);
+                
+                // Send completion notification
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await m_notificationService?.NotifyCommandStatusAsync(
+                            queuedCommand.Id, queuedCommand.Command, "completed", 100, "Command completed successfully", result)!;
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogWarning(ex, "Failed to send completion notification for command {CommandId}", queuedCommand.Id);
+                    }
+                });
             }
             catch (OperationCanceledException)
             {
                 m_timeoutService.CancelCommandTimeout(queuedCommand.Id);
                 m_logger.LogInformation("⏹️ Command {CommandId} was cancelled", queuedCommand.Id);
                 queuedCommand.CompletionSource.TrySetResult("Command execution was cancelled.");
+                
+                // Send cancellation notification
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await m_notificationService?.NotifyCommandStatusAsync(
+                            queuedCommand.Id, queuedCommand.Command, "cancelled", null, "Command execution was cancelled")!;
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogWarning(ex, "Failed to send cancellation notification for command {CommandId}", queuedCommand.Id);
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -366,9 +458,27 @@ namespace mcp_nexus.Services
                 _ = Task.Run(async () => await m_recoveryService.RecoverStuckSession($"Command execution failed: {ex.Message}"));
                 
                 queuedCommand.CompletionSource.TrySetResult($"Command execution failed: {ex.Message}");
+                
+                // Send error notification
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await m_notificationService?.NotifyCommandStatusAsync(
+                            queuedCommand.Id, queuedCommand.Command, "failed", null, "Command execution failed", null, ex.Message)!;
+                    }
+                    catch (Exception notificationEx)
+                    {
+                        m_logger.LogWarning(notificationEx, "Failed to send error notification for command {CommandId}", queuedCommand.Id);
+                    }
+                });
             }
             finally
             {
+                // Stop heartbeat notifications
+                heartbeatCts?.Cancel();
+                heartbeatCts?.Dispose();
+                
                 lock (m_currentCommandLock)
                 {
                     m_currentCommand = null;
@@ -402,6 +512,59 @@ namespace mcp_nexus.Services
             }
 
             return m_defaultCommandTimeout;
+        }
+
+        private static string DetermineHeartbeatDetails(string command, TimeSpan elapsed)
+        {
+            var lowerCommand = command.ToLowerInvariant();
+            
+            // Provide context-specific details based on command type
+            if (lowerCommand.Contains("!analyze"))
+            {
+                if (elapsed.TotalMinutes < 2)
+                    return "Initializing crash analysis engine...";
+                else if (elapsed.TotalMinutes < 5)
+                    return "Analyzing memory dumps and stack traces...";
+                else if (elapsed.TotalMinutes < 10)
+                    return "Performing deep symbol resolution...";
+                else
+                    return "Processing complex crash analysis (this may take several more minutes)...";
+            }
+            
+            if (lowerCommand.Contains("!heap"))
+            {
+                if (elapsed.TotalMinutes < 1)
+                    return "Scanning heap structures...";
+                else if (elapsed.TotalMinutes < 3)
+                    return "Analyzing heap allocations and free blocks...";
+                else
+                    return "Processing large heap dump (this is normal for applications with high memory usage)...";
+            }
+            
+            if (lowerCommand.Contains("!process 0 0") || lowerCommand.Contains("!process"))
+            {
+                if (elapsed.TotalMinutes < 1)
+                    return "Enumerating system processes...";
+                else if (elapsed.TotalMinutes < 3)
+                    return "Gathering detailed process information...";
+                else
+                    return "Processing extensive process data...";
+            }
+            
+            if (lowerCommand.Contains("!locks") || lowerCommand.Contains("!handle"))
+            {
+                return elapsed.TotalMinutes < 2 
+                    ? "Scanning kernel synchronization objects..." 
+                    : "Analyzing complex lock dependencies...";
+            }
+            
+            // Generic progress messages for other commands
+            if (elapsed.TotalMinutes < 1)
+                return "Command executing...";
+            else if (elapsed.TotalMinutes < 5)
+                return "Processing... (complex operations can take several minutes)";
+            else
+                return "Still working... (this operation is taking longer than usual but is still active)";
         }
 
         private void RemoveCancelledCommandFromQueue(string commandId)
