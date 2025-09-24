@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using mcp_nexus.Helper;
 
-namespace mcp_nexus.tests.Helper
+namespace mcp_nexus_tests.Helper
 {
 	/// <summary>
 	/// Tests for CdbSession input validation and error handling

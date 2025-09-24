@@ -4,7 +4,7 @@ using mcp_nexus.Helper;
 using mcp_nexus.Services;
 using mcp_nexus.Tools;
 
-namespace mcp_nexus.tests.Tools
+namespace mcp_nexus_tests.Tools
 {
 	/// <summary>
 	/// Edge case and boundary condition tests for WindbgTool

@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace mcp_nexus.tests.Helper
+namespace mcp_nexus_tests.Helper
 {
 	/// <summary>
 	/// Tests that specifically verify the fix for the race condition between 

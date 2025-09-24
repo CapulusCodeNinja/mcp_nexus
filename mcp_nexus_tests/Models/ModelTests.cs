@@ -2,7 +2,7 @@ using System.Text.Json;
 using mcp_nexus.Models;
 using Xunit;
 
-namespace mcp_nexus.tests.Models
+namespace mcp_nexus_tests.Models
 {
 	public class ModelTests
 	{

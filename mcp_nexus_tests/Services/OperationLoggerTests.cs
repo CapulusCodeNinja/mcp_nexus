@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using mcp_nexus.Services;
 
-namespace mcp_nexus.tests.Services
+namespace mcp_nexus_tests.Services
 {
 	public class OperationLoggerTests
 	{

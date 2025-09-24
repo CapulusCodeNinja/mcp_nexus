@@ -8,7 +8,7 @@ using mcp_nexus.Helper;
 using mcp_nexus.Services;
 using Xunit;
 
-namespace mcp_nexus.tests.Services
+namespace mcp_nexus_tests.Services
 {
 	/// <summary>
 	/// Tests specifically designed to detect deadlock scenarios that occurred

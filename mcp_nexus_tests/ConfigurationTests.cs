@@ -2,7 +2,7 @@ using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using Xunit;
 
-namespace mcp_nexus.tests
+namespace mcp_nexus_tests
 {
 	public class ConfigurationTests
 	{

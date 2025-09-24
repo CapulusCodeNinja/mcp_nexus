@@ -7,7 +7,7 @@ using mcp_nexus.Services;
 using mcp_nexus.Tools;
 using Xunit;
 
-namespace mcp_nexus.tests.Tools
+namespace mcp_nexus_tests.Tools
 {
 	public class WindbgToolTests
 	{

@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace mcp_nexus.tests.Helper
+namespace mcp_nexus_tests.Helper
 {
 	/// <summary>
 	/// Tests specifically designed to prevent regression of the close_windbg_dump deadlock issue.

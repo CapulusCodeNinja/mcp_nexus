@@ -3,7 +3,7 @@ using Moq;
 using mcp_nexus.Helper;
 using mcp_nexus.Services;
 
-namespace mcp_nexus.tests.Services
+namespace mcp_nexus_tests.Services
 {
 	/// <summary>
 	/// Edge case and boundary condition tests for CommandQueueService
