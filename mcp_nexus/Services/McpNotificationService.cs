@@ -17,7 +17,7 @@ namespace mcp_nexus.Services
         public McpNotificationService(ILogger<McpNotificationService> logger)
         {
             m_logger = logger;
-            m_logger.LogInformation("🔔 McpNotificationService initialized - ready to send server notifications");
+            m_logger.LogDebug("McpNotificationService initialized");
         }
 
         public async Task NotifyCommandStatusAsync(string commandId, string command, string status, 
@@ -39,7 +39,7 @@ namespace mcp_nexus.Services
 
             await SendNotificationAsync("notifications/commandStatus", notification);
             
-            m_logger.LogDebug("📤 Sent command status notification: {CommandId} -> {Status}", commandId, status);
+            m_logger.LogDebug("Sent command status notification: {CommandId} -> {Status}", commandId, status);
         }
 
         public async Task NotifyCommandHeartbeatAsync(string commandId, string command, TimeSpan elapsed, string? details = null)
@@ -62,7 +62,7 @@ namespace mcp_nexus.Services
 
             await SendNotificationAsync("notifications/commandHeartbeat", notification);
             
-            m_logger.LogDebug("💓 Sent command heartbeat: {CommandId} -> {Elapsed}", commandId, elapsedDisplay);
+            m_logger.LogTrace("Sent command heartbeat: {CommandId} -> {Elapsed}", commandId, elapsedDisplay);
         }
 
         public async Task NotifySessionRecoveryAsync(string reason, string recoveryStep, bool success, 
@@ -82,7 +82,7 @@ namespace mcp_nexus.Services
 
             await SendNotificationAsync("notifications/sessionRecovery", notification);
             
-            m_logger.LogInformation("🚨 Sent session recovery notification: {RecoveryStep} -> {Success}", recoveryStep, success);
+            m_logger.LogInformation("Sent session recovery notification: {RecoveryStep} -> {Success}", recoveryStep, success);
         }
 
         public async Task NotifyServerHealthAsync(string status, bool cdbSessionActive, int queueSize, 
@@ -102,7 +102,7 @@ namespace mcp_nexus.Services
 
             await SendNotificationAsync("notifications/serverHealth", notification);
             
-            m_logger.LogDebug("💚 Sent server health notification: {Status} (Queue: {QueueSize}, Active: {ActiveCommands})", 
+            m_logger.LogDebug("Sent server health notification: {Status} (Queue: {QueueSize}, Active: {ActiveCommands})", 
                 status, queueSize, activeCommands);
         }
 
@@ -119,7 +119,7 @@ namespace mcp_nexus.Services
             var handlers = m_notificationHandlers.ToArray();
             if (handlers.Length == 0)
             {
-                m_logger.LogWarning("⚠️ No notification handlers registered - notification will be dropped: {Method}", method);
+                m_logger.LogDebug("No notification handlers registered - notification will be dropped: {Method}", method);
                 return;
             }
 
@@ -132,18 +132,18 @@ namespace mcp_nexus.Services
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogError(ex, "💥 Error invoking notification handler for method: {Method}", method);
+                    m_logger.LogError(ex, "Error invoking notification handler for method: {Method}", method);
                 }
             }
 
             try
             {
                 await Task.WhenAll(tasks);
-                m_logger.LogDebug("✅ Successfully sent notification to {HandlerCount} handlers: {Method}", handlers.Length, method);
+                m_logger.LogTrace("Successfully sent notification to {HandlerCount} handlers: {Method}", handlers.Length, method);
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "💥 Error sending notification to handlers: {Method}", method);
+                m_logger.LogError(ex, "Error sending notification to handlers: {Method}", method);
             }
         }
 
@@ -152,7 +152,7 @@ namespace mcp_nexus.Services
             if (m_disposed) return;
 
             m_notificationHandlers.Add(handler);
-            m_logger.LogInformation("📝 Registered notification handler (Total: {HandlerCount})", m_notificationHandlers.Count);
+            m_logger.LogDebug("Registered notification handler (Total: {HandlerCount})", m_notificationHandlers.Count);
         }
 
         public void UnregisterNotificationHandler(Func<McpNotification, Task> handler)
@@ -161,7 +161,7 @@ namespace mcp_nexus.Services
 
             // ConcurrentBag doesn't support removal, so we'll need to track this differently
             // For now, we'll log the attempt - in a production system, you might use a different collection
-            m_logger.LogWarning("⚠️ UnregisterNotificationHandler called - ConcurrentBag doesn't support removal. Consider using a different collection type for production.");
+            m_logger.LogTrace("UnregisterNotificationHandler called - ConcurrentBag doesn't support removal");
         }
 
         public void Dispose()
@@ -169,7 +169,7 @@ namespace mcp_nexus.Services
             if (m_disposed) return;
 
             m_disposed = true;
-            m_logger.LogInformation("🔔 McpNotificationService disposed");
+            m_logger.LogDebug("McpNotificationService disposed");
         }
     }
 }

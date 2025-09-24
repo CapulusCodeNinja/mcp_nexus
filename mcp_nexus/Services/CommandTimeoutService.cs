@@ -41,7 +41,7 @@ namespace mcp_nexus.Services
             var timeoutInfo = new TimeoutInfo(cts, onTimeout, DateTime.UtcNow);
             m_timeouts[commandId] = timeoutInfo;
             
-            m_logger.LogInformation("⏰ Starting timeout for command {CommandId}: {TimeoutMinutes:F1} minutes", 
+            m_logger.LogDebug("Starting timeout for command {CommandId}: {TimeoutMinutes:F1} minutes", 
                 commandId, timeout.TotalMinutes);
 
             // Start timeout task
@@ -53,7 +53,7 @@ namespace mcp_nexus.Services
                     
                     if (!cts.Token.IsCancellationRequested)
                     {
-                        m_logger.LogError("🚨 TIMEOUT: Command {CommandId} exceeded {TimeoutMinutes:F1} minute limit - triggering recovery", 
+                        m_logger.LogError("Command {CommandId} timed out after {TimeoutMinutes:F1} minutes", 
                             commandId, timeout.TotalMinutes);
                         
                         await onTimeout();
@@ -61,11 +61,11 @@ namespace mcp_nexus.Services
                 }
                 catch (OperationCanceledException)
                 {
-                    m_logger.LogDebug("✅ Timeout cancelled for command {CommandId}", commandId);
+                    m_logger.LogTrace("Timeout cancelled for command {CommandId}", commandId);
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogError(ex, "💥 Error in timeout handler for command {CommandId}", commandId);
+                    m_logger.LogError(ex, "Error in timeout handler for command {CommandId}", commandId);
                 }
                 finally
                 {
@@ -79,7 +79,7 @@ namespace mcp_nexus.Services
         {
             if (m_timeouts.TryRemove(commandId, out var timeoutInfo))
             {
-                m_logger.LogDebug("⏹️ Cancelling timeout for command {CommandId}", commandId);
+                m_logger.LogTrace("Cancelling timeout for command {CommandId}", commandId);
                 timeoutInfo.CancellationTokenSource.Cancel();
                 timeoutInfo.CancellationTokenSource.Dispose();
             }
@@ -92,7 +92,7 @@ namespace mcp_nexus.Services
                 var originalHandler = existingInfo.OnTimeout;
                 var totalElapsed = DateTime.UtcNow - existingInfo.StartTime;
                 
-                m_logger.LogInformation("⏰ Extending timeout for command {CommandId} by {AdditionalMinutes:F1} minutes (already running for {ElapsedMinutes:F1} minutes)", 
+                m_logger.LogDebug("Extending timeout for command {CommandId} by {AdditionalMinutes:F1} minutes (already running for {ElapsedMinutes:F1} minutes)", 
                     commandId, additionalTime.TotalMinutes, totalElapsed.TotalMinutes);
                 
                 // Cancel existing timeout
@@ -113,7 +113,7 @@ namespace mcp_nexus.Services
                         if (!newCts.Token.IsCancellationRequested)
                         {
                             var finalElapsed = DateTime.UtcNow - existingInfo.StartTime;
-                            m_logger.LogError("🚨 EXTENDED TIMEOUT: Command {CommandId} exceeded extended limit after {TotalMinutes:F1} minutes - triggering recovery", 
+                            m_logger.LogError("Command {CommandId} exceeded extended timeout after {TotalMinutes:F1} minutes", 
                                 commandId, finalElapsed.TotalMinutes);
                             
                             // Now we can call the original timeout handler!
@@ -122,11 +122,11 @@ namespace mcp_nexus.Services
                     }
                     catch (OperationCanceledException)
                     {
-                        m_logger.LogDebug("✅ Extended timeout cancelled for command {CommandId}", commandId);
+                        m_logger.LogTrace("Extended timeout cancelled for command {CommandId}", commandId);
                     }
                     catch (Exception ex)
                     {
-                        m_logger.LogError(ex, "💥 Error in extended timeout handler for command {CommandId}", commandId);
+                        m_logger.LogError(ex, "Error in extended timeout handler for command {CommandId}", commandId);
                     }
                     finally
                     {

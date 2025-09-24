@@ -36,7 +36,7 @@ namespace mcp_nexus.Services
             lock (m_recoveryLock)
             {
                 m_recoveryAttempts++;
-                m_logger.LogError("🚨 RECOVERY ATTEMPT #{Attempt}: {Reason}", m_recoveryAttempts, reason);
+                m_logger.LogWarning("Starting recovery attempt #{Attempt}: {Reason}", m_recoveryAttempts, reason);
             }
 
             // Send recovery start notification
@@ -56,12 +56,12 @@ namespace mcp_nexus.Services
             try
             {
                 // Step 1: Cancel all pending commands
-                m_logger.LogWarning("🔄 Recovery Step 1: Cancelling all pending commands");
+                m_logger.LogInformation("Recovery Step 1: Cancelling all pending commands");
                 var cancelledCount = m_commandQueueService.CancelAllCommands($"Recovery: {reason}");
-                m_logger.LogInformation("✅ Cancelled {Count} pending commands", cancelledCount);
+                m_logger.LogDebug("Cancelled {Count} pending commands", cancelledCount);
 
                 // Step 2: Try gentle CDB cancellation first
-                m_logger.LogWarning("🔄 Recovery Step 2: Attempting CDB cancellation");
+                m_logger.LogInformation("Recovery Step 2: Attempting CDB cancellation");
                 try
                 {
                     m_cdbSession.CancelCurrentOperation();
@@ -69,13 +69,13 @@ namespace mcp_nexus.Services
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogWarning(ex, "⚠️ CDB cancellation failed, proceeding to force restart");
+                    m_logger.LogWarning(ex, "CDB cancellation failed, proceeding to force restart");
                 }
 
                 // Step 3: Check if session is still responsive
                 if (await IsSessionResponsive())
                 {
-                    m_logger.LogInformation("✅ Session recovered successfully after cancellation");
+                    m_logger.LogInformation("Session recovered successfully after cancellation");
                     ResetRecoveryCounter();
                     
                     // Send successful recovery notification
@@ -96,19 +96,19 @@ namespace mcp_nexus.Services
                 }
 
                 // Step 4: Force restart if still unresponsive
-                m_logger.LogError("❌ Session still unresponsive, forcing restart");
+                m_logger.LogWarning("Session still unresponsive, forcing restart");
                 return await ForceRestartSession($"Recovery escalation: {reason}");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "💥 Recovery attempt failed");
+                m_logger.LogError(ex, "Recovery attempt failed");
                 return false;
             }
         }
 
         public async Task<bool> ForceRestartSession(string reason)
         {
-            m_logger.LogError("🚨 FORCE RESTART: {Reason}", reason);
+            m_logger.LogWarning("Force restarting CDB session: {Reason}", reason);
 
             try
             {
@@ -116,12 +116,12 @@ namespace mcp_nexus.Services
                 m_commandQueueService.CancelAllCommands($"Force restart: {reason}");
 
                 // Step 2: Stop current session forcefully
-                m_logger.LogWarning("🔄 Force stopping CDB session");
+                m_logger.LogDebug("Force stopping CDB session");
                 var stopResult = await m_cdbSession.StopSession();
                 
                 if (!stopResult)
                 {
-                    m_logger.LogWarning("⚠️ StopSession returned false, session may still be active");
+                    m_logger.LogWarning("StopSession returned false, session may still be active");
                 }
 
                 // Step 3: Wait a moment for cleanup
@@ -130,11 +130,11 @@ namespace mcp_nexus.Services
                 // Step 4: Verify session is stopped
                 if (m_cdbSession.IsActive)
                 {
-                    m_logger.LogError("❌ Session still active after stop attempt - this requires manual intervention");
+                    m_logger.LogError("Session still active after stop attempt - this requires manual intervention");
                     return false;
                 }
 
-                m_logger.LogInformation("✅ Session stopped successfully, ready for new connections");
+                m_logger.LogInformation("Session stopped successfully, ready for new connections");
                 ResetRecoveryCounter();
                 return true;
             }

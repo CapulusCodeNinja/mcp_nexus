@@ -41,17 +41,17 @@ namespace mcp_nexus.Services
             m_recoveryService = recoveryService;
             m_notificationService = notificationService;
 
-            m_logger.LogInformation("🚀 ResilientCommandQueueService starting with automated recovery");
+            m_logger.LogInformation("Starting resilient command queue with automated recovery");
 
             // Start the background processing task
             try
             {
                 m_processingTask = Task.Run(ProcessCommandQueue, m_serviceCts.Token);
-                m_logger.LogInformation("✅ Resilient command queue started successfully");
+                m_logger.LogDebug("Resilient command queue background task started successfully");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "❌ FAILED to start resilient command queue");
+                m_logger.LogError(ex, "Failed to start resilient command queue background task");
                 throw;
             }
         }
@@ -77,8 +77,8 @@ namespace mcp_nexus.Services
             m_commandQueue.Enqueue(queuedCommand);
             m_queueSemaphore.Release();
 
-            m_logger.LogInformation("📋 Queued command {CommandId}: {Command} (queue depth: {QueueDepth})", 
-                commandId, command, m_commandQueue.Count);
+            m_logger.LogInformation("Queued command {CommandId}: {Command}", commandId, command);
+            m_logger.LogDebug("Queue depth: {QueueDepth}", m_commandQueue.Count);
 
             // Send notification about command being queued
             _ = Task.Run(async () =>
@@ -138,7 +138,7 @@ namespace mcp_nexus.Services
                 
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
-                m_logger.LogInformation("⏹️ Cancelling command {CommandId}: {Command}", commandId, command.Command);
+                m_logger.LogInformation("Cancelling command {CommandId}: {Command}", commandId, command.Command);
 
                 // Cancel timeout first
                 m_timeoutService.CancelCommandTimeout(commandId);
@@ -158,7 +158,7 @@ namespace mcp_nexus.Services
                 {
                     if (m_currentCommand?.Id == commandId)
                     {
-                        m_logger.LogWarning("🚨 Cancelling currently executing command {CommandId}", commandId);
+                        m_logger.LogWarning("Cancelling currently executing command {CommandId}", commandId);
                         m_cdbSession.CancelCurrentOperation();
                     }
                 }
@@ -169,7 +169,7 @@ namespace mcp_nexus.Services
                 return true;
             }
 
-            m_logger.LogWarning("❌ Attempted to cancel non-existent command: {CommandId}", commandId);
+            m_logger.LogDebug("Attempted to cancel non-existent command: {CommandId}", commandId);
             return false;
         }
 
@@ -179,7 +179,7 @@ namespace mcp_nexus.Services
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
                 
             var reasonText = string.IsNullOrWhiteSpace(reason) ? "No reason provided" : reason;
-            m_logger.LogWarning("🚨 Cancelling ALL commands. Reason: {Reason}", reasonText);
+            m_logger.LogWarning("Cancelling ALL commands. Reason: {Reason}", reasonText);
 
             var cancelledCount = 0;
             string? currentId;
@@ -225,7 +225,7 @@ namespace mcp_nexus.Services
             {
                 try
                 {
-                    m_logger.LogWarning("🚨 Requesting CDB cancellation for currently executing command: {CommandId}", currentId);
+                    m_logger.LogDebug("Requesting CDB cancellation for currently executing command: {CommandId}", currentId);
                     m_cdbSession.CancelCurrentOperation();
                 }
                 catch (Exception ex)
@@ -234,7 +234,7 @@ namespace mcp_nexus.Services
                 }
             }
 
-            m_logger.LogInformation("✅ Cancelled {Count} command(s)", cancelledCount);
+            m_logger.LogInformation("Cancelled {Count} command(s)", cancelledCount);
             return cancelledCount;
         }
 
@@ -279,7 +279,7 @@ namespace mcp_nexus.Services
 
         private async Task ProcessCommandQueue()
         {
-            m_logger.LogInformation("🚀 Resilient command processor started");
+            m_logger.LogDebug("Resilient command processor started");
 
             try
             {
@@ -292,7 +292,7 @@ namespace mcp_nexus.Services
                         // Skip cancelled commands
                         if (queuedCommand.CancellationTokenSource.Token.IsCancellationRequested)
                         {
-                            m_logger.LogInformation("⏭️ Skipping cancelled command {CommandId}", queuedCommand.Id);
+                            m_logger.LogDebug("Skipping cancelled command {CommandId}", queuedCommand.Id);
                             queuedCommand.CompletionSource.TrySetResult("Command was cancelled while queued.");
                             CleanupCommand(queuedCommand);
                             continue;
@@ -304,11 +304,11 @@ namespace mcp_nexus.Services
             }
             catch (OperationCanceledException)
             {
-                m_logger.LogInformation("⏹️ Command queue processing was cancelled");
+                m_logger.LogDebug("Command queue processing was cancelled");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "💥 Unexpected error in command queue processing - attempting recovery");
+                m_logger.LogError(ex, "Unexpected error in command queue processing - attempting recovery");
                 
                 // Trigger recovery for queue processor failure
                 _ = Task.Run(async () => await m_recoveryService.RecoverStuckSession("Queue processor failure"));
@@ -323,8 +323,8 @@ namespace mcp_nexus.Services
             }
 
             var waitTime = (DateTime.UtcNow - queuedCommand.QueueTime).TotalSeconds;
-            m_logger.LogInformation("🚀 Starting command {CommandId}: {Command} (waited {WaitTime:F1}s)", 
-                queuedCommand.Id, queuedCommand.Command, waitTime);
+            m_logger.LogInformation("Executing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
+            m_logger.LogDebug("Command wait time: {WaitTime:F1}s", waitTime);
 
             // Send notification about command starting execution
             _ = Task.Run(async () =>
@@ -346,7 +346,7 @@ namespace mcp_nexus.Services
             // Start automated timeout monitoring
             m_timeoutService.StartCommandTimeout(queuedCommand.Id, timeout, async () =>
             {
-                m_logger.LogError("⏰ TIMEOUT: Command {CommandId} exceeded {Minutes:F1} minute limit", 
+                m_logger.LogError("Command {CommandId} timed out after {Minutes:F1} minutes", 
                     queuedCommand.Id, timeout.TotalMinutes);
                 
                 // First try gentle recovery
@@ -396,7 +396,7 @@ namespace mcp_nexus.Services
                 // Check session health before executing
                 if (!m_recoveryService.IsSessionHealthy())
                 {
-                    m_logger.LogWarning("⚠️ Session unhealthy, attempting recovery before command execution");
+                    m_logger.LogWarning("Session unhealthy, attempting recovery before command execution");
                     var recovered = await m_recoveryService.RecoverStuckSession("Pre-execution health check failed");
                     
                     if (!recovered)
@@ -412,7 +412,7 @@ namespace mcp_nexus.Services
                 // Cancel timeout on successful completion
                 m_timeoutService.CancelCommandTimeout(queuedCommand.Id);
 
-                m_logger.LogInformation("✅ Command {CommandId} completed successfully", queuedCommand.Id);
+                m_logger.LogInformation("Command {CommandId} completed successfully", queuedCommand.Id);
                 queuedCommand.CompletionSource.TrySetResult(result);
                 
                 // Send completion notification
@@ -432,7 +432,7 @@ namespace mcp_nexus.Services
             catch (OperationCanceledException)
             {
                 m_timeoutService.CancelCommandTimeout(queuedCommand.Id);
-                m_logger.LogInformation("⏹️ Command {CommandId} was cancelled", queuedCommand.Id);
+                m_logger.LogInformation("Command {CommandId} was cancelled", queuedCommand.Id);
                 queuedCommand.CompletionSource.TrySetResult("Command execution was cancelled.");
                 
                 // Send cancellation notification
@@ -452,7 +452,7 @@ namespace mcp_nexus.Services
             catch (Exception ex)
             {
                 m_timeoutService.CancelCommandTimeout(queuedCommand.Id);
-                m_logger.LogError(ex, "💥 Command {CommandId} failed: {Error}", queuedCommand.Id, ex.Message);
+                m_logger.LogError(ex, "Command {CommandId} execution failed", queuedCommand.Id);
                 
                 // On execution failure, trigger recovery
                 _ = Task.Run(async () => await m_recoveryService.RecoverStuckSession($"Command execution failed: {ex.Message}"));
@@ -577,7 +577,7 @@ namespace mcp_nexus.Services
         private void ClearQueue()
         {
             while (m_commandQueue.TryDequeue(out _)) { }
-            m_logger.LogInformation("🧹 Cleared all queued commands");
+            m_logger.LogDebug("Cleared all queued commands");
         }
 
         private void CleanupCommand(QueuedCommand command)
@@ -592,7 +592,7 @@ namespace mcp_nexus.Services
             if (m_disposed) return;
             m_disposed = true;
 
-            m_logger.LogInformation("🛑 Disposing ResilientCommandQueueService");
+            m_logger.LogInformation("Disposing ResilientCommandQueueService");
 
             // Cancel all commands and cleanup
             try
@@ -602,7 +602,7 @@ namespace mcp_nexus.Services
                 
                 if (!m_processingTask.Wait(5000))
                 {
-                    m_logger.LogWarning("⚠️ Processing task did not complete within 5 seconds");
+                    m_logger.LogWarning("Processing task did not complete within 5 seconds during shutdown");
                 }
             }
             catch (Exception ex)
@@ -615,7 +615,7 @@ namespace mcp_nexus.Services
             try { m_serviceCts.Dispose(); } catch (ObjectDisposedException) { }
             try { m_queueSemaphore.Dispose(); } catch (ObjectDisposedException) { }
 
-            m_logger.LogInformation("✅ ResilientCommandQueueService disposed");
+            m_logger.LogDebug("ResilientCommandQueueService disposed");
         }
     }
 }

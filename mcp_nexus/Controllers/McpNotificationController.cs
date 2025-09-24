@@ -28,7 +28,7 @@ namespace mcp_nexus.Controllers
         {
             var sessionId = Request.Headers["Mcp-Session-Id"].FirstOrDefault() ?? Guid.NewGuid().ToString();
             
-            m_logger.LogInformation("🔔 Starting notification stream for session: {SessionId}", sessionId);
+            m_logger.LogInformation("Starting notification stream for session: {SessionId}", sessionId);
 
             // Set up SSE headers
             Response.Headers["Content-Type"] = "text/event-stream";
@@ -59,11 +59,11 @@ namespace mcp_nexus.Controllers
                     await Response.WriteAsync(sseData, cancellationToken);
                     await Response.Body.FlushAsync(cancellationToken);
 
-                    m_logger.LogDebug("📤 Sent notification to session {SessionId}: {Method}", sessionId, notification.Method);
+                    m_logger.LogTrace("Sent notification to session {SessionId}: {Method}", sessionId, notification.Method);
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogWarning(ex, "⚠️ Failed to send notification to session {SessionId}", sessionId);
+                    m_logger.LogWarning(ex, "Failed to send notification to session {SessionId}", sessionId);
                     clientDisconnected = true;
                 }
             }
@@ -102,25 +102,25 @@ namespace mcp_nexus.Controllers
                     }
                     catch (Exception ex)
                     {
-                        m_logger.LogWarning(ex, "⚠️ Error sending heartbeat to session {SessionId}", sessionId);
+                        m_logger.LogWarning(ex, "Error sending heartbeat to session {SessionId}", sessionId);
                         break;
                     }
                 }
             }
             catch (OperationCanceledException)
             {
-                m_logger.LogInformation("🔌 Client disconnected from notification stream: {SessionId}", sessionId);
+                m_logger.LogDebug("Client disconnected from notification stream: {SessionId}", sessionId);
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "💥 Error in notification stream for session {SessionId}", sessionId);
+                m_logger.LogError(ex, "Error in notification stream for session {SessionId}", sessionId);
             }
             finally
             {
                 clientDisconnected = true;
                 // Note: We can't unregister the handler due to ConcurrentBag limitations
                 // In production, consider using a different collection type
-                m_logger.LogInformation("🔌 Notification stream ended for session: {SessionId}", sessionId);
+                m_logger.LogDebug("Notification stream ended for session: {SessionId}", sessionId);
             }
         }
 
@@ -130,7 +130,7 @@ namespace mcp_nexus.Controllers
         [HttpPost("test")]
         public async Task<IActionResult> SendTestNotification([FromBody] TestNotificationRequest request)
         {
-            m_logger.LogInformation("🧪 Sending test notification: {Method}", request.Method);
+            m_logger.LogDebug("Sending test notification: {Method}", request.Method);
 
             await m_notificationService.SendNotificationAsync(request.Method, request.Params);
 

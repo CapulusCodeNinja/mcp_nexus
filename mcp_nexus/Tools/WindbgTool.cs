@@ -12,7 +12,7 @@ namespace mcp_nexus.Tools
         // Helper method to wait for async command completion and extract result
         private async Task<string> WaitForCommandCompletion(string commandId, string commandDescription)
         {
-            logger.LogDebug("⏳ Waiting for {Description} command {CommandId} to complete...", commandDescription, commandId);
+            logger.LogTrace("Waiting for {Description} command {CommandId} to complete...", commandDescription, commandId);
 
             var maxWaitTime = TimeSpan.FromMinutes(5); // 5 minute timeout
             var startTime = DateTime.UtcNow;
@@ -24,7 +24,7 @@ namespace mcp_nexus.Tools
                 // If command completed successfully, return the result
                 if (!result.StartsWith("Command is still") && !result.StartsWith("Command not found"))
                 {
-                    logger.LogDebug("✅ {Description} command {CommandId} completed", commandDescription, commandId);
+                    logger.LogTrace("{Description} command {CommandId} completed", commandDescription, commandId);
                     return result;
                 }
 
@@ -33,7 +33,7 @@ namespace mcp_nexus.Tools
             }
 
             // Timeout - cancel the command and return error
-            logger.LogError("⏰ {Description} command {CommandId} timed out after 5 minutes", commandDescription, commandId);
+            logger.LogError("{Description} command {CommandId} timed out after 5 minutes", commandDescription, commandId);
             commandQueueService.CancelCommand(commandId);
             return $"Command timed out after 5 minutes: {commandDescription}";
         }
@@ -81,12 +81,12 @@ namespace mcp_nexus.Tools
                 var target = symbolsPath != null ? $"-y \"{symbolsPath}\" -z \"{dumpPath}\"" : $"-z \"{dumpPath}\"";
                 logger.LogDebug("CDB target arguments: {Target}", target);
 
-                logger.LogInformation("Starting CDB session for crash dump analysis...");
+                logger.LogDebug("Starting CDB session for crash dump analysis...");
                 var success = await cdbSession.StartSession(target);
 
                 if (success)
                 {
-                    logger.LogInformation("Successfully opened crash dump: {DumpPath}", dumpPath);
+                    logger.LogInformation("Opened crash dump: {DumpPath}", dumpPath);
                     return $"Successfully opened crash dump: {dumpPath}";
                 }
                 else
@@ -105,7 +105,7 @@ namespace mcp_nexus.Tools
         [McpServerTool, Description("Unload a crash dump and release resources")]
         public async Task<string> CloseWindbgDump()
         {
-            logger.LogInformation("CloseWindbgDump called");
+            logger.LogDebug("CloseWindbgDump called");
 
             try
             {
@@ -172,12 +172,12 @@ namespace mcp_nexus.Tools
                 var target = symbolsPath != null ? $"-y \"{symbolsPath}\" -remote {connectionString}" : $"-remote {connectionString}";
                 logger.LogDebug("CDB target arguments for remote connection: {Target}", target);
 
-                logger.LogInformation("Starting CDB session for remote debugging...");
+                logger.LogDebug("Starting CDB session for remote debugging...");
                 var success = await cdbSession.StartSession(target);
 
                 if (success)
                 {
-                    logger.LogInformation("Successfully connected to remote debugging session: {ConnectionString}", connectionString);
+                    logger.LogInformation("Connected to remote debugging session: {ConnectionString}", connectionString);
                     return $"Successfully connected to remote debugging session: {connectionString}";
                 }
                 else
@@ -236,7 +236,7 @@ namespace mcp_nexus.Tools
         [McpServerTool, Description("🔄 ASYNC QUEUE: Execute WinDBG command in background queue. ⚠️ NEVER returns command results directly! Always returns commandId. You MUST call get_command_status(commandId) to get results. NO EXCEPTIONS! Works for ALL commands: version, lsa, !analyze -v, !process, etc.")]
         public Task<string> RunWindbgCmdAsync(string command)
         {
-            logger.LogInformation("RunWindbgCmdAsync called with command: {Command} [PURE ASYNC QUEUE MODE]", command);
+            logger.LogDebug("RunWindbgCmdAsync called with command: {Command}", command);
 
             try
             {
@@ -259,7 +259,7 @@ namespace mcp_nexus.Tools
                 // Queue the command for sequential execution
                 var commandId = commandQueueService.QueueCommand(command);
 
-                logger.LogInformation("Queued command {CommandId}: {Command}", commandId, command);
+                logger.LogDebug("Queued command {CommandId}: {Command}", commandId, command);
 
                 // PURE ASYNC: Always return command ID immediately, never wait
                 var response = $@"{{

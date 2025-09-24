@@ -79,15 +79,15 @@ namespace mcp_nexus.Helper
         private async Task CancelCurrentOperationAsync()
         {
             var stopwatch = Stopwatch.StartNew();
-            logger.LogWarning("🚨 [LOCKLESS-CANCEL] CancelCurrentOperationAsync started - ARCHITECTURAL FIX - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+            logger.LogDebug("CancelCurrentOperation started - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 
-            // ARCHITECTURAL FIX: Since ExecuteCommand no longer holds session lock, this is much simpler
-            logger.LogInformation("🎯 [LOCKLESS-CANCEL] Cancelling operation token (ExecuteCommand is lockless now) - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+            // Cancel operation token first
+            logger.LogDebug("Cancelling operation token - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
             lock (m_CancellationLock)
             {
-                logger.LogWarning("🚨 [LOCKLESS-CANCEL] Cancelling current CDB operation due to client request - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                logger.LogInformation("Cancelling current CDB operation due to client request");
                 m_CurrentOperationCts?.Cancel();
-                logger.LogInformation("✅ [LOCKLESS-CANCEL] Operation token cancelled successfully - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                logger.LogDebug("Operation token cancelled - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
             }
 
             // Get process info for interrupt commands - no session lock conflicts anymore!
@@ -97,68 +97,66 @@ namespace mcp_nexus.Helper
             if (debuggerProcess is { HasExited: false } && debuggerInput != null)
             {
                 var processId = debuggerProcess.Id;
-                logger.LogInformation("📋 [LOCKLESS-CANCEL] Process details captured for cancellation (PID: {ProcessId}) - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
+                logger.LogDebug("Attempting to interrupt CDB command for PID: {ProcessId}", processId);
 
-                // Send interrupt commands directly - no session lock needed
+                // Send interrupt commands directly
                 try
                 {
-                    logger.LogWarning("🚨 [LOCKLESS-CANCEL] Attempting to interrupt CDB command for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
-
-                    logger.LogInformation("📡 [LOCKLESS-CANCEL] Sending Ctrl+C to CDB process - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    logger.LogDebug("Sending Ctrl+C to CDB process - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     
                     // RACE CONDITION FIX: Check if stream is still valid before writing
                     if (debuggerInput.BaseStream?.CanWrite == true)
                     {
                         await debuggerInput.WriteLineAsync("\x03"); // ASCII ETX (Ctrl+C)
                         await debuggerInput.FlushAsync();
-                        logger.LogInformation("✅ [LOCKLESS-CANCEL] Ctrl+C sent, starting 1s wait - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                        logger.LogTrace("Ctrl+C sent, starting 1s wait - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     }
                     else
                     {
-                        logger.LogWarning("⚠️ [LOCKLESS-CANCEL] Debugger input stream is not writable, skipping Ctrl+C - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                        logger.LogDebug("Debugger input stream is not writable, skipping Ctrl+C - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     }
 
                     await Task.Delay(1000);
 
-                    logger.LogInformation("📡 [LOCKLESS-CANCEL] Sending '.' command to get back to prompt - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    logger.LogTrace("Sending '.' command to get back to prompt - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     
-                    // RACE CONDITION FIX: Check if stream is still valid before writing
+                    // Check if stream is still valid before writing
                     if (debuggerInput.BaseStream?.CanWrite == true)
                     {
                         await debuggerInput.WriteLineAsync(".");  // Current instruction
                         await debuggerInput.FlushAsync();
-                        logger.LogInformation("✅ [LOCKLESS-CANCEL] '.' command sent - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                        logger.LogTrace("'.' command sent - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     }
                     else
                     {
-                        logger.LogWarning("⚠️ [LOCKLESS-CANCEL] Debugger input stream is not writable, skipping '.' command - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                        logger.LogDebug("Debugger input stream is not writable, skipping '.' command - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     }
 
-                    logger.LogInformation("⏳ [LOCKLESS-CANCEL] Starting final 2s wait - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    logger.LogTrace("Starting final 2s wait - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     await Task.Delay(2000);
 
-                    logger.LogWarning("✅ [LOCKLESS-CANCEL] Command cancellation completed for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
+                    logger.LogDebug("Command cancellation completed for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
                 }
                 catch (ObjectDisposedException)
                 {
-                    logger.LogWarning("⚠️ [LOCKLESS-CANCEL] CDB streams already disposed during cancellation for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
+                    logger.LogDebug("CDB streams already disposed during cancellation for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
                 }
                 catch (InvalidOperationException)
                 {
-                    logger.LogWarning("⚠️ [LOCKLESS-CANCEL] CDB streams in invalid state during cancellation for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
+                    logger.LogDebug("CDB streams in invalid state during cancellation for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "💥 [LOCKLESS-CANCEL] Failed to interrupt CDB command for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
+                    logger.LogError(ex, "Failed to interrupt CDB command for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
                 }
             }
             else
             {
-                logger.LogWarning("❌ [LOCKLESS-CANCEL] No active CDB process to cancel - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                logger.LogDebug("No active CDB process to cancel - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
             }
 
             stopwatch.Stop();
-            logger.LogInformation("🎯 [LOCKLESS-CANCEL] CancelCurrentOperationAsync completed - TOTAL TIME: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+            logger.LogDebug("CancelCurrentOperation completed - total time: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
         }
 
         public async Task<bool> StartSession(string target, string? arguments = null)
@@ -203,7 +201,7 @@ namespace mcp_nexus.Helper
 
                 if (needsStop)
                 {
-                    logger.LogInformation("Session is already active - stopping current session before starting new one");
+                    logger.LogDebug("Session is already active - stopping current session before starting new one");
                     StopSession().Wait(); // Synchronous wait since we're in a non-async method
                 }
 
@@ -211,7 +209,7 @@ namespace mcp_nexus.Helper
                 {
                     logger.LogDebug("Acquired lifecycle lock for StartSession");
 
-                    logger.LogInformation("Searching for CDB executable...");
+                    logger.LogDebug("Searching for CDB executable...");
                     var cdbPath = FindCdbPath();
                     if (string.IsNullOrEmpty(cdbPath))
                     {

@@ -20,7 +20,7 @@ namespace mcp_nexus.Services
                     return CreateErrorResponse(0, -32600, "Invalid Request - malformed JSON-RPC");
                 }
 
-                m_logger.LogInformation("Processing MCP request: {Method}", request.Method);
+                m_logger.LogDebug("Processing MCP request: {Method}", request.Method);
 
                 var result = await ExecuteMethod(request);
                 return CreateSuccessResponse(request.Id, result);
@@ -79,7 +79,7 @@ namespace mcp_nexus.Services
 
         private object HandleNotificationInitialized()
         {
-            m_logger.LogInformation("Received MCP initialization notification");
+            m_logger.LogDebug("Received MCP initialization notification");
             // For notifications, we typically return an empty success response
             return new { };
         }
@@ -89,18 +89,18 @@ namespace mcp_nexus.Services
             if (paramsElement != null && paramsElement.Value.TryGetProperty("requestId", out var requestIdProp))
             {
                 var requestId = requestIdProp.ToString();
-                m_logger.LogWarning("Received cancellation notification for request ID: {RequestId}", requestId);
+                m_logger.LogInformation("Received cancellation notification for request ID: {RequestId}", requestId);
 
                 if (paramsElement.Value.TryGetProperty("reason", out var reasonProp))
                 {
                     var reason = reasonProp.GetString();
-                    m_logger.LogWarning("Cancellation reason: {Reason}", reason);
+                    m_logger.LogDebug("Cancellation reason: {Reason}", reason);
                 }
 
                 // Actually cancel any running CDB operations
                 try
                 {
-                    m_logger.LogWarning("Cancelling current CDB operations due to client request");
+                    m_logger.LogDebug("Cancelling current CDB operations due to client request");
                     m_cdbSession.CancelCurrentOperation();
                 }
                 catch (Exception ex)
@@ -110,7 +110,7 @@ namespace mcp_nexus.Services
             }
             else
             {
-                m_logger.LogWarning("Received cancellation notification without request ID");
+                m_logger.LogDebug("Received cancellation notification without request ID");
             }
 
             // Return empty success response for notifications
