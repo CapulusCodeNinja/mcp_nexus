@@ -127,7 +127,7 @@ namespace mcp_nexus.Services
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Install Path: {InstallFolder}", InstallFolder);
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "HTTP Endpoint: http://localhost:5000/mcp");
 
-                Console.WriteLine("✅ MCP Nexus service installed and started successfully!");
+                Console.WriteLine("SUCCESS: MCP Nexus service installed and started successfully!");
                 Console.WriteLine($"   Service Name: {ServiceName}");
                 Console.WriteLine($"   Install Path: {InstallFolder}");
                 Console.WriteLine("   HTTP Endpoint: http://localhost:5000/mcp");
@@ -217,7 +217,7 @@ namespace mcp_nexus.Services
                 }
 
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Uninstall, "MCP Nexus service uninstalled successfully");
-                Console.WriteLine("✅ MCP Nexus service uninstalled successfully!");
+                Console.WriteLine("SUCCESS: MCP Nexus service uninstalled successfully!");
                 return true;
             }
             catch (Exception ex)
@@ -263,7 +263,7 @@ namespace mcp_nexus.Services
                 }
 
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.ForceUninstall, "Force uninstall completed");
-                Console.WriteLine("✅ Force uninstall completed!");
+                Console.WriteLine("SUCCESS: Force uninstall completed!");
                 Console.WriteLine("The service should now be completely removed from the system.");
 
                 return true;
@@ -708,7 +708,7 @@ namespace mcp_nexus.Services
                 }
 
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Starting MCP Nexus service update");
-                Console.WriteLine("🔄 Starting MCP Nexus service update...");
+                Console.WriteLine("INFO: Starting MCP Nexus service update...");
 
                 // Check if service exists
                 if (!IsServiceInstalled())
@@ -721,17 +721,17 @@ namespace mcp_nexus.Services
 
                 // Step 1: Stop the service
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Stopping MCP Nexus service for update");
-                Console.WriteLine("📱 Stopping MCP Nexus service...");
+                Console.WriteLine("INFO: Stopping MCP Nexus service...");
                 var stopResult = await RunScCommandAsync($@"stop ""{ServiceName}""", logger, allowFailure: true);
                 if (stopResult)
                 {
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Service stopped successfully");
-                    Console.WriteLine("✅ Service stopped successfully");
+                    Console.WriteLine("SUCCESS: Service stopped successfully");
                 }
                 else
                 {
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Service was not running or already stopped");
-                    Console.WriteLine("ℹ️ Service was not running");
+                    Console.WriteLine("INFO: Service was not running");
                 }
 
                 // Wait for service to fully stop
@@ -739,11 +739,11 @@ namespace mcp_nexus.Services
 
                 // Step 2: Build the project in Release mode
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Building project for deployment");
-                Console.WriteLine("🔨 Building project in Release mode...");
+                Console.WriteLine("INFO: Building project in Release mode...");
                 if (!await BuildProjectForDeploymentAsync(logger))
                 {
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Failed to build project for update");
-                    await Console.Error.WriteLineAsync("❌ Failed to build project for update");
+                    await Console.Error.WriteLineAsync("ERROR: Failed to build project for update");
                     return false;
                 }
 
@@ -802,21 +802,21 @@ namespace mcp_nexus.Services
                 // Copy new files
                 await CopyApplicationFilesAsync(logger);
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Application files updated successfully");
-                Console.WriteLine("✅ Application files updated");
+                Console.WriteLine("SUCCESS: Application files updated");
 
                 // Step 4: Start the service
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Starting MCP Nexus service");
-                Console.WriteLine("🚀 Starting MCP Nexus service...");
+                Console.WriteLine("INFO: Starting MCP Nexus service...");
                 var startResult = await RunScCommandAsync($@"start ""{ServiceName}""", logger);
                 if (startResult)
                 {
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Service started successfully");
-                    Console.WriteLine("✅ Service started successfully");
+                    Console.WriteLine("SUCCESS: Service started successfully");
                 }
                 else
                 {
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Failed to start service after update");
-                    await Console.Error.WriteLineAsync("❌ Failed to start service after update");
+                    await Console.Error.WriteLineAsync("ERROR: Failed to start service after update");
                     await Console.Error.WriteLineAsync($"You can manually start it with: sc start \"{ServiceName}\"");
                     await Console.Error.WriteLineAsync($"Or restore from backup: {backupFolder}");
                     return false;
@@ -824,7 +824,7 @@ namespace mcp_nexus.Services
 
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "MCP Nexus service updated successfully");
                 Console.WriteLine();
-                Console.WriteLine("✅ MCP Nexus service updated successfully!");
+                Console.WriteLine("SUCCESS: MCP Nexus service updated successfully!");
                 Console.WriteLine($"   Service Name: {ServiceName}");
                 Console.WriteLine($"   Install Path: {InstallFolder}");
                 Console.WriteLine("   HTTP Endpoint: http://localhost:5000/mcp");
@@ -836,7 +836,7 @@ namespace mcp_nexus.Services
             catch (Exception ex)
             {
                 OperationLogger.LogError(logger, OperationLogger.Operations.Update, ex, "Service update failed");
-                await Console.Error.WriteLineAsync($"❌ Service update failed: {ex.Message}");
+                await Console.Error.WriteLineAsync($"ERROR: Service update failed: {ex.Message}");
                 return false;
             }
         }
