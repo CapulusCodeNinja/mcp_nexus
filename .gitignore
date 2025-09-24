@@ -53,6 +53,9 @@ Generated\ Files/
 [Bb]uild[Ll]og.*
 *.trx
 
+# Test Results directories
+**/TestResults/
+
 # NUnit
 *.VisualState.xml
 TestResult.xml
@@ -161,6 +164,9 @@ _TeamCity*
 coverage*.json
 coverage*.xml
 coverage*.info
+
+# Coverage report output directory
+CoverageReport/
 
 # Visual Studio code coverage results
 *.coverage
