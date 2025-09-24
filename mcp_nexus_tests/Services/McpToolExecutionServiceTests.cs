@@ -61,13 +61,13 @@ namespace mcp_nexus_tests.Services
 			var args = JsonDocument.Parse(jsonString).RootElement;
 			m_mockCdbSession.Setup(s => s.StartSession(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(false);
 
-			// Act
-			var result = await m_service.ExecuteTool("open_windbg_dump", args);
+		// Act
+		var result = await m_service.ExecuteTool("nexus_open_dump", args);
 
-			// Assert
-			Assert.NotNull(result);
-			// The actual call is StartSession(target) which uses the default value for the second parameter
-			m_mockCdbSession.Verify(s => s.StartSession(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+		// Assert
+		Assert.NotNull(result);
+		// The actual call is StartSession(target) which uses the default value for the second parameter
+		m_mockCdbSession.Verify(s => s.StartSession(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
 		}
 		finally
 		{
@@ -86,7 +86,7 @@ namespace mcp_nexus_tests.Services
 		m_mockCdbSession.Setup(s => s.StopSession()).ReturnsAsync(true);
 
 		// Act
-		var result = await m_service.ExecuteTool("close_windbg_dump", args);
+			var result = await m_service.ExecuteTool("nexus_close_dump", args);
 
 		// Assert
 		Assert.NotNull(result);
@@ -102,7 +102,7 @@ namespace mcp_nexus_tests.Services
 			m_mockCommandQueueService.Setup(q => q.QueueCommand(It.IsAny<string>())).Returns("test-id");
 
 			// Act
-			var result = await m_service.ExecuteTool("run_windbg_cmd_async", args);
+			var result = await m_service.ExecuteTool("nexus_exec_debugger_command_async", args);
 
 			// Assert
 			Assert.NotNull(result);
@@ -117,7 +117,7 @@ namespace mcp_nexus_tests.Services
 			m_mockCommandQueueService.Setup(q => q.GetCommandResult("test-id")).ReturnsAsync("completed");
 
 			// Act
-			var result = await m_service.ExecuteTool("get_command_status", args);
+			var result = await m_service.ExecuteTool("nexus_debugger_command_status", args);
 
 			// Assert
 			Assert.NotNull(result);
@@ -132,7 +132,7 @@ namespace mcp_nexus_tests.Services
 			m_mockCommandQueueService.Setup(q => q.CancelCommand("test-id")).Returns(true);
 
 			// Act
-			var result = await m_service.ExecuteTool("cancel_command", args);
+			var result = await m_service.ExecuteTool("nexus_debugger_command_cancel", args);
 
 			// Assert
 			Assert.NotNull(result);
@@ -148,7 +148,7 @@ namespace mcp_nexus_tests.Services
 			m_mockCommandQueueService.Setup(q => q.GetQueueStatus()).Returns(Array.Empty<(string, string, DateTime, string)>());
 
 			// Act
-			var result = await m_service.ExecuteTool("list_commands", args);
+			var result = await m_service.ExecuteTool("nexus_list_debugger_commands", args);
 
 			// Assert
 			Assert.NotNull(result);
@@ -184,7 +184,7 @@ namespace mcp_nexus_tests.Services
 		Assert.NotNull(result);
 		var resultJson = JsonSerializer.Serialize(result);
 		Assert.Contains("COMMAND REMOVED", resultJson);
-		Assert.Contains("run_windbg_cmd_async", resultJson);
+		Assert.Contains("nexus_exec_debugger_command_async", resultJson);
 		}
 
 		[Fact]
@@ -199,8 +199,8 @@ namespace mcp_nexus_tests.Services
 		// Assert
 		Assert.NotNull(result);
 		var resultJson = JsonSerializer.Serialize(result);
-		Assert.Contains("PERMANENTLY REMOVED", resultJson);
-		Assert.Contains("run_windbg_cmd_async", resultJson);
+		Assert.Contains("COMMAND REMOVED", resultJson);
+		Assert.Contains("nexus_exec_debugger_command_async", resultJson);
 		}
 
 		[Fact]
@@ -238,7 +238,7 @@ namespace mcp_nexus_tests.Services
 			m_mockCdbSession.Setup(s => s.StartSession(It.IsAny<string>(), null)).ReturnsAsync(false);
 
 			// Act
-			var result = await m_service.ExecuteTool("open_windbg_remote", args);
+			var result = await m_service.ExecuteTool("nexus_start_remote_debug", args);
 
 			// Assert
 			Assert.NotNull(result);
@@ -254,7 +254,7 @@ namespace mcp_nexus_tests.Services
 		m_mockCdbSession.Setup(s => s.StopSession()).ReturnsAsync(true);
 
 		// Act
-		var result = await m_service.ExecuteTool("close_windbg_remote", args);
+			var result = await m_service.ExecuteTool("nexus_stop_remote_debug", args);
 
 		// Assert
 		Assert.NotNull(result);

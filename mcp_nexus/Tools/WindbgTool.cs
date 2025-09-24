@@ -82,7 +82,7 @@ namespace mcp_nexus.Tools
                 logger.LogDebug("CDB target arguments: {Target}", target);
 
                 logger.LogDebug("Starting CDB session for crash dump analysis...");
-                var success = await cdbSession.StartSession(target);
+                var success = await cdbSession.StartSession(target, null);
 
                 if (success)
                 {
@@ -173,7 +173,7 @@ namespace mcp_nexus.Tools
                 logger.LogDebug("CDB target arguments for remote connection: {Target}", target);
 
                 logger.LogDebug("Starting CDB session for remote debugging...");
-                var success = await cdbSession.StartSession(target);
+                var success = await cdbSession.StartSession(target, null);
 
                 if (success)
                 {

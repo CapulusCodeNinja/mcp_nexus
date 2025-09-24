@@ -94,7 +94,7 @@ namespace mcp_nexus_tests.Services
 			var toolsListResult = response.Result as McpToolsListResult;
 			Assert.NotNull(toolsListResult);
 			Assert.NotEmpty(toolsListResult.Tools);
-			Assert.Contains(toolsListResult.Tools, t => t.Name == "run_windbg_cmd_async");
+			Assert.Contains(toolsListResult.Tools, t => t.Name == "nexus_exec_debugger_command_async");
 		}
 
 		[Fact]
@@ -280,7 +280,7 @@ namespace mcp_nexus_tests.Services
 					"id": 8,
 					"method": "tools/call",
 					"params": {
-						"name": "run_windbg_cmd_async",
+						"name": "nexus_exec_debugger_command_async",
 						"arguments": {
 							"command": "version"
 						}

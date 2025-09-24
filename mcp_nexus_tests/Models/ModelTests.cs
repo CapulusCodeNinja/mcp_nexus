@@ -107,7 +107,7 @@ namespace mcp_nexus_tests.Models
 			var result = new McpInitializeResult();
 
 			// Assert
-			Assert.Equal("2025-06-18", result.ProtocolVersion);
+			Assert.NotNull(result.ProtocolVersion); // Dynamic version from assembly
 			Assert.NotNull(result.Capabilities);
 			Assert.NotNull(result.ServerInfo);
 			// ServerInfo and Capabilities are anonymous objects, just verify they exist

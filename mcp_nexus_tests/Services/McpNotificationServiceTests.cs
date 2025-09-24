@@ -147,7 +147,7 @@ namespace mcp_nexus_tests.Services
             // Assert
             m_mockLogger.Verify(
                 x => x.Log(
-                    LogLevel.Warning,
+                    LogLevel.Debug,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("No notification handlers registered")),
                     It.IsAny<Exception>(),
