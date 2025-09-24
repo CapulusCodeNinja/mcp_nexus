@@ -34,10 +34,10 @@ cd mcp_nexus
 dotnet build
 
 # Run in stdio mode (default)
-dotnet run
+dotnet run --project mcp_nexus/mcp_nexus.csproj
 
 # Run in HTTP mode
-dotnet run -- --http
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http
 ```
 
 ### Windows Service Installation
@@ -46,16 +46,16 @@ Install MCP Nexus as a Windows service for persistent operation:
 
 ```bash
 # Install as Windows service (requires administrator privileges)
-dotnet run -- --install
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --install
 
 # Update existing Windows service (stop, update files, restart)
-dotnet run -- --update
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --update
 
 # Uninstall the Windows service
-dotnet run -- --uninstall
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --uninstall
 
 # Manual service mode testing
-dotnet run -- --service
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --service
 ```
 
 **Service Features:**
@@ -89,52 +89,71 @@ The server automatically exposes all available tools through the MCP protocol. C
 - **Protocol**: JSON-RPC over stdin/stdout
 - **Performance**: High performance, low latency
 - **Use Case**: Direct integration with AI tools
-- **Command**: `dotnet run`
+- **Command**: `dotnet run --project mcp_nexus/mcp_nexus.csproj`
 
 ### HTTP Transport
 - **Protocol**: JSON-RPC over HTTP
 - **Endpoint**: `http://localhost:5000/mcp`
 - **Use Case**: Development, debugging, web integration
-- **Command**: `dotnet run -- --http`
+- **Command**: `dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http`
 
 ## Available Tools
 
-### Debugging Tools (10 tools)
+### Debugging Tools (8 tools)
 Windows debugging capabilities through WinDBG/CDB integration:
 
-- **Crash Dump Analysis**: `open_windbg_dump`, `close_windbg_dump`
-- **Remote Debugging**: `open_windbg_remote`, `close_windbg_remote`  
-- **Command Execution**: `run_windbg_cmd_async` (🔄 ASYNC QUEUE: Always returns commandId, use `get_command_status` for results)
-- **Queue Management**: `get_command_status`, `cancel_command`, `list_commands`  
-- **File Management**: `list_windbg_dumps`
-- **Advanced Analysis**: `get_session_info`, `analyze_call_stack`, `analyze_memory`, `analyze_crash_patterns`
+- **Crash Dump Analysis**: `nexus_open_dump`, `nexus_close_dump`
+- **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
+- **Command Execution**: `nexus_exec_debugger_command_async` (🔄 ASYNC QUEUE: Always returns commandId, use `nexus_debugger_command_status` for results)
+- **Queue Management**: `nexus_debugger_command_status`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`  
+- **Advanced Analysis**: `analyze_call_stack`, `analyze_memory`, `analyze_crash_patterns`
 
 #### 🔄 Async Command Execution Workflow
 
 **IMPORTANT**: All WinDBG commands use an async queue system:
 
 ```bash
-1. Call run_windbg_cmd_async {"command": "!analyze -v"}
+1. Call nexus_exec_debugger_command_async {"command": "!analyze -v"}
    → Returns: {"commandId": "abc-123", "status": "queued", ...}
 
-2. Poll get_command_status {"commandId": "abc-123"}  
+2. Poll nexus_debugger_command_status {"commandId": "abc-123"}  
    → Returns: {"status": "executing", ...} (keep polling)
    → Returns: {"status": "completed", "result": "ACTUAL_OUTPUT"}
 
 3. Extract the "result" field for your WinDBG command output
 ```
 
-**⚠️ CRITICAL**: `run_windbg_cmd_async` NEVER returns command results directly. You MUST use `get_command_status` to get results!
+**⚠️ CRITICAL**: `nexus_exec_debugger_command_async` NEVER returns command results directly. You MUST use `nexus_debugger_command_status` to get results!
 
-### Utility Tools (1 tool)
-- **Time Services**: `get_current_time` - Get current time for any city
+## Testing
 
-### Future Tool Categories
-The platform is designed to support additional tool categories:
-- **System Administration Tools** (planned)
-- **Development Tools** (planned)
-- **Data Analysis Tools** (planned)
-- **Network Tools** (planned)
+### Running Tests
+
+```bash
+# Run all tests
+dotnet test --logger "console;verbosity=minimal" --nologo
+
+# Run tests with coverage
+dotnet test --collect:"XPlat Code Coverage" --logger "console;verbosity=minimal" --nologo
+
+# Generate coverage report (requires reportgenerator tool)
+reportgenerator -reports:"mcp_nexus_tests/TestResults/*/coverage.cobertura.xml" -targetdir:"CoverageReport" -reporttypes:Html
+
+# Install reportgenerator if not already installed
+dotnet tool install -g dotnet-reportgenerator-globaltool
+
+# Run specific test categories
+dotnet test --filter "FullyQualifiedName~Models" --logger "console;verbosity=minimal" --nologo
+dotnet test --filter "FullyQualifiedName~Services" --logger "console;verbosity=minimal" --nologo
+dotnet test --filter "FullyQualifiedName~Integration" --logger "console;verbosity=minimal" --nologo
+```
+
+### Test Performance
+
+The test suite is optimized for speed:
+- **All tests**: ~4-5 seconds
+- **327 tests**: All using proper mocking for fast execution
+- **Coverage**: 46%+ line coverage with room for improvement
 
 ## Integration with AI Tools
 
@@ -188,7 +207,7 @@ Create or edit your MCP configuration:
 }
 ```
 
-Start the server first: `dotnet run -- --http`
+Start the server first: `dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http`
 
 ### Other MCP Clients
 
@@ -236,7 +255,7 @@ For Windows debugging capabilities:
 
 2. **Configure CDB Path** (optional):
    ```bash
-   dotnet run -- --cdb-path "C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe"
+   dotnet run --project mcp_nexus/mcp_nexus.csproj -- --cdb-path "C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe"
    ```
 
 3. **Automatic Detection**: If no path specified, the system searches:
