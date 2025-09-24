@@ -107,23 +107,27 @@ namespace mcp_nexus_tests.Services
 			// Act
 			var tools = m_service.GetAllTools();
 
-			// Assert
-			Assert.Contains(tools, t => t.Name == "get_command_status");
-			Assert.Contains(tools, t => t.Name == "cancel_command");
-			Assert.Contains(tools, t => t.Name == "list_commands");
+		// Assert
+		Assert.Contains(tools, t => t.Name == "nexus_debugger_command_status");
+		Assert.Contains(tools, t => t.Name == "nexus_debugger_command_cancel");
+		Assert.Contains(tools, t => t.Name == "nexus_list_debugger_commands");
 		}
 
-		[Fact]
-		public void GetAllTools_ContainsUtilityTools()
-		{
-			// Act
-			var tools = m_service.GetAllTools();
+	[Fact]
+	public void GetAllTools_ContainsNexusTools()
+	{
+		// Act
+		var tools = m_service.GetAllTools();
 
-			// Assert
-			Assert.Contains(tools, t => t.Name == "list_windbg_dumps");
-			Assert.Contains(tools, t => t.Name == "get_session_info");
-			Assert.Contains(tools, t => t.Name == "get_current_time");
-		}
+		// Assert
+		Assert.Contains(tools, t => t.Name == "nexus_open_dump");
+		Assert.Contains(tools, t => t.Name == "nexus_start_remote_debug");
+		Assert.Contains(tools, t => t.Name == "nexus_exec_debugger_command_async");
+		Assert.Contains(tools, t => t.Name == "nexus_debugger_command_status");
+		Assert.DoesNotContain(tools, t => t.Name == "list_windbg_dumps");
+		Assert.DoesNotContain(tools, t => t.Name == "get_session_info");
+		Assert.DoesNotContain(tools, t => t.Name == "get_current_time");
+	}
 
 		[Fact]
 		public void GetAllTools_DoesNotContainDeprecatedTools()

@@ -106,8 +106,9 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 			var toolNames = tools.Select(t => t.Name).ToList();
 
-			// Assert
-			Assert.Contains("list_windbg_dumps", toolNames);
+		// Assert
+		Assert.DoesNotContain("list_windbg_dumps", toolNames); // Obsolete tool should not be present
+		Assert.Contains("nexus_open_dump", toolNames);
 		}
 
 		[Fact]

@@ -3,6 +3,18 @@ using System.Text.Json.Serialization;
 
 namespace mcp_nexus.Models
 {
+    /// <summary>
+    /// Helper class to get version information
+    /// </summary>
+    internal static class VersionHelper
+    {
+        internal static string GetFileVersion()
+        {
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            var fileVersionInfo = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location);
+            return fileVersionInfo.FileVersion ?? "1.0.0.0";
+        }
+    }
     public class McpRequest
     {
         [JsonPropertyName("jsonrpc")]
@@ -65,9 +77,9 @@ namespace mcp_nexus.Models
 
     public class McpInitializeResult
     {
-        public string ProtocolVersion { get; set; } = "2025-06-18";
-        public object Capabilities { get; set; } = new { tools = new { listChanged = true } };
-        public object ServerInfo { get; set; } = new { name = "mcp-nexus", version = "1.0.0" };
+        public string ProtocolVersion { get; set; } = VersionHelper.GetFileVersion();
+        public McpCapabilities Capabilities { get; set; } = new();
+        public McpServerDetails ServerInfo { get; set; } = new();
     }
 
     public class McpToolsListResult
@@ -84,7 +96,7 @@ namespace mcp_nexus.Models
 
     public class McpServerInfoResult
     {
-        public string ProtocolVersion { get; set; } = "2025-06-18";
+        public string ProtocolVersion { get; set; } = VersionHelper.GetFileVersion();
         public McpCapabilities Capabilities { get; set; } = new();
         public McpServerDetails ServerInfo { get; set; } = new();
     }
@@ -102,7 +114,7 @@ namespace mcp_nexus.Models
     public class McpServerDetails
     {
         public string Name { get; set; } = "mcp-nexus";
-        public string Version { get; set; } = "1.0.0";
+        public string Version { get; set; } = VersionHelper.GetFileVersion();
     }
 
     // ===== SERVER NOTIFICATION MODELS =====

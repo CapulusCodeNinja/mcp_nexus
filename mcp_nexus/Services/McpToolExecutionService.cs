@@ -16,17 +16,28 @@ namespace mcp_nexus.Services
             {
                 return toolName switch
                 {
-                    "open_windbg_dump" => await ExecuteOpenWindbgDump(arguments),
-                    "open_windbg_remote" => await ExecuteOpenWindbgRemote(arguments),
-                    "close_windbg_dump" => await ExecuteCloseWindbgDump(),
-                    "close_windbg_remote" => await ExecuteCloseWindbgRemote(),
-                    "run_windbg_cmd_async" => await ExecuteRunWindbgCmdAsync(arguments),
-                    "get_command_status" => await ExecuteGetCommandStatus(arguments),
-                    "cancel_command" => await ExecuteCancelCommand(arguments),
-                    "list_commands" => await ExecuteListCommands(),
-                    // Deprecated commands
-                    "run_windbg_cmd" => CreateErrorResult(-32602, "COMMAND REMOVED: run_windbg_cmd has been permanently removed. Use run_windbg_cmd_async instead for all commands."),
-                    "run_windbg_cmd_sync" => CreateErrorResult(-32602, "PERMANENTLY REMOVED: run_windbg_cmd_sync has been removed. Use run_windbg_cmd_async for all commands."),
+                    "nexus_open_dump" => await ExecuteOpenWindbgDump(arguments),
+                    "nexus_start_remote_debug" => await ExecuteOpenWindbgRemote(arguments),
+                    "nexus_close_dump" => await ExecuteCloseWindbgDump(),
+                    "nexus_stop_remote_debug" => await ExecuteCloseWindbgRemote(),
+                    "nexus_exec_debugger_command_async" => await ExecuteRunWindbgCmdAsync(arguments),
+                    "nexus_debugger_command_status" => await ExecuteGetCommandStatus(arguments),
+                    "nexus_debugger_command_cancel" => await ExecuteCancelCommand(arguments),
+                    "nexus_list_debugger_commands" => await ExecuteListCommands(),
+                    // Deprecated commands - maintain backward compatibility
+                    "open_windbg_dump" => CreateErrorResult(-32602, "DEPRECATED: Use nexus_open_dump instead"),
+                    "open_windbg_remote" => CreateErrorResult(-32602, "DEPRECATED: Use nexus_start_remote_debug instead"),
+                    "close_windbg_dump" => CreateErrorResult(-32602, "DEPRECATED: Use nexus_close_dump instead"),
+                    "close_windbg_remote" => CreateErrorResult(-32602, "DEPRECATED: Use nexus_stop_remote_debug instead"),
+                    "run_windbg_cmd_async" => CreateErrorResult(-32602, "DEPRECATED: Use nexus_exec_debugger_command_async instead"),
+                    "get_command_status" => CreateErrorResult(-32602, "DEPRECATED: Use nexus_debugger_command_status instead"),
+                    "cancel_command" => CreateErrorResult(-32602, "DEPRECATED: Use nexus_debugger_command_cancel instead"),
+                    "list_commands" => CreateErrorResult(-32602, "DEPRECATED: Use nexus_list_debugger_commands instead"),
+                    "run_windbg_cmd" => CreateErrorResult(-32602, "COMMAND REMOVED: Use nexus_exec_debugger_command_async instead"),
+                    "run_windbg_cmd_sync" => CreateErrorResult(-32602, "COMMAND REMOVED: Use nexus_exec_debugger_command_async instead"),
+                    "list_windbg_dumps" => CreateErrorResult(-32602, "COMMAND OBSOLETE: This functionality has been removed"),
+                    "get_session_info" => CreateErrorResult(-32602, "COMMAND OBSOLETE: This functionality has been removed"),
+                    "get_current_time" => CreateErrorResult(-32602, "COMMAND OBSOLETE: This functionality has been removed"),
                     _ => CreateErrorResult(-32602, $"Unknown tool: {toolName}")
                 };
             }
@@ -44,7 +55,7 @@ namespace mcp_nexus.Services
                 return CreateErrorResult(-32602, "Missing or invalid dumpPath argument");
 
             var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
-            var result = await windbgTool.OpenWindbgDump(dumpPath, symbolsPath);
+            var result = await windbgTool.NexusOpenDump(dumpPath, symbolsPath);
 
             return CreateTextResult(result);
         }
@@ -56,20 +67,20 @@ namespace mcp_nexus.Services
                 return CreateErrorResult(-32602, "Missing or invalid connectionString argument");
 
             var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
-            var result = await windbgTool.OpenWindbgRemote(connectionString, symbolsPath);
+            var result = await windbgTool.NexusStartRemoteDebug(connectionString, symbolsPath);
 
             return CreateTextResult(result);
         }
 
         private async Task<object> ExecuteCloseWindbgDump()
         {
-            var result = await windbgTool.CloseWindbgDump();
+            var result = await windbgTool.NexusCloseDump();
             return CreateTextResult(result);
         }
 
         private async Task<object> ExecuteCloseWindbgRemote()
         {
-            var result = await windbgTool.CloseWindbgRemote();
+            var result = await windbgTool.NexusStopRemoteDebug();
             return CreateTextResult(result);
         }
 
@@ -79,7 +90,7 @@ namespace mcp_nexus.Services
             if (command == null)
                 return CreateErrorResult(-32602, "Missing or invalid command argument");
 
-            var result = await windbgTool.RunWindbgCmdAsync(command);
+            var result = await windbgTool.NexusExecDebuggerCommandAsync(command);
             return CreateTextResult(result);
         }
 
@@ -89,7 +100,7 @@ namespace mcp_nexus.Services
             if (commandId == null)
                 return CreateErrorResult(-32602, "Missing or invalid commandId argument");
 
-            var result = await windbgTool.GetCommandStatus(commandId);
+            var result = await windbgTool.NexusDebuggerCommandStatus(commandId);
             return CreateTextResult(result);
         }
 
@@ -99,13 +110,13 @@ namespace mcp_nexus.Services
             if (commandId == null)
                 return CreateErrorResult(-32602, "Missing or invalid commandId argument");
 
-            var result = await windbgTool.CancelCommand(commandId);
+            var result = await windbgTool.NexusDebuggerCommandCancel(commandId);
             return CreateTextResult(result);
         }
 
         private async Task<object> ExecuteListCommands()
         {
-            var result = await windbgTool.ListCommands();
+            var result = await windbgTool.NexusListDebuggerCommands();
             return CreateTextResult(result);
         }
 

@@ -40,10 +40,10 @@ namespace mcp_nexus.Tools
 
         // Crash Dump Analysis Tools
 
-        [McpServerTool, Description("Analyze a Windows crash dump file using common WinDBG commands")]
-        public async Task<string> OpenWindbgDump(string dumpPath, string? symbolsPath = null)
+        [McpServerTool, Description("Analyze a Windows crash dump file using common debugger commands")]
+        public async Task<string> NexusOpenDump(string dumpPath, string? symbolsPath = null)
         {
-            logger.LogDebug("OpenWindbgDump called with dumpPath: {DumpPath}, symbolsPath: {SymbolsPath}", dumpPath, symbolsPath);
+            logger.LogDebug("NexusOpenDump called with dumpPath: {DumpPath}, symbolsPath: {SymbolsPath}", dumpPath, symbolsPath);
 
             try
             {
@@ -103,9 +103,9 @@ namespace mcp_nexus.Tools
         }
 
         [McpServerTool, Description("Unload a crash dump and release resources")]
-        public async Task<string> CloseWindbgDump()
+        public async Task<string> NexusCloseDump()
         {
-            logger.LogDebug("CloseWindbgDump called");
+            logger.LogDebug("NexusCloseDump called");
 
             try
             {
@@ -142,9 +142,9 @@ namespace mcp_nexus.Tools
         // Remote Debugging Tools
 
         [McpServerTool, Description("Connect to a remote debugging session using a connection string (e.g., tcp:Port=5005,Server=192.168.0.100)")]
-        public async Task<string> OpenWindbgRemote(string connectionString, string? symbolsPath = null)
+        public async Task<string> NexusStartRemoteDebug(string connectionString, string? symbolsPath = null)
         {
-            logger.LogInformation("OpenWindbgRemote called with connectionString: {ConnectionString}, symbolsPath: {SymbolsPath}", connectionString, symbolsPath);
+            logger.LogInformation("NexusStartRemoteDebug called with connectionString: {ConnectionString}, symbolsPath: {SymbolsPath}", connectionString, symbolsPath);
 
             try
             {
@@ -194,9 +194,9 @@ namespace mcp_nexus.Tools
         }
 
         [McpServerTool, Description("Disconnect from a remote debugging session and release resources")]
-        public async Task<string> CloseWindbgRemote()
+        public async Task<string> NexusStopRemoteDebug()
         {
-            logger.LogInformation("CloseWindbgRemote called");
+            logger.LogInformation("NexusStopRemoteDebug called");
 
             try
             {
@@ -233,10 +233,10 @@ namespace mcp_nexus.Tools
         // General Commands
 
 
-        [McpServerTool, Description("🔄 ASYNC QUEUE: Execute WinDBG command in background queue. ⚠️ NEVER returns command results directly! Always returns commandId. You MUST call get_command_status(commandId) to get results. NO EXCEPTIONS! Works for ALL commands: version, lsa, !analyze -v, !process, etc.")]
-        public Task<string> RunWindbgCmdAsync(string command)
+        [McpServerTool, Description("🔄 ASYNC QUEUE: Execute debugger command in background queue. ⚠️ NEVER returns command results directly! Always returns commandId. You MUST call nexus_debugger_command_status(commandId) to get results. NO EXCEPTIONS! Works for ALL commands: version, lsa, !analyze -v, !process, etc.")]
+        public Task<string> NexusExecDebuggerCommandAsync(string command)
         {
-            logger.LogDebug("RunWindbgCmdAsync called with command: {Command}", command);
+            logger.LogDebug("NexusExecDebuggerCommandAsync called with command: {Command}", command);
 
             try
             {
@@ -271,27 +271,27 @@ namespace mcp_nexus.Tools
   
   ""🚨 CRITICAL_INSTRUCTIONS"": {{
     ""step_1"": ""The command '{command}' is now queued for execution"",
-    ""step_2"": ""You MUST call get_command_status(commandId='{commandId}') to get results"",
-    ""step_3"": ""Keep calling get_command_status every 5-10 seconds until status='completed'"",
-    ""step_4"": ""Extract 'result' field from completed response for actual WinDBG output"",
+    ""step_2"": ""You MUST call nexus_debugger_command_status(commandId='{commandId}') to get results"",
+    ""step_3"": ""Keep calling nexus_debugger_command_status every 5-10 seconds until status='completed'"",
+    ""step_4"": ""Extract 'result' field from completed response for actual debugger output"",
     ""no_exceptions"": ""NEVER expect results in this response - they don't exist here!""
   }},
 
   ""next_required_call"": {{
-    ""function"": ""get_command_status"",
+    ""function"": ""nexus_debugger_command_status"",
     ""parameters"": {{""commandId"": ""{commandId}""}},
     ""when"": ""Call immediately, then every 5-10 seconds"",
     ""until"": ""status field equals 'completed'""
   }},
 
   ""example_workflow"": [
-    ""1. You just called run_windbg_cmd_async → Got this commandId"",
-    ""2. Now call get_command_status('{commandId}') → Check if done"",
+    ""1. You just called nexus_exec_debugger_command_async → Got this commandId"",
+    ""2. Now call nexus_debugger_command_status('{commandId}') → Check if done"",
     ""3. If status='queued' or 'executing' → Wait 5-10s, call again"",
     ""4. If status='completed' → Extract 'result' field = your answer!""
   ],
 
-  ""🔴 WARNING"": ""Command results are NOT in this JSON! Use get_command_status!""
+  ""🔴 WARNING"": ""Command results are NOT in this JSON! Use nexus_debugger_command_status!""
 }}";
 
                 return Task.FromResult(response);
@@ -303,61 +303,14 @@ namespace mcp_nexus.Tools
             }
         }
 
-        // Additional Analysis Tools
-
-        [McpServerTool, Description("Get basic information about the current debugging session")]
-        public async Task<string> GetSessionInfo()
-        {
-            logger.LogInformation("GetSessionInfo called");
-
-            try
-            {
-                logger.LogDebug("Checking if session is active...");
-                if (!cdbSession.IsActive)
-                {
-                    logger.LogWarning("No active debugging session - cannot get session info");
-                    return "No active debugging session.";
-                }
-
-                logger.LogInformation("Gathering session information...");
-                var result = new StringBuilder();
-
-                // Get version info
-                logger.LogDebug("Getting version information...");
-                var version = await cdbSession.ExecuteCommand("version");
-                result.AppendLine("=== Version Information ===");
-                result.AppendLine(version);
-                result.AppendLine();
-
-                // Get process info
-                logger.LogDebug("Getting process information...");
-                var processInfo = await cdbSession.ExecuteCommand("!process 0 0");
-                result.AppendLine("=== Process Information ===");
-                result.AppendLine(processInfo);
-                result.AppendLine();
-
-                // Get thread info
-                logger.LogDebug("Getting thread information...");
-                var threadInfo = await cdbSession.ExecuteCommand("~");
-                result.AppendLine("=== Thread Information ===");
-                result.AppendLine(threadInfo);
-
-                logger.LogInformation("Session information gathered successfully");
-                return result.ToString();
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error getting session information");
-                return $"Error getting session information: {ex.Message}";
-            }
-        }
+        // Command Queue Management Tools
 
         // Async Job Management Tools
 
-        [McpServerTool, Description("Check status of queued command from run_windbg_cmd_async. Returns JSON with status: 'queued' (waiting in line), 'executing' (running now), 'completed' (extract 'result' field for command output), or 'cancelled'. CRITICAL: You must call this to get actual results from commands!")]
-        public async Task<string> GetCommandStatus(string commandId)
+        [McpServerTool, Description("Check status of queued command from nexus_exec_debugger_command_async. Returns JSON with status: 'queued' (waiting in line), 'executing' (running now), 'completed' (extract 'result' field for command output), or 'cancelled'. CRITICAL: You must call this to get actual results from commands!")]
+        public async Task<string> NexusDebuggerCommandStatus(string commandId)
         {
-            logger.LogInformation("GetCommandStatus called with commandId: {CommandId}", commandId);
+            logger.LogInformation("NexusDebuggerCommandStatus called with commandId: {CommandId}", commandId);
 
             try
             {
@@ -420,9 +373,9 @@ namespace mcp_nexus.Tools
         }
 
         [McpServerTool, Description("Cancel a queued or running command. Useful for stopping long-running commands that are taking too long.")]
-        public Task<string> CancelCommand(string commandId)
+        public Task<string> NexusDebuggerCommandCancel(string commandId)
         {
-            logger.LogInformation("CancelCommand called with commandId: {CommandId}", commandId);
+            logger.LogInformation("NexusDebuggerCommandCancel called with commandId: {CommandId}", commandId);
 
             try
             {
@@ -447,9 +400,9 @@ namespace mcp_nexus.Tools
         }
 
         [McpServerTool, Description("List current command queue status. Shows queued, executing, and recent commands with their status.")]
-        public Task<string> ListCommands()
+        public Task<string> NexusListDebuggerCommands()
         {
-            logger.LogInformation("ListCommands called");
+            logger.LogInformation("NexusListDebuggerCommands called");
 
             try
             {
