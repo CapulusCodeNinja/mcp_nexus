@@ -14,6 +14,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>mcp_nexus_tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.4" />
     <PackageReference Include="NLog.Extensions.Logging" Version="6.0.4" />
     <PackageReference Include="NLog.Web.AspNetCore" Version="6.0.4" />
