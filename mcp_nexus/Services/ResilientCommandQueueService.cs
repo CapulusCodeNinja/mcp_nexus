@@ -590,14 +590,14 @@ namespace mcp_nexus.Services
         public void Dispose()
         {
             if (m_disposed) return;
-            m_disposed = true;
 
             m_logger.LogInformation("Disposing ResilientCommandQueueService");
 
-            // Cancel all commands and cleanup
+            // Cancel all commands and cleanup BEFORE setting disposed flag
             try
             {
                 CancelAllCommands("Service shutdown");
+                m_disposed = true;
                 m_serviceCts.Cancel();
                 
                 if (!m_processingTask.Wait(5000))

@@ -77,7 +77,7 @@ namespace mcp_nexus.Models
 
     public class McpInitializeResult
     {
-        public string ProtocolVersion { get; set; } = VersionHelper.GetFileVersion();
+        public string ProtocolVersion { get; set; } = "2025-06-18";
         public McpCapabilities Capabilities { get; set; } = new();
         public McpServerDetails ServerInfo { get; set; } = new();
     }
@@ -96,7 +96,7 @@ namespace mcp_nexus.Models
 
     public class McpServerInfoResult
     {
-        public string ProtocolVersion { get; set; } = VersionHelper.GetFileVersion();
+        public string ProtocolVersion { get; set; } = "2025-06-18";
         public McpCapabilities Capabilities { get; set; } = new();
         public McpServerDetails ServerInfo { get; set; } = new();
     }
