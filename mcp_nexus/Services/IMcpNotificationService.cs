@@ -31,6 +31,11 @@ namespace mcp_nexus.Services
             int activeCommands, TimeSpan? uptime = null);
 
         /// <summary>
+        /// Send a tools list changed notification to all connected clients (standard MCP notification)
+        /// </summary>
+        Task NotifyToolsListChangedAsync();
+
+        /// <summary>
         /// Send a custom notification to all connected clients
         /// </summary>
         Task SendNotificationAsync(string method, object? parameters = null);

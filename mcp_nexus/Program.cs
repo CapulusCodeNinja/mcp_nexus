@@ -578,6 +578,23 @@ namespace mcp_nexus
             await Console.Error.WriteLineAsync("Building application host...");
             var host = builder.Build();
 
+            // CRITICAL FIX: Initialize the notification bridge after host is built
+            try
+            {
+                var notificationBridge = host.Services.GetRequiredService<IStdioNotificationBridge>();
+                await notificationBridge.InitializeAsync();
+                await Console.Error.WriteLineAsync("Notification bridge initialized for stdio MCP server");
+
+                // Send standard MCP tools list changed notification on startup
+                var notificationService = host.Services.GetRequiredService<IMcpNotificationService>();
+                await notificationService.NotifyToolsListChangedAsync();
+                await Console.Error.WriteLineAsync("Sent tools list changed notification to MCP clients");
+            }
+            catch (Exception ex)
+            {
+                await Console.Error.WriteLineAsync($"Warning: Failed to initialize notification bridge: {ex.Message}");
+            }
+
             await Console.Error.WriteLineAsync("Starting MCP Nexus stdio server...");
             await host.RunAsync();
         }
@@ -654,6 +671,10 @@ namespace mcp_nexus
 
             services.AddSingleton<WindbgTool>();
             Console.Error.WriteLine("Registered WindbgTool as singleton");
+
+            // Register MCP notification service for both HTTP and stdio modes
+            services.AddSingleton<IMcpNotificationService, McpNotificationService>();
+            Console.Error.WriteLine("Registered McpNotificationService for server-initiated notifications");
         }
 
         private static void ConfigureHttpServices(IServiceCollection services)
@@ -693,8 +714,7 @@ namespace mcp_nexus
             services.AddSingleton<McpToolDefinitionService>();
             services.AddSingleton<McpToolExecutionService>();
             services.AddSingleton<McpProtocolService>();
-            services.AddSingleton<IMcpNotificationService, McpNotificationService>();
-            Console.WriteLine("Registered McpNotificationService for server-initiated notifications");
+            // Note: IMcpNotificationService now registered in shared RegisterServices() method
 
             Console.WriteLine("MCP server configured for HTTP with controllers, CORS, and services");
         }
@@ -706,9 +726,14 @@ namespace mcp_nexus
             // Add the MCP protocol service for logging comparison
             services.AddSingleton<McpProtocolService>();
 
+            // Note: IMcpNotificationService is now registered in shared RegisterServices() method
+
             services.AddMcpServer()
     .WithStdioServerTransport()
     .WithToolsFromAssembly();
+
+            // CRITICAL FIX: Bridge notification service to stdio MCP server
+            services.AddSingleton<IStdioNotificationBridge, StdioNotificationBridge>();
 
             Console.Error.WriteLine("MCP server configured with stdio transport and tools from assembly");
         }

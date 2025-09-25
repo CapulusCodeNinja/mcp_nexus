@@ -106,6 +106,16 @@ namespace mcp_nexus.Services
                 status, queueSize, activeCommands);
         }
 
+        public async Task NotifyToolsListChangedAsync()
+        {
+            if (m_disposed) return;
+
+            // Standard MCP notification - no parameters needed for tools/list_changed
+            await SendNotificationAsync("notifications/tools/list_changed", null);
+            
+            m_logger.LogDebug("Sent standard MCP tools list changed notification");
+        }
+
         public async Task SendNotificationAsync(string method, object? parameters = null)
         {
             if (m_disposed) return;
