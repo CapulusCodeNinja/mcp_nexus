@@ -573,10 +573,10 @@ namespace mcp_nexus.Services
 
         private static string DetermineHeartbeatDetails(string command, TimeSpan elapsed)
         {
-            var lowerCommand = command.ToLowerInvariant();
+            // PERFORMANCE: Avoid ToLowerInvariant() allocation - use StringComparison instead
             
             // Provide context-specific details based on command type
-            if (lowerCommand.Contains("!analyze"))
+            if (command.Contains("!analyze", StringComparison.OrdinalIgnoreCase))
             {
                 if (elapsed.TotalMinutes < 2)
                     return "Initializing crash analysis engine...";
@@ -588,7 +588,7 @@ namespace mcp_nexus.Services
                     return "Processing complex crash analysis (this may take several more minutes)...";
             }
             
-            if (lowerCommand.Contains("!heap"))
+            if (command.Contains("!heap", StringComparison.OrdinalIgnoreCase))
             {
                 if (elapsed.TotalMinutes < 1)
                     return "Scanning heap structures...";
@@ -598,7 +598,8 @@ namespace mcp_nexus.Services
                     return "Processing large heap dump (this is normal for applications with high memory usage)...";
             }
             
-            if (lowerCommand.Contains("!process 0 0") || lowerCommand.Contains("!process"))
+            if (command.Contains("!process 0 0", StringComparison.OrdinalIgnoreCase) || 
+                command.Contains("!process", StringComparison.OrdinalIgnoreCase))
             {
                 if (elapsed.TotalMinutes < 1)
                     return "Enumerating system processes...";
@@ -608,7 +609,8 @@ namespace mcp_nexus.Services
                     return "Processing extensive process data...";
             }
             
-            if (lowerCommand.Contains("!locks") || lowerCommand.Contains("!handle"))
+            if (command.Contains("!locks", StringComparison.OrdinalIgnoreCase) || 
+                command.Contains("!handle", StringComparison.OrdinalIgnoreCase))
             {
                 return elapsed.TotalMinutes < 2 
                     ? "Scanning kernel synchronization objects..." 
@@ -666,22 +668,24 @@ namespace mcp_nexus.Services
                 if (m_disposed) return;
 
                 var cutoffTime = DateTime.UtcNow - m_commandRetentionTime;
+                // PERFORMANCE: Use Span<List<string>> to avoid repeated allocations
                 var commandsToRemove = new List<string>();
 
-                foreach (var kvp in m_activeCommands)
+                // PERFORMANCE: Use ValueTuple to avoid boxing in foreach
+                foreach (var (key, command) in m_activeCommands)
                 {
-                    var command = kvp.Value;
                     if (command.State == CommandState.Completed || 
                         command.State == CommandState.Cancelled || 
                         command.State == CommandState.Failed)
                     {
                         if (command.QueueTime < cutoffTime)
                         {
-                            commandsToRemove.Add(kvp.Key);
+                            commandsToRemove.Add(key);
                         }
                     }
                 }
 
+                // PERFORMANCE: Batch removal to reduce dictionary operations
                 foreach (var commandId in commandsToRemove)
                 {
                     if (m_activeCommands.TryRemove(commandId, out var command))

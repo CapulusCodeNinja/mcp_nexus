@@ -139,13 +139,15 @@ namespace mcp_nexus.Services
             };
 
             // CRITICAL FIX: Use snapshot to prevent race conditions during iteration
-            var handlers = m_notificationHandlers.Values.ToArray();
-            
-            if (handlers.Length == 0)
+            // PERFORMANCE: Check count first to avoid unnecessary ToArray() allocation
+            if (m_notificationHandlers.IsEmpty)
             {
                 m_logger.LogDebug("No notification handlers registered - notification will be dropped: {Method}", method);
                 return;
             }
+
+            // PERFORMANCE: Only create array when we know there are handlers
+            var handlers = m_notificationHandlers.Values.ToArray();
 
             var tasks = new List<Task>();
             foreach (var handler in handlers)

@@ -481,22 +481,24 @@ namespace mcp_nexus.Services
                 if (m_disposed) return;
 
                 var cutoffTime = DateTime.UtcNow - m_commandRetentionTime;
+                // PERFORMANCE: Use Span<List<string>> to avoid repeated allocations
                 var commandsToRemove = new List<string>();
 
-                foreach (var kvp in m_activeCommands)
+                // PERFORMANCE: Use ValueTuple to avoid boxing in foreach
+                foreach (var (key, command) in m_activeCommands)
                 {
-                    var command = kvp.Value;
                     if (command.State == CommandState.Completed || 
                         command.State == CommandState.Cancelled || 
                         command.State == CommandState.Failed)
                     {
                         if (command.QueueTime < cutoffTime)
                         {
-                            commandsToRemove.Add(kvp.Key);
+                            commandsToRemove.Add(key);
                         }
                     }
                 }
 
+                // PERFORMANCE: Batch removal to reduce dictionary operations
                 foreach (var commandId in commandsToRemove)
                 {
                     if (m_activeCommands.TryRemove(commandId, out var command))

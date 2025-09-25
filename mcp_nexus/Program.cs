@@ -733,8 +733,8 @@ namespace mcp_nexus
             // Note: IMcpNotificationService is now registered in shared RegisterServices() method
 
             services.AddMcpServer()
-    .WithStdioServerTransport()
-    .WithToolsFromAssembly();
+                .WithStdioServerTransport()
+                .WithToolsFromAssembly();
 
             // CRITICAL FIX: Bridge notification service to stdio MCP server
             services.AddSingleton<IStdioNotificationBridge, StdioNotificationBridge>();

@@ -43,5 +43,10 @@ namespace mcp_nexus.Constants
         public static readonly int MaxRecoveryAttempts = 3;
         public static readonly TimeSpan RecoveryDelay = TimeSpan.FromSeconds(5);
         public static readonly TimeSpan HealthCheckInterval = TimeSpan.FromSeconds(30);
+
+        // Performance Optimization Settings
+        public const int MaxConcurrentNotifications = 10;
+        public const int MaxCleanupBatchSize = 100;
+        public const int MaxLogMessageLength = 1000;
     }
 }
