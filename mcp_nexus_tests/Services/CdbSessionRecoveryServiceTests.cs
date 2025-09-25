@@ -1,270 +1,537 @@
-using Xunit;
-using Moq;
-using Microsoft.Extensions.Logging;
-using mcp_nexus.Helper;
-using mcp_nexus.Services;
 using System;
 using System.Threading.Tasks;
-using System.Threading;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+using mcp_nexus.Helper;
+using mcp_nexus.Services;
 
 namespace mcp_nexus_tests.Services
 {
-    public class CdbSessionRecoveryServiceTests
+    /// <summary>
+    /// Tests for CdbSessionRecoveryService - handles CDB session recovery
+    /// </summary>
+    public class CdbSessionRecoveryServiceTests : IDisposable
     {
-        private readonly Mock<ICdbSessionRecoveryService> m_mockRecoveryService;
+        private readonly Mock<ICdbSession> m_mockCdbSession;
+        private readonly Mock<ILogger<CdbSessionRecoveryService>> m_mockLogger;
+        private readonly Mock<IMcpNotificationService> m_mockNotificationService;
+        private readonly Func<string, int> m_cancelAllCommandsCallback;
+        private CdbSessionRecoveryService? m_recoveryService;
 
         public CdbSessionRecoveryServiceTests()
         {
-            m_mockRecoveryService = new Mock<ICdbSessionRecoveryService>();
+            m_mockCdbSession = new Mock<ICdbSession>();
+            m_mockLogger = new Mock<ILogger<CdbSessionRecoveryService>>();
+            m_mockNotificationService = new Mock<IMcpNotificationService>();
+            m_cancelAllCommandsCallback = (reason) => 0; // Mock callback
+        }
+
+        public void Dispose()
+        {
+            m_recoveryService?.Dispose();
         }
 
         [Fact]
-        public async Task RecoverStuckSession_SuccessfulCancellation_ReturnsTrue()
+        public void CdbSessionRecoveryService_Constructor_WithValidParameters_Succeeds()
+        {
+            // Act
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+
+            // Assert
+            Assert.NotNull(m_recoveryService);
+        }
+
+        [Fact]
+        public void CdbSessionRecoveryService_Constructor_WithNotificationService_Succeeds()
+        {
+            // Act
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback,
+                m_mockNotificationService.Object);
+
+            // Assert
+            Assert.NotNull(m_recoveryService);
+        }
+
+        [Fact]
+        public void CdbSessionRecoveryService_Constructor_WithNullCdbSession_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => 
+                new CdbSessionRecoveryService(null!, m_mockLogger.Object, m_cancelAllCommandsCallback));
+        }
+
+        [Fact]
+        public void CdbSessionRecoveryService_Constructor_WithNullLogger_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => 
+                new CdbSessionRecoveryService(m_mockCdbSession.Object, null!, m_cancelAllCommandsCallback));
+        }
+
+        [Fact]
+        public void CdbSessionRecoveryService_Constructor_WithNullCallback_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => 
+                new CdbSessionRecoveryService(m_mockCdbSession.Object, m_mockLogger.Object, null!));
+        }
+
+        [Fact]
+        public async Task RecoverStuckSession_WithValidReason_ReturnsTrue()
         {
             // Arrange
-            m_mockRecoveryService.Setup(s => s.RecoverStuckSession("Test timeout"))
-                .ReturnsAsync(true);
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback,
+                m_mockNotificationService.Object);
+
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
+            m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
+            m_mockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
 
             // Act
-            var result = await m_mockRecoveryService.Object.RecoverStuckSession("Test timeout");
+            var result = await m_recoveryService.RecoverStuckSession("Test recovery");
 
             // Assert
             Assert.True(result);
-            m_mockRecoveryService.Verify(s => s.RecoverStuckSession("Test timeout"), Times.Once);
+            m_mockCdbSession.Verify(x => x.StopSession(), Times.Once);
+            m_mockCdbSession.Verify(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
-        public async Task RecoverStuckSession_CancellationFails_ProceedsToForceRestart()
+        public async Task RecoverStuckSession_WithNullReason_ThrowsArgumentNullException()
         {
             // Arrange
-            m_mockRecoveryService.Setup(s => s.RecoverStuckSession("Test unresponsive"))
-                .ReturnsAsync(true);
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
 
-            // Act
-            var result = await m_mockRecoveryService.Object.RecoverStuckSession("Test unresponsive");
-
-            // Assert
-            Assert.True(result);
-            m_mockRecoveryService.Verify(s => s.RecoverStuckSession("Test unresponsive"), Times.Once);
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => 
+                m_recoveryService.RecoverStuckSession(null!));
         }
 
         [Fact]
-        public async Task RecoverStuckSession_SessionUnresponsive_ForceRestart()
+        public async Task RecoverStuckSession_WithEmptyReason_ThrowsArgumentException()
         {
             // Arrange
-            m_mockRecoveryService.Setup(s => s.RecoverStuckSession("Test unresponsive session"))
-                .ReturnsAsync(true);
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
 
-            // Act
-            var result = await m_mockRecoveryService.Object.RecoverStuckSession("Test unresponsive session");
-
-            // Assert
-            Assert.True(result);
-            m_mockRecoveryService.Verify(s => s.RecoverStuckSession("Test unresponsive session"), Times.Once);
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => 
+                m_recoveryService.RecoverStuckSession(""));
         }
 
         [Fact]
-        public async Task ForceRestartSession_SuccessfulStop_ReturnsTrue()
+        public async Task RecoverStuckSession_WithWhitespaceReason_ThrowsArgumentException()
         {
             // Arrange
-            m_mockRecoveryService.Setup(s => s.ForceRestartSession("Force restart test"))
-                .ReturnsAsync(true);
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
 
-            // Act
-            var result = await m_mockRecoveryService.Object.ForceRestartSession("Force restart test");
-
-            // Assert
-            Assert.True(result);
-            m_mockRecoveryService.Verify(s => s.ForceRestartSession("Force restart test"), Times.Once);
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => 
+                m_recoveryService.RecoverStuckSession("   "));
         }
 
         [Fact]
-        public async Task ForceRestartSession_StopFails_SessionStillActive_ReturnsFalse()
+        public async Task RecoverStuckSession_WhenSessionNotActive_ReturnsFalse()
         {
             // Arrange
-            m_mockRecoveryService.Setup(s => s.ForceRestartSession("Force restart test"))
-                .ReturnsAsync(false);
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(false);
 
             // Act
-            var result = await m_mockRecoveryService.Object.ForceRestartSession("Force restart test");
+            var result = await m_recoveryService.RecoverStuckSession("Test recovery");
 
             // Assert
             Assert.False(result);
-            m_mockRecoveryService.Verify(s => s.ForceRestartSession("Force restart test"), Times.Once);
+            m_mockCdbSession.Verify(x => x.StopSession(), Times.Never);
+            m_mockCdbSession.Verify(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
-        public async Task ForceRestartSession_ExceptionDuringStop_ReturnsFalse()
+        public async Task RecoverStuckSession_WhenStopSessionFails_ReturnsFalse()
         {
             // Arrange
-            m_mockRecoveryService.Setup(s => s.ForceRestartSession("Exception test"))
-                .ReturnsAsync(false);
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
+            m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(false);
 
             // Act
-            var result = await m_mockRecoveryService.Object.ForceRestartSession("Exception test");
+            var result = await m_recoveryService.RecoverStuckSession("Test recovery");
+
+            // Assert
+            Assert.False(result);
+            m_mockCdbSession.Verify(x => x.StopSession(), Times.Once);
+            m_mockCdbSession.Verify(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task RecoverStuckSession_WhenStartSessionFails_ReturnsFalse()
+        {
+            // Arrange
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
+            m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
+            m_mockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(false);
+
+            // Act
+            var result = await m_recoveryService.RecoverStuckSession("Test recovery");
+
+            // Assert
+            Assert.False(result);
+            m_mockCdbSession.Verify(x => x.StopSession(), Times.Once);
+            m_mockCdbSession.Verify(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task RecoverStuckSession_WhenDisposed_ThrowsObjectDisposedException()
+        {
+            // Arrange
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+            m_recoveryService.Dispose();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => 
+                m_recoveryService.RecoverStuckSession("Test recovery"));
+        }
+
+        [Fact]
+        public async Task ForceRestartSession_WithValidReason_ReturnsTrue()
+        {
+            // Arrange
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback,
+                m_mockNotificationService.Object);
+
+            // Setup mocks to return successful results
+            m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
+            m_mockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(false);
+
+            // Act
+            var result = await m_recoveryService.ForceRestartSession("Test force restart");
+
+            // Assert
+            Assert.True(result);
+            m_mockCdbSession.Verify(x => x.StopSession(), Times.Once);
+            m_mockCdbSession.Verify(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+            m_mockCdbSession.Verify(x => x.IsActive, Times.Once);
+        }
+
+        [Fact]
+        public async Task ForceRestartSession_WithNullReason_ThrowsArgumentNullException()
+        {
+            // Arrange
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => 
+                m_recoveryService.ForceRestartSession(null!));
+        }
+
+        [Fact]
+        public async Task ForceRestartSession_WithEmptyReason_ThrowsArgumentException()
+        {
+            // Arrange
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => 
+                m_recoveryService.ForceRestartSession(""));
+        }
+
+        [Fact]
+        public async Task ForceRestartSession_WhenSessionNotActive_ReturnsFalse()
+        {
+            // Arrange
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(false);
+
+            // Act
+            var result = await m_recoveryService.ForceRestartSession("Test force restart");
+
+            // Assert
+            Assert.False(result);
+            m_mockCdbSession.Verify(x => x.StopSession(), Times.Never);
+            m_mockCdbSession.Verify(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ForceRestartSession_WhenDisposed_ThrowsObjectDisposedException()
+        {
+            // Arrange
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+            m_recoveryService.Dispose();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => 
+                m_recoveryService.ForceRestartSession("Test force restart"));
+        }
+
+        [Fact]
+        public void IsSessionHealthy_WhenSessionActive_ReturnsTrue()
+        {
+            // Arrange
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
+
+            // Act
+            var result = m_recoveryService.IsSessionHealthy();
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void IsSessionHealthy_WhenSessionNotActive_ReturnsFalse()
+        {
+            // Arrange
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(false);
+
+            // Act
+            var result = m_recoveryService.IsSessionHealthy();
 
             // Assert
             Assert.False(result);
         }
 
         [Fact]
-        public void IsSessionHealthy_RecentCheck_ReturnsTrue()
+        public void IsSessionHealthy_WhenDisposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_mockRecoveryService.Setup(s => s.IsSessionHealthy()).Returns(true);
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+            m_recoveryService.Dispose();
 
-            // Act
-            var result = m_mockRecoveryService.Object.IsSessionHealthy();
-
-            // Assert
-            Assert.True(result);
-            m_mockRecoveryService.Verify(s => s.IsSessionHealthy(), Times.Once);
+            // Act & Assert
+            Assert.Throws<ObjectDisposedException>(() => m_recoveryService.IsSessionHealthy());
         }
 
         [Fact]
-        public void IsSessionHealthy_InactiveSession_ReturnsTrue()
+        public void Dispose_MultipleTimes_DoesNotThrow()
         {
             // Arrange
-            m_mockRecoveryService.Setup(s => s.IsSessionHealthy()).Returns(true);
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
 
-            // Act
-            var result = m_mockRecoveryService.Object.IsSessionHealthy();
-
-            // Assert
-            Assert.True(result);
-            m_mockRecoveryService.Verify(s => s.IsSessionHealthy(), Times.Once);
+            // Act & Assert - Should not throw
+            m_recoveryService.Dispose();
+            var exception = Record.Exception(() => m_recoveryService.Dispose());
+            Assert.Null(exception);
         }
 
         [Fact]
-        public void IsSessionHealthy_ExceptionThrown_ReturnsFalse()
+        public async Task RecoverStuckSession_MultipleCalls_IncrementsRecoveryAttempts()
         {
             // Arrange
-            m_mockRecoveryService.Setup(s => s.IsSessionHealthy()).Returns(false);
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
+            m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
+            m_mockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
 
             // Act
-            var result = m_mockRecoveryService.Object.IsSessionHealthy();
+            await m_recoveryService.RecoverStuckSession("First recovery");
+            await m_recoveryService.RecoverStuckSession("Second recovery");
+            await m_recoveryService.RecoverStuckSession("Third recovery");
 
             // Assert
-            Assert.False(result);
-            m_mockRecoveryService.Verify(s => s.IsSessionHealthy(), Times.Once);
+            m_mockCdbSession.Verify(x => x.StopSession(), Times.Exactly(3));
+            m_mockCdbSession.Verify(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>()), Times.Exactly(3));
         }
 
         [Fact]
-        public async Task RecoverStuckSession_MultipleAttempts_TracksRecoveryCount()
+        public async Task RecoverStuckSession_WithNotificationService_SendsNotification()
         {
-            // Arrange - Three consecutive recovery calls should all succeed
-            m_mockRecoveryService.Setup(s => s.RecoverStuckSession("First attempt")).ReturnsAsync(true);
-            m_mockRecoveryService.Setup(s => s.RecoverStuckSession("Second attempt")).ReturnsAsync(true);
-            m_mockRecoveryService.Setup(s => s.RecoverStuckSession("Third attempt")).ReturnsAsync(true);
+            // Arrange
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback,
+                m_mockNotificationService.Object);
 
-            // Act - Multiple recovery attempts
-            var result1 = await m_mockRecoveryService.Object.RecoverStuckSession("First attempt");
-            var result2 = await m_mockRecoveryService.Object.RecoverStuckSession("Second attempt");
-            var result3 = await m_mockRecoveryService.Object.RecoverStuckSession("Third attempt");
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
+            m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
+            m_mockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+
+            // Act
+            await m_recoveryService.RecoverStuckSession("Test recovery");
+
+            // Wait for async notifications to complete
+            await Task.Delay(100);
 
             // Assert
-            Assert.True(result1);
-            Assert.True(result2);
-            Assert.True(result3);
-            m_mockRecoveryService.Verify(s => s.RecoverStuckSession("First attempt"), Times.Once);
-            m_mockRecoveryService.Verify(s => s.RecoverStuckSession("Second attempt"), Times.Once);
-            m_mockRecoveryService.Verify(s => s.RecoverStuckSession("Third attempt"), Times.Once);
+            m_mockNotificationService.Verify(x => x.NotifySessionRecoveryAsync(
+                It.IsAny<string>(), 
+                It.IsAny<string>(), 
+                It.IsAny<bool>(), 
+                It.IsAny<string>(), 
+                It.IsAny<string[]>()), 
+                Times.AtLeastOnce);
         }
 
         [Fact]
-        public async Task RecoverStuckSession_SessionBecomesResponsive_ResetsRecoveryCounter()
+        public async Task RecoverStuckSession_WithoutNotificationService_DoesNotThrow()
         {
             // Arrange
-            m_mockRecoveryService.Setup(s => s.RecoverStuckSession("Test recovery reset")).ReturnsAsync(true);
-            m_mockRecoveryService.Setup(s => s.IsSessionHealthy()).Returns(true);
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
 
-            // Act
-            var result = await m_mockRecoveryService.Object.RecoverStuckSession("Test recovery reset");
-            var health = m_mockRecoveryService.Object.IsSessionHealthy();
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
+            m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
+            m_mockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
 
-            // Assert
-            Assert.True(result);
-            Assert.True(health);
-        }
-
-        [Fact]
-        public async Task RecoverStuckSession_CommandQueueException_HandlesGracefully()
-        {
-            // Arrange
-            m_mockRecoveryService.Setup(s => s.RecoverStuckSession("Queue exception test")).ReturnsAsync(false);
-
-            // Act
-            var result = await m_mockRecoveryService.Object.RecoverStuckSession("Queue exception test");
-
-            // Assert
-            Assert.False(result); // Should return false when recovery fails
-        }
-
-        [Theory]
-        [InlineData("")]
-        [InlineData("   ")]
-        public async Task RecoverStuckSession_EmptyReason_HandlesGracefully(string reason)
-        {
-            // Arrange
-            m_mockRecoveryService.Setup(s => s.RecoverStuckSession(reason)).ReturnsAsync(true);
-
-            // Act
-            var result = await m_mockRecoveryService.Object.RecoverStuckSession(reason);
-
-            // Assert
-            Assert.True(result); // Should still work with empty reason
-        }
-
-        [Fact]
-        public async Task RecoverStuckSession_NullReason_HandlesGracefully()
-        {
-            // Arrange
-            m_mockRecoveryService.Setup(s => s.RecoverStuckSession(null!)).ReturnsAsync(true);
-
-            // Act
-            var result = await m_mockRecoveryService.Object.RecoverStuckSession(null!);
-
-            // Assert
-            Assert.True(result); // Should still work with null reason
-        }
-
-        [Fact]
-        public async Task ForceRestartSession_WaitsForCleanup_VerifiesDelay()
-        {
-            // Arrange
-            m_mockRecoveryService.Setup(s => s.ForceRestartSession("Cleanup delay test")).ReturnsAsync(true);
-
-            // Act
-            var result = await m_mockRecoveryService.Object.ForceRestartSession("Cleanup delay test");
+            // Act & Assert - Should not throw
+            var result = await m_recoveryService.RecoverStuckSession("Test recovery");
 
             // Assert
             Assert.True(result);
         }
 
         [Fact]
-        public async Task RecoverStuckSession_ResponsivenessTestTimeout_HandlesCorrectly()
+        public async Task ForceRestartSession_WithNotificationService_SendsNotification()
         {
             // Arrange
-            m_mockRecoveryService.Setup(s => s.RecoverStuckSession("Responsiveness timeout test")).ReturnsAsync(true);
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback,
+                m_mockNotificationService.Object);
+
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
+            m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
+            m_mockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            
+            // After StopSession is called, IsActive should return false
+            m_mockCdbSession.SetupSequence(x => x.IsActive)
+                .Returns(true)  // First call (before stop)
+                .Returns(false) // Second call (after stop)
+                .Returns(false); // Third call (after stop)
 
             // Act
-            var result = await m_mockRecoveryService.Object.RecoverStuckSession("Responsiveness timeout test");
+            await m_recoveryService.ForceRestartSession("Test force restart");
+
+            // Wait for async notifications to complete
+            await Task.Delay(100);
 
             // Assert
-            Assert.True(result); // Should recover via force restart
+            m_mockNotificationService.Verify(x => x.NotifySessionRecoveryAsync(
+                It.IsAny<string>(), 
+                It.IsAny<string>(), 
+                It.IsAny<bool>(), 
+                It.IsAny<string>(), 
+                It.IsAny<string[]>()), 
+                Times.AtLeastOnce);
         }
 
         [Fact]
-        public async Task RecoverStuckSession_ResponsivenessTestReturnsError_TriggersRestart()
+        public async Task ForceRestartSession_WithoutNotificationService_DoesNotThrow()
         {
             // Arrange
-            m_mockRecoveryService.Setup(s => s.RecoverStuckSession("Error response test")).ReturnsAsync(true);
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
 
-            // Act
-            var result = await m_mockRecoveryService.Object.RecoverStuckSession("Error response test");
+            m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
+            m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
+            m_mockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+
+            // Act & Assert - Should not throw
+            var result = await m_recoveryService.ForceRestartSession("Test force restart");
 
             // Assert
             Assert.True(result);
+        }
+
+        [Fact]
+        public void CdbSessionRecoveryService_ImplementsIDisposable()
+        {
+            // Arrange
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+
+            // Act & Assert
+            Assert.IsAssignableFrom<IDisposable>(m_recoveryService);
+        }
+
+        [Fact]
+        public void CdbSessionRecoveryService_ImplementsICdbSessionRecoveryService()
+        {
+            // Arrange
+            m_recoveryService = new CdbSessionRecoveryService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_cancelAllCommandsCallback);
+
+            // Act & Assert
+            Assert.IsAssignableFrom<ICdbSessionRecoveryService>(m_recoveryService);
         }
     }
 }

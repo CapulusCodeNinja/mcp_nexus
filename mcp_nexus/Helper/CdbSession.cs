@@ -5,16 +5,37 @@ using System.Runtime.InteropServices;
 
 namespace mcp_nexus.Helper
 {
-    public class CdbSession(
-        ILogger<CdbSession> logger, 
-        int commandTimeoutMs = 30000, 
-        string? customCdbPath = null, 
-        int symbolServerTimeoutMs = 30000, 
-        int symbolServerMaxRetries = 1, 
-        string? symbolSearchPath = null, 
-        int startupDelayMs = 2000)
-        : IDisposable, ICdbSession
+    public class CdbSession : IDisposable, ICdbSession
     {
+        private readonly ILogger<CdbSession> logger;
+        private readonly int commandTimeoutMs;
+        private readonly string? customCdbPath;
+        private readonly int symbolServerTimeoutMs;
+        private readonly int symbolServerMaxRetries;
+        private readonly string? symbolSearchPath;
+        private readonly int startupDelayMs;
+
+        public CdbSession(
+            ILogger<CdbSession> logger, 
+            int commandTimeoutMs = 30000, 
+            string? customCdbPath = null, 
+            int symbolServerTimeoutMs = 30000, 
+            int symbolServerMaxRetries = 1, 
+            string? symbolSearchPath = null, 
+            int startupDelayMs = 2000)
+        {
+            // Validate parameters first
+            ValidateParameters(commandTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
+            
+            // Store parameters
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.commandTimeoutMs = commandTimeoutMs;
+            this.customCdbPath = customCdbPath;
+            this.symbolServerTimeoutMs = symbolServerTimeoutMs;
+            this.symbolServerMaxRetries = symbolServerMaxRetries;
+            this.symbolSearchPath = symbolSearchPath;
+            this.startupDelayMs = startupDelayMs;
+        }
         // Validation logic
         private static void ValidateParameters(
             int commandTimeoutMs, 
@@ -67,7 +88,9 @@ namespace mcp_nexus.Helper
         {
             get
             {
-                ThrowIfDisposed();
+                // FIXED: Return false when disposed instead of throwing
+                if (m_disposed)
+                    return false;
                 
                 // LOCK-FREE VERSION: Don't block on m_SessionLock to avoid deadlocks
                 // This is safe to read without locks since these are just status checks
@@ -330,6 +353,13 @@ namespace mcp_nexus.Helper
                     // Give CDB a moment to start up (configurable delay)
                     logger.LogDebug("Allowing CDB process to start up (PID: {ProcessId}), waiting {DelayMs}ms...", m_debuggerProcess.Id, startupDelayMs);
                     Thread.Sleep(startupDelayMs);
+
+                    // Check if the process is still running after startup delay
+                    if (m_debuggerProcess.HasExited)
+                    {
+                        logger.LogError("CDB process exited during startup. Exit code: {ExitCode}", m_debuggerProcess.ExitCode);
+                        return false;
+                    }
 
                     logger.LogDebug("Setting up input/output streams...");
                     m_debuggerInput = m_debuggerProcess.StandardInput;
@@ -908,7 +938,8 @@ namespace mcp_nexus.Helper
                 }
                 else
                 {
-                    logger.LogWarning("Custom CDB path does not exist: {Path}", customCdbPath);
+                    logger.LogError("Custom CDB path does not exist: {Path}", customCdbPath);
+                    return null; // Return null when custom path doesn't exist
                 }
             }
             

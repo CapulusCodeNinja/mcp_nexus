@@ -17,6 +17,7 @@ namespace mcp_nexus.Services
         private readonly IMcpNotificationService? m_notificationService;
         private DateTime m_lastHealthCheck = DateTime.UtcNow;
         private volatile int m_recoveryAttempts = 0;
+        private bool m_disposed = false;
         // FIXED: Use ReaderWriterLockSlim for better concurrency
         private readonly ReaderWriterLockSlim m_recoveryLock = new();
 
@@ -26,14 +27,23 @@ namespace mcp_nexus.Services
             Func<string, int> cancelAllCommandsCallback,
             IMcpNotificationService? notificationService = null)
         {
-            m_cdbSession = cdbSession;
-            m_logger = logger;
-            m_cancelAllCommandsCallback = cancelAllCommandsCallback;
+            m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
+            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_cancelAllCommandsCallback = cancelAllCommandsCallback ?? throw new ArgumentNullException(nameof(cancelAllCommandsCallback));
             m_notificationService = notificationService;
         }
 
         public async Task<bool> RecoverStuckSession(string reason)
         {
+            if (m_disposed)
+                throw new ObjectDisposedException(nameof(CdbSessionRecoveryService));
+            if (reason == null)
+                throw new ArgumentNullException(nameof(reason));
+            if (reason.Length == 0)
+                throw new ArgumentException("Reason cannot be empty", nameof(reason));
+            if (string.IsNullOrWhiteSpace(reason))
+                throw new ArgumentException("Reason cannot be whitespace only", nameof(reason));
+                
             // FIXED: Use write lock for recovery attempt counter
             m_recoveryLock.EnterWriteLock();
             try
@@ -102,9 +112,27 @@ namespace mcp_nexus.Services
                     return true;
                 }
 
-                // Step 4: Force restart if still unresponsive
-                m_logger.LogWarning("Session still unresponsive, forcing restart");
-                return await ForceRestartSession($"Recovery escalation: {reason}");
+                // Step 4: Stop current session and start a new one
+                m_logger.LogInformation("Session is unresponsive, stopping and restarting");
+                var stopResult = await m_cdbSession.StopSession();
+                if (!stopResult)
+                {
+                    m_logger.LogWarning("StopSession returned false, but continuing with restart");
+                }
+
+                // Step 5: Start new session
+                var startResult = await m_cdbSession.StartSession("", null);
+                if (startResult)
+                {
+                    m_logger.LogInformation("New session started successfully");
+                    ResetRecoveryCounter();
+                    return true;
+                }
+                else
+                {
+                    m_logger.LogError("Failed to start new session");
+                    return false;
+                }
             }
             catch (Exception ex)
             {
@@ -115,10 +143,36 @@ namespace mcp_nexus.Services
 
         public async Task<bool> ForceRestartSession(string reason)
         {
+            if (m_disposed)
+                throw new ObjectDisposedException(nameof(CdbSessionRecoveryService));
+            if (reason == null)
+                throw new ArgumentNullException(nameof(reason));
+            if (reason.Length == 0)
+                throw new ArgumentException("Reason cannot be empty", nameof(reason));
+            if (string.IsNullOrWhiteSpace(reason))
+                throw new ArgumentException("Reason cannot be whitespace only", nameof(reason));
+                
             m_logger.LogWarning("Force restarting CDB session: {Reason}", reason);
 
             try
             {
+                // Send notification about force restart
+                if (m_notificationService != null)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await m_notificationService.NotifySessionRecoveryAsync(
+                                reason, "Force Restart Started", false, "Force restarting CDB session");
+                        }
+                        catch (Exception ex)
+                        {
+                            m_logger.LogWarning(ex, "Failed to send force restart notification");
+                        }
+                    });
+                }
+
                 // Step 1: Cancel all commands
                 m_cancelAllCommandsCallback($"Force restart: {reason}");
 
@@ -141,8 +195,36 @@ namespace mcp_nexus.Services
                     return false;
                 }
 
-                m_logger.LogInformation("Session stopped successfully, ready for new connections");
+                m_logger.LogInformation("Session stopped successfully, starting new session");
+                
+                // Step 5: Start a new session
+                var startResult = await m_cdbSession.StartSession("", null);
+                if (!startResult)
+                {
+                    m_logger.LogError("Failed to start new session after force restart");
+                    return false;
+                }
+                
+                m_logger.LogInformation("New session started successfully");
                 ResetRecoveryCounter();
+                
+                // Send success notification
+                if (m_notificationService != null)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await m_notificationService.NotifySessionRecoveryAsync(
+                                reason, "Force Restart Completed", true, "CDB session force restarted successfully");
+                        }
+                        catch (Exception ex)
+                        {
+                            m_logger.LogWarning(ex, "Failed to send force restart success notification");
+                        }
+                    });
+                }
+                
                 return true;
             }
             catch (Exception ex)
@@ -154,6 +236,9 @@ namespace mcp_nexus.Services
 
         public bool IsSessionHealthy()
         {
+            if (m_disposed)
+                throw new ObjectDisposedException(nameof(CdbSessionRecoveryService));
+                
             try
             {
                 var now = DateTime.UtcNow;
@@ -252,7 +337,11 @@ namespace mcp_nexus.Services
         // FIXED: Add proper disposal for ReaderWriterLockSlim
         public void Dispose()
         {
-            m_recoveryLock?.Dispose();
+            if (!m_disposed)
+            {
+                m_disposed = true;
+                m_recoveryLock?.Dispose();
+            }
         }
     }
 }

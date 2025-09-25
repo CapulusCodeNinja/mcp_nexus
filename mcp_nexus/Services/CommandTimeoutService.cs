@@ -23,12 +23,22 @@ namespace mcp_nexus.Services
 
         public CommandTimeoutService(ILogger<CommandTimeoutService> logger)
         {
-            m_logger = logger;
+            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public void StartCommandTimeout(string commandId, TimeSpan timeout, Func<Task> onTimeout)
         {
             if (m_disposed) return;
+            
+            // Validate parameters
+            if (commandId == null)
+                throw new ArgumentNullException(nameof(commandId));
+            if (commandId.Length == 0)
+                throw new ArgumentException("Command ID cannot be empty", nameof(commandId));
+            if (timeout < TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException(nameof(timeout), "Timeout cannot be negative");
+            if (onTimeout == null)
+                throw new ArgumentNullException(nameof(onTimeout));
 
             // Cancel existing timeout if it exists
             if (m_timeouts.TryRemove(commandId, out var existingInfo))
@@ -51,13 +61,13 @@ namespace mcp_nexus.Services
                 {
                     await Task.Delay(timeout, cts.Token);
                     
-                    if (!cts.Token.IsCancellationRequested)
-                    {
-                        m_logger.LogError("Command {CommandId} timed out after {TimeoutMinutes:F1} minutes", 
-                            commandId, timeout.TotalMinutes);
-                        
-                        await onTimeout();
-                    }
+                    // Check cancellation again after delay
+                    cts.Token.ThrowIfCancellationRequested();
+                    
+                    m_logger.LogError("Command {CommandId} timed out after {TimeoutMinutes:F1} minutes", 
+                        commandId, timeout.TotalMinutes);
+                    
+                    await onTimeout();
                 }
                 catch (OperationCanceledException)
                 {
@@ -77,6 +87,11 @@ namespace mcp_nexus.Services
 
         public void CancelCommandTimeout(string commandId)
         {
+            if (commandId == null)
+                throw new ArgumentNullException(nameof(commandId));
+            if (commandId.Length == 0)
+                throw new ArgumentException("Command ID cannot be empty", nameof(commandId));
+                
             if (m_timeouts.TryRemove(commandId, out var timeoutInfo))
             {
                 m_logger.LogTrace("Cancelling timeout for command {CommandId}", commandId);
@@ -87,6 +102,13 @@ namespace mcp_nexus.Services
 
         public void ExtendCommandTimeout(string commandId, TimeSpan additionalTime)
         {
+            if (commandId == null)
+                throw new ArgumentNullException(nameof(commandId));
+            if (commandId.Length == 0)
+                throw new ArgumentException("Command ID cannot be empty", nameof(commandId));
+            if (additionalTime < TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException(nameof(additionalTime), "Additional time cannot be negative");
+                
             if (m_timeouts.TryRemove(commandId, out var existingInfo))
             {
                 var originalHandler = existingInfo.OnTimeout;
@@ -95,9 +117,11 @@ namespace mcp_nexus.Services
                 m_logger.LogDebug("Extending timeout for command {CommandId} by {AdditionalMinutes:F1} minutes (already running for {ElapsedMinutes:F1} minutes)", 
                     commandId, additionalTime.TotalMinutes, totalElapsed.TotalMinutes);
                 
-                // Cancel existing timeout
+                // Cancel existing timeout immediately to prevent it from firing
+                m_logger.LogDebug("Cancelling existing timeout for command {CommandId}", commandId);
                 existingInfo.CancellationTokenSource.Cancel();
                 existingInfo.CancellationTokenSource.Dispose();
+                m_logger.LogDebug("Existing timeout cancelled for command {CommandId}", commandId);
                 
                 // Create new timeout with the additional time, preserving the original handler
                 var newCts = new CancellationTokenSource();
@@ -108,6 +132,7 @@ namespace mcp_nexus.Services
                 {
                     try
                     {
+                        // Wait for the additional time
                         await Task.Delay(additionalTime, newCts.Token);
                         
                         if (!newCts.Token.IsCancellationRequested)
