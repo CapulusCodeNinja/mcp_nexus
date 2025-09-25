@@ -203,7 +203,7 @@ namespace mcp_nexus_tests.Tools
 			Assert.NotNull(waitMethod);
 
 			// Act - This will timeout, but let's limit it to a short time for testing
-			var task = (Task<string>)waitMethod!.Invoke(m_tool, new object[] { "test-id", "test command" })!;
+			var task = (Task<string>)waitMethod!.Invoke(m_tool, new object[] { "test-id", "test command", CancellationToken.None })!;
 			
 			// Wait a very short time for testing (reduced from 2 seconds)
             using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(1));
