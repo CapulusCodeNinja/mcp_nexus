@@ -1,5 +1,6 @@
 ﻿using mcp_nexus.Helper;
 using mcp_nexus.Services;
+using mcp_nexus.Utilities;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text;
@@ -54,6 +55,14 @@ namespace mcp_nexus.Tools
                     return "Dump path cannot be null or empty";
                 }
 
+                // Convert WSL paths to Windows format for file operations
+                var originalDumpPath = dumpPath;
+                dumpPath = PathHandler.NormalizeForWindows(dumpPath);
+                if (originalDumpPath != dumpPath)
+                {
+                    logger.LogInformation("Converted WSL path '{OriginalPath}' to Windows path '{WindowsPath}'", originalDumpPath, dumpPath);
+                }
+
                 logger.LogDebug("Checking if dump file exists: {DumpPath}", dumpPath);
                 if (!File.Exists(dumpPath))
                 {
@@ -67,6 +76,14 @@ namespace mcp_nexus.Tools
                 // Check if symbols path is valid if provided
                 if (!string.IsNullOrEmpty(symbolsPath))
                 {
+                    // Convert WSL paths to Windows format for symbols path
+                    var originalSymbolsPath = symbolsPath;
+                    symbolsPath = PathHandler.NormalizeForWindows(symbolsPath);
+                    if (originalSymbolsPath != symbolsPath)
+                    {
+                        logger.LogInformation("Converted WSL symbols path '{OriginalPath}' to Windows path '{WindowsPath}'", originalSymbolsPath, symbolsPath);
+                    }
+
                     logger.LogDebug("Validating symbols path: {SymbolsPath}", symbolsPath);
                     if (!Directory.Exists(symbolsPath))
                     {
@@ -158,6 +175,14 @@ namespace mcp_nexus.Tools
                 // Check if symbols path is valid if provided
                 if (!string.IsNullOrEmpty(symbolsPath))
                 {
+                    // Convert WSL paths to Windows format for symbols path
+                    var originalSymbolsPath = symbolsPath;
+                    symbolsPath = PathHandler.NormalizeForWindows(symbolsPath);
+                    if (originalSymbolsPath != symbolsPath)
+                    {
+                        logger.LogInformation("Converted WSL symbols path '{OriginalPath}' to Windows path '{WindowsPath}'", originalSymbolsPath, symbolsPath);
+                    }
+
                     logger.LogDebug("Validating symbols path: {SymbolsPath}", symbolsPath);
                     if (!Directory.Exists(symbolsPath))
                     {
