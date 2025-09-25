@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Linq;
 
 using mcp_nexus.Constants;
 using mcp_nexus.Helper;
@@ -145,6 +146,7 @@ namespace mcp_nexus.Services
             if (string.IsNullOrEmpty(commandId))
                 return false;
                 
+            // First check if command is in active commands (executing or completed)
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
                 m_logger.LogInformation("Cancelling command {CommandId}: {Command}", commandId, command.Command);
@@ -168,6 +170,25 @@ namespace mcp_nexus.Services
                         m_logger.LogWarning("Cancelling currently executing command {CommandId}", commandId);
                         m_cdbSession.CancelCurrentOperation();
                     }
+                }
+
+                return true;
+            }
+
+            // Check if command is still in the queue (not yet started)
+            var queuedCommand = m_commandQueue.FirstOrDefault(c => c.Id == commandId);
+            if (queuedCommand != null)
+            {
+                m_logger.LogInformation("Cancelling queued command {CommandId}: {Command}", commandId, queuedCommand.Command);
+                
+                try
+                {
+                    queuedCommand.CancellationTokenSource.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                    m_logger.LogDebug("CancellationTokenSource already disposed for queued command {CommandId}", commandId);
+                    return false;
                 }
 
                 return true;

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
+using mcp_nexus.Constants;
 
 namespace mcp_nexus.Helper
 {
@@ -177,7 +178,7 @@ namespace mcp_nexus.Helper
                         logger.LogDebug("Debugger input stream is not writable, skipping Ctrl+C - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     }
 
-                    await Task.Delay(1000);
+                    await Task.Delay(ApplicationConstants.CdbInterruptDelay);
 
                     logger.LogTrace("Sending '.' command to get back to prompt - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     
@@ -194,7 +195,7 @@ namespace mcp_nexus.Helper
                     }
 
                     logger.LogTrace("Starting final 2s wait - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    await Task.Delay(2000);
+                    await Task.Delay(ApplicationConstants.CdbPromptDelay);
 
                     logger.LogDebug("Command cancellation completed for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
                 }
@@ -530,7 +531,7 @@ namespace mcp_nexus.Helper
 
                     // Give cancellation a moment to take effect
                     logger.LogInformation("⏳ [LOCKLESS-STOP] Starting 200ms delay - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    await Task.Delay(200);
+                    await Task.Delay(ApplicationConstants.CdbStartupDelay);
                     logger.LogInformation("✅ [LOCKLESS-STOP] 200ms delay completed - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 
                     // Get process reference - thread-safe reads, no session lock needed
@@ -565,7 +566,7 @@ namespace mcp_nexus.Helper
 
                         // Grace period for quit
                         logger.LogInformation("⏳ [LOCKLESS-STOP] Starting 500ms grace period - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                        await Task.Delay(500);
+                        await Task.Delay(ApplicationConstants.CdbOutputDelay);
                         logger.LogInformation("✅ [LOCKLESS-STOP] Grace period completed - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 
                         // Force kill if needed
@@ -578,7 +579,7 @@ namespace mcp_nexus.Helper
                                 logger.LogInformation("🔪 [LOCKLESS-STOP] Kill command issued - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 
                                 // Short wait for kill
-                                await Task.Delay(1000);
+                                await Task.Delay(ApplicationConstants.CdbCommandDelay);
                                 logger.LogInformation("💀 [LOCKLESS-STOP] Kill wait completed - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                             }
                             catch (Exception ex)
@@ -656,7 +657,7 @@ namespace mcp_nexus.Helper
                     if (m_debuggerOutput.Peek() == -1)
                     {
                         // Check if we've been waiting too long without any output
-                        if ((DateTime.Now - lastOutputTime).TotalMilliseconds > 5000)
+                        if ((DateTime.Now - lastOutputTime) > ApplicationConstants.CdbOutputTimeout)
                         {
                             logger.LogWarning("No output received for 5 seconds, continuing to wait...");
                         }
@@ -837,7 +838,7 @@ namespace mcp_nexus.Helper
                 {
                     logger.Log(logLevel, $"  Start Time:   {process.StartTime}");
                     logger.Log(logLevel, $"  CPU Time:     {process.TotalProcessorTime}");
-                    var memoryInfo = $"{process.WorkingSet64:N0} bytes ({process.WorkingSet64 / 1024.0 / 1024.0:F1} MB)";
+                    var memoryInfo = $"{process.WorkingSet64:N0} bytes ({process.WorkingSet64 / ApplicationConstants.BytesPerMB:F1} MB)";
                     logger.Log(logLevel, $"  Memory Usage: {memoryInfo}");
                     logger.Log(logLevel, $"  Threads:      {process.Threads.Count}");
 
@@ -885,7 +886,7 @@ namespace mcp_nexus.Helper
                     CreateNoWindow = true
                 });
 
-                if (process != null && process.WaitForExit(5000))
+                if (process != null && process.WaitForExit((int)ApplicationConstants.CdbProcessWaitTimeout.TotalMilliseconds))
                 {
                     var output = process.StandardOutput.ReadToEnd();
                     var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
@@ -923,7 +924,7 @@ namespace mcp_nexus.Helper
             };
         }
 
-        private string FindCdbPath()
+        private string? FindCdbPath()
         {
             logger.LogDebug("FindCDBPath called - searching for CDB executable");
             
@@ -1040,7 +1041,7 @@ namespace mcp_nexus.Helper
                 if (result != null)
                 {
                     // Use timeout to prevent hanging
-                    const int timeoutMs = 5000; // 5 second timeout
+                    var timeoutMs = (int)ApplicationConstants.CdbProcessWaitTimeout.TotalMilliseconds; // 5 second timeout
                     logger.LogDebug("Executing 'where cdb.exe' with {TimeoutMs}ms timeout", timeoutMs);
 
                     if (result.WaitForExit(timeoutMs))

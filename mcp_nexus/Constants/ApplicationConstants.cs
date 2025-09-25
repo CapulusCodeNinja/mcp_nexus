@@ -48,5 +48,17 @@ namespace mcp_nexus.Constants
         public const int MaxConcurrentNotifications = 10;
         public const int MaxCleanupBatchSize = 100;
         public const int MaxLogMessageLength = 1000;
+        
+        // CDB Session timing constants
+        public static readonly TimeSpan CdbInterruptDelay = TimeSpan.FromMilliseconds(1000);
+        public static readonly TimeSpan CdbPromptDelay = TimeSpan.FromMilliseconds(2000);
+        public static readonly TimeSpan CdbStartupDelay = TimeSpan.FromMilliseconds(200);
+        public static readonly TimeSpan CdbOutputDelay = TimeSpan.FromMilliseconds(500);
+        public static readonly TimeSpan CdbCommandDelay = TimeSpan.FromMilliseconds(1000);
+        public static readonly TimeSpan CdbOutputTimeout = TimeSpan.FromMilliseconds(5000);
+        public static readonly TimeSpan CdbProcessWaitTimeout = TimeSpan.FromMilliseconds(5000);
+        
+        // Memory display constants
+        public const double BytesPerMB = 1024.0 * 1024.0;
     }
 }
