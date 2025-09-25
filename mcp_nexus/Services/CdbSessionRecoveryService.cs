@@ -44,6 +44,13 @@ namespace mcp_nexus.Services
             if (string.IsNullOrWhiteSpace(reason))
                 throw new ArgumentException("Reason cannot be whitespace only", nameof(reason));
                 
+            // Check if session is already not active
+            if (!m_cdbSession.IsActive)
+            {
+                m_logger.LogInformation("Session is not active, no recovery needed");
+                return false;
+            }
+
             // FIXED: Use write lock for recovery attempt counter
             m_recoveryLock.EnterWriteLock();
             try
@@ -117,7 +124,8 @@ namespace mcp_nexus.Services
                 var stopResult = await m_cdbSession.StopSession();
                 if (!stopResult)
                 {
-                    m_logger.LogWarning("StopSession returned false, but continuing with restart");
+                    m_logger.LogWarning("StopSession returned false, cannot restart");
+                    return false;
                 }
 
                 // Step 5: Start new session
@@ -153,6 +161,13 @@ namespace mcp_nexus.Services
                 throw new ArgumentException("Reason cannot be whitespace only", nameof(reason));
                 
             m_logger.LogWarning("Force restarting CDB session: {Reason}", reason);
+
+            // Check if session is already not active
+            if (!m_cdbSession.IsActive)
+            {
+                m_logger.LogInformation("Session is not active, no restart needed");
+                return false;
+            }
 
             try
             {
@@ -255,7 +270,7 @@ namespace mcp_nexus.Services
                 if (!m_cdbSession.IsActive)
                 {
                     m_logger.LogDebug("🔍 Health check: Session not active");
-                    return true; // Not active is not unhealthy
+                    return false; // Not active is unhealthy
                 }
 
                 // FIXED: Use read lock for recovery attempt check
