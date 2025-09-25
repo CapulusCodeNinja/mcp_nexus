@@ -81,12 +81,17 @@ The server automatically exposes all available tools through the MCP protocol wi
 
 ## 📚 Documentation
 
-| Topic | Documentation | What You'll Find |
-|-------|---------------|------------------|
-| 🛠 **Tools** | **[📋 TOOLS.md](docs/TOOLS.md)** | Complete tool reference, async workflows, notification examples |
-| ⚙️ **Setup** | **[🔧 CONFIGURATION.md](docs/CONFIGURATION.md)** | Transport modes, Windows service, environment setup |
-| 🔌 **Integration** | **[🤖 INTEGRATION.md](docs/INTEGRATION.md)** | Cursor IDE setup, MCP clients, notification handling |
-| 💻 **Development** | **[👨‍💻 DEVELOPMENT.md](docs/DEVELOPMENT.md)** | Architecture, testing, contribution guide |
+### 🛠 **[📋 Available Tools](docs/TOOLS.md)**
+Complete tool reference, async workflows, notification examples
+
+### ⚙️ **[🔧 Configuration](docs/CONFIGURATION.md)**  
+Transport modes, Windows service, environment setup
+
+### 🔌 **[🤖 AI Integration](docs/INTEGRATION.md)**
+Cursor IDE setup, MCP clients, notification handling
+
+### 💻 **[👨‍💻 Development](docs/DEVELOPMENT.md)**
+Architecture, testing, contribution guide
 
 > 💡 **New to MCP Nexus?** Start with [🔧 CONFIGURATION.md](docs/CONFIGURATION.md) for setup, then [🤖 INTEGRATION.md](docs/INTEGRATION.md) for AI tool integration.
 
