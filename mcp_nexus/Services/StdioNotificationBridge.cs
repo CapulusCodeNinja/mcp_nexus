@@ -52,7 +52,7 @@ namespace mcp_nexus.Services
 
         private Task HandleNotification(McpNotification notification)
         {
-            if (m_disposed)
+            if (m_disposed || notification == null)
                 return Task.CompletedTask;
 
             try

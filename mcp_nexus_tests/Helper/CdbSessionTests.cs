@@ -56,7 +56,7 @@ namespace mcp_nexus_tests.Helper
 
             // Assert
             Assert.False(result);
-            m_mockSession.Verify(x => x.StartSession(null, null), Times.Once);
+            m_mockSession.Verify(x => x.StartSession(null!, null), Times.Once);
         }
 
         [Fact]
