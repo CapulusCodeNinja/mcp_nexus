@@ -141,27 +141,29 @@
             }
             string template = File.ReadAllText(templatePath);
             // Replace minimal placeholders requested by user
-            string dmpNameForTemplate = Path.GetFileName(windowsFilePath);
-            template = template.Replace("<uploaded_file_name>", dmpNameForTemplate);
             // IMPORTANT: Do not perform any other replacements
             // We only compute siteRootWsl for setting the working directory before running cursor-agent
             string siteRootWin = Server.MapPath("~");
             string siteRootWsl = ConvertToWSLPath(siteRootWin);
             if (!siteRootWsl.EndsWith("/")) siteRootWsl += "/";
 
-            // Prepare a temporary working directory under Crash-Analysis
-            string crashRootWin = Server.MapPath("~/Crash-Analysis");
-            if (!Directory.Exists(crashRootWin)) Directory.CreateDirectory(crashRootWin);
-            workWin = Path.Combine(crashRootWin, "work_" + DateTime.Now.ToString("yyyyMMdd_HHmmss_fff"));
+            // Prepare a temporary working directory under workingdir
+            string workingRootWin = Server.MapPath("~/workingdir");
+            if (!Directory.Exists(workingRootWin)) Directory.CreateDirectory(workingRootWin);
+            workWin = Path.Combine(workingRootWin, "work_" + DateTime.Now.ToString("yyyyMMdd_HHmmss_fff"));
             Directory.CreateDirectory(workWin);
             workWsl = ConvertToWSLPath(workWin);
             if (!workWsl.EndsWith("/")) workWsl += "/";
+
+            // Prepare the analysis directory for final results
+            string analysisRootWin = Server.MapPath("~/analysis");
+            if (!Directory.Exists(analysisRootWin)) Directory.CreateDirectory(analysisRootWin);
 
             // Run WinDbg !analyze -v in parallel and write to analysis directory
             try
             {
                 string baseNameForAnalyze = Path.GetFileNameWithoutExtension(windowsFilePath);
-                string analysisDir = Path.Combine(crashRootWin, baseNameForAnalyze);
+                string analysisDir = Path.Combine(analysisRootWin, baseNameForAnalyze);
                 if (!Directory.Exists(analysisDir))
                 {
                     Directory.CreateDirectory(analysisDir);
@@ -169,13 +171,18 @@
                 string analyzeOutPath = Path.Combine(analysisDir, "cdb_analyze.txt");
                 System.Threading.ThreadPool.QueueUserWorkItem(_ =>
                 {
-                    RunAnalyzeV(windowsFilePath, analyzeOutPath, 600000); // 10 minutes timeout
+                    RunAnalyzeV(windowsFilePath, analyzeOutPath, 1800000); // 30 minutes timeout
                 });
             }
             catch { }
 
             // Use WSL path for [workingdir] so the agent can create files inside Linux
-            template = template.Replace("[workingdir]", siteRootWsl.TrimEnd('/'));
+            template = template.Replace("[workingdir]", workWsl.TrimEnd('/'));
+            // Use WSL path for [outputdir] - where the AI should save the .md result file (final location)
+            string outputBaseName = Path.GetFileNameWithoutExtension(windowsFilePath);
+            string finalAnalysisDir = Path.Combine(analysisRootWin, outputBaseName);
+            string finalAnalysisDirWsl = ConvertToWSLPath(finalAnalysisDir);
+            template = template.Replace("[outputdir]", finalAnalysisDirWsl.TrimEnd('/'));
             // Replace [filename] with full Windows path to the uploaded dump (required by MCP open_windbg_dump)
             template = template.Replace("[filename]", windowsFilePath);
 
@@ -187,54 +194,42 @@
             string wslConsoleWin = Path.Combine(workWin, "agent_console_" + DateTime.Now.ToString("yyyyMMdd_HHmmss_fff") + ".txt");
             string wslConsoleWsl = ConvertToWSLPath(wslConsoleWin);
 
-            // Preflight: check MCP config; log only (do not alter behavior)
-            try
-            {
-                var checkPsi = new ProcessStartInfo
-                {
-                    FileName = "wsl.exe",
-                    Arguments = "bash -l -c \"cd '" + siteRootWsl.TrimEnd('/') + "' && if [ -d .cursor ] && ( [ -f .cursor/mcp.json ] && grep -qi 'open_windbg_dump' .cursor/mcp.json ); then echo OK; else echo NO_MCP; fi\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-                using (var cp = Process.Start(checkPsi))
-                {
-                    if (cp != null)
-                    {
-                        cp.WaitForExit(5000);
-                        string chk = (cp.StandardOutput.ReadToEnd() + cp.StandardError.ReadToEnd()).Trim();
-                        if (chk.IndexOf("NO_MCP", StringComparison.OrdinalIgnoreCase) >= 0) { TryLogAnalyze("MCP preflight: NO_MCP"); }
-                    }
-                }
-            }
-            catch { }
-
-            // Run from work dir; use natural HOME and config paths
-            string cmd = "cd '" + workWsl.TrimEnd('/') + "' && cursor-agent -f --output-format text < '" + tempPayloadWsl + "' > '" + wslConsoleWsl + "' 2>&1";
+            // Set HOME environment and run cursor-agent with clean output
+            string cmd = "export HOME=/home/droller && export TERM=dumb && cd '$HOME' && cursor-agent -f --output-format text < '" + tempPayloadWsl + "' > '" + wslConsoleWsl + "' 2>&1";
 
             var psi = new ProcessStartInfo
             {
                 FileName = "wsl.exe",
-                Arguments = "bash -l -c \"" + cmd.Replace("\"", "\\\"") + "\"",
+                Arguments = "-u droller bash -l -c \"" + cmd.Replace("\"", "\\\"") + "\"",
                 UseShellExecute = false,
                 RedirectStandardOutput = false,
                 RedirectStandardError = false,
                 CreateNoWindow = true
             };
+
             using (var p = Process.Start(psi))
             {
-                // Up to 10 minutes total, but we poll for result to stop early when MD exists
-                var deadline = DateTime.UtcNow.AddMinutes(10);
+                // Poll for result and stop when MD exists - configurable timeout via environment variable
                 string foundWin = null;
-                while (!p.HasExited && DateTime.UtcNow < deadline)
+                var startTime = DateTime.UtcNow;
+                
+                // Check if max runtime is specified (0 = unlimited)
+                string envMaxRuntime = Environment.GetEnvironmentVariable("CURSOR_AGENT_MAX_RUNTIME_MINUTES");
+                int maxRuntimeMinutes = 0; // Default: unlimited
+                int customRuntime;
+                if (!string.IsNullOrEmpty(envMaxRuntime) && int.TryParse(envMaxRuntime, out customRuntime))
+                {
+                    maxRuntimeMinutes = customRuntime;
+                }
+                
+                while (!p.HasExited)
                 {
                     // Only stop when the expected MD file (same name as dump) exists
                     string expectedName = Path.GetFileNameWithoutExtension(windowsFilePath) + ".md";
                     string expectedInWork = Path.Combine(workWin, expectedName);
-                    string expectedInWorkSub = Path.Combine(Path.Combine(workWin, "Crash-Analysis"), expectedName);
-                    string expectedInRoot = Path.Combine(crashRootWin, expectedName);
+                    string expectedInWorkSub = Path.Combine(Path.Combine(workWin, "analysis"), expectedName);
+                    string expectedInRoot = Path.Combine(analysisRootWin, expectedName);
+                    string expectedInSubDir = Path.Combine(Path.Combine(analysisRootWin, Path.GetFileNameWithoutExtension(windowsFilePath)), expectedName);
                     string pick = null;
                     if (File.Exists(expectedInWorkSub))
                     {
@@ -243,6 +238,10 @@
                     else if (File.Exists(expectedInWork))
                     {
                         pick = expectedInWork;
+                    }
+                    else if (File.Exists(expectedInSubDir))
+                    {
+                        pick = expectedInSubDir;
                     }
                     else if (File.Exists(expectedInRoot))
                     {
@@ -253,7 +252,7 @@
                     {
                         // Create dedicated directory for this analysis
                         string baseName = Path.GetFileNameWithoutExtension(windowsFilePath);
-                        string analysisDir = Path.Combine(crashRootWin, baseName);
+                        string analysisDir = Path.Combine(analysisRootWin, baseName);
                         if (!Directory.Exists(analysisDir))
                         {
                             Directory.CreateDirectory(analysisDir);
@@ -273,37 +272,42 @@
                             dest = pick; // already in target location
                         }
 						foundWin = dest;
+						// Give cursor-agent a moment to finish writing the file
+                        System.Threading.Thread.Sleep(3000); // Wait 3 seconds to let it complete output
+                        
 						// Stop the agent now that we have the result
-						try { p.Kill(); } catch { }
-						// Best-effort: also kill any lingering cursor-agent process inside WSL
-						try
-						{
-							var killPsi = new ProcessStartInfo
-							{
-								FileName = "wsl.exe",
-								Arguments = "bash -l -c \"pkill -f 'cursor-agent -f -p' || true\"",
-								UseShellExecute = false,
-								RedirectStandardOutput = true,
-								RedirectStandardError = true,
-								CreateNoWindow = true
-							};
-							using (var k = Process.Start(killPsi))
-							{
-								if (k != null) { k.WaitForExit(3000); }
-							}
-						}
-						catch { }
+						try { 
+                            p.Kill(); 
+                            p.WaitForExit(2000); // Give it 2 seconds to die gracefully
+                        } catch { }
+                        
+                        // Kill all cursor-agent processes
+                        KillAllCursorAgentProcesses();
                         break;
                     }
+                    
+                    // Check for timeout if max runtime is set
+                    if (maxRuntimeMinutes > 0)
+                    {
+                        var elapsed = DateTime.UtcNow - startTime;
+                        if (elapsed.TotalMinutes >= maxRuntimeMinutes)
+                        {
+                            LogApplicationResult(windowsFilePath, -2, "Cursor-agent execution timeout after " + maxRuntimeMinutes + " minutes", "");
+                            break;
+                        }
+                    }
+                    
                     System.Threading.Thread.Sleep(1000);
                 }
 
-                // Ensure the process is not running beyond deadline
+                // Force kill cursor-agent processes if still running after completion detection
                 if (!p.HasExited)
                 {
-                    bool finished = p.WaitForExit((int)Math.Max(0, (deadline - DateTime.UtcNow).TotalMilliseconds));
-                    if (!finished) { try { p.Kill(); } catch { } }
+                    try { p.Kill(); } catch { }
                 }
+                
+                // Always kill any lingering cursor-agent processes - more aggressive cleanup
+                KillAllCursorAgentProcesses();
 
                 string output = "";
                 string error = "";
@@ -314,7 +318,7 @@
                     if (File.Exists(wslConsoleWin))
                     {
                         string baseName = Path.GetFileNameWithoutExtension(windowsFilePath);
-                        string analysisDir = Path.Combine(crashRootWin, baseName);
+                        string analysisDir = Path.Combine(analysisRootWin, baseName);
                         if (!Directory.Exists(analysisDir))
                         {
                             Directory.CreateDirectory(analysisDir);
@@ -330,13 +334,13 @@
                 }
                 catch { }
 
-                // Move the original dump file to the analysis directory
+                // Move the original dump file to the analysis directory (regardless of analysis success)
                 try
                 {
-                    if (foundWin != null && File.Exists(windowsFilePath))
+                    if (File.Exists(windowsFilePath))
                     {
                         string baseName = Path.GetFileNameWithoutExtension(windowsFilePath);
-                        string analysisDir = Path.Combine(crashRootWin, baseName);
+                        string analysisDir = Path.Combine(analysisRootWin, baseName);
                         if (!Directory.Exists(analysisDir))
                         {
                             Directory.CreateDirectory(analysisDir);
@@ -413,7 +417,7 @@
                 if (!finished)
                 {
                     try { p.Kill(); } catch { }
-                    try { File.AppendAllText(outputTxtPath, "\r\n[Timeout] !analyze -v exceeded " + (timeoutMs/1000) + "s."); } catch { }
+                    try { File.AppendAllText(outputTxtPath, "\r\n[Timeout] !analyze -v exceeded " + (timeoutMs/1000) + "s. Consider using larger timeouts for complex dumps."); } catch { }
                 }
                 TryLogAnalyze("analyze finished for " + dumpPathWin + ", file=" + outputTxtPath);
             }
@@ -574,7 +578,7 @@
             
             using (Process process = Process.Start(startInfo))
             {
-                process.WaitForExit(30000);
+                process.WaitForExit(300000); // 5 minutes timeout for hash calculation
                 string output = process.StandardOutput.ReadToEnd();
                 
                 // Parse certutil output to extract hash
@@ -763,13 +767,35 @@
                 var psi = new ProcessStartInfo
                 {
                     FileName = "wsl.exe",
-                    Arguments = "bash -l -c \"rm -rf '" + directoryPathWsl.TrimEnd('/') + "'\"",
+                    Arguments = "-u droller bash -l -c \"rm -rf '" + directoryPathWsl.TrimEnd('/') + "'\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true
                 };
                 using (var p = Process.Start(psi)) { if (p != null) p.WaitForExit(3000); }
+            }
+        }
+        catch { }
+    }
+    
+    private void KillAllCursorAgentProcesses()
+    {
+        try
+        {
+            // Kill all cursor-agent processes in WSL more aggressively
+            var killPsi = new ProcessStartInfo
+            {
+                FileName = "wsl.exe",
+                Arguments = "-u droller bash -l -c \"pkill -9 -f 'cursor-agent' || true; pkill -9 -f 'node.*cursor-agent' || true; killall -9 node 2>/dev/null || true\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            using (var k = Process.Start(killPsi))
+            {
+                if (k != null) { k.WaitForExit(5000); }
             }
         }
         catch { }

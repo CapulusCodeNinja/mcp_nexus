@@ -9,7 +9,7 @@
         Response.ContentType = "application/json";
         try
         {
-            string dir = Server.MapPath("~/Crash-Analysis");
+            string dir = Server.MapPath("~/analysis");
             if (!Directory.Exists(dir)) { Response.Write("[]"); return; }
 
             var folders = new DirectoryInfo(dir).GetDirectories()
@@ -29,7 +29,7 @@
                         files["analysis"] = new System.Collections.Generic.Dictionary<string, object> {
                             {"size", mdFile.Length},
                             {"modified", mdFile.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")},
-                            {"url", "Crash-Analysis/" + d.Name + "/" + mdFile.Name}
+                            {"url", "analysis/" + d.Name + "/" + mdFile.Name}
                         };
                     }
                     
@@ -39,7 +39,7 @@
                         files["console"] = new System.Collections.Generic.Dictionary<string, object> {
                             {"size", consoleFile.Length},
                             {"modified", consoleFile.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")},
-                            {"url", "Crash-Analysis/" + d.Name + "/console.txt"}
+                            {"url", "analysis/" + d.Name + "/console.txt"}
                         };
                     }
                     
@@ -49,7 +49,7 @@
                         files["cdb_analyze"] = new System.Collections.Generic.Dictionary<string, object> {
                             {"size", cdbFile.Length},
                             {"modified", cdbFile.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")},
-                            {"url", "Crash-Analysis/" + d.Name + "/cdb_analyze.txt"}
+                            {"url", "analysis/" + d.Name + "/cdb_analyze.txt"}
                         };
                     }
                     
@@ -60,7 +60,7 @@
                             {"name", dumpFile.Name},
                             {"size", dumpFile.Length},
                             {"modified", dumpFile.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")},
-                            {"url", "Crash-Analysis/" + d.Name + "/" + dumpFile.Name}
+                            {"url", "analysis/" + d.Name + "/" + dumpFile.Name}
                         };
                     }
                     

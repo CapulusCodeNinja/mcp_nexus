@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crash Dump Analyzer</title>
+    <link rel="stylesheet" href="styles.css?v=20250925191500">
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="#">Crash Dump Analyzer</a>
+            <div class="menu">
+                <button class="upload-btn-header" id="uploadBtn">📁 Upload Dumps</button>
+                <a href="admin.html" class="upload-btn-header" style="text-decoration: none;">⚙️ Admin</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="panel">
+            <h2>Analysis Jobs</h2>
+            <div class="muted">Server-side queue processing</div>
+            <ul id="jobsList"></ul>
+        </div>
+        <div class="viewer-panel">
+            <div class="viewer-title" id="viewerTitle" style="display: none;">Select a job to view details</div>
+            <div class="tabs" id="tabsContainer" style="display: none;">
+                <div class="tab active" data-type="analysis">Analysis Report</div>
+                <div class="tab disabled" data-type="cdb_analyze">WinDbg Output</div>
+                <div class="tab disabled" data-type="console">Console Log</div>
+                <div class="tab disabled" data-type="dump">Dump File</div>
+            </div>
+            <div class="viewer-body" id="viewerBody">
+                <p>Upload dump files to start analysis. Jobs are processed server-side in the background.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Upload Crash Dump Files</h3>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            <div class="upload-area" id="uploadArea">
+                <input type="file" id="fileInput" accept=".dmp" multiple style="display: none;">
+                <div id="uploadContent">
+                    <button class="upload-button" onclick="document.getElementById('fileInput').click()">
+                        Choose Files
+                    </button>
+                    <div class="upload-status" id="uploadStatus">
+                        Drop dump files here or click to select
+                    </div>
+                    <div class="upload-help">
+                        Supports multiple .dmp files • Processed server-side
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        let jobs = [];
+        let selectedJob = null;
+        let pollInterval = null;
+
+        // Modal functionality
+        const uploadModal = document.getElementById('uploadModal');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const closeModal = document.getElementById('closeModal');
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadStatus = document.getElementById('uploadStatus');
+        
+        uploadBtn.addEventListener('click', () => {
+            uploadModal.style.display = 'block';
+        });
+        
+        closeModal.addEventListener('click', () => {
+            uploadModal.style.display = 'none';
+        });
+        
+        window.addEventListener('click', (e) => {
+            if (e.target === uploadModal) {
+                uploadModal.style.display = 'none';
+            }
+        });
+
+        // File upload handling
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                uploadFiles(files);
+                e.target.value = '';
+                uploadModal.style.display = 'none';
+            }
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#238636';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#30363d';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#30363d';
+            const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.dmp'));
+            if (files.length > 0) {
+                uploadFiles(files);
+                uploadModal.style.display = 'none';
+            }
+        });
+
+        async function uploadFiles(files) {
+            for (const file of files) {
+                try {
+                    uploadStatus.textContent = `Uploading ${file.name}...`;
+                    
+                    const formData = new FormData();
+                    formData.append('dumpFile', file);
+                    
+                    const response = await fetch('queue-add.aspx', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        console.log('Job added:', result.jobId);
+                    } else {
+                        console.error('Upload failed:', result.error);
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                }
+            }
+            
+            uploadStatus.textContent = 'Upload complete';
+            setTimeout(() => {
+                uploadStatus.textContent = 'Drop dump files here or click to select';
+            }, 2000);
+            
+            // Refresh job list
+            loadJobs();
+        }
+
+        async function loadJobs() {
+            try {
+                const response = await fetch('queue-status.aspx');
+                const result = await response.json();
+                
+                if (result.success) {
+                    jobs = result.jobs || [];
+                    renderJobs();
+                } else {
+                    console.error('Failed to load jobs:', result.error);
+                }
+            } catch (error) {
+                console.error('Load jobs error:', error);
+            }
+        }
+
+        function renderJobs() {
+            const jobsList = document.getElementById('jobsList');
+            
+            if (jobs.length === 0) {
+                jobsList.innerHTML = '<li style="cursor: default; opacity: 0.7;">No jobs found. Upload dump files to start analysis.</li>';
+                return;
+            }
+            
+            jobsList.innerHTML = '';
+            
+            // Check for saved selection or default to first job
+            let jobToSelect = null;
+            const savedJobId = localStorage.getItem('selectedJobId');
+            
+            if (savedJobId) {
+                // Try to find the previously selected job
+                jobToSelect = jobs.find(job => job.id === savedJobId);
+            }
+            
+            // If no saved selection or saved job not found, select first job
+            if (!jobToSelect && jobs.length > 0) {
+                jobToSelect = jobs[0];
+            }
+            
+            jobs.forEach(job => {
+                const li = document.createElement('li');
+                if (selectedJob && selectedJob.id === job.id) {
+                    li.classList.add('active');
+                }
+                
+                li.addEventListener('click', () => selectJob(job));
+                
+                const jobName = document.createElement('div');
+                jobName.className = 'job-name';
+                jobName.textContent = job.name;
+                
+                const jobInfo = document.createElement('div');
+                jobInfo.className = 'job-info';
+                jobInfo.textContent = job.created;
+                
+                const jobStatus = document.createElement('div');
+                jobStatus.className = 'job-status-detailed';
+                
+                if (job.status === 'processing') {
+                    jobStatus.innerHTML = '<span class="spinner"></span> PROCESSING';
+                } else if (job.status === 'completed') {
+                    // Show individual file status indicators
+                    const indicators = [
+                        { name: 'Analysis', available: job.hasAnalysis || false, title: 'Analysis Report' },
+                        { name: 'Windbg', available: job.hasWinDbg || false, title: 'WinDbg Output' },
+                        { name: 'AI', available: job.hasConsole || false, title: 'Console Log' },
+                        { name: 'Dump', available: job.hasDump || true, title: 'Dump File' }
+                    ];
+                    
+                    jobStatus.innerHTML = indicators.map(ind => 
+                        `<span class="status-indicator ${ind.available ? 'available' : 'unavailable'}" title="${ind.title}">${ind.name}</span>`
+                    ).join(' ');
+                } else {
+                    jobStatus.textContent = job.status.toUpperCase();
+                    jobStatus.className += ` ${job.status}`;
+                }
+                
+                li.appendChild(jobName);
+                li.appendChild(jobInfo);
+                li.appendChild(jobStatus);
+                
+                jobsList.appendChild(li);
+            });
+            
+            // Auto-select the determined job
+            if (jobToSelect && (!selectedJob || selectedJob.id !== jobToSelect.id)) {
+                selectJob(jobToSelect);
+            }
+        }
+
+        function selectJob(job) {
+            selectedJob = job;
+            
+            // Save selection to localStorage
+            localStorage.setItem('selectedJobId', job.id);
+            
+            renderJobs(); // Re-render to show selection
+            
+            const viewerTitle = document.getElementById('viewerTitle');
+            const viewerBody = document.getElementById('viewerBody');
+            const tabsContainer = document.getElementById('tabsContainer');
+            
+            viewerTitle.textContent = 'Analysis Results';
+            
+            if (job.status === 'completed') {
+                // Show tabs and load analysis results
+                tabsContainer.style.display = 'flex';
+                loadAnalysisResults(job.name);
+            } else {
+                // Hide tabs and show job status
+                tabsContainer.style.display = 'none';
+                
+                let statusText = `Status: ${job.status.toUpperCase()}`;
+                if (job.error) {
+                    statusText += `\nError: ${job.error}`;
+                }
+                
+                viewerBody.innerHTML = `
+                    <p><strong>Job ID:</strong> ${job.id}</p>
+                    <p><strong>Created:</strong> ${job.created}</p>
+                    <p><strong>Updated:</strong> ${job.updated}</p>
+                    <p><strong>Status:</strong> ${job.status.toUpperCase()}</p>
+                    ${job.error ? `<p><strong>Error:</strong> ${job.error}</p>` : ''}
+                    ${job.status === 'processing' ? '<p>Analysis in progress...</p>' : ''}
+                `;
+            }
+        }
+
+        async function loadAnalysisResults(jobName) {
+            try {
+                console.log('Loading analysis results for job:', jobName);
+                // Load the analysis list to find the corresponding analysis folder
+                const response = await fetch('analysis-list.aspx');
+                const analyses = await response.json();
+                console.log('Available analyses:', analyses);
+                
+                // Find the analysis that matches this job name
+                const analysis = analyses.find(a => a.name === jobName);
+                console.log('Found analysis:', analysis);
+                
+                if (analysis) {
+                    console.log('Analysis files:', analysis.files);
+                    // Load the analysis report by default
+                    loadAnalysisContent(analysis, 'analysis');
+                    updateTabStates(analysis);
+                } else {
+                    console.log('No analysis found for job:', jobName);
+                    document.getElementById('viewerBody').innerHTML = '<p>Analysis results not found. The analysis may still be processing.</p>';
+                }
+            } catch (error) {
+                console.error('Failed to load analysis results:', error);
+                document.getElementById('viewerBody').innerHTML = '<p>Failed to load analysis results.</p>';
+            }
+        }
+
+        function updateTabStates(analysis) {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                const type = tab.dataset.type;
+                if (analysis.files && analysis.files[type]) {
+                    tab.classList.remove('disabled');
+                } else {
+                    tab.classList.add('disabled');
+                }
+            });
+        }
+
+        async function loadAnalysisContent(analysis, type) {
+            const viewerBody = document.getElementById('viewerBody');
+            
+            if (!analysis.files || !analysis.files[type]) {
+                viewerBody.innerHTML = '<p>Content not available.</p>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(analysis.files[type].url);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const content = await response.text();
+                console.log('Raw content loaded:', content.substring(0, 200) + '...');
+                
+                // Update active tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelector(`[data-type="${type}"]`).classList.add('active');
+                
+                if (type === 'analysis') {
+                    // Render markdown
+                    // Function to generate heading IDs
+                    function generateId(text) {
+                        if (typeof text !== 'string') {
+                            text = String(text || '');
+                        }
+                        return text.toLowerCase()
+                            .replace(/[^\w\s-]/g, '') // Remove special characters
+                            .replace(/\s+/g, '-')     // Replace spaces with hyphens
+                            .replace(/--+/g, '-')     // Replace multiple hyphens with single
+                            .trim();
+                    }
+                    
+                    // Parse markdown normally, then add IDs afterward
+                    console.log('Parsing markdown content...');
+                    try {
+                        // Parse markdown without custom renderer first
+                        const parsedContent = marked.parse(content);
+                        console.log('Parsed content successfully');
+                        
+                        // Set the content first
+                        viewerBody.innerHTML = `<div class="analysis-content markdown-body">${parsedContent}</div>`;
+                        
+                        // Then add IDs to headings for ToC links
+                        const headings = viewerBody.querySelectorAll('h1, h2, h3, h4, h5, h6');
+                        headings.forEach(heading => {
+                            const text = heading.textContent || '';
+                            const id = generateId(text);
+                            heading.id = id;
+                        });
+                        
+                        console.log('Added IDs to', headings.length, 'headings');
+                    } catch (markedError) {
+                        console.error('Marked.js error:', markedError);
+                        // Fallback to raw content
+                        viewerBody.innerHTML = `<div class="analysis-content markdown-body"><pre>${content}</pre></div>`;
+                    }
+                } else if (type === 'dump') {
+                    // Show dump file info
+                    const file = analysis.files[type];
+                    viewerBody.innerHTML = `
+                        <div class="dump-info">
+                            <h3>Dump File Information</h3>
+                            <p><strong>Filename:</strong> ${file.name}</p>
+                            <p><strong>Size:</strong> ${formatFileSize(file.size)}</p>
+                            <p><strong>Modified:</strong> ${file.modified}</p>
+                            <a href="${file.url}" class="download-btn" download>📥 Download Dump File</a>
+                        </div>
+                    `;
+                } else {
+                    // Show text content (console, cdb_analyze)
+                    viewerBody.innerHTML = `<div class="analysis-content"><div class="text-content">${content}</div></div>`;
+                }
+            } catch (error) {
+                console.error('Failed to load content:', error);
+                console.error('Error details:', error.message);
+                console.error('Analysis object:', analysis);
+                console.error('Type requested:', type);
+                console.error('Available files:', analysis.files);
+                if (analysis.files && analysis.files[type]) {
+                    console.error('File URL attempted:', analysis.files[type].url);
+                }
+                viewerBody.innerHTML = `<p>Failed to load content. Error: ${error.message}<br>Check browser console for details.</p>`;
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+            
+            pollInterval = setInterval(() => {
+                loadJobs();
+            }, 3000); // Poll every 3 seconds
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+
+        // Tab click handlers
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                if (!tab.classList.contains('disabled') && selectedJob && selectedJob.status === 'completed') {
+                    const type = tab.dataset.type;
+                    loadAnalysisResults(selectedJob.name).then(() => {
+                        // Find the analysis again and load the specific content
+                        fetch('analysis-list.aspx')
+                            .then(response => response.json())
+                            .then(analyses => {
+                                const analysis = analyses.find(a => a.name === selectedJob.name);
+                                if (analysis) {
+                                    loadAnalysisContent(analysis, type);
+                                }
+                            });
+                    });
+                }
+            });
+        });
+
+        // Initialize
+        loadJobs();
+        startPolling();
+
+        // Stop polling when page is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopPolling();
+            } else {
+                startPolling();
+            }
+        });
+
+        // Add smooth scrolling for anchor links in markdown content
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'A' && e.target.hash) {
+                const targetId = e.target.hash.substring(1);
+                const targetElement = document.getElementById(targetId);
+                
+                if (targetElement) {
+                    e.preventDefault();
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>

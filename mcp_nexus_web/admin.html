@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Crash Dump Analyzer</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Additional admin-specific styles */
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .admin-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+        }
+        
+        .admin-card h3 {
+            margin: 0 0 12px 0;
+            color: #e6edf3;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .admin-card p {
+            margin: 0 0 16px 0;
+            color: #7d8590;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .admin-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .admin-btn {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .admin-btn:hover {
+            background: #2ea043;
+        }
+        
+        .admin-btn.danger {
+            background: #da3633;
+        }
+        
+        .admin-btn.danger:hover {
+            background: #e5484d;
+        }
+        
+        .admin-btn.warning {
+            background: #fb8500;
+        }
+        
+        .admin-btn.warning:hover {
+            background: #fd7e14;
+        }
+        
+        .debug-output {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.online {
+            background: #238636;
+        }
+        
+        .status-indicator.offline {
+            background: #da3633;
+        }
+        
+        .status-indicator.warning {
+            background: #fb8500;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 200px));
+            gap: 12px;
+            margin: 16px 0 8px 0;
+            justify-content: start;
+        }
+        
+        .stat-item {
+            background: #0d1117;
+            border: 1px solid #21262d;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #e6edf3;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #7d8590;
+        }
+        
+        .loading {
+            opacity: 0.6;
+        }
+        
+        /* Make System Status panel more compact */
+        .panel.system-status {
+            min-height: auto;
+            padding: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .admin-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                justify-content: stretch;
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(6, 180px);
+                justify-content: start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="index.html">Crash Dump Analyzer - Admin</a>
+            <div class="menu">
+                <a href="index.html" class="upload-btn-header">← Back to Main</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="layout" style="grid-template-columns: 1fr; max-width: 1200px; margin: 24px auto;">
+        <!-- System Status Overview -->
+        <div class="panel system-status">
+            <h2>System Status</h2>
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-item">
+                    <div class="stat-value" id="queueCount">-</div>
+                    <div class="stat-label">Queue Jobs</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="processingCount">-</div>
+                    <div class="stat-label">Processing</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="completedCount">-</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="errorCount">-</div>
+                    <div class="stat-label">Errors</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="processCount">-</div>
+                    <div class="stat-label">WSL cursor-agent</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="uploadCount">-</div>
+                    <div class="stat-label">Upload Files</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Actions -->
+        <div class="admin-grid">
+            <div class="admin-card">
+                <h3><span class="status-indicator online"></span>Queue Management</h3>
+                <p>Monitor and control the analysis queue. View current jobs, restart stuck processes, and manage the processing pipeline.</p>
+                <div class="admin-actions">
+                    <button class="admin-btn" onclick="refreshStatus()">🔄 Refresh Status</button>
+                    <button class="admin-btn warning" onclick="restartQueue()">⚠️ Restart Queue</button>
+                    <button class="admin-btn" onclick="showDebugInfo()">🔍 Debug Info</button>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h3><span class="status-indicator warning"></span>WSL Process Management</h3>
+                <p>Monitor cursor-agent processes running in WSL and terminate hanging operations. Safely targets only analysis processes without affecting your Windows Cursor IDE.</p>
+                <div class="admin-actions">
+                    <button class="admin-btn" onclick="showProcesses()">📊 Show WSL Processes</button>
+                    <button class="admin-btn danger" onclick="killHangingProcesses()">💀 Kill cursor-agent</button>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h3><span class="status-indicator online"></span>File System</h3>
+                <p>Monitor disk usage, clean up temporary files, and manage analysis results storage.</p>
+                <div class="admin-actions">
+                    <button class="admin-btn" onclick="showFileSystem()">📁 File System Info</button>
+                    <button class="admin-btn warning" onclick="cleanupUploads()">🧹 Cleanup Uploads</button>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h3><span class="status-indicator online"></span>Analysis List Management</h3>
+                <p>Manage the analysis results displayed on the main page. Reset the list to clear old entries from the UI.</p>
+                <div class="admin-actions">
+                    <button class="admin-btn warning" onclick="deleteFailedEntries()">🗑️ Delete Failed</button>
+                    <button class="admin-btn warning" onclick="resetAnalysisList()">🗑️ Reset All</button>
+                    <button class="admin-btn" onclick="refreshAnalysisList()">🔄 Refresh List</button>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h3><span class="status-indicator online"></span>System Health</h3>
+                <p>Check system resources, WSL status, and MCP server connectivity for troubleshooting.</p>
+                <div class="admin-actions">
+                    <button class="admin-btn" onclick="checkHealth()">❤️ Health Check</button>
+                    <button class="admin-btn" onclick="testWSL()">🐧 Test WSL</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="panel">
+            <h2>Output</h2>
+            <div class="muted">System information and command results will appear here</div>
+            <div class="debug-output" id="outputPanel">
+Click any action button above to see system information and results here.
+
+Available actions:
+• Refresh Status - Update all system statistics
+• Debug Info - Show detailed queue and system information  
+• Show WSL Processes - List cursor-agent processes running in WSL
+• Kill cursor-agent - Terminate all cursor-agent processes in WSL (safe for Windows Cursor IDE)
+• File System Info - Show disk usage and file counts
+• Cleanup Uploads - Remove old files from uploads directory
+• Health Check - Test all system components
+• Test WSL - Verify Windows Subsystem for Linux connectivity
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let refreshInterval = null;
+
+        // Auto-refresh status every 10 seconds
+        function startAutoRefresh() {
+            refreshInterval = setInterval(refreshStatus, 10000);
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+
+        async function deleteFailedEntries() {
+            if (!confirm('Are you sure you want to delete all failed/error analysis entries? This will permanently remove failed jobs from the queue and hide their folders.')) {
+                return;
+            }
+            
+            showOutput('Deleting failed entries...\n');
+            
+            try {
+                const response = await fetch('admin-api.aspx?action=deletefailed');
+                const result = await response.text();
+                showOutput(result);
+            } catch (error) {
+                showOutput('Error deleting failed entries: ' + error.message);
+            }
+        }
+
+        async function resetAnalysisList() {
+            if (!confirm('Are you sure you want to reset the analysis list? This will hide all analysis folders from the main page but will not delete the actual files.')) {
+                return;
+            }
+            
+            showOutput('Resetting analysis list...\n');
+            
+            try {
+                const response = await fetch('admin-api.aspx?action=resetlist');
+                const result = await response.text();
+                showOutput(result);
+            } catch (error) {
+                showOutput('Error resetting analysis list: ' + error.message);
+            }
+        }
+
+        async function refreshAnalysisList() {
+            showOutput('Refreshing analysis list...\n');
+            
+            try {
+                const response = await fetch('admin-api.aspx?action=refreshlist');
+                const result = await response.text();
+                showOutput(result);
+            } catch (error) {
+                showOutput('Error refreshing analysis list: ' + error.message);
+            }
+        }
+
+        async function refreshStatus() {
+            try {
+                const response = await fetch('admin-api.aspx?action=status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('queueCount').textContent = data.stats.queueCount || 0;
+                    document.getElementById('processingCount').textContent = data.stats.processingCount || 0;
+                    document.getElementById('completedCount').textContent = data.stats.completedCount || 0;
+                    document.getElementById('errorCount').textContent = data.stats.errorCount || 0;
+                    document.getElementById('processCount').textContent = data.stats.processCount || 0;
+                    document.getElementById('uploadCount').textContent = data.stats.uploadCount || 0;
+                } else {
+                    showOutput('Error refreshing status: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                showOutput('Failed to refresh status: ' + error.message);
+            }
+        }
+
+        async function restartQueue() {
+            if (!confirm('This will restart stuck queue jobs and kill hanging processes. Continue?')) {
+                return;
+            }
+            
+            showOutput('Restarting queue...\n');
+            try {
+                const response = await fetch('admin-api.aspx?action=restart');
+                const result = await response.text();
+                showOutput(result);
+                setTimeout(refreshStatus, 2000);
+            } catch (error) {
+                showOutput('Error restarting queue: ' + error.message);
+            }
+        }
+
+        async function showDebugInfo() {
+            showOutput('Loading debug information...\n');
+            try {
+                const response = await fetch('admin-api.aspx?action=debug');
+                const result = await response.text();
+                showOutput(result);
+            } catch (error) {
+                showOutput('Error loading debug info: ' + error.message);
+            }
+        }
+
+        async function showProcesses() {
+            showOutput('Loading process information...\n');
+            try {
+                const response = await fetch('admin-api.aspx?action=processes');
+                const result = await response.text();
+                showOutput(result);
+            } catch (error) {
+                showOutput('Error loading processes: ' + error.message);
+            }
+        }
+
+        async function killHangingProcesses() {
+            if (!confirm('This will kill all cursor-agent processes in WSL. This may interrupt active analysis jobs but will not affect your Windows Cursor IDE. Continue?')) {
+                return;
+            }
+            
+            showOutput('Killing WSL cursor-agent processes...\n');
+            try {
+                const response = await fetch('admin-api.aspx?action=kill');
+                const result = await response.text();
+                showOutput(result);
+                setTimeout(refreshStatus, 2000);
+            } catch (error) {
+                showOutput('Error killing WSL processes: ' + error.message);
+            }
+        }
+
+        async function showFileSystem() {
+            showOutput('Loading file system information...\n');
+            try {
+                const response = await fetch('admin-api.aspx?action=filesystem');
+                const result = await response.text();
+                showOutput(result);
+            } catch (error) {
+                showOutput('Error loading file system info: ' + error.message);
+            }
+        }
+
+        async function cleanupUploads() {
+            if (!confirm('This will delete old files from the uploads directory. Continue?')) {
+                return;
+            }
+            
+            showOutput('Cleaning up uploads directory...\n');
+            try {
+                const response = await fetch('admin-api.aspx?action=cleanup');
+                const result = await response.text();
+                showOutput(result);
+                setTimeout(refreshStatus, 2000);
+            } catch (error) {
+                showOutput('Error cleaning up uploads: ' + error.message);
+            }
+        }
+
+        async function checkHealth() {
+            showOutput('Running health check...\n');
+            try {
+                const response = await fetch('admin-api.aspx?action=health');
+                const result = await response.text();
+                showOutput(result);
+            } catch (error) {
+                showOutput('Error running health check: ' + error.message);
+            }
+        }
+
+        async function testWSL() {
+            showOutput('Testing WSL connectivity...\n');
+            try {
+                const response = await fetch('admin-api.aspx?action=wsl');
+                const result = await response.text();
+                showOutput(result);
+            } catch (error) {
+                showOutput('Error testing WSL: ' + error.message);
+            }
+        }
+
+        function showOutput(text) {
+            const panel = document.getElementById('outputPanel');
+            panel.textContent = text;
+            panel.scrollTop = panel.scrollHeight;
+        }
+
+        // Initialize
+        refreshStatus();
+        startAutoRefresh();
+
+        // Stop auto-refresh when page is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+            }
+        });
+    </script>
+</body>
+</html>
