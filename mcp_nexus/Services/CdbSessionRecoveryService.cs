@@ -9,15 +9,16 @@ namespace mcp_nexus.Services
         bool IsSessionHealthy();
     }
 
-    public class CdbSessionRecoveryService : ICdbSessionRecoveryService
+    public class CdbSessionRecoveryService : ICdbSessionRecoveryService, IDisposable
     {
         private readonly ICdbSession m_cdbSession;
         private readonly ILogger<CdbSessionRecoveryService> m_logger;
         private readonly Func<string, int> m_cancelAllCommandsCallback;
         private readonly IMcpNotificationService? m_notificationService;
         private DateTime m_lastHealthCheck = DateTime.UtcNow;
-        private int m_recoveryAttempts = 0;
-        private readonly object m_recoveryLock = new();
+        private volatile int m_recoveryAttempts = 0;
+        // FIXED: Use ReaderWriterLockSlim for better concurrency
+        private readonly ReaderWriterLockSlim m_recoveryLock = new();
 
         public CdbSessionRecoveryService(
             ICdbSession cdbSession, 
@@ -33,10 +34,16 @@ namespace mcp_nexus.Services
 
         public async Task<bool> RecoverStuckSession(string reason)
         {
-            lock (m_recoveryLock)
+            // FIXED: Use write lock for recovery attempt counter
+            m_recoveryLock.EnterWriteLock();
+            try
             {
                 m_recoveryAttempts++;
                 m_logger.LogWarning("Starting recovery attempt #{Attempt}: {Reason}", m_recoveryAttempts, reason);
+            }
+            finally
+            {
+                m_recoveryLock.ExitWriteLock();
             }
 
             // Send recovery start notification
@@ -166,11 +173,19 @@ namespace mcp_nexus.Services
                     return true; // Not active is not unhealthy
                 }
 
-                // Check for excessive recovery attempts
-                if (m_recoveryAttempts > 3)
+                // FIXED: Use read lock for recovery attempt check
+                m_recoveryLock.EnterReadLock();
+                try
                 {
-                    m_logger.LogError("🚨 Health check FAILED: Too many recovery attempts ({Count})", m_recoveryAttempts);
-                    return false;
+                    if (m_recoveryAttempts > 3)
+                    {
+                        m_logger.LogError("🚨 Health check FAILED: Too many recovery attempts ({Count})", m_recoveryAttempts);
+                        return false;
+                    }
+                }
+                finally
+                {
+                    m_recoveryLock.ExitReadLock();
                 }
 
                 // Could add more sophisticated health checks here:
@@ -218,7 +233,9 @@ namespace mcp_nexus.Services
 
         private void ResetRecoveryCounter()
         {
-            lock (m_recoveryLock)
+            // FIXED: Use write lock for counter reset
+            m_recoveryLock.EnterWriteLock();
+            try
             {
                 if (m_recoveryAttempts > 0)
                 {
@@ -226,6 +243,16 @@ namespace mcp_nexus.Services
                     m_recoveryAttempts = 0;
                 }
             }
+            finally
+            {
+                m_recoveryLock.ExitWriteLock();
+            }
+        }
+
+        // FIXED: Add proper disposal for ReaderWriterLockSlim
+        public void Dispose()
+        {
+            m_recoveryLock?.Dispose();
         }
     }
 }

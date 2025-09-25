@@ -17,6 +17,8 @@ namespace mcp_nexus.Services
         private readonly object m_stdoutLock = new();
         private bool m_disposed;
         private bool m_initialized;
+        // FIXED: Track handler ID for proper cleanup
+        private Guid m_handlerId;
 
         public StdioNotificationBridge(
             ILogger<StdioNotificationBridge> logger,
@@ -35,8 +37,8 @@ namespace mcp_nexus.Services
             {
                 m_logger.LogInformation("Initializing stdio notification bridge...");
 
-                // Register our notification handler with the notification service
-                m_notificationService.RegisterNotificationHandler(HandleNotification);
+                // FIXED: Register our notification handler with the notification service and track ID
+                m_handlerId = m_notificationService.RegisterNotificationHandler(HandleNotification);
                 
                 m_initialized = true;
                 m_logger.LogInformation("Stdio notification bridge initialized - notifications will be sent to MCP clients via stdout");
@@ -100,8 +102,11 @@ namespace mcp_nexus.Services
             {
                 m_logger.LogDebug("Disposing stdio notification bridge...");
                 
-                // Note: We can't unregister from McpNotificationService due to ConcurrentBag limitations
-                // This is already noted as a limitation in the service
+                // FIXED: Properly unregister notification handler
+                if (m_initialized && m_handlerId != Guid.Empty)
+                {
+                    m_notificationService.UnregisterNotificationHandler(m_handlerId);
+                }
                 
                 m_disposed = true;
                 

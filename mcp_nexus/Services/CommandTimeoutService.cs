@@ -15,7 +15,7 @@ namespace mcp_nexus.Services
         DateTime StartTime
     );
 
-    public class CommandTimeoutService : ICommandTimeoutService, IDisposable
+    public class CommandTimeoutService : ICommandTimeoutService, IDisposable, IAsyncDisposable
     {
         private readonly ILogger<CommandTimeoutService> m_logger;
         private readonly ConcurrentDictionary<string, TimeoutInfo> m_timeouts = new();
@@ -148,6 +148,35 @@ namespace mcp_nexus.Services
                 timeoutInfo.CancellationTokenSource.Dispose();
             }
             m_timeouts.Clear();
+        }
+
+        // IMPROVED: Simplified async disposal - Dispose() is synchronous
+        public ValueTask DisposeAsync()
+        {
+            if (m_disposed) return ValueTask.CompletedTask;
+            m_disposed = true;
+
+            // Cancel all timeouts first
+            foreach (var timeoutInfo in m_timeouts.Values)
+            {
+                timeoutInfo.CancellationTokenSource.Cancel();
+            }
+
+            // Dispose cancellation tokens synchronously
+            foreach (var timeoutInfo in m_timeouts.Values)
+            {
+                try
+                {
+                    timeoutInfo.CancellationTokenSource.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogError(ex, "Error disposing cancellation token");
+                }
+            }
+
+            m_timeouts.Clear();
+            return ValueTask.CompletedTask;
         }
     }
 }

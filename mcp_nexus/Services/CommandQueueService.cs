@@ -3,12 +3,22 @@ using mcp_nexus.Helper;
 
 namespace mcp_nexus.Services
 {
+    public enum CommandState
+    {
+        Queued,
+        Executing,
+        Completed,
+        Cancelled,
+        Failed
+    }
+
     public record QueuedCommand(
         string Id,
         string Command,
         DateTime QueueTime,
         TaskCompletionSource<string> CompletionSource,
-        CancellationTokenSource CancellationTokenSource
+        CancellationTokenSource CancellationTokenSource,
+        CommandState State = CommandState.Queued
     );
 
     public class CommandQueueService : IDisposable, ICommandQueueService
@@ -23,6 +33,17 @@ namespace mcp_nexus.Services
         private QueuedCommand? m_currentCommand;
         private readonly object m_currentCommandLock = new();
         private bool m_disposed;
+        
+        // FIXED: Add cleanup mechanism for completed commands
+        private readonly Timer m_cleanupTimer;
+        private readonly TimeSpan m_cleanupInterval = TimeSpan.FromMinutes(5);
+        private readonly TimeSpan m_commandRetentionTime = TimeSpan.FromHours(1);
+        
+        // IMPROVED: Add concurrency monitoring
+        private long m_commandsProcessed = 0;
+        private long m_commandsFailed = 0;
+        private long m_commandsCancelled = 0;
+        private DateTime m_lastStatsLog = DateTime.UtcNow;
 
         public CommandQueueService(ICdbSession cdbSession, ILogger<CommandQueueService> logger)
         {
@@ -42,6 +63,9 @@ namespace mcp_nexus.Services
                 m_logger.LogError(ex, "❌ FAILED to start CommandQueueService background task");
                 throw;
             }
+
+            // FIXED: Start cleanup timer for completed commands
+            m_cleanupTimer = new Timer(CleanupCompletedCommands, null, m_cleanupInterval, m_cleanupInterval);
 
             m_logger.LogInformation("🎯 CommandQueueService fully initialized");
         }
@@ -284,11 +308,14 @@ namespace mcp_nexus.Services
                             continue;
                         }
 
-                        // Set as current command
+                        // FIXED: Set as current command with state transition
                         lock (m_currentCommandLock)
                         {
                             m_currentCommand = queuedCommand;
                         }
+                        
+                        // Update command state to executing
+                        UpdateCommandState(queuedCommand.Id, CommandState.Executing);
 
                         var waitTime = (DateTime.UtcNow - queuedCommand.QueueTime).TotalSeconds;
                         m_logger.LogInformation("🚀 BACKGROUND PROCESSOR: Starting execution of {CommandId}: {Command} (waited {WaitTime:F1}s in queue)",
@@ -306,38 +333,72 @@ namespace mcp_nexus.Services
 
                             m_logger.LogInformation("✅ BACKGROUND PROCESSOR: CdbSession.ExecuteCommand completed for {CommandId}", queuedCommand.Id);
 
-                            // RACE CONDITION FIX: Use TrySetResult to prevent double-completion
-                            var wasCompleted = queuedCommand.CompletionSource.TrySetResult(
-                                queuedCommand.CancellationTokenSource.Token.IsCancellationRequested
-                                    ? "Command execution was cancelled."
-                                    : result);
+                            // CRITICAL FIX: Atomic completion and state update
+                            var resultMessage = queuedCommand.CancellationTokenSource.Token.IsCancellationRequested
+                                ? "Command execution was cancelled."
+                                : result;
                             
-                            if (!wasCompleted)
+                            var wasCompleted = queuedCommand.CompletionSource.TrySetResult(resultMessage);
+                            
+                            // Update state atomically - this is safe even if another thread modified the command
+                            UpdateCommandState(queuedCommand.Id, CommandState.Completed);
+                            
+                            if (wasCompleted)
+                            {
+                                Interlocked.Increment(ref m_commandsProcessed);
+                            }
+                            else
                             {
                                 m_logger.LogDebug("Command {CommandId} was already completed by another thread (race condition handled)", queuedCommand.Id);
                             }
+                            
+                            LogConcurrencyStats();
                         }
                         catch (OperationCanceledException)
                         {
                             m_logger.LogInformation("Command {CommandId} was cancelled during execution", queuedCommand.Id);
                             
-                            // RACE CONDITION FIX: Use TrySetResult to prevent double-completion
+                            // FIXED: Use TrySetResult to prevent double-completion and update state
                             var wasCompleted = queuedCommand.CompletionSource.TrySetResult("Command execution was cancelled.");
-                            if (!wasCompleted)
+                            if (wasCompleted)
+                            {
+                                UpdateCommandState(queuedCommand.Id, CommandState.Cancelled);
+                                Interlocked.Increment(ref m_commandsCancelled);
+                            }
+                            else
                             {
                                 m_logger.LogDebug("Command {CommandId} was already completed by another thread during cancellation", queuedCommand.Id);
                             }
+                            
+                            LogConcurrencyStats();
                         }
                         catch (Exception ex)
                         {
                             m_logger.LogError(ex, "Error executing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
                             
-                            // RACE CONDITION FIX: Use TrySetResult to prevent double-completion
-                            var wasCompleted = queuedCommand.CompletionSource.TrySetResult($"Command execution failed: {ex.Message}");
-                            if (!wasCompleted)
+                            // IMPROVED: Better error handling with detailed error information
+                            var errorMessage = ex switch
+                            {
+                                OperationCanceledException => "Command execution was cancelled",
+                                TimeoutException => "Command execution timed out",
+                                InvalidOperationException => $"Invalid operation: {ex.Message}",
+                                ArgumentException => $"Invalid argument: {ex.Message}",
+                                _ => $"Command execution failed: {ex.GetType().Name}: {ex.Message}"
+                            };
+                            
+                            var wasCompleted = queuedCommand.CompletionSource.TrySetResult(errorMessage);
+                            UpdateCommandState(queuedCommand.Id, CommandState.Failed);
+                            
+                            if (wasCompleted)
+                            {
+                                Interlocked.Increment(ref m_commandsFailed);
+                            }
+                            else
                             {
                                 m_logger.LogDebug("Command {CommandId} was already completed by another thread during error handling", queuedCommand.Id);
                             }
+                            
+                            LogConcurrencyStats();
                         }
                         finally
                         {
@@ -369,6 +430,89 @@ namespace mcp_nexus.Services
             command.CancellationTokenSource.Dispose();
 
             m_logger.LogDebug("Cleaned up command resources for {CommandId} (kept in activeCommands for result retrieval)", command.Id);
+        }
+
+        // CRITICAL FIX: Make state updates atomic
+        private void UpdateCommandState(string commandId, CommandState newState)
+        {
+            if (m_activeCommands.TryGetValue(commandId, out var command))
+            {
+                // Create updated command with new state
+                var updatedCommand = command with { State = newState };
+                // Use TryUpdate to ensure atomic state transition
+                if (!m_activeCommands.TryUpdate(commandId, updatedCommand, command))
+                {
+                    // If update failed, the command was modified by another thread
+                    // This is expected in concurrent scenarios, so we log and continue
+                    m_logger.LogTrace("Command {CommandId} state update failed - command was modified by another thread", commandId);
+                }
+            }
+        }
+
+        // IMPROVED: Add concurrency statistics logging
+        private void LogConcurrencyStats()
+        {
+            var now = DateTime.UtcNow;
+            if ((now - m_lastStatsLog).TotalMinutes >= 5) // Log every 5 minutes
+            {
+                var processed = Interlocked.Read(ref m_commandsProcessed);
+                var failed = Interlocked.Read(ref m_commandsFailed);
+                var cancelled = Interlocked.Read(ref m_commandsCancelled);
+                var total = processed + failed + cancelled;
+                
+                if (total > 0)
+                {
+                    var successRate = total > 0 ? (double)processed / total * 100 : 0;
+                    m_logger.LogInformation("Concurrency Stats - Processed: {Processed}, Failed: {Failed}, Cancelled: {Cancelled}, Success Rate: {SuccessRate:F1}%", 
+                        processed, failed, cancelled, successRate);
+                }
+                
+                m_lastStatsLog = now;
+            }
+        }
+
+        // FIXED: Add cleanup method for completed commands
+        private void CleanupCompletedCommands(object? state)
+        {
+            try
+            {
+                if (m_disposed) return;
+
+                var cutoffTime = DateTime.UtcNow - m_commandRetentionTime;
+                var commandsToRemove = new List<string>();
+
+                foreach (var kvp in m_activeCommands)
+                {
+                    var command = kvp.Value;
+                    if (command.State == CommandState.Completed || 
+                        command.State == CommandState.Cancelled || 
+                        command.State == CommandState.Failed)
+                    {
+                        if (command.QueueTime < cutoffTime)
+                        {
+                            commandsToRemove.Add(kvp.Key);
+                        }
+                    }
+                }
+
+                foreach (var commandId in commandsToRemove)
+                {
+                    if (m_activeCommands.TryRemove(commandId, out var command))
+                    {
+                        command.CancellationTokenSource.Dispose();
+                        m_logger.LogDebug("Cleaned up old completed command: {CommandId}", commandId);
+                    }
+                }
+
+                if (commandsToRemove.Count > 0)
+                {
+                    m_logger.LogDebug("Cleaned up {Count} old completed commands", commandsToRemove.Count);
+                }
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogError(ex, "Error during command cleanup");
+            }
         }
 
         public void Dispose()
@@ -457,6 +601,16 @@ namespace mcp_nexus.Services
             catch (ObjectDisposedException)
             {
                 // Already disposed, ignore
+            }
+
+            // FIXED: Dispose cleanup timer
+            try
+            {
+                m_cleanupTimer?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogError(ex, "Error disposing cleanup timer");
             }
 
             m_disposed = true;

@@ -27,6 +27,15 @@ namespace mcp_nexus.Services
         private readonly TimeSpan m_defaultCommandTimeout = TimeSpan.FromMinutes(10); // 10 minute default
         private readonly TimeSpan m_complexCommandTimeout = TimeSpan.FromMinutes(30); // 30 minutes for complex analysis
         private readonly TimeSpan m_maxCommandTimeout = TimeSpan.FromHours(1); // 1 hour absolute max
+        
+        // IMPROVED: Add cleanup mechanism and monitoring like CommandQueueService
+        private readonly Timer m_cleanupTimer;
+        private readonly TimeSpan m_cleanupInterval = TimeSpan.FromMinutes(5);
+        private readonly TimeSpan m_commandRetentionTime = TimeSpan.FromHours(1);
+        private long m_commandsProcessed = 0;
+        private long m_commandsFailed = 0;
+        private long m_commandsCancelled = 0;
+        private DateTime m_lastStatsLog = DateTime.UtcNow;
 
         public ResilientCommandQueueService(
             ICdbSession cdbSession, 
@@ -47,6 +56,7 @@ namespace mcp_nexus.Services
             try
             {
                 m_processingTask = Task.Run(ProcessCommandQueue, m_serviceCts.Token);
+                m_cleanupTimer = new Timer(CleanupCompletedCommands, null, m_cleanupInterval, m_cleanupInterval);
                 m_logger.LogDebug("Resilient command queue background task started successfully");
             }
             catch (Exception ex)
@@ -80,19 +90,31 @@ namespace mcp_nexus.Services
             m_logger.LogInformation("Queued command {CommandId}: {Command}", commandId, command);
             m_logger.LogDebug("Queue depth: {QueueDepth}", m_commandQueue.Count);
 
-            // Send notification about command being queued
-            _ = Task.Run(async () =>
+            // IMPROVED: Better fire-and-forget with proper task tracking
+            if (m_notificationService != null)
             {
-                try
+                var notificationTask = Task.Run(async () =>
                 {
-                    await m_notificationService?.NotifyCommandStatusAsync(
-                        commandId, command, "queued", 0, "Command queued for execution")!;
-                }
-                catch (Exception ex)
+                    try
+                    {
+                        await m_notificationService.NotifyCommandStatusAsync(
+                            commandId, command, "queued", 0, "Command queued for execution");
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogWarning(ex, "Failed to send queued notification for command {CommandId}", commandId);
+                    }
+                }, CancellationToken.None);
+                
+                // Track the task to prevent unobserved exceptions
+                _ = notificationTask.ContinueWith(t => 
                 {
-                    m_logger.LogWarning(ex, "Failed to send queued notification for command {CommandId}", commandId);
-                }
-            });
+                    if (t.IsFaulted)
+                    {
+                        m_logger.LogError(t.Exception?.GetBaseException(), "Notification task failed for command {CommandId}", commandId);
+                    }
+                }, TaskContinuationOptions.OnlyOnFaulted);
+            }
 
             return commandId;
         }
@@ -310,8 +332,18 @@ namespace mcp_nexus.Services
             {
                 m_logger.LogError(ex, "Unexpected error in command queue processing - attempting recovery");
                 
-                // Trigger recovery for queue processor failure
-                _ = Task.Run(async () => await m_recoveryService.RecoverStuckSession("Queue processor failure"));
+                // FIXED: Proper fire-and-forget with error handling
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await m_recoveryService.RecoverStuckSession("Queue processor failure");
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogError(ex, "Recovery attempt failed after queue processor error");
+                    }
+                }, CancellationToken.None);
             }
         }
 
@@ -321,12 +353,15 @@ namespace mcp_nexus.Services
             {
                 m_currentCommand = queuedCommand;
             }
+            
+            // FIXED: Update command state to executing
+            UpdateCommandState(queuedCommand.Id, CommandState.Executing);
 
             var waitTime = (DateTime.UtcNow - queuedCommand.QueueTime).TotalSeconds;
             m_logger.LogInformation("Executing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
             m_logger.LogDebug("Command wait time: {WaitTime:F1}s", waitTime);
 
-            // Send notification about command starting execution
+            // FIXED: Proper fire-and-forget with error handling
             _ = Task.Run(async () =>
             {
                 try
@@ -338,7 +373,7 @@ namespace mcp_nexus.Services
                 {
                     m_logger.LogWarning(ex, "Failed to send executing notification for command {CommandId}", queuedCommand.Id);
                 }
-            });
+            }, CancellationToken.None);
 
             // Determine timeout based on command complexity
             var timeout = DetermineCommandTimeout(queuedCommand.Command);
@@ -413,7 +448,14 @@ namespace mcp_nexus.Services
                 m_timeoutService.CancelCommandTimeout(queuedCommand.Id);
 
                 m_logger.LogInformation("Command {CommandId} completed successfully", queuedCommand.Id);
-                queuedCommand.CompletionSource.TrySetResult(result);
+                var wasCompleted = queuedCommand.CompletionSource.TrySetResult(result);
+                if (wasCompleted)
+                {
+                    UpdateCommandState(queuedCommand.Id, CommandState.Completed);
+                    Interlocked.Increment(ref m_commandsProcessed);
+                }
+                
+                LogConcurrencyStats();
                 
                 // Send completion notification
                 _ = Task.Run(async () =>
@@ -433,7 +475,14 @@ namespace mcp_nexus.Services
             {
                 m_timeoutService.CancelCommandTimeout(queuedCommand.Id);
                 m_logger.LogInformation("Command {CommandId} was cancelled", queuedCommand.Id);
-                queuedCommand.CompletionSource.TrySetResult("Command execution was cancelled.");
+                var wasCompleted = queuedCommand.CompletionSource.TrySetResult("Command execution was cancelled.");
+                if (wasCompleted)
+                {
+                    UpdateCommandState(queuedCommand.Id, CommandState.Cancelled);
+                    Interlocked.Increment(ref m_commandsCancelled);
+                }
+                
+                LogConcurrencyStats();
                 
                 // Send cancellation notification
                 _ = Task.Run(async () =>
@@ -457,7 +506,14 @@ namespace mcp_nexus.Services
                 // On execution failure, trigger recovery
                 _ = Task.Run(async () => await m_recoveryService.RecoverStuckSession($"Command execution failed: {ex.Message}"));
                 
-                queuedCommand.CompletionSource.TrySetResult($"Command execution failed: {ex.Message}");
+                var wasCompleted = queuedCommand.CompletionSource.TrySetResult($"Command execution failed: {ex.Message}");
+                if (wasCompleted)
+                {
+                    UpdateCommandState(queuedCommand.Id, CommandState.Failed);
+                    Interlocked.Increment(ref m_commandsFailed);
+                }
+                
+                LogConcurrencyStats();
                 
                 // Send error notification
                 _ = Task.Run(async () =>
@@ -587,6 +643,86 @@ namespace mcp_nexus.Services
             m_logger.LogDebug("🧹 Cleaned up resources for command {CommandId}", command.Id);
         }
 
+        // FIXED: Add state management methods (same as CommandQueueService)
+        private void UpdateCommandState(string commandId, CommandState newState)
+        {
+            if (m_activeCommands.TryGetValue(commandId, out var command))
+            {
+                // Create updated command with new state
+                var updatedCommand = command with { State = newState };
+                if (!m_activeCommands.TryUpdate(commandId, updatedCommand, command))
+                {
+                    m_logger.LogTrace("Command {CommandId} state update failed - command was modified by another thread", commandId);
+                }
+            }
+        }
+
+        // IMPROVED: Add cleanup method for completed commands
+        private void CleanupCompletedCommands(object? state)
+        {
+            try
+            {
+                if (m_disposed) return;
+
+                var cutoffTime = DateTime.UtcNow - m_commandRetentionTime;
+                var commandsToRemove = new List<string>();
+
+                foreach (var kvp in m_activeCommands)
+                {
+                    var command = kvp.Value;
+                    if (command.State == CommandState.Completed || 
+                        command.State == CommandState.Cancelled || 
+                        command.State == CommandState.Failed)
+                    {
+                        if (command.QueueTime < cutoffTime)
+                        {
+                            commandsToRemove.Add(kvp.Key);
+                        }
+                    }
+                }
+
+                foreach (var commandId in commandsToRemove)
+                {
+                    if (m_activeCommands.TryRemove(commandId, out var command))
+                    {
+                        command.CancellationTokenSource.Dispose();
+                        m_logger.LogDebug("Cleaned up old completed command: {CommandId}", commandId);
+                    }
+                }
+
+                if (commandsToRemove.Count > 0)
+                {
+                    m_logger.LogDebug("Cleaned up {Count} old completed commands", commandsToRemove.Count);
+                }
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogError(ex, "Error during command cleanup");
+            }
+        }
+
+        // IMPROVED: Add concurrency statistics logging
+        private void LogConcurrencyStats()
+        {
+            var now = DateTime.UtcNow;
+            if ((now - m_lastStatsLog).TotalMinutes >= 5) // Log every 5 minutes
+            {
+                var processed = Interlocked.Read(ref m_commandsProcessed);
+                var failed = Interlocked.Read(ref m_commandsFailed);
+                var cancelled = Interlocked.Read(ref m_commandsCancelled);
+                var total = processed + failed + cancelled;
+                
+                if (total > 0)
+                {
+                    var successRate = total > 0 ? (double)processed / total * 100 : 0;
+                    m_logger.LogInformation("Resilient Concurrency Stats - Processed: {Processed}, Failed: {Failed}, Cancelled: {Cancelled}, Success Rate: {SuccessRate:F1}%", 
+                        processed, failed, cancelled, successRate);
+                }
+                
+                m_lastStatsLog = now;
+            }
+        }
+
         public void Dispose()
         {
             if (m_disposed) return;
@@ -599,6 +735,7 @@ namespace mcp_nexus.Services
                 CancelAllCommands("Service shutdown");
                 m_disposed = true;
                 m_serviceCts.Cancel();
+                m_cleanupTimer?.Dispose();
                 
                 if (!m_processingTask.Wait(5000))
                 {
