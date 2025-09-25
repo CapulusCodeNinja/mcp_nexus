@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+
 using mcp_nexus.Models;
 
 namespace mcp_nexus.Services
@@ -21,8 +22,14 @@ namespace mcp_nexus.Services
             m_logger.LogDebug("McpNotificationService initialized");
         }
 
-        public async Task NotifyCommandStatusAsync(string commandId, string command, string status, 
-            int? progress = null, string? message = null, string? result = null, string? error = null)
+        public async Task NotifyCommandStatusAsync(
+            string commandId, 
+            string command, 
+            string status, 
+            int? progress = null, 
+            string? message = null, 
+            string? result = null, 
+            string? error = null)
         {
             if (m_disposed) return;
 
@@ -43,11 +50,15 @@ namespace mcp_nexus.Services
             m_logger.LogDebug("Sent command status notification: {CommandId} -> {Status}", commandId, status);
         }
 
-        public async Task NotifyCommandHeartbeatAsync(string commandId, string command, TimeSpan elapsed, string? details = null)
+        public async Task NotifyCommandHeartbeatAsync(
+            string commandId, 
+            string command, 
+            TimeSpan elapsed, 
+            string? details = null)
         {
             if (m_disposed) return;
 
-            var elapsedDisplay = elapsed.TotalMinutes >= 1 
+            var elapsedDisplay = elapsed.TotalMinutes >= 1
                 ? $"{elapsed.TotalMinutes.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}m"
                 : $"{elapsed.TotalSeconds.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)}s";
 

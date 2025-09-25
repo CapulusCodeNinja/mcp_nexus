@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
-using mcp_nexus.Helper;
+
 using mcp_nexus.Constants;
+using mcp_nexus.Helper;
 
 namespace mcp_nexus.Services
 {
@@ -34,12 +35,12 @@ namespace mcp_nexus.Services
         private QueuedCommand? m_currentCommand;
         private readonly object m_currentCommandLock = new();
         private bool m_disposed;
-        
+
         // FIXED: Add cleanup mechanism for completed commands
         private readonly Timer m_cleanupTimer;
         private readonly TimeSpan m_cleanupInterval = ApplicationConstants.CleanupInterval;
         private readonly TimeSpan m_commandRetentionTime = ApplicationConstants.CommandRetentionTime;
-        
+
         // IMPROVED: Add concurrency monitoring
         private long m_commandsProcessed = 0;
         private long m_commandsFailed = 0;
