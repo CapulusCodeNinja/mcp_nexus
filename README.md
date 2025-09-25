@@ -1,22 +1,57 @@
 # MCP Nexus
 
-**A comprehensive Model Context Protocol (MCP) server platform providing diverse tools for AI integration.**
+**A comprehensive Model Context Protocol (MCP) server platform with real-time notifications.**
 
-MCP Nexus serves as a unified platform for exposing various tools and capabilities through the Model Context Protocol, enabling AI systems to interact with specialized tools and services seamlessly.
+MCP Nexus serves as a unified platform for exposing various tools and capabilities through the Model Context Protocol, enabling AI systems to interact with specialized tools and services seamlessly with live progress updates.
 
-## Overview
+## 📑 Table of Contents
 
-MCP Nexus implements the [Model Context Protocol](https://modelcontextprotocol.io/) specification, providing a standardized way for AI systems to access external tools and resources. The platform supports multiple transport modes and is designed to accommodate various tool categories beyond its initial debugging focus.
+- [🌟 Key Features](#-key-features)
+- [📡 Real-Time Notifications](#-whats-new-real-time-notifications)
+- [🚀 Quick Start](#-quick-start)
+- [📚 Documentation](#-documentation)
+- [🔄 Transport Modes](#-transport-modes)
+- [🛠 Available Tools](#-available-tools-8-tools)
+- [🏃‍♂️ Windows Service](#️-windows-service)
+- [🎯 AI Tool Integration](#-ai-tool-integration)
+- [🧪 Testing](#-testing)
+- [🛠 Development](#-development)
+- [🆘 Troubleshooting](#-troubleshooting)
 
-### Key Features
+## 🌟 Key Features
 
-- **🔄 Dual Transport Support**: Both stdio and HTTP transport modes
+- **📡 Real-Time Notifications**: Live command execution progress via server-initiated notifications
+- **🔄 Dual Transport Support**: Both stdio and HTTP transport modes with notification support
 - **🛠 Modular Architecture**: Easy to extend with new tool categories  
 - **🎯 Standards Compliant**: Full JSON-RPC 2.0 and MCP specification compliance
 - **🔧 Production Ready**: Robust logging, error handling, and resource management
 - **🚀 AI Integration**: Seamless integration with AI tools like Cursor IDE
+- **⚡ Async Queue System**: Non-blocking command execution with progress tracking
 
-## Quick Start
+## 📡 What's New: Real-Time Notifications
+
+MCP Nexus now provides live updates about command execution:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "notifications/commandStatus", 
+  "params": {
+    "commandId": "cmd-123",
+    "status": "executing",
+    "progress": 75,
+    "message": "Analyzing crash dump..."
+  }
+}
+```
+
+**Benefits:**
+- **No polling needed** - Get instant updates
+- **Progress tracking** - See 0-100% completion
+- **Error notifications** - Immediate failure alerts
+- **Heartbeat monitoring** - Know long commands are running
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -33,155 +68,83 @@ cd mcp_nexus
 # Build the project
 dotnet build
 
-# Run in stdio mode (default)
+# Run in stdio mode (default) - with notifications
 dotnet run --project mcp_nexus/mcp_nexus.csproj
 
-# Run in HTTP mode
+# Run in HTTP mode - with SSE notifications
 dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http
-```
-
-### Windows Service Installation
-
-Install MCP Nexus as a Windows service for persistent operation:
-
-```bash
-# Install as Windows service (requires administrator privileges)
-dotnet run --project mcp_nexus/mcp_nexus.csproj -- --install
-
-# Update existing Windows service (stop, update files, restart)
-dotnet run --project mcp_nexus/mcp_nexus.csproj -- --update
-
-# Uninstall the Windows service
-dotnet run --project mcp_nexus/mcp_nexus.csproj -- --uninstall
-
-# Manual service mode testing
-dotnet run --project mcp_nexus/mcp_nexus.csproj -- --service
-```
-
-**Service Features:**
-- **Auto-start**: Service starts automatically on system boot
-- **HTTP Mode**: Service runs in HTTP transport mode
-- **Program Files**: Installed to `C:\Program Files\MCP-Nexus`
-- **Event Logging**: Logs to Windows Event Log and files
-- **Management**: Use Windows Services console or command line
-- **Safe Updates**: Automatic backups to `C:\Program Files\MCP-Nexus\backups\[timestamp]`
-
-**Service Management:**
-```bash
-# Check service status
-sc query "MCP-Nexus"
-
-# Start/stop service manually
-sc start "MCP-Nexus"
-sc stop "MCP-Nexus"
-
-# Access HTTP endpoint when service is running
-# http://localhost:5000/mcp
 ```
 
 ### Basic Usage
 
-The server automatically exposes all available tools through the MCP protocol. Connect using any MCP-compatible client or integrate directly with AI tools like Cursor.
+The server automatically exposes all available tools through the MCP protocol with real-time notification support. Connect using any MCP-compatible client or integrate directly with AI tools like Cursor.
 
-## Transport Modes
+## 📚 Documentation
+
+| Topic | Documentation | What You'll Find |
+|-------|---------------|------------------|
+| 🛠 **Tools** | **[📋 TOOLS.md](docs/TOOLS.md)** | Complete tool reference, async workflows, notification examples |
+| ⚙️ **Setup** | **[🔧 CONFIGURATION.md](docs/CONFIGURATION.md)** | Transport modes, Windows service, environment setup |
+| 🔌 **Integration** | **[🤖 INTEGRATION.md](docs/INTEGRATION.md)** | Cursor IDE setup, MCP clients, notification handling |
+| 💻 **Development** | **[👨‍💻 DEVELOPMENT.md](docs/DEVELOPMENT.md)** | Architecture, testing, contribution guide |
+
+> 💡 **New to MCP Nexus?** Start with [🔧 CONFIGURATION.md](docs/CONFIGURATION.md) for setup, then [🤖 INTEGRATION.md](docs/INTEGRATION.md) for AI tool integration.
+
+## 🔄 Transport Modes
 
 ### Stdio Transport (Recommended)
 - **Protocol**: JSON-RPC over stdin/stdout
+- **Notifications**: Real-time via stdout
 - **Performance**: High performance, low latency
 - **Use Case**: Direct integration with AI tools
-- **Command**: `dotnet run --project mcp_nexus/mcp_nexus.csproj`
 
-### HTTP Transport
+### HTTP Transport  
 - **Protocol**: JSON-RPC over HTTP
+- **Notifications**: Server-Sent Events (SSE)
 - **Endpoint**: `http://localhost:5000/mcp`
 - **Use Case**: Development, debugging, web integration
-- **Command**: `dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http`
 
-## Available Tools
+> 📖 **Detailed setup instructions:** [🔧 CONFIGURATION.md](docs/CONFIGURATION.md)
 
-### Debugging Tools (8 tools)
-Windows debugging capabilities through WinDBG/CDB integration:
+## 🛠 Available Tools (8 tools)
 
+### Windows Debugging Tools
 - **Crash Dump Analysis**: `nexus_open_dump`, `nexus_close_dump`
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
-- **Command Execution**: `nexus_exec_debugger_command_async` (🔄 ASYNC QUEUE: Always returns commandId, use `nexus_debugger_command_status` for results)
-- **Queue Management**: `nexus_debugger_command_status`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`  
-- **Advanced Analysis**: `analyze_call_stack`, `analyze_memory`, `analyze_crash_patterns`
+- **Async Command Queue**: `nexus_exec_debugger_command_async`, `nexus_debugger_command_status`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
 
-#### 🔄 Async Command Execution Workflow
+**🔄 Async Workflow with Notifications:**
+```bash
+1. nexus_exec_debugger_command_async → Returns commandId
+2. Listen for notifications/commandStatus → Real-time progress
+3. OR poll nexus_debugger_command_status → Get results
+```
 
-**IMPORTANT**: All WinDBG commands use an async queue system:
+> 📖 **Complete tool reference with examples:** **[📋 TOOLS.md](docs/TOOLS.md)**
+
+## 🏃‍♂️ Windows Service
+
+Install MCP Nexus as a Windows service for persistent operation:
 
 ```bash
-1. Call nexus_exec_debugger_command_async {"command": "!analyze -v"}
-   → Returns: {"commandId": "abc-123", "status": "queued", ...}
+# Install as Windows service (administrator required)
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --install
 
-2. Poll nexus_debugger_command_status {"commandId": "abc-123"}  
-   → Returns: {"status": "executing", ...} (keep polling)
-   → Returns: {"status": "completed", "result": "ACTUAL_OUTPUT"}
+# Update service files
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --update
 
-3. Extract the "result" field for your WinDBG command output
+# Access HTTP endpoint + notifications
+# http://localhost:5000/mcp
+# http://localhost:5000/mcp/notifications
 ```
 
-**⚠️ CRITICAL**: `nexus_exec_debugger_command_async` NEVER returns command results directly. You MUST use `nexus_debugger_command_status` to get results!
+> 📖 **Service installation guide:** [🔧 CONFIGURATION.md](docs/CONFIGURATION.md#windows-service-configuration)
 
-## Testing
+## 🎯 AI Tool Integration
 
-### Running Tests
+### Cursor IDE (Recommended)
 
-```bash
-# Run all tests
-dotnet test --logger "console;verbosity=minimal" --nologo
-
-# Run tests with coverage
-dotnet test --collect:"XPlat Code Coverage" --logger "console;verbosity=minimal" --nologo
-
-# Generate coverage report (requires reportgenerator tool)
-reportgenerator -reports:"mcp_nexus_tests/TestResults/*/coverage.cobertura.xml" -targetdir:"CoverageReport" -reporttypes:Html
-
-# Install reportgenerator if not already installed
-dotnet tool install -g dotnet-reportgenerator-globaltool
-
-# Run specific test categories
-dotnet test --filter "FullyQualifiedName~Models" --logger "console;verbosity=minimal" --nologo
-dotnet test --filter "FullyQualifiedName~Services" --logger "console;verbosity=minimal" --nologo
-dotnet test --filter "FullyQualifiedName~Integration" --logger "console;verbosity=minimal" --nologo
-```
-
-### Test Performance
-
-The test suite is optimized for speed:
-- **All tests**: ~4-5 seconds
-- **327 tests**: All using proper mocking for fast execution
-- **Coverage**: 46%+ line coverage with room for improvement
-
-## Integration with AI Tools
-
-### Cursor IDE Integration
-
-#### Configuration for Stdio Mode (Recommended)
-
-Create or edit your MCP configuration:
-
-**Global Configuration** (`~/.cursor/mcp.json`):
-```json
-{
-  "mcpServers": {
-    "mcp-nexus": {
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "/path/to/mcp_nexus/mcp_nexus.csproj"
-      ],
-      "cwd": "/path/to/mcp_nexus",
-      "type": "stdio"
-    }
-  }
-}
-```
-
-**Workspace Configuration** (`.cursor/mcp.json`):
+**Stdio Mode with Notifications** (`.cursor/mcp.json`):
 ```json
 {
   "servers": {
@@ -194,8 +157,7 @@ Create or edit your MCP configuration:
 }
 ```
 
-#### Configuration for HTTP Mode
-
+**HTTP Mode with SSE** (`.cursor/mcp.json`):
 ```json
 {
   "servers": {
@@ -207,134 +169,67 @@ Create or edit your MCP configuration:
 }
 ```
 
-Start the server first: `dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http`
+> 📖 **Complete integration guide:** **[🤖 INTEGRATION.md](docs/INTEGRATION.md)**
 
-### Other MCP Clients
-
-Any MCP-compatible client can connect to MCP Nexus:
+## 🧪 Testing
 
 ```bash
-# Test with curl (HTTP mode)
-curl -X POST http://localhost:5000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "tools/list",
-    "params": {}
-  }'
+# Run all tests (381 tests, ~4-5 seconds)
+dotnet test
+
+# Run notification-specific tests
+dotnet test --filter "Notification"
+
+# Test coverage
+dotnet test --collect:"XPlat Code Coverage"
 ```
 
-## Configuration
+**Test Coverage:**
+- ✅ **381 tests passing** (100% success rate)
+- ✅ **Zero warnings** in build
+- ✅ **46%+ line coverage** with comprehensive notification testing
+- ✅ **7 dedicated notification test classes**
 
-### Command Line Options
+## 🛠 Development
 
-- `--http`: Run in HTTP transport mode
-- `--service`: Run in Windows service mode (implies --http)
-- `--cdb-path <path>`: Custom path to CDB.exe for debugging tools
-- `--install`: Install MCP Nexus as Windows service (Windows only)
-- `--update`: Update existing Windows service files and restart (Windows only)
-- `--uninstall`: Uninstall MCP Nexus Windows service (Windows only)
-- `--force-uninstall`: Force uninstall service with registry cleanup (Windows only)
-- `--help`: Show command line help
-
-### Environment Variables
-
-- `MCP_NEXUS_CDB_PATH`: Default CDB.exe path
-- `MCP_NEXUS_LOG_LEVEL`: Logging level (Debug, Info, Warn, Error)
-
-### Advanced Configuration
-
-#### Debugging Tools Setup
-
-For Windows debugging capabilities:
-
-1. **Install Windows Debugging Tools**:
-   - Download from Microsoft
-   - Or install via Windows SDK
-
-2. **Configure CDB Path** (optional):
-   ```bash
-   dotnet run --project mcp_nexus/mcp_nexus.csproj -- --cdb-path "C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe"
-   ```
-
-3. **Automatic Detection**: If no path specified, the system searches:
-   - Windows Kits installation paths
-   - System PATH environment
-   - Common installation directories
-
-## Development
-
-### Architecture
-
-The platform follows a modular architecture:
+The platform uses a modular architecture with integrated notification support:
 
 ```
 MCP Nexus
-├── Core Services
-│   ├── McpProtocolService    # MCP protocol handling
-│   ├── McpToolDefinitionService  # Tool definitions
-│   └── McpToolExecutionService   # Tool execution
-├── Transport Layer
-│   ├── Stdio Transport       # stdin/stdout communication
-│   └── HTTP Transport        # HTTP API endpoints
-└── Tool Modules
-    ├── Debugging Tools       # WinDBG/CDB integration
-    ├── Time Tools           # Time utilities
-    └── [Future Tools]       # Extensible tool system
+├── Core Services (MCP protocol, tools, notifications)
+├── Transport Layer (stdio + HTTP with notifications)  
+├── Notification System (real-time command updates)
+└── Tool Modules (debugging, time, extensible)
 ```
 
-### Adding New Tools
+> 📖 **Architecture and contribution guide:** **[👨‍💻 DEVELOPMENT.md](docs/DEVELOPMENT.md)**
 
-1. **Define Tool Schema**: Add tool definition to `McpToolDefinitionService`
-2. **Implement Logic**: Add execution logic to `McpToolExecutionService`  
-3. **Register Services**: Update dependency injection in `Program.cs`
-4. **Update Documentation**: Add tool description to README
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Add your tool implementation
-4. Update documentation
-5. Submit a pull request
-
-## Troubleshooting
+## 🆘 Troubleshooting
 
 ### Common Issues
-
-#### Connection Problems
-- **Stdio Mode**: Check file paths in MCP configuration
-- **HTTP Mode**: Ensure server is running before client connects
-- **Build Issues**: Run `dotnet build` before starting
-
-#### Tool-Specific Issues
-- **Debugging Tools**: Verify Windows Debugging Tools installation
-- **Permissions**: Run as administrator for system-level debugging
-- **Port Conflicts**: Use different port for HTTP mode if 5000 is occupied
-
-#### Performance Issues
-- **Stdio Mode**: Preferred for performance-critical applications
-- **HTTP Mode**: Better for development and debugging
-- **Logging**: Adjust log level in production environments
+- **Connection**: Check file paths (stdio) or server status (HTTP)
+- **Notifications**: Verify client supports MCP notification capabilities
+- **Build**: Run `dotnet build` before starting
+- **Permissions**: Administrator required for system-level debugging
 
 ### Getting Help
-
 1. **Check Logs**: Review application logs for detailed error information
-2. **Test Manually**: Use curl to test HTTP mode endpoints
-3. **Verify Tools**: Ensure all prerequisite tools are installed
+2. **Test Manually**: Use curl to test HTTP endpoints and SSE notifications
+3. **Read Docs**: Check [🔧 CONFIGURATION.md](docs/CONFIGURATION.md) and [🤖 INTEGRATION.md](docs/INTEGRATION.md)
 4. **Community**: Report issues on GitHub
 
-## License
+> 📖 **Troubleshooting guides in:** [🔧 CONFIGURATION.md](docs/CONFIGURATION.md) and [🤖 INTEGRATION.md](docs/INTEGRATION.md)
+
+## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - [Model Context Protocol](https://modelcontextprotocol.io/) specification
-- Windows Debugging Tools community
+- Windows Debugging Tools community  
 - .NET and ASP.NET Core teams
 
 ---
 
-**MCP Nexus** - Bridging AI and specialized tools through the Model Context Protocol.
+**MCP Nexus** - Bridging AI and specialized tools through real-time Model Context Protocol communication.
