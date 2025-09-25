@@ -42,8 +42,7 @@ namespace mcp_nexus.Helper
         private readonly object m_CancellationLock = new();
         private bool m_Disposed;
 
-        // Validate parameters after field initialization
-        private readonly bool m_ValidatedParameters = ValidateParametersAndReturn(commandTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
+        // Parameters are validated in constructor - no need to store validation result
 
         public bool IsActive
         {

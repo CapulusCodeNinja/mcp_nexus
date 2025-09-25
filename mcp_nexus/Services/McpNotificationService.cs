@@ -160,27 +160,31 @@ namespace mcp_nexus.Services
             }
         }
 
-        public Guid RegisterNotificationHandler(Func<McpNotification, Task> handler)
+        public void RegisterNotificationHandler(Func<McpNotification, Task> handler)
         {
-            if (m_disposed) return Guid.Empty;
+            if (m_disposed) return;
 
             var id = Guid.NewGuid();
             m_notificationHandlers[id] = handler;
             m_logger.LogDebug("Registered notification handler {HandlerId} (Total: {HandlerCount})", id, m_notificationHandlers.Count);
-            return id;
         }
 
-        public void UnregisterNotificationHandler(Guid handlerId)
+        public void UnregisterNotificationHandler(Func<McpNotification, Task> handler)
         {
-            if (m_disposed || handlerId == Guid.Empty) return;
+            if (m_disposed) return;
 
-            if (m_notificationHandlers.TryRemove(handlerId, out _))
+            // Find and remove the handler by value
+            var handlerToRemove = m_notificationHandlers.FirstOrDefault(kvp => kvp.Value == handler);
+            if (!handlerToRemove.Equals(default(KeyValuePair<Guid, Func<McpNotification, Task>>)))
             {
-                m_logger.LogDebug("Unregistered notification handler {HandlerId} (Total: {HandlerCount})", handlerId, m_notificationHandlers.Count);
+                if (m_notificationHandlers.TryRemove(handlerToRemove.Key, out _))
+                {
+                    m_logger.LogDebug("Unregistered notification handler {HandlerId} (Total: {HandlerCount})", handlerToRemove.Key, m_notificationHandlers.Count);
+                }
             }
             else
             {
-                m_logger.LogWarning("Attempted to unregister non-existent notification handler {HandlerId}", handlerId);
+                m_logger.LogWarning("Attempted to unregister non-existent notification handler");
             }
         }
 

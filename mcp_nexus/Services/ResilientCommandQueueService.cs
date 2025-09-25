@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using mcp_nexus.Helper;
+using mcp_nexus.Constants;
 
 namespace mcp_nexus.Services
 {
@@ -24,14 +25,14 @@ namespace mcp_nexus.Services
         private bool m_disposed;
 
         // Configuration for automated recovery
-        private readonly TimeSpan m_defaultCommandTimeout = TimeSpan.FromMinutes(10); // 10 minute default
-        private readonly TimeSpan m_complexCommandTimeout = TimeSpan.FromMinutes(30); // 30 minutes for complex analysis
-        private readonly TimeSpan m_maxCommandTimeout = TimeSpan.FromHours(1); // 1 hour absolute max
+        private readonly TimeSpan m_defaultCommandTimeout = ApplicationConstants.DefaultCommandTimeout;
+        private readonly TimeSpan m_complexCommandTimeout = ApplicationConstants.MaxCommandTimeout;
+        private readonly TimeSpan m_maxCommandTimeout = ApplicationConstants.LongRunningCommandTimeout;
         
         // IMPROVED: Add cleanup mechanism and monitoring like CommandQueueService
         private readonly Timer m_cleanupTimer;
-        private readonly TimeSpan m_cleanupInterval = TimeSpan.FromMinutes(5);
-        private readonly TimeSpan m_commandRetentionTime = TimeSpan.FromHours(1);
+        private readonly TimeSpan m_cleanupInterval = ApplicationConstants.CleanupInterval;
+        private readonly TimeSpan m_commandRetentionTime = ApplicationConstants.CommandRetentionTime;
         private long m_commandsProcessed = 0;
         private long m_commandsFailed = 0;
         private long m_commandsCancelled = 0;
@@ -705,7 +706,7 @@ namespace mcp_nexus.Services
         private void LogConcurrencyStats()
         {
             var now = DateTime.UtcNow;
-            if ((now - m_lastStatsLog).TotalMinutes >= 5) // Log every 5 minutes
+            if ((now - m_lastStatsLog) >= ApplicationConstants.StatsLogInterval)
             {
                 var processed = Interlocked.Read(ref m_commandsProcessed);
                 var failed = Interlocked.Read(ref m_commandsFailed);
@@ -737,9 +738,9 @@ namespace mcp_nexus.Services
                 m_serviceCts.Cancel();
                 m_cleanupTimer?.Dispose();
                 
-                if (!m_processingTask.Wait(5000))
+                if (!m_processingTask.Wait(ApplicationConstants.ServiceShutdownTimeout))
                 {
-                    m_logger.LogWarning("Processing task did not complete within 5 seconds during shutdown");
+                    m_logger.LogWarning("Processing task did not complete within {TimeoutSeconds} seconds during shutdown", ApplicationConstants.ServiceShutdownTimeout.TotalSeconds);
                 }
             }
             catch (Exception ex)

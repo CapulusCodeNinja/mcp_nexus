@@ -17,8 +17,8 @@ namespace mcp_nexus.Services
         private readonly object m_stdoutLock = new();
         private bool m_disposed;
         private bool m_initialized;
-        // FIXED: Track handler ID for proper cleanup
-        private Guid m_handlerId;
+        // FIXED: Track handler function for proper cleanup
+        private Func<McpNotification, Task>? m_notificationHandler;
 
         public StdioNotificationBridge(
             ILogger<StdioNotificationBridge> logger,
@@ -37,8 +37,9 @@ namespace mcp_nexus.Services
             {
                 m_logger.LogInformation("Initializing stdio notification bridge...");
 
-                // FIXED: Register our notification handler with the notification service and track ID
-                m_handlerId = m_notificationService.RegisterNotificationHandler(HandleNotification);
+                // FIXED: Register our notification handler with the notification service and track function
+                m_notificationHandler = HandleNotification;
+                m_notificationService.RegisterNotificationHandler(m_notificationHandler);
                 
                 m_initialized = true;
                 m_logger.LogInformation("Stdio notification bridge initialized - notifications will be sent to MCP clients via stdout");
@@ -103,9 +104,9 @@ namespace mcp_nexus.Services
                 m_logger.LogDebug("Disposing stdio notification bridge...");
                 
                 // FIXED: Properly unregister notification handler
-                if (m_initialized && m_handlerId != Guid.Empty)
+                if (m_initialized && m_notificationHandler != null)
                 {
-                    m_notificationService.UnregisterNotificationHandler(m_handlerId);
+                    m_notificationService.UnregisterNotificationHandler(m_notificationHandler);
                 }
                 
                 m_disposed = true;

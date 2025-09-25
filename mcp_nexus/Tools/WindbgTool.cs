@@ -1,6 +1,7 @@
 ﻿using mcp_nexus.Helper;
 using mcp_nexus.Services;
 using mcp_nexus.Utilities;
+using mcp_nexus.Constants;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text;
@@ -15,10 +16,9 @@ namespace mcp_nexus.Tools
         {
             logger.LogTrace("Waiting for {Description} command {CommandId} to complete...", commandDescription, commandId);
 
-            var maxWaitTime = TimeSpan.FromMinutes(5); // 5 minute timeout
-            var startTime = DateTime.UtcNow;
-            var pollInterval = TimeSpan.FromMilliseconds(100); // Start with 100ms
-            var maxPollInterval = TimeSpan.FromSeconds(2); // Max 2 seconds between polls
+            var maxWaitTime = ApplicationConstants.DefaultCommandTimeout;
+            var pollInterval = ApplicationConstants.InitialPollInterval;
+            var maxPollInterval = ApplicationConstants.MaxPollInterval;
 
             using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             combinedCts.CancelAfter(maxWaitTime);
@@ -38,7 +38,7 @@ namespace mcp_nexus.Tools
 
                     // Exponential backoff for polling
                     await Task.Delay(pollInterval, combinedCts.Token);
-                    pollInterval = TimeSpan.FromMilliseconds(Math.Min(pollInterval.TotalMilliseconds * 1.5, maxPollInterval.TotalMilliseconds));
+                    pollInterval = TimeSpan.FromMilliseconds(Math.Min(pollInterval.TotalMilliseconds * ApplicationConstants.PollBackoffMultiplier, maxPollInterval.TotalMilliseconds));
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -50,15 +50,15 @@ namespace mcp_nexus.Tools
             catch (OperationCanceledException)
             {
                 // Timeout reached
-                logger.LogError("{Description} command {CommandId} timed out after 5 minutes", commandDescription, commandId);
+                logger.LogError("{Description} command {CommandId} timed out after {TimeoutMinutes} minutes", commandDescription, commandId, ApplicationConstants.DefaultCommandTimeout.TotalMinutes);
                 commandQueueService.CancelCommand(commandId);
-                return $"Command timed out after 5 minutes: {commandDescription}";
+                return $"Command timed out after {ApplicationConstants.DefaultCommandTimeout.TotalMinutes} minutes: {commandDescription}";
             }
 
             // Fallback timeout
-            logger.LogError("{Description} command {CommandId} timed out after 5 minutes", commandDescription, commandId);
+            logger.LogError("{Description} command {CommandId} timed out after {TimeoutMinutes} minutes", commandDescription, commandId, ApplicationConstants.DefaultCommandTimeout.TotalMinutes);
             commandQueueService.CancelCommand(commandId);
-            return $"Command timed out after 5 minutes: {commandDescription}";
+            return $"Command timed out after {ApplicationConstants.DefaultCommandTimeout.TotalMinutes} minutes: {commandDescription}";
         }
 
         // Crash Dump Analysis Tools

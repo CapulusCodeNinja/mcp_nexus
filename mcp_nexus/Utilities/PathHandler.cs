@@ -82,7 +82,7 @@ namespace mcp_nexus.Utilities
                     var restOfPath = path.Length > 2 ? path.Substring(2).Replace('\\', '/') : "";
                     
                     // Remove leading slash if present (e.g., C:\ -> /mnt/c, not /mnt/c/)
-                    if (restOfPath.StartsWith("/"))
+                    if (!string.IsNullOrEmpty(restOfPath) && restOfPath.StartsWith("/"))
                     {
                         restOfPath = restOfPath.Substring(1);
                     }

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using mcp_nexus.Helper;
+using mcp_nexus.Constants;
 
 namespace mcp_nexus.Services
 {
@@ -36,8 +37,8 @@ namespace mcp_nexus.Services
         
         // FIXED: Add cleanup mechanism for completed commands
         private readonly Timer m_cleanupTimer;
-        private readonly TimeSpan m_cleanupInterval = TimeSpan.FromMinutes(5);
-        private readonly TimeSpan m_commandRetentionTime = TimeSpan.FromHours(1);
+        private readonly TimeSpan m_cleanupInterval = ApplicationConstants.CleanupInterval;
+        private readonly TimeSpan m_commandRetentionTime = ApplicationConstants.CommandRetentionTime;
         
         // IMPROVED: Add concurrency monitoring
         private long m_commandsProcessed = 0;
@@ -453,7 +454,7 @@ namespace mcp_nexus.Services
         private void LogConcurrencyStats()
         {
             var now = DateTime.UtcNow;
-            if ((now - m_lastStatsLog).TotalMinutes >= 5) // Log every 5 minutes
+            if ((now - m_lastStatsLog) >= ApplicationConstants.StatsLogInterval)
             {
                 var processed = Interlocked.Read(ref m_commandsProcessed);
                 var failed = Interlocked.Read(ref m_commandsFailed);
