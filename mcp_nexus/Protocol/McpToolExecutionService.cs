@@ -43,9 +43,7 @@ namespace mcp_nexus.Protocol
             
             var dumpPath = GetRequiredStringArgument(arguments, "dumpPath");
             if (dumpPath == null)
-                throw new McpToolException(-32602, "❌ MISSING DUMP PATH: You must provide a 'dumpPath' parameter! " +
-                    "🔧 RECOVERY: Add 'dumpPath' parameter with full path to a .dmp file " +
-                    "💡 EXAMPLE: {\"dumpPath\": \"C:\\\\path\\\\to\\\\crash.dmp\"}");
+                throw new McpToolException(-32602, "Missing required parameter: dumpPath");
 
             var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
             var result = await sessionAwareWindbgTool.nexus_open_dump_analyze_session(dumpPath, symbolsPath);
@@ -60,9 +58,7 @@ namespace mcp_nexus.Protocol
             var sessionId = GetRequiredStringArgument(arguments, "sessionId");
             
             if (sessionId == null)
-                throw new McpToolException(-32602, "❌ MISSING SESSION ID: You must provide a 'sessionId' parameter! " +
-                    "🔧 RECOVERY: Include the sessionId from your nexus_open_dump response " +
-                    "💡 EXAMPLE: {\"sessionId\": \"sess-000001-abc12345\"}");
+                throw new McpToolException(-32602, "Missing required parameter: sessionId");
 
             logger.LogInformation("Manual session closure requested for session: {SessionId}", sessionId);
             
@@ -77,20 +73,10 @@ namespace mcp_nexus.Protocol
             var sessionId = GetRequiredStringArgument(arguments, "sessionId");
             
             if (command == null)
-                throw new McpToolException(-32602, "❌ MISSING COMMAND: You must provide a 'command' parameter. " +
-                    "🔧 RECOVERY: Add 'command' parameter with a WinDbg command like '!analyze -v', 'k', 'lm', etc.");
+                throw new McpToolException(-32602, "Missing required parameter: command");
                 
             if (sessionId == null)
-                throw new McpToolException(-32602, "❌ MISSING SESSION ID: You must provide a 'sessionId' parameter! " +
-                    "🔧 STEP-BY-STEP RECOVERY: " +
-                    "1️⃣ FIRST: Call nexus_open_dump with a .dmp file path → this creates a debugging session " +
-                    "2️⃣ EXTRACT: Get the 'sessionId' value from the nexus_open_dump response JSON " +
-                    "3️⃣ RETRY: Call this command again with BOTH 'command' AND 'sessionId' parameters " +
-                    "4️⃣ REMEMBER: This command only returns a commandId, then call nexus_debugger_command_status(commandId) for actual results " +
-                    "💡 CORRECT USAGE EXAMPLE: {\"command\": \"!analyze -v\", \"sessionId\": \"sess-000001-abc12345\"} " +
-                    "🚨 ASYNC WORKFLOW: nexus_open_dump → nexus_exec_debugger_command_async → nexus_debugger_command_status " +
-                    "❓ WHY THIS ERROR: The AI client didn't extract sessionId from nexus_open_dump response or skipped calling nexus_open_dump entirely. " +
-                    "🎯 AI DEBUGGING TIP: Check your previous nexus_open_dump response for the sessionId field!");
+                throw new McpToolException(-32602, "Missing required parameter: sessionId");
 
             logger.LogDebug("Executing command '{Command}' for session '{SessionId}'", command, sessionId);
             
@@ -111,11 +97,7 @@ namespace mcp_nexus.Protocol
             // Get command status using session-aware implementation
             var commandId = GetRequiredStringArgument(arguments, "commandId");
             if (commandId == null)
-                throw new McpToolException(-32602, "❌ MISSING COMMAND ID: You must provide a 'commandId' parameter! " +
-                    "🔧 RECOVERY: Add 'commandId' parameter from nexus_exec_debugger_command_async response " +
-                    "🚨 ASYNC WORKFLOW: nexus_exec_debugger_command_async returns commandId → use it here to get results " +
-                    "💡 EXAMPLE: {\"commandId\": \"cmd-12345-abc\"} " +
-                    "📡 This is how you get actual debugger command output!");
+                throw new McpToolException(-32602, "Missing required parameter: commandId");
 
             logger.LogDebug("Getting command status for commandId: {CommandId}", commandId);
             

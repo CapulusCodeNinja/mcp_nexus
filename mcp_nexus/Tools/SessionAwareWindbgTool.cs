@@ -23,12 +23,53 @@ namespace mcp_nexus.Tools
     [McpServerToolType]
     public class SessionAwareWindbgTool(ILogger<SessionAwareWindbgTool> logger, ISessionManager sessionManager)
     {
-        private const string TOOL_USAGE_EXPLANATION = 
-            "Explains how to use the Nexus MCP server. Please get further details from the responses and the tool listings of the MCP server.\n\n" +
-            "- **Tooling - Open Session** Open the analyze session for the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`. Using the open call you receive a `sessionid`. This **EXACT** `sessionid` **IS REQUIRED TO BE USED** for all following commands in the session.\n" +
-            "- **Tooling - Exec Command** Use the `nexus_dump_analyze_session_async_command` to start async execution of the Windbg commands. Using the command call you receive a `commandId`. This **EXACT** `commandId` **IS REQUIRED TO BE USED** for the `nexus_dump_analyze_session_async_command_status` commands to get the async result.\n" +
-            "- **Tooling - Get Command Status** Use the `nexus_dump_analyze_session_async_command_status` to poll for the status or result of the specific async execution of the Windbg commands\n" +
-            "- **Tooling - Close Session** Use the `nexus_close_dump_analyze_session` to close analyze session of the dump file after all commands are executed or the session is not needed anymore";
+        private static readonly object TOOL_USAGE_EXPLANATION = new
+        {
+            title = "TOOL USAGE",
+            description = "Explaining how to use the Nexus MCP server.",
+            general_notes = new[]
+            {
+                "Please get further details from the response and the tool listings of the MCP server.",
+                "After opening an analyze session, WinDBG commands can be asynchronously executed.",
+                "The result can be queried (regular polling) by the status API.",
+                "Opening a session without executing commands will not have any effect."
+            },
+            tooling_steps = new[]
+            {
+                new
+                {
+                    step_title = "Tooling - Open Session",
+                    tool_name = "nexus_open_dump_analyze_session",
+                    action = "Open the analyze session for the dump file with the tool from Nexus MCP server.",
+                    output = (string?)"sessionid",
+                    note = (string?)"This EXACT sessionid IS REQUIRED TO BE USED for all following commands in the session."
+                },
+                new
+                {
+                    step_title = "Tooling - Exec Command",
+                    tool_name = "nexus_dump_analyze_session_async_command",
+                    action = "Use the tool to start asynchronous execution of the WinDBG commands.",
+                    output = (string?)"commandId",
+                    note = (string?)"This EXACT commandId IS REQUIRED TO BE USED for the nexus_dump_analyze_session_async_command_status commands to get the asynchronous result."
+                },
+                new
+                {
+                    step_title = "Tooling - Get Command Status",
+                    tool_name = "nexus_dump_analyze_session_async_command_status",
+                    action = "Use the tool to poll for the status or result of the specific asynchronous execution of the WinDBG commands.",
+                    output = (string?)"result",
+                    note = (string?)null
+                },
+                new
+                {
+                    step_title = "Tooling - Close Session",
+                    tool_name = "nexus_close_dump_analyze_session",
+                    action = "Use the tool to close the analyze session of the dump file after all commands are executed or the session is not needed anymore.",
+                    output = (string?)null,
+                    note = (string?)null
+                }
+            }
+        };
         
         /// <summary>
         /// Session-aware response wrapper for AI client guidance
@@ -100,17 +141,16 @@ namespace mcp_nexus.Tools
                 var sessionId = await sessionManager.CreateSessionAsync(dumpPath, symbolsPath);
                 var context = sessionManager.GetSessionContext(sessionId);
 
-                // Return simplified response with essential information
+                // Return standardized response with required fields
                 var response = new
                 {
+                    toolusage = TOOL_USAGE_EXPLANATION,
                     sessionId = sessionId,
                     dumpFile = Path.GetFileName(dumpPath),
                     commandId = (string?)null,
                     success = true,
                     operation = "nexus_open_dump_analyze_session",
-                    status = "completed",
-                    message = $"Session created: {sessionId}",
-                    toolusage = TOOL_USAGE_EXPLANATION
+                    message = $"Session created successfully: {sessionId}"
                 };
 
                 logger.LogInformation("✅ Session {SessionId} created successfully", sessionId);
@@ -120,25 +160,15 @@ namespace mcp_nexus.Tools
             {
                 logger.LogWarning("❌ Session limit exceeded: {Message}", ex.Message);
                 
-                var errorResponse = new SessionAwareResponse
+                var errorResponse = new
                 {
-                    Result = $"❌ Maximum concurrent sessions exceeded: {ex.CurrentSessions}/{ex.MaxSessions}\n\n" +
-                             "🔧 Please close unused sessions or wait for inactive sessions to expire.\n" +
-                             "💡 Use nexus_close_dump to explicitly close sessions.",
-                    AIGuidance = new AIGuidance
-                    {
-                        NextSteps = new List<string>
-                        {
-                            "Check active sessions and close unused ones",
-                            "Wait for inactive sessions to auto-expire (30 minutes)",
-                            "Retry opening the dump file"
-                        },
-                        CommonErrors = new List<string>
-                        {
-                            "Too many concurrent debugging sessions open",
-                            "Sessions not being explicitly closed"
-                        }
-                    }
+                    toolusage = TOOL_USAGE_EXPLANATION,
+                    sessionId = (string?)null,
+                    dumpFile = (string?)null,
+                    commandId = (string?)null,
+                    success = false,
+                    operation = "nexus_open_dump_analyze_session",
+                    message = $"Maximum concurrent sessions exceeded: {ex.CurrentSessions}/{ex.MaxSessions}"
                 };
                 
                 return errorResponse;
@@ -147,27 +177,15 @@ namespace mcp_nexus.Tools
             {
                 logger.LogError(ex, "❌ Failed to create debugging session for {DumpPath}", dumpPath);
                 
-                var errorResponse = new SessionAwareResponse
+                var errorResponse = new
                 {
-                    Result = $"❌ Failed to create debugging session: {ex.Message}\n\n" +
-                             "🔧 Check that the dump file exists and is accessible.\n" +
-                             "💡 Verify that WinDbg/CDB is properly installed.",
-                    AIGuidance = new AIGuidance
-                    {
-                        NextSteps = new List<string>
-                        {
-                            "Verify dump file path is correct and file exists",
-                            "Check file permissions",
-                            "Ensure debugging tools are installed",
-                            "Try again with correct path"
-                        },
-                        CommonErrors = new List<string>
-                        {
-                            "File not found or inaccessible",
-                            "Insufficient permissions",
-                            "WinDbg/CDB not installed or configured"
-                        }
-                    }
+                    toolusage = TOOL_USAGE_EXPLANATION,
+                    sessionId = (string?)null,
+                    dumpFile = Path.GetFileName(dumpPath),
+                    commandId = (string?)null,
+                    success = false,
+                    operation = "nexus_open_dump_analyze_session",
+                    message = $"Failed to create debugging session: {ex.Message}"
                 };
                 
                 return errorResponse;
@@ -188,24 +206,15 @@ namespace mcp_nexus.Tools
                 var sessionExists = sessionManager.SessionExists(sessionId);
                 if (!sessionExists)
                 {
-                    var notFoundResponse = new SessionAwareResponse
+                    var notFoundResponse = new
                     {
-                        SessionId = sessionId,
-                        Result = $"⚠️ Session '{sessionId}' not found or already closed.\n\n" +
-                                "This could be normal if the session expired due to inactivity.",
-                        AIGuidance = new AIGuidance
-                        {
-                            NextSteps = new List<string>
-                            {
-                                "Verify the sessionId is correct",
-                                "Create a new session if needed with nexus_open_dump"
-                            },
-                            CommonErrors = new List<string>
-                            {
-                                "Using expired or invalid sessionId",
-                                "Session was already closed"
-                            }
-                        }
+                        toolusage = TOOL_USAGE_EXPLANATION,
+                        sessionId = sessionId,
+                        dumpFile = (string?)null,
+                        commandId = (string?)null,
+                        success = false,
+                        operation = "nexus_close_dump_analyze_session",
+                        message = $"Session not found or already closed: {sessionId}"
                     };
                     
                     return notFoundResponse;
@@ -214,19 +223,18 @@ namespace mcp_nexus.Tools
                 var context = sessionManager.GetSessionContext(sessionId);
                 var closed = await sessionManager.CloseSessionAsync(sessionId);
 
-                // Return simplified response with essential information
+                // Return standardized response with required fields
                 var response = new
                 {
+                    toolusage = TOOL_USAGE_EXPLANATION,
                     sessionId = sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
                     success = closed,
                     operation = "nexus_close_dump_analyze_session",
-                    status = closed ? "completed" : "warning",
                     message = closed 
-                        ? $"Session closed: {sessionId}"
-                        : $"Session may have already been closed: {sessionId}",
-                    toolusage = TOOL_USAGE_EXPLANATION
+                        ? $"Session closed successfully: {sessionId}"
+                        : $"Session may have already been closed: {sessionId}"
                 };
 
                 logger.LogInformation("✅ Session {SessionId} closed successfully", sessionId);
@@ -236,20 +244,15 @@ namespace mcp_nexus.Tools
             {
                 logger.LogError(ex, "❌ Error closing session {SessionId}", sessionId);
                 
-                var errorResponse = new SessionAwareResponse
+                var errorResponse = new
                 {
-                    SessionId = sessionId,
-                    Result = $"❌ Error closing session: {ex.Message}\n\n" +
-                             "The session may still be partially active. Resources will be cleaned up automatically.",
-                    AIGuidance = new AIGuidance
-                    {
-                        NextSteps = new List<string>
-                        {
-                            "Session cleanup will happen automatically",
-                            "Monitor for session expiry notifications",
-                            "Create new session if needed"
-                        }
-                    }
+                    toolusage = TOOL_USAGE_EXPLANATION,
+                    sessionId = sessionId,
+                    dumpFile = (string?)null,
+                    commandId = (string?)null,
+                    success = false,
+                    operation = "nexus_close_dump_analyze_session",
+                    message = $"Error closing session: {ex.Message}"
                 };
                 
                 return errorResponse;
@@ -280,34 +283,15 @@ namespace mcp_nexus.Tools
                 // Validate session
                 if (!sessionManager.SessionExists(sessionId))
                 {
-                var sessionNotFoundResponse = new SessionAwareResponse
+                var sessionNotFoundResponse = new
                 {
-                    SessionId = sessionId,
-                    Result = $"❌ INVALID SESSION ID: '{sessionId}' not found or expired!\n\n" +
-                             "🚨 CRITICAL AI CLIENT ERROR: You're using a WRONG or MADE-UP sessionId!\n\n" +
-                             "🔧 EXACT RECOVERY STEPS:\n" +
-                             "1️⃣ CALL nexus_open_dump with a .dmp file path\n" +
-                             "2️⃣ EXTRACT the 'sessionId' field from the JSON response\n" +
-                             "3️⃣ USE that EXACT sessionId value here (e.g., 'sess-000001-abc12345')\n" +
-                             "4️⃣ DO NOT make up your own sessionId values!\n\n" +
-                             "💡 EXAMPLE: If nexus_open_dump returns sessionId='sess-000001-feaf4c54', then use EXACTLY that value!\n" +
-                             "❌ WRONG: 'session_12345', 'my_session', 'test_session'\n" +
-                             "✅ CORRECT: Copy the sessionId from nexus_open_dump response JSON",
-                    AIGuidance = new AIGuidance
-                    {
-                        NextSteps = new List<string>
-                        {
-                            "Call nexus_open_dump and extract the returned sessionId from response JSON",
-                            "Use the EXACT sessionId value returned (starts with 'sess-')",
-                            "Stop making up your own sessionId values"
-                        },
-                        CommonErrors = new List<string>
-                        {
-                            "Making up sessionId instead of using the one from nexus_open_dump",
-                            "Using expired or incorrect sessionId",
-                            "Not extracting sessionId from nexus_open_dump response"
-                        }
-                    }
+                    toolusage = TOOL_USAGE_EXPLANATION,
+                    sessionId = sessionId,
+                    dumpFile = (string?)null,
+                    commandId = (string?)null,
+                    success = false,
+                    operation = "nexus_dump_analyze_session_async_command",
+                    message = $"Session not found or expired: {sessionId}"
                 };
                     
                     return sessionNotFoundResponse;
@@ -318,17 +302,16 @@ namespace mcp_nexus.Tools
                 var commandId = commandQueue.QueueCommand(command);
                 var context = sessionManager.GetSessionContext(sessionId);
 
-                // Return simplified response with essential information
+                // Return standardized response with required fields
                 var response = new
                 {
+                    toolusage = TOOL_USAGE_EXPLANATION,
                     sessionId = sessionId,
                     dumpFile = context?.DumpPath != null ? Path.GetFileName(context.DumpPath) : null,
                     commandId = commandId,
                     success = true,
                     operation = "nexus_dump_analyze_session_async_command",
-                    status = "queued",
-                    message = $"Command queued: {commandId}",
-                    toolusage = TOOL_USAGE_EXPLANATION
+                    message = $"Command queued successfully: {commandId}"
                 };
 
                 logger.LogInformation("✅ Command {CommandId} queued in session {SessionId}", commandId, sessionId);
@@ -338,20 +321,15 @@ namespace mcp_nexus.Tools
             {
                 logger.LogWarning("❌ Session not found: {SessionId}", sessionId);
                 
-                var errorResponse = new SessionAwareResponse
+                var errorResponse = new
                 {
-                    SessionId = sessionId,
-                    Result = $"❌ Session not found: {ex.Message}\n\n" +
-                             "🔧 The session may have expired or was never created.",
-                    AIGuidance = new AIGuidance
-                    {
-                        NextSteps = new List<string>
-                        {
-                            "Create new session with nexus_open_dump",
-                            "Check session expiry notifications",
-                            "Verify sessionId spelling"
-                        }
-                    }
+                    toolusage = TOOL_USAGE_EXPLANATION,
+                    sessionId = sessionId,
+                    dumpFile = (string?)null,
+                    commandId = (string?)null,
+                    success = false,
+                    operation = "nexus_dump_analyze_session_async_command",
+                    message = $"Session not found: {ex.Message}"
                 };
                 
                 return errorResponse;
@@ -360,20 +338,15 @@ namespace mcp_nexus.Tools
             {
                 logger.LogError(ex, "❌ Error executing command in session {SessionId}: {Command}", sessionId, command);
                 
-                var errorResponse = new SessionAwareResponse
+                var errorResponse = new
                 {
-                    SessionId = sessionId,
-                    Result = $"❌ Error executing command: {ex.Message}\n\n" +
-                             "🔧 Check session status and command syntax.",
-                    AIGuidance = new AIGuidance
-                    {
-                        NextSteps = new List<string>
-                        {
-                            "Verify command syntax is correct",
-                            "Check session is still active",
-                            "Try again with corrected command"
-                        }
-                    }
+                    toolusage = TOOL_USAGE_EXPLANATION,
+                    sessionId = sessionId,
+                    dumpFile = (string?)null,
+                    commandId = (string?)null,
+                    success = false,
+                    operation = "nexus_dump_analyze_session_async_command",
+                    message = $"Error executing command: {ex.Message}"
                 };
                 
                 return errorResponse;
@@ -400,22 +373,15 @@ namespace mcp_nexus.Tools
                 var parts = commandId.Split('-');
                 if (parts.Length < 5) // cmd-sess-XXXXXX-YYYYYYYY-ZZZZ format
                 {
-                    var errorResponse = new SessionAwareResponse
+                    var errorResponse = new
                     {
-                        Result = $"❌ INVALID COMMAND ID FORMAT: {commandId}\n\n" +
-                                 "🔧 REQUIRED FORMAT: cmd-sess-XXXXXX-YYYYYYYY-ZZZZ\n" +
-                                 "📋 EXAMPLE: cmd-sess-000001-abc12345-0001\n" +
-                                 "❓ WHY THIS ERROR: You must use the exact commandId returned by nexus_exec_debugger_command_async\n" +
-                                 "🎯 AI DEBUGGING TIP: Copy the commandId exactly from the previous response!",
-                        AIGuidance = new AIGuidance
-                        {
-                            NextSteps = new List<string>
-                            {
-                                "Use the exact commandId from nexus_exec_debugger_command_async response",
-                                "Check for typos or truncation in the commandId",
-                                "Ensure you're copying the full commandId string"
-                            }
-                        }
+                        toolusage = TOOL_USAGE_EXPLANATION,
+                        sessionId = (string?)null,
+                        dumpFile = (string?)null,
+                        commandId = commandId,
+                        success = false,
+                        operation = "nexus_dump_analyze_session_async_command_status",
+                        message = $"Invalid command ID format: {commandId}"
                     };
                     
                     return errorResponse;
@@ -427,34 +393,15 @@ namespace mcp_nexus.Tools
                 // Validate session
                 if (!sessionManager.SessionExists(sessionId))
                 {
-                    var sessionNotFoundResponse = new SessionAwareResponse
+                    var sessionNotFoundResponse = new
                     {
-                        SessionId = sessionId,
-                        Result = $"❌ INVALID SESSION ID: '{sessionId}' not found or expired for command '{commandId}'!\n\n" +
-                                "🚨 CRITICAL AI CLIENT ERROR: You're using a WRONG or MADE-UP sessionId!\n\n" +
-                                "🔧 EXACT RECOVERY STEPS:\n" +
-                                "1️⃣ CALL nexus_open_dump with a .dmp file path\n" +
-                                "2️⃣ EXTRACT the 'sessionId' field from the JSON response\n" +
-                                "3️⃣ USE that EXACT sessionId value (e.g., 'sess-000001-abc12345')\n" +
-                                "4️⃣ DO NOT make up your own sessionId values!\n\n" +
-                                "💡 EXAMPLE: If nexus_open_dump returns sessionId='sess-000001-feaf4c54', then use EXACTLY that value!\n" +
-                                "❌ WRONG: 'session_12345', 'my_session', 'test_session'\n" +
-                                "✅ CORRECT: Copy the sessionId from nexus_open_dump response JSON",
-                        AIGuidance = new AIGuidance
-                        {
-                            NextSteps = new List<string>
-                            {
-                                "Call nexus_open_dump and extract the returned sessionId from response JSON",
-                                "Use the EXACT sessionId value returned (starts with 'sess-')",
-                                "Stop making up your own sessionId values"
-                            },
-                            CommonErrors = new List<string>
-                            {
-                                "Making up sessionId instead of using the one from nexus_open_dump",
-                                "Using expired or incorrect sessionId", 
-                                "Not extracting sessionId from nexus_open_dump response"
-                            }
-                        }
+                        toolusage = TOOL_USAGE_EXPLANATION,
+                        sessionId = sessionId,
+                        dumpFile = (string?)null,
+                        commandId = commandId,
+                        success = false,
+                        operation = "nexus_dump_analyze_session_async_command_status",
+                        message = $"Session not found or expired for command: {commandId}"
                     };
                     
                     return sessionNotFoundResponse;
@@ -475,18 +422,17 @@ namespace mcp_nexus.Tools
                     _ => "completed"
                 };
 
-                // Return simplified response with essential information
+                // Return standardized response with required fields
                 var response = new
                 {
+                    toolusage = TOOL_USAGE_EXPLANATION,
                     sessionId = sessionId,
                     dumpFile = context?.DumpPath != null ? Path.GetFileName(context.DumpPath) : null,
                     commandId = commandId,
                     success = true,
                     operation = "nexus_dump_analyze_session_async_command_status",
-                    status = status,
                     message = $"Command status: {status}",
-                    result = result,
-                    toolusage = TOOL_USAGE_EXPLANATION
+                    result = result // Keep the debugger output
                 };
 
                 return response;
@@ -495,18 +441,15 @@ namespace mcp_nexus.Tools
             {
                 logger.LogError(ex, "❌ Error checking command status: {CommandId}", commandId);
                 
-                var errorResponse = new SessionAwareResponse
+                var errorResponse = new
                 {
-                    Result = $"❌ Error checking command status: {ex.Message}",
-                    AIGuidance = new AIGuidance
-                    {
-                        NextSteps = new List<string>
-                        {
-                            "Verify commandId is correct",
-                            "Check session is still active",
-                            "Try again or re-execute command"
-                        }
-                    }
+                    toolusage = TOOL_USAGE_EXPLANATION,
+                    sessionId = (string?)null,
+                    dumpFile = (string?)null,
+                    commandId = commandId,
+                    success = false,
+                    operation = "nexus_dump_analyze_session_async_command_status",
+                    message = $"Error checking command status: {ex.Message}"
                 };
                 
                 return errorResponse;
