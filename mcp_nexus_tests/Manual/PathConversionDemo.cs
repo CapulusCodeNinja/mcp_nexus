@@ -58,7 +58,7 @@ namespace mcp_nexus_tests.Manual
 
             output.WriteLine("=== How to see this in real MCP server usage ===");
             output.WriteLine("1. Start MCP server: dotnet run --project mcp_nexus -- --http");
-            output.WriteLine("2. Call nexus_open_dump with WSL paths");
+            output.WriteLine("2. Call nexus_open_dump_analyze_session with WSL paths");
             output.WriteLine("3. Check server console output for conversion log messages");
             output.WriteLine("4. Look for lines containing 'Converted WSL path'");
         }
@@ -73,7 +73,7 @@ namespace mcp_nexus_tests.Manual
             var originalDumpPath = "/mnt/c/inetpub/wwwroot/uploads/dump_20250925_112751.dmp";
             var dumpPath = PathHandler.NormalizeForWindows(originalDumpPath);
             
-            output.WriteLine($"AI calls nexus_open_dump with:");
+            output.WriteLine($"AI calls nexus_open_dump_analyze_session with:");
             output.WriteLine($"  dumpPath: \"{originalDumpPath}\"");
             output.WriteLine("");
             

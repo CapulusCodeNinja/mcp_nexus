@@ -7,17 +7,17 @@
 Windows debugging capabilities through WinDBG/CDB integration:
 
 ### Core Debugging Commands
-- **Crash Dump Analysis**: `nexus_open_dump`, `nexus_close_dump`
+- **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
-- **Command Execution**: `nexus_exec_debugger_command_async` (🔄 ASYNC QUEUE: Always returns commandId, use `nexus_debugger_command_status` for results)
-- **Queue Management**: `nexus_debugger_command_status`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
+- **Command Execution**: `nexus_dump_analyze_session_async_command` (🔄 ASYNC QUEUE: Always returns commandId, use `nexus_dump_analyze_session_async_command_status` for results)
+- **Queue Management**: `nexus_dump_analyze_session_async_command_status`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
 
 ### 🔄 Async Command Execution Workflow
 
 **IMPORTANT**: All WinDBG commands use an async queue system with real-time notifications:
 
 ```bash
-1. Call nexus_exec_debugger_command_async {"command": "!analyze -v"}
+1. Call nexus_dump_analyze_session_async_command {"command": "!analyze -v"}
    → Returns: {"commandId": "abc-123", "status": "queued", ...}
 
 2. Listen for real-time notifications:
@@ -25,14 +25,14 @@ Windows debugging capabilities through WinDBG/CDB integration:
    → notifications/commandHeartbeat: {"elapsed": "30s", ...} (for long commands)
    → notifications/commandStatus: {"status": "completed", "result": "ACTUAL_OUTPUT"}
 
-3. OR poll nexus_debugger_command_status {"commandId": "abc-123"}  
+3. OR poll nexus_dump_analyze_session_async_command_status {"commandId": "abc-123"}  
    → Returns: {"status": "executing", ...} (keep polling)
    → Returns: {"status": "completed", "result": "ACTUAL_OUTPUT"}
 
 4. Extract the "result" field for your WinDBG command output
 ```
 
-**⚠️ CRITICAL**: `nexus_exec_debugger_command_async` NEVER returns command results directly. You MUST use `nexus_debugger_command_status` to get results or listen for notifications!
+**⚠️ CRITICAL**: `nexus_dump_analyze_session_async_command` NEVER returns command results directly. You MUST use `nexus_dump_analyze_session_async_command_status` to get results or listen for notifications!
 
 ## 📡 Real-Time Notifications
 

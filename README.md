@@ -114,15 +114,15 @@ Architecture, testing, contribution guide
 ## 🛠 Available Tools (8 tools)
 
 ### Windows Debugging Tools
-- **Crash Dump Analysis**: `nexus_open_dump`, `nexus_close_dump`
+- **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
-- **Async Command Queue**: `nexus_exec_debugger_command_async`, `nexus_debugger_command_status`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
+- **Async Command Queue**: `nexus_dump_analyze_session_async_command`, `nexus_dump_analyze_session_async_command_status`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
 
 **🔄 Async Workflow with Notifications:**
 ```bash
-1. nexus_exec_debugger_command_async → Returns commandId
+1. nexus_dump_analyze_session_async_command → Returns commandId
 2. Listen for notifications/commandStatus → Real-time progress
-3. OR poll nexus_debugger_command_status → Get results
+3. OR poll nexus_dump_analyze_session_async_command_status → Get results
 ```
 
 > 📖 **Complete tool reference with examples:** **[📋 TOOLS.md](docs/TOOLS.md)**

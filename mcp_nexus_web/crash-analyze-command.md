@@ -26,14 +26,14 @@ The following steps must be performed sequentially. Ensure all mandatory rules a
 
 1.  **Confirm MCP servers:** Confirm MCP servers are available
 2.  **List available MCP Tools:** List all the available MCP servers and there tools
-3.  **Verify MCP Tools:** Verify that `nexus_open_dump`, `nexus_close_dump` and `nexus_exec_debugger_command_async` is available in your tool list
+3.  **Verify MCP Tools:** Verify that `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session` and `nexus_dump_analyze_session_async_command` is available in your tool list
 4.  **Analyze issue** In case the verification fails elaborate what the issue might be as the server is set in the global mcp.json of the user account `droller`. Check the configuration file and test the connection.
 
 ### 🔧 **REQUIRED ACTIONS & WORKFLOW**
 
 The following steps must be performed sequentially. Ensure all mandatory rules are followed at each stage.
 
-1.  **Initialize Analysis:** Open the dump file with the tool from Nexus MCP server `mcp_nexus_open_dump`
+1.  **Initialize Analysis:** Open the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`
 2.  **Source Code Retrieval:**
     * Set the source server path: `.srcpath srv\*[workingdir]\source`
     * Enable source verbosity: `.srcnoisy 3`

@@ -32,7 +32,7 @@ The test output above shows **exactly** what you'll see in your MCP server logs 
        id = 1
        method = "tools/call"
        params = @{
-           name = "nexus_open_dump"
+           name = "nexus_open_dump_analyze_session"
            arguments = @{
                dumpPath = "/mnt/c/inetpub/wwwroot/uploads/test_dump.dmp"
                symbolsPath = "/mnt/d/symbols"
@@ -54,7 +54,7 @@ The test output above shows **exactly** what you'll see in your MCP server logs 
    "Please analyze the crash dump at /mnt/c/inetpub/wwwroot/uploads/dump_20250925_112751.dmp using symbols from /mnt/d/symbols"
    ```
 
-3. **Watch your MCP server console** - you'll see the conversion notifications when the AI calls `nexus_open_dump`
+3. **Watch your MCP server console** - you'll see the conversion notifications when the AI calls `nexus_open_dump_analyze_session`
 
 ### Method 3: Direct Stdio Testing
 
@@ -65,7 +65,7 @@ The test output above shows **exactly** what you'll see in your MCP server logs 
 
 2. **Send JSON-RPC directly** (paste this and press Enter):
    ```json
-   {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"nexus_open_dump","arguments":{"dumpPath":"/mnt/c/inetpub/wwwroot/uploads/test_dump.dmp","symbolsPath":"/mnt/d/symbols"}}}
+   {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"nexus_open_dump_analyze_session","arguments":{"dumpPath":"/mnt/c/inetpub/wwwroot/uploads/test_dump.dmp","symbolsPath":"/mnt/d/symbols"}}}
    ```
 
 3. **See the logs in real-time** on the console
