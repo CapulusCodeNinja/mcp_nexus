@@ -270,9 +270,11 @@ namespace mcp_nexus_tests.Controllers
 			var okResult = result as OkObjectResult;
 			Assert.NotNull(okResult?.Value);
 			
-			var response = okResult.Value as McpSuccessResponse;
-			Assert.NotNull(response);
-			Assert.Equal(3, response.Id);
+		var errorResponse = okResult.Value as McpErrorResponse;
+		Assert.NotNull(errorResponse);
+		Assert.Equal(3, errorResponse.Id);
+		Assert.Equal(-32602, errorResponse.Error.Code);
+		Assert.Contains("Unknown tool", errorResponse.Error.Message);
 		}
 
 		[Fact]

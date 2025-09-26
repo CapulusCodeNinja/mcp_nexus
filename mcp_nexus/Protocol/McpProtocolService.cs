@@ -1,6 +1,7 @@
 using System.Text.Json;
 using mcp_nexus.Models;
 using mcp_nexus.Debugger;
+using mcp_nexus.Exceptions;
 
 namespace mcp_nexus.Protocol
 {
@@ -11,6 +12,7 @@ namespace mcp_nexus.Protocol
     {
         public async Task<object> ProcessRequest(JsonElement requestElement)
         {
+            int requestId = 0;
             try
             {
                 var request = ParseRequest(requestElement);
@@ -19,15 +21,21 @@ namespace mcp_nexus.Protocol
                     return CreateErrorResponse(0, -32600, "Invalid Request - malformed JSON-RPC");
                 }
 
+                requestId = request.Id;
                 m_logger.LogDebug("Processing MCP request: {Method}", request.Method);
 
                 var result = await ExecuteMethod(request);
                 return CreateSuccessResponse(request.Id, result);
             }
+            catch (McpToolException ex)
+            {
+                m_logger.LogWarning(ex, "MCP tool error: {Message}", ex.Message);
+                return CreateErrorResponse(requestId, ex.ErrorCode, ex.Message, ex.ErrorData);
+            }
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "Error processing MCP request");
-                return CreateErrorResponse(0, -32603, "Internal error", ex.Message);
+                return CreateErrorResponse(requestId, -32603, "Internal error", ex.Message);
             }
         }
 
@@ -67,7 +75,7 @@ namespace mcp_nexus.Protocol
                 "tools/list" => HandleToolsList(),
                 "tools/call" => await HandleToolsCall(request.Params),
                 "notifications/cancelled" => HandleNotificationCancelled(request.Params),
-                _ => CreateMethodNotFoundError(request.Method)
+                _ => throw new McpToolException(-32601, $"Method not found: {request.Method}")
             };
         }
 
@@ -120,20 +128,20 @@ namespace mcp_nexus.Protocol
         {
             if (paramsElement == null)
             {
-                return CreateParameterError("Missing params");
+                throw new McpToolException(-32602, "Missing params");
             }
 
             var @params = paramsElement.Value;
 
             if (!@params.TryGetProperty("name", out var nameProperty))
             {
-                return CreateParameterError("Missing tool name");
+                throw new McpToolException(-32602, "Missing tool name");
             }
 
             var toolName = nameProperty.GetString();
             if (string.IsNullOrEmpty(toolName))
             {
-                return CreateParameterError("Invalid tool name");
+                throw new McpToolException(-32602, "Invalid tool name");
             }
 
             var arguments = @params.TryGetProperty("arguments", out var argsProperty)
@@ -166,15 +174,6 @@ namespace mcp_nexus.Protocol
             };
         }
 
-        private static object CreateMethodNotFoundError(string method)
-        {
-            return new { error = new McpError { Code = -32601, Message = $"Method not found: {method}" } };
-        }
-
-        private static object CreateParameterError(string message)
-        {
-            return new { error = new McpError { Code = -32602, Message = message } };
-        }
     }
 }
 

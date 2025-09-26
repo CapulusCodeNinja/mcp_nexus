@@ -181,16 +181,14 @@ namespace mcp_nexus_tests.Services
 			// Act
 			var result = await m_service.ProcessRequest(element);
 
-			// Assert
-			Assert.NotNull(result);
-			var response = result as McpSuccessResponse;
-			Assert.NotNull(response);
-			Assert.Equal(4, response.Id);
-			
-			// Should contain method not found error
-			var resultJson = JsonSerializer.Serialize(response.Result);
-			Assert.Contains("Method not found", resultJson);
-			Assert.Contains("unknown/method", resultJson);
+		// Assert
+		Assert.NotNull(result);
+		var errorResponse = result as McpErrorResponse;
+		Assert.NotNull(errorResponse);
+		Assert.Equal(4, errorResponse.Id);
+		Assert.Equal(-32601, errorResponse.Error.Code);
+		Assert.Contains("Method not found", errorResponse.Error.Message);
+		Assert.Contains("unknown/method", errorResponse.Error.Message);
 		}
 
 		[Fact]
@@ -204,13 +202,12 @@ namespace mcp_nexus_tests.Services
 			var result = await m_service.ProcessRequest(element);
 
 			// Assert
-			Assert.NotNull(result);
-			var response = result as McpSuccessResponse;
-			Assert.NotNull(response);
-			Assert.Equal(5, response.Id);
-			
-			var resultJson = JsonSerializer.Serialize(response.Result);
-			Assert.Contains("Missing params", resultJson);
+		Assert.NotNull(result);
+		var errorResponse = result as McpErrorResponse;
+		Assert.NotNull(errorResponse);
+		Assert.Equal(5, errorResponse.Id);
+		Assert.Equal(-32602, errorResponse.Error.Code);
+		Assert.Contains("Missing params", errorResponse.Error.Message);
 		}
 
 		[Fact]
@@ -232,14 +229,13 @@ namespace mcp_nexus_tests.Services
 			// Act
 			var result = await m_service.ProcessRequest(element);
 
-			// Assert
-			Assert.NotNull(result);
-			var response = result as McpSuccessResponse;
-			Assert.NotNull(response);
-			Assert.Equal(6, response.Id);
-			
-			var resultJson = JsonSerializer.Serialize(response.Result);
-			Assert.Contains("Missing tool name", resultJson);
+		// Assert
+		Assert.NotNull(result);
+		var errorResponse = result as McpErrorResponse;
+		Assert.NotNull(errorResponse);
+		Assert.Equal(6, errorResponse.Id);
+		Assert.Equal(-32602, errorResponse.Error.Code);
+		Assert.Contains("Missing tool name", errorResponse.Error.Message);
 		}
 
 		[Fact]
@@ -262,14 +258,13 @@ namespace mcp_nexus_tests.Services
 			// Act
 			var result = await m_service.ProcessRequest(element);
 
-			// Assert
-			Assert.NotNull(result);
-			var response = result as McpSuccessResponse;
-			Assert.NotNull(response);
-			Assert.Equal(7, response.Id);
-			
-			var resultJson = JsonSerializer.Serialize(response.Result);
-			Assert.Contains("Invalid tool name", resultJson);
+		// Assert
+		Assert.NotNull(result);
+		var errorResponse = result as McpErrorResponse;
+		Assert.NotNull(errorResponse);
+		Assert.Equal(7, errorResponse.Id);
+		Assert.Equal(-32602, errorResponse.Error.Code);
+		Assert.Contains("Invalid tool name", errorResponse.Error.Message);
 		}
 
 		[Fact]
@@ -294,17 +289,13 @@ namespace mcp_nexus_tests.Services
 			// Act
 			var result = await m_service.ProcessRequest(element);
 
-			// Assert
-			Assert.NotNull(result);
-			var response = result as McpSuccessResponse;
-			Assert.NotNull(response);
-			Assert.Equal(8, response.Id);
-			
-			// The tool should return an error (actual message may vary)
-			var resultString = JsonSerializer.Serialize(response.Result);
-			Assert.NotNull(resultString);
-			// Just verify we get some kind of error response
-			Assert.Contains("error", resultString.ToLowerInvariant());
+		// Assert
+		Assert.NotNull(result);
+		var errorResponse = result as McpErrorResponse;
+		Assert.NotNull(errorResponse);
+		Assert.Equal(8, errorResponse.Id);
+		Assert.Equal(-32602, errorResponse.Error.Code);
+		Assert.Contains("Command execution requires sessionId", errorResponse.Error.Message);
 		}
 
 		[Fact]
@@ -346,14 +337,13 @@ namespace mcp_nexus_tests.Services
 			// Act
 			var result = await m_service.ProcessRequest(element);
 
-			// Assert
-			Assert.NotNull(result);
-			var response = result as McpSuccessResponse;
-			Assert.NotNull(response);
-			Assert.Equal(10, response.Id);
-			
-			var resultJson = JsonSerializer.Serialize(response.Result);
-			Assert.Contains("Unknown tool", resultJson);
+		// Assert
+		Assert.NotNull(result);
+		var errorResponse = result as McpErrorResponse;
+		Assert.NotNull(errorResponse);
+		Assert.Equal(10, errorResponse.Id);
+		Assert.Equal(-32602, errorResponse.Error.Code);
+		Assert.Contains("Unknown tool", errorResponse.Error.Message);
 		}
 
 		[Fact]
@@ -378,14 +368,13 @@ namespace mcp_nexus_tests.Services
 			// Act
 			var result = await m_service.ProcessRequest(element);
 
-			// Assert
-			Assert.NotNull(result);
-			var response = result as McpSuccessResponse;
-			Assert.NotNull(response);
-			Assert.Equal(11, response.Id);
-			
-			var resultJson = JsonSerializer.Serialize(response.Result);
-			Assert.Contains("Unknown tool", resultJson);
+		// Assert
+		Assert.NotNull(result);
+		var errorResponse = result as McpErrorResponse;
+		Assert.NotNull(errorResponse);
+		Assert.Equal(11, errorResponse.Id);
+		Assert.Equal(-32602, errorResponse.Error.Code);
+		Assert.Contains("Unknown tool", errorResponse.Error.Message);
 		}
 	}
 }
