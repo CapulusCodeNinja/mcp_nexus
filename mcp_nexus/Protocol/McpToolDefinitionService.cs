@@ -48,7 +48,9 @@ namespace mcp_nexus.Protocol
                     "1️⃣ nexus_open_dump → SAVE the sessionId from response " +
                     "2️⃣ nexus_exec_debugger_command_async + sessionId → get commandId " +
                     "3️⃣ nexus_debugger_command_status + commandId → get results " +
-                    "❌ WITHOUT sessionId, ALL other commands will FAIL!",
+                    "4️⃣ nexus_close_dump → CLOSE session when done (EXPECTED!) " +
+                    "❌ WITHOUT sessionId, ALL other commands will FAIL! " +
+                    "🧹 CLEANUP EXPECTATION: You SHOULD call nexus_close_dump when finished analyzing to properly release resources and close the debugging session. While sessions auto-expire after 30 minutes, explicit closure is the expected and professional approach!",
                 InputSchema = new
                 {
                     type = "object",
@@ -68,14 +70,19 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_close_dump",
-                Description = "🔚 CLEANUP: Close the current crash dump session and release resources. " +
-                    "Use this when you're done analyzing a dump file. " +
-                    "After closing, you'll need nexus_open_dump again to analyze another dump.",
+                Description = "🔚 STEP 4 - CLEANUP: Close the current crash dump session and release resources. " +
+                    "⭐ EXPECTED BEHAVIOR: You SHOULD call this when done analyzing a dump file! " +
+                    "🧹 PROFESSIONAL PRACTICE: While sessions auto-expire after 30 minutes, explicit closure is the expected and responsible approach. " +
+                    "🔄 NEXT SESSION: After closing, you'll need nexus_open_dump again to analyze another dump. " +
+                    "💡 AI CLIENT TIP: Always close sessions when finished - it's good resource management!",
                 InputSchema = new
                 {
                     type = "object",
-                    properties = new { },
-                    required = Array.Empty<string>()
+                    properties = new
+                    {
+                        sessionId = new { type = "string", description = "Session ID from nexus_open_dump to close" }
+                    },
+                    required = new[] { "sessionId" }
                 }
             };
         }

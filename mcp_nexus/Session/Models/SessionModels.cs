@@ -188,7 +188,7 @@ namespace mcp_nexus.Session.Models
     public class SessionConfiguration
     {
         /// <summary>Maximum number of concurrent sessions</summary>
-        public int MaxConcurrentSessions { get; set; } = 10;
+        public int MaxConcurrentSessions { get; set; } = 1000;
         
         /// <summary>Session timeout due to inactivity</summary>
         public TimeSpan SessionTimeout { get; set; } = TimeSpan.FromMinutes(30);

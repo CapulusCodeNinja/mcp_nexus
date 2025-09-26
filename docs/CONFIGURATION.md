@@ -32,7 +32,7 @@ Section: `McpNexus:SessionManagement`
 {
   "McpNexus": {
     "SessionManagement": {
-      "MaxConcurrentSessions": 10,
+      "MaxConcurrentSessions": 1000,
       "SessionTimeoutMinutes": 30,
       "CleanupIntervalMinutes": 5,
       "DisposalTimeoutSeconds": 30,
@@ -44,7 +44,7 @@ Section: `McpNexus:SessionManagement`
 ```
 
 Notes:
-- `MaxConcurrentSessions` (>0): Max active sessions allowed.
+- `MaxConcurrentSessions` (>0): Max active sessions allowed. Set high (1000) since sessions are lightweight and auto-expire.
 - `SessionTimeoutMinutes` (>0): Idle timeout before auto-closing a session.
 - `CleanupIntervalMinutes` (>0): How often expired sessions are cleaned.
 - `DisposalTimeoutSeconds` (>0): Max time to dispose a session during cleanup.

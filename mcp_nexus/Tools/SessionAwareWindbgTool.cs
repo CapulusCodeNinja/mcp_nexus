@@ -81,7 +81,7 @@ namespace mcp_nexus.Tools
         /// Creates an isolated debugging environment with dedicated CDB process
         /// </summary>
         [Description("🔓 OPEN SESSION: Create a new debugging session for a crash dump file. Returns sessionId that MUST be used for all subsequent operations.")]
-        public async Task<string> nexus_open_dump(
+        public async Task<object> nexus_open_dump(
             [Description("Full path to the crash dump file (.dmp)")] string dumpPath,
             [Description("Optional path to symbol files directory")] string? symbolsPath = null)
         {
@@ -114,12 +114,13 @@ namespace mcp_nexus.Tools
                         "🔄 All commands execute asynchronously - always check status",
                         "📡 Listen for notifications to get real-time updates",
                         "⏰ Session will auto-expire after 30 minutes of inactivity",
-                        "🎯 Always include the sessionId in your requests"
+                        "🎯 Always include the sessionId in your requests",
+                        "🧹 EXPECTED: Call nexus_close_dump when finished analyzing to properly close the session!"
                     }
                 };
 
                 logger.LogInformation("✅ Session {SessionId} created successfully", sessionId);
-                return JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true });
+                return response;
             }
             catch (SessionLimitExceededException ex)
             {
@@ -146,7 +147,7 @@ namespace mcp_nexus.Tools
                     }
                 };
                 
-                return JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions { WriteIndented = true });
+                return errorResponse;
             }
             catch (Exception ex)
             {
@@ -175,7 +176,7 @@ namespace mcp_nexus.Tools
                     }
                 };
                 
-                return JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions { WriteIndented = true });
+                return errorResponse;
             }
         }
 
@@ -183,7 +184,7 @@ namespace mcp_nexus.Tools
         /// Close a debugging session and clean up resources
         /// </summary>
         [Description("🔒 CLOSE SESSION: Close a debugging session and free resources. Use when done with analysis.")]
-        public async Task<string> nexus_close_dump(
+        public async Task<object> nexus_close_dump(
             [Description("Session ID to close")] string sessionId)
         {
             logger.LogInformation("🔒 Closing debugging session: {SessionId}", sessionId);
@@ -213,7 +214,7 @@ namespace mcp_nexus.Tools
                         }
                     };
                     
-                    return JsonSerializer.Serialize(notFoundResponse, new JsonSerializerOptions { WriteIndented = true });
+                    return notFoundResponse;
                 }
 
                 var context = sessionManager.GetSessionContext(sessionId);
@@ -230,7 +231,7 @@ namespace mcp_nexus.Tools
                 };
 
                 logger.LogInformation("✅ Session {SessionId} closed successfully", sessionId);
-                return JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true });
+                return response;
             }
             catch (Exception ex)
             {
@@ -252,7 +253,7 @@ namespace mcp_nexus.Tools
                     }
                 };
                 
-                return JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions { WriteIndented = true });
+                return errorResponse;
             }
         }
 
@@ -264,7 +265,7 @@ namespace mcp_nexus.Tools
         /// Execute a debugger command asynchronously in the specified session
         /// </summary>
         [Description("🔄 ASYNC COMMAND: Execute debugger command in background queue. NEVER returns results directly! Always returns commandId. MUST use nexus_debugger_command_status to get actual results.")]
-        public Task<string> nexus_exec_debugger_command_async(
+        public Task<object> nexus_exec_debugger_command_async(
             [Description("Session ID from nexus_open_dump")] string sessionId,
             [Description("Debugger command to execute (e.g., '!analyze -v', 'k', '!peb')")] string command)
         {
@@ -273,7 +274,7 @@ namespace mcp_nexus.Tools
             return Task.FromResult(ExecuteCommandSync(sessionId, command));
         }
 
-        private string ExecuteCommandSync(string sessionId, string command)
+        private object ExecuteCommandSync(string sessionId, string command)
         {
             try
             {
@@ -302,7 +303,7 @@ namespace mcp_nexus.Tools
                         }
                     };
                     
-                    return JsonSerializer.Serialize(sessionNotFoundResponse, new JsonSerializerOptions { WriteIndented = true });
+                    return sessionNotFoundResponse;
                 }
 
                 // Get command queue for session
@@ -330,7 +331,7 @@ namespace mcp_nexus.Tools
                 };
 
                 logger.LogInformation("✅ Command {CommandId} queued in session {SessionId}", commandId, sessionId);
-                return JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true });
+                return response;
             }
             catch (SessionNotFoundException ex)
             {
@@ -352,7 +353,7 @@ namespace mcp_nexus.Tools
                     }
                 };
                 
-                return JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions { WriteIndented = true });
+                return errorResponse;
             }
             catch (Exception ex)
             {
@@ -374,7 +375,7 @@ namespace mcp_nexus.Tools
                     }
                 };
                 
-                return JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions { WriteIndented = true });
+                return errorResponse;
             }
         }
 
@@ -382,7 +383,7 @@ namespace mcp_nexus.Tools
         /// Get the status and result of a previously queued command
         /// </summary>
         [Description("📊 COMMAND STATUS: Get the result/status of a queued command. This is how you get actual command results from async operations.")]
-        public async Task<string> nexus_debugger_command_status(
+        public async Task<object> nexus_debugger_command_status(
             [Description("Command ID returned by nexus_exec_debugger_command_async")] string commandId)
         {
             logger.LogInformation("📊 Checking command status: {CommandId}", commandId);
@@ -390,7 +391,7 @@ namespace mcp_nexus.Tools
             return await GetCommandStatusAsync(commandId);
         }
 
-        private async Task<string> GetCommandStatusAsync(string commandId)
+        private async Task<object> GetCommandStatusAsync(string commandId)
         {
             try
             {
@@ -416,7 +417,7 @@ namespace mcp_nexus.Tools
                         }
                     };
                     
-                    return JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions { WriteIndented = true });
+                    return errorResponse;
                 }
                 
                 // Extract sessionId from commandId (by design, not a fallback)
@@ -441,7 +442,7 @@ namespace mcp_nexus.Tools
                         }
                     };
                     
-                    return JsonSerializer.Serialize(sessionNotFoundResponse, new JsonSerializerOptions { WriteIndented = true });
+                    return sessionNotFoundResponse;
                 }
 
                 // Get command result
@@ -481,7 +482,7 @@ namespace mcp_nexus.Tools
                     }
                 };
 
-                return JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true });
+                return response;
             }
             catch (Exception ex)
             {
@@ -501,7 +502,7 @@ namespace mcp_nexus.Tools
                     }
                 };
                 
-                return JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions { WriteIndented = true });
+                return errorResponse;
             }
         }
 

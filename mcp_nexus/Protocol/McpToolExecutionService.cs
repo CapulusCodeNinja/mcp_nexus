@@ -18,7 +18,7 @@ namespace mcp_nexus.Protocol
                 return toolName switch
                 {
                     "nexus_open_dump" => await ExecuteOpenWindbgDump(arguments),
-                    "nexus_close_dump" => await ExecuteCloseWindbgDump(),
+                    "nexus_close_dump" => await ExecuteCloseWindbgDump(arguments),
                     "nexus_exec_debugger_command_async" => await ExecuteRunWindbgCmdAsync(arguments),
                     "nexus_debugger_command_status" => await ExecuteGetCommandStatus(arguments),
                     _ => throw new McpToolException(-32602, $"Unknown tool: {toolName}")
@@ -50,21 +50,24 @@ namespace mcp_nexus.Protocol
             var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
             var result = await sessionAwareWindbgTool.nexus_open_dump(dumpPath, symbolsPath);
 
-            // Return the structured JSON response (not wrapped in text)
-            return JsonSerializer.Deserialize<object>(result) ?? new object();
+            // Return the structured response object directly
+            return result;
         }
 
-        private Task<object> ExecuteCloseWindbgDump()
+        private async Task<object> ExecuteCloseWindbgDump(JsonElement arguments)
         {
-            // Sessions automatically expire after 30 minutes of inactivity, but allow manual close for good practice
-            logger.LogInformation("Manual session closure requested - this is good practice even though sessions auto-expire");
+            // Close the specified session
+            var sessionId = GetRequiredStringArgument(arguments, "sessionId");
             
-            return Task.FromResult<object>(new
-            {
-                success = true,
-                message = "✅ Session close acknowledged! Sessions automatically expire after 30 minutes of inactivity, but manual closure is good practice.",
-                info = "Sessions will clean up automatically, but you're following best practices by explicitly closing."
-            });
+            if (sessionId == null)
+                throw new McpToolException(-32602, "❌ MISSING SESSION ID: You must provide a 'sessionId' parameter! " +
+                    "🔧 RECOVERY: Include the sessionId from your nexus_open_dump response " +
+                    "💡 EXAMPLE: {\"sessionId\": \"sess-000001-abc12345\"}");
+
+            logger.LogInformation("Manual session closure requested for session: {SessionId}", sessionId);
+            
+            var result = await sessionAwareWindbgTool.nexus_close_dump(sessionId);
+            return result;
         }
 
         private async Task<object> ExecuteRunWindbgCmdAsync(JsonElement arguments)
@@ -94,7 +97,7 @@ namespace mcp_nexus.Protocol
             try
             {
                 var result = await sessionAwareWindbgTool.nexus_exec_debugger_command_async(sessionId, command);
-                return JsonSerializer.Deserialize<object>(result) ?? new object();
+                return result;
             }
             catch (Exception ex)
             {
@@ -119,8 +122,8 @@ namespace mcp_nexus.Protocol
             try
             {
                 var result = await sessionAwareWindbgTool.nexus_debugger_command_status(commandId);
-                // Return the structured JSON response (not wrapped in text)
-                return JsonSerializer.Deserialize<object>(result) ?? new object();
+                // Return the structured response object directly
+                return result;
             }
             catch (Exception ex)
             {
