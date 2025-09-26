@@ -37,8 +37,8 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			// Should have 11 tools based on the implementation
-			Assert.Equal(7, tools.Length); // nexus_list_debugger_commands removed
+			// Core tools for first release: nexus_open_dump, nexus_exec_debugger_command_async, nexus_debugger_command_status, nexus_close_dump
+			Assert.Equal(4, tools.Length);
 		}
 
 		[Fact]
@@ -84,15 +84,15 @@ namespace mcp_nexus_tests.Services
 		}
 
 		[Fact]
-		public void GetAllTools_ContainsOpenWindbgRemoteTool()
+		public void GetAllTools_ContainsOpenDumpTool()
 		{
 			// Act
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var remoteTool = tools.FirstOrDefault(t => t.Name == "nexus_start_remote_debug");
-			Assert.NotNull(remoteTool);
-			Assert.Contains("remote", remoteTool.Description);
+			var dumpTool = tools.FirstOrDefault(t => t.Name == "nexus_open_dump");
+			Assert.NotNull(dumpTool);
+			Assert.Contains("crash dump", dumpTool.Description);
 		}
 
 		[Fact]
@@ -101,9 +101,8 @@ namespace mcp_nexus_tests.Services
 			// Act
 			var tools = m_service.GetAllTools();
 
-			// Assert
+			// Assert - Only dump file closure (remote debugging removed for first release)
 			Assert.Contains(tools, t => t.Name == "nexus_close_dump");
-			Assert.Contains(tools, t => t.Name == "nexus_stop_remote_debug");
 		}
 
 		[Fact]
@@ -112,10 +111,8 @@ namespace mcp_nexus_tests.Services
 			// Act
 			var tools = m_service.GetAllTools();
 
-		// Assert
+		// Assert - Only status checking (command cancellation removed for first release)
 		Assert.Contains(tools, t => t.Name == "nexus_debugger_command_status");
-		Assert.Contains(tools, t => t.Name == "nexus_debugger_command_cancel");
-		// nexus_list_debugger_commands removed - no longer advertised
 		}
 
 	[Fact]
@@ -124,12 +121,11 @@ namespace mcp_nexus_tests.Services
 		// Act
 		var tools = m_service.GetAllTools();
 
-		// Assert
+		// Assert - Core tools for first release
 		Assert.Contains(tools, t => t.Name == "nexus_open_dump");
-		Assert.Contains(tools, t => t.Name == "nexus_start_remote_debug");
 		Assert.Contains(tools, t => t.Name == "nexus_exec_debugger_command_async");
 		Assert.Contains(tools, t => t.Name == "nexus_debugger_command_status");
-		Assert.DoesNotContain(tools, t => t.Name == "list_windbg_dumps");
+		Assert.Contains(tools, t => t.Name == "nexus_close_dump");
 		Assert.DoesNotContain(tools, t => t.Name == "get_session_info");
 		Assert.DoesNotContain(tools, t => t.Name == "get_current_time");
 	}
@@ -175,18 +171,17 @@ namespace mcp_nexus_tests.Services
 		}
 
 		[Fact]
-		public void GetAllTools_RemoteToolHasCorrectSchema()
+		public void GetAllTools_DumpToolHasCorrectSchema()
 		{
 			// Act
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var remoteTool = tools.First(t => t.Name == "nexus_start_remote_debug");
-			Assert.NotNull(remoteTool.InputSchema);
+			var dumpTool = tools.First(t => t.Name == "nexus_open_dump");
+			Assert.NotNull(dumpTool.InputSchema);
 			
-			var schemaJson = System.Text.Json.JsonSerializer.Serialize(remoteTool.InputSchema);
-			Assert.Contains("connectionString", schemaJson);
-			Assert.Contains("symbolsPath", schemaJson);
+			var schemaJson = System.Text.Json.JsonSerializer.Serialize(dumpTool.InputSchema);
+			Assert.Contains("dumpPath", schemaJson);
 		}
 
 		[Fact]
@@ -204,15 +199,15 @@ namespace mcp_nexus_tests.Services
 	// Test removed - nexus_list_debugger_commands no longer advertised
 
 		[Fact]
-		public void GetAllTools_CancelCommandToolHasCorrectDescription()
+		public void GetAllTools_StatusToolHasCorrectDescription()
 		{
 			// Act
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var cancelTool = tools.First(t => t.Name == "nexus_debugger_command_cancel");
-			Assert.Contains("CANCEL COMMAND", cancelTool.Description);
-			Assert.Contains("long-running", cancelTool.Description);
+			var statusTool = tools.First(t => t.Name == "nexus_debugger_command_status");
+			Assert.Contains("GET RESULTS", statusTool.Description);
+			Assert.Contains("ONLY way", statusTool.Description);
 		}
 
 		[Fact]

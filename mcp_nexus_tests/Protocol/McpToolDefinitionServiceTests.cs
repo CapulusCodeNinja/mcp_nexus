@@ -21,7 +21,7 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 
 			// Assert
-			Assert.Equal(7, tools.Length); // nexus_list_debugger_commands removed
+			Assert.Equal(4, tools.Length); // Core tools: nexus_open_dump, nexus_exec_debugger_command_async, nexus_debugger_command_status, nexus_close_dump
 		}
 
 		[Fact]
@@ -64,11 +64,9 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 			var toolNames = tools.Select(t => t.Name).ToList();
 
-			// Assert
+			// Assert - Only dump file analysis tools (remote debugging removed for first release)
 			Assert.Contains("nexus_open_dump", toolNames);
-			Assert.Contains("nexus_start_remote_debug", toolNames);
 			Assert.Contains("nexus_close_dump", toolNames);
-			Assert.Contains("nexus_stop_remote_debug", toolNames);
 		}
 
 		[Fact]
@@ -95,10 +93,8 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 			var toolNames = tools.Select(t => t.Name).ToList();
 
-		// Assert
+		// Assert - Only status checking (command cancellation removed for first release)
 		Assert.Contains("nexus_debugger_command_status", toolNames);
-		Assert.Contains("nexus_debugger_command_cancel", toolNames);
-		// nexus_list_debugger_commands removed - no longer advertised
 		}
 
 		[Fact]
@@ -167,18 +163,18 @@ namespace mcp_nexus_tests.Services
 		}
 
 		[Fact]
-		public void GetAllTools_RemoteToolHasCorrectSchema()
+		public void GetAllTools_DumpToolHasCorrectSchema()
 		{
 			// Arrange
 			var service = new McpToolDefinitionService();
 
 			// Act
 			var tools = service.GetAllTools();
-			var remoteTool = tools.First(t => t.Name == "nexus_start_remote_debug");
+			var dumpTool = tools.First(t => t.Name == "nexus_open_dump");
 
 			// Assert
-			Assert.Contains("tcp:Port=", remoteTool.Description);
-			Assert.Contains("REMOTE DEBUGGING", remoteTool.Description);
+			Assert.Contains("STEP 1", dumpTool.Description);
+			Assert.Contains("crash dump", dumpTool.Description);
 		}
 	}
 }

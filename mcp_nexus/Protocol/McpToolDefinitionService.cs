@@ -16,15 +16,12 @@ namespace mcp_nexus.Protocol
         {
             return
             [
-                // ✅ NEXUS DEBUGGER COMMANDS
-                CreateNexusExecDebuggerCommandAsyncTool(),
+                // ✅ NEXUS DEBUGGER COMMANDS - Core functionality for crash dump analysis
                 CreateNexusOpenDumpTool(),
-                CreateNexusStartRemoteDebugTool(),
-                CreateNexusCloseDumpTool(),
-                CreateNexusStopRemoteDebugTool(),
+                CreateNexusExecDebuggerCommandAsyncTool(),
                 CreateNexusDebuggerCommandStatusTool(),
-                CreateNexusDebuggerCommandCancelTool()
-                // REMOVED: CreateNexusListDebuggerCommandsTool() - deprecated in session-aware architecture
+                CreateNexusCloseDumpTool()
+                // NOTE: Remote debugging and command cancellation will be added in future releases
             ];
         }
 
@@ -65,33 +62,6 @@ namespace mcp_nexus.Protocol
             };
         }
 
-        private static McpToolSchema CreateNexusStartRemoteDebugTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "nexus_start_remote_debug",
-                Description = "🔗 ALTERNATIVE STEP 1 - REMOTE DEBUGGING: Connect to a live process or system for real-time debugging. " +
-                    "Use this for debugging running applications, not crash dumps. " +
-                    "⚠️ CRITICAL: This returns a 'sessionId' that you MUST save and use in ALL subsequent commands! " +
-                    "📝 EXTRACT the sessionId from the response JSON and store it for later use. " +
-                    "Connection examples: 'tcp:Port=5005,Server=192.168.0.100' or 'npipe:Pipe=MyApp,Server=.' " +
-                    "🔄 MANDATORY WORKFLOW: " +
-                    "1️⃣ nexus_start_remote_debug → SAVE the sessionId from response " +
-                    "2️⃣ nexus_exec_debugger_command_async + sessionId → get commandId " +
-                    "3️⃣ nexus_debugger_command_status + commandId → get results " +
-                    "❌ WITHOUT sessionId, ALL other commands will FAIL!",
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        connectionString = new { type = "string", description = "Connection string: tcp:Port=XXXX,Server=IP or npipe:Pipe=NAME,Server=." },
-                        symbolsPath = new { type = "string", description = "Optional: Path to symbols directory for better analysis" }
-                    },
-                    required = new[] { "connectionString" }
-                }
-            };
-        }
 
         private static McpToolSchema CreateNexusCloseDumpTool()
         {
@@ -110,22 +80,6 @@ namespace mcp_nexus.Protocol
             };
         }
 
-        private static McpToolSchema CreateNexusStopRemoteDebugTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "nexus_stop_remote_debug",
-                Description = "🔌 DISCONNECT: Stop the current remote debugging session and release resources. " +
-                    "Use this when you're done debugging a remote process. " +
-                    "After stopping, you'll need nexus_start_remote_debug again to connect to another target.",
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new { },
-                    required = Array.Empty<string>()
-                }
-            };
-        }
 
         private static McpToolSchema CreateNexusExecDebuggerCommandAsyncTool()
         {
@@ -189,25 +143,6 @@ namespace mcp_nexus.Protocol
             };
         }
 
-        private static McpToolSchema CreateNexusDebuggerCommandCancelTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "nexus_debugger_command_cancel",
-                Description = "❌ CANCEL COMMAND: Stop a queued or running command. " +
-                    "Useful for canceling long-running commands that are taking too long. " +
-                    "Once canceled, the command status will change to 'canceled'.",
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        commandId = new { type = "string", description = "The commandId to cancel (from nexus_exec_debugger_command_async)" }
-                    },
-                    required = new[] { "commandId" }
-                }
-            };
-        }
 
     }
 }

@@ -100,7 +100,22 @@ namespace mcp_nexus.Tools
                     dumpFile = Path.GetFileName(dumpPath),
                     message = "✅ Debugging session created successfully! Use this sessionId for all subsequent commands.",
                     nextStep = $"nexus_exec_debugger_command_async(sessionId='{sessionId}', command='!analyze -v')",
-                    workflow = "ASYNC: nexus_exec_debugger_command_async returns commandId → Poll nexus_debugger_command_status until complete"
+                    workflow = "ASYNC: nexus_exec_debugger_command_async returns commandId → Poll nexus_debugger_command_status until complete",
+                    notifications = "Subscribe to notifications/commandStatus for real-time command progress",
+                    commonCommands = new[]
+                    {
+                        "!analyze -v  // Comprehensive crash analysis",
+                        "k           // Call stack",
+                        "!peb        // Process environment block", 
+                        "lm          // Loaded modules"
+                    },
+                    reminders = new[]
+                    {
+                        "🔄 All commands execute asynchronously - always check status",
+                        "📡 Listen for notifications to get real-time updates",
+                        "⏰ Session will auto-expire after 30 minutes of inactivity",
+                        "🎯 Always include the sessionId in your requests"
+                    }
                 };
 
                 logger.LogInformation("✅ Session {SessionId} created successfully", sessionId);
@@ -303,7 +318,15 @@ namespace mcp_nexus.Tools
                     message = "✅ Command queued successfully! Use nexus_debugger_command_status(commandId) to get results.",
                     nextStep = $"nexus_debugger_command_status('{commandId}')",
                     polling = "Check status every 3-5 seconds until command completes",
-                    workflow = "ASYNC: This returns commandId only → Poll nexus_debugger_command_status until completed"
+                    workflow = "ASYNC: This returns commandId only → Poll nexus_debugger_command_status until completed",
+                    notifications = "Listen for notifications/commandStatus for real-time progress updates",
+                    hints = new[]
+                    {
+                        "📡 Real-time notifications show execution progress",
+                        "⏱️ Long-running commands send periodic heartbeats", 
+                        "🎯 Each session has isolated command queue",
+                        "🔄 Commands execute asynchronously in session-specific queue"
+                    }
                 };
 
                 logger.LogInformation("✅ Command {CommandId} queued in session {SessionId}", commandId, sessionId);
@@ -447,7 +470,17 @@ namespace mcp_nexus.Tools
                     result = result,
                     message = $"📊 Command Status: {status.ToUpper()}",
                     isComplete = status is "completed" or "failed" or "cancelled",
-                    continuePolling = status is "queued" or "executing" ? "Check again in 3-5 seconds" : null
+                    continuePolling = status is "queued" or "executing" ? "Check again in 3-5 seconds" : null,
+                    notifications = status is "queued" or "executing" ? "Listen for notifications/commandStatus for real-time updates" : null,
+                    advice = status switch
+                    {
+                        "queued" => "Command is waiting in queue - notifications will alert when execution starts",
+                        "executing" => "Command is running - monitor notifications for progress heartbeats",
+                        "completed" => "Command finished successfully - result contains debugger output",
+                        "failed" => "Command failed - check result for error details",
+                        "cancelled" => "Command was cancelled before completion",
+                        _ => "Unknown status"
+                    }
                 };
 
                 return JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true });
