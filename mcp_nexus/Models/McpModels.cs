@@ -22,7 +22,9 @@ namespace mcp_nexus.Models
         public string JsonRpc { get; set; } = "2.0";
         [JsonPropertyName("method")]
         public string Method { get; set; } = string.Empty;
+        [JsonPropertyName("params")]
         public JsonElement? Params { get; set; }
+        [JsonPropertyName("id")]
         public int Id { get; set; }
     }
 
@@ -30,8 +32,11 @@ namespace mcp_nexus.Models
     {
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; } = "2.0";
+        [JsonPropertyName("id")]
         public int Id { get; set; }
+        [JsonPropertyName("result")]
         public object? Result { get; set; }
+        [JsonPropertyName("error")]
         public McpError? Error { get; set; }
     }
 
@@ -57,38 +62,51 @@ namespace mcp_nexus.Models
 
     public class McpError
     {
+        [JsonPropertyName("code")]
         public int Code { get; set; }
+        [JsonPropertyName("message")]
         public string Message { get; set; } = string.Empty;
+        [JsonPropertyName("data")]
         public object? Data { get; set; }
     }
 
     public class McpToolSchema
     {
+        [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
+        [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
+        [JsonPropertyName("inputSchema")]
         public object InputSchema { get; set; } = new { };
     }
 
     public class McpToolResult
     {
+        [JsonPropertyName("content")]
         public McpContent[] Content { get; set; } = Array.Empty<McpContent>();
     }
 
     public class McpContent
     {
+        [JsonPropertyName("type")]
         public string Type { get; set; } = "text";
+        [JsonPropertyName("text")]
         public string Text { get; set; } = string.Empty;
     }
 
     public class McpInitializeResult
     {
+        [JsonPropertyName("protocolVersion")]
         public string ProtocolVersion { get; set; } = "2025-06-18";
+        [JsonPropertyName("capabilities")]
         public McpCapabilities Capabilities { get; set; } = new();
+        [JsonPropertyName("serverInfo")]
         public McpServerDetails ServerInfo { get; set; } = new();
     }
 
     public class McpToolsListResult
     {
+        [JsonPropertyName("tools")]
         public McpToolSchema[] Tools { get; set; } = Array.Empty<McpToolSchema>();
     }
 
@@ -96,19 +114,25 @@ namespace mcp_nexus.Models
     {
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; } = "2.0";
+        [JsonPropertyName("result")]
         public McpServerInfoResult Result { get; set; } = new();
     }
 
     public class McpServerInfoResult
     {
+        [JsonPropertyName("protocolVersion")]
         public string ProtocolVersion { get; set; } = "2025-06-18";
+        [JsonPropertyName("capabilities")]
         public McpCapabilities Capabilities { get; set; } = new();
+        [JsonPropertyName("serverInfo")]
         public McpServerDetails ServerInfo { get; set; } = new();
     }
 
     public class McpCapabilities
     {
+        [JsonPropertyName("tools")]
         public object Tools { get; set; } = new { listChanged = true };
+        [JsonPropertyName("notifications")]
         public object Notifications { get; set; } = new { 
             // Standard MCP notifications
             tools = new { listChanged = true },
@@ -121,8 +145,11 @@ namespace mcp_nexus.Models
 
     public class McpServerDetails
     {
+        [JsonPropertyName("name")]
         public string Name { get; set; } = "mcp-nexus";
+        [JsonPropertyName("version")]
         public string Version { get; set; } = VersionHelper.GetFileVersion();
+        [JsonPropertyName("description")]
         public string Description { get; set; } = "Windows Debugging Tools MCP Server with real-time command notifications. " +
             "Provides asynchronous debugging commands with live status updates via server-initiated notifications. " +
             "Supports notifications/commandStatus (execution progress), notifications/commandHeartbeat (long-running command updates), " +

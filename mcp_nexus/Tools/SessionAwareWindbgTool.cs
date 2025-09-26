@@ -23,9 +23,9 @@ namespace mcp_nexus.Tools
     [McpServerToolType]
     public class SessionAwareWindbgTool(ILogger<SessionAwareWindbgTool> logger, ISessionManager sessionManager)
     {
-        private static readonly object TOOL_USAGE_EXPLANATION = "";/*new
+        public static readonly object TOOL_USAGE_EXPLANATION = new
         {
-            title = "TOOL USAGE",
+            title = "Tool usage",
             description = "Explaining how to use the Nexus MCP server.",
             general_notes = new[]
             {
@@ -69,7 +69,7 @@ namespace mcp_nexus.Tools
                     note = (string?)null
                 }
             }
-        };*/
+        };
         
         /// <summary>
         /// Session-aware response wrapper for AI client guidance
