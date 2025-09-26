@@ -201,6 +201,9 @@ namespace mcp_nexus.Session.Models
         
         /// <summary>Default command timeout per session</summary>
         public TimeSpan DefaultCommandTimeout { get; set; } = TimeSpan.FromMinutes(10);
+        
+        /// <summary>Memory threshold in bytes for triggering cleanup (default: 1GB)</summary>
+        public long MemoryCleanupThresholdBytes { get; set; } = 1_000_000_000; // 1GB
     }
 
     /// <summary>

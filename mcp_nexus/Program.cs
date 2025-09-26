@@ -667,6 +667,7 @@ namespace mcp_nexus
                 config.CleanupInterval = TimeSpan.FromMinutes(5);
                 config.DisposalTimeout = TimeSpan.FromSeconds(30);
                 config.DefaultCommandTimeout = TimeSpan.FromMinutes(10);
+                config.MemoryCleanupThresholdBytes = 1_000_000_000; // 1GB - configurable via appsettings
             });
             services.AddSingleton<ISessionManager, ThreadSafeSessionManager>();
             Console.Error.WriteLine("Registered ThreadSafeSessionManager for multi-session support");

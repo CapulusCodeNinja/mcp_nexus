@@ -455,16 +455,16 @@ namespace mcp_nexus.Tools
         /// Get the status and result of a previously queued command
         /// </summary>
         [Description("📊 COMMAND STATUS: Get the result/status of a queued command. This is how you get actual command results from async operations.")]
-        public Task<string> nexus_debugger_command_status(
+        public async Task<string> nexus_debugger_command_status(
             [Description("Command ID returned by nexus_exec_debugger_command_async")] string commandId,
             [Description("Optional: Session ID for context (auto-detected from commandId if not provided)")] string? sessionId = null)
         {
             logger.LogInformation("📊 Checking command status: {CommandId}", commandId);
 
-            return Task.FromResult(GetCommandStatusSync(commandId, sessionId));
+            return await GetCommandStatusAsync(commandId, sessionId);
         }
 
-        private string GetCommandStatusSync(string commandId, string? sessionId)
+        private async Task<string> GetCommandStatusAsync(string commandId, string? sessionId)
         {
             try
             {
@@ -521,7 +521,7 @@ namespace mcp_nexus.Tools
 
                 // Get command result
                 var commandQueue = sessionManager.GetCommandQueue(sessionId);
-                var result = commandQueue.GetCommandResult(commandId).Result;
+                var result = await commandQueue.GetCommandResult(commandId);
                 var context = sessionManager.GetSessionContext(sessionId);
 
                 // Determine status from result

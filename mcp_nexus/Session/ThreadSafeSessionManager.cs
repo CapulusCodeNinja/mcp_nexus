@@ -28,7 +28,7 @@ namespace mcp_nexus.Session
         private readonly ConcurrentDictionary<string, SessionInfo> m_sessions = new();
         
         // LOCKING: Separate locks for different concerns to prevent deadlocks
-        private readonly object m_sessionCreationLock = new();
+        private readonly SemaphoreSlim m_sessionCreationSemaphore = new(1, 1);
         private readonly object m_cleanupLock = new();
         
         // CANCELLATION: Global shutdown coordination
@@ -111,8 +111,9 @@ namespace mcp_nexus.Session
 
             try
             {
-                // CRITICAL FIX: Hold lock during entire session creation to prevent TOCTTOU race
-                lock (m_sessionCreationLock)
+                // CRITICAL FIX: Hold semaphore during entire session creation to prevent TOCTTOU race
+                await m_sessionCreationSemaphore.WaitAsync(combinedCts.Token);
+                try
                 {
                     // SAFETY: Check if we're shutting down
                     if (m_shutdownCts.Token.IsCancellationRequested)
@@ -131,9 +132,9 @@ namespace mcp_nexus.Session
                     var cdbSession = CreateCdbSession(sessionLogger, sessionId);
                     var commandQueue = CreateCommandQueue(cdbSession, sessionLogger, sessionId);
 
-                    // ASYNC: Start CDB session synchronously (ICdbSession interface is sync)
+                    // ASYNC: Start CDB session asynchronously to prevent deadlocks
                     var cdbTarget = ConstructCdbTarget(dumpPath, symbolsPath);
-                    var startSuccess = Task.Run(() => cdbSession.StartSession(cdbTarget, null)).Result;
+                    var startSuccess = await Task.Run(() => cdbSession.StartSession(cdbTarget, null), combinedCts.Token);
 
                     if (!startSuccess)
                     {
@@ -164,6 +165,10 @@ namespace mcp_nexus.Session
                         try { newSession.CommandQueue.Dispose(); } catch { }
                         throw new InvalidOperationException($"Session ID conflict: {sessionId}");
                     }
+                }
+                finally
+                {
+                    m_sessionCreationSemaphore.Release();
                 }
 
                 // METRICS: Update counters atomically
@@ -584,7 +589,7 @@ namespace mcp_nexus.Session
                             stats.MemoryUsage.WorkingSetBytes / 1024 / 1024);
                         
                         // Check for memory pressure and cleanup if needed
-                        if (stats.MemoryUsage.WorkingSetBytes > 1_000_000_000) // 1GB
+                        if (stats.MemoryUsage.WorkingSetBytes > m_config.MemoryCleanupThresholdBytes)
                         {
                             m_logger.LogWarning("⚠️ High memory usage detected, forcing cleanup");
                             await SafeCleanupExpiredSessions();
@@ -653,6 +658,7 @@ namespace mcp_nexus.Session
                 
                 // CLEANUP: Dispose resources
                 m_shutdownCts.Dispose();
+                m_sessionCreationSemaphore.Dispose();
                 
                 m_logger.LogInformation("✅ ThreadSafeSessionManager disposed successfully");
             }

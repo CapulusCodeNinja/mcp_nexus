@@ -28,6 +28,9 @@ namespace mcp_nexus.Utilities
                 return path;
             }
 
+            // SECURITY: Prevent path traversal attacks
+            ValidatePathSecurity(path);
+
             try
             {
                 // Check if it's a WSL mount path pattern: /mnt/[drive_letter]/rest/of/path
@@ -72,6 +75,9 @@ namespace mcp_nexus.Utilities
             {
                 return path;
             }
+
+            // SECURITY: Prevent path traversal attacks
+            ValidatePathSecurity(path);
 
             try
             {
@@ -154,6 +160,58 @@ namespace mcp_nexus.Utilities
             }
 
             return paths.Select(NormalizeForWindows).ToArray();
+        }
+
+        /// <summary>
+        /// Validates path security to prevent traversal attacks and malicious paths
+        /// </summary>
+        /// <param name="path">The path to validate</param>
+        /// <exception cref="ArgumentException">Thrown if path contains security risks</exception>
+        private static void ValidatePathSecurity(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return;
+
+            // SECURITY: Check for path traversal patterns
+            var normalizedPath = path.Replace('\\', '/').ToLowerInvariant();
+            
+            // Dangerous patterns that could be used for path traversal
+            string[] dangerousPatterns = {
+                "../",      // Parent directory traversal
+                "..\\",     // Windows parent directory traversal
+                "~",        // Home directory expansion
+                "%",        // Environment variable expansion
+                "$",        // Variable expansion (Unix/PowerShell)
+                "\0",       // Null byte injection
+                "\r",       // Carriage return
+                "\n"        // Line feed
+            };
+
+            foreach (var pattern in dangerousPatterns)
+            {
+                if (normalizedPath.Contains(pattern.ToLowerInvariant()))
+                {
+                    throw new ArgumentException($"Path contains potentially dangerous pattern '{pattern}': {path}", nameof(path));
+                }
+            }
+
+            // SECURITY: Check for UNC paths (\\server\share) which could be used for network attacks
+            if (path.StartsWith("\\\\") || path.StartsWith("//"))
+            {
+                throw new ArgumentException($"UNC paths are not allowed for security reasons: {path}", nameof(path));
+            }
+
+            // SECURITY: Check for excessively long paths that could cause buffer overflows
+            if (path.Length > 260) // MAX_PATH on Windows
+            {
+                throw new ArgumentException($"Path exceeds maximum allowed length (260 characters): {path.Length}", nameof(path));
+            }
+
+            // SECURITY: Check for control characters that could be used for injection
+            if (path.Any(c => char.IsControl(c) && c != '\t'))
+            {
+                throw new ArgumentException($"Path contains invalid control characters: {path}", nameof(path));
+            }
         }
     }
 }
