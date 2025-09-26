@@ -104,7 +104,8 @@ namespace mcp_nexus.Session
 
             // CONCURRENCY: Generate unique session ID atomically
             var sessionNumber = Interlocked.Increment(ref m_sessionCounter);
-            var sessionId = $"sess-{sessionNumber:D6}-{Guid.NewGuid():N[..8]}";
+            var guid = Guid.NewGuid().ToString("N");
+            var sessionId = $"sess-{sessionNumber:D6}-{guid[..8]}";
 
             SessionInfo? newSession = null;
             var stopwatch = Stopwatch.StartNew();
