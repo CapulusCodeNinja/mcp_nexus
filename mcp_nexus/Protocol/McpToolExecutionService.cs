@@ -121,7 +121,9 @@ namespace mcp_nexus.Protocol
                         "1️⃣ First call nexus_open_dump with a .dmp file path to create a session " +
                         "2️⃣ Extract the 'sessionId' from the response JSON " +
                         "3️⃣ Retry this command with both 'command' AND 'sessionId' parameters " +
-                        "💡 EXAMPLE: {\"command\": \"!analyze -v\", \"sessionId\": \"sess-000001-abc12345\"}");
+                        "4️⃣ REMEMBER: This command returns commandId, then call nexus_debugger_command_status(commandId) for results " +
+                        "💡 EXAMPLE: {\"command\": \"!analyze -v\", \"sessionId\": \"sess-000001-abc12345\"} " +
+                        "🚨 ASYNC WORKFLOW: nexus_exec_debugger_command_async → nexus_debugger_command_status");
                 }
             }
 
@@ -131,19 +133,41 @@ namespace mcp_nexus.Protocol
             {
                 var result = await sessionAwareWindbgTool.nexus_exec_debugger_command_async(command, sessionId);
                 
-                // If auto-detection was used, prepend a warning to the result
+                // If auto-detection was used, modify the JSON response to include warning
                 if (GetOptionalStringArgument(arguments, "sessionId") == null)
                 {
+                    // Parse the JSON response to modify it
+                    var jsonResponse = JsonSerializer.Deserialize<JsonElement>(result);
+                    var resultText = jsonResponse.GetProperty("result").GetString() ?? "";
+                    
                     var warningMessage = "🚨 AUTO-DETECTION WARNING: sessionId was missing and auto-detected!\n" +
                                        "⚠️ THIS IS NOT RECOMMENDED: Always include sessionId parameter for proper API usage.\n" +
                                        $"💡 CORRECT USAGE: {{\"command\": \"{command}\", \"sessionId\": \"{sessionId}\"}}\n" +
                                        "🎯 Auto-detection used most recent session - this may not be what you intended!\n\n" +
-                                       "--- COMMAND RESULT ---\n";
+                                       "🚨 ASYNC WORKFLOW REMINDER: This command only returns a commandId!\n" +
+                                       "🔄 NEXT STEP REQUIRED: Call nexus_debugger_command_status(commandId) to get actual results!\n" +
+                                       "📡 Commands execute asynchronously - don't expect immediate results!\n\n" +
+                                       "--- ORIGINAL RESPONSE ---\n" + resultText;
                     
-                    return CreateTextResult(warningMessage + result);
+                    // Create a modified response with the warning but preserve all other JSON structure
+                    var modifiedResponse = new Dictionary<string, object>();
+                    foreach (var property in jsonResponse.EnumerateObject())
+                    {
+                        if (property.Name == "result")
+                        {
+                            modifiedResponse[property.Name] = warningMessage;
+                        }
+                        else
+                        {
+                            modifiedResponse[property.Name] = JsonSerializer.Deserialize<object>(property.Value.GetRawText()) ?? new object();
+                        }
+                    }
+                    
+                    return modifiedResponse;
                 }
                 
-                return CreateTextResult(result);
+                // Return the structured JSON response (not just text)
+                return JsonSerializer.Deserialize<object>(result) ?? new object();
             }
             catch (Exception ex)
             {
@@ -159,7 +183,9 @@ namespace mcp_nexus.Protocol
             if (commandId == null)
                 throw new McpToolException(-32602, "❌ MISSING COMMAND ID: You must provide a 'commandId' parameter! " +
                     "🔧 RECOVERY: Add 'commandId' parameter from nexus_exec_debugger_command_async response " +
-                    "💡 EXAMPLE: {\"commandId\": \"cmd-12345-abc\"}");
+                    "🚨 ASYNC WORKFLOW: nexus_exec_debugger_command_async returns commandId → use it here to get results " +
+                    "💡 EXAMPLE: {\"commandId\": \"cmd-12345-abc\"} " +
+                    "📡 This is how you get actual debugger command output!");
 
             logger.LogWarning("Legacy command status check called for commandId: {CommandId}", commandId);
             

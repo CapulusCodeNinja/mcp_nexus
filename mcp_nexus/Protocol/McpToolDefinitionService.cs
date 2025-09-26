@@ -133,11 +133,15 @@ namespace mcp_nexus.Protocol
             {
             Name = "nexus_exec_debugger_command_async",
             Description = "⚡ STEP 2 - EXECUTE COMMANDS: Run debugger commands like '!analyze -v', 'k', 'lm', 'dt', etc. " +
+                "🚨 ASYNC WORKFLOW - READ CAREFULLY: " +
+                "1️⃣ This command ONLY QUEUES the command and returns a commandId " +
+                "2️⃣ It does NOT return the actual debugger output! " +
+                "3️⃣ You MUST call nexus_debugger_command_status(commandId) to get results " +
+                "4️⃣ Commands execute asynchronously in background queue " +
                 "🎯 BEST PRACTICE: Always include 'sessionId' parameter for proper API usage " +
                 "🚨 FALLBACK ONLY: If sessionId is missing, service will auto-detect most recent session (NOT RECOMMENDED) " +
                 "⚠️ AUTO-DETECTION WARNING: This fallback generates warnings and should not be relied upon " +
-                "⚠️ CRITICAL: This only QUEUES the command and returns a commandId - it does NOT return results! " +
-                "🔄 REQUIRED NEXT STEP: You MUST call nexus_debugger_command_status(commandId) to get the actual output. " +
+                "🔄 MANDATORY WORKFLOW: nexus_exec_debugger_command_async → nexus_debugger_command_status " +
                 "💡 COMMON COMMANDS: " +
                 "• '!analyze -v' - Detailed crash analysis " +
                 "• 'k' - Call stack " +

@@ -107,10 +107,11 @@ namespace mcp_nexus.Tools
                     {
                         NextSteps = new List<string>
                         {
-                            $"Use nexus_exec_debugger_command_async with sessionId='{sessionId}' to run commands",
-                            "Start with basic commands like '!analyze -v' or 'k' (stack trace)",
-                            "Monitor notifications for real-time command progress",
-                            "Use nexus_debugger_command_status to check command results"
+                            $"🔄 ASYNC WORKFLOW: Use nexus_exec_debugger_command_async with sessionId='{sessionId}' to queue commands",
+                            "📡 CRITICAL: nexus_exec_debugger_command_async only returns commandId, NOT results!",
+                            "🎯 MANDATORY: Call nexus_debugger_command_status(commandId) to get actual debugger output",
+                            "💡 Start with basic commands like '!analyze -v' or 'k' (stack trace)",
+                            "📊 Monitor notifications for real-time command progress"
                         },
                         UsageHints = new List<string>
                         {
@@ -123,7 +124,9 @@ namespace mcp_nexus.Tools
                         {
                             "❌ Missing sessionId parameter in subsequent calls",
                             "❌ Using expired or invalid sessionId",
-                            "❌ Not waiting for command completion before next command"
+                            "❌ CRITICAL: Expecting immediate results from nexus_exec_debugger_command_async",
+                            "❌ CRITICAL: Not calling nexus_debugger_command_status to get actual results",
+                            "❌ Not understanding that commands execute asynchronously"
                         }
                     },
                     WorkflowContext = new WorkflowContext
@@ -360,12 +363,15 @@ namespace mcp_nexus.Tools
                 {
                     SessionId = sessionId,
                     Result = $"✅ Command queued successfully!\n\n" +
+                             $"🚨 ASYNC WORKFLOW - CRITICAL: This command does NOT return debugger output!\n" +
+                             $"🔄 NEXT STEP REQUIRED: Call nexus_debugger_command_status('{commandId}') to get actual results!\n" +
+                             $"📡 Commands execute asynchronously - results come later via status check!\n\n" +
                              $"📊 Command Details:\n" +
                              $"• Session ID: {sessionId}\n" +
                              $"• Command ID: {commandId}\n" +
                              $"• Command: {command}\n" +
                              $"• Queued At: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC\n\n" +
-                             $"🎯 IMPORTANT: Use nexus_debugger_command_status('{commandId}') to get results!\n" +
+                             $"🎯 MANDATORY NEXT STEP: nexus_debugger_command_status('{commandId}')\n" +
                              $"📡 Monitor notifications for real-time progress updates.",
                     SessionContext = context,
                     AIGuidance = new AIGuidance
