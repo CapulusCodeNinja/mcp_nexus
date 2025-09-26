@@ -23,6 +23,13 @@ namespace mcp_nexus.Tools
     [McpServerToolType]
     public class SessionAwareWindbgTool(ILogger<SessionAwareWindbgTool> logger, ISessionManager sessionManager)
     {
+        private const string TOOL_USAGE_EXPLANATION = 
+            "Explains how to use the Nexus MCP server. Please get further details from the responses and the tool listings of the MCP server.\n\n" +
+            "- **Tooling - Open Session** Open the analyze session for the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`. Using the open call you receive a `sessionid`. This **EXACT** `sessionid` **IS REQUIRED TO BE USED** for all following commands in the session.\n" +
+            "- **Tooling - Exec Command** Use the `nexus_dump_analyze_session_async_command` to start async execution of the Windbg commands. Using the command call you receive a `commandId`. This **EXACT** `commandId` **IS REQUIRED TO BE USED** for the `nexus_dump_analyze_session_async_command_status` commands to get the async result.\n" +
+            "- **Tooling - Get Command Status** Use the `nexus_dump_analyze_session_async_command_status` to poll for the status or result of the specific async execution of the Windbg commands\n" +
+            "- **Tooling - Close Session** Use the `nexus_close_dump_analyze_session` to close analyze session of the dump file after all commands are executed or the session is not needed anymore";
+        
         /// <summary>
         /// Session-aware response wrapper for AI client guidance
         /// </summary>
@@ -93,29 +100,17 @@ namespace mcp_nexus.Tools
                 var sessionId = await sessionManager.CreateSessionAsync(dumpPath, symbolsPath);
                 var context = sessionManager.GetSessionContext(sessionId);
 
-                // Return comprehensive response with all critical information
+                // Return simplified response with essential information
                 var response = new
                 {
-                    // CRITICAL IDENTIFIERS - Always include these
                     sessionId = sessionId,
                     dumpFile = Path.GetFileName(dumpPath),
-                    commandId = (string?)null, // No commandId for this operation
-                    
-                    // OPERATION STATUS
+                    commandId = (string?)null,
                     success = true,
                     operation = "nexus_open_dump_analyze_session",
                     status = "completed",
                     message = $"Session created: {sessionId}",
-                    
-                    // WORKFLOW GUIDANCE
-                    nextCommand = "nexus_dump_analyze_session_async_command",
-                    nextCommandParameters = new { sessionId = sessionId, command = "!analyze -v" },
-                    workflow = "STEP 1 COMPLETE → NEXT: nexus_dump_analyze_session_async_command → THEN: nexus_dump_analyze_session_async_command_status",
-                    
-                    // CRITICAL REMINDERS
-                    extractSessionId = sessionId, // Extra copy for extraction
-                    useThisSessionId = sessionId, // Another copy for clarity
-                    instructions = $"SAVE this sessionId '{sessionId}' and use it in ALL subsequent commands!"
+                    toolusage = TOOL_USAGE_EXPLANATION
                 };
 
                 logger.LogInformation("✅ Session {SessionId} created successfully", sessionId);
@@ -219,31 +214,19 @@ namespace mcp_nexus.Tools
                 var context = sessionManager.GetSessionContext(sessionId);
                 var closed = await sessionManager.CloseSessionAsync(sessionId);
 
-                // Return comprehensive response with all critical information
+                // Return simplified response with essential information
                 var response = new
                 {
-                    // CRITICAL IDENTIFIERS - Always include these
                     sessionId = sessionId,
-                    dumpFile = (string?)null, // No dump file for close operation
-                    commandId = (string?)null, // No commandId for this operation
-                    
-                    // OPERATION STATUS
+                    dumpFile = (string?)null,
+                    commandId = (string?)null,
                     success = closed,
                     operation = "nexus_close_dump_analyze_session",
                     status = closed ? "completed" : "warning",
                     message = closed 
                         ? $"Session closed: {sessionId}"
                         : $"Session may have already been closed: {sessionId}",
-                    
-                    // WORKFLOW GUIDANCE
-                    nextCommand = closed ? "nexus_open_dump_analyze_session" : null,
-                    nextCommandParameters = closed ? new { dumpPath = "<new-dump-file-path>" } : null,
-                    workflow = closed ? "Session closed successfully. Use nexus_open_dump_analyze_session to start a new session." : "Session cleanup in progress.",
-                    
-                    // CRITICAL REMINDERS
-                    closedSessionId = sessionId, // Extra copy for tracking
-                    resourcesFreed = closed,
-                    instructions = closed ? "Session successfully closed. Start new session with nexus_open_dump_analyze_session if needed." : "Session cleanup in progress."
+                    toolusage = TOOL_USAGE_EXPLANATION
                 };
 
                 logger.LogInformation("✅ Session {SessionId} closed successfully", sessionId);
@@ -335,31 +318,17 @@ namespace mcp_nexus.Tools
                 var commandId = commandQueue.QueueCommand(command);
                 var context = sessionManager.GetSessionContext(sessionId);
 
-                // Return comprehensive response with all critical information
+                // Return simplified response with essential information
                 var response = new
                 {
-                    // CRITICAL IDENTIFIERS - Always include these
                     sessionId = sessionId,
                     dumpFile = context?.DumpPath != null ? Path.GetFileName(context.DumpPath) : null,
                     commandId = commandId,
-                    
-                    // OPERATION STATUS
                     success = true,
                     operation = "nexus_dump_analyze_session_async_command",
                     status = "queued",
                     message = $"Command queued: {commandId}",
-                    
-                    // WORKFLOW GUIDANCE
-                    nextCommand = "nexus_dump_analyze_session_async_command_status",
-                    nextCommandParameters = new { commandId = commandId },
-                    workflow = "STEP 2 COMPLETE → NEXT: nexus_dump_analyze_session_async_command_status → POLL until status='completed'",
-                    
-                    // CRITICAL REMINDERS
-                    extractCommandId = commandId, // Extra copy for extraction
-                    useThisCommandId = commandId, // Another copy for clarity
-                    useThisSessionId = sessionId, // Session reminder
-                    instructions = $"SAVE this commandId '{commandId}' and use it in nexus_dump_analyze_session_async_command_status to get results!",
-                    polling = "Check nexus_dump_analyze_session_async_command_status every 3-5 seconds until status='completed'"
+                    toolusage = TOOL_USAGE_EXPLANATION
                 };
 
                 logger.LogInformation("✅ Command {CommandId} queued in session {SessionId}", commandId, sessionId);
@@ -506,48 +475,18 @@ namespace mcp_nexus.Tools
                     _ => "completed"
                 };
 
-                // Return comprehensive response with all critical information
+                // Return simplified response with essential information
                 var response = new
                 {
-                    // CRITICAL IDENTIFIERS - Always include these
                     sessionId = sessionId,
                     dumpFile = context?.DumpPath != null ? Path.GetFileName(context.DumpPath) : null,
                     commandId = commandId,
-                    
-                    // OPERATION STATUS
                     success = true,
                     operation = "nexus_dump_analyze_session_async_command_status",
                     status = status,
                     message = $"Command status: {status}",
-                    
-                    // COMMAND RESULT
                     result = result,
-                    debuggerOutput = result, // Extra copy for clarity
-                    
-                    // WORKFLOW GUIDANCE
-                    isComplete = status is "completed" or "failed" or "cancelled",
-                    nextCommand = status is "completed" or "failed" or "cancelled" ? null : "nexus_dump_analyze_session_async_command_status",
-                    nextCommandParameters = status is "completed" or "failed" or "cancelled" ? null : new { commandId = commandId },
-                    workflow = status switch
-                    {
-                        "queued" or "executing" => "POLLING: Call nexus_dump_analyze_session_async_command_status again in 3-5 seconds",
-                        "completed" => "STEP 3 COMPLETE → Use 'result' field for debugger output → Call nexus_close_dump_analyze_session when done",
-                        "failed" => "COMMAND FAILED → Check 'result' for error details → Try new command or nexus_close_dump_analyze_session",
-                        _ => "Check status and continue as needed"
-                    },
-                    
-                    // CRITICAL REMINDERS
-                    extractResult = status == "completed" ? result : null, // Extra copy for extraction
-                    useThisCommandId = commandId, // Command reminder
-                    useThisSessionId = sessionId, // Session reminder
-                    instructions = status switch
-                    {
-                        "queued" or "executing" => $"Command '{commandId}' still processing. Check again in 3-5 seconds.",
-                        "completed" => $"Command '{commandId}' completed! Use the 'result' field for debugger output.",
-                        "failed" => $"Command '{commandId}' failed. Check 'result' field for error details.",
-                        _ => $"Command '{commandId}' status: {status}"
-                    },
-                    polling = status is "queued" or "executing" ? "Check nexus_dump_analyze_session_async_command_status again in 3-5 seconds" : null
+                    toolusage = TOOL_USAGE_EXPLANATION
                 };
 
                 return response;
