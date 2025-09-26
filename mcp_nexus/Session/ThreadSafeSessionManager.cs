@@ -250,6 +250,38 @@ namespace mcp_nexus.Session
             }
         }
 
+        /// <summary>
+        /// Internal method to close a session without disposal checks (used during shutdown)
+        /// </summary>
+        private async Task<bool> CloseSessionInternalAsync(string sessionId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrEmpty(sessionId))
+                return false;
+
+            if (!m_sessions.TryRemove(sessionId, out var session))
+            {
+                m_logger.LogDebug("Session {SessionId} not found for closure during shutdown", sessionId);
+                return false;
+            }
+
+            m_logger.LogInformation("🛑 Closing session {SessionId} during shutdown", sessionId);
+            
+            try
+            {
+                await SafeCleanupSession(session);
+                Interlocked.Increment(ref m_totalSessionsClosed);
+
+                // Skip notifications during shutdown to avoid potential issues
+                m_logger.LogDebug("Session {SessionId} closed successfully during shutdown", sessionId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogError(ex, "❌ Error closing session {SessionId} during shutdown", sessionId);
+                return false;
+            }
+        }
+
         public bool SessionExists(string sessionId)
         {
             if (string.IsNullOrEmpty(sessionId))
@@ -626,8 +658,6 @@ namespace mcp_nexus.Session
         {
             if (m_disposed) return;
             
-            m_disposed = true;
-            
             m_logger.LogInformation("🛑 ThreadSafeSessionManager disposing...");
             
             try
@@ -644,9 +674,9 @@ namespace mcp_nexus.Session
                     m_logger.LogWarning("⚠️ Session monitor did not stop within timeout");
                 }
                 
-                // CLEANUP: Close all sessions
+                // CLEANUP: Close all sessions BEFORE marking as disposed
                 var sessionIds = m_sessions.Keys.ToList();
-                var cleanupTasks = sessionIds.Select(id => CloseSessionAsync(id, CancellationToken.None));
+                var cleanupTasks = sessionIds.Select(id => CloseSessionInternalAsync(id, CancellationToken.None));
                 
                 try
                 {
@@ -656,6 +686,9 @@ namespace mcp_nexus.Session
                 {
                     m_logger.LogError(ex, "Error during bulk session cleanup");
                 }
+                
+                // NOW mark as disposed after cleanup is complete
+                m_disposed = true;
                 
                 // CLEANUP: Dispose resources
                 m_shutdownCts.Dispose();

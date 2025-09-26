@@ -152,6 +152,7 @@ namespace mcp_nexus.Protocol
                         sessionId = new { type = "string", description = "REQUIRED: Session ID from nexus_open_dump response. Without this, the command will FAIL!" }
                     },
                     required = new[] { "command", "sessionId" }
+                }
             };
         }
 
