@@ -385,7 +385,7 @@ namespace mcp_nexus_tests.Services
 			Assert.Equal(11, response.Id);
 			
 			var resultJson = JsonSerializer.Serialize(response.Result);
-			Assert.Contains("COMMAND REMOVED", resultJson);
+			Assert.Contains("Unknown tool", resultJson);
 		}
 	}
 }

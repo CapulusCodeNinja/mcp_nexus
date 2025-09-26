@@ -23,8 +23,8 @@ namespace mcp_nexus.Protocol
                 CreateNexusCloseDumpTool(),
                 CreateNexusStopRemoteDebugTool(),
                 CreateNexusDebuggerCommandStatusTool(),
-                CreateNexusDebuggerCommandCancelTool(),
-                CreateNexusListDebuggerCommandsTool()
+                CreateNexusDebuggerCommandCancelTool()
+                // REMOVED: CreateNexusListDebuggerCommandsTool() - deprecated in session-aware architecture
             ];
         }
 
@@ -44,14 +44,18 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_open_dump",
-                Description = "Analyze a Windows crash dump file using common debugger commands. Automatically replaces any existing session with the new dump file.",
+                Description = "🚀 START HERE: Open and analyze a Windows crash dump file (.dmp). " +
+                    "This is typically your FIRST step when debugging crashes. " +
+                    "Creates a new debugging session that replaces any existing session. " +
+                    "After opening, use nexus_exec_debugger_command_async to run commands like '!analyze -v', 'k', 'lm', etc. " +
+                    "💡 WORKFLOW: nexus_open_dump → nexus_exec_debugger_command_async → nexus_debugger_command_status (to get results)",
                 InputSchema = new
                 {
                     type = "object",
                     properties = new
                     {
-                        dumpPath = new { type = "string", description = "Path to the crash dump file" },
-                        symbolsPath = new { type = "string", description = "Optional path to symbols directory" }
+                        dumpPath = new { type = "string", description = "Full path to the crash dump file (.dmp)" },
+                        symbolsPath = new { type = "string", description = "Optional: Path to symbols directory for better analysis" }
                     },
                     required = new[] { "dumpPath" }
                 }
@@ -63,14 +67,18 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_start_remote_debug",
-                Description = "Connect to a remote debugging session using a connection string (e.g., tcp:Port=5005,Server=192.168.0.100). Automatically replaces any existing session with the new remote connection.",
+                Description = "🔗 REMOTE DEBUGGING: Connect to a live process or system for real-time debugging. " +
+                    "Use this for debugging running applications, not crash dumps. " +
+                    "Creates a new debugging session that replaces any existing session. " +
+                    "Connection examples: 'tcp:Port=5005,Server=192.168.0.100' or 'npipe:Pipe=MyApp,Server=.' " +
+                    "💡 WORKFLOW: nexus_start_remote_debug → nexus_exec_debugger_command_async → nexus_debugger_command_status",
                 InputSchema = new
                 {
                     type = "object",
                     properties = new
                     {
-                        connectionString = new { type = "string", description = "Connection string for remote debugging" },
-                        symbolsPath = new { type = "string", description = "Optional path to symbols directory" }
+                        connectionString = new { type = "string", description = "Connection string: tcp:Port=XXXX,Server=IP or npipe:Pipe=NAME,Server=." },
+                        symbolsPath = new { type = "string", description = "Optional: Path to symbols directory for better analysis" }
                     },
                     required = new[] { "connectionString" }
                 }
@@ -82,7 +90,9 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_close_dump",
-                Description = "Unload a crash dump and release resources",
+                Description = "🔚 CLEANUP: Close the current crash dump session and release resources. " +
+                    "Use this when you're done analyzing a dump file. " +
+                    "After closing, you'll need nexus_open_dump again to analyze another dump.",
                 InputSchema = new
                 {
                     type = "object",
@@ -97,7 +107,9 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_stop_remote_debug",
-                Description = "Disconnect from a remote debugging session and release resources",
+                Description = "🔌 DISCONNECT: Stop the current remote debugging session and release resources. " +
+                    "Use this when you're done debugging a remote process. " +
+                    "After stopping, you'll need nexus_start_remote_debug again to connect to another target.",
                 InputSchema = new
                 {
                     type = "object",
@@ -112,20 +124,21 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_exec_debugger_command_async",
-                Description = "🔄 ASYNC QUEUE: Execute debugger command in background queue. ⚠️ NEVER returns results directly! Always returns commandId for polling. " +
-                    "You MUST call nexus_debugger_command_status(commandId) to get actual results. NO EXCEPTIONS! " +
-                    "📡 REAL-TIME NOTIFICATIONS: This server sends live notifications about command progress: " +
-                    "• notifications/commandStatus (queued→executing→completed with progress %) " +
-                    "• notifications/commandHeartbeat (for long-running commands, shows elapsed time) " +
-                    "• notifications/sessionRecovery (if debugging session needs recovery) " +
-                    "• notifications/serverHealth (server status updates) " +
-                    "Listen for these notifications to get real-time updates without constant polling!",
+                Description = "⚡ EXECUTE COMMANDS: Run debugger commands like '!analyze -v', 'k', 'lm', 'dt', etc. " +
+                    "⚠️ CRITICAL: This only QUEUES the command and returns a commandId - it does NOT return results! " +
+                    "🔄 REQUIRED NEXT STEP: You MUST call nexus_debugger_command_status(commandId) to get the actual output. " +
+                    "💡 COMMON COMMANDS: " +
+                    "• '!analyze -v' - Detailed crash analysis " +
+                    "• 'k' - Call stack " +
+                    "• 'lm' - List loaded modules " +
+                    "• 'dt ModuleName!StructName' - Display type " +
+                    "📡 TIP: Listen for notifications/commandStatus to know when commands complete!",
                 InputSchema = new
                 {
                     type = "object",
                     properties = new
                     {
-                        command = new { type = "string", description = "Debugger command to execute" }
+                        command = new { type = "string", description = "WinDbg/CDB command like '!analyze -v', 'k', 'lm', etc." }
                     },
                     required = new[] { "command" }
                 }
@@ -139,17 +152,18 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_debugger_command_status",
-                Description = "✅ REQUIRED: Get results from nexus_exec_debugger_command_async. Call this repeatedly until status='completed', then extract 'result' field for actual debugger output. " +
-                    "This is the ONLY way to get command results! " +
-                    "📡 NOTIFICATION TIP: Instead of constant polling, listen for notifications/commandStatus notifications which will tell you when commands change state: " +
-                    "queued→executing→completed. The notification includes the same commandId so you know which command finished. " +
-                    "You can still call this method to get the final result, but notifications reduce the need for frequent polling.",
+                Description = "📋 GET RESULTS: Retrieve the output from a previously queued command. " +
+                    "This is the ONLY way to get actual debugger command results! " +
+                    "📊 STATUS FLOW: queued → executing → completed " +
+                    "✅ When status='completed', the 'result' field contains the debugger output. " +
+                    "⏳ If status='executing' or 'queued', wait and try again. " +
+                    "💡 SMART TIP: Listen for notifications/commandStatus to know when to check instead of polling constantly.",
                 InputSchema = new
                 {
                     type = "object",
                     properties = new
                     {
-                        commandId = new { type = "string", description = "Command ID from nexus_exec_debugger_command_async" }
+                        commandId = new { type = "string", description = "The commandId returned by nexus_exec_debugger_command_async" }
                     },
                     required = new[] { "commandId" }
                 }
@@ -161,35 +175,21 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_debugger_command_cancel",
-                Description = "Cancel a queued or running command. Useful for stopping long-running commands.",
+                Description = "❌ CANCEL COMMAND: Stop a queued or running command. " +
+                    "Useful for canceling long-running commands that are taking too long. " +
+                    "Once canceled, the command status will change to 'canceled'.",
                 InputSchema = new
                 {
                     type = "object",
                     properties = new
                     {
-                        commandId = new { type = "string", description = "Command ID to cancel" }
+                        commandId = new { type = "string", description = "The commandId to cancel (from nexus_exec_debugger_command_async)" }
                     },
                     required = new[] { "commandId" }
                 }
             };
         }
 
-        private static McpToolSchema CreateNexusListDebuggerCommandsTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "nexus_list_debugger_commands",
-                Description = "List current command queue status. Shows queued, executing, and recent commands with their IDs and timestamps. " +
-                    "📡 NOTIFICATION INTEGRATION: Each command listed here will also send notifications/commandStatus updates as they progress. " +
-                    "Monitor notifications to get real-time updates about any of these commands without needing to repeatedly call this method.",
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new { },
-                    required = Array.Empty<string>()
-                }
-            };
-        }
     }
 }
 

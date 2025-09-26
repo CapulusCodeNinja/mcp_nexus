@@ -21,7 +21,7 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 
 			// Assert
-			Assert.Equal(8, tools.Length); // 3 tools removed: list_windbg_dumps, get_session_info, get_current_time
+			Assert.Equal(7, tools.Length); // nexus_list_debugger_commands removed
 		}
 
 		[Fact]
@@ -36,7 +36,7 @@ namespace mcp_nexus_tests.Services
 			// Assert
 			var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_exec_debugger_command_async");
 			Assert.NotNull(asyncTool);
-			Assert.Contains("ASYNC QUEUE", asyncTool.Description);
+			Assert.Contains("EXECUTE COMMANDS", asyncTool.Description);
 		}
 
 		[Fact]
@@ -51,7 +51,7 @@ namespace mcp_nexus_tests.Services
 			// Assert
 			var statusTool = tools.FirstOrDefault(t => t.Name == "nexus_debugger_command_status");
 			Assert.NotNull(statusTool);
-			Assert.Contains("REQUIRED", statusTool.Description);
+			Assert.Contains("GET RESULTS", statusTool.Description);
 		}
 
 		[Fact]
@@ -95,10 +95,10 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 			var toolNames = tools.Select(t => t.Name).ToList();
 
-			// Assert
-			Assert.Contains("nexus_debugger_command_status", toolNames);
-			Assert.Contains("nexus_debugger_command_cancel", toolNames);
-			Assert.Contains("nexus_list_debugger_commands", toolNames);
+		// Assert
+		Assert.Contains("nexus_debugger_command_status", toolNames);
+		Assert.Contains("nexus_debugger_command_cancel", toolNames);
+		// nexus_list_debugger_commands removed - no longer advertised
 		}
 
 		[Fact]
@@ -162,7 +162,7 @@ namespace mcp_nexus_tests.Services
 			var dumpTool = tools.First(t => t.Name == "nexus_open_dump");
 
 			// Assert
-			Assert.Contains("Automatically replaces", dumpTool.Description);
+			Assert.Contains("START HERE", dumpTool.Description);
 			Assert.NotNull(dumpTool.InputSchema);
 		}
 
@@ -178,7 +178,7 @@ namespace mcp_nexus_tests.Services
 
 			// Assert
 			Assert.Contains("tcp:Port=", remoteTool.Description);
-			Assert.Contains("Automatically replaces", remoteTool.Description);
+			Assert.Contains("REMOTE DEBUGGING", remoteTool.Description);
 		}
 	}
 }

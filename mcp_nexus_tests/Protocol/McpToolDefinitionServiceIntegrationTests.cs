@@ -38,7 +38,7 @@ namespace mcp_nexus_tests.Services
 
 			// Assert
 			// Should have 11 tools based on the implementation
-			Assert.Equal(8, tools.Length); // 3 tools removed: list_windbg_dumps, get_session_info, get_current_time
+			Assert.Equal(7, tools.Length); // nexus_list_debugger_commands removed
 		}
 
 		[Fact]
@@ -67,7 +67,7 @@ namespace mcp_nexus_tests.Services
 			// Assert
 			var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_exec_debugger_command_async");
 			Assert.NotNull(asyncTool);
-			Assert.Contains("ASYNC QUEUE", asyncTool.Description);
+			Assert.Contains("EXECUTE COMMANDS", asyncTool.Description);
 			Assert.Contains("commandId", asyncTool.Description);
 		}
 
@@ -115,7 +115,7 @@ namespace mcp_nexus_tests.Services
 		// Assert
 		Assert.Contains(tools, t => t.Name == "nexus_debugger_command_status");
 		Assert.Contains(tools, t => t.Name == "nexus_debugger_command_cancel");
-		Assert.Contains(tools, t => t.Name == "nexus_list_debugger_commands");
+		// nexus_list_debugger_commands removed - no longer advertised
 		}
 
 	[Fact]
@@ -197,21 +197,11 @@ namespace mcp_nexus_tests.Services
 
 			// Assert
 			var statusTool = tools.First(t => t.Name == "nexus_debugger_command_status");
-			Assert.Contains("REQUIRED", statusTool.Description);
+			Assert.Contains("GET RESULTS", statusTool.Description);
 			Assert.Contains("ONLY way", statusTool.Description);
 		}
 
-		[Fact]
-		public void GetAllTools_ListCommandsToolHasCorrectDescription()
-		{
-			// Act
-			var tools = m_service.GetAllTools();
-
-			// Assert
-			var listTool = tools.First(t => t.Name == "nexus_list_debugger_commands");
-			Assert.Contains("queue status", listTool.Description);
-			Assert.Contains("queued", listTool.Description);
-		}
+	// Test removed - nexus_list_debugger_commands no longer advertised
 
 		[Fact]
 		public void GetAllTools_CancelCommandToolHasCorrectDescription()
@@ -221,7 +211,7 @@ namespace mcp_nexus_tests.Services
 
 			// Assert
 			var cancelTool = tools.First(t => t.Name == "nexus_debugger_command_cancel");
-			Assert.Contains("Cancel", cancelTool.Description);
+			Assert.Contains("CANCEL COMMAND", cancelTool.Description);
 			Assert.Contains("long-running", cancelTool.Description);
 		}
 
