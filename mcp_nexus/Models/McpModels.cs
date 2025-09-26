@@ -110,6 +110,53 @@ namespace mcp_nexus.Models
         public McpToolSchema[] Tools { get; set; } = Array.Empty<McpToolSchema>();
     }
 
+    // ===== MCP RESOURCE MODELS =====
+
+    public class McpResource
+    {
+        [JsonPropertyName("uri")]
+        public string Uri { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; } = string.Empty;
+
+        [JsonPropertyName("mimeType")]
+        public string? MimeType { get; set; }
+
+        [JsonPropertyName("expiresAt")]
+        public DateTime? ExpiresAt { get; set; }
+    }
+
+    public class McpResourcesListResult
+    {
+        [JsonPropertyName("resources")]
+        public McpResource[] Resources { get; set; } = Array.Empty<McpResource>();
+    }
+
+    public class McpResourceContent
+    {
+        [JsonPropertyName("uri")]
+        public string Uri { get; set; } = string.Empty;
+
+        [JsonPropertyName("mimeType")]
+        public string MimeType { get; set; } = "text/plain";
+
+        [JsonPropertyName("text")]
+        public string? Text { get; set; }
+
+        [JsonPropertyName("blob")]
+        public string? Blob { get; set; }
+    }
+
+    public class McpResourceReadResult
+    {
+        [JsonPropertyName("contents")]
+        public McpResourceContent[] Contents { get; set; } = Array.Empty<McpResourceContent>();
+    }
+
     public class McpServerInfoResponse
     {
         [JsonPropertyName("jsonrpc")]
@@ -132,11 +179,20 @@ namespace mcp_nexus.Models
     {
         [JsonPropertyName("tools")]
         public object Tools { get; set; } = new { listChanged = true };
+        
+        [JsonPropertyName("resources")]
+        public object Resources { get; set; } = new 
+        { 
+            subscribe = true, 
+            listChanged = true 
+        };
+        
         [JsonPropertyName("notifications")]
         public object Notifications { get; set; } = new
         {
             // Standard MCP notifications
             tools = new { listChanged = true },
+            resources = new { listChanged = true },
             // Custom MCP Nexus notifications  
             commandStatus = true,
             sessionRecovery = true,

@@ -697,6 +697,10 @@ namespace mcp_nexus
             // Register MCP notification service for both HTTP and stdio modes
             services.AddSingleton<IMcpNotificationService, McpNotificationService>();
             Console.Error.WriteLine("Registered McpNotificationService for server-initiated notifications");
+
+            // Register MCP resource service for context and data resources
+            services.AddSingleton<McpResourceService>();
+            Console.Error.WriteLine("Registered McpResourceService for MCP resources support");
         }
 
         private static void ConfigureHttpServices(IServiceCollection services)

@@ -8,6 +8,7 @@ namespace mcp_nexus.Protocol
     public class McpProtocolService(
         McpToolDefinitionService m_toolDefinitionService,
         McpToolExecutionService m_toolExecutionService,
+        McpResourceService m_resourceService,
         ILogger<McpProtocolService> m_logger)
     {
         public async Task<object> ProcessRequest(JsonElement requestElement)
@@ -75,6 +76,8 @@ namespace mcp_nexus.Protocol
                 "notifications/initialized" => HandleNotificationInitialized(),
                 "tools/list" => HandleToolsList(),
                 "tools/call" => await HandleToolsCall(request.Params),
+                "resources/list" => HandleResourcesList(),
+                "resources/read" => await HandleResourcesRead(request.Params),
                 "notifications/cancelled" => HandleNotificationCancelled(request.Params),
                 _ => throw new McpToolException(-32601, $"Method not found: {request.Method}")
             };
@@ -123,6 +126,28 @@ namespace mcp_nexus.Protocol
         {
             var tools = m_toolDefinitionService.GetAllTools();
             return new McpToolsListResult { Tools = tools };
+        }
+
+        private object HandleResourcesList()
+        {
+            var resources = m_resourceService.GetAllResources();
+            return new McpResourcesListResult { Resources = resources };
+        }
+
+        private async Task<object> HandleResourcesRead(JsonElement? paramsElement)
+        {
+            if (paramsElement == null || !paramsElement.Value.TryGetProperty("uri", out var uriProperty))
+            {
+                throw new McpToolException(-32602, "Missing required parameter: uri");
+            }
+
+            var uri = uriProperty.GetString();
+            if (string.IsNullOrEmpty(uri))
+            {
+                throw new McpToolException(-32602, "Invalid uri parameter");
+            }
+
+            return await m_resourceService.ReadResource(uri);
         }
 
         private async Task<object> HandleToolsCall(JsonElement? paramsElement)
