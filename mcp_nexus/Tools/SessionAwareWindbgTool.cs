@@ -359,53 +359,13 @@ namespace mcp_nexus.Tools
                 var commandId = commandQueue.QueueCommand(command);
                 var context = sessionManager.GetSessionContext(sessionId);
 
-                var response = new SessionAwareResponse
+                // Return simple response with command ID for MCP protocol
+                var response = new
                 {
-                    SessionId = sessionId,
-                    Result = $"✅ Command queued successfully!\n\n" +
-                             $"🚨 ASYNC WORKFLOW - CRITICAL: This command does NOT return debugger output!\n" +
-                             $"🔄 NEXT STEP REQUIRED: Call nexus_debugger_command_status('{commandId}') to get actual results!\n" +
-                             $"📡 Commands execute asynchronously - results come later via status check!\n\n" +
-                             $"📊 Command Details:\n" +
-                             $"• Session ID: {sessionId}\n" +
-                             $"• Command ID: {commandId}\n" +
-                             $"• Command: {command}\n" +
-                             $"• Queued At: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC\n\n" +
-                             $"🎯 MANDATORY NEXT STEP: nexus_debugger_command_status('{commandId}')\n" +
-                             $"📡 Monitor notifications for real-time progress updates.",
-                    SessionContext = context,
-                    AIGuidance = new AIGuidance
-                    {
-                        NextSteps = new List<string>
-                        {
-                            $"Call nexus_debugger_command_status('{commandId}') to get results",
-                            "Listen for notifications/commandStatus for real-time updates",
-                            "Wait for command completion before queuing next command",
-                            "Monitor notifications/commandHeartbeat for long-running commands"
-                        },
-                        UsageHints = new List<string>
-                        {
-                            "🔄 Commands execute asynchronously in session-specific queue",
-                            "📡 Real-time notifications show execution progress",
-                            "⏱️ Long-running commands send periodic heartbeats",
-                            "🎯 Each session has isolated command queue"
-                        },
-                        CommonErrors = new List<string>
-                        {
-                            "❌ Not calling nexus_debugger_command_status to get results",
-                            "❌ Assuming command completed immediately",
-                            "❌ Ignoring notification messages"
-                        }
-                    },
-                    WorkflowContext = new WorkflowContext
-                    {
-                        CurrentStep = "Command Queued",
-                        SuggestedNextCommands = new List<string>
-                        {
-                            $"nexus_debugger_command_status('{commandId}')  // Get command results"
-                        },
-                        SessionState = $"Executing: {command}"
-                    }
+                    commandId = commandId,
+                    sessionId = sessionId,
+                    message = "✅ Command queued successfully! Use nexus_debugger_command_status(commandId) to get results.",
+                    nextStep = $"nexus_debugger_command_status('{commandId}')"
                 };
 
                 logger.LogInformation("✅ Command {CommandId} queued in session {SessionId}", commandId, sessionId);

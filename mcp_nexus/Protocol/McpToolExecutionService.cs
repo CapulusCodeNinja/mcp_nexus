@@ -142,7 +142,8 @@ namespace mcp_nexus.Protocol
                 {
                     // Parse the JSON response to modify it
                     var jsonResponse = JsonSerializer.Deserialize<JsonElement>(result);
-                    var resultText = jsonResponse.GetProperty("result").GetString() ?? "";
+                    var originalMessage = jsonResponse.GetProperty("message").GetString() ?? "";
+                    var commandIdValue = jsonResponse.GetProperty("commandId").GetString() ?? "";
                     
                     var warningMessage = "🚨 AUTO-DETECTION WARNING: sessionId was missing and auto-detected!\n" +
                                        "⚠️ THIS IS NOT RECOMMENDED: Always include sessionId parameter for proper API usage.\n" +
@@ -151,21 +152,17 @@ namespace mcp_nexus.Protocol
                                        "🚨 ASYNC WORKFLOW REMINDER: This command only returns a commandId!\n" +
                                        "🔄 NEXT STEP REQUIRED: Call nexus_debugger_command_status(commandId) to get actual results!\n" +
                                        "📡 Commands execute asynchronously - don't expect immediate results!\n\n" +
-                                       "--- ORIGINAL RESPONSE ---\n" + resultText;
+                                       "--- ORIGINAL RESPONSE ---\n" + originalMessage;
                     
-                    // Create a modified response with the warning but preserve all other JSON structure
-                    var modifiedResponse = new Dictionary<string, object>();
-                    foreach (var property in jsonResponse.EnumerateObject())
+                    // Create a modified response with the warning but preserve the simple structure
+                    var modifiedResponse = new
                     {
-                        if (property.Name == "result")
-                        {
-                            modifiedResponse[property.Name] = warningMessage;
-                        }
-                        else
-                        {
-                            modifiedResponse[property.Name] = JsonSerializer.Deserialize<object>(property.Value.GetRawText()) ?? new object();
-                        }
-                    }
+                        commandId = commandIdValue,
+                        sessionId = sessionId,
+                        message = warningMessage,
+                        nextStep = $"nexus_debugger_command_status('{commandIdValue}')",
+                        warning = "AUTO_DETECTION_USED"
+                    };
                     
                     return modifiedResponse;
                 }
