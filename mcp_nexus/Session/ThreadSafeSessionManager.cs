@@ -343,6 +343,7 @@ namespace mcp_nexus.Session
             {
                 SessionId = sessionId,
                 Description = $"Debugging session for {Path.GetFileName(session.DumpPath ?? "Unknown")}",
+                DumpPath = session.DumpPath,
                 CreatedAt = session.CreatedAt,
                 LastActivity = session.LastActivity,
                 Status = session.Status.ToString(),

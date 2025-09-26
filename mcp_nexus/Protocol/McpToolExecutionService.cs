@@ -17,10 +17,10 @@ namespace mcp_nexus.Protocol
             {
                 return toolName switch
                 {
-                    "nexus_open_dump" => await ExecuteOpenWindbgDump(arguments),
-                    "nexus_close_dump" => await ExecuteCloseWindbgDump(arguments),
-                    "nexus_exec_debugger_command_async" => await ExecuteRunWindbgCmdAsync(arguments),
-                    "nexus_debugger_command_status" => await ExecuteGetCommandStatus(arguments),
+                    "nexus_open_dump_analyze_session" => await ExecuteOpenWindbgDump(arguments),
+                    "nexus_close_dump_analyze_session" => await ExecuteCloseWindbgDump(arguments),
+                    "nexus_dump_analyze_session_async_command" => await ExecuteRunWindbgCmdAsync(arguments),
+                    "nexus_dump_analyze_session_async_command_status" => await ExecuteGetCommandStatus(arguments),
                     _ => throw new McpToolException(-32602, $"Unknown tool: {toolName}")
                 };
             }
@@ -48,7 +48,7 @@ namespace mcp_nexus.Protocol
                     "💡 EXAMPLE: {\"dumpPath\": \"C:\\\\path\\\\to\\\\crash.dmp\"}");
 
             var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
-            var result = await sessionAwareWindbgTool.nexus_open_dump(dumpPath, symbolsPath);
+            var result = await sessionAwareWindbgTool.nexus_open_dump_analyze_session(dumpPath, symbolsPath);
 
             // Return the structured response object directly
             return result;
@@ -66,7 +66,7 @@ namespace mcp_nexus.Protocol
 
             logger.LogInformation("Manual session closure requested for session: {SessionId}", sessionId);
             
-            var result = await sessionAwareWindbgTool.nexus_close_dump(sessionId);
+            var result = await sessionAwareWindbgTool.nexus_close_dump_analyze_session(sessionId);
             return result;
         }
 
@@ -96,7 +96,7 @@ namespace mcp_nexus.Protocol
             
             try
             {
-                var result = await sessionAwareWindbgTool.nexus_exec_debugger_command_async(sessionId, command);
+                var result = await sessionAwareWindbgTool.nexus_dump_analyze_session_async_command(sessionId, command);
                 return result;
             }
             catch (Exception ex)
@@ -121,7 +121,7 @@ namespace mcp_nexus.Protocol
             
             try
             {
-                var result = await sessionAwareWindbgTool.nexus_debugger_command_status(commandId);
+                var result = await sessionAwareWindbgTool.nexus_dump_analyze_session_async_command_status(commandId);
                 // Return the structured response object directly
                 return result;
             }

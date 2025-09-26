@@ -118,6 +118,9 @@ namespace mcp_nexus.Session.Models
         /// <summary>Human-readable session description</summary>
         public string Description { get; set; } = string.Empty;
         
+        /// <summary>Path to the dump file being debugged</summary>
+        public string? DumpPath { get; set; }
+        
         /// <summary>Session creation time</summary>
         public DateTime CreatedAt { get; set; }
         

@@ -37,7 +37,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			// Core tools for first release: nexus_open_dump, nexus_exec_debugger_command_async, nexus_debugger_command_status, nexus_close_dump
+			// Core tools for first release: nexus_open_dump_analyze_session, nexus_dump_analyze_session_async_command, nexus_dump_analyze_session_async_command_status, nexus_close_dump_analyze_session
 			Assert.Equal(4, tools.Length);
 		}
 
@@ -65,7 +65,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_exec_debugger_command_async");
+			var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_dump_analyze_session_async_command");
 			Assert.NotNull(asyncTool);
 			Assert.Contains("EXECUTE COMMANDS", asyncTool.Description);
 			Assert.Contains("commandId", asyncTool.Description);
@@ -78,7 +78,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var dumpTool = tools.FirstOrDefault(t => t.Name == "nexus_open_dump");
+			var dumpTool = tools.FirstOrDefault(t => t.Name == "nexus_open_dump_analyze_session");
 			Assert.NotNull(dumpTool);
 			Assert.Contains("crash dump", dumpTool.Description);
 		}
@@ -90,7 +90,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var dumpTool = tools.FirstOrDefault(t => t.Name == "nexus_open_dump");
+			var dumpTool = tools.FirstOrDefault(t => t.Name == "nexus_open_dump_analyze_session");
 			Assert.NotNull(dumpTool);
 			Assert.Contains("crash dump", dumpTool.Description);
 		}
@@ -102,7 +102,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert - Only dump file closure (remote debugging removed for first release)
-			Assert.Contains(tools, t => t.Name == "nexus_close_dump");
+			Assert.Contains(tools, t => t.Name == "nexus_close_dump_analyze_session");
 		}
 
 		[Fact]
@@ -112,7 +112,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 		// Assert - Only status checking (command cancellation removed for first release)
-		Assert.Contains(tools, t => t.Name == "nexus_debugger_command_status");
+		Assert.Contains(tools, t => t.Name == "nexus_dump_analyze_session_async_command_status");
 		}
 
 	[Fact]
@@ -122,10 +122,10 @@ namespace mcp_nexus_tests.Services
 		var tools = m_service.GetAllTools();
 
 		// Assert - Core tools for first release
-		Assert.Contains(tools, t => t.Name == "nexus_open_dump");
-		Assert.Contains(tools, t => t.Name == "nexus_exec_debugger_command_async");
-		Assert.Contains(tools, t => t.Name == "nexus_debugger_command_status");
-		Assert.Contains(tools, t => t.Name == "nexus_close_dump");
+		Assert.Contains(tools, t => t.Name == "nexus_open_dump_analyze_session");
+		Assert.Contains(tools, t => t.Name == "nexus_dump_analyze_session_async_command");
+		Assert.Contains(tools, t => t.Name == "nexus_dump_analyze_session_async_command_status");
+		Assert.Contains(tools, t => t.Name == "nexus_close_dump_analyze_session");
 		Assert.DoesNotContain(tools, t => t.Name == "get_session_info");
 		Assert.DoesNotContain(tools, t => t.Name == "get_current_time");
 	}
@@ -160,7 +160,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var dumpTool = tools.First(t => t.Name == "nexus_open_dump");
+			var dumpTool = tools.First(t => t.Name == "nexus_open_dump_analyze_session");
 			Assert.NotNull(dumpTool.InputSchema);
 			
 			// InputSchema should be a properly structured object
@@ -177,7 +177,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var dumpTool = tools.First(t => t.Name == "nexus_open_dump");
+			var dumpTool = tools.First(t => t.Name == "nexus_open_dump_analyze_session");
 			Assert.NotNull(dumpTool.InputSchema);
 			
 			var schemaJson = System.Text.Json.JsonSerializer.Serialize(dumpTool.InputSchema);
@@ -191,7 +191,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var statusTool = tools.First(t => t.Name == "nexus_debugger_command_status");
+			var statusTool = tools.First(t => t.Name == "nexus_dump_analyze_session_async_command_status");
 			Assert.Contains("GET RESULTS", statusTool.Description);
 			Assert.Contains("ONLY way", statusTool.Description);
 		}
@@ -205,7 +205,7 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			var statusTool = tools.First(t => t.Name == "nexus_debugger_command_status");
+			var statusTool = tools.First(t => t.Name == "nexus_dump_analyze_session_async_command_status");
 			Assert.Contains("GET RESULTS", statusTool.Description);
 			Assert.Contains("ONLY way", statusTool.Description);
 		}

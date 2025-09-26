@@ -81,7 +81,7 @@ namespace mcp_nexus.Tools
         /// Creates an isolated debugging environment with dedicated CDB process
         /// </summary>
         [Description("🔓 OPEN SESSION: Create a new debugging session for a crash dump file. Returns sessionId that MUST be used for all subsequent operations.")]
-        public async Task<object> nexus_open_dump(
+        public async Task<object> nexus_open_dump_analyze_session(
             [Description("Full path to the crash dump file (.dmp)")] string dumpPath,
             [Description("Optional path to symbol files directory")] string? symbolsPath = null)
         {
@@ -93,46 +93,29 @@ namespace mcp_nexus.Tools
                 var sessionId = await sessionManager.CreateSessionAsync(dumpPath, symbolsPath);
                 var context = sessionManager.GetSessionContext(sessionId);
 
-                // Return simple response with session ID for MCP protocol
+                // Return comprehensive response with all critical information
                 var response = new
                 {
-                    // THE MOST IMPORTANT FIELD - EXTRACT THIS VALUE!
+                    // CRITICAL IDENTIFIERS - Always include these
                     sessionId = sessionId,
-                    
-                    // BACKUP FIELDS TO MAKE IT OBVIOUS
-                    EXTRACT_THIS_sessionId = sessionId,
-                    USE_THIS_sessionId = sessionId,
-                    
-                    // OTHER INFO
                     dumpFile = Path.GetFileName(dumpPath),
-                    message = $"✅ SUCCESS! EXTRACT THIS sessionId VALUE: '{sessionId}' and SAVE IT for ALL subsequent commands!",
-                    nextStep = $"nexus_exec_debugger_command_async(sessionId='{sessionId}', command='!analyze -v')",
+                    commandId = (string?)null, // No commandId for this operation
                     
-                    // EXPLICIT INSTRUCTIONS
-                    AI_INSTRUCTIONS = new
-                    {
-                        STEP_1 = "EXTRACT the 'sessionId' field from this response",
-                        STEP_2 = $"SAVE this value: '{sessionId}'",
-                        STEP_3 = "USE this saved sessionId in ALL subsequent commands",
-                        WARNING = "DO NOT make up your own sessionId values!"
-                    },
-                    workflow = "ASYNC: nexus_exec_debugger_command_async returns commandId → Poll nexus_debugger_command_status until complete",
-                    notifications = "Subscribe to notifications/commandStatus for real-time command progress",
-                    commonCommands = new[]
-                    {
-                        "!analyze -v  // Comprehensive crash analysis",
-                        "k           // Call stack",
-                        "!peb        // Process environment block", 
-                        "lm          // Loaded modules"
-                    },
-                    reminders = new[]
-                    {
-                        "🔄 All commands execute asynchronously - always check status",
-                        "📡 Listen for notifications to get real-time updates",
-                        "⏰ Session will auto-expire after 30 minutes of inactivity",
-                        "🎯 Always include the sessionId in your requests",
-                        "🧹 EXPECTED: Call nexus_close_dump when finished analyzing to properly close the session!"
-                    }
+                    // OPERATION STATUS
+                    success = true,
+                    operation = "nexus_open_dump_analyze_session",
+                    status = "completed",
+                    message = $"Session created: {sessionId}",
+                    
+                    // WORKFLOW GUIDANCE
+                    nextCommand = "nexus_dump_analyze_session_async_command",
+                    nextCommandParameters = new { sessionId = sessionId, command = "!analyze -v" },
+                    workflow = "STEP 1 COMPLETE → NEXT: nexus_dump_analyze_session_async_command → THEN: nexus_dump_analyze_session_async_command_status",
+                    
+                    // CRITICAL REMINDERS
+                    extractSessionId = sessionId, // Extra copy for extraction
+                    useThisSessionId = sessionId, // Another copy for clarity
+                    instructions = $"SAVE this sessionId '{sessionId}' and use it in ALL subsequent commands!"
                 };
 
                 logger.LogInformation("✅ Session {SessionId} created successfully", sessionId);
@@ -200,7 +183,7 @@ namespace mcp_nexus.Tools
         /// Close a debugging session and clean up resources
         /// </summary>
         [Description("🔒 CLOSE SESSION: Close a debugging session and free resources. Use when done with analysis.")]
-        public async Task<object> nexus_close_dump(
+        public async Task<object> nexus_close_dump_analyze_session(
             [Description("Session ID to close")] string sessionId)
         {
             logger.LogInformation("🔒 Closing debugging session: {SessionId}", sessionId);
@@ -236,14 +219,31 @@ namespace mcp_nexus.Tools
                 var context = sessionManager.GetSessionContext(sessionId);
                 var closed = await sessionManager.CloseSessionAsync(sessionId);
 
-                // Return simple response for MCP protocol
+                // Return comprehensive response with all critical information
                 var response = new
                 {
+                    // CRITICAL IDENTIFIERS - Always include these
                     sessionId = sessionId,
+                    dumpFile = (string?)null, // No dump file for close operation
+                    commandId = (string?)null, // No commandId for this operation
+                    
+                    // OPERATION STATUS
                     success = closed,
+                    operation = "nexus_close_dump_analyze_session",
+                    status = closed ? "completed" : "warning",
                     message = closed 
-                        ? $"✅ Session '{sessionId}' closed successfully! All resources have been cleaned up."
-                        : $"⚠️ Session '{sessionId}' may have already been closed or expired."
+                        ? $"Session closed: {sessionId}"
+                        : $"Session may have already been closed: {sessionId}",
+                    
+                    // WORKFLOW GUIDANCE
+                    nextCommand = closed ? "nexus_open_dump_analyze_session" : null,
+                    nextCommandParameters = closed ? new { dumpPath = "<new-dump-file-path>" } : null,
+                    workflow = closed ? "Session closed successfully. Use nexus_open_dump_analyze_session to start a new session." : "Session cleanup in progress.",
+                    
+                    // CRITICAL REMINDERS
+                    closedSessionId = sessionId, // Extra copy for tracking
+                    resourcesFreed = closed,
+                    instructions = closed ? "Session successfully closed. Start new session with nexus_open_dump_analyze_session if needed." : "Session cleanup in progress."
                 };
 
                 logger.LogInformation("✅ Session {SessionId} closed successfully", sessionId);
@@ -280,9 +280,9 @@ namespace mcp_nexus.Tools
         /// <summary>
         /// Execute a debugger command asynchronously in the specified session
         /// </summary>
-        [Description("🔄 ASYNC COMMAND: Execute debugger command in background queue. NEVER returns results directly! Always returns commandId. MUST use nexus_debugger_command_status to get actual results.")]
-        public Task<object> nexus_exec_debugger_command_async(
-            [Description("Session ID from nexus_open_dump")] string sessionId,
+        [Description("🔄 ASYNC COMMAND: Execute debugger command in background queue. NEVER returns results directly! Always returns commandId. MUST use nexus_dump_analyze_session_async_command_status to get actual results.")]
+        public Task<object> nexus_dump_analyze_session_async_command(
+            [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
             [Description("Debugger command to execute (e.g., '!analyze -v', 'k', '!peb')")] string command)
         {
             logger.LogInformation("🔄 Executing async command in session {SessionId}: {Command}", sessionId, command);
@@ -335,23 +335,31 @@ namespace mcp_nexus.Tools
                 var commandId = commandQueue.QueueCommand(command);
                 var context = sessionManager.GetSessionContext(sessionId);
 
-                // Return simple response with command ID for MCP protocol
+                // Return comprehensive response with all critical information
                 var response = new
                 {
-                    commandId = commandId,
+                    // CRITICAL IDENTIFIERS - Always include these
                     sessionId = sessionId,
-                    message = "✅ Command queued successfully! Use nexus_debugger_command_status(commandId) to get results.",
-                    nextStep = $"nexus_debugger_command_status('{commandId}')",
-                    polling = "Check status every 3-5 seconds until command completes",
-                    workflow = "ASYNC: This returns commandId only → Poll nexus_debugger_command_status until completed",
-                    notifications = "Listen for notifications/commandStatus for real-time progress updates",
-                    hints = new[]
-                    {
-                        "📡 Real-time notifications show execution progress",
-                        "⏱️ Long-running commands send periodic heartbeats", 
-                        "🎯 Each session has isolated command queue",
-                        "🔄 Commands execute asynchronously in session-specific queue"
-                    }
+                    dumpFile = context?.DumpPath != null ? Path.GetFileName(context.DumpPath) : null,
+                    commandId = commandId,
+                    
+                    // OPERATION STATUS
+                    success = true,
+                    operation = "nexus_dump_analyze_session_async_command",
+                    status = "queued",
+                    message = $"Command queued: {commandId}",
+                    
+                    // WORKFLOW GUIDANCE
+                    nextCommand = "nexus_dump_analyze_session_async_command_status",
+                    nextCommandParameters = new { commandId = commandId },
+                    workflow = "STEP 2 COMPLETE → NEXT: nexus_dump_analyze_session_async_command_status → POLL until status='completed'",
+                    
+                    // CRITICAL REMINDERS
+                    extractCommandId = commandId, // Extra copy for extraction
+                    useThisCommandId = commandId, // Another copy for clarity
+                    useThisSessionId = sessionId, // Session reminder
+                    instructions = $"SAVE this commandId '{commandId}' and use it in nexus_dump_analyze_session_async_command_status to get results!",
+                    polling = "Check nexus_dump_analyze_session_async_command_status every 3-5 seconds until status='completed'"
                 };
 
                 logger.LogInformation("✅ Command {CommandId} queued in session {SessionId}", commandId, sessionId);
@@ -407,8 +415,8 @@ namespace mcp_nexus.Tools
         /// Get the status and result of a previously queued command
         /// </summary>
         [Description("📊 COMMAND STATUS: Get the result/status of a queued command. This is how you get actual command results from async operations.")]
-        public async Task<object> nexus_debugger_command_status(
-            [Description("Command ID returned by nexus_exec_debugger_command_async")] string commandId)
+        public async Task<object> nexus_dump_analyze_session_async_command_status(
+            [Description("Command ID returned by nexus_dump_analyze_session_async_command")] string commandId)
         {
             logger.LogInformation("📊 Checking command status: {CommandId}", commandId);
 
@@ -498,26 +506,48 @@ namespace mcp_nexus.Tools
                     _ => "completed"
                 };
 
-                // Return simple response for MCP protocol
+                // Return comprehensive response with all critical information
                 var response = new
                 {
-                    commandId = commandId,
+                    // CRITICAL IDENTIFIERS - Always include these
                     sessionId = sessionId,
+                    dumpFile = context?.DumpPath != null ? Path.GetFileName(context.DumpPath) : null,
+                    commandId = commandId,
+                    
+                    // OPERATION STATUS
+                    success = true,
+                    operation = "nexus_dump_analyze_session_async_command_status",
                     status = status,
+                    message = $"Command status: {status}",
+                    
+                    // COMMAND RESULT
                     result = result,
-                    message = $"📊 Command Status: {status.ToUpper()}",
+                    debuggerOutput = result, // Extra copy for clarity
+                    
+                    // WORKFLOW GUIDANCE
                     isComplete = status is "completed" or "failed" or "cancelled",
-                    continuePolling = status is "queued" or "executing" ? "Check again in 3-5 seconds" : null,
-                    notifications = status is "queued" or "executing" ? "Listen for notifications/commandStatus for real-time updates" : null,
-                    advice = status switch
+                    nextCommand = status is "completed" or "failed" or "cancelled" ? null : "nexus_dump_analyze_session_async_command_status",
+                    nextCommandParameters = status is "completed" or "failed" or "cancelled" ? null : new { commandId = commandId },
+                    workflow = status switch
                     {
-                        "queued" => "Command is waiting in queue - notifications will alert when execution starts",
-                        "executing" => "Command is running - monitor notifications for progress heartbeats",
-                        "completed" => "Command finished successfully - result contains debugger output",
-                        "failed" => "Command failed - check result for error details",
-                        "cancelled" => "Command was cancelled before completion",
-                        _ => "Unknown status"
-                    }
+                        "queued" or "executing" => "POLLING: Call nexus_dump_analyze_session_async_command_status again in 3-5 seconds",
+                        "completed" => "STEP 3 COMPLETE → Use 'result' field for debugger output → Call nexus_close_dump_analyze_session when done",
+                        "failed" => "COMMAND FAILED → Check 'result' for error details → Try new command or nexus_close_dump_analyze_session",
+                        _ => "Check status and continue as needed"
+                    },
+                    
+                    // CRITICAL REMINDERS
+                    extractResult = status == "completed" ? result : null, // Extra copy for extraction
+                    useThisCommandId = commandId, // Command reminder
+                    useThisSessionId = sessionId, // Session reminder
+                    instructions = status switch
+                    {
+                        "queued" or "executing" => $"Command '{commandId}' still processing. Check again in 3-5 seconds.",
+                        "completed" => $"Command '{commandId}' completed! Use the 'result' field for debugger output.",
+                        "failed" => $"Command '{commandId}' failed. Check 'result' field for error details.",
+                        _ => $"Command '{commandId}' status: {status}"
+                    },
+                    polling = status is "queued" or "executing" ? "Check nexus_dump_analyze_session_async_command_status again in 3-5 seconds" : null
                 };
 
                 return response;

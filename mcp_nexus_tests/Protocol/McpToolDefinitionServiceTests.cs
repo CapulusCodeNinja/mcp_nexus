@@ -21,7 +21,7 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 
 			// Assert
-			Assert.Equal(4, tools.Length); // Core tools: nexus_open_dump, nexus_exec_debugger_command_async, nexus_debugger_command_status, nexus_close_dump
+			Assert.Equal(4, tools.Length); // Core tools: nexus_open_dump_analyze_session, nexus_dump_analyze_session_async_command, nexus_dump_analyze_session_async_command_status, nexus_close_dump_analyze_session
 		}
 
 		[Fact]
@@ -34,7 +34,7 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 
 			// Assert
-			var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_exec_debugger_command_async");
+			var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_dump_analyze_session_async_command");
 			Assert.NotNull(asyncTool);
 			Assert.Contains("EXECUTE COMMANDS", asyncTool.Description);
 		}
@@ -49,7 +49,7 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 
 			// Assert
-			var statusTool = tools.FirstOrDefault(t => t.Name == "nexus_debugger_command_status");
+			var statusTool = tools.FirstOrDefault(t => t.Name == "nexus_dump_analyze_session_async_command_status");
 			Assert.NotNull(statusTool);
 			Assert.Contains("GET RESULTS", statusTool.Description);
 		}
@@ -65,8 +65,8 @@ namespace mcp_nexus_tests.Services
 			var toolNames = tools.Select(t => t.Name).ToList();
 
 			// Assert - Only dump file analysis tools (remote debugging removed for first release)
-			Assert.Contains("nexus_open_dump", toolNames);
-			Assert.Contains("nexus_close_dump", toolNames);
+			Assert.Contains("nexus_open_dump_analyze_session", toolNames);
+			Assert.Contains("nexus_close_dump_analyze_session", toolNames);
 		}
 
 		[Fact]
@@ -94,7 +94,7 @@ namespace mcp_nexus_tests.Services
 			var toolNames = tools.Select(t => t.Name).ToList();
 
 		// Assert - Only status checking (command cancellation removed for first release)
-		Assert.Contains("nexus_debugger_command_status", toolNames);
+		Assert.Contains("nexus_dump_analyze_session_async_command_status", toolNames);
 		}
 
 		[Fact]
@@ -109,7 +109,7 @@ namespace mcp_nexus_tests.Services
 
 		// Assert
 		Assert.DoesNotContain("list_windbg_dumps", toolNames); // Obsolete tool should not be present
-		Assert.Contains("nexus_open_dump", toolNames);
+		Assert.Contains("nexus_open_dump_analyze_session", toolNames);
 		}
 
 		[Fact]
@@ -155,7 +155,7 @@ namespace mcp_nexus_tests.Services
 
 			// Act
 			var tools = service.GetAllTools();
-			var dumpTool = tools.First(t => t.Name == "nexus_open_dump");
+			var dumpTool = tools.First(t => t.Name == "nexus_open_dump_analyze_session");
 
 			// Assert
 			Assert.Contains("START HERE", dumpTool.Description);
@@ -170,7 +170,7 @@ namespace mcp_nexus_tests.Services
 
 			// Act
 			var tools = service.GetAllTools();
-			var dumpTool = tools.First(t => t.Name == "nexus_open_dump");
+			var dumpTool = tools.First(t => t.Name == "nexus_open_dump_analyze_session");
 
 			// Assert
 			Assert.Contains("STEP 1", dumpTool.Description);
