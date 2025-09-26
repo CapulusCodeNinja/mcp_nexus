@@ -38,7 +38,7 @@ namespace mcp_nexus_tests.Services
 
 			// Assert
 			// Core tools for first release: nexus_open_dump_analyze_session, nexus_dump_analyze_session_async_command, nexus_dump_analyze_session_async_command_status, nexus_close_dump_analyze_session
-			Assert.Equal(4, tools.Length);
+			Assert.Equal(6, tools.Length);
 		}
 
 		[Fact]
@@ -67,7 +67,7 @@ namespace mcp_nexus_tests.Services
 			// Assert
 			var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_dump_analyze_session_async_command");
 			Assert.NotNull(asyncTool);
-			Assert.Contains("EXECUTE COMMANDS", asyncTool.Description);
+			Assert.Contains("asynchronous execution", asyncTool.Description);
 			Assert.Contains("commandId", asyncTool.Description);
 		}
 
@@ -80,7 +80,7 @@ namespace mcp_nexus_tests.Services
 			// Assert
 			var dumpTool = tools.FirstOrDefault(t => t.Name == "nexus_open_dump_analyze_session");
 			Assert.NotNull(dumpTool);
-			Assert.Contains("crash dump", dumpTool.Description);
+			Assert.Contains("dump file", dumpTool.Description);
 		}
 
 		[Fact]
@@ -92,7 +92,7 @@ namespace mcp_nexus_tests.Services
 			// Assert
 			var dumpTool = tools.FirstOrDefault(t => t.Name == "nexus_open_dump_analyze_session");
 			Assert.NotNull(dumpTool);
-			Assert.Contains("crash dump", dumpTool.Description);
+			Assert.Contains("dump file", dumpTool.Description);
 		}
 
 		[Fact]
@@ -192,8 +192,8 @@ namespace mcp_nexus_tests.Services
 
 			// Assert
 			var statusTool = tools.First(t => t.Name == "nexus_dump_analyze_session_async_command_status");
-			Assert.Contains("GET RESULTS", statusTool.Description);
-			Assert.Contains("ONLY way", statusTool.Description);
+			Assert.Contains("poll for the status", statusTool.Description);
+			Assert.Contains("REQUIRED TO BE USED", statusTool.Description);
 		}
 
 	// Test removed - nexus_list_debugger_commands no longer advertised
@@ -206,8 +206,8 @@ namespace mcp_nexus_tests.Services
 
 			// Assert
 			var statusTool = tools.First(t => t.Name == "nexus_dump_analyze_session_async_command_status");
-			Assert.Contains("GET RESULTS", statusTool.Description);
-			Assert.Contains("ONLY way", statusTool.Description);
+			Assert.Contains("poll for the status", statusTool.Description);
+			Assert.Contains("REQUIRED TO BE USED", statusTool.Description);
 		}
 
 		[Fact]

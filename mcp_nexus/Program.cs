@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Text.Json;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using NLog.Web;
+using AspNetCoreRateLimit;
 
 using mcp_nexus.Constants;
 using mcp_nexus.Debugger;
@@ -551,7 +552,7 @@ namespace mcp_nexus
 
             ConfigureLogging(webBuilder.Logging, commandLineArgs.ServiceMode);
             RegisterServices(webBuilder.Services, webBuilder.Configuration, commandLineArgs.CustomCdbPath);
-            ConfigureHttpServices(webBuilder.Services);
+            ConfigureHttpServices(webBuilder.Services, webBuilder.Configuration);
 
             var app = webBuilder.Build();
             ConfigureHttpPipeline(app);
@@ -703,14 +704,14 @@ namespace mcp_nexus
             Console.Error.WriteLine("Registered McpResourceService for MCP resources support");
         }
 
-        private static void ConfigureHttpServices(IServiceCollection services)
+        private static void ConfigureHttpServices(IServiceCollection services, IConfiguration configuration)
         {
             Console.WriteLine("Configuring MCP server for HTTP...");
 
             services.AddControllers()
                 .AddJsonOptions(options =>
                 {
-                    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                    options.JsonSerializerOptions.PropertyNamingPolicy = null; // Don't change property names - MCP protocol requires exact field names
                     options.JsonSerializerOptions.WriteIndented = true;
                 });
 
@@ -738,14 +739,22 @@ namespace mcp_nexus
                 });
             });
 
+            // Configure rate limiting
+            services.AddMemoryCache();
+            services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
+            services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+            services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+            services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+            services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
+
             // MIGRATION: Register tool discovery without stdio transport for HTTP mode
             // Note: Tools are discovered automatically via [McpServerToolType] attribute
             // HTTP mode uses controllers instead of stdio transport
 
             // Register MCP services for HTTP endpoint compatibility
-            services.AddSingleton<McpToolDefinitionService>();
-            services.AddSingleton<McpToolExecutionService>();
-            services.AddSingleton<McpProtocolService>();
+            services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
+            services.AddSingleton<IMcpToolExecutionService, McpToolExecutionService>();
+            services.AddSingleton<IMcpProtocolService, McpProtocolService>();
             // Note: IMcpNotificationService now registered in shared RegisterServices() method
 
             Console.WriteLine("MCP server configured for HTTP with controllers, CORS, and tool discovery");
@@ -756,7 +765,7 @@ namespace mcp_nexus
             Console.Error.WriteLine("Configuring MCP server for stdio...");
 
             // Add the MCP protocol service for logging comparison
-            services.AddSingleton<McpProtocolService>();
+            services.AddSingleton<IMcpProtocolService, McpProtocolService>();
 
             // Note: IMcpNotificationService is now registered in shared RegisterServices() method
 
@@ -774,6 +783,7 @@ namespace mcp_nexus
         {
             Console.WriteLine("Configuring HTTP request pipeline...");
 
+            app.UseIpRateLimiting();
             app.UseCors();
             app.UseRouting();
             app.MapControllers();

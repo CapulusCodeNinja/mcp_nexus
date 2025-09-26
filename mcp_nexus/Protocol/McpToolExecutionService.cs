@@ -7,7 +7,7 @@ namespace mcp_nexus.Protocol
 {
     public class McpToolExecutionService(
         SessionAwareWindbgTool sessionAwareWindbgTool,
-        ILogger<McpToolExecutionService> logger)
+        ILogger<McpToolExecutionService> logger) : IMcpToolExecutionService
     {
         // PERFORMANCE: Cache JsonSerializerOptions to avoid repeated allocation
         private static readonly JsonSerializerOptions s_jsonOptions = new()

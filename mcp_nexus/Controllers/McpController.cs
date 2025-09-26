@@ -7,12 +7,13 @@ using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure;
 using mcp_nexus.Session;
 using mcp_nexus.Models;
+using AspNetCoreRateLimit;
 
 namespace mcp_nexus.Controllers
 {
     [ApiController]
     [Route("mcp")]
-    public class McpController(McpProtocolService mcpProtocolService, ILogger<McpController> logger)
+    public class McpController(IMcpProtocolService mcpProtocolService, ILogger<McpController> logger)
         : ControllerBase
     {
         // PERFORMANCE: Reuse JSON options to avoid repeated allocations

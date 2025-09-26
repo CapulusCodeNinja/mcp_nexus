@@ -39,6 +39,7 @@ namespace mcp_nexus_tests.Controllers
 			var protocolService = new McpProtocolService(
 				toolDefinitionService,
 				toolExecutionService,
+				null!, // McpResourceService - not needed for this test
 				mockProtocolLogger);
 
 			m_mockLogger = new Mock<ILogger<McpController>>();
@@ -222,7 +223,7 @@ namespace mcp_nexus_tests.Controllers
 		}
 
 		[Fact]
-		public async Task HandleMcpRequest_WithNotificationMethod_ReturnsOkResult()
+		public async Task HandleMcpRequest_WithNotificationMethod_ReturnsNoContentResult()
 		{
 			// Arrange
 			var requestBody = """{"jsonrpc":"2.0","method":"notifications/initialized"}""";
@@ -235,9 +236,7 @@ namespace mcp_nexus_tests.Controllers
 			var result = await m_controller.HandleMcpRequest();
 
 			// Assert
-			Assert.IsType<OkObjectResult>(result);
-			var okResult = result as OkObjectResult;
-			Assert.NotNull(okResult?.Value);
+			Assert.IsType<NoContentResult>(result); // Notifications should return NoContent (HTTP 204)
 		}
 
 		[Fact]

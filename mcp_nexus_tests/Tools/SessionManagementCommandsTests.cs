@@ -65,6 +65,7 @@ namespace mcp_nexus_tests.Tools
             Assert.NotNull(successProperty);
             
             var successValue = successProperty.GetValue(result);
+            Assert.NotNull(successValue);
             Assert.True((bool)successValue);
         }
 
@@ -96,6 +97,7 @@ namespace mcp_nexus_tests.Tools
             Assert.NotNull(successProperty);
             
             var successValue = successProperty.GetValue(result);
+            Assert.NotNull(successValue);
             Assert.True((bool)successValue);
         }
 
@@ -119,6 +121,7 @@ namespace mcp_nexus_tests.Tools
             Assert.NotNull(successProperty);
             
             var successValue = successProperty.GetValue(result);
+            Assert.NotNull(successValue);
             Assert.False((bool)successValue);
         }
 
@@ -141,6 +144,7 @@ namespace mcp_nexus_tests.Tools
             Assert.NotNull(successProperty);
             
             var successValue = successProperty.GetValue(result);
+            Assert.NotNull(successValue);
             Assert.False((bool)successValue);
         }
     }

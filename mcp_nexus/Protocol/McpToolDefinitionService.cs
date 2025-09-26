@@ -4,7 +4,7 @@ using mcp_nexus.Tools;
 
 namespace mcp_nexus.Protocol
 {
-    public class McpToolDefinitionService
+    public class McpToolDefinitionService : IMcpToolDefinitionService
     {
         private readonly IMcpNotificationService? m_notificationService;
 

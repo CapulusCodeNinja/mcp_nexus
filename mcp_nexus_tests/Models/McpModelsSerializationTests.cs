@@ -6,6 +6,12 @@ namespace mcp_nexus_tests.Models
 {
 	public class McpModelsSerializationTests
 	{
+		// Use the same JSON options as the application to ensure consistent serialization
+		private static readonly JsonSerializerOptions s_jsonOptions = new()
+		{
+			WriteIndented = true,
+			PropertyNamingPolicy = null // Don't change property names - MCP protocol requires exact field names
+		};
 		[Fact]
 		public void McpRequest_Serialization_IncludesAllProperties()
 		{
@@ -19,13 +25,13 @@ namespace mcp_nexus_tests.Models
 			};
 
 			// Act
-			var json = JsonSerializer.Serialize(request);
+			var json = JsonSerializer.Serialize(request, s_jsonOptions);
 
 			// Assert
-			Assert.Contains("\"jsonrpc\":\"2.0\"", json);
-			Assert.Contains("\"method\":\"test_method\"", json);
-			Assert.Contains("\"Id\":123", json);
-			Assert.Contains("\"Params\":", json);
+			Assert.Contains("\"jsonrpc\": \"2.0\"", json);
+			Assert.Contains("\"method\": \"test_method\"", json);
+			Assert.Contains("\"id\": 123", json);
+			Assert.Contains("\"params\":", json);
 		}
 
 		[Fact]
@@ -37,7 +43,7 @@ namespace mcp_nexus_tests.Models
 			// Assert
 			Assert.Equal("2.0", request.JsonRpc);
 			Assert.Equal(string.Empty, request.Method);
-			Assert.Equal(0, request.Id);
+			Assert.Null(request.Id);
 			Assert.Null(request.Params);
 		}
 
@@ -53,13 +59,13 @@ namespace mcp_nexus_tests.Models
 			};
 
 			// Act
-			var json = JsonSerializer.Serialize(response);
+			var json = JsonSerializer.Serialize(response, s_jsonOptions);
 
 			// Assert
-			Assert.Contains("\"jsonrpc\":\"2.0\"", json);
-			Assert.Contains("\"Id\":456", json);
-			Assert.Contains("\"Result\":", json);
-			Assert.Contains("\"success\":true", json);
+			Assert.Contains("\"jsonrpc\": \"2.0\"", json);
+			Assert.Contains("\"id\": 456", json);
+			Assert.Contains("\"result\":", json);
+			Assert.Contains("\"success\": true", json);
 		}
 
 		[Fact]
@@ -79,15 +85,15 @@ namespace mcp_nexus_tests.Models
 			};
 
 			// Act
-			var json = JsonSerializer.Serialize(response);
+			var json = JsonSerializer.Serialize(response, s_jsonOptions);
 
 			// Assert
-			Assert.Contains("\"jsonrpc\":\"2.0\"", json);
-			Assert.Contains("\"Id\":789", json);
-			Assert.Contains("\"Error\":", json);
-			Assert.Contains("\"Code\":-32602", json);
-			Assert.Contains("\"Message\":\"Invalid params\"", json);
-			Assert.Contains("\"Data\":", json);
+			Assert.Contains("\"jsonrpc\": \"2.0\"", json);
+			Assert.Contains("\"id\": 789", json);
+			Assert.Contains("\"error\":", json);
+			Assert.Contains("\"code\": -32602", json);
+			Assert.Contains("\"message\": \"Invalid params\"", json);
+			Assert.Contains("\"data\":", json);
 		}
 
 		[Fact]
@@ -134,13 +140,13 @@ namespace mcp_nexus_tests.Models
 			};
 
 			// Act
-			var json = JsonSerializer.Serialize(schema);
+			var json = JsonSerializer.Serialize(schema, s_jsonOptions);
 
 			// Assert
-			Assert.Contains("\"Name\":\"test_tool\"", json);
-			Assert.Contains("\"Description\":\"A test tool\"", json);
-			Assert.Contains("\"InputSchema\":", json);
-			Assert.Contains("\"type\":\"object\"", json);
+			Assert.Contains("\"name\": \"test_tool\"", json);
+			Assert.Contains("\"description\": \"A test tool\"", json);
+			Assert.Contains("\"inputSchema\":", json);
+			Assert.Contains("\"type\": \"object\"", json);
 			Assert.Contains("\"properties\":", json);
 		}
 
@@ -177,11 +183,11 @@ namespace mcp_nexus_tests.Models
 			};
 
 			// Act
-			var json = JsonSerializer.Serialize(content);
+			var json = JsonSerializer.Serialize(content, s_jsonOptions);
 
 			// Assert
-			Assert.Contains("\"Type\":\"text\"", json);
-			Assert.Contains("\"Text\":\"Hello, world!\"", json);
+			Assert.Contains("\"type\": \"text\"", json);
+			Assert.Contains("\"text\": \"Hello, world!\"", json);
 		}
 
 		[Fact]
@@ -201,7 +207,7 @@ namespace mcp_nexus_tests.Models
 			var result = new McpInitializeResult();
 
 			// Act
-			var json = JsonSerializer.Serialize(result);
+			var json = JsonSerializer.Serialize(result, s_jsonOptions);
 
 			// Assert
 			Assert.NotNull(json);
@@ -223,12 +229,12 @@ namespace mcp_nexus_tests.Models
 			var result = new McpToolsListResult { Tools = tools };
 
 			// Act
-			var json = JsonSerializer.Serialize(result);
+			var json = JsonSerializer.Serialize(result, s_jsonOptions);
 
 			// Assert
-			Assert.Contains("\"Tools\":", json);
-			Assert.Contains("\"Name\":\"tool1\"", json);
-			Assert.Contains("\"Name\":\"tool2\"", json);
+			Assert.Contains("\"tools\":", json);
+			Assert.Contains("\"name\": \"tool1\"", json);
+			Assert.Contains("\"name\": \"tool2\"", json);
 		}
 
 		[Fact]
@@ -238,11 +244,11 @@ namespace mcp_nexus_tests.Models
 			var request = new McpRequest { Method = "test_method" };
 
 			// Act
-			var json = JsonSerializer.Serialize(request);
+			var json = JsonSerializer.Serialize(request, s_jsonOptions);
 
 			// Assert
 			// Should serialize as "method" (lowercase) due to JsonPropertyName attribute
-			Assert.Contains("\"method\":\"test_method\"", json);
+			Assert.Contains("\"method\": \"test_method\"", json);
 		}
 
 		[Fact]
@@ -252,11 +258,11 @@ namespace mcp_nexus_tests.Models
 			var response = new McpSuccessResponse { JsonRpc = "2.0" };
 
 			// Act
-			var json = JsonSerializer.Serialize(response);
+			var json = JsonSerializer.Serialize(response, s_jsonOptions);
 
 			// Assert
 			// Should serialize as "jsonrpc" (lowercase) due to JsonPropertyName attribute
-			Assert.Contains("\"jsonrpc\":\"2.0\"", json);
+			Assert.Contains("\"jsonrpc\": \"2.0\"", json);
 		}
 
 		[Fact]
@@ -273,10 +279,10 @@ namespace mcp_nexus_tests.Models
 			};
 
 			// Act
-			var json = JsonSerializer.Serialize(result);
+			var json = JsonSerializer.Serialize(result, s_jsonOptions);
 
 			// Assert
-			Assert.Contains("\"Content\":", json);
+			Assert.Contains("\"content\":", json);
 			Assert.Contains("\"First content\"", json);
 			Assert.Contains("\"Second content\"", json);
 		}
@@ -308,14 +314,14 @@ namespace mcp_nexus_tests.Models
 			};
 
 			// Act
-			var json = JsonSerializer.Serialize(response);
+			var json = JsonSerializer.Serialize(response, s_jsonOptions);
 
 			// Assert
-			Assert.Contains("\"jsonrpc\":\"2.0\"", json);
-			Assert.Contains("\"Result\":", json);
-			Assert.Contains("\"ProtocolVersion\":\"2025-06-18\"", json);
-			Assert.Contains("\"Capabilities\":", json);
-			Assert.Contains("\"ServerInfo\":", json);
+			Assert.Contains("\"jsonrpc\": \"2.0\"", json);
+			Assert.Contains("\"result\":", json);
+			Assert.Contains("\"protocolVersion\": \"2025-06-18\"", json);
+			Assert.Contains("\"capabilities\":", json);
+			Assert.Contains("\"serverInfo\":", json);
 			Assert.Contains("\"test-server\"", json);
 		}
 
@@ -351,12 +357,12 @@ namespace mcp_nexus_tests.Models
 			};
 
 			// Act
-			var json = JsonSerializer.Serialize(capabilities);
+			var json = JsonSerializer.Serialize(capabilities, s_jsonOptions);
 
 			// Assert
-			Assert.Contains("\"Tools\":", json);
-			Assert.Contains("\"listChanged\":true", json);
-			Assert.Contains("\"customFeature\":\"enabled\"", json);
+			Assert.Contains("\"tools\":", json);
+			Assert.Contains("\"listChanged\": true", json);
+			Assert.Contains("\"customFeature\": \"enabled\"", json);
 		}
 
 		[Fact]
@@ -381,11 +387,11 @@ namespace mcp_nexus_tests.Models
 			};
 
 			// Act
-			var json = JsonSerializer.Serialize(details);
+			var json = JsonSerializer.Serialize(details, s_jsonOptions);
 
 			// Assert
-			Assert.Contains("\"Name\":\"custom-server\"", json);
-			Assert.Contains("\"Version\":\"3.2.1\"", json);
+			Assert.Contains("\"name\": \"custom-server\"", json);
+			Assert.Contains("\"version\": \"3.2.1\"", json);
 		}
 
 		[Fact]
@@ -420,14 +426,14 @@ namespace mcp_nexus_tests.Models
 		};
 
 			// Act
-			var json = JsonSerializer.Serialize(result);
+			var json = JsonSerializer.Serialize(result, s_jsonOptions);
 
 			// Assert
-			Assert.Contains("\"ProtocolVersion\":\"2025-06-18\"", json);
-			Assert.Contains("\"Capabilities\":", json);
-			Assert.Contains("\"ServerInfo\":", json);
+			Assert.Contains("\"protocolVersion\": \"2025-06-18\"", json);
+			Assert.Contains("\"capabilities\":", json);
+			Assert.Contains("\"serverInfo\":", json);
 			Assert.Contains("\"test-nexus\"", json);
-			Assert.Contains("\"listChanged\":true", json);
+			Assert.Contains("\"listChanged\": true", json);
 		}
 
 		[Fact]
@@ -438,7 +444,7 @@ namespace mcp_nexus_tests.Models
 
 			// Assert
 			Assert.Equal("2.0", response.JsonRpc);
-			Assert.Equal(0, response.Id);
+			Assert.Null(response.Id);
 			Assert.Null(response.Result);
 			Assert.Null(response.Error);
 		}
@@ -456,14 +462,14 @@ namespace mcp_nexus_tests.Models
 			};
 
 			// Act
-			var json = JsonSerializer.Serialize(response);
+			var json = JsonSerializer.Serialize(response, s_jsonOptions);
 
 			// Assert
-			Assert.Contains("\"jsonrpc\":\"2.0\"", json);
-			Assert.Contains("\"Id\":123", json);
-			Assert.Contains("\"Result\":", json);
-			Assert.Contains("\"Error\":", json);
-			Assert.Contains("\"status\":\"success\"", json);
+			Assert.Contains("\"jsonrpc\": \"2.0\"", json);
+			Assert.Contains("\"id\": 123", json);
+			Assert.Contains("\"result\":", json);
+			Assert.Contains("\"error\":", json);
+			Assert.Contains("\"status\": \"success\"", json);
 		}
 
 		[Fact]

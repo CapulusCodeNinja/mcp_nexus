@@ -6,10 +6,10 @@ using mcp_nexus.Exceptions;
 namespace mcp_nexus.Protocol
 {
     public class McpProtocolService(
-        McpToolDefinitionService m_toolDefinitionService,
-        McpToolExecutionService m_toolExecutionService,
+        IMcpToolDefinitionService m_toolDefinitionService,
+        IMcpToolExecutionService m_toolExecutionService,
         McpResourceService m_resourceService,
-        ILogger<McpProtocolService> m_logger)
+        ILogger<McpProtocolService> m_logger) : IMcpProtocolService
     {
         public async Task<object?> ProcessRequest(JsonElement requestElement)
         {
@@ -19,7 +19,11 @@ namespace mcp_nexus.Protocol
                 var request = ParseRequest(requestElement);
                 if (request == null)
                 {
-                    return CreateErrorResponse(null, -32600, "Invalid Request - malformed JSON-RPC");
+                    return CreateErrorResponse(null, -32600, "Invalid Request: The request is not a valid JSON-RPC 2.0 request. Please ensure the request contains a 'method' field and follows the JSON-RPC 2.0 specification.", new {
+                        errorType = "InvalidRequest",
+                        requiredFields = new[] { "jsonrpc", "method" },
+                        specification = "JSON-RPC 2.0"
+                    });
                 }
 
                 requestId = request.Id;
@@ -42,8 +46,12 @@ namespace mcp_nexus.Protocol
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error processing MCP request");
-                return CreateErrorResponse(requestId, -32603, "Internal error", ex.Message);
+                m_logger.LogError(ex, "Unexpected error processing MCP request: {RequestId}", requestId);
+                return CreateErrorResponse(requestId, -32603, "Internal server error occurred while processing your request. Please try again or contact support if the issue persists.", new { 
+                    errorType = "InternalError",
+                    timestamp = DateTime.UtcNow,
+                    requestId = requestId?.ToString() ?? "unknown"
+                });
             }
         }
 

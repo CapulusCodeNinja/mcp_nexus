@@ -21,7 +21,7 @@ namespace mcp_nexus_tests.Services
 			var tools = service.GetAllTools();
 
 			// Assert
-			Assert.Equal(4, tools.Length); // Core tools: nexus_open_dump_analyze_session, nexus_dump_analyze_session_async_command, nexus_dump_analyze_session_async_command_status, nexus_close_dump_analyze_session
+			Assert.Equal(6, tools.Length); // Core tools: nexus_open_dump_analyze_session, nexus_dump_analyze_session_async_command, nexus_dump_analyze_session_async_command_status, nexus_close_dump_analyze_session, nexus_list_dump_analyze_sessions, nexus_list_dump_analyze_session_async_commands
 		}
 
 		[Fact]
@@ -36,7 +36,7 @@ namespace mcp_nexus_tests.Services
 			// Assert
 			var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_dump_analyze_session_async_command");
 			Assert.NotNull(asyncTool);
-			Assert.Contains("EXECUTE COMMANDS", asyncTool.Description);
+			Assert.Contains("asynchronous execution", asyncTool.Description);
 		}
 
 		[Fact]
@@ -51,7 +51,7 @@ namespace mcp_nexus_tests.Services
 			// Assert
 			var statusTool = tools.FirstOrDefault(t => t.Name == "nexus_dump_analyze_session_async_command_status");
 			Assert.NotNull(statusTool);
-			Assert.Contains("GET RESULTS", statusTool.Description);
+			Assert.Contains("poll for the status", statusTool.Description);
 		}
 
 		[Fact]
@@ -158,7 +158,7 @@ namespace mcp_nexus_tests.Services
 			var dumpTool = tools.First(t => t.Name == "nexus_open_dump_analyze_session");
 
 			// Assert
-			Assert.Contains("START HERE", dumpTool.Description);
+			Assert.Contains("Open the analyze session", dumpTool.Description);
 			Assert.NotNull(dumpTool.InputSchema);
 		}
 
@@ -173,8 +173,8 @@ namespace mcp_nexus_tests.Services
 			var dumpTool = tools.First(t => t.Name == "nexus_open_dump_analyze_session");
 
 			// Assert
-			Assert.Contains("STEP 1", dumpTool.Description);
-			Assert.Contains("crash dump", dumpTool.Description);
+			Assert.Contains("Tooling - Open Session", dumpTool.Description);
+			Assert.Contains("dump file", dumpTool.Description);
 		}
 	}
 }
