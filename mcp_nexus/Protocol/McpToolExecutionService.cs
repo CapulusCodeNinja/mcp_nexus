@@ -67,11 +67,15 @@ namespace mcp_nexus.Protocol
 
         private Task<object> ExecuteCloseWindbgDump()
         {
-            // MIGRATION: Session closure is automatic in session-aware architecture
-            logger.LogWarning("Manual session closure not needed in session-aware architecture - sessions auto-expire");
-            throw new McpToolException(-32601, "❌ MANUAL CLOSE NOT NEEDED: Sessions automatically expire after 30 minutes of inactivity. " +
-                "🔧 RECOVERY: No action needed - sessions clean up automatically " +
-                "💡 INFO: Focus on analyzing your dump with nexus_exec_debugger_command_async instead");
+            // Sessions automatically expire after 30 minutes of inactivity, but allow manual close for good practice
+            logger.LogInformation("Manual session closure requested - this is good practice even though sessions auto-expire");
+            
+            return Task.FromResult<object>(new
+            {
+                success = true,
+                message = "✅ Session close acknowledged! Sessions automatically expire after 30 minutes of inactivity, but manual closure is good practice.",
+                info = "Sessions will clean up automatically, but you're following best practices by explicitly closing."
+            });
         }
 
         private Task<object> ExecuteCloseWindbgRemote()
@@ -192,8 +196,8 @@ namespace mcp_nexus.Protocol
             try
             {
                 var result = await sessionAwareWindbgTool.nexus_debugger_command_status(commandId);
-                return CreateTextResult(result);
-            }
+            return CreateTextResult(result);
+        }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to get command status for legacy call");

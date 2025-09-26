@@ -478,16 +478,16 @@ namespace mcp_nexus.Tools
                 if (string.IsNullOrEmpty(sessionId))
                 {
                     var parts = commandId.Split('-');
-                    if (parts.Length >= 3)
+                    if (parts.Length >= 5) // cmd-sess-XXXXXX-YYYYYYYY-ZZZZ format
                     {
-                        sessionId = $"{parts[0]}-{parts[1]}-{parts[2]}";
+                        sessionId = $"{parts[1]}-{parts[2]}-{parts[3]}"; // Extract "sess-XXXXXX-YYYYYYYY"
                     }
                     else
                     {
                         var errorResponse = new SessionAwareResponse
                         {
                             Result = $"❌ Invalid command ID format: {commandId}\n\n" +
-                                     "Command IDs should be in format: cmd-sess-XXXXXX-YYYY",
+                                     "Command IDs should be in format: cmd-sess-XXXXXX-YYYYYYYY-ZZZZ",
                             AIGuidance = new AIGuidance
                             {
                                 NextSteps = new List<string>
