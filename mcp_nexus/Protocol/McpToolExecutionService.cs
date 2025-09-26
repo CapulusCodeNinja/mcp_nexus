@@ -46,7 +46,9 @@ namespace mcp_nexus.Protocol
             
             var dumpPath = GetRequiredStringArgument(arguments, "dumpPath");
             if (dumpPath == null)
-                throw new McpToolException(-32602, "Missing or invalid dumpPath argument");
+                throw new McpToolException(-32602, "❌ MISSING DUMP PATH: You must provide a 'dumpPath' parameter! " +
+                    "🔧 RECOVERY: Add 'dumpPath' parameter with full path to a .dmp file " +
+                    "💡 EXAMPLE: {\"dumpPath\": \"C:\\\\path\\\\to\\\\crash.dmp\"}");
 
             var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
             var result = await sessionAwareWindbgTool.nexus_open_dump(dumpPath, symbolsPath);
@@ -58,28 +60,59 @@ namespace mcp_nexus.Protocol
         {
             // MIGRATION: Remote debugging not implemented in session-aware architecture
             logger.LogWarning("Remote debugging feature not available in session-aware architecture");
-            throw new McpToolException(-32601, "Remote debugging not implemented in session-aware architecture. Use dump analysis instead.");
+            throw new McpToolException(-32601, "❌ REMOTE DEBUGGING NOT AVAILABLE: This feature is not implemented in the current architecture. " +
+                "🔧 RECOVERY: Use nexus_open_dump instead with a crash dump file (.dmp) " +
+                "💡 ALTERNATIVE: Analyze existing dump files rather than live debugging");
         }
 
         private Task<object> ExecuteCloseWindbgDump()
         {
             // MIGRATION: Session closure is automatic in session-aware architecture
             logger.LogWarning("Manual session closure not needed in session-aware architecture - sessions auto-expire");
-            throw new McpToolException(-32601, "Manual session closure not needed. Sessions auto-expire based on inactivity timeout.");
+            throw new McpToolException(-32601, "❌ MANUAL CLOSE NOT NEEDED: Sessions automatically expire after 30 minutes of inactivity. " +
+                "🔧 RECOVERY: No action needed - sessions clean up automatically " +
+                "💡 INFO: Focus on analyzing your dump with nexus_exec_debugger_command_async instead");
         }
 
         private Task<object> ExecuteCloseWindbgRemote()
         {
             // MIGRATION: Remote debugging not implemented in session-aware architecture
             logger.LogWarning("Remote debugging feature not available in session-aware architecture");
-            throw new McpToolException(-32601, "Remote debugging not implemented in session-aware architecture. Use dump analysis instead.");
+            throw new McpToolException(-32601, "❌ REMOTE DEBUGGING NOT AVAILABLE: This feature is not implemented in the current architecture. " +
+                "🔧 RECOVERY: Use nexus_open_dump instead with a crash dump file (.dmp) " +
+                "💡 ALTERNATIVE: Analyze existing dump files rather than live debugging");
         }
 
-        private Task<object> ExecuteRunWindbgCmdAsync(JsonElement arguments)
+        private async Task<object> ExecuteRunWindbgCmdAsync(JsonElement arguments)
         {
-            // MIGRATION: Command execution requires sessionId in session-aware architecture
-            logger.LogWarning("Legacy command execution called without sessionId");
-            throw new McpToolException(-32602, "Command execution requires sessionId. Use nexus_open_dump first to get a sessionId, then use the session-aware API.");
+            // Extract command and sessionId from arguments
+            var command = GetRequiredStringArgument(arguments, "command");
+            var sessionId = GetRequiredStringArgument(arguments, "sessionId");
+            
+            if (command == null)
+                throw new McpToolException(-32602, "❌ MISSING COMMAND: You must provide a 'command' parameter. " +
+                    "🔧 RECOVERY: Add 'command' parameter with a WinDbg command like '!analyze -v', 'k', 'lm', etc.");
+                
+            if (sessionId == null)
+                throw new McpToolException(-32602, "❌ MISSING SESSION ID: You must provide a 'sessionId' parameter! " +
+                    "🔧 RECOVERY STEPS: " +
+                    "1️⃣ First call nexus_open_dump with a .dmp file path " +
+                    "2️⃣ Extract the 'sessionId' from the response JSON " +
+                    "3️⃣ Retry this command with both 'command' AND 'sessionId' parameters " +
+                    "💡 EXAMPLE: {\"command\": \"!analyze -v\", \"sessionId\": \"sess-000001-abc12345\"}");
+
+            logger.LogDebug("Executing command '{Command}' for session '{SessionId}'", command, sessionId);
+            
+            try
+            {
+                var result = await sessionAwareWindbgTool.nexus_exec_debugger_command_async(command, sessionId);
+                return CreateTextResult(result);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to execute command '{Command}' for session '{SessionId}'", command, sessionId);
+                throw new McpToolException(-32603, $"Command execution failed: {ex.Message}", ex);
+            }
         }
 
         private async Task<object> ExecuteGetCommandStatus(JsonElement arguments)
@@ -87,7 +120,9 @@ namespace mcp_nexus.Protocol
             // MIGRATION: Try to use session-aware command status if available
             var commandId = GetRequiredStringArgument(arguments, "commandId");
             if (commandId == null)
-                throw new McpToolException(-32602, "Missing or invalid commandId argument");
+                throw new McpToolException(-32602, "❌ MISSING COMMAND ID: You must provide a 'commandId' parameter! " +
+                    "🔧 RECOVERY: Add 'commandId' parameter from nexus_exec_debugger_command_async response " +
+                    "💡 EXAMPLE: {\"commandId\": \"cmd-12345-abc\"}");
 
             logger.LogWarning("Legacy command status check called for commandId: {CommandId}", commandId);
             
@@ -107,7 +142,9 @@ namespace mcp_nexus.Protocol
         {
             // MIGRATION: Command cancellation not implemented in session-aware architecture
             logger.LogWarning("Legacy command cancellation called");
-            throw new McpToolException(-32601, "Command cancellation not implemented in session-aware architecture. Sessions auto-timeout inactive commands.");
+            throw new McpToolException(-32601, "❌ COMMAND CANCELLATION NOT AVAILABLE: This feature is not implemented in the current architecture. " +
+                "🔧 RECOVERY: Wait for the command to complete or start a new session " +
+                "💡 INFO: Commands typically complete quickly - use nexus_debugger_command_status to check progress");
         }
 
 

@@ -44,11 +44,14 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_open_dump",
-                Description = "🚀 START HERE: Open and analyze a Windows crash dump file (.dmp). " +
-                    "This is typically your FIRST step when debugging crashes. " +
-                    "Creates a new debugging session that replaces any existing session. " +
-                    "After opening, use nexus_exec_debugger_command_async to run commands like '!analyze -v', 'k', 'lm', etc. " +
-                    "💡 WORKFLOW: nexus_open_dump → nexus_exec_debugger_command_async → nexus_debugger_command_status (to get results)",
+                Description = "🚀 STEP 1 - START HERE: Open and analyze a Windows crash dump file (.dmp). " +
+                    "⚠️ CRITICAL: This returns a 'sessionId' that you MUST save and use in ALL subsequent commands! " +
+                    "📝 EXTRACT the sessionId from the response JSON and store it for later use. " +
+                    "🔄 MANDATORY WORKFLOW: " +
+                    "1️⃣ nexus_open_dump → SAVE the sessionId from response " +
+                    "2️⃣ nexus_exec_debugger_command_async + sessionId → get commandId " +
+                    "3️⃣ nexus_debugger_command_status + commandId → get results " +
+                    "❌ WITHOUT sessionId, ALL other commands will FAIL!",
                 InputSchema = new
                 {
                     type = "object",
@@ -67,11 +70,16 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_start_remote_debug",
-                Description = "🔗 REMOTE DEBUGGING: Connect to a live process or system for real-time debugging. " +
+                Description = "🔗 ALTERNATIVE STEP 1 - REMOTE DEBUGGING: Connect to a live process or system for real-time debugging. " +
                     "Use this for debugging running applications, not crash dumps. " +
-                    "Creates a new debugging session that replaces any existing session. " +
+                    "⚠️ CRITICAL: This returns a 'sessionId' that you MUST save and use in ALL subsequent commands! " +
+                    "📝 EXTRACT the sessionId from the response JSON and store it for later use. " +
                     "Connection examples: 'tcp:Port=5005,Server=192.168.0.100' or 'npipe:Pipe=MyApp,Server=.' " +
-                    "💡 WORKFLOW: nexus_start_remote_debug → nexus_exec_debugger_command_async → nexus_debugger_command_status",
+                    "🔄 MANDATORY WORKFLOW: " +
+                    "1️⃣ nexus_start_remote_debug → SAVE the sessionId from response " +
+                    "2️⃣ nexus_exec_debugger_command_async + sessionId → get commandId " +
+                    "3️⃣ nexus_debugger_command_status + commandId → get results " +
+                    "❌ WITHOUT sessionId, ALL other commands will FAIL!",
                 InputSchema = new
                 {
                     type = "object",
@@ -124,7 +132,9 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_exec_debugger_command_async",
-                Description = "⚡ EXECUTE COMMANDS: Run debugger commands like '!analyze -v', 'k', 'lm', 'dt', etc. " +
+                Description = "⚡ STEP 2 - EXECUTE COMMANDS: Run debugger commands like '!analyze -v', 'k', 'lm', 'dt', etc. " +
+                    "🚨 MANDATORY REQUIREMENT: You MUST include 'sessionId' parameter from nexus_open_dump response! " +
+                    "❌ WITHOUT sessionId this command will FAIL with error -32602! " +
                     "⚠️ CRITICAL: This only QUEUES the command and returns a commandId - it does NOT return results! " +
                     "🔄 REQUIRED NEXT STEP: You MUST call nexus_debugger_command_status(commandId) to get the actual output. " +
                     "💡 COMMON COMMANDS: " +
@@ -138,10 +148,10 @@ namespace mcp_nexus.Protocol
                     type = "object",
                     properties = new
                     {
-                        command = new { type = "string", description = "WinDbg/CDB command like '!analyze -v', 'k', 'lm', etc." }
+                        command = new { type = "string", description = "WinDbg/CDB command like '!analyze -v', 'k', 'lm', etc." },
+                        sessionId = new { type = "string", description = "REQUIRED: Session ID from nexus_open_dump response. Without this, the command will FAIL!" }
                     },
-                    required = new[] { "command" }
-                }
+                    required = new[] { "command", "sessionId" }
             };
         }
 
@@ -152,7 +162,7 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_debugger_command_status",
-                Description = "📋 GET RESULTS: Retrieve the output from a previously queued command. " +
+                Description = "📋 STEP 3 - GET RESULTS: Retrieve the output from a previously queued command. " +
                     "This is the ONLY way to get actual debugger command results! " +
                     "📊 STATUS FLOW: queued → executing → completed " +
                     "✅ When status='completed', the 'result' field contains the debugger output. " +
