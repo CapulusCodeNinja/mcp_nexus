@@ -39,13 +39,13 @@ namespace mcp_nexus.Utilities
                 {
                     var driveLetter = match.Groups[1].Value.ToUpper();
                     var restOfPath = match.Groups[2].Success ? match.Groups[2].Value.Replace('/', '\\') : "";
-                    
+
                     // Handle empty rest of path (e.g., /mnt/c or /mnt/c/ -> C:\)
                     if (string.IsNullOrEmpty(restOfPath))
                     {
                         return $"{driveLetter}:\\";
                     }
-                    
+
                     return $"{driveLetter}:\\{restOfPath}";
                 }
 
@@ -86,13 +86,13 @@ namespace mcp_nexus.Utilities
                 {
                     var driveLetter = char.ToLower(path[0]);
                     var restOfPath = path.Length > 2 ? path.Substring(2).Replace('\\', '/') : "";
-                    
+
                     // Remove leading slash if present (e.g., C:\ -> /mnt/c, not /mnt/c/)
                     if (!string.IsNullOrEmpty(restOfPath) && restOfPath.StartsWith("/"))
                     {
                         restOfPath = restOfPath.Substring(1);
                     }
-                    
+
                     return string.IsNullOrEmpty(restOfPath) ? $"/mnt/{driveLetter}" : $"/mnt/{driveLetter}/{restOfPath}";
                 }
 
@@ -174,7 +174,7 @@ namespace mcp_nexus.Utilities
 
             // SECURITY: Check for path traversal patterns
             var normalizedPath = path.Replace('\\', '/').ToLowerInvariant();
-            
+
             // Dangerous patterns that could be used for path traversal
             string[] dangerousPatterns = {
                 "../",      // Parent directory traversal

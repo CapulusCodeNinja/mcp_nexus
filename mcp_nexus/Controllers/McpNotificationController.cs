@@ -32,7 +32,7 @@ namespace mcp_nexus.Controllers
         public async Task StreamNotifications()
         {
             var sessionId = Request.Headers["Mcp-Session-Id"].FirstOrDefault() ?? Guid.NewGuid().ToString();
-            
+
             m_logger.LogInformation("Starting notification stream for session: {SessionId}", sessionId);
 
             // Set up SSE headers
@@ -93,7 +93,7 @@ namespace mcp_nexus.Controllers
                     {
                         // Send heartbeat every 30 seconds
                         await Task.Delay(30000, cancellationToken);
-                        
+
                         if (!cancellationToken.IsCancellationRequested && !clientDisconnected)
                         {
                             var heartbeat = $"event: heartbeat\ndata: {{\"timestamp\":\"{DateTime.UtcNow:O}\"}}\n\n";

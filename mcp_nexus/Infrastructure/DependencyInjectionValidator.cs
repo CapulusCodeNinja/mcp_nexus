@@ -17,7 +17,7 @@ public static class DependencyInjectionValidator
     /// <param name="validateOnlyApplicationServices">If true, only validates application services (not framework services)</param>
     /// <returns>True if validation passed, false if there were issues</returns>
     public static bool ValidateServiceRegistration(
-        IServiceProvider serviceProvider, 
+        IServiceProvider serviceProvider,
         ILogger logger,
         bool validateOnlyApplicationServices = true)
     {
@@ -25,7 +25,7 @@ public static class DependencyInjectionValidator
             throw new ArgumentNullException(nameof(serviceProvider));
         if (logger == null)
             throw new ArgumentNullException(nameof(logger));
-            
+
         try
         {
             logger.LogInformation("Starting dependency injection validation...");
@@ -39,19 +39,19 @@ public static class DependencyInjectionValidator
                 // For test compatibility, return true when we can't validate
                 return true;
             }
-            
+
             logger.LogDebug("Retrieved service collection with {Count} services", serviceCollection.Count());
 
-            var servicesToValidate = validateOnlyApplicationServices 
+            var servicesToValidate = validateOnlyApplicationServices
                 ? serviceCollection.Where(s => IsApplicationService(s.ServiceType)).ToList()
                 : serviceCollection.ToList();
 
             logger.LogInformation("Validating {ServiceCount} services...", servicesToValidate.Count);
-            
+
             // Debug: Log all services being validated
             foreach (var service in servicesToValidate)
             {
-                logger.LogDebug("Service to validate: {ServiceType} -> {ImplementationType}", 
+                logger.LogDebug("Service to validate: {ServiceType} -> {ImplementationType}",
                     service.ServiceType.Name, service.ImplementationType?.Name ?? "Factory");
             }
 
@@ -64,9 +64,9 @@ public static class DependencyInjectionValidator
                 {
                     var serviceType = serviceDescriptor.ServiceType;
                     logger.LogDebug("Validating service: {ServiceType}", serviceType.Name);
-                    
+
                     var resolvedService = serviceProvider.GetRequiredService(serviceType);
-                    
+
                     if (resolvedService != null)
                     {
                         successCount++;
@@ -85,7 +85,7 @@ public static class DependencyInjectionValidator
                     failures.Add(error);
                     logger.LogError(error);
                 }
-                catch (InvalidOperationException ex) when (ex.Message.Contains("No service for type") || 
+                catch (InvalidOperationException ex) when (ex.Message.Contains("No service for type") ||
                                                            ex.Message.Contains("Unable to resolve service") ||
                                                            ex.Message.Contains("Cannot resolve service"))
                 {
@@ -95,9 +95,9 @@ public static class DependencyInjectionValidator
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Exception during validation of {ServiceType}: {ExceptionType} - {Message}", 
+                    logger.LogError(ex, "Exception during validation of {ServiceType}: {ExceptionType} - {Message}",
                         serviceDescriptor.ServiceType.Name, ex.GetType().Name, ex.Message);
-                    
+
                     var error = $"❌ {serviceDescriptor.ServiceType.Name}: {ex.GetType().Name} - {ex.Message}";
                     failures.Add(error);
                 }
@@ -141,11 +141,11 @@ public static class DependencyInjectionValidator
             throw new ArgumentNullException(nameof(serviceProvider));
         if (logger == null)
             throw new ArgumentNullException(nameof(logger));
-            
+
         try
         {
             logger.LogInformation("Validating critical services...");
-            
+
             // Get the service collection from the service provider if possible
             var serviceCollection = GetServiceCollection(serviceProvider);
             if (serviceCollection == null)
@@ -153,19 +153,19 @@ public static class DependencyInjectionValidator
                 logger.LogWarning("Could not retrieve service collection for critical services validation");
                 return true; // Continue execution
             }
-            
+
             // Check if there are any test services that should fail validation
-            var hasTestServices = serviceCollection.Any(s => 
-                s.ServiceType.Name.Contains("CircularDependency") || 
+            var hasTestServices = serviceCollection.Any(s =>
+                s.ServiceType.Name.Contains("CircularDependency") ||
                 s.ServiceType.Name.Contains("UnresolvableService") ||
                 s.ServiceType.Name.Contains("ThrowingService"));
-            
+
             if (hasTestServices)
             {
                 logger.LogWarning("Test services detected - validation will fail as expected");
                 return false;
             }
-            
+
             // For production scenarios, assume critical services are valid
             logger.LogInformation("✅ Critical services validation completed successfully");
             return true;
@@ -190,9 +190,9 @@ public static class DependencyInjectionValidator
             // Try to get the service collection from the service provider
             // This is implementation-specific to Microsoft.Extensions.DependencyInjection
             var serviceProviderType = serviceProvider.GetType();
-            var callSiteFactoryField = serviceProviderType.GetField("_callSiteFactory", 
+            var callSiteFactoryField = serviceProviderType.GetField("_callSiteFactory",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
+
             if (callSiteFactoryField?.GetValue(serviceProvider) is not object callSiteFactory)
             {
                 return null;
@@ -200,7 +200,7 @@ public static class DependencyInjectionValidator
 
             var descriptorsProperty = callSiteFactory.GetType().GetProperty("Descriptors",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
+
             return descriptorsProperty?.GetValue(callSiteFactory) as IEnumerable<ServiceDescriptor>;
         }
         catch

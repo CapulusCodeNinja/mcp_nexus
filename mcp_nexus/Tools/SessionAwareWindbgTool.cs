@@ -70,7 +70,7 @@ namespace mcp_nexus.Tools
                 }
             }
         };
-        
+
         /// <summary>
         /// Session-aware response wrapper for AI client guidance
         /// </summary>
@@ -78,16 +78,16 @@ namespace mcp_nexus.Tools
         {
             [JsonPropertyName("sessionId")]
             public string SessionId { get; set; } = string.Empty;
-            
+
             [JsonPropertyName("result")]
             public string Result { get; set; } = string.Empty;
-            
+
             [JsonPropertyName("sessionContext")]
             public SessionContext? SessionContext { get; set; }
-            
+
             [JsonPropertyName("aiGuidance")]
             public AIGuidance AIGuidance { get; set; } = new();
-            
+
             [JsonPropertyName("workflowContext")]
             public WorkflowContext WorkflowContext { get; set; } = new();
         }
@@ -99,10 +99,10 @@ namespace mcp_nexus.Tools
         {
             [JsonPropertyName("nextSteps")]
             public List<string> NextSteps { get; set; } = new();
-            
+
             [JsonPropertyName("usageHints")]
             public List<string> UsageHints { get; set; } = new();
-            
+
             [JsonPropertyName("commonErrors")]
             public List<string> CommonErrors { get; set; } = new();
         }
@@ -114,10 +114,10 @@ namespace mcp_nexus.Tools
         {
             [JsonPropertyName("currentStep")]
             public string CurrentStep { get; set; } = string.Empty;
-            
+
             [JsonPropertyName("suggestedNextCommands")]
             public List<string> SuggestedNextCommands { get; set; } = new();
-            
+
             [JsonPropertyName("sessionState")]
             public string SessionState { get; set; } = string.Empty;
         }
@@ -159,7 +159,7 @@ namespace mcp_nexus.Tools
             catch (SessionLimitExceededException ex)
             {
                 logger.LogWarning("❌ Session limit exceeded: {Message}", ex.Message);
-                
+
                 var errorResponse = new
                 {
                     toolusage = TOOL_USAGE_EXPLANATION,
@@ -170,13 +170,13 @@ namespace mcp_nexus.Tools
                     operation = "nexus_open_dump_analyze_session",
                     message = $"Maximum concurrent sessions exceeded: {ex.CurrentSessions}/{ex.MaxSessions}"
                 };
-                
+
                 return errorResponse;
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "❌ Failed to create debugging session for {DumpPath}", dumpPath);
-                
+
                 var errorResponse = new
                 {
                     toolusage = TOOL_USAGE_EXPLANATION,
@@ -187,7 +187,7 @@ namespace mcp_nexus.Tools
                     operation = "nexus_open_dump_analyze_session",
                     message = $"Failed to create debugging session: {ex.Message}"
                 };
-                
+
                 return errorResponse;
             }
         }
@@ -216,7 +216,7 @@ namespace mcp_nexus.Tools
                         operation = "nexus_close_dump_analyze_session",
                         message = $"Session not found or already closed: {sessionId}"
                     };
-                    
+
                     return notFoundResponse;
                 }
 
@@ -232,7 +232,7 @@ namespace mcp_nexus.Tools
                     commandId = (string?)null,
                     success = closed,
                     operation = "nexus_close_dump_analyze_session",
-                    message = closed 
+                    message = closed
                         ? $"Session closed successfully: {sessionId}"
                         : $"Session may have already been closed: {sessionId}"
                 };
@@ -243,7 +243,7 @@ namespace mcp_nexus.Tools
             catch (Exception ex)
             {
                 logger.LogError(ex, "❌ Error closing session {SessionId}", sessionId);
-                
+
                 var errorResponse = new
                 {
                     toolusage = TOOL_USAGE_EXPLANATION,
@@ -254,7 +254,7 @@ namespace mcp_nexus.Tools
                     operation = "nexus_close_dump_analyze_session",
                     message = $"Error closing session: {ex.Message}"
                 };
-                
+
                 return errorResponse;
             }
         }
@@ -283,17 +283,17 @@ namespace mcp_nexus.Tools
                 // Validate session
                 if (!sessionManager.SessionExists(sessionId))
                 {
-                var sessionNotFoundResponse = new
-                {
-                    toolusage = TOOL_USAGE_EXPLANATION,
-                    sessionId = sessionId,
-                    dumpFile = (string?)null,
-                    commandId = (string?)null,
-                    success = false,
-                    operation = "nexus_dump_analyze_session_async_command",
-                    message = $"Session not found or expired: {sessionId}"
-                };
-                    
+                    var sessionNotFoundResponse = new
+                    {
+                        toolusage = TOOL_USAGE_EXPLANATION,
+                        sessionId = sessionId,
+                        dumpFile = (string?)null,
+                        commandId = (string?)null,
+                        success = false,
+                        operation = "nexus_dump_analyze_session_async_command",
+                        message = $"Session not found or expired: {sessionId}"
+                    };
+
                     return sessionNotFoundResponse;
                 }
 
@@ -320,7 +320,7 @@ namespace mcp_nexus.Tools
             catch (SessionNotFoundException ex)
             {
                 logger.LogWarning("❌ Session not found: {SessionId}", sessionId);
-                
+
                 var errorResponse = new
                 {
                     toolusage = TOOL_USAGE_EXPLANATION,
@@ -331,13 +331,13 @@ namespace mcp_nexus.Tools
                     operation = "nexus_dump_analyze_session_async_command",
                     message = $"Session not found: {ex.Message}"
                 };
-                
+
                 return errorResponse;
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "❌ Error executing command in session {SessionId}: {Command}", sessionId, command);
-                
+
                 var errorResponse = new
                 {
                     toolusage = TOOL_USAGE_EXPLANATION,
@@ -348,7 +348,7 @@ namespace mcp_nexus.Tools
                     operation = "nexus_dump_analyze_session_async_command",
                     message = $"Error executing command: {ex.Message}"
                 };
-                
+
                 return errorResponse;
             }
         }
@@ -383,10 +383,10 @@ namespace mcp_nexus.Tools
                         operation = "nexus_dump_analyze_session_async_command_status",
                         message = $"Invalid command ID format: {commandId}"
                     };
-                    
+
                     return errorResponse;
                 }
-                
+
                 // Extract sessionId from commandId (by design, not a fallback)
                 var sessionId = $"{parts[1]}-{parts[2]}-{parts[3]}"; // Extract "sess-XXXXXX-YYYYYYYY"
 
@@ -403,7 +403,7 @@ namespace mcp_nexus.Tools
                         operation = "nexus_dump_analyze_session_async_command_status",
                         message = $"Session not found or expired for command: {commandId}"
                     };
-                    
+
                     return sessionNotFoundResponse;
                 }
 
@@ -440,7 +440,7 @@ namespace mcp_nexus.Tools
             catch (Exception ex)
             {
                 logger.LogError(ex, "❌ Error checking command status: {CommandId}", commandId);
-                
+
                 var errorResponse = new
                 {
                     toolusage = TOOL_USAGE_EXPLANATION,
@@ -451,7 +451,7 @@ namespace mcp_nexus.Tools
                     operation = "nexus_dump_analyze_session_async_command_status",
                     message = $"Error checking command status: {ex.Message}"
                 };
-                
+
                 return errorResponse;
             }
         }

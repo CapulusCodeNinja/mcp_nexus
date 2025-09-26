@@ -49,7 +49,7 @@ namespace mcp_nexus.Protocol
                 var request = new McpRequest
                 {
                     Method = methodProperty.GetString() ?? string.Empty,
-                    Id = requestElement.TryGetProperty("id", out var idProperty) 
+                    Id = requestElement.TryGetProperty("id", out var idProperty)
                         ? (idProperty.ValueKind == JsonValueKind.Number ? idProperty.GetInt32() : 0)
                         : 0
                 };

@@ -11,13 +11,13 @@ namespace mcp_nexus.Notifications
         /// <summary>
         /// Send a command status notification to all connected clients
         /// </summary>
-        Task NotifyCommandStatusAsync(string commandId, string command, string status, 
+        Task NotifyCommandStatusAsync(string commandId, string command, string status,
             int? progress = null, string? message = null, string? result = null, string? error = null);
 
         /// <summary>
         /// Send a session-aware command status notification to all connected clients
         /// </summary>
-        Task NotifyCommandStatusAsync(string sessionId, string commandId, string command, string status, 
+        Task NotifyCommandStatusAsync(string sessionId, string commandId, string command, string status,
             string? result = null, int? progress = null, string? message = null, string? error = null);
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace mcp_nexus.Notifications
         /// <summary>
         /// Send a session recovery notification to all connected clients
         /// </summary>
-        Task NotifySessionRecoveryAsync(string reason, string recoveryStep, bool success, 
+        Task NotifySessionRecoveryAsync(string reason, string recoveryStep, bool success,
             string message, string[]? affectedCommands = null);
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace mcp_nexus.Notifications
         /// <summary>
         /// Send a server health notification to all connected clients
         /// </summary>
-        Task NotifyServerHealthAsync(string status, bool cdbSessionActive, int queueSize, 
+        Task NotifyServerHealthAsync(string status, bool cdbSessionActive, int queueSize,
             int activeCommands, TimeSpan? uptime = null);
 
         /// <summary>

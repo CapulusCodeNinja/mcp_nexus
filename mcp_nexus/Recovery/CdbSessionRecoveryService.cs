@@ -23,7 +23,7 @@ namespace mcp_nexus.Recovery
         private readonly ReaderWriterLockSlim m_recoveryLock = new();
 
         public CdbSessionRecoveryService(
-            ICdbSession cdbSession, 
+            ICdbSession cdbSession,
             ILogger<CdbSessionRecoveryService> logger,
             Func<string, int> cancelAllCommandsCallback,
             IMcpNotificationService? notificationService = null)
@@ -44,7 +44,7 @@ namespace mcp_nexus.Recovery
                 throw new ArgumentException("Reason cannot be empty", nameof(reason));
             if (string.IsNullOrWhiteSpace(reason))
                 throw new ArgumentException("Reason cannot be whitespace only", nameof(reason));
-                
+
             // Check if session is already not active
             if (!m_cdbSession.IsActive)
             {
@@ -102,7 +102,7 @@ namespace mcp_nexus.Recovery
                 {
                     m_logger.LogInformation("Session recovered successfully after cancellation");
                     ResetRecoveryCounter();
-                    
+
                     // Send successful recovery notification
                     _ = Task.Run(async () =>
                     {
@@ -116,7 +116,7 @@ namespace mcp_nexus.Recovery
                             m_logger.LogWarning(ex, "Failed to send recovery success notification");
                         }
                     });
-                    
+
                     return true;
                 }
 
@@ -160,7 +160,7 @@ namespace mcp_nexus.Recovery
                 throw new ArgumentException("Reason cannot be empty", nameof(reason));
             if (string.IsNullOrWhiteSpace(reason))
                 throw new ArgumentException("Reason cannot be whitespace only", nameof(reason));
-                
+
             m_logger.LogWarning("Force restarting CDB session: {Reason}", reason);
 
             // Check if session is already not active
@@ -195,7 +195,7 @@ namespace mcp_nexus.Recovery
                 // Step 2: Stop current session forcefully
                 m_logger.LogDebug("Force stopping CDB session");
                 var stopResult = await m_cdbSession.StopSession();
-                
+
                 if (!stopResult)
                 {
                     m_logger.LogWarning("StopSession returned false, session may still be active");
@@ -212,7 +212,7 @@ namespace mcp_nexus.Recovery
                 }
 
                 m_logger.LogInformation("Session stopped successfully, starting new session");
-                
+
                 // Step 5: Start a new session
                 var startResult = await m_cdbSession.StartSession("", null);
                 if (!startResult)
@@ -220,10 +220,10 @@ namespace mcp_nexus.Recovery
                     m_logger.LogError("Failed to start new session after force restart");
                     return false;
                 }
-                
+
                 m_logger.LogInformation("New session started successfully");
                 ResetRecoveryCounter();
-                
+
                 // Send success notification
                 if (m_notificationService != null)
                 {
@@ -240,7 +240,7 @@ namespace mcp_nexus.Recovery
                         }
                     });
                 }
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -254,11 +254,11 @@ namespace mcp_nexus.Recovery
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CdbSessionRecoveryService));
-                
+
             try
             {
                 var now = DateTime.UtcNow;
-                
+
                 // Don't check too frequently
                 if ((now - m_lastHealthCheck).TotalSeconds < 30)
                 {
@@ -315,8 +315,8 @@ namespace mcp_nexus.Recovery
                 // Try a simple command with short timeout to test responsiveness
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 var result = await m_cdbSession.ExecuteCommand("version", cts.Token);
-                
-                return !string.IsNullOrEmpty(result) && 
+
+                return !string.IsNullOrEmpty(result) &&
                        !result.Contains("timeout", StringComparison.OrdinalIgnoreCase) &&
                        !result.Contains("failed", StringComparison.OrdinalIgnoreCase);
             }

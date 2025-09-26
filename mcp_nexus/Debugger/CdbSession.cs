@@ -17,17 +17,17 @@ namespace mcp_nexus.Debugger
         private readonly int startupDelayMs;
 
         public CdbSession(
-            ILogger<CdbSession> logger, 
-            int commandTimeoutMs = 30000, 
-            string? customCdbPath = null, 
-            int symbolServerTimeoutMs = 30000, 
-            int symbolServerMaxRetries = 1, 
-            string? symbolSearchPath = null, 
+            ILogger<CdbSession> logger,
+            int commandTimeoutMs = 30000,
+            string? customCdbPath = null,
+            int symbolServerTimeoutMs = 30000,
+            int symbolServerMaxRetries = 1,
+            string? symbolSearchPath = null,
             int startupDelayMs = 2000)
         {
             // Validate parameters first
             ValidateParameters(commandTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
-            
+
             // Store parameters
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.commandTimeoutMs = commandTimeoutMs;
@@ -39,28 +39,28 @@ namespace mcp_nexus.Debugger
         }
         // Validation logic
         private static void ValidateParameters(
-            int commandTimeoutMs, 
-            int symbolServerTimeoutMs, 
-            int symbolServerMaxRetries, 
+            int commandTimeoutMs,
+            int symbolServerTimeoutMs,
+            int symbolServerMaxRetries,
             int startupDelayMs)
         {
             if (commandTimeoutMs <= 0)
                 throw new ArgumentOutOfRangeException(nameof(commandTimeoutMs), "Command timeout must be positive");
-            
+
             if (symbolServerTimeoutMs < 0)
                 throw new ArgumentOutOfRangeException(nameof(symbolServerTimeoutMs), "Symbol server timeout cannot be negative");
-            
+
             if (symbolServerMaxRetries < 0)
                 throw new ArgumentOutOfRangeException(nameof(symbolServerMaxRetries), "Symbol server max retries cannot be negative");
-            
+
             if (startupDelayMs < 0)
                 throw new ArgumentOutOfRangeException(nameof(startupDelayMs), "Startup delay cannot be negative");
         }
 
         private static bool ValidateParametersAndReturn(
-            int commandTimeoutMs, 
-            int symbolServerTimeoutMs, 
-            int symbolServerMaxRetries, 
+            int commandTimeoutMs,
+            int symbolServerTimeoutMs,
+            int symbolServerMaxRetries,
             int startupDelayMs)
         {
             ValidateParameters(commandTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
@@ -92,7 +92,7 @@ namespace mcp_nexus.Debugger
                 // FIXED: Return false when disposed instead of throwing
                 if (m_disposed)
                     return false;
-                
+
                 // LOCK-FREE VERSION: Don't block on m_SessionLock to avoid deadlocks
                 // This is safe to read without locks since these are just status checks
                 logger.LogTrace("IsActive: Checking status (lock-free)...");
@@ -113,7 +113,7 @@ namespace mcp_nexus.Debugger
         public void CancelCurrentOperation()
         {
             ThrowIfDisposed();
-            
+
             // CRITICAL FIX: Proper fire-and-forget with error handling and task tracking
             var cancellationTask = Task.Run(async () =>
             {
@@ -126,10 +126,10 @@ namespace mcp_nexus.Debugger
                     logger.LogError(ex, "Error in background cancellation operation");
                 }
             }, CancellationToken.None);
-            
+
             // Store the task to prevent it from being garbage collected
             // This prevents UnobservedTaskException events
-            _ = cancellationTask.ContinueWith(t => 
+            _ = cancellationTask.ContinueWith(t =>
             {
                 if (t.IsFaulted)
                 {
@@ -165,7 +165,7 @@ namespace mcp_nexus.Debugger
                 try
                 {
                     logger.LogDebug("Sending Ctrl+C to CDB process - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    
+
                     // RACE CONDITION FIX: Check if stream is still valid before writing
                     if (debuggerInput.BaseStream?.CanWrite == true)
                     {
@@ -181,7 +181,7 @@ namespace mcp_nexus.Debugger
                     await Task.Delay(ApplicationConstants.CdbInterruptDelay);
 
                     logger.LogTrace("Sending '.' command to get back to prompt - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    
+
                     // Check if stream is still valid before writing
                     if (debuggerInput.BaseStream?.CanWrite == true)
                     {
@@ -224,12 +224,12 @@ namespace mcp_nexus.Debugger
         public async Task<bool> StartSession(string target, string? arguments = null)
         {
             ThrowIfDisposed();
-            
+
             if (string.IsNullOrWhiteSpace(target))
             {
                 throw new ArgumentException("Target cannot be null or empty", nameof(target));
             }
-            
+
             logger.LogDebug("StartSession called with target: {Target}, arguments: {Arguments}", target, arguments);
 
             try
@@ -283,10 +283,10 @@ namespace mcp_nexus.Debugger
                     logger.LogInformation("Found CDB at: {CdbPath}", cdbPath);
 
                     // Determine if this is a crash dump file (ends with .dmp)
-                    var isCrashDump = target.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase) || 
+                    var isCrashDump = target.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase) ||
                                      target.Contains(".dmp\"", StringComparison.OrdinalIgnoreCase) ||
                                      target.Contains(".dmp ", StringComparison.OrdinalIgnoreCase);
-                    
+
                     // For crash dumps, ensure we use -z flag. The target may already contain other arguments.
                     string cdbArguments;
                     if (isCrashDump && !target.TrimStart().StartsWith("-z", StringComparison.OrdinalIgnoreCase))
@@ -299,10 +299,10 @@ namespace mcp_nexus.Debugger
                         // Target already has proper formatting or is not a crash dump
                         cdbArguments = target;
                     }
-                    
+
                     // Add startup arguments with symbol server timeout controls
                     logger.LogDebug("CDB arguments: {Arguments} (isCrashDump: {IsCrashDump})", cdbArguments, isCrashDump);
-                    
+
                     var startInfo = new ProcessStartInfo
                     {
                         FileName = cdbPath,
@@ -340,7 +340,7 @@ namespace mcp_nexus.Debugger
 
                     logger.LogDebug("Creating CDB process with arguments: {Arguments}", startInfo.Arguments);
                     m_debuggerProcess = new Process { StartInfo = startInfo };
-                    
+
                     logger.LogInformation("Starting CDB process...");
                     var processStarted = m_debuggerProcess.Start();
                     logger.LogInformation("CDB process start result: {Started}, PID: {ProcessId}", processStarted, m_debuggerProcess.Id);
@@ -374,10 +374,10 @@ namespace mcp_nexus.Debugger
 
                 logger.LogInformation("Successfully started CDB session with target: {Target}", target);
                 logger.LogInformation("Session active: {IsActive}, Process running: {IsRunning}", m_isActive, m_debuggerProcess?.HasExited == false);
-                
+
                 // Don't wait for full initialization - CDB will be ready when we send commands
                 logger.LogInformation("CDB process started successfully. Session will be ready for commands.");
-                
+
                 logger.LogInformation("StartSession completed successfully");
                 return true;
             }
@@ -396,17 +396,17 @@ namespace mcp_nexus.Debugger
         public Task<string> ExecuteCommand(string command, CancellationToken externalCancellationToken)
         {
             ThrowIfDisposed();
-            
+
             if (string.IsNullOrWhiteSpace(command))
             {
                 throw new ArgumentException("Command cannot be null or empty", nameof(command));
             }
-            
+
             if (!IsActive)
             {
                 throw new InvalidOperationException("No active debugging session");
             }
-            
+
             logger.LogInformation("🎯 [LOCKLESS] CDB ExecuteCommand START: {Command} - QUEUE PROVIDES SERIALIZATION", command);
 
             try
@@ -515,7 +515,7 @@ namespace mcp_nexus.Debugger
         public Task<bool> StopSession()
         {
             ThrowIfDisposed();
-            
+
             logger.LogInformation("🔥 [LOCKLESS-STOP] StopSession called - ARCHITECTURAL FIX ACTIVE");
             var stopwatch = Stopwatch.StartNew();
 
@@ -603,38 +603,38 @@ namespace mcp_nexus.Debugger
                     lock (m_lifecycleLock)
                     {
                         logger.LogInformation("🧹 [LOCKLESS-STOP] Disposing of CDB resources - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    m_debuggerProcess?.Dispose();
-                    m_debuggerInput?.Dispose();
-                    m_debuggerOutput?.Dispose();
-                    m_debuggerError?.Dispose();
+                        m_debuggerProcess?.Dispose();
+                        m_debuggerInput?.Dispose();
+                        m_debuggerOutput?.Dispose();
+                        m_debuggerError?.Dispose();
 
-                    m_debuggerProcess = null;
-                    m_debuggerInput = null;
-                    m_debuggerOutput = null;
-                    m_debuggerError = null;
-                    m_isActive = false;
-                    
+                        m_debuggerProcess = null;
+                        m_debuggerInput = null;
+                        m_debuggerOutput = null;
+                        m_debuggerError = null;
+                        m_isActive = false;
+
                         logger.LogInformation("✅ [LOCKLESS-STOP] CDB session resources cleaned up - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                }
+                    }
                     logger.LogInformation("🔓 [LOCKLESS-STOP] Lifecycle lock released - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 
                     stopwatch.Stop();
                     logger.LogInformation("🎯 [LOCKLESS-STOP] CDB session stopped successfully - TOTAL TIME: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     return true;
-            }
-            catch (Exception ex)
-            {
+                }
+                catch (Exception ex)
+                {
                     stopwatch.Stop();
                     logger.LogError(ex, "💥 [LOCKLESS-STOP] Failed to stop CDB session - TOTAL TIME: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     return false;
-            }
+                }
             });
         }
 
         private string ReadDebuggerOutputWithCancellation(int timeoutMs, CancellationToken cancellationToken)
         {
             logger.LogDebug("ReadDebuggerOutputWithCancellation called with timeout: {TimeoutMs}ms", timeoutMs);
-            
+
             if (m_debuggerOutput == null)
             {
                 logger.LogError("No output stream available for reading");
@@ -649,7 +649,7 @@ namespace mcp_nexus.Debugger
             try
             {
                 logger.LogDebug("Starting to read debugger output with cancellation support...");
-                
+
                 while ((DateTime.Now - startTime).TotalMilliseconds < timeoutMs)
                 {
                     // Check for cancellation first
@@ -683,7 +683,7 @@ namespace mcp_nexus.Debugger
                         }
                     }
                 }
-                
+
                 var elapsed = (DateTime.Now - startTime).TotalMilliseconds;
                 logger.LogDebug("Finished reading debugger output after {ElapsedMs}ms, read {LineCount} lines", elapsed, linesRead);
             }
@@ -915,7 +915,7 @@ namespace mcp_nexus.Debugger
         {
             var architecture = RuntimeInformation.ProcessArchitecture;
             logger.LogDebug("Detected process architecture: {Architecture}", architecture);
-            
+
             return architecture switch
             {
                 Architecture.X64 => "x64",
@@ -929,7 +929,7 @@ namespace mcp_nexus.Debugger
         private string? FindCdbPath()
         {
             logger.LogDebug("FindCDBPath called - searching for CDB executable");
-            
+
             // 1. Check custom path provided via --cdb-path parameter
             if (!string.IsNullOrEmpty(customCdbPath))
             {
@@ -945,14 +945,14 @@ namespace mcp_nexus.Debugger
                     return null; // Return null when custom path doesn't exist
                 }
             }
-            
+
             // 2. Continue with automatic path detection
             var currentArch = GetCurrentArchitecture();
             logger.LogInformation("Current machine architecture: {Architecture}", currentArch);
-            
+
             // Create prioritized list based on current architecture
             var possiblePaths = new List<string>();
-            
+
             // Add paths for current architecture first
             switch (currentArch)
             {
@@ -982,7 +982,7 @@ namespace mcp_nexus.Debugger
                     });
                     break;
             }
-            
+
             // Add fallback paths for other architectures
             if (currentArch != "x64")
             {
@@ -994,7 +994,7 @@ namespace mcp_nexus.Debugger
                     @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe"
                 });
             }
-            
+
             if (currentArch != "x86")
             {
                 possiblePaths.AddRange(new[]
@@ -1005,7 +1005,7 @@ namespace mcp_nexus.Debugger
                     @"C:\Program Files\Debugging Tools for Windows (x86)\cdb.exe"
                 });
             }
-            
+
             if (currentArch != "arm64")
             {
                 possiblePaths.AddRange(new[]
@@ -1047,24 +1047,24 @@ namespace mcp_nexus.Debugger
                     logger.LogDebug("Executing 'where cdb.exe' with {TimeoutMs}ms timeout", timeoutMs);
 
                     if (result.WaitForExit(timeoutMs))
-                {
-                    var output = result.StandardOutput.ReadToEnd();
+                    {
+                        var output = result.StandardOutput.ReadToEnd();
                         logger.LogDebug("'where cdb.exe' command exit code: {ExitCode}", result.ExitCode);
-                    
-                    if (result.ExitCode == 0 && !string.IsNullOrEmpty(output))
-                    {
-                        var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-                            logger.LogDebug("Found {Count} CDB paths in PATH", lines.Length);
-                        
-                        if (lines.Length > 0)
+
+                        if (result.ExitCode == 0 && !string.IsNullOrEmpty(output))
                         {
-                            var cdbPath = lines[0].Trim();
+                            var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                            logger.LogDebug("Found {Count} CDB paths in PATH", lines.Length);
+
+                            if (lines.Length > 0)
+                            {
+                                var cdbPath = lines[0].Trim();
                                 logger.LogInformation("Found CDB in PATH: {Path}", cdbPath);
-                            return cdbPath;
+                                return cdbPath;
+                            }
                         }
-                    }
-                    else
-                    {
+                        else
+                        {
                             logger.LogDebug("'where cdb.exe' found no results");
                         }
                     }
@@ -1104,7 +1104,7 @@ namespace mcp_nexus.Debugger
                     m_currentOperationCts.Cancel();
                 }
             }
-            
+
             if (!m_disposed)
             {
                 if (m_isActive)
@@ -1132,10 +1132,10 @@ namespace mcp_nexus.Debugger
                 {
                     logger.LogDebug("No active session to dispose");
                 }
-                
+
                 m_disposed = true;
             }
-            
+
             logger.LogDebug("CdbSession disposal completed");
         }
     }

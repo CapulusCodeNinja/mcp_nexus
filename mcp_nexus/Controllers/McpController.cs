@@ -78,7 +78,7 @@ namespace mcp_nexus.Controllers
                     var responseJson = JsonSerializer.Serialize(response, s_jsonOptions);
                     logger.LogDebug("Full JSON response:\n{Response}", responseJson);
                 }
-                
+
                 logger.LogInformation("Sending response for method '{Method}' (Session: {SessionId})", method, sessionId);
 
                 return Ok(response);

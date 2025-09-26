@@ -647,14 +647,14 @@ namespace mcp_nexus
                 var cdbSession = serviceProvider.GetRequiredService<ICdbSession>();
                 var logger = serviceProvider.GetRequiredService<ILogger<CdbSessionRecoveryService>>();
                 var notificationService = serviceProvider.GetService<IMcpNotificationService>();
-                
+
                 // Create a callback that will be resolved when the command queue service is available
                 Func<string, int> cancelAllCommandsCallback = reason =>
                 {
                     var commandQueueService = serviceProvider.GetRequiredService<ICommandQueueService>();
                     return commandQueueService.CancelAllCommands(reason);
                 };
-                
+
                 return new CdbSessionRecoveryService(cdbSession, logger, cancelAllCommandsCallback, notificationService);
             });
             Console.Error.WriteLine("Registered CdbSessionRecoveryService for automated recovery");

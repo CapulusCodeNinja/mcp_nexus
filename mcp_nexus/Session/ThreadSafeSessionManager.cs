@@ -23,21 +23,21 @@ namespace mcp_nexus.Session
         private readonly IMcpNotificationService m_notificationService;
         private readonly SessionConfiguration m_config;
         private readonly CdbSessionOptions m_cdbOptions;
-        
+
         // CONCURRENCY: Thread-safe session storage
         private readonly ConcurrentDictionary<string, SessionInfo> m_sessions = new();
-        
+
         // LOCKING: Separate locks for different concerns to prevent deadlocks
         private readonly SemaphoreSlim m_sessionCreationSemaphore = new(1, 1);
         private readonly object m_cleanupLock = new();
-        
+
         // CANCELLATION: Global shutdown coordination
         private readonly CancellationTokenSource m_shutdownCts = new();
-        
+
         // CLEANUP: Automatic session cleanup
         private readonly Timer m_cleanupTimer;
         private readonly Task m_monitoringTask;
-        
+
         // METRICS: Thread-safe performance counters
         private long m_sessionCounter = 0;
         private long m_totalSessionsCreated = 0;
@@ -45,11 +45,11 @@ namespace mcp_nexus.Session
         private long m_totalSessionsExpired = 0;
         private long m_totalCommandsProcessed = 0;
         private readonly DateTime m_startTime = DateTime.UtcNow;
-        
+
         private volatile bool m_disposed = false;
 
         public ThreadSafeSessionManager(
-            ILogger<ThreadSafeSessionManager> logger, 
+            ILogger<ThreadSafeSessionManager> logger,
             IServiceProvider serviceProvider,
             IMcpNotificationService notificationService,
             IOptions<SessionConfiguration>? config = null,
@@ -65,7 +65,7 @@ namespace mcp_nexus.Session
                 m_config.MaxConcurrentSessions, m_config.SessionTimeout);
 
             // SAFETY: Initialize cleanup timer with thread-safe callback
-            m_cleanupTimer = new Timer(_ => 
+            m_cleanupTimer = new Timer(_ =>
             {
                 // SAFETY: Fire-and-forget with proper exception handling
                 _ = Task.Run(async () =>
@@ -87,11 +87,11 @@ namespace mcp_nexus.Session
             m_logger.LogInformation("✅ ThreadSafeSessionManager initialized successfully");
         }
 
-        public async Task<string> CreateSessionAsync(string dumpPath, string? symbolsPath = null, 
+        public async Task<string> CreateSessionAsync(string dumpPath, string? symbolsPath = null,
             CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            
+
             // VALIDATION: Early parameter validation (no locks needed)
             if (string.IsNullOrWhiteSpace(dumpPath))
                 throw new ArgumentException("Dump path cannot be null or empty", nameof(dumpPath));
@@ -180,7 +180,7 @@ namespace mcp_nexus.Session
                 {
                     try
                     {
-                        await m_notificationService.NotifySessionEventAsync(sessionId, 
+                        await m_notificationService.NotifySessionEventAsync(sessionId,
                             "SESSION_CREATED", $"Session created for {Path.GetFileName(dumpPath)}",
                             GetSessionContext(sessionId));
                     }
@@ -190,9 +190,9 @@ namespace mcp_nexus.Session
                     }
                 }, CancellationToken.None);
 
-                m_logger.LogInformation("✅ Session {SessionId} created successfully in {ElapsedMs}ms for {DumpPath}", 
+                m_logger.LogInformation("✅ Session {SessionId} created successfully in {ElapsedMs}ms for {DumpPath}",
                     sessionId, stopwatch.ElapsedMilliseconds, dumpPath);
-                
+
                 return sessionId;
             }
             catch
@@ -209,7 +209,7 @@ namespace mcp_nexus.Session
         public async Task<bool> CloseSessionAsync(string sessionId, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            
+
             if (string.IsNullOrEmpty(sessionId))
                 return false;
 
@@ -220,7 +220,7 @@ namespace mcp_nexus.Session
             }
 
             m_logger.LogInformation("🛑 Closing session {SessionId}", sessionId);
-            
+
             try
             {
                 await SafeCleanupSession(session);
@@ -231,7 +231,7 @@ namespace mcp_nexus.Session
                 {
                     try
                     {
-                        await m_notificationService.NotifySessionEventAsync(sessionId, 
+                        await m_notificationService.NotifySessionEventAsync(sessionId,
                             "SESSION_CLOSED", "Session closed by user request");
                     }
                     catch (Exception ex)
@@ -265,7 +265,7 @@ namespace mcp_nexus.Session
             }
 
             m_logger.LogInformation("🛑 Closing session {SessionId} during shutdown", sessionId);
-            
+
             try
             {
                 await SafeCleanupSession(session);
@@ -305,13 +305,13 @@ namespace mcp_nexus.Session
 
         public ICommandQueueService GetCommandQueue(string sessionId)
         {
-            if (m_sessions.TryGetValue(sessionId, out var session) && 
+            if (m_sessions.TryGetValue(sessionId, out var session) &&
                 session.Status == SessionStatus.Active && !session.IsDisposed)
             {
                 UpdateActivity(sessionId);
                 return session.CommandQueue;
             }
-            
+
             throw new SessionNotFoundException(sessionId);
         }
 
@@ -319,7 +319,7 @@ namespace mcp_nexus.Session
         {
             if (string.IsNullOrEmpty(sessionId))
                 throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
-                
+
             if (!m_sessions.TryGetValue(sessionId, out var session))
                 throw new SessionNotFoundException(sessionId);
 
@@ -336,7 +336,7 @@ namespace mcp_nexus.Session
             {
                 throw new SessionNotFoundException(sessionId, "Session command queue has been disposed");
             }
-            
+
             var timeUntilExpiry = m_config.SessionTimeout - (DateTime.UtcNow - session.LastActivity);
 
             return new SessionContext
@@ -373,7 +373,7 @@ namespace mcp_nexus.Session
         public SessionStatistics GetStatistics()
         {
             var process = Process.GetCurrentProcess();
-            
+
             return new SessionStatistics
             {
                 ActiveSessions = m_sessions.Count(kvp => kvp.Value.Status == SessionStatus.Active),
@@ -404,7 +404,7 @@ namespace mcp_nexus.Session
 
         private ILogger CreateSessionLogger(string sessionId)
         {
-            return m_serviceProvider.GetService<ILoggerFactory>()?.CreateLogger($"Session-{sessionId}") 
+            return m_serviceProvider.GetService<ILoggerFactory>()?.CreateLogger($"Session-{sessionId}")
                 ?? m_logger;
         }
 
@@ -412,11 +412,11 @@ namespace mcp_nexus.Session
         {
             // Create CdbSession with session-specific configuration
             // Cast logger to the correct generic type
-            var typedLogger = sessionLogger as ILogger<CdbSession> ?? 
+            var typedLogger = sessionLogger as ILogger<CdbSession> ??
                 m_serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger<CdbSession>();
-                
+
             return new CdbSession(
-                typedLogger, 
+                typedLogger,
                 m_cdbOptions.CommandTimeoutMs,
                 m_cdbOptions.CustomCdbPath,
                 m_cdbOptions.SymbolServerTimeoutMs,
@@ -434,12 +434,12 @@ namespace mcp_nexus.Session
         {
             // Construct CDB target command line
             var target = $"-z \"{dumpPath}\"";
-            
+
             if (!string.IsNullOrEmpty(symbolsPath))
             {
                 target += $" -y \"{symbolsPath}\"";
             }
-            
+
             return target;
         }
 
@@ -452,20 +452,20 @@ namespace mcp_nexus.Session
         private List<string> GenerateUsageHints(SessionInfo session, List<(string Id, string Command, DateTime QueueTime, string Status)> queueStatus)
         {
             var hints = new List<string>();
-            
+
             if (queueStatus.Any(q => q.Status == "Queued"))
             {
                 hints.Add("🔄 Commands are queued - they execute sequentially");
             }
-            
+
             if (session.LastActivity < DateTime.UtcNow.AddMinutes(-5))
             {
                 hints.Add("⏰ Session has been inactive - will auto-expire if no activity");
             }
-            
+
             hints.Add($"📊 Use nexus_dump_analyze_session_async_command_status to check command results");
             hints.Add($"🎯 Always include sessionId='{session.SessionId}' in your requests");
-            
+
             return hints;
         }
 
@@ -473,7 +473,7 @@ namespace mcp_nexus.Session
         {
             var totalSessions = Volatile.Read(ref m_totalSessionsClosed);
             if (totalSessions == 0) return TimeSpan.Zero;
-            
+
             // Simple approximation - in real implementation, we'd track actual lifetimes
             return TimeSpan.FromMinutes(15); // Placeholder
         }
@@ -481,13 +481,13 @@ namespace mcp_nexus.Session
         private async Task<int> SafeCleanupExpiredSessions()
         {
             if (m_disposed) return 0;
-            
+
             var cleanedCount = 0;
             var expiredSessions = new List<string>();
-            
+
             // PHASE 1: Identify expired sessions (no locks)
             var cutoffTime = DateTime.UtcNow - m_config.SessionTimeout;
-            
+
             foreach (var kvp in m_sessions)
             {
                 var session = kvp.Value;
@@ -496,7 +496,7 @@ namespace mcp_nexus.Session
                     expiredSessions.Add(kvp.Key);
                 }
             }
-            
+
             // PHASE 2: Clean up expired sessions
             foreach (var sessionId in expiredSessions)
             {
@@ -512,12 +512,12 @@ namespace mcp_nexus.Session
                     m_logger.LogError(ex, "Error cleaning up expired session {SessionId}", sessionId);
                 }
             }
-            
+
             if (cleanedCount > 0)
             {
                 m_logger.LogInformation("🧹 Cleaned up {Count} expired sessions", cleanedCount);
             }
-            
+
             return cleanedCount;
         }
 
@@ -525,20 +525,20 @@ namespace mcp_nexus.Session
         {
             if (!m_sessions.TryRemove(sessionId, out var session))
                 return false;
-                
+
             m_logger.LogInformation("⏰ Cleaning up expired session {SessionId}", sessionId);
-            
+
             try
             {
                 await SafeCleanupSession(session);
                 Interlocked.Increment(ref m_totalSessionsExpired);
-                
+
                 // Notification for expired session
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        await m_notificationService.NotifySessionEventAsync(sessionId, 
+                        await m_notificationService.NotifySessionEventAsync(sessionId,
                             "SESSION_EXPIRED", "Session expired due to inactivity");
                     }
                     catch (Exception ex)
@@ -546,7 +546,7 @@ namespace mcp_nexus.Session
                         m_logger.LogWarning(ex, "Failed to send session expiry notification for {SessionId}", sessionId);
                     }
                 }, CancellationToken.None);
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -559,7 +559,7 @@ namespace mcp_nexus.Session
         private async Task SafeCleanupSession(SessionInfo session)
         {
             using var timeoutCts = new CancellationTokenSource(m_config.DisposalTimeout);
-            
+
             try
             {
                 // Dispose in correct order: CommandQueue first, then CdbSession
@@ -574,9 +574,9 @@ namespace mcp_nexus.Session
                         m_logger.LogWarning(ex, "Error disposing command queue for session {SessionId}", session.SessionId);
                     }
                 }, timeoutCts.Token);
-                
+
                 await SafeDisposeCdbSession(session.CdbSession);
-                
+
                 session.Dispose();
             }
             catch (OperationCanceledException)
@@ -608,7 +608,7 @@ namespace mcp_nexus.Session
         private async Task MonitorSessionHealthAsync()
         {
             m_logger.LogDebug("🔍 Session health monitor started");
-            
+
             try
             {
                 while (!m_shutdownCts.Token.IsCancellationRequested)
@@ -616,12 +616,12 @@ namespace mcp_nexus.Session
                     try
                     {
                         await Task.Delay(TimeSpan.FromMinutes(1), m_shutdownCts.Token);
-                        
+
                         var stats = GetStatistics();
                         m_logger.LogDebug("📊 Session Stats: Active={Active}, Total={Total}, Memory={MemoryMB}MB",
-                            stats.ActiveSessions, stats.TotalSessionsCreated, 
+                            stats.ActiveSessions, stats.TotalSessionsCreated,
                             stats.MemoryUsage.WorkingSetBytes / 1024 / 1024);
-                        
+
                         // Check for memory pressure and cleanup if needed
                         if (stats.MemoryUsage.WorkingSetBytes > m_config.MemoryCleanupThresholdBytes)
                         {
@@ -658,27 +658,27 @@ namespace mcp_nexus.Session
         public void Dispose()
         {
             if (m_disposed) return;
-            
+
             m_logger.LogInformation("🛑 ThreadSafeSessionManager disposing...");
-            
+
             try
             {
                 // SHUTDOWN: Signal shutdown
                 m_shutdownCts.Cancel();
-                
+
                 // CLEANUP: Stop timers
                 m_cleanupTimer?.Dispose();
-                
+
                 // WAIT: Wait for monitoring task
                 if (!m_monitoringTask.Wait(TimeSpan.FromSeconds(10)))
                 {
                     m_logger.LogWarning("⚠️ Session monitor did not stop within timeout");
                 }
-                
+
                 // CLEANUP: Close all sessions BEFORE marking as disposed
                 var sessionIds = m_sessions.Keys.ToList();
                 var cleanupTasks = sessionIds.Select(id => CloseSessionInternalAsync(id, CancellationToken.None));
-                
+
                 try
                 {
                     Task.WaitAll(cleanupTasks.ToArray(), TimeSpan.FromSeconds(30));
@@ -687,14 +687,14 @@ namespace mcp_nexus.Session
                 {
                     m_logger.LogError(ex, "Error during bulk session cleanup");
                 }
-                
+
                 // NOW mark as disposed after cleanup is complete
                 m_disposed = true;
-                
+
                 // CLEANUP: Dispose resources
                 m_shutdownCts.Dispose();
                 m_sessionCreationSemaphore.Dispose();
-                
+
                 m_logger.LogInformation("✅ ThreadSafeSessionManager disposed successfully");
             }
             catch (Exception ex)

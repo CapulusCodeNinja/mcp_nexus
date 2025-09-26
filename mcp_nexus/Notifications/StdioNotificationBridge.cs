@@ -40,10 +40,10 @@ namespace mcp_nexus.Notifications
                 // FIXED: Register our notification handler with the notification service and track function
                 m_notificationHandler = HandleNotification;
                 m_notificationService.RegisterNotificationHandler(m_notificationHandler);
-                
+
                 m_initialized = true;
                 m_logger.LogInformation("Stdio notification bridge initialized - notifications will be sent to MCP clients via stdout");
-                
+
                 return Task.CompletedTask;
             }
             catch (Exception ex)
@@ -102,15 +102,15 @@ namespace mcp_nexus.Notifications
             try
             {
                 m_logger.LogDebug("Disposing stdio notification bridge...");
-                
+
                 // FIXED: Properly unregister notification handler
                 if (m_initialized && m_notificationHandler != null)
                 {
                     m_notificationService.UnregisterNotificationHandler(m_notificationHandler);
                 }
-                
+
                 m_disposed = true;
-                
+
                 m_logger.LogDebug("Stdio notification bridge disposed");
             }
             catch (Exception ex)

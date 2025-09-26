@@ -77,10 +77,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
-                
+
             if (string.IsNullOrWhiteSpace(command))
                 throw new ArgumentException("Command cannot be null or empty", nameof(command));
-            
+
             var commandId = Guid.NewGuid().ToString();
             m_logger.LogInformation("🔄 QueueCommand START: {CommandId} for command: {Command}", commandId, command);
 
@@ -108,10 +108,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
-                
+
             if (string.IsNullOrEmpty(commandId))
                 return Task.FromResult($"Command not found: {commandId}");
-                
+
             // NOTE: Completed commands stay in m_activeCommands for result retrieval
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
@@ -142,10 +142,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
-                
+
             if (string.IsNullOrEmpty(commandId))
                 return false;
-                
+
             // First check if command is in active commands (executing or completed)
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
@@ -180,7 +180,7 @@ namespace mcp_nexus.CommandQueue
             if (queuedCommand != null)
             {
                 m_logger.LogInformation("Cancelling queued command {CommandId}: {Command}", commandId, queuedCommand.Command);
-                
+
                 try
                 {
                     queuedCommand.CancellationTokenSource.Cancel();
@@ -202,7 +202,7 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
-                
+
             var reasonText = string.IsNullOrWhiteSpace(reason) ? "No reason provided" : reason;
             m_logger.LogWarning("Cancelling ALL commands. Reason: {Reason}", reasonText);
 
@@ -266,7 +266,7 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
-                
+
             lock (m_currentCommandLock)
             {
                 return m_currentCommand;
@@ -277,7 +277,7 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
-                
+
             var results = new List<(string, string, DateTime, string)>();
 
             // Add current command
@@ -336,7 +336,7 @@ namespace mcp_nexus.CommandQueue
                         {
                             m_currentCommand = queuedCommand;
                         }
-                        
+
                         // Update command state to executing
                         UpdateCommandState(queuedCommand.Id, CommandState.Executing);
 
@@ -360,12 +360,12 @@ namespace mcp_nexus.CommandQueue
                             var resultMessage = queuedCommand.CancellationTokenSource.Token.IsCancellationRequested
                                 ? "Command execution was cancelled."
                                 : result;
-                            
+
                             var wasCompleted = queuedCommand.CompletionSource.TrySetResult(resultMessage);
-                            
+
                             // Update state atomically - this is safe even if another thread modified the command
                             UpdateCommandState(queuedCommand.Id, CommandState.Completed);
-                            
+
                             if (wasCompleted)
                             {
                                 Interlocked.Increment(ref m_commandsProcessed);
@@ -374,13 +374,13 @@ namespace mcp_nexus.CommandQueue
                             {
                                 m_logger.LogDebug("Command {CommandId} was already completed by another thread (race condition handled)", queuedCommand.Id);
                             }
-                            
+
                             LogConcurrencyStats();
                         }
                         catch (OperationCanceledException)
                         {
                             m_logger.LogInformation("Command {CommandId} was cancelled during execution", queuedCommand.Id);
-                            
+
                             // FIXED: Use TrySetResult to prevent double-completion and update state
                             var wasCompleted = queuedCommand.CompletionSource.TrySetResult("Command execution was cancelled.");
                             if (wasCompleted)
@@ -392,13 +392,13 @@ namespace mcp_nexus.CommandQueue
                             {
                                 m_logger.LogDebug("Command {CommandId} was already completed by another thread during cancellation", queuedCommand.Id);
                             }
-                            
+
                             LogConcurrencyStats();
                         }
                         catch (Exception ex)
                         {
                             m_logger.LogError(ex, "Error executing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
-                            
+
                             // IMPROVED: Better error handling with detailed error information
                             var errorMessage = ex switch
                             {
@@ -408,10 +408,10 @@ namespace mcp_nexus.CommandQueue
                                 ArgumentException => $"Invalid argument: {ex.Message}",
                                 _ => $"Command execution failed: {ex.GetType().Name}: {ex.Message}"
                             };
-                            
+
                             var wasCompleted = queuedCommand.CompletionSource.TrySetResult(errorMessage);
                             UpdateCommandState(queuedCommand.Id, CommandState.Failed);
-                            
+
                             if (wasCompleted)
                             {
                                 Interlocked.Increment(ref m_commandsFailed);
@@ -420,7 +420,7 @@ namespace mcp_nexus.CommandQueue
                             {
                                 m_logger.LogDebug("Command {CommandId} was already completed by another thread during error handling", queuedCommand.Id);
                             }
-                            
+
                             LogConcurrencyStats();
                         }
                         finally
@@ -482,14 +482,14 @@ namespace mcp_nexus.CommandQueue
                 var failed = Interlocked.Read(ref m_commandsFailed);
                 var cancelled = Interlocked.Read(ref m_commandsCancelled);
                 var total = processed + failed + cancelled;
-                
+
                 if (total > 0)
                 {
                     var successRate = total > 0 ? (double)processed / total * 100 : 0;
-                    m_logger.LogInformation("Concurrency Stats - Processed: {Processed}, Failed: {Failed}, Cancelled: {Cancelled}, Success Rate: {SuccessRate:F1}%", 
+                    m_logger.LogInformation("Concurrency Stats - Processed: {Processed}, Failed: {Failed}, Cancelled: {Cancelled}, Success Rate: {SuccessRate:F1}%",
                         processed, failed, cancelled, successRate);
                 }
-                
+
                 m_lastStatsLog = now;
             }
         }
@@ -508,8 +508,8 @@ namespace mcp_nexus.CommandQueue
                 // PERFORMANCE: Use ValueTuple to avoid boxing in foreach
                 foreach (var (key, command) in m_activeCommands)
                 {
-                    if (command.State == CommandState.Completed || 
-                        command.State == CommandState.Cancelled || 
+                    if (command.State == CommandState.Completed ||
+                        command.State == CommandState.Cancelled ||
                         command.State == CommandState.Failed)
                     {
                         if (command.QueueTime < cutoffTime)

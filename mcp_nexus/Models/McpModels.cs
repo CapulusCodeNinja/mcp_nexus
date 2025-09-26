@@ -133,13 +133,14 @@ namespace mcp_nexus.Models
         [JsonPropertyName("tools")]
         public object Tools { get; set; } = new { listChanged = true };
         [JsonPropertyName("notifications")]
-        public object Notifications { get; set; } = new { 
+        public object Notifications { get; set; } = new
+        {
             // Standard MCP notifications
             tools = new { listChanged = true },
             // Custom MCP Nexus notifications  
-            commandStatus = true, 
-            sessionRecovery = true, 
-            serverHealth = true 
+            commandStatus = true,
+            sessionRecovery = true,
+            serverHealth = true
         };
     }
 
@@ -159,7 +160,7 @@ namespace mcp_nexus.Models
     }
 
     // ===== SERVER NOTIFICATION MODELS =====
-    
+
     /// <summary>
     /// Server-initiated notification (no ID, no response expected)
     /// </summary>
@@ -167,10 +168,10 @@ namespace mcp_nexus.Models
     {
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; } = "2.0";
-        
+
         [JsonPropertyName("method")]
         public string Method { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("params")]
         public object? Params { get; set; }
     }
@@ -199,28 +200,28 @@ namespace mcp_nexus.Models
     {
         [JsonPropertyName("sessionId")]
         public string? SessionId { get; set; }
-        
+
         [JsonPropertyName("commandId")]
         public string CommandId { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("command")]
         public string Command { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("status")]
         public string Status { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("progress")]
         public int? Progress { get; set; }
-        
+
         [JsonPropertyName("message")]
         public string? Message { get; set; }
-        
+
         [JsonPropertyName("timestamp")]
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-        
+
         [JsonPropertyName("result")]
         public string? Result { get; set; }
-        
+
         [JsonPropertyName("error")]
         public string? Error { get; set; }
     }
@@ -249,22 +250,22 @@ namespace mcp_nexus.Models
     {
         [JsonPropertyName("sessionId")]
         public string? SessionId { get; set; }
-        
+
         [JsonPropertyName("commandId")]
         public string CommandId { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("command")]
         public string Command { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("elapsedSeconds")]
         public double ElapsedSeconds { get; set; }
-        
+
         [JsonPropertyName("elapsedDisplay")]
         public string ElapsedDisplay { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("details")]
         public string? Details { get; set; }
-        
+
         [JsonPropertyName("timestamp")]
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
@@ -293,19 +294,19 @@ namespace mcp_nexus.Models
     {
         [JsonPropertyName("reason")]
         public string Reason { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("recoveryStep")]
         public string RecoveryStep { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("success")]
         public bool Success { get; set; }
-        
+
         [JsonPropertyName("message")]
         public string Message { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("timestamp")]
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-        
+
         [JsonPropertyName("affectedCommands")]
         public string[]? AffectedCommands { get; set; }
     }
@@ -334,19 +335,19 @@ namespace mcp_nexus.Models
     {
         [JsonPropertyName("status")]
         public string Status { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("cdbSessionActive")]
         public bool CdbSessionActive { get; set; }
-        
+
         [JsonPropertyName("queueSize")]
         public int QueueSize { get; set; }
-        
+
         [JsonPropertyName("activeCommands")]
         public int ActiveCommands { get; set; }
-        
+
         [JsonPropertyName("timestamp")]
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-        
+
         [JsonPropertyName("uptime")]
         public TimeSpan? Uptime { get; set; }
     }
@@ -381,16 +382,16 @@ namespace mcp_nexus.Models
     {
         [JsonPropertyName("sessionId")]
         public string SessionId { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("eventType")]
         public string EventType { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("message")]
         public string Message { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("context")]
         public SessionContext? Context { get; set; }
-        
+
         [JsonPropertyName("timestamp")]
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }

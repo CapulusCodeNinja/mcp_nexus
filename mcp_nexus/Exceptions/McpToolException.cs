@@ -8,14 +8,14 @@ namespace mcp_nexus.Exceptions
         public int ErrorCode { get; }
         public object? ErrorData { get; }
 
-        public McpToolException(int errorCode, string message, object? errorData = null) 
+        public McpToolException(int errorCode, string message, object? errorData = null)
             : base(message)
         {
             ErrorCode = errorCode;
             ErrorData = errorData;
         }
 
-        public McpToolException(int errorCode, string message, Exception innerException, object? errorData = null) 
+        public McpToolException(int errorCode, string message, Exception innerException, object? errorData = null)
             : base(message, innerException)
         {
             ErrorCode = errorCode;

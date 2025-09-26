@@ -29,7 +29,7 @@ namespace mcp_nexus.Recovery
         public void StartCommandTimeout(string commandId, TimeSpan timeout, Func<Task> onTimeout)
         {
             if (m_disposed) return;
-            
+
             // Validate parameters
             if (commandId == null)
                 throw new ArgumentNullException(nameof(commandId));
@@ -50,8 +50,8 @@ namespace mcp_nexus.Recovery
             var cts = new CancellationTokenSource();
             var timeoutInfo = new TimeoutInfo(cts, onTimeout, DateTime.UtcNow);
             m_timeouts[commandId] = timeoutInfo;
-            
-            m_logger.LogDebug("Starting timeout for command {CommandId}: {TimeoutMinutes:F1} minutes", 
+
+            m_logger.LogDebug("Starting timeout for command {CommandId}: {TimeoutMinutes:F1} minutes",
                 commandId, timeout.TotalMinutes);
 
             // Start timeout task
@@ -60,13 +60,13 @@ namespace mcp_nexus.Recovery
                 try
                 {
                     await Task.Delay(timeout, cts.Token);
-                    
+
                     // Check cancellation again after delay
                     cts.Token.ThrowIfCancellationRequested();
-                    
-                    m_logger.LogError("Command {CommandId} timed out after {TimeoutMinutes:F1} minutes", 
+
+                    m_logger.LogError("Command {CommandId} timed out after {TimeoutMinutes:F1} minutes",
                         commandId, timeout.TotalMinutes);
-                    
+
                     await onTimeout();
                 }
                 catch (OperationCanceledException)
@@ -91,7 +91,7 @@ namespace mcp_nexus.Recovery
                 throw new ArgumentNullException(nameof(commandId));
             if (commandId.Length == 0)
                 throw new ArgumentException("Command ID cannot be empty", nameof(commandId));
-                
+
             if (m_timeouts.TryRemove(commandId, out var timeoutInfo))
             {
                 m_logger.LogTrace("Cancelling timeout for command {CommandId}", commandId);
@@ -108,39 +108,39 @@ namespace mcp_nexus.Recovery
                 throw new ArgumentException("Command ID cannot be empty", nameof(commandId));
             if (additionalTime < TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException(nameof(additionalTime), "Additional time cannot be negative");
-                
+
             if (m_timeouts.TryRemove(commandId, out var existingInfo))
             {
                 var originalHandler = existingInfo.OnTimeout;
                 var totalElapsed = DateTime.UtcNow - existingInfo.StartTime;
-                
-                m_logger.LogDebug("Extending timeout for command {CommandId} by {AdditionalMinutes:F1} minutes (already running for {ElapsedMinutes:F1} minutes)", 
+
+                m_logger.LogDebug("Extending timeout for command {CommandId} by {AdditionalMinutes:F1} minutes (already running for {ElapsedMinutes:F1} minutes)",
                     commandId, additionalTime.TotalMinutes, totalElapsed.TotalMinutes);
-                
+
                 // Cancel existing timeout immediately to prevent it from firing
                 m_logger.LogDebug("Cancelling existing timeout for command {CommandId}", commandId);
                 existingInfo.CancellationTokenSource.Cancel();
                 existingInfo.CancellationTokenSource.Dispose();
                 m_logger.LogDebug("Existing timeout cancelled for command {CommandId}", commandId);
-                
+
                 // Create new timeout with the additional time, preserving the original handler
                 var newCts = new CancellationTokenSource();
                 var newTimeoutInfo = new TimeoutInfo(newCts, originalHandler, existingInfo.StartTime);
                 m_timeouts[commandId] = newTimeoutInfo;
-                
+
                 _ = Task.Run(async () =>
                 {
                     try
                     {
                         // Wait for the additional time
                         await Task.Delay(additionalTime, newCts.Token);
-                        
+
                         if (!newCts.Token.IsCancellationRequested)
                         {
                             var finalElapsed = DateTime.UtcNow - existingInfo.StartTime;
-                            m_logger.LogError("Command {CommandId} exceeded extended timeout after {TotalMinutes:F1} minutes", 
+                            m_logger.LogError("Command {CommandId} exceeded extended timeout after {TotalMinutes:F1} minutes",
                                 commandId, finalElapsed.TotalMinutes);
-                            
+
                             // Now we can call the original timeout handler!
                             await originalHandler();
                         }

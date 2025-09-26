@@ -16,7 +16,7 @@ namespace mcp_nexus.CommandQueue
         private readonly ICommandTimeoutService m_timeoutService;
         private readonly ICdbSessionRecoveryService m_recoveryService;
         private readonly IMcpNotificationService? m_notificationService;
-        
+
         private readonly ConcurrentQueue<QueuedCommand> m_commandQueue = new();
         private readonly SemaphoreSlim m_queueSemaphore = new(0);
         private readonly CancellationTokenSource m_serviceCts = new();
@@ -30,7 +30,7 @@ namespace mcp_nexus.CommandQueue
         private readonly TimeSpan m_defaultCommandTimeout = ApplicationConstants.DefaultCommandTimeout;
         private readonly TimeSpan m_complexCommandTimeout = ApplicationConstants.MaxCommandTimeout;
         private readonly TimeSpan m_maxCommandTimeout = ApplicationConstants.LongRunningCommandTimeout;
-        
+
         // IMPROVED: Add cleanup mechanism and monitoring like CommandQueueService
         private readonly Timer m_cleanupTimer;
         private readonly TimeSpan m_cleanupInterval = ApplicationConstants.CleanupInterval;
@@ -41,7 +41,7 @@ namespace mcp_nexus.CommandQueue
         private DateTime m_lastStatsLog = DateTime.UtcNow;
 
         public ResilientCommandQueueService(
-            ICdbSession cdbSession, 
+            ICdbSession cdbSession,
             ILogger<ResilientCommandQueueService> logger,
             ICommandTimeoutService timeoutService,
             ICdbSessionRecoveryService recoveryService,
@@ -108,9 +108,9 @@ namespace mcp_nexus.CommandQueue
                         m_logger.LogWarning(ex, "Failed to send queued notification for command {CommandId}", commandId);
                     }
                 }, CancellationToken.None);
-                
+
                 // Track the task to prevent unobserved exceptions
-                _ = notificationTask.ContinueWith(t => 
+                _ = notificationTask.ContinueWith(t =>
                 {
                     if (t.IsFaulted)
                     {
@@ -126,10 +126,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
-                
+
             if (string.IsNullOrEmpty(commandId))
                 return Task.FromResult($"Command not found: {commandId}");
-                
+
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
                 if (command.CompletionSource.Task.IsCompleted)
@@ -157,10 +157,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
-                
+
             if (string.IsNullOrEmpty(commandId))
                 return false;
-                
+
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
                 m_logger.LogInformation("Cancelling command {CommandId}: {Command}", commandId, command.Command);
@@ -202,13 +202,13 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
-                
+
             var reasonText = string.IsNullOrWhiteSpace(reason) ? "No reason provided" : reason;
             m_logger.LogWarning("Cancelling ALL commands. Reason: {Reason}", reasonText);
 
             var cancelledCount = 0;
             string? currentId;
-            
+
             lock (m_currentCommandLock)
             {
                 currentId = m_currentCommand?.Id;
@@ -267,7 +267,7 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
-                
+
             lock (m_currentCommandLock)
             {
                 return m_currentCommand;
@@ -278,7 +278,7 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
-                
+
             var results = new List<(string, string, DateTime, string)>();
 
             // Add current command
@@ -334,7 +334,7 @@ namespace mcp_nexus.CommandQueue
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "Unexpected error in command queue processing - attempting recovery");
-                
+
                 // FIXED: Proper fire-and-forget with error handling
                 _ = Task.Run(async () =>
                 {
@@ -356,7 +356,7 @@ namespace mcp_nexus.CommandQueue
             {
                 m_currentCommand = queuedCommand;
             }
-            
+
             // FIXED: Update command state to executing
             UpdateCommandState(queuedCommand.Id, CommandState.Executing);
 
@@ -380,16 +380,16 @@ namespace mcp_nexus.CommandQueue
 
             // Determine timeout based on command complexity
             var timeout = DetermineCommandTimeout(queuedCommand.Command);
-            
+
             // Start automated timeout monitoring
             m_timeoutService.StartCommandTimeout(queuedCommand.Id, timeout, async () =>
             {
-                m_logger.LogError("Command {CommandId} timed out after {Minutes:F1} minutes", 
+                m_logger.LogError("Command {CommandId} timed out after {Minutes:F1} minutes",
                     queuedCommand.Id, timeout.TotalMinutes);
-                
+
                 // First try gentle recovery
                 await m_recoveryService.RecoverStuckSession($"Command timeout: {queuedCommand.Command}");
-                
+
                 // Set timeout result
                 queuedCommand.CompletionSource.TrySetResult(
                     $"Command timed out after {timeout.TotalMinutes:F1} minutes and session was recovered. " +
@@ -400,7 +400,7 @@ namespace mcp_nexus.CommandQueue
             var heartbeatCts = new CancellationTokenSource();
             var commandStartTime = DateTime.UtcNow;
             var heartbeatInterval = TimeSpan.FromSeconds(30); // Send heartbeat every 30 seconds
-            
+
             _ = Task.Run(async () =>
             {
                 try
@@ -408,12 +408,12 @@ namespace mcp_nexus.CommandQueue
                     while (!heartbeatCts.Token.IsCancellationRequested && !queuedCommand.CompletionSource.Task.IsCompleted)
                     {
                         await Task.Delay(heartbeatInterval, heartbeatCts.Token);
-                        
+
                         if (!heartbeatCts.Token.IsCancellationRequested && !queuedCommand.CompletionSource.Task.IsCompleted)
                         {
                             var elapsed = DateTime.UtcNow - commandStartTime;
                             var details = DetermineHeartbeatDetails(queuedCommand.Command, elapsed);
-                            
+
                             await m_notificationService?.NotifyCommandHeartbeatAsync(
                                 queuedCommand.Id, queuedCommand.Command, elapsed, details)!;
                         }
@@ -436,7 +436,7 @@ namespace mcp_nexus.CommandQueue
                 {
                     m_logger.LogWarning("Session unhealthy, attempting recovery before command execution");
                     var recovered = await m_recoveryService.RecoverStuckSession("Pre-execution health check failed");
-                    
+
                     if (!recovered)
                     {
                         queuedCommand.CompletionSource.TrySetResult("Session recovery failed - command could not be executed");
@@ -457,9 +457,9 @@ namespace mcp_nexus.CommandQueue
                     UpdateCommandState(queuedCommand.Id, CommandState.Completed);
                     Interlocked.Increment(ref m_commandsProcessed);
                 }
-                
+
                 LogConcurrencyStats();
-                
+
                 // Send completion notification
                 _ = Task.Run(async () =>
                 {
@@ -484,16 +484,16 @@ namespace mcp_nexus.CommandQueue
                     UpdateCommandState(queuedCommand.Id, CommandState.Cancelled);
                     Interlocked.Increment(ref m_commandsCancelled);
                 }
-                
+
                 LogConcurrencyStats();
-                
+
                 // Send cancellation notification
                 _ = Task.Run(async () =>
                 {
                     try
                     {
                         await m_notificationService?.NotifyCommandStatusAsync(
-                            queuedCommand.Id, queuedCommand.Command, "cancelled", progress: null, 
+                            queuedCommand.Id, queuedCommand.Command, "cancelled", progress: null,
                             message: "Command execution was cancelled", result: null, error: null)!;
                     }
                     catch (Exception ex)
@@ -506,19 +506,19 @@ namespace mcp_nexus.CommandQueue
             {
                 m_timeoutService.CancelCommandTimeout(queuedCommand.Id);
                 m_logger.LogError(ex, "Command {CommandId} execution failed", queuedCommand.Id);
-                
+
                 // On execution failure, trigger recovery
                 _ = Task.Run(async () => await m_recoveryService.RecoverStuckSession($"Command execution failed: {ex.Message}"));
-                
+
                 var wasCompleted = queuedCommand.CompletionSource.TrySetResult($"Command execution failed: {ex.Message}");
                 if (wasCompleted)
                 {
                     UpdateCommandState(queuedCommand.Id, CommandState.Failed);
                     Interlocked.Increment(ref m_commandsFailed);
                 }
-                
+
                 LogConcurrencyStats();
-                
+
                 // Send error notification
                 _ = Task.Run(async () =>
                 {
@@ -538,7 +538,7 @@ namespace mcp_nexus.CommandQueue
                 // Stop heartbeat notifications
                 heartbeatCts?.Cancel();
                 heartbeatCts?.Dispose();
-                
+
                 lock (m_currentCommandLock)
                 {
                     m_currentCommand = null;
@@ -552,8 +552,8 @@ namespace mcp_nexus.CommandQueue
             var lowerCommand = command.ToLowerInvariant();
 
             // Complex analysis commands get longer timeouts
-            if (lowerCommand.Contains("!analyze") || 
-                lowerCommand.Contains("!heap") || 
+            if (lowerCommand.Contains("!analyze") ||
+                lowerCommand.Contains("!heap") ||
                 lowerCommand.Contains("!locks") ||
                 lowerCommand.Contains("!handle") ||
                 lowerCommand.Contains("!process 0 0"))
@@ -562,9 +562,9 @@ namespace mcp_nexus.CommandQueue
             }
 
             // Very simple commands get shorter timeouts
-            if (lowerCommand.Length < 10 && 
-                (lowerCommand.StartsWith("k") || 
-                 lowerCommand.StartsWith("lm") || 
+            if (lowerCommand.Length < 10 &&
+                (lowerCommand.StartsWith("k") ||
+                 lowerCommand.StartsWith("lm") ||
                  lowerCommand.StartsWith("r") ||
                  lowerCommand == "version"))
             {
@@ -577,7 +577,7 @@ namespace mcp_nexus.CommandQueue
         private static string DetermineHeartbeatDetails(string command, TimeSpan elapsed)
         {
             // PERFORMANCE: Avoid ToLowerInvariant() allocation - use StringComparison instead
-            
+
             // Provide context-specific details based on command type
             if (command.Contains("!analyze", StringComparison.OrdinalIgnoreCase))
             {
@@ -590,7 +590,7 @@ namespace mcp_nexus.CommandQueue
                 else
                     return "Processing complex crash analysis (this may take several more minutes)...";
             }
-            
+
             if (command.Contains("!heap", StringComparison.OrdinalIgnoreCase))
             {
                 if (elapsed.TotalMinutes < 1)
@@ -600,8 +600,8 @@ namespace mcp_nexus.CommandQueue
                 else
                     return "Processing large heap dump (this is normal for applications with high memory usage)...";
             }
-            
-            if (command.Contains("!process 0 0", StringComparison.OrdinalIgnoreCase) || 
+
+            if (command.Contains("!process 0 0", StringComparison.OrdinalIgnoreCase) ||
                 command.Contains("!process", StringComparison.OrdinalIgnoreCase))
             {
                 if (elapsed.TotalMinutes < 1)
@@ -611,15 +611,15 @@ namespace mcp_nexus.CommandQueue
                 else
                     return "Processing extensive process data...";
             }
-            
-            if (command.Contains("!locks", StringComparison.OrdinalIgnoreCase) || 
+
+            if (command.Contains("!locks", StringComparison.OrdinalIgnoreCase) ||
                 command.Contains("!handle", StringComparison.OrdinalIgnoreCase))
             {
-                return elapsed.TotalMinutes < 2 
-                    ? "Scanning kernel synchronization objects..." 
+                return elapsed.TotalMinutes < 2
+                    ? "Scanning kernel synchronization objects..."
                     : "Analyzing complex lock dependencies...";
             }
-            
+
             // Generic progress messages for other commands
             if (elapsed.TotalMinutes < 1)
                 return "Command executing...";
@@ -677,8 +677,8 @@ namespace mcp_nexus.CommandQueue
                 // PERFORMANCE: Use ValueTuple to avoid boxing in foreach
                 foreach (var (key, command) in m_activeCommands)
                 {
-                    if (command.State == CommandState.Completed || 
-                        command.State == CommandState.Cancelled || 
+                    if (command.State == CommandState.Completed ||
+                        command.State == CommandState.Cancelled ||
                         command.State == CommandState.Failed)
                     {
                         if (command.QueueTime < cutoffTime)
@@ -719,14 +719,14 @@ namespace mcp_nexus.CommandQueue
                 var failed = Interlocked.Read(ref m_commandsFailed);
                 var cancelled = Interlocked.Read(ref m_commandsCancelled);
                 var total = processed + failed + cancelled;
-                
+
                 if (total > 0)
                 {
                     var successRate = total > 0 ? (double)processed / total * 100 : 0;
-                    m_logger.LogInformation("Resilient Concurrency Stats - Processed: {Processed}, Failed: {Failed}, Cancelled: {Cancelled}, Success Rate: {SuccessRate:F1}%", 
+                    m_logger.LogInformation("Resilient Concurrency Stats - Processed: {Processed}, Failed: {Failed}, Cancelled: {Cancelled}, Success Rate: {SuccessRate:F1}%",
                         processed, failed, cancelled, successRate);
                 }
-                
+
                 m_lastStatsLog = now;
             }
         }
@@ -744,7 +744,7 @@ namespace mcp_nexus.CommandQueue
                 m_disposed = true;
                 m_serviceCts.Cancel();
                 m_cleanupTimer?.Dispose();
-                
+
                 if (!m_processingTask.Wait(ApplicationConstants.ServiceShutdownTimeout))
                 {
                     m_logger.LogWarning("Processing task did not complete within {TimeoutSeconds} seconds during shutdown", ApplicationConstants.ServiceShutdownTimeout.TotalSeconds);

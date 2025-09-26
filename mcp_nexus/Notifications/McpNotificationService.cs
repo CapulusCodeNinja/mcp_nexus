@@ -24,12 +24,12 @@ namespace mcp_nexus.Notifications
         }
 
         public async Task NotifyCommandStatusAsync(
-            string commandId, 
-            string command, 
-            string status, 
-            int? progress = null, 
-            string? message = null, 
-            string? result = null, 
+            string commandId,
+            string command,
+            string status,
+            int? progress = null,
+            string? message = null,
+            string? result = null,
             string? error = null)
         {
             if (m_disposed) return;
@@ -47,18 +47,18 @@ namespace mcp_nexus.Notifications
             };
 
             await SendNotificationAsync("notifications/commandStatus", notification);
-            
+
             m_logger.LogDebug("Sent command status notification: {CommandId} -> {Status}", commandId, status);
         }
 
         public async Task NotifyCommandStatusAsync(
             string sessionId,
-            string commandId, 
-            string command, 
-            string status, 
+            string commandId,
+            string command,
+            string status,
             string? result = null,
-            int? progress = null, 
-            string? message = null, 
+            int? progress = null,
+            string? message = null,
             string? error = null)
         {
             if (m_disposed) return;
@@ -77,14 +77,14 @@ namespace mcp_nexus.Notifications
             };
 
             await SendNotificationAsync("notifications/commandStatus", notification);
-            
+
             m_logger.LogDebug("Sent session-aware command status notification: {SessionId}/{CommandId} -> {Status}", sessionId, commandId, status);
         }
 
         public async Task NotifyCommandHeartbeatAsync(
-            string commandId, 
-            string command, 
-            TimeSpan elapsed, 
+            string commandId,
+            string command,
+            TimeSpan elapsed,
             string? details = null)
         {
             if (m_disposed) return;
@@ -104,15 +104,15 @@ namespace mcp_nexus.Notifications
             };
 
             await SendNotificationAsync("notifications/commandHeartbeat", notification);
-            
+
             m_logger.LogTrace("Sent command heartbeat: {CommandId} -> {Elapsed}", commandId, elapsedDisplay);
         }
 
         public async Task NotifyCommandHeartbeatAsync(
             string sessionId,
-            string commandId, 
-            string command, 
-            TimeSpan elapsed, 
+            string commandId,
+            string command,
+            TimeSpan elapsed,
             string? details = null)
         {
             if (m_disposed) return;
@@ -133,11 +133,11 @@ namespace mcp_nexus.Notifications
             };
 
             await SendNotificationAsync("notifications/commandHeartbeat", notification);
-            
+
             m_logger.LogTrace("Sent session-aware command heartbeat: {SessionId}/{CommandId} -> {Elapsed}", sessionId, commandId, elapsedDisplay);
         }
 
-        public async Task NotifySessionRecoveryAsync(string reason, string recoveryStep, bool success, 
+        public async Task NotifySessionRecoveryAsync(string reason, string recoveryStep, bool success,
             string message, string[]? affectedCommands = null)
         {
             if (m_disposed) return;
@@ -153,7 +153,7 @@ namespace mcp_nexus.Notifications
             };
 
             await SendNotificationAsync("notifications/sessionRecovery", notification);
-            
+
             m_logger.LogInformation("Sent session recovery notification: {RecoveryStep} -> {Success}", recoveryStep, success);
         }
 
@@ -171,11 +171,11 @@ namespace mcp_nexus.Notifications
             };
 
             await SendNotificationAsync("notifications/sessionEvent", notification);
-            
+
             m_logger.LogInformation("Sent session event notification: {SessionId} -> {EventType}: {Message}", sessionId, eventType, message);
         }
 
-        public async Task NotifyServerHealthAsync(string status, bool cdbSessionActive, int queueSize, 
+        public async Task NotifyServerHealthAsync(string status, bool cdbSessionActive, int queueSize,
             int activeCommands, TimeSpan? uptime = null)
         {
             if (m_disposed) return;
@@ -191,8 +191,8 @@ namespace mcp_nexus.Notifications
             };
 
             await SendNotificationAsync("notifications/serverHealth", notification);
-            
-            m_logger.LogDebug("Sent server health notification: {Status} (Queue: {QueueSize}, Active: {ActiveCommands})", 
+
+            m_logger.LogDebug("Sent server health notification: {Status} (Queue: {QueueSize}, Active: {ActiveCommands})",
                 status, queueSize, activeCommands);
         }
 
@@ -202,7 +202,7 @@ namespace mcp_nexus.Notifications
 
             // Standard MCP notification - no parameters needed for tools/list_changed
             await SendNotificationAsync("notifications/tools/list_changed", null);
-            
+
             m_logger.LogDebug("Sent standard MCP tools list changed notification");
         }
 

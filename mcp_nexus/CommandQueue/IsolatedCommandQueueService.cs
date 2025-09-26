@@ -20,37 +20,37 @@ namespace mcp_nexus.CommandQueue
         private readonly string m_sessionId;
         private readonly ILogger m_logger;
         private readonly IMcpNotificationService m_notificationService;
-        
+
         // CONCURRENCY: Thread-safe collections
         private readonly ConcurrentQueue<QueuedCommand> m_commandQueue = new();
         private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands = new();
-        
+
         // SYNCHRONIZATION: Semaphore for queue processing
         private readonly SemaphoreSlim m_queueSemaphore = new(0, int.MaxValue);
-        
+
         // CURRENT COMMAND: Thread-safe current command tracking
         private volatile QueuedCommand? m_currentCommand;
         private readonly object m_currentCommandLock = new();
-        
+
         // LIFECYCLE: Cancellation and disposal
         private readonly CancellationTokenSource m_processingCts = new();
         private readonly Task m_processingTask;
         private volatile bool m_disposed = false;
-        
+
         // COUNTERS: Thread-safe performance tracking
         private long m_commandCounter = 0;
         private long m_completedCommands = 0;
         private long m_failedCommands = 0;
         private long m_cancelledCommands = 0;
-        
+
         // CONFIGURATION: Timeout settings
         private readonly TimeSpan m_defaultCommandTimeout = TimeSpan.FromMinutes(10);
         private readonly TimeSpan m_heartbeatInterval = TimeSpan.FromSeconds(30);
 
         public IsolatedCommandQueueService(
-            ICdbSession cdbSession, 
-            ILogger logger, 
-            IMcpNotificationService notificationService, 
+            ICdbSession cdbSession,
+            ILogger logger,
+            IMcpNotificationService notificationService,
             string sessionId)
         {
             m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
@@ -77,7 +77,7 @@ namespace mcp_nexus.CommandQueue
             var commandNumber = Interlocked.Increment(ref m_commandCounter);
             var commandId = $"cmd-{m_sessionId}-{commandNumber:D4}";
 
-            m_logger.LogDebug("🔄 Queueing command {CommandId} in session {SessionId}: {Command}", 
+            m_logger.LogDebug("🔄 Queueing command {CommandId} in session {SessionId}: {Command}",
                 commandId, m_sessionId, command);
 
             // IMMUTABLE: Create command object
@@ -111,7 +111,7 @@ namespace mcp_nexus.CommandQueue
                     try
                     {
                         await m_notificationService.NotifyCommandStatusAsync(
-                            m_sessionId, commandId, command, "queued", 
+                            m_sessionId, commandId, command, "queued",
                             result: null, progress: 0);
                     }
                     catch (Exception ex)
@@ -234,7 +234,7 @@ namespace mcp_nexus.CommandQueue
                 m_logger.LogWarning(ex, "Error cancelling current CDB operation during bulk cancel");
             }
 
-            m_logger.LogInformation("🚫 Cancelled {Count} commands in session {SessionId}: {Reason}", 
+            m_logger.LogInformation("🚫 Cancelled {Count} commands in session {SessionId}: {Reason}",
                 cancelledCount, m_sessionId, reason ?? "Bulk cancellation");
 
             return cancelledCount;
@@ -338,7 +338,7 @@ namespace mcp_nexus.CommandQueue
                     CompleteCommandSafely(command, result, CommandState.Completed);
                     Interlocked.Increment(ref m_completedCommands);
 
-                    m_logger.LogInformation("✅ Command {CommandId} completed in {ElapsedMs}ms", 
+                    m_logger.LogInformation("✅ Command {CommandId} completed in {ElapsedMs}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
                 }
                 finally
@@ -365,7 +365,7 @@ namespace mcp_nexus.CommandQueue
                 CompleteCommandSafely(command, $"Command execution failed: {ex.Message}", CommandState.Failed);
                 Interlocked.Increment(ref m_failedCommands);
 
-                m_logger.LogError(ex, "❌ Command {CommandId} failed after {ElapsedMs}ms", 
+                m_logger.LogError(ex, "❌ Command {CommandId} failed after {ElapsedMs}ms",
                     command.Id, stopwatch.ElapsedMilliseconds);
             }
             finally
@@ -508,7 +508,7 @@ namespace mcp_nexus.CommandQueue
                 // CLEANUP: Dispose resources
                 m_queueSemaphore.Dispose();
                 m_processingCts.Dispose();
-                
+
                 // CLEANUP: Dispose processing task
                 try
                 {
