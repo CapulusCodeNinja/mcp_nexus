@@ -734,10 +734,9 @@ namespace mcp_nexus
                 });
             });
 
-            // MIGRATION: Use the same tool discovery approach as stdio mode
-            services.AddMcpServer()
-                .WithStdioServerTransport()  // This will be overridden by HTTP controllers, but enables tool discovery
-                .WithToolsFromAssembly();
+            // MIGRATION: Register tool discovery without stdio transport for HTTP mode
+            // Note: Tools are discovered automatically via [McpServerToolType] attribute
+            // HTTP mode uses controllers instead of stdio transport
 
             // Register MCP services for HTTP endpoint compatibility
             services.AddSingleton<McpToolDefinitionService>();
