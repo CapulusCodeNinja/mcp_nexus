@@ -5,7 +5,7 @@ using mcp_nexus.Tools;
 namespace mcp_nexus.Protocol
 {
     public class McpToolExecutionService(
-        WindbgTool windbgTool,
+        SessionAwareWindbgTool sessionAwareWindbgTool,
         ILogger<McpToolExecutionService> logger)
     {
         public async Task<object> ExecuteTool(string toolName, JsonElement arguments)
@@ -50,74 +50,80 @@ namespace mcp_nexus.Protocol
 
         private async Task<object> ExecuteOpenWindbgDump(JsonElement arguments)
         {
+            // MIGRATION: Legacy HTTP endpoint - redirect to session-aware tool
+            logger.LogWarning("Legacy HTTP endpoint called: nexus_open_dump. Consider using the session-aware API directly.");
+            
             var dumpPath = GetRequiredStringArgument(arguments, "dumpPath");
             if (dumpPath == null)
                 return CreateErrorResult(-32602, "Missing or invalid dumpPath argument");
 
             var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
-            var result = await windbgTool.NexusOpenDump(dumpPath, symbolsPath);
+            var result = await sessionAwareWindbgTool.nexus_open_dump(dumpPath, symbolsPath);
 
             return CreateTextResult(result);
         }
 
-        private async Task<object> ExecuteOpenWindbgRemote(JsonElement arguments)
+        private Task<object> ExecuteOpenWindbgRemote(JsonElement arguments)
         {
-            var connectionString = GetRequiredStringArgument(arguments, "connectionString");
-            if (connectionString == null)
-                return CreateErrorResult(-32602, "Missing or invalid connectionString argument");
-
-            var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
-            var result = await windbgTool.NexusStartRemoteDebug(connectionString, symbolsPath);
-
-            return CreateTextResult(result);
+            // MIGRATION: Remote debugging not implemented in session-aware architecture
+            logger.LogWarning("Remote debugging feature not available in session-aware architecture");
+            return Task.FromResult(CreateErrorResult(-32601, "Remote debugging not implemented in session-aware architecture. Use dump analysis instead."));
         }
 
-        private async Task<object> ExecuteCloseWindbgDump()
+        private Task<object> ExecuteCloseWindbgDump()
         {
-            var result = await windbgTool.NexusCloseDump();
-            return CreateTextResult(result);
+            // MIGRATION: Session closure is automatic in session-aware architecture
+            logger.LogWarning("Manual session closure not needed in session-aware architecture - sessions auto-expire");
+            return Task.FromResult(CreateErrorResult(-32601, "Manual session closure not needed. Sessions auto-expire based on inactivity timeout."));
         }
 
-        private async Task<object> ExecuteCloseWindbgRemote()
+        private Task<object> ExecuteCloseWindbgRemote()
         {
-            var result = await windbgTool.NexusStopRemoteDebug();
-            return CreateTextResult(result);
+            // MIGRATION: Remote debugging not implemented in session-aware architecture
+            logger.LogWarning("Remote debugging feature not available in session-aware architecture");
+            return Task.FromResult(CreateErrorResult(-32601, "Remote debugging not implemented in session-aware architecture. Use dump analysis instead."));
         }
 
-        private async Task<object> ExecuteRunWindbgCmdAsync(JsonElement arguments)
+        private Task<object> ExecuteRunWindbgCmdAsync(JsonElement arguments)
         {
-            var command = GetRequiredStringArgument(arguments, "command");
-            if (command == null)
-                return CreateErrorResult(-32602, "Missing or invalid command argument");
-
-            var result = await windbgTool.NexusExecDebuggerCommandAsync(command);
-            return CreateTextResult(result);
+            // MIGRATION: Command execution requires sessionId in session-aware architecture
+            logger.LogWarning("Legacy command execution called without sessionId");
+            return Task.FromResult(CreateErrorResult(-32602, "Command execution requires sessionId. Use nexus_open_dump first to get a sessionId, then use the session-aware API."));
         }
 
         private async Task<object> ExecuteGetCommandStatus(JsonElement arguments)
         {
+            // MIGRATION: Try to use session-aware command status if available
             var commandId = GetRequiredStringArgument(arguments, "commandId");
             if (commandId == null)
                 return CreateErrorResult(-32602, "Missing or invalid commandId argument");
 
-            var result = await windbgTool.NexusDebuggerCommandStatus(commandId);
-            return CreateTextResult(result);
+            logger.LogWarning("Legacy command status check called for commandId: {CommandId}", commandId);
+            
+            try
+            {
+                var result = await sessionAwareWindbgTool.nexus_debugger_command_status(commandId);
+                return CreateTextResult(result);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to get command status for legacy call");
+                return CreateErrorResult(-32603, $"Command status check failed: {ex.Message}");
+            }
         }
 
-        private async Task<object> ExecuteCancelCommand(JsonElement arguments)
+        private Task<object> ExecuteCancelCommand(JsonElement arguments)
         {
-            var commandId = GetRequiredStringArgument(arguments, "commandId");
-            if (commandId == null)
-                return CreateErrorResult(-32602, "Missing or invalid commandId argument");
-
-            var result = await windbgTool.NexusDebuggerCommandCancel(commandId);
-            return CreateTextResult(result);
+            // MIGRATION: Command cancellation not implemented in session-aware architecture
+            logger.LogWarning("Legacy command cancellation called");
+            return Task.FromResult(CreateErrorResult(-32601, "Command cancellation not implemented in session-aware architecture. Sessions auto-timeout inactive commands."));
         }
 
-        private async Task<object> ExecuteListCommands()
+        private Task<object> ExecuteListCommands()
         {
-            var result = await windbgTool.NexusListDebuggerCommands();
-            return CreateTextResult(result);
+            // MIGRATION: Command listing not implemented in session-aware architecture
+            logger.LogWarning("Legacy command listing called");
+            return Task.FromResult(CreateErrorResult(-32601, "Command listing not implemented in session-aware architecture. Use session context to track commands."));
         }
 
         private static string? GetRequiredStringArgument(JsonElement arguments, string name)

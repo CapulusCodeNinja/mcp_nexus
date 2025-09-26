@@ -26,16 +26,18 @@ namespace mcp_nexus_tests.Controllers
 			// Create real dependencies for McpProtocolService
 			var toolDefinitionService = new McpToolDefinitionService();
 			
-			// Create real WindbgTool with proper dependencies
-			var mockWindbgLogger = LoggerFactory.Create(b => { }).CreateLogger<mcp_nexus.Tools.WindbgTool>();
-			var mockCdbSession = Mock.Of<mcp_nexus.Debugger.ICdbSession>();
-			var mockCommandQueueService = Mock.Of<mcp_nexus.CommandQueue.ICommandQueueService>();
-			var windbgTool = new mcp_nexus.Tools.WindbgTool(mockWindbgLogger, mockCdbSession, mockCommandQueueService);
+			// Create SessionAwareWindbgTool with proper dependencies
+			var mockWindbgLogger = LoggerFactory.Create(b => { }).CreateLogger<mcp_nexus.Tools.SessionAwareWindbgTool>();
+			var mockSessionManager = Mock.Of<mcp_nexus.Session.ISessionManager>();
+			var sessionAwareWindbgTool = new mcp_nexus.Tools.SessionAwareWindbgTool(mockWindbgLogger, mockSessionManager);
 			
 			var mockExecutionLogger = LoggerFactory.Create(b => { }).CreateLogger<McpToolExecutionService>();
-			var toolExecutionService = new McpToolExecutionService(windbgTool, mockExecutionLogger);
+			var toolExecutionService = new McpToolExecutionService(sessionAwareWindbgTool, mockExecutionLogger);
 			
 			var mockProtocolLogger = LoggerFactory.Create(b => { }).CreateLogger<McpProtocolService>();
+			// Mock ICdbSession for McpProtocolService
+			var mockCdbSession = Mock.Of<mcp_nexus.Debugger.ICdbSession>();
+			
 			var protocolService = new McpProtocolService(
 				toolDefinitionService,
 				toolExecutionService,

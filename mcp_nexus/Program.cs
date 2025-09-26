@@ -734,13 +734,18 @@ namespace mcp_nexus
                 });
             });
 
-            // Register MCP services
+            // MIGRATION: Use the same tool discovery approach as stdio mode
+            services.AddMcpServer()
+                .WithStdioServerTransport()  // This will be overridden by HTTP controllers, but enables tool discovery
+                .WithToolsFromAssembly();
+
+            // Register MCP services for HTTP endpoint compatibility
             services.AddSingleton<McpToolDefinitionService>();
             services.AddSingleton<McpToolExecutionService>();
             services.AddSingleton<McpProtocolService>();
             // Note: IMcpNotificationService now registered in shared RegisterServices() method
 
-            Console.WriteLine("MCP server configured for HTTP with controllers, CORS, and services");
+            Console.WriteLine("MCP server configured for HTTP with controllers, CORS, and tool discovery");
         }
 
         private static void ConfigureStdioServices(IServiceCollection services)
