@@ -93,54 +93,13 @@ namespace mcp_nexus.Tools
                 var sessionId = await sessionManager.CreateSessionAsync(dumpPath, symbolsPath);
                 var context = sessionManager.GetSessionContext(sessionId);
 
-                var response = new SessionAwareResponse
+                // Return simple response with session ID for MCP protocol
+                var response = new
                 {
-                    SessionId = sessionId,
-                    Result = $"✅ Debugging session created successfully!\n\n" +
-                             $"📊 Session ID: {sessionId}\n" +
-                             $"📁 Dump File: {Path.GetFileName(dumpPath)}\n" +
-                             $"🔍 Symbols: {symbolsPath ?? "Default symbol paths"}\n" +
-                             $"⏰ Created: {context.CreatedAt:yyyy-MM-dd HH:mm:ss} UTC\n\n" +
-                             $"🎯 IMPORTANT: Use sessionId='{sessionId}' for ALL subsequent commands!",
-                    SessionContext = context,
-                    AIGuidance = new AIGuidance
-                    {
-                        NextSteps = new List<string>
-                        {
-                            $"🔄 ASYNC WORKFLOW: Use nexus_exec_debugger_command_async with sessionId='{sessionId}' to queue commands",
-                            "📡 CRITICAL: nexus_exec_debugger_command_async only returns commandId, NOT results!",
-                            "🎯 MANDATORY: Call nexus_debugger_command_status(commandId) to get actual debugger output",
-                            "💡 Start with basic commands like '!analyze -v' or 'k' (stack trace)",
-                            "📊 Monitor notifications for real-time command progress"
-                        },
-                        UsageHints = new List<string>
-                        {
-                            "🔄 All commands execute asynchronously - always check status",
-                            "📡 Listen for notifications to get real-time updates",
-                            "⏰ Session will auto-expire after 30 minutes of inactivity",
-                            "🎯 Always include the sessionId in your requests"
-                        },
-                        CommonErrors = new List<string>
-                        {
-                            "❌ Missing sessionId parameter in subsequent calls",
-                            "❌ Using expired or invalid sessionId",
-                            "❌ CRITICAL: Expecting immediate results from nexus_exec_debugger_command_async",
-                            "❌ CRITICAL: Not calling nexus_debugger_command_status to get actual results",
-                            "❌ Not understanding that commands execute asynchronously"
-                        }
-                    },
-                    WorkflowContext = new WorkflowContext
-                    {
-                        CurrentStep = "Session Created",
-                        SuggestedNextCommands = new List<string>
-                        {
-                            "!analyze -v  // Comprehensive crash analysis",
-                            "k           // Call stack",
-                            "!peb        // Process environment block",
-                            "lm          // Loaded modules"
-                        },
-                        SessionState = "Ready for commands"
-                    }
+                    sessionId = sessionId,
+                    dumpFile = Path.GetFileName(dumpPath),
+                    message = "✅ Debugging session created successfully! Use this sessionId for all subsequent commands.",
+                    nextStep = $"nexus_exec_debugger_command_async(sessionId='{sessionId}', command='!analyze -v')"
                 };
 
                 logger.LogInformation("✅ Session {SessionId} created successfully", sessionId);
@@ -244,38 +203,14 @@ namespace mcp_nexus.Tools
                 var context = sessionManager.GetSessionContext(sessionId);
                 var closed = await sessionManager.CloseSessionAsync(sessionId);
 
-                var response = new SessionAwareResponse
+                // Return simple response for MCP protocol
+                var response = new
                 {
-                    SessionId = sessionId,
-                    Result = closed 
-                        ? $"✅ Session '{sessionId}' closed successfully!\n\n" +
-                          $"📊 Session Statistics:\n" +
-                          $"• Commands Processed: {context.CommandsProcessed}\n" +
-                          $"• Session Duration: {DateTime.UtcNow - context.CreatedAt:hh\\:mm\\:ss}\n" +
-                          $"• Last Activity: {context.LastActivity:yyyy-MM-dd HH:mm:ss} UTC\n\n" +
-                          "🧹 All resources have been cleaned up."
-                        : $"⚠️ Session '{sessionId}' may have already been closed or expired.",
-                    SessionContext = context,
-                    AIGuidance = new AIGuidance
-                    {
-                        NextSteps = new List<string>
-                        {
-                            "Session is now closed and resources freed",
-                            "Create new session with nexus_open_dump if needed",
-                            "All commands for this session are now invalid"
-                        },
-                        UsageHints = new List<string>
-                        {
-                            "🧹 Always close sessions when done to free resources",
-                            "📊 Session statistics show the debugging activity",
-                            "🔄 Create new sessions for different dump files"
-                        }
-                    },
-                    WorkflowContext = new WorkflowContext
-                    {
-                        CurrentStep = "Session Closed",
-                        SessionState = "Terminated"
-                    }
+                    sessionId = sessionId,
+                    success = closed,
+                    message = closed 
+                        ? $"✅ Session '{sessionId}' closed successfully! All resources have been cleaned up."
+                        : $"⚠️ Session '{sessionId}' may have already been closed or expired."
                 };
 
                 logger.LogInformation("✅ Session {SessionId} closed successfully", sessionId);
@@ -500,21 +435,14 @@ namespace mcp_nexus.Tools
                     _ => "completed"
                 };
 
-                var response = new SessionAwareResponse
+                // Return simple response for MCP protocol
+                var response = new
                 {
-                    SessionId = sessionId,
-                    Result = $"📊 Command Status: {status.ToUpper()}\n\n" +
-                             $"Command ID: {commandId}\n" +
-                             $"Session: {sessionId}\n" +
-                             $"Status: {status}\n\n" +
-                             $"🔍 Result:\n{result}",
-                    SessionContext = context,
-                    AIGuidance = GenerateStatusGuidance(status, commandId, result),
-                    WorkflowContext = new WorkflowContext
-                    {
-                        CurrentStep = $"Command {status}",
-                        SessionState = $"Last checked: {DateTime.UtcNow:HH:mm:ss}"
-                    }
+                    commandId = commandId,
+                    sessionId = sessionId,
+                    status = status,
+                    result = result,
+                    message = $"📊 Command Status: {status.ToUpper()}"
                 };
 
                 return JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true });
