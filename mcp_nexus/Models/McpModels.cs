@@ -25,7 +25,7 @@ namespace mcp_nexus.Models
         [JsonPropertyName("params")]
         public JsonElement? Params { get; set; }
         [JsonPropertyName("id")]
-        public int Id { get; set; }
+        public object? Id { get; set; }
     }
 
     public class McpResponse
@@ -33,7 +33,7 @@ namespace mcp_nexus.Models
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; } = "2.0";
         [JsonPropertyName("id")]
-        public int Id { get; set; }
+        public object? Id { get; set; }
         [JsonPropertyName("result")]
         public object? Result { get; set; }
         [JsonPropertyName("error")]
@@ -45,7 +45,7 @@ namespace mcp_nexus.Models
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; } = "2.0";
         [JsonPropertyName("id")]
-        public int Id { get; set; }
+        public object? Id { get; set; }
         [JsonPropertyName("result")]
         public object? Result { get; set; }
     }
@@ -55,7 +55,7 @@ namespace mcp_nexus.Models
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; } = "2.0";
         [JsonPropertyName("id")]
-        public int Id { get; set; }
+        public object? Id { get; set; }
         [JsonPropertyName("error")]
         public McpError Error { get; set; } = new();
     }

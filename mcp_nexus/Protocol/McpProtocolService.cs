@@ -11,21 +11,28 @@ namespace mcp_nexus.Protocol
         McpResourceService m_resourceService,
         ILogger<McpProtocolService> m_logger)
     {
-        public async Task<object> ProcessRequest(JsonElement requestElement)
+        public async Task<object?> ProcessRequest(JsonElement requestElement)
         {
-            int requestId = 0;
+            object? requestId = null;
             try
             {
                 var request = ParseRequest(requestElement);
                 if (request == null)
                 {
-                    return CreateErrorResponse(0, -32600, "Invalid Request - malformed JSON-RPC");
+                    return CreateErrorResponse(null, -32600, "Invalid Request - malformed JSON-RPC");
                 }
 
                 requestId = request.Id;
                 m_logger.LogDebug("Processing MCP request: {Method}", request.Method);
 
                 var result = await ExecuteMethod(request);
+                
+                // Handle notifications - they should not return responses
+                if (result == null)
+                {
+                    return null; // No response for notifications
+                }
+                
                 return CreateSuccessResponse(request.Id, result);
             }
             catch (McpToolException ex)
@@ -51,8 +58,13 @@ namespace mcp_nexus.Protocol
                 {
                     Method = methodProperty.GetString() ?? string.Empty,
                     Id = requestElement.TryGetProperty("id", out var idProperty)
-                        ? (idProperty.ValueKind == JsonValueKind.Number ? idProperty.GetInt32() : 0)
-                        : 0
+                        ? idProperty.ValueKind switch
+                        {
+                            JsonValueKind.Number => idProperty.GetInt32(),
+                            JsonValueKind.String => idProperty.GetString(),
+                            _ => null
+                        }
+                        : null
                 };
 
                 if (requestElement.TryGetProperty("params", out var paramsProperty))
@@ -68,7 +80,7 @@ namespace mcp_nexus.Protocol
             }
         }
 
-        private async Task<object> ExecuteMethod(McpRequest request)
+        private async Task<object?> ExecuteMethod(McpRequest request)
         {
             return request.Method switch
             {
@@ -89,14 +101,14 @@ namespace mcp_nexus.Protocol
             return new McpInitializeResult();
         }
 
-        private object HandleNotificationInitialized()
+        private object? HandleNotificationInitialized()
         {
             m_logger.LogDebug("Received MCP initialization notification");
             // Notifications should not return responses according to JSON-RPC spec
-            return new { }; // TODO: Consider if this should return null for true notification handling
+            return null; // Return null to indicate no response should be sent
         }
 
-        private object HandleNotificationCancelled(JsonElement? paramsElement)
+        private object? HandleNotificationCancelled(JsonElement? paramsElement)
         {
             if (paramsElement != null && paramsElement.Value.TryGetProperty("requestId", out var requestIdProp))
             {
@@ -118,8 +130,8 @@ namespace mcp_nexus.Protocol
                 m_logger.LogDebug("Received cancellation notification without request ID");
             }
 
-            // Return empty success response for notifications
-            return new { };
+            // Notifications should not return responses according to JSON-RPC spec
+            return null; // Return null to indicate no response should be sent
         }
 
         private object HandleToolsList()
@@ -177,7 +189,7 @@ namespace mcp_nexus.Protocol
             return await m_toolExecutionService.ExecuteTool(toolName, arguments);
         }
 
-        private static McpSuccessResponse CreateSuccessResponse(int id, object result)
+        private static McpSuccessResponse CreateSuccessResponse(object? id, object result)
         {
             return new McpSuccessResponse
             {
@@ -186,7 +198,7 @@ namespace mcp_nexus.Protocol
             };
         }
 
-        private static McpErrorResponse CreateErrorResponse(int id, int code, string message, object? data = null)
+        private static McpErrorResponse CreateErrorResponse(object? id, int code, string message, object? data = null)
         {
             return new McpErrorResponse
             {
