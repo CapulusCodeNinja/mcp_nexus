@@ -19,7 +19,7 @@ namespace mcp_nexus.Controllers
         private static readonly JsonSerializerOptions s_jsonOptions = new()
         {
             WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNamingPolicy = null // Don't change property names - MCP protocol requires exact field names like 'jsonrpc'
         };
         [HttpPost]
         public async Task<IActionResult> HandleMcpRequest()

@@ -49,8 +49,9 @@ namespace mcp_nexus.Protocol
                 var request = new McpRequest
                 {
                     Method = methodProperty.GetString() ?? string.Empty,
-                    Id = requestElement.TryGetProperty("id", out var idProperty) && idProperty.ValueKind == JsonValueKind.Number 
-                        ? idProperty.GetInt32() : 0
+                    Id = requestElement.TryGetProperty("id", out var idProperty) 
+                        ? (idProperty.ValueKind == JsonValueKind.Number ? idProperty.GetInt32() : 0)
+                        : 0
                 };
 
                 if (requestElement.TryGetProperty("params", out var paramsProperty))
@@ -88,8 +89,8 @@ namespace mcp_nexus.Protocol
         private object HandleNotificationInitialized()
         {
             m_logger.LogDebug("Received MCP initialization notification");
-            // For notifications, we typically return an empty success response
-            return new { };
+            // Notifications should not return responses according to JSON-RPC spec
+            return new { }; // TODO: Consider if this should return null for true notification handling
         }
 
         private object HandleNotificationCancelled(JsonElement? paramsElement)

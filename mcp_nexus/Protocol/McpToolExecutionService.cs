@@ -48,8 +48,8 @@ namespace mcp_nexus.Protocol
             var symbolsPath = GetOptionalStringArgument(arguments, "symbolsPath");
             var result = await sessionAwareWindbgTool.nexus_open_dump_analyze_session(dumpPath, symbolsPath);
 
-            // Return the structured response object directly
-            return result;
+            // Wrap result in MCP tool result format
+            return CreateToolResult(result);
         }
 
         private async Task<object> ExecuteCloseWindbgDump(JsonElement arguments)
@@ -63,7 +63,7 @@ namespace mcp_nexus.Protocol
             logger.LogInformation("Manual session closure requested for session: {SessionId}", sessionId);
             
             var result = await sessionAwareWindbgTool.nexus_close_dump_analyze_session(sessionId);
-            return result;
+            return CreateToolResult(result);
         }
 
         private async Task<object> ExecuteRunWindbgCmdAsync(JsonElement arguments)
@@ -83,7 +83,7 @@ namespace mcp_nexus.Protocol
             try
             {
                 var result = await sessionAwareWindbgTool.nexus_dump_analyze_session_async_command(sessionId, command);
-                return result;
+                return CreateToolResult(result);
             }
             catch (Exception ex)
             {
@@ -104,8 +104,8 @@ namespace mcp_nexus.Protocol
             try
             {
                 var result = await sessionAwareWindbgTool.nexus_dump_analyze_session_async_command_status(commandId);
-                // Return the structured response object directly
-                return result;
+                // Wrap result in MCP tool result format
+                return CreateToolResult(result);
             }
             catch (Exception ex)
             {
@@ -130,7 +130,7 @@ namespace mcp_nexus.Protocol
             return arguments.TryGetProperty(name, out var property) ? property.GetString() : null;
         }
 
-        private static object CreateTextResult(string text)
+        private static object CreateToolResult(object result)
         {
             return new McpToolResult
             {
@@ -139,7 +139,7 @@ namespace mcp_nexus.Protocol
                     new McpContent
                     {
                         Type = "text",
-                        Text = text
+                        Text = System.Text.Json.JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true })
                     }
                 ]
             };
