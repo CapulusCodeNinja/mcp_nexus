@@ -15,6 +15,7 @@ using System.Text.Json;
 
 namespace mcp_nexus_tests.Services
 {
+    [Collection("NotificationTestCollection")]
     public class StdioNotificationBridgeTests : IDisposable
     {
         private readonly Mock<ILogger<StdioNotificationBridge>> m_mockLogger;
@@ -91,9 +92,14 @@ namespace mcp_nexus_tests.Services
                 .Callback<Func<McpNotification, Task>>(handler => registeredHandler = handler);
 
             await m_bridge.InitializeAsync();
+            
+            // Clear any existing output and add stabilization delays
+            m_stringWriter.GetStringBuilder().Clear();
+            await Task.Delay(50);
 
             // Act
             await registeredHandler!(notification);
+            await Task.Delay(50);
 
             // Assert
             var output = m_stringWriter.ToString();

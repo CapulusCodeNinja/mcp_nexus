@@ -12,6 +12,9 @@ using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure;
 using mcp_nexus.Session;
 
+// Suppress Windows platform-specific warnings for service management functionality
+#pragma warning disable CA1416 // Validate platform compatibility
+
 namespace mcp_nexus_tests.Services
 {
     /// <summary>
