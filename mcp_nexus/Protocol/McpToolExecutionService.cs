@@ -131,7 +131,7 @@ namespace mcp_nexus.Protocol
             
             try
             {
-                var result = await sessionAwareWindbgTool.nexus_exec_debugger_command_async(command, sessionId);
+                var result = await sessionAwareWindbgTool.nexus_exec_debugger_command_async(sessionId, command);
                 
                 // If auto-detection was used, modify the JSON response to include warning
                 if (GetOptionalStringArgument(arguments, "sessionId") == null)
