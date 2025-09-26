@@ -5,7 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using mcp_nexus.Controllers;
-using mcp_nexus.Services;
+using mcp_nexus.CommandQueue;
+using mcp_nexus.Notifications;
+using mcp_nexus.Protocol;
+using mcp_nexus.Recovery;
+using mcp_nexus.Infrastructure;
+using mcp_nexus.Session;
 using mcp_nexus.Models;
 using Xunit;
 
@@ -23,8 +28,8 @@ namespace mcp_nexus_tests.Controllers
 			
 			// Create real WindbgTool with proper dependencies
 			var mockWindbgLogger = LoggerFactory.Create(b => { }).CreateLogger<mcp_nexus.Tools.WindbgTool>();
-			var mockCdbSession = Mock.Of<mcp_nexus.Helper.ICdbSession>();
-			var mockCommandQueueService = Mock.Of<mcp_nexus.Services.ICommandQueueService>();
+			var mockCdbSession = Mock.Of<mcp_nexus.Debugger.ICdbSession>();
+			var mockCommandQueueService = Mock.Of<mcp_nexus.CommandQueue.ICommandQueueService>();
 			var windbgTool = new mcp_nexus.Tools.WindbgTool(mockWindbgLogger, mockCdbSession, mockCommandQueueService);
 			
 			var mockExecutionLogger = LoggerFactory.Create(b => { }).CreateLogger<McpToolExecutionService>();
@@ -325,3 +330,4 @@ namespace mcp_nexus_tests.Controllers
 		}
 	}
 }
+

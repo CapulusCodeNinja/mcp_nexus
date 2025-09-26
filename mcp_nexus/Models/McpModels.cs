@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using mcp_nexus.Session.Models;
 
 namespace mcp_nexus.Models
 {
@@ -363,6 +364,7 @@ namespace mcp_nexus.Models
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 }
+
 
 
 

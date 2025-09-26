@@ -1,7 +1,12 @@
 using Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using mcp_nexus.Services;
+using mcp_nexus.CommandQueue;
+using mcp_nexus.Notifications;
+using mcp_nexus.Protocol;
+using mcp_nexus.Recovery;
+using mcp_nexus.Infrastructure;
+using mcp_nexus.Session;
 using mcp_nexus.Models;
 using System;
 using System.IO;
@@ -169,3 +174,4 @@ namespace mcp_nexus_tests.Integration
         }
     }
 }
+

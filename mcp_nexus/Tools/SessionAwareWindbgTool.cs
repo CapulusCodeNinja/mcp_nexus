@@ -1,5 +1,10 @@
-using mcp_nexus.Helper;
-using mcp_nexus.Services;
+using mcp_nexus.Session;
+using mcp_nexus.Session.Models;
+using mcp_nexus.CommandQueue;
+using mcp_nexus.Notifications;
+using mcp_nexus.Protocol;
+using mcp_nexus.Recovery;
+using mcp_nexus.Infrastructure;
 using mcp_nexus.Utilities;
 using mcp_nexus.Constants;
 using mcp_nexus.Models;
@@ -637,3 +642,4 @@ namespace mcp_nexus.Tools
         #endregion
     }
 }
+

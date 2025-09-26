@@ -4,8 +4,13 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using NLog.Web;
 
 using mcp_nexus.Constants;
-using mcp_nexus.Helper;
-using mcp_nexus.Services;
+using mcp_nexus.Debugger;
+using mcp_nexus.CommandQueue;
+using mcp_nexus.Notifications;
+using mcp_nexus.Protocol;
+using mcp_nexus.Recovery;
+using mcp_nexus.Infrastructure;
+using mcp_nexus.Session;
 using mcp_nexus.Tools;
 
 namespace mcp_nexus
@@ -655,7 +660,7 @@ namespace mcp_nexus
             Console.Error.WriteLine("Registered CdbSessionRecoveryService for automated recovery");
 
             // MIGRATION: Register session management instead of global command queue
-            services.Configure<mcp_nexus.Models.SessionConfiguration>(config =>
+            services.Configure<mcp_nexus.Session.Models.SessionConfiguration>(config =>
             {
                 config.MaxConcurrentSessions = 10;
                 config.SessionTimeout = TimeSpan.FromMinutes(30);
@@ -668,7 +673,7 @@ namespace mcp_nexus
 
             // MIGRATION: CdbSession is now created per-session by SessionManager
             // Store CDB configuration for session manager to use
-            services.Configure<mcp_nexus.Models.CdbSessionOptions>(options =>
+            services.Configure<mcp_nexus.Session.Models.CdbSessionOptions>(options =>
             {
                 options.CommandTimeoutMs = 30000; // Default 30 seconds - will be configurable later
                 options.SymbolServerTimeoutMs = 30000; // Default 30 seconds

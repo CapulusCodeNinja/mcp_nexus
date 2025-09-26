@@ -1,0 +1,291 @@
+using System.Collections.Concurrent;
+using System.Text.Json;
+
+using mcp_nexus.Models;
+using mcp_nexus.Session.Models;
+
+namespace mcp_nexus.Notifications
+{
+    /// <summary>
+    /// Service for sending MCP server-initiated notifications to clients
+    /// </summary>
+    public class McpNotificationService : IMcpNotificationService, IDisposable
+    {
+        private readonly ILogger<McpNotificationService> m_logger;
+        // FIXED: Replace ConcurrentBag with ConcurrentDictionary to support removal
+        private readonly ConcurrentDictionary<Guid, Func<McpNotification, Task>> m_notificationHandlers = new();
+        private readonly DateTime m_serverStartTime = DateTime.UtcNow;
+        private bool m_disposed;
+
+        public McpNotificationService(ILogger<McpNotificationService> logger)
+        {
+            m_logger = logger;
+            m_logger.LogDebug("McpNotificationService initialized");
+        }
+
+        public async Task NotifyCommandStatusAsync(
+            string commandId, 
+            string command, 
+            string status, 
+            int? progress = null, 
+            string? message = null, 
+            string? result = null, 
+            string? error = null)
+        {
+            if (m_disposed) return;
+
+            var notification = new McpCommandStatusNotification
+            {
+                CommandId = commandId,
+                Command = command,
+                Status = status,
+                Progress = progress,
+                Message = message,
+                Result = result,
+                Error = error,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await SendNotificationAsync("notifications/commandStatus", notification);
+            
+            m_logger.LogDebug("Sent command status notification: {CommandId} -> {Status}", commandId, status);
+        }
+
+        public async Task NotifyCommandStatusAsync(
+            string sessionId,
+            string commandId, 
+            string command, 
+            string status, 
+            string? result = null,
+            int? progress = null, 
+            string? message = null, 
+            string? error = null)
+        {
+            if (m_disposed) return;
+
+            var notification = new McpCommandStatusNotification
+            {
+                SessionId = sessionId,
+                CommandId = commandId,
+                Command = command,
+                Status = status,
+                Progress = progress,
+                Message = message,
+                Result = result,
+                Error = error,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await SendNotificationAsync("notifications/commandStatus", notification);
+            
+            m_logger.LogDebug("Sent session-aware command status notification: {SessionId}/{CommandId} -> {Status}", sessionId, commandId, status);
+        }
+
+        public async Task NotifyCommandHeartbeatAsync(
+            string commandId, 
+            string command, 
+            TimeSpan elapsed, 
+            string? details = null)
+        {
+            if (m_disposed) return;
+
+            var elapsedDisplay = elapsed.TotalMinutes >= 1
+                ? $"{elapsed.TotalMinutes.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}m"
+                : $"{elapsed.TotalSeconds.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)}s";
+
+            var notification = new McpCommandHeartbeatNotification
+            {
+                CommandId = commandId,
+                Command = command,
+                ElapsedSeconds = elapsed.TotalSeconds,
+                ElapsedDisplay = elapsedDisplay,
+                Details = details,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await SendNotificationAsync("notifications/commandHeartbeat", notification);
+            
+            m_logger.LogTrace("Sent command heartbeat: {CommandId} -> {Elapsed}", commandId, elapsedDisplay);
+        }
+
+        public async Task NotifyCommandHeartbeatAsync(
+            string sessionId,
+            string commandId, 
+            string command, 
+            TimeSpan elapsed, 
+            string? details = null)
+        {
+            if (m_disposed) return;
+
+            var elapsedDisplay = elapsed.TotalMinutes >= 1
+                ? $"{elapsed.TotalMinutes.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}m"
+                : $"{elapsed.TotalSeconds.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)}s";
+
+            var notification = new McpCommandHeartbeatNotification
+            {
+                SessionId = sessionId,
+                CommandId = commandId,
+                Command = command,
+                ElapsedSeconds = elapsed.TotalSeconds,
+                ElapsedDisplay = elapsedDisplay,
+                Details = details,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await SendNotificationAsync("notifications/commandHeartbeat", notification);
+            
+            m_logger.LogTrace("Sent session-aware command heartbeat: {SessionId}/{CommandId} -> {Elapsed}", sessionId, commandId, elapsedDisplay);
+        }
+
+        public async Task NotifySessionRecoveryAsync(string reason, string recoveryStep, bool success, 
+            string message, string[]? affectedCommands = null)
+        {
+            if (m_disposed) return;
+
+            var notification = new McpSessionRecoveryNotification
+            {
+                Reason = reason,
+                RecoveryStep = recoveryStep,
+                Success = success,
+                Message = message,
+                AffectedCommands = affectedCommands,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await SendNotificationAsync("notifications/sessionRecovery", notification);
+            
+            m_logger.LogInformation("Sent session recovery notification: {RecoveryStep} -> {Success}", recoveryStep, success);
+        }
+
+        public async Task NotifySessionEventAsync(string sessionId, string eventType, string message, SessionContext? context = null)
+        {
+            if (m_disposed) return;
+
+            var notification = new McpSessionEventNotification
+            {
+                SessionId = sessionId,
+                EventType = eventType,
+                Message = message,
+                Context = context,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await SendNotificationAsync("notifications/sessionEvent", notification);
+            
+            m_logger.LogInformation("Sent session event notification: {SessionId} -> {EventType}: {Message}", sessionId, eventType, message);
+        }
+
+        public async Task NotifyServerHealthAsync(string status, bool cdbSessionActive, int queueSize, 
+            int activeCommands, TimeSpan? uptime = null)
+        {
+            if (m_disposed) return;
+
+            var notification = new McpServerHealthNotification
+            {
+                Status = status,
+                CdbSessionActive = cdbSessionActive,
+                QueueSize = queueSize,
+                ActiveCommands = activeCommands,
+                Uptime = uptime ?? (DateTime.UtcNow - m_serverStartTime),
+                Timestamp = DateTime.UtcNow
+            };
+
+            await SendNotificationAsync("notifications/serverHealth", notification);
+            
+            m_logger.LogDebug("Sent server health notification: {Status} (Queue: {QueueSize}, Active: {ActiveCommands})", 
+                status, queueSize, activeCommands);
+        }
+
+        public async Task NotifyToolsListChangedAsync()
+        {
+            if (m_disposed) return;
+
+            // Standard MCP notification - no parameters needed for tools/list_changed
+            await SendNotificationAsync("notifications/tools/list_changed", null);
+            
+            m_logger.LogDebug("Sent standard MCP tools list changed notification");
+        }
+
+        public async Task SendNotificationAsync(string method, object? parameters = null)
+        {
+            if (m_disposed) return;
+
+            var notification = new McpNotification
+            {
+                Method = method,
+                Params = parameters
+            };
+
+            // CRITICAL FIX: Use snapshot to prevent race conditions during iteration
+            // PERFORMANCE: Check count first to avoid unnecessary ToArray() allocation
+            if (m_notificationHandlers.IsEmpty)
+            {
+                m_logger.LogDebug("No notification handlers registered - notification will be dropped: {Method}", method);
+                return;
+            }
+
+            // PERFORMANCE: Only create array when we know there are handlers
+            var handlers = m_notificationHandlers.Values.ToArray();
+
+            var tasks = new List<Task>();
+            foreach (var handler in handlers)
+            {
+                try
+                {
+                    tasks.Add(handler(notification));
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogError(ex, "Error invoking notification handler for method: {Method}", method);
+                }
+            }
+
+            try
+            {
+                await Task.WhenAll(tasks);
+                m_logger.LogTrace("Successfully sent notification to {HandlerCount} handlers: {Method}", handlers.Length, method);
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogError(ex, "Error sending notification to handlers: {Method}", method);
+            }
+        }
+
+        public void RegisterNotificationHandler(Func<McpNotification, Task> handler)
+        {
+            if (m_disposed) return;
+
+            var id = Guid.NewGuid();
+            m_notificationHandlers[id] = handler;
+            m_logger.LogDebug("Registered notification handler {HandlerId} (Total: {HandlerCount})", id, m_notificationHandlers.Count);
+        }
+
+        public void UnregisterNotificationHandler(Func<McpNotification, Task> handler)
+        {
+            if (m_disposed) return;
+
+            // Find and remove the handler by value
+            var handlerToRemove = m_notificationHandlers.FirstOrDefault(kvp => kvp.Value == handler);
+            if (!handlerToRemove.Equals(default(KeyValuePair<Guid, Func<McpNotification, Task>>)))
+            {
+                if (m_notificationHandlers.TryRemove(handlerToRemove.Key, out _))
+                {
+                    m_logger.LogDebug("Unregistered notification handler {HandlerId} (Total: {HandlerCount})", handlerToRemove.Key, m_notificationHandlers.Count);
+                }
+            }
+            else
+            {
+                m_logger.LogWarning("Attempted to unregister non-existent notification handler");
+            }
+        }
+
+        public void Dispose()
+        {
+            if (m_disposed) return;
+
+            m_disposed = true;
+            m_logger.LogDebug("McpNotificationService disposed");
+        }
+    }
+}
+

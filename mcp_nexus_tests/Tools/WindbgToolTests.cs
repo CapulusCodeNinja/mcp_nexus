@@ -2,8 +2,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
-using mcp_nexus.Helper;
-using mcp_nexus.Services;
+using mcp_nexus.Debugger;
+using mcp_nexus.CommandQueue;
+using mcp_nexus.Notifications;
+using mcp_nexus.Protocol;
+using mcp_nexus.Recovery;
+using mcp_nexus.Infrastructure;
+using mcp_nexus.Session;
 using mcp_nexus.Tools;
 using Xunit;
 
@@ -249,3 +254,4 @@ namespace mcp_nexus_tests.Tools
 		}
 	}
 }
+
