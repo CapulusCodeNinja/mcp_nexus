@@ -295,7 +295,7 @@ namespace mcp_nexus_tests.Services
 		Assert.NotNull(errorResponse);
 		Assert.Equal(8, errorResponse.Id);
 		Assert.Equal(-32602, errorResponse.Error.Code);
-		Assert.Contains("MISSING SESSION ID", errorResponse.Error.Message);
+		Assert.Contains("NO ACTIVE SESSIONS FOUND", errorResponse.Error.Message);
 		}
 
 		[Fact]

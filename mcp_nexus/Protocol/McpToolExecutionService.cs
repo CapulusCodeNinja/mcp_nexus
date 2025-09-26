@@ -87,25 +87,62 @@ namespace mcp_nexus.Protocol
         {
             // Extract command and sessionId from arguments
             var command = GetRequiredStringArgument(arguments, "command");
-            var sessionId = GetRequiredStringArgument(arguments, "sessionId");
+            var sessionId = GetOptionalStringArgument(arguments, "sessionId");
             
             if (command == null)
                 throw new McpToolException(-32602, "❌ MISSING COMMAND: You must provide a 'command' parameter. " +
                     "🔧 RECOVERY: Add 'command' parameter with a WinDbg command like '!analyze -v', 'k', 'lm', etc.");
                 
+            // FALLBACK AUTO-DETECTION: Not recommended, but helps AI clients that don't follow proper workflow
             if (sessionId == null)
-                throw new McpToolException(-32602, "❌ MISSING SESSION ID: You must provide a 'sessionId' parameter! " +
-                    "🔧 RECOVERY STEPS: " +
-                    "1️⃣ First call nexus_open_dump with a .dmp file path " +
-                    "2️⃣ Extract the 'sessionId' from the response JSON " +
-                    "3️⃣ Retry this command with both 'command' AND 'sessionId' parameters " +
-                    "💡 EXAMPLE: {\"command\": \"!analyze -v\", \"sessionId\": \"sess-000001-abc12345\"}");
+            {
+                logger.LogWarning("⚠️ IMPROPER API USAGE: sessionId parameter missing - falling back to auto-detection");
+                logger.LogWarning("🚨 THIS IS NOT RECOMMENDED: Always include sessionId for proper API usage");
+                
+                // Get all active sessions and find the most recent one
+                var activeSessions = await sessionAwareWindbgTool.GetActiveSessionsAsync();
+                if (activeSessions?.Any() == true)
+                {
+                    if (activeSessions.Count() > 1)
+                    {
+                        logger.LogWarning("⚠️ MULTIPLE SESSIONS DETECTED: Found {Count} active sessions, using most recent", activeSessions.Count());
+                        var sessionList = string.Join(", ", activeSessions.Select(s => s.SessionId));
+                        logger.LogWarning("📋 Available sessions: {SessionList}", sessionList);
+                    }
+                    
+                    sessionId = activeSessions.OrderByDescending(s => s.CreatedAt).First().SessionId;
+                    logger.LogWarning("🔍 AUTO-DETECTED session: {SessionId} (most recent active session)", sessionId);
+                    logger.LogWarning("💡 BEST PRACTICE: Include sessionId explicitly: {{\"command\": \"{Command}\", \"sessionId\": \"{SessionId}\"}}", command, sessionId);
+                }
+                else
+                {
+                    throw new McpToolException(-32602, "❌ NO ACTIVE SESSIONS FOUND: You must provide a 'sessionId' parameter or have an active session! " +
+                        "🔧 RECOVERY STEPS: " +
+                        "1️⃣ First call nexus_open_dump with a .dmp file path to create a session " +
+                        "2️⃣ Extract the 'sessionId' from the response JSON " +
+                        "3️⃣ Retry this command with both 'command' AND 'sessionId' parameters " +
+                        "💡 EXAMPLE: {\"command\": \"!analyze -v\", \"sessionId\": \"sess-000001-abc12345\"}");
+                }
+            }
 
             logger.LogDebug("Executing command '{Command}' for session '{SessionId}'", command, sessionId);
             
             try
             {
                 var result = await sessionAwareWindbgTool.nexus_exec_debugger_command_async(command, sessionId);
+                
+                // If auto-detection was used, prepend a warning to the result
+                if (GetOptionalStringArgument(arguments, "sessionId") == null)
+                {
+                    var warningMessage = "🚨 AUTO-DETECTION WARNING: sessionId was missing and auto-detected!\n" +
+                                       "⚠️ THIS IS NOT RECOMMENDED: Always include sessionId parameter for proper API usage.\n" +
+                                       $"💡 CORRECT USAGE: {{\"command\": \"{command}\", \"sessionId\": \"{sessionId}\"}}\n" +
+                                       "🎯 Auto-detection used most recent session - this may not be what you intended!\n\n" +
+                                       "--- COMMAND RESULT ---\n";
+                    
+                    return CreateTextResult(warningMessage + result);
+                }
+                
                 return CreateTextResult(result);
             }
             catch (Exception ex)

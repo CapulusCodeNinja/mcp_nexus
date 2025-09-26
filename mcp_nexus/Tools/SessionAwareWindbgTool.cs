@@ -639,7 +639,16 @@ namespace mcp_nexus.Tools
             };
         }
 
+        /// <summary>
+        /// Get all active sessions for auto-detection when sessionId is missing
+        /// </summary>
+        public Task<IEnumerable<SessionContext>> GetActiveSessionsAsync()
+        {
+            logger.LogDebug("Getting active sessions for auto-detection");
+            var activeSessions = sessionManager.GetActiveSessions();
+            return Task.FromResult(activeSessions);
+        }
+
         #endregion
     }
 }
-

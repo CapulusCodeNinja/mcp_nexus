@@ -131,28 +131,29 @@ namespace mcp_nexus.Protocol
         {
             return new McpToolSchema
             {
-                Name = "nexus_exec_debugger_command_async",
-                Description = "⚡ STEP 2 - EXECUTE COMMANDS: Run debugger commands like '!analyze -v', 'k', 'lm', 'dt', etc. " +
-                    "🚨 MANDATORY REQUIREMENT: You MUST include 'sessionId' parameter from nexus_open_dump response! " +
-                    "❌ WITHOUT sessionId this command will FAIL with error -32602! " +
-                    "⚠️ CRITICAL: This only QUEUES the command and returns a commandId - it does NOT return results! " +
-                    "🔄 REQUIRED NEXT STEP: You MUST call nexus_debugger_command_status(commandId) to get the actual output. " +
-                    "💡 COMMON COMMANDS: " +
-                    "• '!analyze -v' - Detailed crash analysis " +
-                    "• 'k' - Call stack " +
-                    "• 'lm' - List loaded modules " +
-                    "• 'dt ModuleName!StructName' - Display type " +
-                    "📡 TIP: Listen for notifications/commandStatus to know when commands complete!",
-                InputSchema = new
+            Name = "nexus_exec_debugger_command_async",
+            Description = "⚡ STEP 2 - EXECUTE COMMANDS: Run debugger commands like '!analyze -v', 'k', 'lm', 'dt', etc. " +
+                "🎯 BEST PRACTICE: Always include 'sessionId' parameter for proper API usage " +
+                "🚨 FALLBACK ONLY: If sessionId is missing, service will auto-detect most recent session (NOT RECOMMENDED) " +
+                "⚠️ AUTO-DETECTION WARNING: This fallback generates warnings and should not be relied upon " +
+                "⚠️ CRITICAL: This only QUEUES the command and returns a commandId - it does NOT return results! " +
+                "🔄 REQUIRED NEXT STEP: You MUST call nexus_debugger_command_status(commandId) to get the actual output. " +
+                "💡 COMMON COMMANDS: " +
+                "• '!analyze -v' - Detailed crash analysis " +
+                "• 'k' - Call stack " +
+                "• 'lm' - List loaded modules " +
+                "• 'dt ModuleName!StructName' - Display type " +
+                "📡 TIP: Listen for notifications/commandStatus to know when commands complete!",
+            InputSchema = new
+            {
+                type = "object",
+                properties = new
                 {
-                    type = "object",
-                    properties = new
-                    {
-                        command = new { type = "string", description = "WinDbg/CDB command like '!analyze -v', 'k', 'lm', etc." },
-                        sessionId = new { type = "string", description = "REQUIRED: Session ID from nexus_open_dump response. Without this, the command will FAIL!" }
-                    },
-                    required = new[] { "command", "sessionId" }
-                }
+                    command = new { type = "string", description = "WinDbg/CDB command like '!analyze -v', 'k', 'lm', etc." },
+                    sessionId = new { type = "string", description = "RECOMMENDED: Session ID from nexus_open_dump response. If omitted, service will auto-detect (with warnings)." }
+                },
+                required = new[] { "command" }
+            }
             };
         }
 
