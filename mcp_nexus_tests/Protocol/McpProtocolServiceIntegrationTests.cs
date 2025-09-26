@@ -35,12 +35,9 @@ namespace mcp_nexus_tests.Services
 			
 			var logger = LoggerFactory.Create(b => { }).CreateLogger<McpProtocolService>();
 			
-			var mockCdbSession = Mock.Of<ICdbSession>();
-			
 			m_service = new McpProtocolService(
 				toolDefinitionService,
 				toolExecutionService,
-				mockCdbSession,
 				logger);
 		}
 

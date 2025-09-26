@@ -35,13 +35,10 @@ namespace mcp_nexus_tests.Controllers
 			var toolExecutionService = new McpToolExecutionService(sessionAwareWindbgTool, mockExecutionLogger);
 			
 			var mockProtocolLogger = LoggerFactory.Create(b => { }).CreateLogger<McpProtocolService>();
-			// Mock ICdbSession for McpProtocolService
-			var mockCdbSession = Mock.Of<mcp_nexus.Debugger.ICdbSession>();
 			
 			var protocolService = new McpProtocolService(
 				toolDefinitionService,
 				toolExecutionService,
-				mockCdbSession,
 				mockProtocolLogger);
 
 			m_mockLogger = new Mock<ILogger<McpController>>();

@@ -7,7 +7,6 @@ namespace mcp_nexus.Protocol
     public class McpProtocolService(
         McpToolDefinitionService m_toolDefinitionService,
         McpToolExecutionService m_toolExecutionService,
-        ICdbSession m_cdbSession,
         ILogger<McpProtocolService> m_logger)
     {
         public async Task<object> ProcessRequest(JsonElement requestElement)
@@ -98,16 +97,9 @@ namespace mcp_nexus.Protocol
                     m_logger.LogDebug("Cancellation reason: {Reason}", reason);
                 }
 
-                // Actually cancel any running CDB operations
-                try
-                {
-                    m_logger.LogDebug("Cancelling current CDB operations due to client request");
-                    m_cdbSession.CancelCurrentOperation();
-                }
-                catch (Exception ex)
-                {
-                    m_logger.LogError(ex, "Failed to cancel CDB operation for request ID: {RequestId}", requestId);
-                }
+                // TODO: Implement cancellation through session manager or tool execution service
+                // In the new session-aware architecture, cancellation should be handled per-session
+                m_logger.LogDebug("Cancellation request received for request ID: {RequestId} (session-aware cancellation not yet implemented)", requestId);
             }
             else
             {
