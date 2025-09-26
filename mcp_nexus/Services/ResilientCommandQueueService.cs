@@ -491,7 +491,8 @@ namespace mcp_nexus.Services
                     try
                     {
                         await m_notificationService?.NotifyCommandStatusAsync(
-                            queuedCommand.Id, queuedCommand.Command, "cancelled", null, "Command execution was cancelled")!;
+                            queuedCommand.Id, queuedCommand.Command, "cancelled", progress: null, 
+                            message: "Command execution was cancelled", result: null, error: null)!;
                     }
                     catch (Exception ex)
                     {

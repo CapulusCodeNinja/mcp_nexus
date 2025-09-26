@@ -1,6 +1,6 @@
 namespace mcp_nexus.Services
 {
-    public interface ICommandQueueService
+    public interface ICommandQueueService : IDisposable
     {
         string QueueCommand(string command);
         Task<string> GetCommandResult(string commandId);

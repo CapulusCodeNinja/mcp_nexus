@@ -654,25 +654,33 @@ namespace mcp_nexus
             });
             Console.Error.WriteLine("Registered CdbSessionRecoveryService for automated recovery");
 
-            // Use resilient command queue for automated recovery
-            services.AddSingleton<ICommandQueueService, ResilientCommandQueueService>();
-            Console.Error.WriteLine("Registered ResilientCommandQueueService for automated recovery");
-
-            services.AddSingleton<ICdbSession>(serviceProvider =>
+            // MIGRATION: Register session management instead of global command queue
+            services.Configure<mcp_nexus.Models.SessionConfiguration>(config =>
             {
-                var logger = serviceProvider.GetRequiredService<ILogger<CdbSession>>();
-                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-                var commandTimeoutMs = configuration.GetValue("McpNexus:Debugging:CommandTimeoutMs", 30000);
-                var symbolServerTimeoutMs = configuration.GetValue("McpNexus:Debugging:SymbolServerTimeoutMs", 30000);
-                var symbolServerMaxRetries = configuration.GetValue("McpNexus:Debugging:SymbolServerMaxRetries", 1);
-                var symbolSearchPath = configuration.GetValue<string?>("McpNexus:Debugging:SymbolSearchPath");
-                return new CdbSession(logger, commandTimeoutMs, customCdbPath, symbolServerTimeoutMs, symbolServerMaxRetries, symbolSearchPath);
+                config.MaxConcurrentSessions = 10;
+                config.SessionTimeout = TimeSpan.FromMinutes(30);
+                config.CleanupInterval = TimeSpan.FromMinutes(5);
+                config.DisposalTimeout = TimeSpan.FromSeconds(30);
+                config.DefaultCommandTimeout = TimeSpan.FromMinutes(10);
             });
-            Console.Error.WriteLine("Registered CdbSession as singleton with custom CDB path: {0}",
-                customCdbPath ?? "auto-detect");
+            services.AddSingleton<ISessionManager, ThreadSafeSessionManager>();
+            Console.Error.WriteLine("Registered ThreadSafeSessionManager for multi-session support");
 
-            services.AddSingleton<WindbgTool>();
-            Console.Error.WriteLine("Registered WindbgTool as singleton");
+            // MIGRATION: CdbSession is now created per-session by SessionManager
+            // Store CDB configuration for session manager to use
+            services.Configure<mcp_nexus.Models.CdbSessionOptions>(options =>
+            {
+                options.CommandTimeoutMs = 30000; // Default 30 seconds - will be configurable later
+                options.SymbolServerTimeoutMs = 30000; // Default 30 seconds
+                options.SymbolServerMaxRetries = 1; // Default 1 retry
+                options.SymbolSearchPath = null; // Use default symbol paths
+                options.CustomCdbPath = customCdbPath;
+            });
+            Console.Error.WriteLine("Configured CdbSession parameters for per-session creation");
+
+            // MIGRATION: Register session-aware tool instead of legacy WindbgTool
+            services.AddSingleton<SessionAwareWindbgTool>();
+            Console.Error.WriteLine("Registered SessionAwareWindbgTool with multi-session support");
 
             // Register MCP notification service for both HTTP and stdio modes
             services.AddSingleton<IMcpNotificationService, McpNotificationService>();

@@ -14,15 +14,31 @@ namespace mcp_nexus.Services
             int? progress = null, string? message = null, string? result = null, string? error = null);
 
         /// <summary>
+        /// Send a session-aware command status notification to all connected clients
+        /// </summary>
+        Task NotifyCommandStatusAsync(string sessionId, string commandId, string command, string status, 
+            string? result = null, int? progress = null, string? message = null, string? error = null);
+
+        /// <summary>
         /// Send a heartbeat notification for a running command to show it's still active
         /// </summary>
         Task NotifyCommandHeartbeatAsync(string commandId, string command, TimeSpan elapsed, string? details = null);
+
+        /// <summary>
+        /// Send a session-aware heartbeat notification for a running command
+        /// </summary>
+        Task NotifyCommandHeartbeatAsync(string sessionId, string commandId, string command, TimeSpan elapsed, string? details = null);
 
         /// <summary>
         /// Send a session recovery notification to all connected clients
         /// </summary>
         Task NotifySessionRecoveryAsync(string reason, string recoveryStep, bool success, 
             string message, string[]? affectedCommands = null);
+
+        /// <summary>
+        /// Send a session event notification (creation, closure, expiry, etc.)
+        /// </summary>
+        Task NotifySessionEventAsync(string sessionId, string eventType, string message, SessionContext? context = null);
 
         /// <summary>
         /// Send a server health notification to all connected clients

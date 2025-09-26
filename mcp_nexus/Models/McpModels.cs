@@ -165,6 +165,9 @@ namespace mcp_nexus.Models
     /// </summary>
     public class McpCommandStatusNotification
     {
+        [JsonPropertyName("sessionId")]
+        public string? SessionId { get; set; }
+        
         [JsonPropertyName("commandId")]
         public string CommandId { get; set; } = string.Empty;
         
@@ -212,6 +215,9 @@ namespace mcp_nexus.Models
     /// </summary>
     public class McpCommandHeartbeatNotification
     {
+        [JsonPropertyName("sessionId")]
+        public string? SessionId { get; set; }
+        
         [JsonPropertyName("commandId")]
         public string CommandId { get; set; } = string.Empty;
         
@@ -311,6 +317,50 @@ namespace mcp_nexus.Models
         
         [JsonPropertyName("uptime")]
         public TimeSpan? Uptime { get; set; }
+    }
+
+    /// <summary>
+    /// Session event notification parameters
+    /// 
+    /// Sent via notifications/sessionEvent when important session lifecycle events occur.
+    /// AI clients should monitor these to track session state and handle session expiry.
+    /// 
+    /// Example notification:
+    /// {
+    ///   "jsonrpc": "2.0",
+    ///   "method": "notifications/sessionEvent",
+    ///   "params": {
+    ///     "sessionId": "sess-000001-abc12345",
+    ///     "eventType": "SESSION_CREATED",
+    ///     "message": "Session created for mydump.dmp",
+    ///     "context": {
+    ///       "sessionId": "sess-000001-abc12345",
+    ///       "description": "Debugging session for mydump.dmp",
+    ///       "createdAt": "2025-09-25T18:30:00.000Z",
+    ///       "status": "Active",
+    ///       "commandsProcessed": 0,
+    ///       "activeCommands": 0
+    ///     },
+    ///     "timestamp": "2025-09-25T18:30:00.123Z"
+    ///   }
+    /// }
+    /// </summary>
+    public class McpSessionEventNotification
+    {
+        [JsonPropertyName("sessionId")]
+        public string SessionId { get; set; } = string.Empty;
+        
+        [JsonPropertyName("eventType")]
+        public string EventType { get; set; } = string.Empty;
+        
+        [JsonPropertyName("message")]
+        public string Message { get; set; } = string.Empty;
+        
+        [JsonPropertyName("context")]
+        public SessionContext? Context { get; set; }
+        
+        [JsonPropertyName("timestamp")]
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 }
 

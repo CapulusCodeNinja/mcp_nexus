@@ -50,6 +50,36 @@ namespace mcp_nexus.Services
             m_logger.LogDebug("Sent command status notification: {CommandId} -> {Status}", commandId, status);
         }
 
+        public async Task NotifyCommandStatusAsync(
+            string sessionId,
+            string commandId, 
+            string command, 
+            string status, 
+            string? result = null,
+            int? progress = null, 
+            string? message = null, 
+            string? error = null)
+        {
+            if (m_disposed) return;
+
+            var notification = new McpCommandStatusNotification
+            {
+                SessionId = sessionId,
+                CommandId = commandId,
+                Command = command,
+                Status = status,
+                Progress = progress,
+                Message = message,
+                Result = result,
+                Error = error,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await SendNotificationAsync("notifications/commandStatus", notification);
+            
+            m_logger.LogDebug("Sent session-aware command status notification: {SessionId}/{CommandId} -> {Status}", sessionId, commandId, status);
+        }
+
         public async Task NotifyCommandHeartbeatAsync(
             string commandId, 
             string command, 
@@ -77,6 +107,35 @@ namespace mcp_nexus.Services
             m_logger.LogTrace("Sent command heartbeat: {CommandId} -> {Elapsed}", commandId, elapsedDisplay);
         }
 
+        public async Task NotifyCommandHeartbeatAsync(
+            string sessionId,
+            string commandId, 
+            string command, 
+            TimeSpan elapsed, 
+            string? details = null)
+        {
+            if (m_disposed) return;
+
+            var elapsedDisplay = elapsed.TotalMinutes >= 1
+                ? $"{elapsed.TotalMinutes.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}m"
+                : $"{elapsed.TotalSeconds.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)}s";
+
+            var notification = new McpCommandHeartbeatNotification
+            {
+                SessionId = sessionId,
+                CommandId = commandId,
+                Command = command,
+                ElapsedSeconds = elapsed.TotalSeconds,
+                ElapsedDisplay = elapsedDisplay,
+                Details = details,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await SendNotificationAsync("notifications/commandHeartbeat", notification);
+            
+            m_logger.LogTrace("Sent session-aware command heartbeat: {SessionId}/{CommandId} -> {Elapsed}", sessionId, commandId, elapsedDisplay);
+        }
+
         public async Task NotifySessionRecoveryAsync(string reason, string recoveryStep, bool success, 
             string message, string[]? affectedCommands = null)
         {
@@ -95,6 +154,24 @@ namespace mcp_nexus.Services
             await SendNotificationAsync("notifications/sessionRecovery", notification);
             
             m_logger.LogInformation("Sent session recovery notification: {RecoveryStep} -> {Success}", recoveryStep, success);
+        }
+
+        public async Task NotifySessionEventAsync(string sessionId, string eventType, string message, SessionContext? context = null)
+        {
+            if (m_disposed) return;
+
+            var notification = new McpSessionEventNotification
+            {
+                SessionId = sessionId,
+                EventType = eventType,
+                Message = message,
+                Context = context,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await SendNotificationAsync("notifications/sessionEvent", notification);
+            
+            m_logger.LogInformation("Sent session event notification: {SessionId} -> {EventType}: {Message}", sessionId, eventType, message);
         }
 
         public async Task NotifyServerHealthAsync(string status, bool cdbSessionActive, int queueSize, 
