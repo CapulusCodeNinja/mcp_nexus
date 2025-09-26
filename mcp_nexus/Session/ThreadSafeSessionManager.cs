@@ -102,10 +102,12 @@ namespace mcp_nexus.Session
             using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
                 cancellationToken, m_shutdownCts.Token);
 
-            // CONCURRENCY: Generate unique session ID atomically
+            // CONCURRENCY: Generate unique session ID atomically with enhanced entropy
             var sessionNumber = Interlocked.Increment(ref m_sessionCounter);
             var guid = Guid.NewGuid().ToString("N");
-            var sessionId = $"sess-{sessionNumber:D6}-{guid[..8]}";
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var processId = Environment.ProcessId;
+            var sessionId = $"sess-{sessionNumber:D6}-{guid[..8]}-{timestamp:X8}-{processId:X4}";
 
             SessionInfo? newSession = null;
             var stopwatch = Stopwatch.StartNew();
@@ -367,6 +369,13 @@ namespace mcp_nexus.Session
             return m_sessions.Values
                 .Where(s => s.Status == SessionStatus.Active && !s.IsDisposed)
                 .Select(s => GetSessionContext(s.SessionId))
+                .ToList(); // Materialize to avoid deferred execution issues
+        }
+
+        public IEnumerable<SessionInfo> GetAllSessions()
+        {
+            return m_sessions.Values
+                .Where(s => !s.IsDisposed)
                 .ToList(); // Materialize to avoid deferred execution issues
         }
 

@@ -399,7 +399,7 @@ namespace mcp_nexus.CommandQueue
                         {
                             m_logger.LogError(ex, "Error executing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
 
-                            // IMPROVED: Better error handling with detailed error information
+                            // STANDARDIZED: Consistent error message formatting
                             var errorMessage = ex switch
                             {
                                 OperationCanceledException => "Command execution was cancelled",

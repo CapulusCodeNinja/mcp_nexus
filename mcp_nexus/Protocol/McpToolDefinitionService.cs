@@ -21,7 +21,9 @@ namespace mcp_nexus.Protocol
                 CreateNexusOpenDumpAnalyzeSessionTool(),
                 CreateNexusDumpAnalyzeSessionAsyncCommandTool(),
                 CreateNexusDumpAnalyzeSessionAsyncCommandStatusTool(),
-                CreateNexusCloseDumpAnalyzeSessionTool()
+                CreateNexusCloseDumpAnalyzeSessionTool(),
+                CreateNexusListDumpAnalyzeSessionsTool(),
+                CreateNexusListDumpAnalyzeSessionAsyncCommandsTool()
                 // NOTE: Remote debugging and command cancellation will be added in future releases
             ];
         }
@@ -139,6 +141,47 @@ namespace mcp_nexus.Protocol
                         }
                     },
                     required = new[] { "commandId" }
+                }
+            };
+        }
+
+        private static McpToolSchema CreateNexusListDumpAnalyzeSessionsTool()
+        {
+            return new McpToolSchema
+            {
+                Name = "nexus_list_dump_analyze_sessions",
+                Description = System.Text.Json.JsonSerializer.Serialize(
+                    SessionAwareWindbgTool.TOOL_USAGE_EXPLANATION,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+                InputSchema = new
+                {
+                    type = "object",
+                    properties = new { },
+                    required = new string[] { }
+                }
+            };
+        }
+
+        private static McpToolSchema CreateNexusListDumpAnalyzeSessionAsyncCommandsTool()
+        {
+            return new McpToolSchema
+            {
+                Name = "nexus_list_dump_analyze_session_async_commands",
+                Description = System.Text.Json.JsonSerializer.Serialize(
+                    SessionAwareWindbgTool.TOOL_USAGE_EXPLANATION,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+                InputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        sessionId = new
+                        {
+                            type = "string",
+                            description = "REQUIRED: The EXACT sessionId that was returned by nexus_open_dump_analyze_session. Format: 'sess-XXXXXX-YYYYYYYY-timestamp-processId'. DO NOT make up your own values!"
+                        }
+                    },
+                    required = new[] { "sessionId" }
                 }
             };
         }

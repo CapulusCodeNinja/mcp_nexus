@@ -68,6 +68,12 @@ namespace mcp_nexus.Session
         IEnumerable<SessionContext> GetActiveSessions();
 
         /// <summary>
+        /// Get all sessions with full session information
+        /// </summary>
+        /// <returns>Collection of session info objects</returns>
+        IEnumerable<SessionInfo> GetAllSessions();
+
+        /// <summary>
         /// Get session statistics
         /// </summary>
         /// <returns>Session statistics</returns>

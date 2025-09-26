@@ -1112,15 +1112,91 @@ namespace mcp_nexus.Debugger
                     logger.LogInformation("Disposing active CDB session...");
                     try
                     {
-                        // Don't use StopSession() as it would call ThrowIfDisposed()
-                        // Just do the basic cleanup
+                        // IMPROVED: Proper process disposal with timeout and exception handling
                         lock (m_lifecycleLock)
                         {
-                            m_debuggerProcess?.Dispose();
-                            m_debuggerInput?.Dispose();
-                            m_debuggerOutput?.Dispose();
-                            m_debuggerError?.Dispose();
-                            m_isActive = false;
+                            try
+                            {
+                                // Try to gracefully terminate the process first
+                                if (m_debuggerProcess != null && !m_debuggerProcess.HasExited)
+                                {
+                                    logger.LogDebug("Attempting graceful process termination...");
+                                    try
+                                    {
+                                        m_debuggerProcess.CloseMainWindow();
+
+                                        // Wait for graceful shutdown with timeout
+                                        if (!m_debuggerProcess.WaitForExit(5000)) // 5 second timeout
+                                        {
+                                            logger.LogWarning("Process did not exit gracefully, forcing termination...");
+                                            m_debuggerProcess.Kill();
+                                            m_debuggerProcess.WaitForExit(2000); // 2 second timeout for kill
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        logger.LogWarning(ex, "Error during graceful process termination, forcing kill...");
+                                        try
+                                        {
+                                            m_debuggerProcess.Kill();
+                                            m_debuggerProcess.WaitForExit(2000);
+                                        }
+                                        catch (Exception killEx)
+                                        {
+                                            logger.LogError(killEx, "Error forcing process termination");
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.LogError(ex, "Error during process termination");
+                            }
+                            finally
+                            {
+                                // Always dispose resources, even if process termination failed
+                                try
+                                {
+                                    m_debuggerProcess?.Dispose();
+                                }
+                                catch (Exception ex)
+                                {
+                                    logger.LogWarning(ex, "Error disposing process");
+                                }
+
+                                try
+                                {
+                                    m_debuggerInput?.Dispose();
+                                }
+                                catch (Exception ex)
+                                {
+                                    logger.LogWarning(ex, "Error disposing input stream");
+                                }
+
+                                try
+                                {
+                                    m_debuggerOutput?.Dispose();
+                                }
+                                catch (Exception ex)
+                                {
+                                    logger.LogWarning(ex, "Error disposing output stream");
+                                }
+
+                                try
+                                {
+                                    m_debuggerError?.Dispose();
+                                }
+                                catch (Exception ex)
+                                {
+                                    logger.LogWarning(ex, "Error disposing error stream");
+                                }
+
+                                m_debuggerProcess = null;
+                                m_debuggerInput = null;
+                                m_debuggerOutput = null;
+                                m_debuggerError = null;
+                                m_isActive = false;
+                            }
                         }
                     }
                     catch (Exception ex)

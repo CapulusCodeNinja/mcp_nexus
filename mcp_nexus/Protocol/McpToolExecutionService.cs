@@ -9,6 +9,12 @@ namespace mcp_nexus.Protocol
         SessionAwareWindbgTool sessionAwareWindbgTool,
         ILogger<McpToolExecutionService> logger)
     {
+        // PERFORMANCE: Cache JsonSerializerOptions to avoid repeated allocation
+        private static readonly JsonSerializerOptions s_jsonOptions = new()
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = null // Don't change property names - MCP protocol requires exact field names
+        };
         public async Task<object> ExecuteTool(string toolName, JsonElement arguments)
         {
             logger.LogDebug("Executing tool: {ToolName}", toolName);
@@ -21,6 +27,8 @@ namespace mcp_nexus.Protocol
                     "nexus_close_dump_analyze_session" => await ExecuteCloseWindbgDump(arguments),
                     "nexus_dump_analyze_session_async_command" => await ExecuteRunWindbgCmdAsync(arguments),
                     "nexus_dump_analyze_session_async_command_status" => await ExecuteGetCommandStatus(arguments),
+                    "nexus_list_dump_analyze_sessions" => await ExecuteListSessions(arguments),
+                    "nexus_list_dump_analyze_session_async_commands" => await ExecuteListCommands(arguments),
                     _ => throw new McpToolException(-32602, $"Unknown tool: {toolName}")
                 };
             }
@@ -130,6 +138,26 @@ namespace mcp_nexus.Protocol
             return arguments.TryGetProperty(name, out var property) ? property.GetString() : null;
         }
 
+        private async Task<object> ExecuteListSessions(JsonElement arguments)
+        {
+            logger.LogDebug("Listing all active sessions");
+
+            var result = await sessionAwareWindbgTool.nexus_list_dump_analyze_sessions();
+            return CreateToolResult(result);
+        }
+
+        private async Task<object> ExecuteListCommands(JsonElement arguments)
+        {
+            var sessionId = GetRequiredStringArgument(arguments, "sessionId");
+            if (sessionId == null)
+                throw new McpToolException(-32602, "Missing required parameter: sessionId");
+
+            logger.LogDebug("Listing commands for session: {SessionId}", sessionId);
+
+            var result = await sessionAwareWindbgTool.nexus_list_dump_analyze_session_async_commands(sessionId);
+            return CreateToolResult(result);
+        }
+
         private static object CreateToolResult(object result)
         {
             return new McpToolResult
@@ -139,7 +167,7 @@ namespace mcp_nexus.Protocol
                     new McpContent
                     {
                         Type = "text",
-                        Text = System.Text.Json.JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true })
+                        Text = System.Text.Json.JsonSerializer.Serialize(result, s_jsonOptions)
                     }
                 ]
             };

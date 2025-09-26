@@ -202,9 +202,10 @@ namespace mcp_nexus.Utilities
             }
 
             // SECURITY: Check for excessively long paths that could cause buffer overflows
-            if (path.Length > 260) // MAX_PATH on Windows
+            const int MaxPathLength = 260; // Windows MAX_PATH
+            if (path.Length > MaxPathLength)
             {
-                throw new ArgumentException($"Path exceeds maximum allowed length (260 characters): {path.Length}", nameof(path));
+                throw new ArgumentException($"Path exceeds maximum allowed length ({MaxPathLength} characters): {path.Length}", nameof(path));
             }
 
             // SECURITY: Check for control characters that could be used for injection

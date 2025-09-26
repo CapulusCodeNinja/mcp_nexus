@@ -111,18 +111,23 @@ Architecture, testing, contribution guide
 
 > 📖 **Detailed setup instructions:** [🔧 CONFIGURATION.md](docs/CONFIGURATION.md)
 
-## 🛠 Available Tools (8 tools)
+## 🛠 Available Tools (10 tools)
 
 ### Windows Debugging Tools
 - **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
+- **Session Management**: `nexus_list_dump_analyze_sessions`, `nexus_list_dump_analyze_session_async_commands`
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
 - **Async Command Queue**: `nexus_dump_analyze_session_async_command`, `nexus_dump_analyze_session_async_command_status`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
 
-**🔄 Async Workflow with Notifications:**
+**🔄 Complete Debugging Workflow:**
 ```bash
-1. nexus_dump_analyze_session_async_command → Returns commandId
-2. Listen for notifications/commandStatus → Real-time progress
-3. OR poll nexus_dump_analyze_session_async_command_status → Get results
+1. nexus_open_dump_analyze_session → Create session, returns sessionId
+2. nexus_dump_analyze_session_async_command → Queue command, returns commandId
+3. Listen for notifications/commandStatus → Real-time progress updates
+4. nexus_dump_analyze_session_async_command_status → Get final results
+5. nexus_list_dump_analyze_sessions → List all active sessions
+6. nexus_list_dump_analyze_session_async_commands → List commands for session
+7. nexus_close_dump_analyze_session → Clean up resources
 ```
 
 > 📖 **Complete tool reference with examples:** **[📋 TOOLS.md](docs/TOOLS.md)**
