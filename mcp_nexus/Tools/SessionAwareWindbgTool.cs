@@ -96,10 +96,26 @@ namespace mcp_nexus.Tools
                 // Return simple response with session ID for MCP protocol
                 var response = new
                 {
+                    // THE MOST IMPORTANT FIELD - EXTRACT THIS VALUE!
                     sessionId = sessionId,
+                    
+                    // BACKUP FIELDS TO MAKE IT OBVIOUS
+                    EXTRACT_THIS_sessionId = sessionId,
+                    USE_THIS_sessionId = sessionId,
+                    
+                    // OTHER INFO
                     dumpFile = Path.GetFileName(dumpPath),
-                    message = "✅ Debugging session created successfully! Use this sessionId for all subsequent commands.",
+                    message = $"✅ SUCCESS! EXTRACT THIS sessionId VALUE: '{sessionId}' and SAVE IT for ALL subsequent commands!",
                     nextStep = $"nexus_exec_debugger_command_async(sessionId='{sessionId}', command='!analyze -v')",
+                    
+                    // EXPLICIT INSTRUCTIONS
+                    AI_INSTRUCTIONS = new
+                    {
+                        STEP_1 = "EXTRACT the 'sessionId' field from this response",
+                        STEP_2 = $"SAVE this value: '{sessionId}'",
+                        STEP_3 = "USE this saved sessionId in ALL subsequent commands",
+                        WARNING = "DO NOT make up your own sessionId values!"
+                    },
                     workflow = "ASYNC: nexus_exec_debugger_command_async returns commandId → Poll nexus_debugger_command_status until complete",
                     notifications = "Subscribe to notifications/commandStatus for real-time command progress",
                     commonCommands = new[]
@@ -281,27 +297,35 @@ namespace mcp_nexus.Tools
                 // Validate session
                 if (!sessionManager.SessionExists(sessionId))
                 {
-                    var sessionNotFoundResponse = new SessionAwareResponse
+                var sessionNotFoundResponse = new SessionAwareResponse
+                {
+                    SessionId = sessionId,
+                    Result = $"❌ INVALID SESSION ID: '{sessionId}' not found or expired!\n\n" +
+                             "🚨 CRITICAL AI CLIENT ERROR: You're using a WRONG or MADE-UP sessionId!\n\n" +
+                             "🔧 EXACT RECOVERY STEPS:\n" +
+                             "1️⃣ CALL nexus_open_dump with a .dmp file path\n" +
+                             "2️⃣ EXTRACT the 'sessionId' field from the JSON response\n" +
+                             "3️⃣ USE that EXACT sessionId value here (e.g., 'sess-000001-abc12345')\n" +
+                             "4️⃣ DO NOT make up your own sessionId values!\n\n" +
+                             "💡 EXAMPLE: If nexus_open_dump returns sessionId='sess-000001-feaf4c54', then use EXACTLY that value!\n" +
+                             "❌ WRONG: 'session_12345', 'my_session', 'test_session'\n" +
+                             "✅ CORRECT: Copy the sessionId from nexus_open_dump response JSON",
+                    AIGuidance = new AIGuidance
                     {
-                        SessionId = sessionId,
-                        Result = $"❌ Session '{sessionId}' not found or expired!\n\n" +
-                                "🔧 Create a new session with nexus_open_dump first.",
-                        AIGuidance = new AIGuidance
+                        NextSteps = new List<string>
                         {
-                            NextSteps = new List<string>
-                            {
-                                "Create new session with nexus_open_dump",
-                                "Verify sessionId is correct",
-                                "Check for session expiry notifications"
-                            },
-                            CommonErrors = new List<string>
-                            {
-                                "Using expired sessionId",
-                                "Session was closed or never created",
-                                "Typo in sessionId parameter"
-                            }
+                            "Call nexus_open_dump and extract the returned sessionId from response JSON",
+                            "Use the EXACT sessionId value returned (starts with 'sess-')",
+                            "Stop making up your own sessionId values"
+                        },
+                        CommonErrors = new List<string>
+                        {
+                            "Making up sessionId instead of using the one from nexus_open_dump",
+                            "Using expired or incorrect sessionId",
+                            "Not extracting sessionId from nexus_open_dump response"
                         }
-                    };
+                    }
+                };
                     
                     return sessionNotFoundResponse;
                 }
@@ -429,15 +453,29 @@ namespace mcp_nexus.Tools
                     var sessionNotFoundResponse = new SessionAwareResponse
                     {
                         SessionId = sessionId,
-                        Result = $"❌ Session '{sessionId}' not found or expired!\n\n" +
-                                "The command may have been lost due to session cleanup.",
+                        Result = $"❌ INVALID SESSION ID: '{sessionId}' not found or expired for command '{commandId}'!\n\n" +
+                                "🚨 CRITICAL AI CLIENT ERROR: You're using a WRONG or MADE-UP sessionId!\n\n" +
+                                "🔧 EXACT RECOVERY STEPS:\n" +
+                                "1️⃣ CALL nexus_open_dump with a .dmp file path\n" +
+                                "2️⃣ EXTRACT the 'sessionId' field from the JSON response\n" +
+                                "3️⃣ USE that EXACT sessionId value (e.g., 'sess-000001-abc12345')\n" +
+                                "4️⃣ DO NOT make up your own sessionId values!\n\n" +
+                                "💡 EXAMPLE: If nexus_open_dump returns sessionId='sess-000001-feaf4c54', then use EXACTLY that value!\n" +
+                                "❌ WRONG: 'session_12345', 'my_session', 'test_session'\n" +
+                                "✅ CORRECT: Copy the sessionId from nexus_open_dump response JSON",
                         AIGuidance = new AIGuidance
                         {
                             NextSteps = new List<string>
                             {
-                                "Create new session with nexus_open_dump",
-                                "Re-execute the command in the new session",
-                                "Monitor for session expiry notifications"
+                                "Call nexus_open_dump and extract the returned sessionId from response JSON",
+                                "Use the EXACT sessionId value returned (starts with 'sess-')",
+                                "Stop making up your own sessionId values"
+                            },
+                            CommonErrors = new List<string>
+                            {
+                                "Making up sessionId instead of using the one from nexus_open_dump",
+                                "Using expired or incorrect sessionId", 
+                                "Not extracting sessionId from nexus_open_dump response"
                             }
                         }
                     };

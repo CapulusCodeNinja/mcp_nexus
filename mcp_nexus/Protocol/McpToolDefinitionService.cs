@@ -42,14 +42,16 @@ namespace mcp_nexus.Protocol
             {
                 Name = "nexus_open_dump",
                 Description = "🚀 STEP 1 - START HERE: Open and analyze a Windows crash dump file (.dmp). " +
-                    "⚠️ CRITICAL: This returns a 'sessionId' that you MUST save and use in ALL subsequent commands! " +
-                    "📝 EXTRACT the sessionId from the response JSON and store it for later use. " +
+                    "🚨 CRITICAL RETURN VALUE: This command RETURNS a sessionId in the response JSON that you MUST EXTRACT and SAVE! " +
+                    "📤 RESPONSE CONTAINS: {\"sessionId\": \"sess-000001-abc12345\", ...} " +
+                    "📝 YOU MUST: Parse the response JSON and extract the 'sessionId' field value! " +
+                    "💾 SAVE IT: Store this sessionId string and use it in ALL subsequent commands! " +
                     "🔄 MANDATORY WORKFLOW: " +
-                    "1️⃣ nexus_open_dump → SAVE the sessionId from response " +
-                    "2️⃣ nexus_exec_debugger_command_async + sessionId → get commandId " +
+                    "1️⃣ nexus_open_dump → EXTRACT 'sessionId' from response JSON → SAVE IT! " +
+                    "2️⃣ nexus_exec_debugger_command_async + SAVED sessionId → get commandId " +
                     "3️⃣ nexus_debugger_command_status + commandId → get results " +
-                    "4️⃣ nexus_close_dump → CLOSE session when done (EXPECTED!) " +
-                    "❌ WITHOUT sessionId, ALL other commands will FAIL! " +
+                    "4️⃣ nexus_close_dump + SAVED sessionId → CLOSE session when done (EXPECTED!) " +
+                    "❌ DO NOT MAKE UP sessionId VALUES! Use only what this command returns! " +
                     "🧹 CLEANUP EXPECTATION: You SHOULD call nexus_close_dump when finished analyzing to properly release resources and close the debugging session. While sessions auto-expire after 30 minutes, explicit closure is the expected and professional approach!",
                 InputSchema = new
                 {
@@ -80,7 +82,7 @@ namespace mcp_nexus.Protocol
                     type = "object",
                     properties = new
                     {
-                        sessionId = new { type = "string", description = "Session ID from nexus_open_dump to close" }
+                        sessionId = new { type = "string", description = "🚨 REQUIRED: Session ID that you EXTRACTED from nexus_open_dump response JSON. Use the EXACT value (e.g., 'sess-000001-abc12345')" }
                     },
                     required = new[] { "sessionId" }
                 }
@@ -116,7 +118,7 @@ namespace mcp_nexus.Protocol
                 properties = new
                 {
                     command = new { type = "string", description = "WinDbg/CDB command like '!analyze -v', 'k', 'lm', etc." },
-                    sessionId = new { type = "string", description = "REQUIRED: Session ID from nexus_open_dump response. You MUST extract this from the nexus_open_dump response and include it here." }
+                            sessionId = new { type = "string", description = "🚨 REQUIRED: Session ID that you EXTRACTED from nexus_open_dump response JSON. This must be the EXACT value from the 'sessionId' field (e.g., 'sess-000001-abc12345'). DO NOT make up your own values!" }
                 },
                 required = new[] { "command", "sessionId" }
             }
