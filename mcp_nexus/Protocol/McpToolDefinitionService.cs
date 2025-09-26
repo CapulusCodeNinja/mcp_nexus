@@ -138,10 +138,11 @@ namespace mcp_nexus.Protocol
                 "2️⃣ It does NOT return the actual debugger output! " +
                 "3️⃣ You MUST call nexus_debugger_command_status(commandId) to get results " +
                 "4️⃣ Commands execute asynchronously in background queue " +
+                "⏰ POLLING REQUIRED: Check nexus_debugger_command_status EVERY 3-5 SECONDS until status is 'completed' " +
+                "🔄 EXACT WORKFLOW: nexus_exec_debugger_command_async → GET commandId → nexus_debugger_command_status(commandId) → REPEAT until complete " +
                 "🎯 BEST PRACTICE: Always include 'sessionId' parameter for proper API usage " +
                 "🚨 FALLBACK ONLY: If sessionId is missing, service will auto-detect most recent session (NOT RECOMMENDED) " +
                 "⚠️ AUTO-DETECTION WARNING: This fallback generates warnings and should not be relied upon " +
-                "🔄 MANDATORY WORKFLOW: nexus_exec_debugger_command_async → nexus_debugger_command_status " +
                 "💡 COMMON COMMANDS: " +
                 "• '!analyze -v' - Detailed crash analysis " +
                 "• 'k' - Call stack " +
@@ -172,7 +173,9 @@ namespace mcp_nexus.Protocol
                     "This is the ONLY way to get actual debugger command results! " +
                     "📊 STATUS FLOW: queued → executing → completed " +
                     "✅ When status='completed', the 'result' field contains the debugger output. " +
-                    "⏳ If status='executing' or 'queued', wait and try again. " +
+                    "⏳ If status='executing' or 'queued', wait 3-5 seconds and call this again! " +
+                    "🔄 KEEP POLLING: Call this repeatedly every 3-5 seconds until status='completed' " +
+                    "❌ NEVER GIVE UP: If status is not 'completed', you MUST try again later! " +
                     "💡 SMART TIP: Listen for notifications/commandStatus to know when to check instead of polling constantly.",
                 InputSchema = new
                 {

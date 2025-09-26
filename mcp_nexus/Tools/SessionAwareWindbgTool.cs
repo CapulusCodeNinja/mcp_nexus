@@ -99,7 +99,8 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     dumpFile = Path.GetFileName(dumpPath),
                     message = "✅ Debugging session created successfully! Use this sessionId for all subsequent commands.",
-                    nextStep = $"nexus_exec_debugger_command_async(sessionId='{sessionId}', command='!analyze -v')"
+                    nextStep = $"nexus_exec_debugger_command_async(sessionId='{sessionId}', command='!analyze -v')",
+                    workflow = "ASYNC: nexus_exec_debugger_command_async returns commandId → Poll nexus_debugger_command_status until complete"
                 };
 
                 logger.LogInformation("✅ Session {SessionId} created successfully", sessionId);
@@ -300,7 +301,9 @@ namespace mcp_nexus.Tools
                     commandId = commandId,
                     sessionId = sessionId,
                     message = "✅ Command queued successfully! Use nexus_debugger_command_status(commandId) to get results.",
-                    nextStep = $"nexus_debugger_command_status('{commandId}')"
+                    nextStep = $"nexus_debugger_command_status('{commandId}')",
+                    polling = "Check status every 3-5 seconds until command completes",
+                    workflow = "ASYNC: This returns commandId only → Poll nexus_debugger_command_status until completed"
                 };
 
                 logger.LogInformation("✅ Command {CommandId} queued in session {SessionId}", commandId, sessionId);
@@ -442,7 +445,9 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     status = status,
                     result = result,
-                    message = $"📊 Command Status: {status.ToUpper()}"
+                    message = $"📊 Command Status: {status.ToUpper()}",
+                    isComplete = status is "completed" or "failed" or "cancelled",
+                    continuePolling = status is "queued" or "executing" ? "Check again in 3-5 seconds" : null
                 };
 
                 return JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true });
