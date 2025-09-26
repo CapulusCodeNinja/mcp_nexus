@@ -383,46 +383,44 @@ namespace mcp_nexus.Tools
         /// </summary>
         [Description("📊 COMMAND STATUS: Get the result/status of a queued command. This is how you get actual command results from async operations.")]
         public async Task<string> nexus_debugger_command_status(
-            [Description("Command ID returned by nexus_exec_debugger_command_async")] string commandId,
-            [Description("Optional: Session ID for context (auto-detected from commandId if not provided)")] string? sessionId = null)
+            [Description("Command ID returned by nexus_exec_debugger_command_async")] string commandId)
         {
             logger.LogInformation("📊 Checking command status: {CommandId}", commandId);
 
-            return await GetCommandStatusAsync(commandId, sessionId);
+            return await GetCommandStatusAsync(commandId);
         }
 
-        private async Task<string> GetCommandStatusAsync(string commandId, string? sessionId)
+        private async Task<string> GetCommandStatusAsync(string commandId)
         {
             try
             {
-                // Extract session ID from command ID if not provided
-                if (string.IsNullOrEmpty(sessionId))
+                // Extract session ID from command ID format (strict validation)
+                var parts = commandId.Split('-');
+                if (parts.Length < 5) // cmd-sess-XXXXXX-YYYYYYYY-ZZZZ format
                 {
-                    var parts = commandId.Split('-');
-                    if (parts.Length >= 5) // cmd-sess-XXXXXX-YYYYYYYY-ZZZZ format
+                    var errorResponse = new SessionAwareResponse
                     {
-                        sessionId = $"{parts[1]}-{parts[2]}-{parts[3]}"; // Extract "sess-XXXXXX-YYYYYYYY"
-                    }
-                    else
-                    {
-                        var errorResponse = new SessionAwareResponse
+                        Result = $"❌ INVALID COMMAND ID FORMAT: {commandId}\n\n" +
+                                 "🔧 REQUIRED FORMAT: cmd-sess-XXXXXX-YYYYYYYY-ZZZZ\n" +
+                                 "📋 EXAMPLE: cmd-sess-000001-abc12345-0001\n" +
+                                 "❓ WHY THIS ERROR: You must use the exact commandId returned by nexus_exec_debugger_command_async\n" +
+                                 "🎯 AI DEBUGGING TIP: Copy the commandId exactly from the previous response!",
+                        AIGuidance = new AIGuidance
                         {
-                            Result = $"❌ Invalid command ID format: {commandId}\n\n" +
-                                     "Command IDs should be in format: cmd-sess-XXXXXX-YYYYYYYY-ZZZZ",
-                            AIGuidance = new AIGuidance
+                            NextSteps = new List<string>
                             {
-                                NextSteps = new List<string>
-                                {
-                                    "Verify commandId is from nexus_exec_debugger_command_async",
-                                    "Check for typos in commandId",
-                                    "Provide sessionId parameter if commandId format is unclear"
-                                }
+                                "Use the exact commandId from nexus_exec_debugger_command_async response",
+                                "Check for typos or truncation in the commandId",
+                                "Ensure you're copying the full commandId string"
                             }
-                        };
-                        
-                        return JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions { WriteIndented = true });
-                    }
+                        }
+                    };
+                    
+                    return JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions { WriteIndented = true });
                 }
+                
+                // Extract sessionId from commandId (by design, not a fallback)
+                var sessionId = $"{parts[1]}-{parts[2]}-{parts[3]}"; // Extract "sess-XXXXXX-YYYYYYYY"
 
                 // Validate session
                 if (!sessionManager.SessionExists(sessionId))
@@ -571,15 +569,6 @@ namespace mcp_nexus.Tools
             };
         }
 
-        /// <summary>
-        /// Get all active sessions for auto-detection when sessionId is missing
-        /// </summary>
-        public Task<IEnumerable<SessionContext>> GetActiveSessionsAsync()
-        {
-            logger.LogDebug("Getting active sessions for auto-detection");
-            var activeSessions = sessionManager.GetActiveSessions();
-            return Task.FromResult(activeSessions);
-        }
 
         #endregion
     }

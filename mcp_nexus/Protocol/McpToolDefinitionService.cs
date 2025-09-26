@@ -86,32 +86,32 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
             Name = "nexus_exec_debugger_command_async",
-            Description = "⚡ STEP 2 - EXECUTE COMMANDS: Run debugger commands like '!analyze -v', 'k', 'lm', 'dt', etc. " +
-                "🚨 ASYNC WORKFLOW - READ CAREFULLY: " +
-                "1️⃣ This command ONLY QUEUES the command and returns a commandId " +
-                "2️⃣ It does NOT return the actual debugger output! " +
-                "3️⃣ You MUST call nexus_debugger_command_status(commandId) to get results " +
-                "4️⃣ Commands execute asynchronously in background queue " +
-                "⏰ POLLING REQUIRED: Check nexus_debugger_command_status EVERY 3-5 SECONDS until status is 'completed' " +
-                "🔄 EXACT WORKFLOW: nexus_exec_debugger_command_async → GET commandId → nexus_debugger_command_status(commandId) → REPEAT until complete " +
-                "🎯 BEST PRACTICE: Always include 'sessionId' parameter for proper API usage " +
-                "🚨 FALLBACK ONLY: If sessionId is missing, service will auto-detect most recent session (NOT RECOMMENDED) " +
-                "⚠️ AUTO-DETECTION WARNING: This fallback generates warnings and should not be relied upon " +
-                "💡 COMMON COMMANDS: " +
-                "• '!analyze -v' - Detailed crash analysis " +
-                "• 'k' - Call stack " +
-                "• 'lm' - List loaded modules " +
-                "• 'dt ModuleName!StructName' - Display type " +
-                "📡 TIP: Listen for notifications/commandStatus to know when commands complete!",
+                Description = "⚡ STEP 2 - EXECUTE COMMANDS: Run debugger commands like '!analyze -v', 'k', 'lm', 'dt', etc. " +
+                    "🚨 ASYNC WORKFLOW - READ CAREFULLY: " +
+                    "1️⃣ This command ONLY QUEUES the command and returns a commandId " +
+                    "2️⃣ It does NOT return the actual debugger output! " +
+                    "3️⃣ You MUST call nexus_debugger_command_status(commandId) to get results " +
+                    "4️⃣ Commands execute asynchronously in background queue " +
+                    "⏰ POLLING REQUIRED: Check nexus_debugger_command_status EVERY 3-5 SECONDS until status is 'completed' " +
+                    "🔄 EXACT WORKFLOW: nexus_exec_debugger_command_async → GET commandId → nexus_debugger_command_status(commandId) → REPEAT until complete " +
+                    "🎯 MANDATORY sessionId: You MUST include the sessionId from nexus_open_dump response! " +
+                    "❌ MISSING sessionId = ERROR: This command will FAIL without a valid sessionId parameter! " +
+                    "📝 HOW TO GET sessionId: Call nexus_open_dump first, extract 'sessionId' from response JSON, then use it here " +
+                    "💡 COMMON COMMANDS: " +
+                    "• '!analyze -v' - Detailed crash analysis " +
+                    "• 'k' - Call stack " +
+                    "• 'lm' - List loaded modules " +
+                    "• 'dt ModuleName!StructName' - Display type " +
+                    "📡 TIP: Listen for notifications/commandStatus to know when commands complete!",
             InputSchema = new
             {
                 type = "object",
                 properties = new
                 {
                     command = new { type = "string", description = "WinDbg/CDB command like '!analyze -v', 'k', 'lm', etc." },
-                    sessionId = new { type = "string", description = "RECOMMENDED: Session ID from nexus_open_dump response. If omitted, service will auto-detect (with warnings)." }
+                    sessionId = new { type = "string", description = "REQUIRED: Session ID from nexus_open_dump response. You MUST extract this from the nexus_open_dump response and include it here." }
                 },
-                required = new[] { "command" }
+                required = new[] { "command", "sessionId" }
             }
             };
         }

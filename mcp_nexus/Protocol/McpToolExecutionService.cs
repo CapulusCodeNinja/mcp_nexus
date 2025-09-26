@@ -71,83 +71,29 @@ namespace mcp_nexus.Protocol
         {
             // Extract command and sessionId from arguments
             var command = GetRequiredStringArgument(arguments, "command");
-            var sessionId = GetOptionalStringArgument(arguments, "sessionId");
+            var sessionId = GetRequiredStringArgument(arguments, "sessionId");
             
             if (command == null)
                 throw new McpToolException(-32602, "❌ MISSING COMMAND: You must provide a 'command' parameter. " +
                     "🔧 RECOVERY: Add 'command' parameter with a WinDbg command like '!analyze -v', 'k', 'lm', etc.");
                 
-            // FALLBACK AUTO-DETECTION: Not recommended, but helps AI clients that don't follow proper workflow
             if (sessionId == null)
-            {
-                logger.LogWarning("⚠️ IMPROPER API USAGE: sessionId parameter missing - falling back to auto-detection");
-                logger.LogWarning("🚨 THIS IS NOT RECOMMENDED: Always include sessionId for proper API usage");
-                
-                // Get all active sessions and find the most recent one
-                var activeSessions = await sessionAwareWindbgTool.GetActiveSessionsAsync();
-                if (activeSessions?.Any() == true)
-                {
-                    if (activeSessions.Count() > 1)
-                    {
-                        logger.LogWarning("⚠️ MULTIPLE SESSIONS DETECTED: Found {Count} active sessions, using most recent", activeSessions.Count());
-                        var sessionList = string.Join(", ", activeSessions.Select(s => s.SessionId));
-                        logger.LogWarning("📋 Available sessions: {SessionList}", sessionList);
-                    }
-                    
-                    sessionId = activeSessions.OrderByDescending(s => s.CreatedAt).First().SessionId;
-                    logger.LogWarning("🔍 AUTO-DETECTED session: {SessionId} (most recent active session)", sessionId);
-                    logger.LogWarning("💡 BEST PRACTICE: Include sessionId explicitly: {{\"command\": \"{Command}\", \"sessionId\": \"{SessionId}\"}}", command, sessionId);
-                }
-                else
-                {
-                    throw new McpToolException(-32602, "❌ NO ACTIVE SESSIONS FOUND: You must provide a 'sessionId' parameter or have an active session! " +
-                        "🔧 RECOVERY STEPS: " +
-                        "1️⃣ First call nexus_open_dump with a .dmp file path to create a session " +
-                        "2️⃣ Extract the 'sessionId' from the response JSON " +
-                        "3️⃣ Retry this command with both 'command' AND 'sessionId' parameters " +
-                        "4️⃣ REMEMBER: This command returns commandId, then call nexus_debugger_command_status(commandId) for results " +
-                        "💡 EXAMPLE: {\"command\": \"!analyze -v\", \"sessionId\": \"sess-000001-abc12345\"} " +
-                        "🚨 ASYNC WORKFLOW: nexus_exec_debugger_command_async → nexus_debugger_command_status");
-                }
-            }
+                throw new McpToolException(-32602, "❌ MISSING SESSION ID: You must provide a 'sessionId' parameter! " +
+                    "🔧 STEP-BY-STEP RECOVERY: " +
+                    "1️⃣ FIRST: Call nexus_open_dump with a .dmp file path → this creates a debugging session " +
+                    "2️⃣ EXTRACT: Get the 'sessionId' value from the nexus_open_dump response JSON " +
+                    "3️⃣ RETRY: Call this command again with BOTH 'command' AND 'sessionId' parameters " +
+                    "4️⃣ REMEMBER: This command only returns a commandId, then call nexus_debugger_command_status(commandId) for actual results " +
+                    "💡 CORRECT USAGE EXAMPLE: {\"command\": \"!analyze -v\", \"sessionId\": \"sess-000001-abc12345\"} " +
+                    "🚨 ASYNC WORKFLOW: nexus_open_dump → nexus_exec_debugger_command_async → nexus_debugger_command_status " +
+                    "❓ WHY THIS ERROR: The AI client didn't extract sessionId from nexus_open_dump response or skipped calling nexus_open_dump entirely. " +
+                    "🎯 AI DEBUGGING TIP: Check your previous nexus_open_dump response for the sessionId field!");
 
             logger.LogDebug("Executing command '{Command}' for session '{SessionId}'", command, sessionId);
             
             try
             {
                 var result = await sessionAwareWindbgTool.nexus_exec_debugger_command_async(sessionId, command);
-                
-                // If auto-detection was used, modify the JSON response to include warning
-                if (GetOptionalStringArgument(arguments, "sessionId") == null)
-                {
-                    // Parse the JSON response to modify it
-                    var jsonResponse = JsonSerializer.Deserialize<JsonElement>(result);
-                    var originalMessage = jsonResponse.GetProperty("message").GetString() ?? "";
-                    var commandIdValue = jsonResponse.GetProperty("commandId").GetString() ?? "";
-                    
-                    var warningMessage = "🚨 AUTO-DETECTION WARNING: sessionId was missing and auto-detected!\n" +
-                                       "⚠️ THIS IS NOT RECOMMENDED: Always include sessionId parameter for proper API usage.\n" +
-                                       $"💡 CORRECT USAGE: {{\"command\": \"{command}\", \"sessionId\": \"{sessionId}\"}}\n" +
-                                       "🎯 Auto-detection used most recent session - this may not be what you intended!\n\n" +
-                                       "🚨 ASYNC WORKFLOW REMINDER: This command only returns a commandId!\n" +
-                                       "🔄 NEXT STEP REQUIRED: Call nexus_debugger_command_status(commandId) to get actual results!\n" +
-                                       "📡 Commands execute asynchronously - don't expect immediate results!\n\n" +
-                                       "--- ORIGINAL RESPONSE ---\n" + originalMessage;
-                    
-                    // Create a modified response with the warning but preserve the simple structure
-                    var modifiedResponse = new
-                    {
-                        commandId = commandIdValue,
-                        sessionId = sessionId,
-                        message = warningMessage,
-                        nextStep = $"nexus_debugger_command_status('{commandIdValue}')",
-                        warning = "AUTO_DETECTION_USED"
-                    };
-                    
-                    return modifiedResponse;
-                }
-                
-                // Return the structured JSON response (not just text)
                 return JsonSerializer.Deserialize<object>(result) ?? new object();
             }
             catch (Exception ex)
