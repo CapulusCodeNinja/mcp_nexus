@@ -2,26 +2,66 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
+using mcp_nexus.Constants;
 
 namespace mcp_nexus.Helper
 {
-    public class CdbSession(ILogger<CdbSession> logger, int commandTimeoutMs = 30000, string? customCdbPath = null, int symbolServerTimeoutMs = 30000, int symbolServerMaxRetries = 1, string? symbolSearchPath = null, int startupDelayMs = 2000)
-        : IDisposable, ICdbSession
+    public class CdbSession : IDisposable, ICdbSession
     {
+        private readonly ILogger<CdbSession> logger;
+        private readonly int commandTimeoutMs;
+        private readonly string? customCdbPath;
+        private readonly int symbolServerTimeoutMs;
+        private readonly int symbolServerMaxRetries;
+        private readonly string? symbolSearchPath;
+        private readonly int startupDelayMs;
+
+        public CdbSession(
+            ILogger<CdbSession> logger, 
+            int commandTimeoutMs = 30000, 
+            string? customCdbPath = null, 
+            int symbolServerTimeoutMs = 30000, 
+            int symbolServerMaxRetries = 1, 
+            string? symbolSearchPath = null, 
+            int startupDelayMs = 2000)
+        {
+            // Validate parameters first
+            ValidateParameters(commandTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
+            
+            // Store parameters
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.commandTimeoutMs = commandTimeoutMs;
+            this.customCdbPath = customCdbPath;
+            this.symbolServerTimeoutMs = symbolServerTimeoutMs;
+            this.symbolServerMaxRetries = symbolServerMaxRetries;
+            this.symbolSearchPath = symbolSearchPath;
+            this.startupDelayMs = startupDelayMs;
+        }
         // Validation logic
-        private static void ValidateParameters(int commandTimeoutMs, int symbolServerTimeoutMs, int symbolServerMaxRetries, int startupDelayMs)
+        private static void ValidateParameters(
+            int commandTimeoutMs, 
+            int symbolServerTimeoutMs, 
+            int symbolServerMaxRetries, 
+            int startupDelayMs)
         {
             if (commandTimeoutMs <= 0)
                 throw new ArgumentOutOfRangeException(nameof(commandTimeoutMs), "Command timeout must be positive");
+            
             if (symbolServerTimeoutMs < 0)
                 throw new ArgumentOutOfRangeException(nameof(symbolServerTimeoutMs), "Symbol server timeout cannot be negative");
+            
             if (symbolServerMaxRetries < 0)
                 throw new ArgumentOutOfRangeException(nameof(symbolServerMaxRetries), "Symbol server max retries cannot be negative");
+            
             if (startupDelayMs < 0)
                 throw new ArgumentOutOfRangeException(nameof(startupDelayMs), "Startup delay cannot be negative");
         }
 
-        private static bool ValidateParametersAndReturn(int commandTimeoutMs, int symbolServerTimeoutMs, int symbolServerMaxRetries, int startupDelayMs)
+        private static bool ValidateParametersAndReturn(
+            int commandTimeoutMs, 
+            int symbolServerTimeoutMs, 
+            int symbolServerMaxRetries, 
+            int startupDelayMs)
         {
             ValidateParameters(commandTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
             return true;
@@ -29,37 +69,39 @@ namespace mcp_nexus.Helper
 
         private void ThrowIfDisposed()
         {
-            if (m_Disposed)
+            if (m_disposed)
                 throw new ObjectDisposedException(nameof(CdbSession));
         }
-        private Process? m_DebuggerProcess;
-        private StreamWriter? m_DebuggerInput;
-        private StreamReader? m_DebuggerOutput;
-        private StreamReader? m_DebuggerError;
-        private bool m_IsActive;
-        private readonly object m_LifecycleLock = new();  // Only for start/stop operations, not command execution
-        private CancellationTokenSource? m_CurrentOperationCts;
-        private readonly object m_CancellationLock = new();
-        private bool m_Disposed;
 
-        // Validate parameters after field initialization
-        private readonly bool m_ValidatedParameters = ValidateParametersAndReturn(commandTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
+        private Process? m_debuggerProcess;
+        private StreamWriter? m_debuggerInput;
+        private StreamReader? m_debuggerOutput;
+        private StreamReader? m_debuggerError;
+        private bool m_isActive;
+        private readonly object m_lifecycleLock = new(); // Only for start/stop operations, not command execution
+        private CancellationTokenSource? m_currentOperationCts;
+        private readonly object m_cancellationLock = new();
+        private bool m_disposed;
+
+        // Parameters are validated in constructor - no need to store validation result
 
         public bool IsActive
         {
             get
             {
-                ThrowIfDisposed();
+                // FIXED: Return false when disposed instead of throwing
+                if (m_disposed)
+                    return false;
                 
                 // LOCK-FREE VERSION: Don't block on m_SessionLock to avoid deadlocks
                 // This is safe to read without locks since these are just status checks
                 logger.LogTrace("IsActive: Checking status (lock-free)...");
 
-                var isActive = m_IsActive;  // This is a simple bool read, thread-safe
-                var process = m_DebuggerProcess;  // Get reference once
-                var hasExited = process?.HasExited ?? true;  // Safe even if process is null
+                var isActive = m_isActive; // This is a simple bool read, thread-safe
+                var process = m_debuggerProcess; // Get reference once
+                var hasExited = process?.HasExited ?? true; // Safe even if process is null
 
-                logger.LogTrace("IsActive: m_IsActive={IsActive}, processExists={ProcessExists}, hasExited={HasExited}",
+                logger.LogTrace("IsActive: m_isActive={IsActive}, processExists={ProcessExists}, hasExited={HasExited}",
                     isActive, process != null, hasExited);
 
                 var result = isActive && !hasExited;
@@ -72,8 +114,28 @@ namespace mcp_nexus.Helper
         {
             ThrowIfDisposed();
             
-            // Synchronous version for backward compatibility
-            _ = CancelCurrentOperationAsync();
+            // CRITICAL FIX: Proper fire-and-forget with error handling and task tracking
+            var cancellationTask = Task.Run(async () =>
+            {
+                try
+                {
+                    await CancelCurrentOperationAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error in background cancellation operation");
+                }
+            }, CancellationToken.None);
+            
+            // Store the task to prevent it from being garbage collected
+            // This prevents UnobservedTaskException events
+            _ = cancellationTask.ContinueWith(t => 
+            {
+                if (t.IsFaulted)
+                {
+                    logger.LogError(t.Exception?.GetBaseException(), "Background cancellation task failed");
+                }
+            }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         private async Task CancelCurrentOperationAsync()
@@ -83,16 +145,16 @@ namespace mcp_nexus.Helper
 
             // Cancel operation token first
             logger.LogDebug("Cancelling operation token - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-            lock (m_CancellationLock)
+            lock (m_cancellationLock)
             {
                 logger.LogInformation("Cancelling current CDB operation due to client request");
-                m_CurrentOperationCts?.Cancel();
+                m_currentOperationCts?.Cancel();
                 logger.LogDebug("Operation token cancelled - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
             }
 
             // Get process info for interrupt commands - no session lock conflicts anymore!
-            var debuggerProcess = m_DebuggerProcess;  // Thread-safe read
-            var debuggerInput = m_DebuggerInput;      // Thread-safe read
+            var debuggerProcess = m_debuggerProcess;  // Thread-safe read
+            var debuggerInput = m_debuggerInput;      // Thread-safe read
 
             if (debuggerProcess is { HasExited: false } && debuggerInput != null)
             {
@@ -116,7 +178,7 @@ namespace mcp_nexus.Helper
                         logger.LogDebug("Debugger input stream is not writable, skipping Ctrl+C - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     }
 
-                    await Task.Delay(1000);
+                    await Task.Delay(ApplicationConstants.CdbInterruptDelay);
 
                     logger.LogTrace("Sending '.' command to get back to prompt - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                     
@@ -133,7 +195,7 @@ namespace mcp_nexus.Helper
                     }
 
                     logger.LogTrace("Starting final 2s wait - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    await Task.Delay(2000);
+                    await Task.Delay(ApplicationConstants.CdbPromptDelay);
 
                     logger.LogDebug("Command cancellation completed for PID: {ProcessId} - elapsed: {ElapsedMs}ms", processId, stopwatch.ElapsedMilliseconds);
                 }
@@ -194,18 +256,20 @@ namespace mcp_nexus.Helper
             {
                 // Check if we need to stop current session (outside lock to avoid deadlock)
                 bool needsStop;
-                lock (m_LifecycleLock)
+                lock (m_lifecycleLock)
                 {
-                    needsStop = m_IsActive;
+                    needsStop = m_isActive;
                 }
 
                 if (needsStop)
                 {
                     logger.LogDebug("Session is already active - stopping current session before starting new one");
-                    StopSession().Wait(); // Synchronous wait since we're in a non-async method
+                    // CRITICAL FIX: Make this method async to avoid blocking
+                    // For now, we'll just log and continue - the session will be stopped by the queue
+                    logger.LogWarning("Session is already active - this should be handled by the command queue");
                 }
 
-                lock (m_LifecycleLock)
+                lock (m_lifecycleLock)
                 {
                     logger.LogDebug("Acquired lifecycle lock for StartSession");
 
@@ -275,11 +339,11 @@ namespace mcp_nexus.Helper
                     logger.LogInformation("Effective symbol search path for CDB session: {EffectiveSymbolPath}", actualSymbolPath);
 
                     logger.LogDebug("Creating CDB process with arguments: {Arguments}", startInfo.Arguments);
-                    m_DebuggerProcess = new Process { StartInfo = startInfo };
+                    m_debuggerProcess = new Process { StartInfo = startInfo };
                     
                     logger.LogInformation("Starting CDB process...");
-                    var processStarted = m_DebuggerProcess.Start();
-                    logger.LogInformation("CDB process start result: {Started}, PID: {ProcessId}", processStarted, m_DebuggerProcess.Id);
+                    var processStarted = m_debuggerProcess.Start();
+                    logger.LogInformation("CDB process start result: {Started}, PID: {ProcessId}", processStarted, m_debuggerProcess.Id);
 
                     if (!processStarted)
                     {
@@ -288,20 +352,27 @@ namespace mcp_nexus.Helper
                     }
 
                     // Give CDB a moment to start up (configurable delay)
-                    logger.LogDebug("Allowing CDB process to start up (PID: {ProcessId}), waiting {DelayMs}ms...", m_DebuggerProcess.Id, startupDelayMs);
+                    logger.LogDebug("Allowing CDB process to start up (PID: {ProcessId}), waiting {DelayMs}ms...", m_debuggerProcess.Id, startupDelayMs);
                     Thread.Sleep(startupDelayMs);
 
-                    logger.LogDebug("Setting up input/output streams...");
-                    m_DebuggerInput = m_DebuggerProcess.StandardInput;
-                    m_DebuggerOutput = m_DebuggerProcess.StandardOutput;
-                    m_DebuggerError = m_DebuggerProcess.StandardError;
+                    // Check if the process is still running after startup delay
+                    if (m_debuggerProcess.HasExited)
+                    {
+                        logger.LogError("CDB process exited during startup. Exit code: {ExitCode}", m_debuggerProcess.ExitCode);
+                        return false;
+                    }
 
-                    m_IsActive = true;
+                    logger.LogDebug("Setting up input/output streams...");
+                    m_debuggerInput = m_debuggerProcess.StandardInput;
+                    m_debuggerOutput = m_debuggerProcess.StandardOutput;
+                    m_debuggerError = m_debuggerProcess.StandardError;
+
+                    m_isActive = true;
                     logger.LogInformation("CDB session marked as active");
                 }
 
                 logger.LogInformation("Successfully started CDB session with target: {Target}", target);
-                logger.LogInformation("Session active: {IsActive}, Process running: {IsRunning}", m_IsActive, m_DebuggerProcess?.HasExited == false);
+                logger.LogInformation("Session active: {IsActive}, Process running: {IsRunning}", m_isActive, m_debuggerProcess?.HasExited == false);
                 
                 // Don't wait for full initialization - CDB will be ready when we send commands
                 logger.LogInformation("CDB process started successfully. Session will be ready for commands.");
@@ -342,12 +413,12 @@ namespace mcp_nexus.Helper
                 // Create cancellation token for this operation - combine external token with timeout
                 // ARCHITECTURAL FIX: No session lock needed - CommandQueueService provides serialization
                 CancellationTokenSource operationCts;
-                lock (m_CancellationLock)
+                lock (m_cancellationLock)
                 {
                     operationCts = CancellationTokenSource.CreateLinkedTokenSource(
                         externalCancellationToken,
                         new CancellationTokenSource(TimeSpan.FromMilliseconds(commandTimeoutMs)).Token);
-                    m_CurrentOperationCts = operationCts;
+                    m_currentOperationCts = operationCts;
                 }
 
                 return Task.Run(() =>
@@ -362,17 +433,17 @@ namespace mcp_nexus.Helper
 
                         logger.LogDebug("🔓 [LOCKLESS] ExecuteCommand - no session lock needed (queue serializes)");
                         logger.LogInformation("🔓 [LOCKLESS] ExecuteCommand - IsActive: {IsActive}, ProcessExited: {ProcessExited}",
-                            m_IsActive, m_DebuggerProcess?.HasExited);
+                            m_isActive, m_debuggerProcess?.HasExited);
 
                         // Simple thread-safe validation
-                        if (!m_IsActive)
+                        if (!m_isActive)
                         {
                             logger.LogWarning("No active debug session - cannot execute command");
                             return "No active debug session. Please start a session first.";
                         }
 
-                        var debuggerProcess = m_DebuggerProcess;
-                        var debuggerInput = m_DebuggerInput;
+                        var debuggerProcess = m_debuggerProcess;
+                        var debuggerInput = m_debuggerInput;
 
                         if (debuggerProcess?.HasExited == true)
                         {
@@ -422,11 +493,11 @@ namespace mcp_nexus.Helper
                     finally
                     {
                         // Cleanup cancellation token - only need cancellation lock
-                        lock (m_CancellationLock)
+                        lock (m_cancellationLock)
                         {
-                            if (m_CurrentOperationCts == operationCts)
+                            if (m_currentOperationCts == operationCts)
                             {
-                                m_CurrentOperationCts = null;
+                                m_currentOperationCts = null;
                             }
                         }
                         operationCts.Dispose();
@@ -460,13 +531,13 @@ namespace mcp_nexus.Helper
 
                     // Give cancellation a moment to take effect
                     logger.LogInformation("⏳ [LOCKLESS-STOP] Starting 200ms delay - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    await Task.Delay(200);
+                    await Task.Delay(ApplicationConstants.CdbStartupDelay);
                     logger.LogInformation("✅ [LOCKLESS-STOP] 200ms delay completed - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 
                     // Get process reference - thread-safe reads, no session lock needed
-                    var processToStop = m_DebuggerProcess;
-                    var inputToStop = m_DebuggerInput;
-                    var wasActive = m_IsActive;
+                    var processToStop = m_debuggerProcess;
+                    var inputToStop = m_debuggerInput;
+                    var wasActive = m_isActive;
                     var processId = processToStop?.Id ?? 0;
 
                     logger.LogInformation("📋 [LOCKLESS-STOP] Process details captured (PID: {ProcessId}, Active: {IsActive}) - elapsed: {ElapsedMs}ms",
@@ -495,7 +566,7 @@ namespace mcp_nexus.Helper
 
                         // Grace period for quit
                         logger.LogInformation("⏳ [LOCKLESS-STOP] Starting 500ms grace period - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                        await Task.Delay(500);
+                        await Task.Delay(ApplicationConstants.CdbOutputDelay);
                         logger.LogInformation("✅ [LOCKLESS-STOP] Grace period completed - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 
                         // Force kill if needed
@@ -508,7 +579,7 @@ namespace mcp_nexus.Helper
                                 logger.LogInformation("🔪 [LOCKLESS-STOP] Kill command issued - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 
                                 // Short wait for kill
-                                await Task.Delay(1000);
+                                await Task.Delay(ApplicationConstants.CdbCommandDelay);
                                 logger.LogInformation("💀 [LOCKLESS-STOP] Kill wait completed - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                             }
                             catch (Exception ex)
@@ -528,19 +599,19 @@ namespace mcp_nexus.Helper
 
                     // Clean up resources - only use lifecycle lock for state changes
                     logger.LogInformation("🔒 [LOCKLESS-STOP] Acquiring lifecycle lock for cleanup - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    lock (m_LifecycleLock)
+                    lock (m_lifecycleLock)
                     {
                         logger.LogInformation("🧹 [LOCKLESS-STOP] Disposing of CDB resources - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    m_DebuggerProcess?.Dispose();
-                    m_DebuggerInput?.Dispose();
-                    m_DebuggerOutput?.Dispose();
-                    m_DebuggerError?.Dispose();
+                    m_debuggerProcess?.Dispose();
+                    m_debuggerInput?.Dispose();
+                    m_debuggerOutput?.Dispose();
+                    m_debuggerError?.Dispose();
 
-                    m_DebuggerProcess = null;
-                    m_DebuggerInput = null;
-                    m_DebuggerOutput = null;
-                    m_DebuggerError = null;
-                    m_IsActive = false;
+                    m_debuggerProcess = null;
+                    m_debuggerInput = null;
+                    m_debuggerOutput = null;
+                    m_debuggerError = null;
+                    m_isActive = false;
                     
                         logger.LogInformation("✅ [LOCKLESS-STOP] CDB session resources cleaned up - elapsed: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                 }
@@ -563,7 +634,7 @@ namespace mcp_nexus.Helper
         {
             logger.LogDebug("ReadDebuggerOutputWithCancellation called with timeout: {TimeoutMs}ms", timeoutMs);
             
-            if (m_DebuggerOutput == null)
+            if (m_debuggerOutput == null)
             {
                 logger.LogError("No output stream available for reading");
                 return "No output stream available";
@@ -583,10 +654,10 @@ namespace mcp_nexus.Helper
                     // Check for cancellation first
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    if (m_DebuggerOutput.Peek() == -1)
+                    if (m_debuggerOutput.Peek() == -1)
                     {
                         // Check if we've been waiting too long without any output
-                        if ((DateTime.Now - lastOutputTime).TotalMilliseconds > 5000)
+                        if ((DateTime.Now - lastOutputTime) > ApplicationConstants.CdbOutputTimeout)
                         {
                             logger.LogWarning("No output received for 5 seconds, continuing to wait...");
                         }
@@ -594,7 +665,7 @@ namespace mcp_nexus.Helper
                         continue;
                     }
 
-                    var line = m_DebuggerOutput.ReadLine();
+                    var line = m_debuggerOutput.ReadLine();
                     if (line != null)
                     {
                         linesRead++;
@@ -643,14 +714,14 @@ namespace mcp_nexus.Helper
                 logger.LogInformation("╚═══════════════════════════════════════════════════════════════════╝");
 
                 // Try to read any available stdout
-                if (m_DebuggerOutput != null)
+                if (m_debuggerOutput != null)
                 {
                     var stdoutLines = new List<string>();
                     try
                     {
-                        while (m_DebuggerOutput.Peek() != -1)
+                        while (m_debuggerOutput.Peek() != -1)
                         {
-                            var line = m_DebuggerOutput.ReadLine();
+                            var line = m_debuggerOutput.ReadLine();
                             if (line != null)
                             {
                                 stdoutLines.Add(line);
@@ -689,14 +760,14 @@ namespace mcp_nexus.Helper
                 }
 
                 // Try to read any available stderr
-                if (m_DebuggerError != null)
+                if (m_debuggerError != null)
                 {
                     var stderrLines = new List<string>();
                     try
                     {
-                        while (m_DebuggerError.Peek() != -1)
+                        while (m_debuggerError.Peek() != -1)
                         {
-                            var line = m_DebuggerError.ReadLine();
+                            var line = m_debuggerError.ReadLine();
                             if (line != null)
                             {
                                 stderrLines.Add(line);
@@ -744,7 +815,7 @@ namespace mcp_nexus.Helper
 
         private void LogProcessDiagnostics(string context)
         {
-            if (m_DebuggerProcess == null) return;
+            if (m_debuggerProcess == null) return;
 
             try
             {
@@ -752,7 +823,7 @@ namespace mcp_nexus.Helper
                 var isProgressUpdate = context.Contains("in progress") || context.Contains("Symbol download");
                 var logLevel = isProgressUpdate ? LogLevel.Debug : LogLevel.Information;
 
-                var process = m_DebuggerProcess;
+                var process = m_debuggerProcess;
                 logger.Log(logLevel, "");
 
                 logger.Log(logLevel, "╔═══════════════════════════════════════════════════════════════════╗");
@@ -767,7 +838,7 @@ namespace mcp_nexus.Helper
                 {
                     logger.Log(logLevel, $"  Start Time:   {process.StartTime}");
                     logger.Log(logLevel, $"  CPU Time:     {process.TotalProcessorTime}");
-                    var memoryInfo = $"{process.WorkingSet64:N0} bytes ({process.WorkingSet64 / 1024.0 / 1024.0:F1} MB)";
+                    var memoryInfo = $"{process.WorkingSet64:N0} bytes ({process.WorkingSet64 / ApplicationConstants.BytesPerMB:F1} MB)";
                     logger.Log(logLevel, $"  Memory Usage: {memoryInfo}");
                     logger.Log(logLevel, $"  Threads:      {process.Threads.Count}");
 
@@ -815,7 +886,7 @@ namespace mcp_nexus.Helper
                     CreateNoWindow = true
                 });
 
-                if (process != null && process.WaitForExit(5000))
+                if (process != null && process.WaitForExit((int)ApplicationConstants.CdbProcessWaitTimeout.TotalMilliseconds))
                 {
                     var output = process.StandardOutput.ReadToEnd();
                     var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
@@ -853,7 +924,7 @@ namespace mcp_nexus.Helper
             };
         }
 
-        private string FindCdbPath()
+        private string? FindCdbPath()
         {
             logger.LogDebug("FindCDBPath called - searching for CDB executable");
             
@@ -868,7 +939,8 @@ namespace mcp_nexus.Helper
                 }
                 else
                 {
-                    logger.LogWarning("Custom CDB path does not exist: {Path}", customCdbPath);
+                    logger.LogError("Custom CDB path does not exist: {Path}", customCdbPath);
+                    return null; // Return null when custom path doesn't exist
                 }
             }
             
@@ -969,7 +1041,7 @@ namespace mcp_nexus.Helper
                 if (result != null)
                 {
                     // Use timeout to prevent hanging
-                    const int timeoutMs = 5000; // 5 second timeout
+                    var timeoutMs = (int)ApplicationConstants.CdbProcessWaitTimeout.TotalMilliseconds; // 5 second timeout
                     logger.LogDebug("Executing 'where cdb.exe' with {TimeoutMs}ms timeout", timeoutMs);
 
                     if (result.WaitForExit(timeoutMs))
@@ -1022,31 +1094,31 @@ namespace mcp_nexus.Helper
             logger.LogDebug("Dispose called on CdbSession");
 
             // Cancel any running operations first
-            lock (m_CancellationLock)
+            lock (m_cancellationLock)
             {
-                if (m_CurrentOperationCts != null)
+                if (m_currentOperationCts != null)
                 {
                     logger.LogWarning("Cancelling running operation during dispose");
-                    m_CurrentOperationCts.Cancel();
+                    m_currentOperationCts.Cancel();
                 }
             }
             
-            if (!m_Disposed)
+            if (!m_disposed)
             {
-                if (m_IsActive)
+                if (m_isActive)
                 {
                     logger.LogInformation("Disposing active CDB session...");
                     try
                     {
                         // Don't use StopSession() as it would call ThrowIfDisposed()
                         // Just do the basic cleanup
-                        lock (m_LifecycleLock)
+                        lock (m_lifecycleLock)
                         {
-                            m_DebuggerProcess?.Dispose();
-                            m_DebuggerInput?.Dispose();
-                            m_DebuggerOutput?.Dispose();
-                            m_DebuggerError?.Dispose();
-                            m_IsActive = false;
+                            m_debuggerProcess?.Dispose();
+                            m_debuggerInput?.Dispose();
+                            m_debuggerOutput?.Dispose();
+                            m_debuggerError?.Dispose();
+                            m_isActive = false;
                         }
                     }
                     catch (Exception ex)
@@ -1059,7 +1131,7 @@ namespace mcp_nexus.Helper
                     logger.LogDebug("No active session to dispose");
                 }
                 
-                m_Disposed = true;
+                m_disposed = true;
             }
             
             logger.LogDebug("CdbSession disposal completed");

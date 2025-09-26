@@ -1,10 +1,12 @@
-using NLog.Web;
-using mcp_nexus.Tools;
-using mcp_nexus.Helper;
-using mcp_nexus.Services;
 using System.CommandLine;
 using System.Text.Json;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using NLog.Web;
+
+using mcp_nexus.Constants;
+using mcp_nexus.Helper;
+using mcp_nexus.Services;
+using mcp_nexus.Tools;
 
 namespace mcp_nexus
 {
@@ -272,7 +274,7 @@ namespace mcp_nexus
             if (!string.IsNullOrEmpty(args.CustomCdbPath))
             {
                 var cdbPath = args.CustomCdbPath.Length > (contentWidth - 12) ?
-                    "..." + args.CustomCdbPath.Substring(args.CustomCdbPath.Length - (contentWidth - 15)) :
+                    ApplicationConstants.PathTruncationPrefix + args.CustomCdbPath.Substring(args.CustomCdbPath.Length - (contentWidth - 15)) :
                     args.CustomCdbPath;
                 banner.AppendLine(FormatBannerLine("CDB Path:", cdbPath, contentWidth));
             }
@@ -515,7 +517,7 @@ namespace mcp_nexus
 
             // Apply configuration hierarchy: config file -> command line
             var host = commandLineArgs.Host ?? configHost ?? "localhost";
-            var port = commandLineArgs.Port ?? (configPort > 0 ? configPort : (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" ? 5117 : 5000));
+            var port = commandLineArgs.Port ?? (configPort > 0 ? configPort : (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" ? ApplicationConstants.DefaultDevPort : ApplicationConstants.DefaultHttpPort));
 
             var customUrl = $"http://{host}:{port}";
             webBuilder.WebHost.UseUrls(customUrl);
@@ -696,14 +698,16 @@ namespace mcp_nexus
 
             services.Configure<KestrelServerOptions>(options =>
             {
-                options.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(15);
-                options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(15);
+                options.Limits.RequestHeadersTimeout = ApplicationConstants.HttpRequestTimeout;
+                options.Limits.KeepAliveTimeout = ApplicationConstants.HttpKeepAliveTimeout;
             });
 
             services.AddCors(options =>
             {
                 options.AddDefaultPolicy(builder =>
                 {
+                    // For local MCP server, allow any origin since it's localhost-only
+                    // MCP clients typically connect from the same machine
                     builder.AllowAnyOrigin()
                            .AllowAnyMethod()
                            .AllowAnyHeader();
@@ -729,8 +733,8 @@ namespace mcp_nexus
             // Note: IMcpNotificationService is now registered in shared RegisterServices() method
 
             services.AddMcpServer()
-    .WithStdioServerTransport()
-    .WithToolsFromAssembly();
+                .WithStdioServerTransport()
+                .WithToolsFromAssembly();
 
             // CRITICAL FIX: Bridge notification service to stdio MCP server
             services.AddSingleton<IStdioNotificationBridge, StdioNotificationBridge>();

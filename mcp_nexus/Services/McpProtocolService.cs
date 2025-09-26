@@ -42,7 +42,8 @@ namespace mcp_nexus.Services
                 var request = new McpRequest
                 {
                     Method = methodProperty.GetString() ?? string.Empty,
-                    Id = requestElement.TryGetProperty("id", out var idProperty) ? idProperty.GetInt32() : 0
+                    Id = requestElement.TryGetProperty("id", out var idProperty) && idProperty.ValueKind == JsonValueKind.Number 
+                        ? idProperty.GetInt32() : 0
                 };
 
                 if (requestElement.TryGetProperty("params", out var paramsProperty))

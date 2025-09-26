@@ -10,7 +10,7 @@ using Xunit;
 
 namespace mcp_nexus_tests.Services
 {
-    public class CommandQueueServiceTests : IDisposable
+    public class CommandQueueServiceTests
     {
         private readonly Mock<ICdbSession> m_mockCdbSession;
         private readonly Mock<ILogger<CommandQueueService>> m_mockLogger;
@@ -149,9 +149,5 @@ namespace mcp_nexus_tests.Services
             Assert.Contains("Command execution failed", result);
         }
 
-        public void Dispose()
-        {
-            m_service?.Dispose();
-        }
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+
 using mcp_nexus.Models;
 
 namespace mcp_nexus.Services
@@ -10,7 +11,8 @@ namespace mcp_nexus.Services
     public class McpNotificationService : IMcpNotificationService, IDisposable
     {
         private readonly ILogger<McpNotificationService> m_logger;
-        private readonly ConcurrentBag<Func<McpNotification, Task>> m_notificationHandlers = new();
+        // FIXED: Replace ConcurrentBag with ConcurrentDictionary to support removal
+        private readonly ConcurrentDictionary<Guid, Func<McpNotification, Task>> m_notificationHandlers = new();
         private readonly DateTime m_serverStartTime = DateTime.UtcNow;
         private bool m_disposed;
 
@@ -20,8 +22,14 @@ namespace mcp_nexus.Services
             m_logger.LogDebug("McpNotificationService initialized");
         }
 
-        public async Task NotifyCommandStatusAsync(string commandId, string command, string status, 
-            int? progress = null, string? message = null, string? result = null, string? error = null)
+        public async Task NotifyCommandStatusAsync(
+            string commandId, 
+            string command, 
+            string status, 
+            int? progress = null, 
+            string? message = null, 
+            string? result = null, 
+            string? error = null)
         {
             if (m_disposed) return;
 
@@ -42,11 +50,15 @@ namespace mcp_nexus.Services
             m_logger.LogDebug("Sent command status notification: {CommandId} -> {Status}", commandId, status);
         }
 
-        public async Task NotifyCommandHeartbeatAsync(string commandId, string command, TimeSpan elapsed, string? details = null)
+        public async Task NotifyCommandHeartbeatAsync(
+            string commandId, 
+            string command, 
+            TimeSpan elapsed, 
+            string? details = null)
         {
             if (m_disposed) return;
 
-            var elapsedDisplay = elapsed.TotalMinutes >= 1 
+            var elapsedDisplay = elapsed.TotalMinutes >= 1
                 ? $"{elapsed.TotalMinutes.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}m"
                 : $"{elapsed.TotalSeconds.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)}s";
 
@@ -126,12 +138,16 @@ namespace mcp_nexus.Services
                 Params = parameters
             };
 
-            var handlers = m_notificationHandlers.ToArray();
-            if (handlers.Length == 0)
+            // CRITICAL FIX: Use snapshot to prevent race conditions during iteration
+            // PERFORMANCE: Check count first to avoid unnecessary ToArray() allocation
+            if (m_notificationHandlers.IsEmpty)
             {
                 m_logger.LogDebug("No notification handlers registered - notification will be dropped: {Method}", method);
                 return;
             }
+
+            // PERFORMANCE: Only create array when we know there are handlers
+            var handlers = m_notificationHandlers.Values.ToArray();
 
             var tasks = new List<Task>();
             foreach (var handler in handlers)
@@ -161,17 +177,28 @@ namespace mcp_nexus.Services
         {
             if (m_disposed) return;
 
-            m_notificationHandlers.Add(handler);
-            m_logger.LogDebug("Registered notification handler (Total: {HandlerCount})", m_notificationHandlers.Count);
+            var id = Guid.NewGuid();
+            m_notificationHandlers[id] = handler;
+            m_logger.LogDebug("Registered notification handler {HandlerId} (Total: {HandlerCount})", id, m_notificationHandlers.Count);
         }
 
         public void UnregisterNotificationHandler(Func<McpNotification, Task> handler)
         {
             if (m_disposed) return;
 
-            // ConcurrentBag doesn't support removal, so we'll need to track this differently
-            // For now, we'll log the attempt - in a production system, you might use a different collection
-            m_logger.LogTrace("UnregisterNotificationHandler called - ConcurrentBag doesn't support removal");
+            // Find and remove the handler by value
+            var handlerToRemove = m_notificationHandlers.FirstOrDefault(kvp => kvp.Value == handler);
+            if (!handlerToRemove.Equals(default(KeyValuePair<Guid, Func<McpNotification, Task>>)))
+            {
+                if (m_notificationHandlers.TryRemove(handlerToRemove.Key, out _))
+                {
+                    m_logger.LogDebug("Unregistered notification handler {HandlerId} (Total: {HandlerCount})", handlerToRemove.Key, m_notificationHandlers.Count);
+                }
+            }
+            else
+            {
+                m_logger.LogWarning("Attempted to unregister non-existent notification handler");
+            }
         }
 
         public void Dispose()

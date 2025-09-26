@@ -1,6 +1,7 @@
 ﻿using mcp_nexus.Helper;
 using mcp_nexus.Services;
 using mcp_nexus.Utilities;
+using mcp_nexus.Constants;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text;
@@ -10,33 +11,54 @@ namespace mcp_nexus.Tools
     [McpServerToolType]
     public class WindbgTool(ILogger<WindbgTool> logger, ICdbSession cdbSession, ICommandQueueService commandQueueService)
     {
-        // Helper method to wait for async command completion and extract result
-        private async Task<string> WaitForCommandCompletion(string commandId, string commandDescription)
+        // IMPROVED: Better polling with exponential backoff and cancellation support
+        private async Task<string> WaitForCommandCompletion(string commandId, string commandDescription, CancellationToken cancellationToken = default)
         {
             logger.LogTrace("Waiting for {Description} command {CommandId} to complete...", commandDescription, commandId);
 
-            var maxWaitTime = TimeSpan.FromMinutes(5); // 5 minute timeout
-            var startTime = DateTime.UtcNow;
+            var maxWaitTime = ApplicationConstants.DefaultCommandTimeout;
+            var pollInterval = ApplicationConstants.InitialPollInterval;
+            var maxPollInterval = ApplicationConstants.MaxPollInterval;
 
-            while ((DateTime.UtcNow - startTime) < maxWaitTime)
+            using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            combinedCts.CancelAfter(maxWaitTime);
+
+            try
             {
-                var result = await commandQueueService.GetCommandResult(commandId);
-
-                // If command completed successfully, return the result
-                if (!result.StartsWith("Command is still") && !result.StartsWith("Command not found"))
+                while (!combinedCts.Token.IsCancellationRequested)
                 {
-                    logger.LogTrace("{Description} command {CommandId} completed", commandDescription, commandId);
-                    return result;
-                }
+                    var result = await commandQueueService.GetCommandResult(commandId);
 
-                // Wait a bit before checking again
-                await Task.Delay(1000);
+                    // If command completed successfully, return the result
+                    if (!result.StartsWith("Command is still") && !result.StartsWith("Command not found"))
+                    {
+                        logger.LogTrace("{Description} command {CommandId} completed", commandDescription, commandId);
+                        return result;
+                    }
+
+                    // Exponential backoff for polling
+                    await Task.Delay(pollInterval, combinedCts.Token);
+                    pollInterval = TimeSpan.FromMilliseconds(Math.Min(pollInterval.TotalMilliseconds * ApplicationConstants.PollBackoffMultiplier, maxPollInterval.TotalMilliseconds));
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                logger.LogWarning("{Description} command {CommandId} was cancelled by caller", commandDescription, commandId);
+                commandQueueService.CancelCommand(commandId);
+                return $"Command was cancelled: {commandDescription}";
+            }
+            catch (OperationCanceledException)
+            {
+                // Timeout reached
+                logger.LogError("{Description} command {CommandId} timed out after {TimeoutMinutes} minutes", commandDescription, commandId, ApplicationConstants.DefaultCommandTimeout.TotalMinutes);
+                commandQueueService.CancelCommand(commandId);
+                return $"Command timed out after {ApplicationConstants.DefaultCommandTimeout.TotalMinutes} minutes: {commandDescription}";
             }
 
-            // Timeout - cancel the command and return error
-            logger.LogError("{Description} command {CommandId} timed out after 5 minutes", commandDescription, commandId);
+            // Fallback timeout
+            logger.LogError("{Description} command {CommandId} timed out after {TimeoutMinutes} minutes", commandDescription, commandId, ApplicationConstants.DefaultCommandTimeout.TotalMinutes);
             commandQueueService.CancelCommand(commandId);
-            return $"Command timed out after 5 minutes: {commandDescription}";
+            return $"Command timed out after {ApplicationConstants.DefaultCommandTimeout.TotalMinutes} minutes: {commandDescription}";
         }
 
         // Crash Dump Analysis Tools

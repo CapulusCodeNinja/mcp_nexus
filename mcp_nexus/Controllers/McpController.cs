@@ -10,6 +10,12 @@ namespace mcp_nexus.Controllers
     public class McpController(McpProtocolService mcpProtocolService, ILogger<McpController> logger)
         : ControllerBase
     {
+        // PERFORMANCE: Reuse JSON options to avoid repeated allocations
+        private static readonly JsonSerializerOptions s_jsonOptions = new()
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
         [HttpPost]
         public async Task<IActionResult> HandleMcpRequest()
         {
@@ -17,7 +23,11 @@ namespace mcp_nexus.Controllers
             Response.Headers["Mcp-Session-Id"] = sessionId;
 
             OperationLogger.LogInfo(logger, OperationLogger.Operations.Http, "NEW MCP REQUEST (Session: {SessionId})", sessionId);
-            OperationLogger.LogDebug(logger, OperationLogger.Operations.Http, "Request Headers: {Headers}", string.Join(", ", Request.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value.ToArray())}")));
+            // PERFORMANCE: Only log headers in debug mode to avoid expensive string operations
+            if (logger.IsEnabled(LogLevel.Debug))
+            {
+                OperationLogger.LogDebug(logger, OperationLogger.Operations.Http, "Request Headers: {Headers}", string.Join(", ", Request.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value.ToArray())}")));
+            }
 
             // Set up standard JSON response headers (NOT SSE)
             Response.Headers["Access-Control-Allow-Origin"] = "*";
@@ -43,11 +53,11 @@ namespace mcp_nexus.Controllers
 
                 if (requestElement.TryGetProperty("params", out var paramsProp))
                 {
-                    logger.LogDebug("Request Params: {Params}", JsonSerializer.Serialize(paramsProp, new JsonSerializerOptions
+                    // PERFORMANCE: Only serialize params in debug mode to avoid unnecessary allocations
+                    if (logger.IsEnabled(LogLevel.Debug))
                     {
-                        WriteIndented = true,
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                    }));
+                        logger.LogDebug("Request Params: {Params}", JsonSerializer.Serialize(paramsProp, s_jsonOptions));
+                    }
                 }
                 else
                 {
@@ -57,13 +67,14 @@ namespace mcp_nexus.Controllers
                 var response = await mcpProtocolService.ProcessRequest(requestElement);
                 logger.LogInformation("ProcessRequest completed for method '{Method}' - Response type: {ResponseType}", method, response.GetType().Name);
 
-                var responseJson = JsonSerializer.Serialize(response, new JsonSerializerOptions
+                // PERFORMANCE: Only serialize response in debug mode to avoid unnecessary allocations
+                if (logger.IsEnabled(LogLevel.Debug))
                 {
-                    WriteIndented = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
+                    var responseJson = JsonSerializer.Serialize(response, s_jsonOptions);
+                    logger.LogDebug("Full JSON response:\n{Response}", responseJson);
+                }
+                
                 logger.LogInformation("Sending response for method '{Method}' (Session: {SessionId})", method, sessionId);
-                logger.LogDebug("Full JSON response:\n{Response}", responseJson);
 
                 return Ok(response);
             }
