@@ -123,8 +123,15 @@ namespace mcp_nexus.Controllers
             finally
             {
                 clientDisconnected = true;
-                // Note: We can't unregister the handler due to ConcurrentBag limitations
-                // In production, consider using a different collection type
+                try
+                {
+                    // Properly unregister the per-connection handler to avoid leaks
+                    m_notificationService.UnregisterNotificationHandler(NotificationHandler);
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogWarning(ex, "Failed to unregister notification handler for session {SessionId}", sessionId);
+                }
                 m_logger.LogDebug("Notification stream ended for session: {SessionId}", sessionId);
             }
         }

@@ -56,9 +56,10 @@ Start the server first: `dotnet run --project mcp_nexus/mcp_nexus.csproj -- --ht
 
 ### Notification Support in Cursor
 
-- **Stdio Mode**: Cursor receives real-time notifications via stdout
-- **HTTP Mode**: Cursor can connect to SSE endpoint for notifications
-- **Auto-discovery**: Cursor automatically discovers notification capabilities during initialization
+- **Stdio Mode**: Cursor receives real-time notifications via stdout (JSON-RPC notifications)
+- **HTTP Mode**: Connect to SSE endpoint for notifications: `GET /mcp/notifications` (no auth, sessionId echoed)
+- **Auto-discovery**: MCP `initialize` response advertises `notifications.tools.listChanged`
+- **No manual registration required**: Clients do not need to call any "subscribe" method; notifications are broadcast
 
 ## Other MCP Clients
 
@@ -82,10 +83,13 @@ curl -N -H "Accept: text/event-stream" http://localhost:5000/mcp/notifications
 ## Notification Integration
 
 ### For AI Clients
-1. **Discovery**: Check server capabilities during `initialize`
-2. **Automatic**: Listen for notifications automatically
-3. **No Registration**: No explicit registration required
-4. **Real-time**: Receive live updates about command execution
+1. **Discovery**: Check server capabilities during `initialize` (supports `tools.listChanged`)
+2. **Connect**: 
+   - Stdio: parse stdout JSON-RPC notifications
+   - HTTP: open SSE stream `GET /mcp/notifications`
+3. **No Registration Needed**: Notifications are server-initiated broadcasts
+4. **Session-Aware**: Many notifications include `sessionId` to correlate flows
+5. **Real-time**: Receive live updates about command execution and health
 
 ### For Custom Clients
 ```javascript

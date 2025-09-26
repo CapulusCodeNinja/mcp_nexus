@@ -550,7 +550,7 @@ namespace mcp_nexus
             }
 
             ConfigureLogging(webBuilder.Logging, commandLineArgs.ServiceMode);
-            RegisterServices(webBuilder.Services, commandLineArgs.CustomCdbPath);
+            RegisterServices(webBuilder.Services, webBuilder.Configuration, commandLineArgs.CustomCdbPath);
             ConfigureHttpServices(webBuilder.Services);
 
             var app = webBuilder.Build();
@@ -579,7 +579,7 @@ namespace mcp_nexus
             // Log detailed configuration settings for stdio mode
             LogConfigurationSettings(builder.Configuration, commandLineArgs);
 
-            RegisterServices(builder.Services, commandLineArgs.CustomCdbPath);
+            RegisterServices(builder.Services, builder.Configuration, commandLineArgs.CustomCdbPath);
             ConfigureStdioServices(builder.Services);
 
             await Console.Error.WriteLineAsync("Building application host...");
@@ -634,7 +634,7 @@ namespace mcp_nexus
             }
         }
 
-        private static void RegisterServices(IServiceCollection services, string? customCdbPath)
+        private static void RegisterServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath)
         {
             Console.Error.WriteLine("Registering services...");
 
@@ -660,28 +660,34 @@ namespace mcp_nexus
             Console.Error.WriteLine("Registered CdbSessionRecoveryService for automated recovery");
 
             // MIGRATION: Register session management instead of global command queue
-            services.Configure<mcp_nexus.Session.Models.SessionConfiguration>(config =>
-            {
-                config.MaxConcurrentSessions = 10;
-                config.SessionTimeout = TimeSpan.FromMinutes(30);
-                config.CleanupInterval = TimeSpan.FromMinutes(5);
-                config.DisposalTimeout = TimeSpan.FromSeconds(30);
-                config.DefaultCommandTimeout = TimeSpan.FromMinutes(10);
-                config.MemoryCleanupThresholdBytes = 1_000_000_000; // 1GB - configurable via appsettings
-            });
+            // Bind from configuration section (appsettings.json: McpNexus:SessionManagement). Model defaults act as fallback.
+            services.AddOptions<mcp_nexus.Session.Models.SessionConfiguration>()
+                .Bind(configuration.GetSection("McpNexus:SessionManagement"))
+                .Validate(cfg => cfg.MaxConcurrentSessions > 0, "MaxConcurrentSessions must be > 0")
+                .Validate(cfg => cfg.SessionTimeout > TimeSpan.Zero, "SessionTimeout must be positive")
+                .Validate(cfg => cfg.CleanupInterval > TimeSpan.Zero, "CleanupInterval must be positive")
+                .Validate(cfg => cfg.DisposalTimeout > TimeSpan.Zero, "DisposalTimeout must be positive")
+                .Validate(cfg => cfg.DefaultCommandTimeout > TimeSpan.Zero, "DefaultCommandTimeout must be positive")
+                .Validate(cfg => cfg.MemoryCleanupThresholdBytes > 0, "MemoryCleanupThresholdBytes must be > 0")
+                .ValidateOnStart();
             services.AddSingleton<ISessionManager, ThreadSafeSessionManager>();
             Console.Error.WriteLine("Registered ThreadSafeSessionManager for multi-session support");
 
             // MIGRATION: CdbSession is now created per-session by SessionManager
-            // Store CDB configuration for session manager to use
-            services.Configure<mcp_nexus.Session.Models.CdbSessionOptions>(options =>
+            // Bind debugging/CDB options from configuration; override CustomCdbPath from CLI if provided
+            services.AddOptions<mcp_nexus.Session.Models.CdbSessionOptions>()
+                .Bind(configuration.GetSection("McpNexus:Debugging"))
+                .Validate(o => o.CommandTimeoutMs > 0, "CommandTimeoutMs must be > 0")
+                .Validate(o => o.SymbolServerTimeoutMs >= 0, "SymbolServerTimeoutMs must be >= 0")
+                .Validate(o => o.SymbolServerMaxRetries >= 0, "SymbolServerMaxRetries must be >= 0")
+                .ValidateOnStart();
+            if (!string.IsNullOrWhiteSpace(customCdbPath))
             {
-                options.CommandTimeoutMs = 30000; // Default 30 seconds - will be configurable later
-                options.SymbolServerTimeoutMs = 30000; // Default 30 seconds
-                options.SymbolServerMaxRetries = 1; // Default 1 retry
-                options.SymbolSearchPath = null; // Use default symbol paths
-                options.CustomCdbPath = customCdbPath;
-            });
+                services.PostConfigure<mcp_nexus.Session.Models.CdbSessionOptions>(options =>
+                {
+                    options.CustomCdbPath = customCdbPath;
+                });
+            }
             Console.Error.WriteLine("Configured CdbSession parameters for per-session creation");
 
             // MIGRATION: Register session-aware tool instead of legacy WindbgTool

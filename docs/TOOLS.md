@@ -46,6 +46,11 @@ The server sends live notifications about command progress:
 - **`notifications/commandHeartbeat`**: Long-running command updates with elapsed time
 - **`notifications/sessionRecovery`**: Debugging session recovery events
 - **`notifications/serverHealth`**: Server status updates
+  
+Notes:
+- Notifications are broadcast automatically; clients do not need to register.
+- In HTTP mode, connect to SSE at `GET /mcp/notifications` and read `data:` lines.
+- In stdio mode, parse JSON-RPC `method` notifications from stdout.
 
 ### Notification Benefits
 - **Real-time updates**: No need for constant polling

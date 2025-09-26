@@ -85,7 +85,7 @@ The server automatically exposes all available tools through the MCP protocol wi
 Complete tool reference, async workflows, notification examples
 
 ### ⚙️ **[🔧 Configuration](docs/CONFIGURATION.md)**  
-Transport modes, Windows service, environment setup
+Transport modes, Windows service, environment setup, appsettings.json keys
 
 ### 🔌 **[🤖 AI Integration](docs/INTEGRATION.md)**
 Cursor IDE setup, MCP clients, notification handling
@@ -105,7 +105,7 @@ Architecture, testing, contribution guide
 
 ### HTTP Transport  
 - **Protocol**: JSON-RPC over HTTP
-- **Notifications**: Server-Sent Events (SSE)
+- **Notifications**: Server-Sent Events (SSE) at `/mcp/notifications`
 - **Endpoint**: `http://localhost:5000/mcp`
 - **Use Case**: Development, debugging, web integration
 
@@ -190,7 +190,7 @@ dotnet test --collect:"XPlat Code Coverage"
 ```
 
 **Test Coverage:**
-- ✅ **381 tests passing** (100% success rate)
+- ✅ **527 tests passing** (100% success rate)
 - ✅ **Zero warnings** in build
 - ✅ **46%+ line coverage** with comprehensive notification testing
 - ✅ **7 dedicated notification test classes**

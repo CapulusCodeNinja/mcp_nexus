@@ -166,6 +166,37 @@ namespace mcp_nexus_tests.Controllers
         }
 
         [Fact]
+        public async Task StreamNotifications_UnregistersHandler_OnDisconnect()
+        {
+            // Arrange
+            Func<McpNotification, Task>? registeredHandler = null;
+            m_mockNotificationService
+                .Setup(x => x.RegisterNotificationHandler(It.IsAny<Func<McpNotification, Task>>()))
+                .Callback<Func<McpNotification, Task>>(h => registeredHandler = h);
+
+            var httpContext = new DefaultHttpContext();
+            var cts = new CancellationTokenSource();
+            httpContext.RequestAborted = cts.Token;
+            httpContext.Response.Body = new MemoryStream();
+
+            m_controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContext
+            };
+
+            // Act - start, then cancel to trigger finally block
+            var task = m_controller.StreamNotifications();
+            await Task.Delay(10);
+            cts.Cancel();
+            await task;
+
+            // Assert
+            m_mockNotificationService.Verify(
+                x => x.UnregisterNotificationHandler(It.IsAny<Func<McpNotification, Task>>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task StreamNotifications_WithSessionId_UsesProvidedSessionId()
         {
             // Arrange

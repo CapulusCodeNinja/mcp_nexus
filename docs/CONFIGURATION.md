@@ -20,6 +20,66 @@
 
 ## Transport Modes
 
+## Application Settings (appsettings.json)
+
+MCP Nexus reads configuration from `appsettings.json` under the `McpNexus` root key.
+
+### Session Management
+
+Section: `McpNexus:SessionManagement`
+
+```json
+{
+  "McpNexus": {
+    "SessionManagement": {
+      "MaxConcurrentSessions": 10,
+      "SessionTimeoutMinutes": 30,
+      "CleanupIntervalMinutes": 5,
+      "DisposalTimeoutSeconds": 30,
+      "DefaultCommandTimeoutMinutes": 10,
+      "MemoryCleanupThresholdMB": 1024
+    }
+  }
+}
+```
+
+Notes:
+- `MaxConcurrentSessions` (>0): Max active sessions allowed.
+- `SessionTimeoutMinutes` (>0): Idle timeout before auto-closing a session.
+- `CleanupIntervalMinutes` (>0): How often expired sessions are cleaned.
+- `DisposalTimeoutSeconds` (>0): Max time to dispose a session during cleanup.
+- `DefaultCommandTimeoutMinutes` (>0): Default per-session command timeout.
+- `MemoryCleanupThresholdMB` (>0): Memory threshold to trigger extra cleanup.
+
+### Debugging (CDB)
+
+Section: `McpNexus:Debugging`
+
+```json
+{
+  "McpNexus": {
+    "Debugging": {
+      "CdbPath": null,
+      "CommandTimeoutMs": 600000,
+      "SymbolServerTimeoutMs": 300000,
+      "SymbolServerMaxRetries": 1,
+      "SymbolSearchPath": "srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols",
+      "StartupDelayMs": 2000
+    }
+  }
+}
+```
+
+Notes:
+- `CdbPath`: Optional absolute path to `cdb.exe`. CLI `--cdb-path` overrides.
+- `CommandTimeoutMs` (>0): Timeout for CDB operations.
+- `SymbolServerTimeoutMs` (>=0): Symbol fetch timeout.
+- `SymbolServerMaxRetries` (>=0): Retries for symbol server calls.
+- `SymbolSearchPath`: Windows symbol path (use doubled backslashes in JSON).
+- `StartupDelayMs`: Initial delay for CDB process startup.
+
+> Validation: Options are validated at startup; invalid values will fail fast with a clear error.
+
 ### Stdio Transport (Recommended)
 - **Protocol**: JSON-RPC over stdin/stdout
 - **Performance**: High performance, low latency
