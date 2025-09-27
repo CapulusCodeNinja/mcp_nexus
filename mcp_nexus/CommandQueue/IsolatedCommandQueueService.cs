@@ -120,7 +120,8 @@ namespace mcp_nexus.CommandQueue
                     }
                 }, CancellationToken.None);
 
-                m_logger.LogInformation("📋 Command {CommandId} queued in session {SessionId}", commandId, m_sessionId);
+                m_logger.LogInformation("📋 Command {CommandId} queued in session {SessionId} (timeout: {TimeoutMinutes} minutes)", 
+                    commandId, m_sessionId, m_defaultCommandTimeout.TotalMinutes);
                 return commandId;
             }
             catch
@@ -155,11 +156,17 @@ namespace mcp_nexus.CommandQueue
                 }
             }
 
-            // Return current status for polling
+            // Calculate elapsed time and remaining timeout
+            var elapsed = DateTime.UtcNow - command.QueueTime;
+            var remaining = m_defaultCommandTimeout - elapsed;
+            var remainingMinutes = Math.Max(0, (int)remaining.TotalMinutes);
+            var remainingSeconds = Math.Max(0, (int)remaining.TotalSeconds % 60);
+
+            // Return current status for polling with timeout information
             return command.State switch
             {
-                CommandState.Queued => "Command is still queued for execution",
-                CommandState.Executing => "Command is currently executing",
+                CommandState.Queued => $"Command is queued for execution (estimated wait: up to {m_defaultCommandTimeout.TotalMinutes:F0} minutes)",
+                CommandState.Executing => $"Command is currently executing (elapsed: {elapsed.TotalMinutes:F1} minutes, remaining: {remainingMinutes} minutes {remainingSeconds} seconds)",
                 CommandState.Cancelled => "Command was cancelled",
                 CommandState.Failed => "Command execution failed",
                 _ => "Command status unknown"

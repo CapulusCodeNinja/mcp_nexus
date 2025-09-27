@@ -64,7 +64,7 @@ namespace mcp_nexus.Tools
                     message = $"Maximum concurrent sessions exceeded: {ex.CurrentSessions}/{ex.MaxSessions}"
                 };
 
-                return errorResponse;
+                return Task.FromResult((object)errorResponse);
             }
             catch (Exception ex)
             {
@@ -80,7 +80,7 @@ namespace mcp_nexus.Tools
                     message = $"Failed to create debugging session: {ex.Message}"
                 };
 
-                return errorResponse;
+                return Task.FromResult((object)errorResponse);
             }
         }
 
@@ -135,12 +135,12 @@ namespace mcp_nexus.Tools
                     message = $"Failed to close session: {ex.Message}"
                 };
 
-                return errorResponse;
+                return Task.FromResult((object)errorResponse);
             }
         }
 
         [McpServerTool, Description("⚡ QUEUE COMMAND: Queue a WinDBG command for execution in a debugging session. Returns commandId for tracking.")]
-        public static async Task<object> nexus_enqueue_async_dump_analyze_command(
+        public static Task<object> nexus_enqueue_async_dump_analyze_command(
             IServiceProvider serviceProvider,
             [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
             [Description("WinDBG command to execute (e.g., '!analyze -v', 'k', '!threads')")] string command)
@@ -164,7 +164,7 @@ namespace mcp_nexus.Tools
                     };
 
                     logger.LogWarning("Attempted to queue command for non-existent session: {SessionId}", sessionId);
-                    return notFoundResponse;
+                    return Task.FromResult((object)notFoundResponse);
                 }
 
                 var context = sessionManager.GetSessionContext(sessionId);
@@ -180,7 +180,7 @@ namespace mcp_nexus.Tools
                     };
 
                     logger.LogError("Session context not available for session: {SessionId}", sessionId);
-                    return contextErrorResponse;
+                    return Task.FromResult((object)contextErrorResponse);
                 }
 
                 var commandQueue = sessionManager.GetCommandQueue(sessionId);
@@ -193,11 +193,13 @@ namespace mcp_nexus.Tools
                     command = command,
                     success = true,
                     operation = "nexus_enqueue_async_dump_analyze_command",
-                    message = $"Command queued successfully. Use the resource 'commands' to observe the status and the 'nexus_read_dump_analyze_command_result' tool to get results."
+                    message = $"Command queued successfully. Estimated execution time: up to 10 minutes. Use the resource 'commands' to observe the status and the 'nexus_read_dump_analyze_command_result' tool to get results.",
+                    timeoutMinutes = 10,
+                    status = "queued"
                 };
 
                 logger.LogInformation("Command {CommandId} queued successfully for session {SessionId}", commandId, sessionId);
-                return response;
+                return Task.FromResult((object)response);
             }
             catch (Exception ex)
             {
@@ -213,7 +215,7 @@ namespace mcp_nexus.Tools
                     message = $"Failed to queue command: {ex.Message}"
                 };
 
-                return errorResponse;
+                return Task.FromResult((object)errorResponse);
             }
         }
 
@@ -245,8 +247,11 @@ namespace mcp_nexus.Tools
                 var commandResult = await commandQueue.GetCommandResult(commandId);
 
                 // Parse the result to determine status
-                var isCompleted = !commandResult.Contains("still executing") && !commandResult.Contains("Command not found");
+                var isCompleted = !commandResult.Contains("still executing") && !commandResult.Contains("Command not found") && 
+                                 !commandResult.Contains("currently executing") && !commandResult.Contains("queued for execution");
                 var isNotFound = commandResult.Contains("Command not found");
+                var isExecuting = commandResult.Contains("currently executing");
+                var isQueued = commandResult.Contains("queued for execution");
 
                 var result = new
                 {
@@ -254,12 +259,13 @@ namespace mcp_nexus.Tools
                     commandId = commandId,
                     success = true,
                     operation = "nexus_read_dump_analyze_command_result",
-                    status = isNotFound ? "Not Found" : (isCompleted ? "Completed" : "In Progress"),
+                    status = isNotFound ? "Not Found" : (isCompleted ? "Completed" : (isExecuting ? "Executing" : "Queued")),
                     result = isCompleted ? commandResult : null,
                     error = isNotFound ? "Command not found. Use nexus_list_commands to see available commands." : null,
                     completedAt = isCompleted ? DateTime.UtcNow : (DateTime?)null,
                     timestamp = DateTime.UtcNow,
-                    message = isNotFound ? null : (isCompleted ? null : "Command is still executing - check again in a few seconds."),
+                    message = isNotFound ? null : (isCompleted ? null : commandResult), // Include the detailed status message
+                    timeoutMinutes = 10,
                     usage = SessionAwareWindbgTool.USAGE_EXPLANATION
                 };
 

@@ -26,7 +26,7 @@ namespace mcp_nexus.Resources
         // IMPORTANT: Method names directly determine resource names!
         // Method "Sessions" becomes resource "sessions", "Commands" becomes "commands", etc.
         [McpServerResource, Description("📊 SESSIONS: List all active debugging sessions with status and activity information")]
-        public static async Task<string> Sessions(
+        public static Task<string> Sessions(
             IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
@@ -44,7 +44,7 @@ namespace mcp_nexus.Resources
                     timestamp = DateTime.UtcNow
                 };
 
-                return JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+                return Task.FromResult(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
             }
             catch (Exception ex)
             {
@@ -54,7 +54,7 @@ namespace mcp_nexus.Resources
         }
 
         [McpServerResource, Description("📋 COMMANDS: List async commands from all sessions with status and timing information")]
-        public static async Task<string> Commands(
+        public static Task<string> Commands(
             IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
@@ -82,7 +82,7 @@ namespace mcp_nexus.Resources
                     note = "Commands from all sessions"
                 };
 
-                return JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+                return Task.FromResult(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
             }
             catch (Exception ex)
             {
@@ -93,7 +93,7 @@ namespace mcp_nexus.Resources
 
 
         [McpServerResource, Description("📚 WORKFLOWS: Common debugging patterns and step-by-step analysis workflows for crash dump investigation")]
-        public static async Task<string> Workflows(
+        public static Task<string> Workflows(
             IServiceProvider serviceProvider)
         {
             var workflows = new
@@ -141,11 +141,11 @@ namespace mcp_nexus.Resources
                 }
             };
 
-            return JsonSerializer.Serialize(workflows, new JsonSerializerOptions { WriteIndented = true });
+            return Task.FromResult(JsonSerializer.Serialize(workflows, new JsonSerializerOptions { WriteIndented = true }));
         }
 
         [McpServerResource, Description("❓ USAGE: Essential tool usage information and API reference for MCP Nexus server")]
-        public static async Task<string> Usage(
+        public static Task<string> Usage(
             IServiceProvider serviceProvider)
         {
             var usage = new
@@ -242,7 +242,7 @@ namespace mcp_nexus.Resources
                 }
             };
 
-            return JsonSerializer.Serialize(usage, new JsonSerializerOptions { WriteIndented = true });
+            return Task.FromResult(JsonSerializer.Serialize(usage, new JsonSerializerOptions { WriteIndented = true }));
         }
 
         private static Dictionary<string, object> GetSessionCommands(
