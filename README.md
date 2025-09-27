@@ -131,7 +131,46 @@ Architecture, testing, contribution guide
 7. nexus_close_dump_analyze_session → Clean up resources
 ```
 
-> 📖 **Complete tool reference with examples:** **[📋 TOOLS.md](docs/TOOLS.md)**
+## 📚 MCP Resources
+
+The server provides rich resources for session management and documentation:
+
+### Available Resources
+- **`sessions://list`** - List all active debugging sessions
+- **`commands://list`** - List commands from all sessions or filter by sessionId
+- **`commands://result`** - Get status and results of specific commands
+- **`docs://workflows`** - Comprehensive crash analysis workflows and examples
+- **`docs://usage`** - Complete usage guide for tools and resources
+
+### Using Resources
+```json
+// List all sessions
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "resources/read",
+  "params": { "uri": "sessions://list" }
+}
+
+// Get command result
+{
+  "jsonrpc": "2.0", 
+  "id": 2,
+  "method": "resources/read",
+  "params": { "uri": "commands://result?sessionId=abc123&commandId=cmd456" }
+}
+
+// Get crash analysis workflows
+{
+  "jsonrpc": "2.0",
+  "id": 3, 
+  "method": "resources/read",
+  "params": { "uri": "docs://workflows" }
+}
+```
+
+> 📖 **Complete tool reference with examples:** **[📋 TOOLS.md](docs/TOOLS.md)**  
+> 📚 **MCP Resources reference:** **[📚 RESOURCES.md](docs/RESOURCES.md)**
 
 ## 🏃‍♂️ Windows Service
 

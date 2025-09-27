@@ -1,6 +1,6 @@
 # Development Guide
 
-> 🏠 **[← Back to Main README](../README.md)** | 📚 **Other Docs:** [📋 Tools](TOOLS.md) | [🔧 Configuration](CONFIGURATION.md) | [🤖 Integration](INTEGRATION.md)
+> 🏠 **[← Back to Main README](../README.md)** | 📚 **Other Docs:** [📋 Tools](TOOLS.md) | [📚 Resources](RESOURCES.md) | [🔧 Configuration](CONFIGURATION.md) | [🤖 Integration](INTEGRATION.md)
 
 ## Architecture
 
@@ -182,5 +182,6 @@ public async Task MyCustomNotification_SendsCorrectly()
 ## Next Steps
 
 - **📋 Tools:** [TOOLS.md](TOOLS.md) - Study tool implementation patterns
+- **📚 Resources:** [RESOURCES.md](RESOURCES.md) - MCP Resources reference and usage patterns
 - **🔧 Configuration:** [CONFIGURATION.md](CONFIGURATION.md) - Environment setup for development
 - **🤖 Integration:** [INTEGRATION.md](INTEGRATION.md) - Test your tools with AI clients

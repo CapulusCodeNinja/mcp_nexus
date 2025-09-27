@@ -45,13 +45,141 @@ Windows debugging capabilities through WinDBG/CDB integration:
 
 ### 📋 Session Management (via MCP Resources)
 
-Session management is now available through MCP Resources for better integration:
+Session management is now available through MCP Resources for better integration and discoverability:
+
+#### Available Resources
 
 - **`sessions://list`** - List all active debugging sessions
-- **`commands://list`** - List commands from all sessions or filter by sessionId
-- **`commands://result`** - Get status of specific commands
+- **`commands://list`** - List commands from all sessions or filter by sessionId  
+- **`commands://result`** - Get status and results of specific commands
+- **`docs://workflows`** - Comprehensive crash analysis workflows and examples
+- **`docs://usage`** - Complete usage guide for tools and resources
 
-These resources provide the same functionality as the previous tools but with better structure and integration.
+#### How to Use Resources
+
+**1. List Active Sessions:**
+```json
+// MCP Request
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "resources/read",
+  "params": {
+    "uri": "sessions://list"
+  }
+}
+
+// Response
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "contents": [{
+      "type": "text",
+      "text": "{\"sessions\": [...], \"count\": 2, \"timestamp\": \"2024-01-15T10:30:00Z\"}"
+    }]
+  }
+}
+```
+
+**2. List Commands (All Sessions):**
+```json
+// MCP Request
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "resources/read", 
+  "params": {
+    "uri": "commands://list"
+  }
+}
+```
+
+**3. List Commands (Specific Session):**
+```json
+// MCP Request
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "resources/read",
+  "params": {
+    "uri": "commands://list?sessionId=sess-000001-abc12345"
+  }
+}
+```
+
+**4. Get Command Result:**
+```json
+// MCP Request
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "resources/read",
+  "params": {
+    "uri": "commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"
+  }
+}
+
+// Response (Command Completed)
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": {
+    "contents": [{
+      "type": "text", 
+      "text": "{\"sessionId\": \"sess-000001-abc12345\", \"commandId\": \"cmd-000001-abc12345-12345678-0001\", \"status\": \"Completed\", \"result\": \"ACTUAL_WINDBG_OUTPUT\", \"timestamp\": \"2024-01-15T10:30:00Z\"}"
+    }]
+  }
+}
+
+// Response (Command In Progress)
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": {
+    "contents": [{
+      "type": "text",
+      "text": "{\"sessionId\": \"sess-000001-abc12345\", \"commandId\": \"cmd-000001-abc12345-12345678-0001\", \"status\": \"In Progress\", \"result\": null, \"message\": \"Command is still executing - check again in a few seconds.\", \"timestamp\": \"2024-01-15T10:30:00Z\"}"
+    }]
+  }
+}
+```
+
+**5. Get Crash Analysis Workflows:**
+```json
+// MCP Request
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "method": "resources/read",
+  "params": {
+    "uri": "docs://workflows"
+  }
+}
+```
+
+**6. Get Usage Guide:**
+```json
+// MCP Request
+{
+  "jsonrpc": "2.0", 
+  "id": 6,
+  "method": "resources/read",
+  "params": {
+    "uri": "docs://usage"
+  }
+}
+```
+
+#### Resource Benefits
+
+- **Better Integration**: Resources work seamlessly with MCP clients
+- **Structured Data**: JSON responses with consistent formatting
+- **Error Handling**: Clear error messages with helpful hints
+- **Real-time Updates**: Resources reflect current server state
+- **Documentation**: Built-in usage guides and workflows
+
+> 📚 **For detailed resource specifications and usage patterns:** **[📚 RESOURCES.md](RESOURCES.md)**
 
 ## 📡 Real-Time Notifications
 

@@ -275,7 +275,7 @@ namespace mcp_nexus.Protocol
         {
             if (!sessionManager.SessionExists(sessionId))
             {
-                throw new ArgumentException($"Session not found: {sessionId}");
+                throw new ArgumentException($"Session not found: {sessionId}. Use sessions://list to see available sessions.");
             }
 
             var session = sessionManager.GetAllSessions().FirstOrDefault(s => s.SessionId == sessionId);
@@ -316,7 +316,7 @@ namespace mcp_nexus.Protocol
         {
             if (!sessionManager.SessionExists(sessionId))
             {
-                throw new ArgumentException($"Session not found: {sessionId}");
+                throw new ArgumentException($"Session not found: {sessionId}. Use sessions://list to see available sessions.");
             }
 
             var session = sessionManager.GetAllSessions().FirstOrDefault(s => s.SessionId == sessionId);
@@ -399,7 +399,7 @@ namespace mcp_nexus.Protocol
         {
             if (!sessionManager.SessionExists(sessionId))
             {
-                throw new ArgumentException($"Session not found: {sessionId}");
+                throw new ArgumentException($"Session not found: {sessionId}. Use sessions://list to see available sessions.");
             }
 
             // TODO: Implement command history retrieval from command queue service
@@ -896,7 +896,7 @@ namespace mcp_nexus.Protocol
                         command = (string?)null, // Command text not available from GetCommandResult
                         status = isCompleted ? "Completed" : "In Progress",
                         result = isCompleted ? commandResult : null,
-                        error = commandResult.Contains("Command not found") ? "Command not found" : null,
+                        error = commandResult.Contains("Command not found") ? "Command not found. Use commands://list to see available commands." : null,
                         createdAt = (DateTime?)null, // Not available from GetCommandResult
                         completedAt = isCompleted ? DateTime.UtcNow : (DateTime?)null,
                         timestamp = DateTime.UtcNow,

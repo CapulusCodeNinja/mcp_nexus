@@ -212,7 +212,7 @@ namespace mcp_nexus.Tools
                     commandId = (string?)null,
                     success = true,
                     operation = "nexus_open_dump_analyze_session",
-                    message = $"Session created successfully: {sessionId}",
+                    message = $"Session created successfully: {sessionId}. Use sessions://list to manage sessions.",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
@@ -276,7 +276,7 @@ namespace mcp_nexus.Tools
                         commandId = (string?)null,
                         success = false,
                         operation = "nexus_close_dump_analyze_session",
-                        message = $"Session not found or already closed: {sessionId}",
+                        message = $"Session not found or already closed: {sessionId}. Use sessions://list to see available sessions.",
                         usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                     };
 
@@ -353,7 +353,7 @@ namespace mcp_nexus.Tools
                         commandId = (string?)null,
                         success = false,
                         operation = "nexus_dump_analyze_session_async_command",
-                        message = $"Session not found or expired: {sessionId}",
+                        message = $"Session not found or expired: {sessionId}. Use sessions://list to see available sessions.",
                         usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                     };
 
@@ -373,7 +373,7 @@ namespace mcp_nexus.Tools
                     commandId = commandId,
                     success = true,
                     operation = "nexus_dump_analyze_session_async_command",
-                    message = $"Command queued successfully: {commandId}",
+                    message = $"Command queued successfully: {commandId}. Use commands://result to get results.",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
