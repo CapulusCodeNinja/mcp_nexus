@@ -84,6 +84,9 @@ The server automatically exposes all available tools through the MCP protocol wi
 ### 🛠 **[📋 Available Tools](docs/TOOLS.md)**
 Complete tool reference, async workflows, notification examples
 
+### 📖 **[💡 Usage Examples](docs/USAGE_EXAMPLES.md)**
+Step-by-step crash dump analysis workflow with real examples
+
 ### ⚙️ **[🔧 Configuration](docs/CONFIGURATION.md)**  
 Transport modes, Windows service, environment setup, appsettings.json keys
 

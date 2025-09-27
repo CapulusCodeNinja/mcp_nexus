@@ -33,7 +33,8 @@ namespace mcp_nexus.Tools
                 description = "Core debugging tools for crash dump analysis",
                 general_notes = new[]
                 {
-                    "Please get further details from the response and the tool listings of the MCP server.",
+                    "TOOLS: Use tools/call method to execute debugging operations (open session, run commands, close session)",
+                    "RESOURCES: Use resources/read method to access data (command results, session lists, documentation)",
                     "After opening an analyze session, WinDBG commands can be asynchronously executed.",
                     "Command results can be accessed via the 'Command Result' resource or 'List Commands' resource.",
                     "Opening a session without executing commands will not have any effect."
@@ -60,15 +61,6 @@ namespace mcp_nexus.Tools
                     },
                     new
                     {
-                        step_title = "Resource - Get Command Result",
-                        tool_name = "commands://result",
-                        action = "Use the 'Command Result' resource to get the status and results of specific commands.",
-                        input = new { sessionId = "string (required)", commandId = "string (required)" },
-                        output = (string?)"result",
-                        note = (string?)"Use: commands://result?sessionId=<sessionId>&commandId=<commandId>"
-                    },
-                    new
-                    {
                         step_title = "Tooling - Close Session",
                         tool_name = "nexus_close_dump_analyze_session",
                         action = "Use the tool to close the analyze session of the dump file after all commands are executed or the session is not needed anymore.",
@@ -81,7 +73,13 @@ namespace mcp_nexus.Tools
             resources = new
             {
                 title = "MCP Resources",
-                description = "Additional resources and documentation available through MCP",
+                description = "Access data and results using resources/read method (NOT tools/call)",
+                usage_notes = new[]
+                {
+                    "Use resources/read method to access these resources",
+                    "Example: {\"method\":\"resources/read\",\"params\":{\"uri\":\"commands://result?sessionId=abc&commandId=cmd123\"}}",
+                    "Resources provide data access, tools provide action execution"
+                },
                 available_resources = new object[]
                 {
                     new
@@ -142,7 +140,9 @@ namespace mcp_nexus.Tools
                         name = "Command Result",
                         description = "Get status and results of a specific async command",
                         input = new { sessionId = "string (required)", commandId = "string (required)" },
-                        note = (string?)"Use: commands://result?sessionId=<sessionId>&commandId=<commandId>"
+                        example = "commands://result?sessionId=sess-000001-abc123&commandId=cmd-sess-000001-abc123-0001",
+                        usage = "Use resources/read method with this URI to get command results",
+                        note = (string?)"This is a RESOURCE, not a tool. Use resources/read method to access it."
                     }
                 },
                 usage_notes = new[]
@@ -236,12 +236,12 @@ namespace mcp_nexus.Tools
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
-                logger.LogInformation("✅ Session {SessionId} created successfully", sessionId);
+                logger.LogInformation("Session {SessionId} created successfully", sessionId);
                 return response;
             }
             catch (SessionLimitExceededException ex)
             {
-                logger.LogWarning("❌ Session limit exceeded: {Message}", ex.Message);
+                logger.LogWarning("Session limit exceeded: {Message}", ex.Message);
 
                 var errorResponse = new
                 {
@@ -258,7 +258,7 @@ namespace mcp_nexus.Tools
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "❌ Failed to create debugging session for {DumpPath}", dumpPath);
+                logger.LogError(ex, "Failed to create debugging session for {DumpPath}", dumpPath);
 
                 var errorResponse = new
                 {
@@ -320,12 +320,12 @@ namespace mcp_nexus.Tools
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
-                logger.LogInformation("✅ Session {SessionId} closed successfully", sessionId);
+                logger.LogInformation("Session {SessionId} closed successfully", sessionId);
                 return response;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "❌ Error closing session {SessionId}", sessionId);
+                logger.LogError(ex, "Error closing session {SessionId}", sessionId);
 
                 var errorResponse = new
                 {
@@ -349,12 +349,12 @@ namespace mcp_nexus.Tools
         /// <summary>
         /// Execute a debugger command asynchronously in the specified session
         /// </summary>
-        [Description("🔄 ASYNC COMMAND: Execute debugger command in background queue. NEVER returns results directly! Always returns commandId. MUST use commands://result resource to get actual results.")]
+        [Description("ASYNC COMMAND: Execute debugger command in background queue. NEVER returns results directly! Always returns commandId. MUST use commands://result resource to get actual results.")]
         public Task<object> nexus_enqueue_async_dump_analyze_command(
             [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
             [Description("Debugger command to execute (e.g., '!analyze -v', 'k', '!peb')")] string command)
         {
-            logger.LogInformation("🔄 Executing async command in session {SessionId}: {Command}", sessionId, command);
+            logger.LogInformation("Executing async command in session {SessionId}: {Command}", sessionId, command);
 
             return Task.FromResult(ExecuteCommandSync(sessionId, command));
         }
@@ -397,12 +397,12 @@ namespace mcp_nexus.Tools
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
-                logger.LogInformation("✅ Command {CommandId} queued in session {SessionId}", commandId, sessionId);
+                logger.LogInformation("Command {CommandId} queued in session {SessionId}", commandId, sessionId);
                 return response;
             }
             catch (SessionNotFoundException ex)
             {
-                logger.LogWarning("❌ Session not found: {SessionId}", sessionId);
+                logger.LogWarning("Session not found: {SessionId}", sessionId);
 
                 var errorResponse = new
                 {
@@ -419,7 +419,7 @@ namespace mcp_nexus.Tools
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "❌ Error executing command in session {SessionId}: {Command}", sessionId, command);
+                logger.LogError(ex, "Error executing command in session {SessionId}: {Command}", sessionId, command);
 
                 var errorResponse = new
                 {
@@ -455,9 +455,9 @@ namespace mcp_nexus.Tools
                     },
                     UsageHints = new List<string>
                     {
-                        "🔄 Command is waiting in queue",
-                        "📡 Watch for notifications/commandStatus updates",
-                        "⏱️ Execution order is first-in-first-out per session"
+                        "Command is waiting in queue",
+                        "Watch for notifications/commandStatus updates",
+                        "Execution order is first-in-first-out per session"
                     }
                 },
                 "completed" => new AIGuidance
@@ -470,9 +470,9 @@ namespace mcp_nexus.Tools
                     },
                     UsageHints = new List<string>
                     {
-                        "✅ Command completed successfully",
-                        "📊 Full output is available in the result",
-                        "🎯 Use results to guide next debugging steps"
+                        "Command completed successfully",
+                        "Full output is available in the result",
+                        "Use results to guide next debugging steps"
                     }
                 },
                 "failed" => new AIGuidance

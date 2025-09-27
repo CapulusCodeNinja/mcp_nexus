@@ -87,7 +87,7 @@ namespace mcp_nexus.Protocol
                     var u when u.StartsWith("sessions://") => await ReadSessionResource(u),
                     var u when u.StartsWith("commands://") => await ReadCommandResource(u),
                     var u when u.StartsWith("docs://") => ReadDocumentationResource(u),
-                    _ => throw new ArgumentException($"Unknown resource URI: {uri}")
+                    _ => throw new ArgumentException($"Unknown resource URI: {uri}. Use resources/list to see available resources, or check the tool descriptions for correct resource URIs.")
                 };
             }
             catch (Exception ex)
@@ -1111,7 +1111,7 @@ namespace mcp_nexus.Protocol
                 var uriParts = uri.Split('?');
                 if (uriParts.Length < 2)
                 {
-                    throw new ArgumentException("Session ID and Command ID required. Use: commands://result?sessionId=<sessionId>&commandId=<commandId>");
+                    throw new ArgumentException("RESOURCE ACCESS ERROR: Session ID and Command ID required. Use: commands://result?sessionId=<sessionId>&commandId=<commandId>. This is a RESOURCE, not a tool - use resources/read method to access it.");
                 }
 
                 var queryParams = System.Web.HttpUtility.ParseQueryString(uriParts[1]);
@@ -1120,7 +1120,7 @@ namespace mcp_nexus.Protocol
 
                 if (string.IsNullOrEmpty(sessionId) || string.IsNullOrEmpty(commandId))
                 {
-                    throw new ArgumentException("Both sessionId and commandId parameters are required. Use sessions://list to see available sessions and commands://list to see available commands.");
+                    throw new ArgumentException("RESOURCE ACCESS ERROR: Both sessionId and commandId parameters are required. Use sessions://list to see available sessions and commands://list to see available commands. This is a RESOURCE, not a tool - use resources/read method to access it.");
                 }
 
                 // Get session context to retrieve command status

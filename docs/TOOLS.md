@@ -6,6 +6,25 @@
 
 Windows debugging capabilities through WinDBG/CDB integration:
 
+### Tools vs Resources
+
+**TOOLS** (use `tools/call` method):
+- Execute actions: open sessions, run commands, close sessions
+- Examples: `nexus_open_dump_analyze_session`, `nexus_enqueue_async_dump_analyze_command`
+
+**RESOURCES** (use `resources/read` method):
+- Access data: command results, session lists, documentation
+- Examples: `commands://result`, `sessions://list`, `docs://workflows`
+
+**Common Mistake**: Don't use resource URIs as tool names!
+```json
+// WRONG - This will fail
+{"method":"tools/call","params":{"name":"commands://result?sessionId=abc&commandId=cmd123"}}
+
+// CORRECT - Use resources/read for resources
+{"method":"resources/read","params":{"uri":"commands://result?sessionId=abc&commandId=cmd123"}}
+```
+
 ### Core Debugging Commands
 - **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
 - **Session Management**: Available via MCP Resources (`sessions://list`, `commands://list`)
@@ -29,13 +48,24 @@ Windows debugging capabilities through WinDBG/CDB integration:
    → notifications/commandHeartbeat: {"elapsed": "30s", ...} (for long commands)
    → notifications/commandStatus: {"status": "completed", "result": "ACTUAL_OUTPUT"}
 
-4. OR use MCP Resource: commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001  
+4. OR use MCP Resource: 
+   ```json
+   {"method":"resources/read","params":{"uri":"commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"}}
+   ```
    → Returns: {"status": "executing", ...} (keep polling)
    → Returns: {"status": "completed", "result": "ACTUAL_OUTPUT"}
 
 5. Use MCP Resources for session management:
-   - `sessions://list` → List all active sessions
-   - `commands://list` → List commands for all sessions or filter by sessionId
+   ```json
+   // List all sessions
+   {"method":"resources/read","params":{"uri":"sessions://list"}}
+   
+   // List commands for a specific session
+   {"method":"resources/read","params":{"uri":"commands://list?sessionId=sess-000001-abc12345"}}
+   
+   // Get command result
+   {"method":"resources/read","params":{"uri":"commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-0001"}}
+   ```
 
 7. nexus_close_dump_analyze_session {"sessionId": "sess-000001-abc12345-12345678-0001"}
    → Returns: {"success": true, ...} - Clean up resources

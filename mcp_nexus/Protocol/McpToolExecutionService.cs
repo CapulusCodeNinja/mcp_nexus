@@ -21,12 +21,18 @@ namespace mcp_nexus.Protocol
 
             try
             {
+                // Check if user is trying to use a resource URI as a tool name
+                if (toolName.StartsWith("commands://") || toolName.StartsWith("sessions://") || toolName.StartsWith("docs://"))
+                {
+                    throw new McpToolException(-32602, $"TOOL CALL ERROR: '{toolName}' is a RESOURCE URI, not a tool name. Use resources/read method to access resources. Use tools/list to see available tools.");
+                }
+
                 return toolName switch
                 {
                     "nexus_open_dump_analyze_session" => await ExecuteOpenWindbgDump(arguments),
                     "nexus_close_dump_analyze_session" => await ExecuteCloseWindbgDump(arguments),
                     "nexus_enqueue_async_dump_analyze_command" => await ExecuteRunWindbgCmdAsync(arguments),
-                    _ => throw new McpToolException(-32602, $"Unknown tool: {toolName}")
+                    _ => throw new McpToolException(-32602, $"Unknown tool: {toolName}. Use tools/list to see available tools.")
                 };
             }
             catch (McpToolException)
