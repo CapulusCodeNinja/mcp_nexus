@@ -179,14 +179,14 @@ namespace mcp_nexus.Models
     {
         [JsonPropertyName("tools")]
         public object Tools { get; set; } = new { listChanged = true };
-        
+
         [JsonPropertyName("resources")]
-        public object Resources { get; set; } = new 
-        { 
-            subscribe = true, 
-            listChanged = true 
+        public object Resources { get; set; } = new
+        {
+            subscribe = true,
+            listChanged = true
         };
-        
+
         [JsonPropertyName("notifications")]
         public object Notifications { get; set; } = new
         {

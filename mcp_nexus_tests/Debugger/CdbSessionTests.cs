@@ -45,9 +45,9 @@ namespace mcp_nexus_tests.Helper
         public void CdbSession_Constructor_InvalidCommandTimeout_ThrowsArgumentOutOfRangeException(int timeout, string expectedMessage)
         {
             // Act & Assert
-            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => 
+            var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
                 new CdbSession(m_mockLogger.Object, timeout));
-            
+
             Assert.Equal("commandTimeoutMs", ex.ParamName);
             Assert.Contains(expectedMessage, ex.Message);
         }
@@ -57,9 +57,9 @@ namespace mcp_nexus_tests.Helper
         public void CdbSession_Constructor_InvalidSymbolServerTimeout_ThrowsArgumentOutOfRangeException(int timeout, string expectedMessage)
         {
             // Act & Assert
-            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => 
+            var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
                 new CdbSession(m_mockLogger.Object, 5000, null, timeout));
-            
+
             Assert.Equal("symbolServerTimeoutMs", ex.ParamName);
             Assert.Contains(expectedMessage, ex.Message);
         }
@@ -69,9 +69,9 @@ namespace mcp_nexus_tests.Helper
         public void CdbSession_Constructor_InvalidSymbolServerMaxRetries_ThrowsArgumentOutOfRangeException(int retries, string expectedMessage)
         {
             // Act & Assert
-            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => 
+            var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
                 new CdbSession(m_mockLogger.Object, 5000, null, 10000, retries));
-            
+
             Assert.Equal("symbolServerMaxRetries", ex.ParamName);
             Assert.Contains(expectedMessage, ex.Message);
         }
@@ -81,9 +81,9 @@ namespace mcp_nexus_tests.Helper
         public void CdbSession_Constructor_InvalidStartupDelay_ThrowsArgumentOutOfRangeException(int delay, string expectedMessage)
         {
             // Act & Assert
-            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => 
+            var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
                 new CdbSession(m_mockLogger.Object, 5000, null, 10000, 1, null, delay));
-            
+
             Assert.Equal("startupDelayMs", ex.ParamName);
             Assert.Contains(expectedMessage, ex.Message);
         }
@@ -130,7 +130,7 @@ namespace mcp_nexus_tests.Helper
             m_cdbSession = new CdbSession(m_mockLogger.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_cdbSession.StartSession(null!, null));
         }
 
@@ -141,7 +141,7 @@ namespace mcp_nexus_tests.Helper
             m_cdbSession = new CdbSession(m_mockLogger.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_cdbSession.StartSession("", null));
         }
 
@@ -152,7 +152,7 @@ namespace mcp_nexus_tests.Helper
             m_cdbSession = new CdbSession(m_mockLogger.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_cdbSession.StartSession("   ", null));
         }
 
@@ -178,7 +178,7 @@ namespace mcp_nexus_tests.Helper
             m_cdbSession.Dispose();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => 
+            await Assert.ThrowsAsync<ObjectDisposedException>(() =>
                 m_cdbSession.StopSession());
         }
 
@@ -189,7 +189,7 @@ namespace mcp_nexus_tests.Helper
             m_cdbSession = new CdbSession(m_mockLogger.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 m_cdbSession.ExecuteCommand("test command"));
         }
 
@@ -201,7 +201,7 @@ namespace mcp_nexus_tests.Helper
             m_cdbSession.Dispose();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => 
+            await Assert.ThrowsAsync<ObjectDisposedException>(() =>
                 m_cdbSession.ExecuteCommand("test command"));
         }
 
@@ -212,7 +212,7 @@ namespace mcp_nexus_tests.Helper
             m_cdbSession = new CdbSession(m_mockLogger.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_cdbSession.ExecuteCommand(null!));
         }
 
@@ -223,7 +223,7 @@ namespace mcp_nexus_tests.Helper
             m_cdbSession = new CdbSession(m_mockLogger.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_cdbSession.ExecuteCommand(""));
         }
 
@@ -234,7 +234,7 @@ namespace mcp_nexus_tests.Helper
             m_cdbSession = new CdbSession(m_mockLogger.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_cdbSession.ExecuteCommand("   "));
         }
 
@@ -245,7 +245,7 @@ namespace mcp_nexus_tests.Helper
             m_cdbSession = new CdbSession(m_mockLogger.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 m_cdbSession.ExecuteCommand("test command", CancellationToken.None));
         }
 
@@ -257,7 +257,7 @@ namespace mcp_nexus_tests.Helper
             m_cdbSession.Dispose();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => 
+            await Assert.ThrowsAsync<ObjectDisposedException>(() =>
                 m_cdbSession.ExecuteCommand("test command", CancellationToken.None));
         }
 
@@ -268,7 +268,7 @@ namespace mcp_nexus_tests.Helper
             m_cdbSession = new CdbSession(m_mockLogger.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_cdbSession.ExecuteCommand(null!, CancellationToken.None));
         }
 
@@ -399,7 +399,7 @@ namespace mcp_nexus_tests.Helper
             // Act & Assert
             // This will throw InvalidOperationException because session is not active,
             // but we're testing that the method signature works with cancellation
-            await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 m_cdbSession.ExecuteCommand("test", cts.Token));
         }
 

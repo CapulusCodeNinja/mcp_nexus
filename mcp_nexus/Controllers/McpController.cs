@@ -71,14 +71,14 @@ namespace mcp_nexus.Controllers
                 }
 
                 var response = await mcpProtocolService.ProcessRequest(requestElement);
-                
+
                 // Handle notifications - they should not return responses
                 if (response == null)
                 {
                     logger.LogInformation("Notification received for method '{Method}' - no response sent (Session: {SessionId})", method, sessionId);
                     return NoContent(); // HTTP 204 No Content for notifications
                 }
-                
+
                 logger.LogInformation("ProcessRequest completed for method '{Method}' - Response type: {ResponseType}", method, response.GetType().Name);
 
                 // PERFORMANCE: Only serialize response in debug mode to avoid unnecessary allocations

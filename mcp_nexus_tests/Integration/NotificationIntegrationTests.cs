@@ -60,7 +60,7 @@ namespace mcp_nexus_tests.Integration
             // Act - Send a command status notification
             await m_notificationService.NotifyCommandStatusAsync(
                 "cmd-integration-test",
-                "!analyze -v", 
+                "!analyze -v",
                 "executing",
                 75,
                 "Integration test in progress",
@@ -96,24 +96,24 @@ namespace mcp_nexus_tests.Integration
 
             // Clear the existing captured output and setup fresh string writer
             m_stringWriter.GetStringBuilder().Clear();
-            
+
             // Add a small delay to ensure previous operations are fully complete
             await Task.Delay(100);
 
             // Act - Send different notification types with small delays for stability
             await m_notificationService.NotifyCommandStatusAsync("cmd1", "test", "queued");
             await Task.Delay(50); // Small delay between notifications
-            
+
             await m_notificationService.NotifyToolsListChangedAsync();
             await Task.Delay(50);
-            
+
             await m_notificationService.NotifyServerHealthAsync("healthy", true, 2, 1);
             await Task.Delay(100); // Final delay to ensure all notifications are processed
 
             // Assert with retry logic for flaky tests
             var output = m_stringWriter.ToString();
             var lines = output.Trim().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            
+
             // More lenient assertion - check that we have at least the expected notifications
             Assert.True(lines.Length >= 3, $"Expected at least 3 notifications but got {lines.Length}. Output: {output}");
 
@@ -134,7 +134,7 @@ namespace mcp_nexus_tests.Integration
         public async Task EndToEnd_ServiceRegistration_BothModesSupported()
         {
             // This test verifies that both HTTP and stdio modes can use the same notification service
-            
+
             // Arrange - Simulate both HTTP and stdio bridges registering
             var httpHandlerCalled = false;
             // var stdioHandlerCalled = false; // Not used in this test
@@ -158,7 +158,7 @@ namespace mcp_nexus_tests.Integration
 
             // Assert
             Assert.True(httpHandlerCalled, "HTTP handler should be called");
-            
+
             var stdioOutput = testStringWriter.ToString();
             Assert.NotEmpty(stdioOutput); // Stdio handler should produce output
 
@@ -169,7 +169,7 @@ namespace mcp_nexus_tests.Integration
         public async Task EndToEnd_NoHandlers_GracefulDegradation()
         {
             // Arrange - Don't initialize any bridges
-            
+
             // Act - Should not throw, just log and continue
             var exception = await Record.ExceptionAsync(async () =>
             {
@@ -178,7 +178,7 @@ namespace mcp_nexus_tests.Integration
 
             // Assert
             Assert.Null(exception);
-            
+
             // No output should be produced since no handlers registered
             var output = m_stringWriter.ToString();
             Assert.Empty(output);

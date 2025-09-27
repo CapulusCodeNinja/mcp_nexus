@@ -194,10 +194,10 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var expectedCommand = new QueuedCommand(
-                "cmd-current", 
-                "test-command", 
-                DateTime.UtcNow, 
-                new TaskCompletionSource<string>(), 
+                "cmd-current",
+                "test-command",
+                DateTime.UtcNow,
+                new TaskCompletionSource<string>(),
                 new CancellationTokenSource());
             m_mockService.Setup(s => s.GetCurrentCommand()).Returns(expectedCommand);
 

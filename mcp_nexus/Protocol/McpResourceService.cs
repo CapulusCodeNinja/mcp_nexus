@@ -50,14 +50,18 @@ namespace mcp_nexus.Protocol
 
             try
             {
-                return uri switch
-                {
-                    var u when u.StartsWith("debugging://sessions/") => await ReadSessionResource(u),
-                    var u when u.StartsWith("debugging://commands/") => await ReadCommandResource(u),
-                    var u when u.StartsWith("debugging://docs/") => ReadDocumentationResource(u),
-                    var u when u.StartsWith("debugging://tools/") => await ReadToolResource(u),
-                    _ => throw new ArgumentException($"Unknown resource URI: {uri}")
-                };
+            return uri switch
+            {
+                var u when u.StartsWith("sessions://") => await ReadSessionResource(u),
+                var u when u.StartsWith("commands://") => await ReadCommandResource(u),
+                var u when u.StartsWith("docs://") => ReadDocumentationResource(u),
+                "sessions://list" => await ReadSessionsList(),
+                "commands://list" => await ReadCommandsList(uri),
+                "commands://result" => await ReadCommandStatusHelp(),
+                var u when u.StartsWith("commands://list?") => await ReadCommandsList(u),
+                var u when u.StartsWith("commands://result?") => await ReadCommandStatus(u),
+                _ => throw new ArgumentException($"Unknown resource URI: {uri}")
+            };
             }
             catch (Exception ex)
             {
@@ -72,14 +76,14 @@ namespace mcp_nexus.Protocol
             [
                 new McpResource
                 {
-                    Uri = "debugging://docs/debugging-workflows",
+                    Uri = "docs://workflows",
                     Name = "Crash Analysis Workflows",
                     Description = "Common debugging patterns and step-by-step analysis workflows",
                     MimeType = "application/json"
                 },
                 new McpResource
                 {
-                    Uri = "debugging://docs/usage",
+                    Uri = "docs://usage",
                     Name = "Usage",
                     Description = "Essential tool usage information for MCP Nexus server",
                     MimeType = "application/json"
@@ -203,9 +207,8 @@ namespace mcp_nexus.Protocol
         {
             var content = uri switch
             {
-                "debugging://docs/windbg-commands" => GetWindbgCommandsDocumentation(),
-                "debugging://docs/debugging-workflows" => GetDebuggingWorkflowsDocumentation(),
-                "debugging://docs/usage" => GetTroubleshootingDocumentation(),
+                "docs://workflows" => GetDebuggingWorkflowsDocumentation(),
+                "docs://usage" => GetTroubleshootingDocumentation(),
                 _ => throw new ArgumentException($"Unknown documentation resource: {uri}")
             };
 
@@ -317,15 +320,15 @@ namespace mcp_nexus.Protocol
             }
 
             var session = sessionManager.GetAllSessions().FirstOrDefault(s => s.SessionId == sessionId);
-            
+
             var dumpInfo = new
             {
                 sessionId = session?.SessionId,
                 dumpPath = session?.DumpPath,
                 dumpFile = session?.DumpPath != null ? Path.GetFileName(session.DumpPath) : "Unknown",
                 fileExists = session?.DumpPath != null && File.Exists(session.DumpPath),
-                fileSize = session?.DumpPath != null && File.Exists(session.DumpPath) 
-                    ? new FileInfo(session.DumpPath).Length 
+                fileSize = session?.DumpPath != null && File.Exists(session.DumpPath)
+                    ? new FileInfo(session.DumpPath).Length
                     : (long?)null,
                 lastModified = session?.DumpPath != null && File.Exists(session.DumpPath)
                     ? File.GetLastWriteTime(session.DumpPath).ToString("yyyy-MM-dd HH:mm:ss UTC")
@@ -473,7 +476,8 @@ namespace mcp_nexus.Protocol
             var workflows = new
             {
                 title = "Crash Analysis Workflows",
-                description = "Comprehensive step-by-step analysis workflows for Windows crash dump investigation",
+                description = "Example workflows for Windows crash dump investigation - these are starting points, not exhaustive lists. AI clients should explore beyond these basic patterns and adapt commands based on specific crash scenarios.",
+                disclaimer = "⚠️ IMPORTANT: These are example workflows below many others. Do not limit yourself to only these patterns - explore additional WinDBG commands, combine different approaches, and adapt based on the specific crash context and symptoms you observe.",
                 workflows = new[]
                 {
                     new
@@ -607,21 +611,21 @@ namespace mcp_nexus.Protocol
             [
                 new McpResource
                 {
-                    Uri = "debugging://tools/sessions",
+                    Uri = "sessions://list",
                     Name = "List Sessions",
                     Description = "List all active debugging sessions",
                     MimeType = "application/json"
                 },
                 new McpResource
                 {
-                    Uri = "debugging://tools/commands",
+                    Uri = "commands://list",
                     Name = "List Commands",
                     Description = "List async commands from all sessions or filter by specific session",
                     MimeType = "application/json"
                 },
                 new McpResource
                 {
-                    Uri = "debugging://tools/command-result",
+                    Uri = "commands://result",
                     Name = "Command Result",
                     Description = "Get status and results of a specific async command",
                     MimeType = "application/json"
@@ -629,18 +633,6 @@ namespace mcp_nexus.Protocol
             ];
         }
 
-        private async Task<McpResourceReadResult> ReadToolResource(string uri)
-        {
-            return uri switch
-            {
-                "debugging://tools/sessions" => await ReadSessionsList(),
-                "debugging://tools/commands" => await ReadCommandsList(uri),
-                "debugging://tools/command-result" => await ReadCommandStatusHelp(),
-                var u when u.StartsWith("debugging://tools/commands?") => await ReadCommandsList(u),
-                var u when u.StartsWith("debugging://tools/command-result?") => await ReadCommandStatus(u),
-                _ => throw new ArgumentException($"Unknown tool resource URI: {uri}")
-            };
-        }
 
         private Task<McpResourceReadResult> ReadSessionsList()
         {
@@ -689,7 +681,7 @@ namespace mcp_nexus.Protocol
             try
             {
                 string? sessionId = null;
-                
+
                 // Extract sessionId from URI if provided: debugging://tools/commands?sessionId=xxx
                 var uriParts = uri.Split('?');
                 if (uriParts.Length >= 2)
@@ -709,7 +701,7 @@ namespace mcp_nexus.Protocol
                     {
                         throw new ArgumentException($"Session {sessionId} not found");
                     }
-                    
+
                     var sessionContext = sessionManager.GetSessionContext(sessionId);
                     var sessionCommands = GetSessionCommands(sessionContext, sessionId);
                     commandsBySession[sessionId] = sessionCommands;
@@ -757,7 +749,7 @@ namespace mcp_nexus.Protocol
         private Dictionary<string, object> GetSessionCommands(SessionContext? sessionContext, string sessionId)
         {
             var commands = new Dictionary<string, object>();
-            
+
             if (sessionContext == null)
             {
                 // Return placeholder if session context is not available
@@ -791,7 +783,7 @@ namespace mcp_nexus.Protocol
                 },
                 new
                 {
-                    commandId = "cmd-002", 
+                    commandId = "cmd-002",
                     command = "!threads",
                     status = "Running",
                     isFinished = false,
@@ -844,7 +836,7 @@ namespace mcp_nexus.Protocol
                 var queryParams = System.Web.HttpUtility.ParseQueryString(uriParts[1]);
                 var sessionId = queryParams["sessionId"];
                 var commandId = queryParams["commandId"];
-                
+
                 if (string.IsNullOrEmpty(sessionId) || string.IsNullOrEmpty(commandId))
                 {
                     throw new ArgumentException("Both sessionId and commandId parameters are required");
@@ -860,16 +852,16 @@ namespace mcp_nexus.Protocol
 
                 // Get the command queue for this session to check command status
                 var commandQueue = sessionManager.GetCommandQueue(sessionId);
-                
+
                 // Try to get the command result
                 try
                 {
                     var commandResult = await commandQueue.GetCommandResult(commandId);
-                    
+
                     // Parse the result to determine status
-                    var isCompleted = !commandResult.Contains("still executing") && 
+                    var isCompleted = !commandResult.Contains("still executing") &&
                                     !commandResult.Contains("Command not found");
-                    
+
                     var result = new
                     {
                         sessionId = sessionId,
@@ -942,8 +934,8 @@ namespace mcp_nexus.Protocol
             {
                 title = "Command Status Resource",
                 description = "Get status and results of a specific async command",
-                usage_info = "Use: debugging://tools/command-result?sessionId=<sessionId>&commandId=<commandId>",
-                example = "debugging://tools/command-result?sessionId=abc123&commandId=cmd456",
+                usage_info = "Use: commands://result?sessionId=<sessionId>&commandId=<commandId>",
+                example = "commands://result?sessionId=abc123&commandId=cmd456",
                 note = "This resource requires both sessionId and commandId parameters to get command status",
                 usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
             };

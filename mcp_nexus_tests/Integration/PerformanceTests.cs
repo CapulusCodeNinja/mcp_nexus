@@ -34,12 +34,12 @@ namespace mcp_nexus_tests.Services
             m_mockCdbSession = new Mock<ICdbSession>();
             m_mockLogger = new Mock<ILogger<CommandQueueService>>();
             m_mockNotificationLogger = new Mock<ILogger<McpNotificationService>>();
-            
+
             // Setup default mock behavior
             m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
             m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync("Mock result");
-            
+
             m_commandQueueService = new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object);
             m_notificationService = new McpNotificationService(m_mockNotificationLogger.Object);
         }
@@ -66,16 +66,16 @@ namespace mcp_nexus_tests.Services
 
             // Act - Measure cleanup performance
             var stopwatch = Stopwatch.StartNew();
-            
+
             // Trigger cleanup by calling the private method via reflection
-            var cleanupMethod = typeof(CommandQueueService).GetMethod("CleanupCompletedCommands", 
+            var cleanupMethod = typeof(CommandQueueService).GetMethod("CleanupCompletedCommands",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             cleanupMethod!.Invoke(m_commandQueueService, new object?[] { null });
-            
+
             stopwatch.Stop();
 
             // Assert - Cleanup should complete quickly even with many commands
-            Assert.True(stopwatch.ElapsedMilliseconds < 1000, 
+            Assert.True(stopwatch.ElapsedMilliseconds < 1000,
                 $"Cleanup took {stopwatch.ElapsedMilliseconds}ms, expected < 1000ms");
         }
 
@@ -88,7 +88,7 @@ namespace mcp_nexus_tests.Services
 
             // Act - Measure performance with no handlers
             var stopwatch = Stopwatch.StartNew();
-            
+
             for (int i = 0; i < iterations; i++)
             {
                 notifications.Add(m_notificationService.NotifyCommandStatusAsync(
@@ -99,7 +99,7 @@ namespace mcp_nexus_tests.Services
             stopwatch.Stop();
 
             // Assert - Should complete quickly even with many notifications
-            Assert.True(stopwatch.ElapsedMilliseconds < 1000, 
+            Assert.True(stopwatch.ElapsedMilliseconds < 1000,
                 $"1000 notifications with no handlers took {stopwatch.ElapsedMilliseconds}ms, expected < 1000ms");
         }
 
@@ -130,7 +130,7 @@ namespace mcp_nexus_tests.Services
 
             // Act - Measure performance with many handlers
             var stopwatch = Stopwatch.StartNew();
-            
+
             for (int i = 0; i < iterations; i++)
             {
                 notifications.Add(m_notificationService.NotifyCommandStatusAsync(
@@ -141,9 +141,9 @@ namespace mcp_nexus_tests.Services
             stopwatch.Stop();
 
             // Assert - Should complete reasonably quickly
-            Assert.True(stopwatch.ElapsedMilliseconds < 2000, 
+            Assert.True(stopwatch.ElapsedMilliseconds < 2000,
                 $"{iterations} notifications with {handlerCount} handlers took {stopwatch.ElapsedMilliseconds}ms, expected < 2000ms");
-            
+
             // Verify all notifications were received
             Assert.Equal(iterations * handlerCount, receivedNotifications.Count);
         }
@@ -167,21 +167,21 @@ namespace mcp_nexus_tests.Services
 
             // Act - Measure string operation performance
             var stopwatch = Stopwatch.StartNew();
-            
+
             for (int i = 0; i < iterations; i++)
             {
                 var command = commands[i % commands.Length];
                 var elapsed = TimeSpan.FromMinutes(i % 10);
-                
+
                 // This tests the optimized DetermineHeartbeatDetails method
                 var details = DetermineHeartbeatDetails(command, elapsed);
                 Assert.NotNull(details);
             }
-            
+
             stopwatch.Stop();
 
             // Assert - String operations should be very fast
-            Assert.True(stopwatch.ElapsedMilliseconds < 100, 
+            Assert.True(stopwatch.ElapsedMilliseconds < 100,
                 $"{iterations} string operations took {stopwatch.ElapsedMilliseconds}ms, expected < 100ms");
         }
 
@@ -200,7 +200,7 @@ namespace mcp_nexus_tests.Services
 
             // Act - Measure ValueTuple iteration performance
             var stopwatch = Stopwatch.StartNew();
-            
+
             for (int i = 0; i < iterations; i++)
             {
                 foreach (var (key, value) in dictionary)
@@ -208,11 +208,11 @@ namespace mcp_nexus_tests.Services
                     results.Add($"{key}:{value}");
                 }
             }
-            
+
             stopwatch.Stop();
 
             // Assert - ValueTuple iteration should be efficient
-            Assert.True(stopwatch.ElapsedMilliseconds < 500, 
+            Assert.True(stopwatch.ElapsedMilliseconds < 500,
                 $"{iterations} ValueTuple iterations took {stopwatch.ElapsedMilliseconds}ms, expected < 500ms");
             Assert.Equal(iterations * dictionary.Count, results.Count);
         }
@@ -232,7 +232,7 @@ namespace mcp_nexus_tests.Services
                 else
                     return "Processing complex crash analysis (this may take several more minutes)...";
             }
-            
+
             if (command.Contains("!heap", StringComparison.OrdinalIgnoreCase))
             {
                 if (elapsed.TotalMinutes < 1)
@@ -242,8 +242,8 @@ namespace mcp_nexus_tests.Services
                 else
                     return "Processing large heap dump (this is normal for applications with high memory usage)...";
             }
-            
-            if (command.Contains("!process 0 0", StringComparison.OrdinalIgnoreCase) || 
+
+            if (command.Contains("!process 0 0", StringComparison.OrdinalIgnoreCase) ||
                 command.Contains("!process", StringComparison.OrdinalIgnoreCase))
             {
                 if (elapsed.TotalMinutes < 1)
@@ -253,15 +253,15 @@ namespace mcp_nexus_tests.Services
                 else
                     return "Processing extensive process data...";
             }
-            
-            if (command.Contains("!locks", StringComparison.OrdinalIgnoreCase) || 
+
+            if (command.Contains("!locks", StringComparison.OrdinalIgnoreCase) ||
                 command.Contains("!handle", StringComparison.OrdinalIgnoreCase))
             {
-                return elapsed.TotalMinutes < 2 
+                return elapsed.TotalMinutes < 2
                     ? "Analyzing system locks and handles..."
                     : "Processing extensive lock and handle information...";
             }
-            
+
             return "Processing command...";
         }
     }

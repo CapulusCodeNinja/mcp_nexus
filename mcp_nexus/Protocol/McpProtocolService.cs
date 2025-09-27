@@ -19,7 +19,8 @@ namespace mcp_nexus.Protocol
                 var request = ParseRequest(requestElement);
                 if (request == null)
                 {
-                    return CreateErrorResponse(null, -32600, "Invalid Request: The request is not a valid JSON-RPC 2.0 request. Please ensure the request contains a 'method' field and follows the JSON-RPC 2.0 specification.", new {
+                    return CreateErrorResponse(null, -32600, "Invalid Request: The request is not a valid JSON-RPC 2.0 request. Please ensure the request contains a 'method' field and follows the JSON-RPC 2.0 specification.", new
+                    {
                         errorType = "InvalidRequest",
                         requiredFields = new[] { "jsonrpc", "method" },
                         specification = "JSON-RPC 2.0"
@@ -30,13 +31,13 @@ namespace mcp_nexus.Protocol
                 m_logger.LogDebug("Processing MCP request: {Method}", request.Method);
 
                 var result = await ExecuteMethod(request);
-                
+
                 // Handle notifications - they should not return responses
                 if (result == null)
                 {
                     return null; // No response for notifications
                 }
-                
+
                 return CreateSuccessResponse(request.Id, result);
             }
             catch (McpToolException ex)
@@ -47,7 +48,8 @@ namespace mcp_nexus.Protocol
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "Unexpected error processing MCP request: {RequestId}", requestId);
-                return CreateErrorResponse(requestId, -32603, "Internal server error occurred while processing your request. Please try again or contact support if the issue persists.", new { 
+                return CreateErrorResponse(requestId, -32603, "Internal server error occurred while processing your request. Please try again or contact support if the issue persists.", new
+                {
                     errorType = "InternalError",
                     timestamp = DateTime.UtcNow,
                     requestId = requestId?.ToString() ?? "unknown"

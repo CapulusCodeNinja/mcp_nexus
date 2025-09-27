@@ -34,7 +34,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert - Should not throw
             var result = await WindowsServiceInstaller.InstallServiceAsync(null);
-            
+
             // Assert - Will likely return false due to admin privileges check
             Assert.False(result);
         }
@@ -44,7 +44,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert - Should not throw
             var result = await WindowsServiceInstaller.InstallServiceAsync(m_mockLogger.Object);
-            
+
             // Assert - Will likely return false due to admin privileges check
             Assert.False(result);
         }
@@ -54,7 +54,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert - Should not throw
             var result = await WindowsServiceInstaller.UninstallServiceAsync(null);
-            
+
             // Assert - Will likely return false due to admin privileges check
             Assert.False(result);
         }
@@ -64,7 +64,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert - Should not throw
             var result = await WindowsServiceInstaller.UninstallServiceAsync(m_mockLogger.Object);
-            
+
             // Assert - Will likely return false due to admin privileges check
             Assert.False(result);
         }
@@ -74,7 +74,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert - Should not throw
             var result = await WindowsServiceInstaller.ForceUninstallServiceAsync(null);
-            
+
             // Assert - Will likely return false due to admin privileges check
             Assert.False(result);
         }
@@ -84,7 +84,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert - Should not throw
             var result = await WindowsServiceInstaller.ForceUninstallServiceAsync(m_mockLogger.Object);
-            
+
             // Assert - Will likely return false due to admin privileges check
             Assert.False(result);
         }
@@ -94,7 +94,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert - Should not throw
             var result = await WindowsServiceInstaller.UpdateServiceAsync(null);
-            
+
             // Assert - Will likely return false due to admin privileges check
             Assert.False(result);
         }
@@ -104,7 +104,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert - Should not throw
             var result = await WindowsServiceInstaller.UpdateServiceAsync(m_mockLogger.Object);
-            
+
             // Assert - Will likely return false due to admin privileges check
             Assert.False(result);
         }
@@ -150,7 +150,7 @@ namespace mcp_nexus_tests.Services
         public async Task InstallServiceAsync_WhenNotAdmin_ReturnsFalse()
         {
             // Arrange - This test assumes we're not running as admin (which is typical in test environments)
-            
+
             // Act
             var result = await WindowsServiceInstaller.InstallServiceAsync(m_mockLogger.Object);
 
@@ -162,7 +162,7 @@ namespace mcp_nexus_tests.Services
         public async Task UninstallServiceAsync_WhenNotAdmin_ReturnsFalse()
         {
             // Arrange - This test assumes we're not running as admin (which is typical in test environments)
-            
+
             // Act
             var result = await WindowsServiceInstaller.UninstallServiceAsync(m_mockLogger.Object);
 
@@ -174,7 +174,7 @@ namespace mcp_nexus_tests.Services
         public async Task ForceUninstallServiceAsync_WhenNotAdmin_ReturnsFalse()
         {
             // Arrange - This test assumes we're not running as admin (which is typical in test environments)
-            
+
             // Act
             var result = await WindowsServiceInstaller.ForceUninstallServiceAsync(m_mockLogger.Object);
 
@@ -186,7 +186,7 @@ namespace mcp_nexus_tests.Services
         public async Task UpdateServiceAsync_WhenNotAdmin_ReturnsFalse()
         {
             // Arrange - This test assumes we're not running as admin (which is typical in test environments)
-            
+
             // Act
             var result = await WindowsServiceInstaller.UpdateServiceAsync(m_mockLogger.Object);
 
@@ -278,7 +278,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange - This test verifies that exceptions are caught and handled
             // The actual implementation should catch exceptions and return false
-            
+
             // Act
             var result = await WindowsServiceInstaller.InstallServiceAsync(m_mockLogger.Object);
 
@@ -291,7 +291,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange - This test verifies that exceptions are caught and handled
             // The actual implementation should catch exceptions and return false
-            
+
             // Act
             var result = await WindowsServiceInstaller.UninstallServiceAsync(m_mockLogger.Object);
 
@@ -304,7 +304,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange - This test verifies that exceptions are caught and handled
             // The actual implementation should catch exceptions and return false
-            
+
             // Act
             var result = await WindowsServiceInstaller.ForceUninstallServiceAsync(m_mockLogger.Object);
 
@@ -317,7 +317,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange - This test verifies that exceptions are caught and handled
             // The actual implementation should catch exceptions and return false
-            
+
             // Act
             var result = await WindowsServiceInstaller.UpdateServiceAsync(m_mockLogger.Object);
 
@@ -345,7 +345,7 @@ namespace mcp_nexus_tests.Services
 
             // Act & Assert - Should have private helper methods
             Assert.NotEmpty(privateMethods);
-            
+
             // Check for specific private methods that should exist
             var methodNames = privateMethods.Select(m => m.Name).ToArray();
             Assert.Contains("IsServiceInstalled", methodNames);

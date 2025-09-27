@@ -61,11 +61,11 @@ namespace mcp_nexus.Tools
                     new
                     {
                         step_title = "Resource - Get Command Result",
-                        tool_name = "debugging://tools/command-result",
+                        tool_name = "commands://result",
                         action = "Use the 'Command Result' resource to get the status and results of specific commands.",
                         input = new { sessionId = "string (required)", commandId = "string (required)" },
                         output = (string?)"result",
-                        note = (string?)"Use: debugging://tools/command-result?sessionId=<sessionId>&commandId=<commandId>"
+                        note = (string?)"Use: commands://result?sessionId=<sessionId>&commandId=<commandId>"
                     },
                     new
                     {
@@ -86,7 +86,7 @@ namespace mcp_nexus.Tools
                 {
                     new
                     {
-                        uri = "debugging://docs/crash-analysis-workflows",
+                        uri = "docs://workflows",
                         name = "Crash Analysis Workflows",
                         description = "Comprehensive step-by-step analysis workflows for Windows crash dump investigation",
                         input = (object?)null,
@@ -94,7 +94,7 @@ namespace mcp_nexus.Tools
                     },
                     new
                     {
-                        uri = "debugging://docs/usage",
+                        uri = "docs://usage",
                         name = "Usage",
                         description = "Essential tool usage information for MCP Nexus server",
                         input = (object?)null,
@@ -102,7 +102,7 @@ namespace mcp_nexus.Tools
                     },
                     new
                     {
-                        uri = "debugging://tools/sessions",
+                        uri = "sessions://list",
                         name = "List Sessions",
                         description = "List all active debugging sessions",
                         input = (object?)null,
@@ -110,19 +110,19 @@ namespace mcp_nexus.Tools
                     },
                     new
                     {
-                        uri = "debugging://tools/commands",
+                        uri = "commands://list",
                         name = "List Commands",
                         description = "List async commands from all sessions or filter by specific session",
                         input = new { sessionId = "string (optional)" },
-                        note = (string?)"Use: debugging://tools/commands or debugging://tools/commands?sessionId=<sessionId>"
+                        note = (string?)"Use: commands://list or commands://list?sessionId=<sessionId>"
                     },
                     new
                     {
-                        uri = "debugging://tools/command-result",
+                        uri = "commands://result",
                         name = "Command Result",
                         description = "Get status and results of a specific async command",
                         input = new { sessionId = "string (required)", commandId = "string (required)" },
-                        note = (string?)"Use: debugging://tools/command-result?sessionId=<sessionId>&commandId=<commandId>"
+                        note = (string?)"Use: commands://result?sessionId=<sessionId>&commandId=<commandId>"
                     }
                 },
                 usage_notes = new[]

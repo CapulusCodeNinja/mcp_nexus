@@ -32,12 +32,12 @@ namespace mcp_nexus_tests.Services
             m_mockCdbSession = new Mock<ICdbSession>();
             m_mockLogger = new Mock<ILogger<CommandQueueService>>();
             m_mockNotificationLogger = new Mock<ILogger<McpNotificationService>>();
-            
+
             // Setup default mock behavior
             m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
             m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync("Mock result");
-            
+
             m_commandQueueService = new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object);
             m_notificationService = new McpNotificationService(m_mockNotificationLogger.Object);
         }
@@ -121,7 +121,7 @@ namespace mcp_nexus_tests.Services
             m_notificationService.RegisterNotificationHandler(badHandler);
 
             // Act - Should not throw even if one handler fails
-            var exception = await Record.ExceptionAsync(() => 
+            var exception = await Record.ExceptionAsync(() =>
                 m_notificationService.NotifyCommandStatusAsync("test", "test", "executing"));
 
             // Assert - Good handler should still execute
@@ -243,7 +243,7 @@ namespace mcp_nexus_tests.Services
             m_notificationService.Dispose();
 
             // Act & Assert - Should not throw
-            var exception = Record.Exception(() => 
+            var exception = Record.Exception(() =>
                 m_notificationService.RegisterNotificationHandler(notification => Task.CompletedTask));
             Assert.Null(exception);
         }
@@ -257,7 +257,7 @@ namespace mcp_nexus_tests.Services
             m_notificationService.Dispose();
 
             // Act & Assert - Should not throw
-            var exception = Record.Exception(() => 
+            var exception = Record.Exception(() =>
                 m_notificationService.UnregisterNotificationHandler(handler));
             Assert.Null(exception);
         }
@@ -270,10 +270,10 @@ namespace mcp_nexus_tests.Services
 
             // Act - Dispose while command is queued
             var disposeTask = Task.Run(() => m_commandQueueService.Dispose());
-            
+
             // Wait a bit for disposal to start
             await Task.Delay(10);
-            
+
             // Try to get result after disposal (should throw ObjectDisposedException)
             await Assert.ThrowsAsync<ObjectDisposedException>(() => m_commandQueueService.GetCommandResult(commandId));
 
