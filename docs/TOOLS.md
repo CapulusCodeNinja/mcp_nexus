@@ -8,7 +8,7 @@ Windows debugging capabilities through WinDBG/CDB integration:
 
 ### Core Debugging Commands
 - **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
-- **Session Management**: Available via MCP Resources (`debugging://tools/sessions`, `debugging://tools/commands`)
+- **Session Management**: Available via MCP Resources (`sessions://list`, `commands://list`)
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
 - **Command Execution**: `nexus_dump_analyze_session_async_command` (🔄 ASYNC QUEUE: Always returns commandId, use MCP Resources for results)
 - **Queue Management**: `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
@@ -29,27 +29,27 @@ Windows debugging capabilities through WinDBG/CDB integration:
    → notifications/commandHeartbeat: {"elapsed": "30s", ...} (for long commands)
    → notifications/commandStatus: {"status": "completed", "result": "ACTUAL_OUTPUT"}
 
-4. OR use MCP Resource: debugging://tools/command-result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001  
+4. OR use MCP Resource: commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001  
    → Returns: {"status": "executing", ...} (keep polling)
    → Returns: {"status": "completed", "result": "ACTUAL_OUTPUT"}
 
 5. Use MCP Resources for session management:
-   - `debugging://tools/sessions` → List all active sessions
-   - `debugging://tools/commands` → List commands for all sessions or filter by sessionId
+   - `sessions://list` → List all active sessions
+   - `commands://list` → List commands for all sessions or filter by sessionId
 
 7. nexus_close_dump_analyze_session {"sessionId": "sess-000001-abc12345-12345678-0001"}
    → Returns: {"success": true, ...} - Clean up resources
 ```
 
-**⚠️ CRITICAL**: `nexus_dump_analyze_session_async_command` NEVER returns command results directly. You MUST use MCP Resources (`debugging://tools/command-result`) to get results or listen for notifications!
+**⚠️ CRITICAL**: `nexus_dump_analyze_session_async_command` NEVER returns command results directly. You MUST use MCP Resources (`commands://result`) to get results or listen for notifications!
 
 ### 📋 Session Management (via MCP Resources)
 
 Session management is now available through MCP Resources for better integration:
 
-- **`debugging://tools/sessions`** - List all active debugging sessions
-- **`debugging://tools/commands`** - List commands from all sessions or filter by sessionId
-- **`debugging://tools/command-result`** - Get status of specific commands
+- **`sessions://list`** - List all active debugging sessions
+- **`commands://list`** - List commands from all sessions or filter by sessionId
+- **`commands://result`** - Get status of specific commands
 
 These resources provide the same functionality as the previous tools but with better structure and integration.
 

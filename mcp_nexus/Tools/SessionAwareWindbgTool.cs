@@ -329,7 +329,7 @@ namespace mcp_nexus.Tools
         /// <summary>
         /// Execute a debugger command asynchronously in the specified session
         /// </summary>
-        [Description("🔄 ASYNC COMMAND: Execute debugger command in background queue. NEVER returns results directly! Always returns commandId. MUST use nexus_dump_analyze_session_async_command_status to get actual results.")]
+        [Description("🔄 ASYNC COMMAND: Execute debugger command in background queue. NEVER returns results directly! Always returns commandId. MUST use commands://result resource to get actual results.")]
         public Task<object> nexus_dump_analyze_session_async_command(
             [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
             [Description("Debugger command to execute (e.g., '!analyze -v', 'k', '!peb')")] string command)

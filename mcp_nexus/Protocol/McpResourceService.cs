@@ -100,7 +100,7 @@ namespace mcp_nexus.Protocol
             {
                 resources.Add(new McpResource
                 {
-                    Uri = $"debugging://sessions/{session.SessionId}",
+                    Uri = $"sessions://{session.SessionId}",
                     Name = $"Session {session.SessionId}",
                     Description = $"Active debugging session for {Path.GetFileName(session.DumpPath ?? "unknown")}",
                     MimeType = "application/json",
@@ -109,7 +109,7 @@ namespace mcp_nexus.Protocol
 
                 resources.Add(new McpResource
                 {
-                    Uri = $"debugging://sessions/{session.SessionId}/dump-info",
+                    Uri = $"sessions://{session.SessionId}/dump-info",
                     Name = $"Dump Info - {session.SessionId}",
                     Description = $"Detailed information about the dump file for session {session.SessionId}",
                     MimeType = "application/json",
@@ -122,7 +122,7 @@ namespace mcp_nexus.Protocol
             {
                 resources.Add(new McpResource
                 {
-                    Uri = "debugging://sessions/active",
+                    Uri = "sessions://active",
                     Name = "Active Debugging Sessions",
                     Description = "Real-time list of all active debugging sessions with their status and details",
                     MimeType = "application/json"
@@ -141,7 +141,7 @@ namespace mcp_nexus.Protocol
             {
                 resources.Add(new McpResource
                 {
-                    Uri = $"debugging://commands/history/{session.SessionId}",
+                    Uri = $"commands://history/{session.SessionId}",
                     Name = $"Command History - {session.SessionId}",
                     Description = $"History of executed WinDBG commands for session {session.SessionId}",
                     MimeType = "application/json",
@@ -154,7 +154,7 @@ namespace mcp_nexus.Protocol
             {
                 resources.Add(new McpResource
                 {
-                    Uri = "debugging://commands/history",
+                    Uri = "commands://history",
                     Name = "All Command History",
                     Description = "Complete history of executed WinDBG commands across all sessions",
                     MimeType = "application/json"
@@ -166,12 +166,12 @@ namespace mcp_nexus.Protocol
 
         private async Task<McpResourceReadResult> ReadSessionResource(string uri)
         {
-            if (uri == "debugging://sessions/active")
+            if (uri == "sessions://active")
             {
                 return await ReadActiveSessionsResource();
             }
 
-            // Parse session ID from URI like "debugging://sessions/{sessionId}"
+            // Parse session ID from URI like "sessions://{sessionId}"
             var sessionId = uri.Split('/').LastOrDefault();
             if (string.IsNullOrEmpty(sessionId))
             {
@@ -188,12 +188,12 @@ namespace mcp_nexus.Protocol
 
         private async Task<McpResourceReadResult> ReadCommandResource(string uri)
         {
-            if (uri == "debugging://commands/history")
+            if (uri == "commands://history")
             {
                 return await ReadAllCommandHistoryResource();
             }
 
-            // Parse session ID from URI like "debugging://commands/history/{sessionId}"
+            // Parse session ID from URI like "commands://history/{sessionId}"
             var sessionId = uri.Split('/').LastOrDefault();
             if (string.IsNullOrEmpty(sessionId))
             {
@@ -261,7 +261,7 @@ namespace mcp_nexus.Protocol
                 {
                     new McpResourceContent
                     {
-                        Uri = "debugging://sessions/active",
+                        Uri = "sessions://active",
                         MimeType = "application/json",
                         Text = content
                     }
@@ -302,7 +302,7 @@ namespace mcp_nexus.Protocol
                 {
                     new McpResourceContent
                     {
-                        Uri = $"debugging://sessions/{sessionId}",
+                        Uri = $"sessions://{sessionId}",
                         MimeType = "application/json",
                         Text = content
                     }
@@ -345,7 +345,7 @@ namespace mcp_nexus.Protocol
                 {
                     new McpResourceContent
                     {
-                        Uri = $"debugging://sessions/{sessionId}/dump-info",
+                        Uri = $"sessions://{sessionId}/dump-info",
                         MimeType = "application/json",
                         Text = content
                     }
@@ -385,7 +385,7 @@ namespace mcp_nexus.Protocol
                 {
                     new McpResourceContent
                     {
-                        Uri = "debugging://commands/history",
+                        Uri = "commands://history",
                         MimeType = "application/json",
                         Text = content
                     }
@@ -417,7 +417,7 @@ namespace mcp_nexus.Protocol
                 {
                     new McpResourceContent
                     {
-                        Uri = $"debugging://commands/history/{sessionId}",
+                        Uri = $"commands://history/{sessionId}",
                         MimeType = "application/json",
                         Text = content
                     }
@@ -709,7 +709,7 @@ namespace mcp_nexus.Protocol
             {
                 string? sessionId = null;
 
-                // Extract sessionId from URI if provided: debugging://tools/commands?sessionId=xxx
+                // Extract sessionId from URI if provided: commands://list?sessionId=xxx
                 var uriParts = uri.Split('?');
                 if (uriParts.Length >= 2)
                 {
@@ -853,11 +853,11 @@ namespace mcp_nexus.Protocol
         {
             try
             {
-                // Extract sessionId and commandId from URI: debugging://tools/command-result?sessionId=xxx&commandId=yyy
+                // Extract sessionId and commandId from URI: commands://result?sessionId=xxx&commandId=yyy
                 var uriParts = uri.Split('?');
                 if (uriParts.Length < 2)
                 {
-                    throw new ArgumentException("Session ID and Command ID required. Use: debugging://tools/command-result?sessionId=<sessionId>&commandId=<commandId>");
+                    throw new ArgumentException("Session ID and Command ID required. Use: commands://result?sessionId=<sessionId>&commandId=<commandId>");
                 }
 
                 var queryParams = System.Web.HttpUtility.ParseQueryString(uriParts[1]);
