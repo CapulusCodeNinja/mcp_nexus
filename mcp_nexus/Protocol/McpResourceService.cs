@@ -826,7 +826,7 @@ namespace mcp_nexus.Protocol
             return commands;
         }
 
-        private Task<McpResourceReadResult> ReadCommandStatus(string uri)
+        private async Task<McpResourceReadResult> ReadCommandStatus(string uri)
         {
             try
             {
@@ -850,35 +850,77 @@ namespace mcp_nexus.Protocol
                 var sessionContext = sessionManager.GetSessionContext(sessionId);
                 if (sessionContext == null)
                 {
+                    // Session doesn't exist - return ERROR
                     throw new ArgumentException($"Session {sessionId} not found");
                 }
 
-                // For now, return a placeholder since SessionContext doesn't have Commands property
-                // This would need to be implemented in the session manager
-                var result = new
+                // Get the command queue for this session to check command status
+                var commandQueue = sessionManager.GetCommandQueue(sessionId);
+                
+                // Try to get the command result
+                try
                 {
-                    sessionId = sessionId,
-                    commandId = commandId,
-                    command = "Command details not available",
-                    status = "Unknown",
-                    result = (string?)null,
-                    error = "Command tracking not implemented in SessionContext",
-                    createdAt = DateTime.UtcNow,
-                    completedAt = (DateTime?)null,
-                    timestamp = DateTime.UtcNow
-                };
-
-                return Task.FromResult(new McpResourceReadResult
-                {
-                    Contents = new[]
+                    var commandResult = await commandQueue.GetCommandResult(commandId);
+                    
+                    // Parse the result to determine status
+                    var isCompleted = !commandResult.Contains("still executing") && 
+                                    !commandResult.Contains("Command not found");
+                    
+                    var result = new
                     {
-                        new McpResourceContent
+                        sessionId = sessionId,
+                        commandId = commandId,
+                        command = (string?)null, // Command text not available from GetCommandResult
+                        status = isCompleted ? "Completed" : "In Progress",
+                        result = isCompleted ? commandResult : null,
+                        error = commandResult.Contains("Command not found") ? "Command not found" : null,
+                        createdAt = (DateTime?)null, // Not available from GetCommandResult
+                        completedAt = isCompleted ? DateTime.UtcNow : (DateTime?)null,
+                        timestamp = DateTime.UtcNow,
+                        message = isCompleted ? null : "Command is still executing - check again in a few seconds. You can also track command status using the 'List Sessions' or 'List Commands' resources."
+                    };
+
+                    return Task.FromResult(new McpResourceReadResult
+                    {
+                        Contents = new[]
                         {
-                            MimeType = "application/json",
-                            Text = JsonSerializer.Serialize(result, s_jsonOptions)
+                            new McpResourceContent
+                            {
+                                MimeType = "application/json",
+                                Text = JsonSerializer.Serialize(result, s_jsonOptions)
+                            }
                         }
-                    }
-                });
+                    });
+                }
+                catch (Exception ex)
+                {
+                    // Command queue error - return error result
+                    var errorResult = new
+                    {
+                        sessionId = sessionId,
+                        commandId = commandId,
+                        command = (string?)null,
+                        status = "Error",
+                        result = (string?)null,
+                        error = ex.Message,
+                        createdAt = (DateTime?)null,
+                        completedAt = (DateTime?)null,
+                        timestamp = DateTime.UtcNow,
+                        message = "Error accessing command queue"
+                    };
+
+                    return Task.FromResult(new McpResourceReadResult
+                    {
+                        Contents = new[]
+                        {
+                            new McpResourceContent
+                            {
+                                MimeType = "application/json",
+                                Text = JsonSerializer.Serialize(errorResult, s_jsonOptions)
+                            }
+                        }
+                    });
+                }
             }
             catch (Exception ex)
             {
