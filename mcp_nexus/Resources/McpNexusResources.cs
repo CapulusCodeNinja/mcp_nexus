@@ -1,3 +1,4 @@
+using System;
 using mcp_nexus.Session;
 using mcp_nexus.Session.Models;
 using mcp_nexus.CommandQueue;
@@ -23,7 +24,7 @@ namespace mcp_nexus.Resources
     public static class McpNexusResources
     {
         [McpServerResource, Description("List all active debugging sessions with advanced filtering options")]
-        public static async Task<string> ListSessions(
+        public static async Task<string> GetSessions(
             IServiceProvider serviceProvider,
             [Description("Filter by session ID (partial match)")] string? sessionId = null,
             [Description("Filter by dump file path (partial match)")] string? dumpPath = null,
@@ -93,7 +94,7 @@ namespace mcp_nexus.Resources
         }
 
         [McpServerResource, Description("List async commands from all sessions with advanced filtering options")]
-        public static async Task<string> ListCommands(
+        public static async Task<string> GetCommands(
             IServiceProvider serviceProvider,
             [Description("Filter by specific session")] string? sessionId = null,
             [Description("Filter by command text (case-insensitive)")] string? command = null,

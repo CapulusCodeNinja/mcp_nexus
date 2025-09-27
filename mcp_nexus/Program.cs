@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using NLog.Web;
 using AspNetCoreRateLimit;
 using ModelContextProtocol.Server;
+using ModelContextProtocol.AspNetCore;
 
 using mcp_nexus.Constants;
 using mcp_nexus.Debugger;
@@ -740,13 +741,13 @@ namespace mcp_nexus
             services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
             services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
 
-            // Use official SDK for HTTP mode (SDK doesn't have HTTP transport yet, so use STDIO)
+            // Use official SDK for HTTP mode with proper HTTP transport
             services.AddMcpServer()
-                .WithStdioServerTransport()
+                .WithHttpTransport()
                 .WithToolsFromAssembly()
                 .WithResourcesFromAssembly();
 
-            Console.WriteLine("MCP server configured for HTTP with official SDK (STDIO transport)");
+            Console.WriteLine("MCP server configured for HTTP with official SDK (HTTP transport)");
         }
 
         private static void ConfigureStdioServices(IServiceCollection services)
@@ -773,8 +774,8 @@ namespace mcp_nexus
             app.UseCors();
             app.UseRouting();
             
-            // Note: HTTP mode now uses STDIO transport via SDK
-            // Custom controllers removed - SDK handles MCP protocol
+            // Use the official SDK's HTTP transport with MapMcp
+            app.MapMcp();
 
             Console.WriteLine("HTTP request pipeline configured with official SDK");
         }
