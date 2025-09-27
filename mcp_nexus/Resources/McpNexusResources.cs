@@ -23,8 +23,10 @@ namespace mcp_nexus.Resources
     [McpServerResourceType]
     public static class McpNexusResources
     {
+        // IMPORTANT: Method names directly determine resource names!
+        // Method "Sessions" becomes resource "sessions", "Commands" becomes "commands", etc.
         [McpServerResource, Description("List all active debugging sessions")]
-        public static async Task<string> GetSessions(
+        public static async Task<string> Sessions(
             IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
@@ -52,7 +54,7 @@ namespace mcp_nexus.Resources
         }
 
         [McpServerResource, Description("List async commands from all sessions")]
-        public static async Task<string> GetCommands(
+        public static async Task<string> Commands(
             IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
@@ -91,7 +93,7 @@ namespace mcp_nexus.Resources
 
 
         [McpServerResource, Description("Common debugging patterns and step-by-step analysis workflows")]
-        public static async Task<string> GetWorkflows(
+        public static async Task<string> Workflows(
             IServiceProvider serviceProvider)
         {
             var workflows = new
@@ -143,7 +145,7 @@ namespace mcp_nexus.Resources
         }
 
         [McpServerResource, Description("Essential tool usage information for MCP Nexus server")]
-        public static async Task<string> GetUsage(
+        public static async Task<string> Usage(
             IServiceProvider serviceProvider)
         {
             var usage = new
