@@ -211,7 +211,7 @@ namespace mcp_nexus.Models
             "Provides asynchronous debugging commands with live status updates via server-initiated notifications. " +
             "Supports notifications/commandStatus (execution progress), notifications/commandHeartbeat (long-running command updates), " +
             "notifications/sessionRecovery (debugging session recovery), notifications/serverHealth (server status), " +
-            "and standard MCP notifications/tools/list_changed. All commands execute asynchronously - use mcp://nexus/commands/result resource " +
+            "and standard MCP notifications/tools/list_changed. All commands execute asynchronously - use 'nexus_read_dump_analyze_command_result' tool " +
             "to get results and monitor for real-time notifications about execution progress.";
     }
 

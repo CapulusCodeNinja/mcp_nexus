@@ -25,7 +25,7 @@ namespace mcp_nexus.Resources
     {
         // IMPORTANT: Method names directly determine resource names!
         // Method "Sessions" becomes resource "sessions", "Commands" becomes "commands", etc.
-        [McpServerResource, Description("List all active debugging sessions")]
+        [McpServerResource, Description("📊 SESSIONS: List all active debugging sessions with status and activity information")]
         public static async Task<string> Sessions(
             IServiceProvider serviceProvider)
         {
@@ -53,7 +53,7 @@ namespace mcp_nexus.Resources
             }
         }
 
-        [McpServerResource, Description("List async commands from all sessions")]
+        [McpServerResource, Description("📋 COMMANDS: List async commands from all sessions with status and timing information")]
         public static async Task<string> Commands(
             IServiceProvider serviceProvider)
         {
@@ -92,7 +92,7 @@ namespace mcp_nexus.Resources
         }
 
 
-        [McpServerResource, Description("Common debugging patterns and step-by-step analysis workflows")]
+        [McpServerResource, Description("📚 WORKFLOWS: Common debugging patterns and step-by-step analysis workflows for crash dump investigation")]
         public static async Task<string> Workflows(
             IServiceProvider serviceProvider)
         {
@@ -144,66 +144,101 @@ namespace mcp_nexus.Resources
             return JsonSerializer.Serialize(workflows, new JsonSerializerOptions { WriteIndented = true });
         }
 
-        [McpServerResource, Description("Essential tool usage information for MCP Nexus server")]
+        [McpServerResource, Description("❓ USAGE: Essential tool usage information and API reference for MCP Nexus server")]
         public static async Task<string> Usage(
             IServiceProvider serviceProvider)
         {
             var usage = new
             {
                 title = "MCP Nexus Usage Guide",
-                description = "Essential tool usage information for MCP Nexus server",
-                tools = new[]
+                description = "Essential tool usage information for MCP Nexus server using official MCP SDK",
+                overview = new
+                {
+                    tools_purpose = "Tools perform actions and operations on the server. They take parameters and return results.",
+                    resources_purpose = "Resources provide data and documentation. They are read-only and typically have no parameters.",
+                    transport_modes = new[] { "STDIO (recommended for AI clients)", "HTTP (basic functionality only)" }
+                },
+                available_tools = new[]
                 {
                     new
                     {
                         name = "nexus_open_dump_analyze_session",
-                        description = "Create a new debugging session for a crash dump file",
+                        description = "🚀 OPEN SESSION: Create a new debugging session for a crash dump file",
                         parameters = new[] { "dumpPath (required)", "symbolsPath (optional)" },
                         returns = "sessionId that MUST be used for all subsequent operations"
                     },
                     new
                     {
-                        name = "nexus_close_dump_analyze_session",
-                        description = "Close an active debugging session and clean up resources",
+                        name = "nexus_close_dump_analyze_session", 
+                        description = "🔒 CLOSE SESSION: Close an active debugging session and clean up resources",
                         parameters = new[] { "sessionId (required)" },
                         returns = "Confirmation of session closure"
                     },
                     new
                     {
                         name = "nexus_enqueue_async_dump_analyze_command",
-                        description = "Queue a WinDBG command for execution in a debugging session",
+                        description = "⚡ QUEUE COMMAND: Queue a WinDBG command for execution in a debugging session",
                         parameters = new[] { "sessionId (required)", "command (required)" },
                         returns = "commandId for tracking command execution"
-                    }
-                },
-                resources = new[]
-                {
-                    new
-                    {
-                        name = "mcp://nexus/sessions/list",
-                        description = "List all debugging sessions with filtering options",
-                        parameters = new[] { "sessionId", "dumpPath", "status", "isActive", "createdFrom", "createdTo", "limit", "offset", "sortBy", "order" }
                     },
                     new
                     {
-                        name = "mcp://nexus/commands/list",
-                        description = "List async commands from all sessions with filtering",
-                        parameters = new[] { "sessionId", "command", "from", "to", "limit", "offset", "sortBy", "order" }
+                        name = "nexus_read_dump_analyze_command_result",
+                        description = "📋 READ COMMAND RESULT: Get the full WinDBG output and status of a specific async command",
+                        parameters = new[] { "sessionId (required)", "commandId (required)" },
+                        returns = "Complete command output, status, and execution details"
+                    }
+                },
+                available_resources = new[]
+                {
+                    new
+                    {
+                        name = "sessions",
+                        description = "📊 SESSIONS: List all active debugging sessions",
+                        parameters = "None (returns all sessions)",
+                        returns = "Array of session information including status, dump path, and activity"
                     },
                     new
                     {
-                        name = "mcp://nexus/commands/result",
-                        description = "Get status and results of a specific async command",
-                        parameters = new[] { "sessionId", "commandId" }
+                        name = "commands", 
+                        description = "📋 COMMANDS: List async commands from all sessions",
+                        parameters = "None (returns all commands)",
+                        returns = "Array of command information including status, timing, and results"
+                    },
+                    new
+                    {
+                        name = "workflows",
+                        description = "📚 WORKFLOWS: Common debugging patterns and step-by-step analysis workflows",
+                        parameters = "None",
+                        returns = "Structured workflows for crash analysis patterns"
+                    },
+                    new
+                    {
+                        name = "usage",
+                        description = "❓ USAGE: This usage guide and essential information",
+                        parameters = "None",
+                        returns = "Complete usage information and API reference"
                     }
                 },
-                workflow = new[]
+                example_workflow = new[]
                 {
-                    "1. Use nexus_open_dump_analyze_session to create a session",
-                    "2. Use nexus_enqueue_async_dump_analyze_command to queue WinDBG commands",
-                    "3. Use mcp://nexus/commands/result to get command results",
-                    "4. Use mcp://nexus/sessions/list to manage sessions",
-                    "5. Use nexus_close_dump_analyze_session when done"
+                    "1. Use 'nexus_open_dump_analyze_session' to create a session (get sessionId)",
+                    "2. Use 'nexus_enqueue_async_dump_analyze_command' to queue WinDBG commands (get commandId)",
+                    "3. Use 'nexus_read_dump_analyze_command_result' to get command results",
+                    "4. Use 'sessions' or 'commands' resources to monitor activity",
+                    "5. Use 'nexus_close_dump_analyze_session' when done"
+                },
+                important_notes = new[]
+                {
+                    "All commands are asynchronous - use the commandId to track progress",
+                    "Resources are parameterless and return all available data",
+                    "STDIO mode provides real-time notifications, HTTP mode does not",
+                    "Always close sessions when no longer needed to free resources"
+                },
+                transport_limitations = new
+                {
+                    stdio = "✅ Full functionality with real-time notifications",
+                    http = "⚠️ Basic functionality only - no notifications available"
                 }
             };
 
@@ -320,3 +355,4 @@ namespace mcp_nexus.Resources
         }
     }
 }
+

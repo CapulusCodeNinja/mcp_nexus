@@ -20,17 +20,17 @@ MCP Nexus serves as a unified platform for exposing various tools and capabiliti
 
 ## 🌟 Key Features
 
-- **📡 Real-Time Notifications**: Live command execution progress via server-initiated notifications
-- **🔄 Dual Transport Support**: Both stdio and HTTP transport modes with notification support
-- **🛠 Modular Architecture**: Easy to extend with new tool categories  
+- **📡 Real-Time Notifications**: Live command execution progress via server-initiated notifications (STDIO only)
+- **🔄 Dual Transport Support**: Both stdio and HTTP transport modes (notifications in STDIO only)
+- **🛠 Official SDK Integration**: Built on official MCP C# SDK for future-proofing
 - **🎯 Standards Compliant**: Full JSON-RPC 2.0 and MCP specification compliance
 - **🔧 Production Ready**: Robust logging, error handling, and resource management
 - **🚀 AI Integration**: Seamless integration with AI tools like Cursor IDE
 - **⚡ Async Queue System**: Non-blocking command execution with progress tracking
 
-## 📡 What's New: Real-Time Notifications
+## 📡 Real-Time Notifications
 
-MCP Nexus now provides live updates about command execution:
+MCP Nexus provides live updates about command execution (STDIO mode only):
 
 ```json
 {
@@ -50,6 +50,8 @@ MCP Nexus now provides live updates about command execution:
 - **Progress tracking** - See 0-100% completion
 - **Error notifications** - Immediate failure alerts
 - **Heartbeat monitoring** - Know long commands are running
+
+> ⚠️ **Note**: Notifications are only available in STDIO mode. HTTP mode provides basic tool/resource functionality without notifications.
 
 ## 🚀 Quick Start
 
@@ -102,36 +104,35 @@ Architecture, testing, contribution guide
 
 ### Stdio Transport (Recommended)
 - **Protocol**: JSON-RPC over stdin/stdout
-- **Notifications**: Real-time via stdout
+- **Notifications**: ✅ Real-time via stdout
 - **Performance**: High performance, low latency
-- **Use Case**: Direct integration with AI tools
+- **Use Case**: Direct integration with AI tools like Cursor
 
 ### HTTP Transport  
 - **Protocol**: JSON-RPC over HTTP
-- **Notifications**: Server-Sent Events (SSE) at `/mcp/notifications`
-- **Endpoint**: `http://localhost:5000/mcp`
-- **Use Case**: Development, debugging, web integration
+- **Notifications**: ❌ Not available (SDK limitation)
+- **Endpoint**: `http://localhost:5511/mcp`
+- **Use Case**: Development, debugging, basic tool/resource access
 
 > 📖 **Detailed setup instructions:** [🔧 CONFIGURATION.md](docs/CONFIGURATION.md)
 
-## 🛠 Available Tools (10 tools)
+## 🛠 Available Tools (4 tools)
 
 ### Windows Debugging Tools
-- **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
-- **Session Management**: Available via MCP Resources (`mcp://nexus/sessions/list`, `mcp://nexus/commands/list`)
-- **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
-- **Async Command Queue**: `nexus_enqueue_async_dump_analyze_command`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
+- **🚀 Session Management**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
+- **⚡ Command Execution**: `nexus_enqueue_async_dump_analyze_command`, `nexus_read_dump_analyze_command_result`
 
 **🔄 Complete Debugging Workflow:**
 ```bash
 1. nexus_open_dump_analyze_session → Create session, returns sessionId
 2. nexus_enqueue_async_dump_analyze_command → Queue command, returns commandId
-3. Listen for notifications/commandStatus → Real-time progress updates
-4. mcp://nexus/commands/result → Get final results via MCP Resource
-5. Use MCP Resources for session management:
-   - `mcp://nexus/sessions/list` → List all active sessions
-   - `mcp://nexus/commands/list` → List commands for all sessions or filter by sessionId
-7. nexus_close_dump_analyze_session → Clean up resources
+3. nexus_read_dump_analyze_command_result → Get command results (replaces resource)
+4. Use MCP Resources for monitoring:
+   - sessions → List all active sessions
+   - commands → List commands from all sessions
+   - workflows → Get analysis patterns
+   - usage → Get this usage guide
+5. nexus_close_dump_analyze_session → Clean up resources
 ```
 
 ## 📚 MCP Resources
@@ -139,11 +140,10 @@ Architecture, testing, contribution guide
 The server provides rich resources for session management and documentation:
 
 ### Available Resources
-- **`mcp://nexus/sessions/list`** - List all active debugging sessions
-- **`mcp://nexus/commands/list`** - List commands from all sessions with advanced filtering (sessionId, command text, time range, pagination, sorting)
-- **`mcp://nexus/commands/result`** - Get status and results of specific commands
-- **`mcp://nexus/docs/workflows`** - Comprehensive crash analysis workflows and examples
-- **`mcp://nexus/docs/usage`** - Complete usage guide for tools and resources
+- **`sessions`** - List all active debugging sessions
+- **`commands`** - List commands from all sessions
+- **`workflows`** - Comprehensive crash analysis workflows and examples
+- **`usage`** - Complete usage guide for tools and resources
 
 ### Using Resources
 ```json
@@ -152,15 +152,15 @@ The server provides rich resources for session management and documentation:
   "jsonrpc": "2.0",
   "id": 1,
   "method": "resources/read",
-  "params": { "uri": "mcp://nexus/sessions/list" }
+  "params": { "uri": "sessions" }
 }
 
-// Get command result
+// List all commands
 {
   "jsonrpc": "2.0", 
   "id": 2,
   "method": "resources/read",
-  "params": { "uri": "mcp://nexus/commands/result?sessionId=abc123&commandId=cmd456" }
+  "params": { "uri": "commands" }
 }
 
 // Get crash analysis workflows
@@ -168,7 +168,15 @@ The server provides rich resources for session management and documentation:
   "jsonrpc": "2.0",
   "id": 3, 
   "method": "resources/read",
-  "params": { "uri": "mcp://nexus/docs/workflows" }
+  "params": { "uri": "workflows" }
+}
+
+// Get usage guide
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "resources/read", 
+  "params": { "uri": "usage" }
 }
 ```
 

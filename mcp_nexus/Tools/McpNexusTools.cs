@@ -21,7 +21,7 @@ namespace mcp_nexus.Tools
     [McpServerToolType]
     public static class McpNexusTools
     {
-        [McpServerTool, Description("🔓 OPEN SESSION: Create a new debugging session for a crash dump file. Returns sessionId that MUST be used for all subsequent operations.")]
+        [McpServerTool, Description("🚀 OPEN SESSION: Create a new debugging session for a crash dump file. Returns sessionId that MUST be used for all subsequent operations.")]
         public static async Task<object> nexus_open_dump_analyze_session(
             IServiceProvider serviceProvider,
             [Description("Full path to the crash dump file (.dmp)")] string dumpPath,
@@ -44,7 +44,7 @@ namespace mcp_nexus.Tools
                     commandId = (string?)null,
                     success = true,
                     operation = "nexus_open_dump_analyze_session",
-                    message = $"Session created successfully: {sessionId}. Use mcp://nexus/sessions/list to manage sessions."
+                    message = $"Session created successfully: {sessionId}. Use 'sessions' resource to manage sessions."
                 };
 
                 logger.LogInformation("Session {SessionId} created successfully", sessionId);
@@ -103,7 +103,7 @@ namespace mcp_nexus.Tools
                         sessionId = sessionId,
                         success = false,
                         operation = "nexus_close_dump_analyze_session",
-                        message = $"Session {sessionId} not found. Use mcp://nexus/sessions/list to see available sessions."
+                        message = $"Session {sessionId} not found. Use 'sessions' resource to see available sessions."
                     };
 
                     logger.LogWarning("Attempted to close non-existent session: {SessionId}", sessionId);
@@ -139,7 +139,7 @@ namespace mcp_nexus.Tools
             }
         }
 
-        [McpServerTool, Description("⚡ EXECUTE COMMAND: Queue a WinDBG command for execution in a debugging session. Returns commandId for tracking.")]
+        [McpServerTool, Description("⚡ QUEUE COMMAND: Queue a WinDBG command for execution in a debugging session. Returns commandId for tracking.")]
         public static async Task<object> nexus_enqueue_async_dump_analyze_command(
             IServiceProvider serviceProvider,
             [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
@@ -160,7 +160,7 @@ namespace mcp_nexus.Tools
                         commandId = (string?)null,
                         success = false,
                         operation = "nexus_enqueue_async_dump_analyze_command",
-                        message = $"Session {sessionId} not found. Use mcp://nexus/sessions/list to see available sessions."
+                        message = $"Session {sessionId} not found. Use 'sessions' resource to see available sessions."
                     };
 
                     logger.LogWarning("Attempted to queue command for non-existent session: {SessionId}", sessionId);
@@ -193,7 +193,7 @@ namespace mcp_nexus.Tools
                     command = command,
                     success = true,
                     operation = "nexus_enqueue_async_dump_analyze_command",
-                    message = $"Command queued successfully. Use mcp://nexus/commands/result?sessionId={sessionId}&commandId={commandId} to get results."
+                    message = $"Command queued successfully. Use the resource 'commands' to observe the status and the 'nexus_read_dump_analyze_command_result' tool to get results."
                 };
 
                 logger.LogInformation("Command {CommandId} queued successfully for session {SessionId}", commandId, sessionId);

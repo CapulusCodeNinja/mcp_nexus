@@ -83,7 +83,7 @@ namespace mcp_nexus.Tools
                 {
                     new
                     {
-                        uri = "mcp://nexus/docs/workflows",
+                        uri = "workflows",
                         name = "Crash Analysis Workflows",
                         description = "Comprehensive step-by-step analysis workflows for Windows crash dump investigation",
                         input = (object?)null,
@@ -91,7 +91,7 @@ namespace mcp_nexus.Tools
                     },
                     new
                     {
-                        uri = "mcp://nexus/docs/usage",
+                        uri = "usage",
                         name = "Usage",
                         description = "Essential tool usage information for MCP Nexus server",
                         input = (object?)null,
@@ -99,49 +99,29 @@ namespace mcp_nexus.Tools
                     },
                     new
                     {
-                        uri = "mcp://nexus/sessions/list",
+                        uri = "sessions",
                         name = "List Sessions",
-                        description = "List all debugging sessions with advanced filtering options",
-                        input = new {
-                            sessionId = "string (optional) - Filter by session ID (partial match)",
-                            dumpPath = "string (optional) - Filter by dump file path (partial match)",
-                            status = "string (optional) - Filter by session status (Initializing, Active, Disposing, Disposed, Error)",
-                            isActive = "bool (optional) - Filter by active status (true/false)",
-                            createdFrom = "DateTime (optional) - Filter sessions created from this time",
-                            createdTo = "DateTime (optional) - Filter sessions created until this time",
-                            limit = "int (optional) - Limit number of results",
-                            offset = "int (optional) - Skip number of results (pagination)",
-                            sortBy = "string (optional) - Sort by field (sessionId, dumpPath, status, createdAt)",
-                            order = "string (optional) - Sort order (asc, desc)"
-                        },
-                        note = (string?)"Use: mcp://nexus/sessions/list?status=Active&isActive=true&limit=10&sortBy=createdAt&order=desc"
+                        description = "List all debugging sessions with status and activity information",
+                        input = (object?)null,
+                        note = (string?)"Use: sessions resource (no parameters - returns all sessions)"
                     },
                     new
                     {
-                        uri = "mcp://nexus/commands/list",
+                        uri = "commands",
                         name = "List Commands",
-                        description = "List async commands from all sessions with advanced filtering options",
-                        input = new {
-                            sessionId = "string (optional) - Filter by specific session",
-                            command = "string (optional) - Filter by command text (case-insensitive)",
-                            from = "DateTime (optional) - Filter commands from this time",
-                            to = "DateTime (optional) - Filter commands until this time",
-                            limit = "int (optional) - Limit number of results",
-                            offset = "int (optional) - Skip number of results (pagination)",
-                            sortBy = "string (optional) - Sort by field (command, status, createdAt)",
-                            order = "string (optional) - Sort order (asc, desc)"
-                        },
-                        note = (string?)"Use: mcp://nexus/commands/list?sessionId=abc123&command=!analyze&limit=10&sortBy=createdAt&order=desc"
+                        description = "List async commands from all sessions with status and timing information",
+                        input = (object?)null,
+                        note = (string?)"Use: commands resource (no parameters - returns all commands)"
                     },
                     new
                     {
-                        uri = "mcp://nexus/commands/result",
+                        uri = "nexus_read_dump_analyze_command_result",
                         name = "Command Result",
                         description = "Get status and results of a specific async command",
                         input = new { sessionId = "string (required)", commandId = "string (required)" },
-                        example = "mcp://nexus/commands/result?sessionId=sess-000001-abc123&commandId=cmd-sess-000001-abc123-0001",
-                        usage = "Use resources/read method with this URI to get command results",
-                        note = (string?)"This is a RESOURCE, not a tool. Use resources/read method to access it."
+                        example = "Use 'nexus_read_dump_analyze_command_result' tool with sessionId and commandId parameters",
+                        usage = "Use this tool directly with sessionId and commandId parameters",
+                        note = (string?)"This is a TOOL, not a resource. Call it directly with parameters."
                     }
                 }
             }
@@ -225,7 +205,7 @@ namespace mcp_nexus.Tools
                     commandId = (string?)null,
                     success = true,
                     operation = "nexus_open_dump_analyze_session",
-                    message = $"Session created successfully: {sessionId}. Use mcp://nexus/sessions/list to manage sessions.",
+                    message = $"Session created successfully: {sessionId}. Use 'sessions' resource to manage sessions.",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
@@ -289,7 +269,7 @@ namespace mcp_nexus.Tools
                         commandId = (string?)null,
                         success = false,
                         operation = "nexus_close_dump_analyze_session",
-                        message = $"Session not found or already closed: {sessionId}. Use mcp://nexus/sessions/list to see available sessions.",
+                        message = $"Session not found or already closed: {sessionId}. Use 'sessions' resource to see available sessions.",
                         usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                     };
 
@@ -342,7 +322,7 @@ namespace mcp_nexus.Tools
         /// <summary>
         /// Execute a debugger command asynchronously in the specified session
         /// </summary>
-        [Description("ASYNC COMMAND: Execute debugger command in background queue. NEVER returns results directly! Always returns commandId. MUST use mcp://nexus/commands/result resource to get actual results.")]
+        [Description("ASYNC COMMAND: Execute debugger command in background queue. NEVER returns results directly! Always returns commandId. Use the resource 'commands' to observe status and the 'nexus_read_dump_analyze_command_result' tool to get actual results.")]
         public Task<object> nexus_enqueue_async_dump_analyze_command(
             [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
             [Description("Debugger command to execute (e.g., '!analyze -v', 'k', '!peb')")] string command)
@@ -366,7 +346,7 @@ namespace mcp_nexus.Tools
                         commandId = (string?)null,
                         success = false,
                         operation = "nexus_enqueue_async_dump_analyze_command",
-                        message = $"Session not found or expired: {sessionId}. Use mcp://nexus/sessions/list to see available sessions.",
+                        message = $"Session not found or expired: {sessionId}. Use 'sessions' resource to see available sessions.",
                         usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                     };
 
@@ -386,7 +366,7 @@ namespace mcp_nexus.Tools
                     commandId = commandId,
                     success = true,
                     operation = "nexus_enqueue_async_dump_analyze_command",
-                    message = $"Command queued successfully: {commandId}. Use mcp://nexus/commands/result to get results.",
+                    message = $"Command queued successfully: {commandId}. Use the resource 'commands' to observe the status and the 'nexus_read_dump_analyze_command_result' tool to get results.",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 

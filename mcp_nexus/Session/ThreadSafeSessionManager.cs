@@ -472,7 +472,7 @@ namespace mcp_nexus.Session
                 hints.Add("⏰ Session has been inactive - will auto-expire if no activity");
             }
 
-            hints.Add($"📊 Use mcp://nexus/commands/result resource to check command results");
+            hints.Add($"📊 Use 'nexus_read_dump_analyze_command_result' tool to check command results");
             hints.Add($"🎯 Always include sessionId='{session.SessionId}' in your requests");
 
             return hints;
