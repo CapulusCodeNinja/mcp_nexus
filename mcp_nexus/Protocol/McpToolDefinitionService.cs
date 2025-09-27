@@ -20,10 +20,7 @@ namespace mcp_nexus.Protocol
                 // NEXUS DEBUGGER COMMANDS - Core functionality for crash dump analysis
                 CreateNexusOpenDumpAnalyzeSessionTool(),
                 CreateNexusDumpAnalyzeSessionAsyncCommandTool(),
-                CreateNexusDumpAnalyzeSessionAsyncCommandStatusTool(),
                 CreateNexusCloseDumpAnalyzeSessionTool(),
-                CreateNexusListDumpAnalyzeSessionsTool(),
-                CreateNexusListDumpAnalyzeSessionAsyncCommandsTool()
                 // NOTE: Remote debugging and command cancellation will be added in future releases
             ];
         }
@@ -45,7 +42,7 @@ namespace mcp_nexus.Protocol
             {
                 Name = "nexus_open_dump_analyze_session",
                 Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.TOOL_USAGE_EXPLANATION,
+                    SessionAwareWindbgTool.USAGE_EXPLANATION,
                     new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
                 InputSchema = new
                 {
@@ -74,7 +71,7 @@ namespace mcp_nexus.Protocol
             {
                 Name = "nexus_close_dump_analyze_session",
                 Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.TOOL_USAGE_EXPLANATION,
+                    SessionAwareWindbgTool.USAGE_EXPLANATION,
                     new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
                 InputSchema = new
                 {
@@ -96,9 +93,9 @@ namespace mcp_nexus.Protocol
         {
             return new McpToolSchema
             {
-                Name = "nexus_dump_analyze_session_async_command",
+                Name = "nexus_enqueue_async_dump_analyze_command",
                 Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.TOOL_USAGE_EXPLANATION,
+                    SessionAwareWindbgTool.USAGE_EXPLANATION,
                     new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
                 InputSchema = new
                 {
@@ -121,69 +118,6 @@ namespace mcp_nexus.Protocol
             };
         }
 
-        private static McpToolSchema CreateNexusDumpAnalyzeSessionAsyncCommandStatusTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "nexus_dump_analyze_session_async_command_status",
-                Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.TOOL_USAGE_EXPLANATION,
-                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        commandId = new
-                        {
-                            type = "string",
-                            description = "REQUIRED: The EXACT commandId that was returned by nexus_dump_analyze_session_async_command. Format: 'cmd-sess-XXXXXX-YYYYYYYY-ZZZZ'. DO NOT make up your own values!"
-                        }
-                    },
-                    required = new[] { "commandId" }
-                }
-            };
-        }
 
-        private static McpToolSchema CreateNexusListDumpAnalyzeSessionsTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "nexus_list_dump_analyze_sessions",
-                Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.TOOL_USAGE_EXPLANATION,
-                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new { },
-                    required = new string[] { }
-                }
-            };
-        }
-
-        private static McpToolSchema CreateNexusListDumpAnalyzeSessionAsyncCommandsTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "nexus_list_dump_analyze_session_async_commands",
-                Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.TOOL_USAGE_EXPLANATION,
-                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        sessionId = new
-                        {
-                            type = "string",
-                            description = "REQUIRED: The EXACT sessionId that was returned by nexus_open_dump_analyze_session. Format: 'sess-XXXXXX-YYYYYYYY-timestamp-processId'. DO NOT make up your own values!"
-                        }
-                    },
-                    required = new[] { "sessionId" }
-                }
-            };
-        }
     }
 }

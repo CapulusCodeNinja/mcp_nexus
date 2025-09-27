@@ -1,6 +1,6 @@
 # Configuration Guide
 
-> 🏠 **[← Back to Main README](../README.md)** | 📚 **Other Docs:** [📋 Tools](TOOLS.md) | [🤖 Integration](INTEGRATION.md) | [👨‍💻 Development](DEVELOPMENT.md)
+> 🏠 **[← Back to Main README](../README.md)** | 📚 **Other Docs:** [📋 Tools](TOOLS.md) | [📚 Resources](RESOURCES.md) | [🤖 Integration](INTEGRATION.md) | [👨‍💻 Development](DEVELOPMENT.md)
 
 ## Command Line Options
 
@@ -153,5 +153,6 @@ sc stop "MCP-Nexus"
 ## Next Steps
 
 - **📋 Tools:** [TOOLS.md](TOOLS.md) - Learn about available tools and notifications
+- **📚 Resources:** [RESOURCES.md](RESOURCES.md) - MCP Resources reference and usage patterns
 - **🤖 Integration:** [INTEGRATION.md](INTEGRATION.md) - Connect with AI tools like Cursor IDE
 - **👨‍💻 Development:** [DEVELOPMENT.md](DEVELOPMENT.md) - Understand the architecture

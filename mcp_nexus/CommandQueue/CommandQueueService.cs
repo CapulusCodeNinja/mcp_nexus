@@ -104,13 +104,13 @@ namespace mcp_nexus.CommandQueue
             return commandId;
         }
 
-        public Task<string> GetCommandResult(string commandId)
+        public async Task<string> GetCommandResult(string commandId)
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
 
             if (string.IsNullOrEmpty(commandId))
-                return Task.FromResult($"Command not found: {commandId}");
+                return $"Command not found: {commandId}";
 
             // NOTE: Completed commands stay in m_activeCommands for result retrieval
             if (m_activeCommands.TryGetValue(commandId, out var command))
@@ -120,22 +120,23 @@ namespace mcp_nexus.CommandQueue
                 {
                     try
                     {
-                        var result = command.CompletionSource.Task.Result;
-                        return Task.FromResult(result);
+                        // FIXED: Use await instead of blocking .Result
+                        var result = await command.CompletionSource.Task.ConfigureAwait(false);
+                        return result;
                     }
                     catch (Exception ex)
                     {
-                        return Task.FromResult($"Command failed: {ex.Message}");
+                        return $"Command failed: {ex.Message}";
                     }
                 }
                 else
                 {
                     // Command still running - return status immediately, don't wait!
-                    return Task.FromResult($"Command is still executing... Please call get_command_status(commandId='{commandId}') again in 5-10 seconds to check if completed.");
+                    return $"Command is still executing... Please call get_command_status(commandId='{commandId}') again in 5-10 seconds to check if completed.";
                 }
             }
 
-            return Task.FromResult($"Command not found: {commandId}");
+            return $"Command not found: {commandId}";
         }
 
         public bool CancelCommand(string commandId)

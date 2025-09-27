@@ -6,12 +6,31 @@
 
 Windows debugging capabilities through WinDBG/CDB integration:
 
+### Tools vs Resources
+
+**TOOLS** (use `tools/call` method):
+- Execute actions: open sessions, run commands, close sessions
+- Examples: `nexus_open_dump_analyze_session`, `nexus_enqueue_async_dump_analyze_command`
+
+**RESOURCES** (use `resources/read` method):
+- Access data: command results, session lists, documentation
+- Examples: `mcp://nexus/commands/result`, `mcp://nexus/sessions/list`, `mcp://nexus/docs/workflows`
+
+**Common Mistake**: Don't use resource URIs as tool names!
+```json
+// WRONG - This will fail
+{"method":"tools/call","params":{"name":"mcp://nexus/commands/result?sessionId=abc&commandId=cmd123"}}
+
+// CORRECT - Use resources/read for resources
+{"method":"resources/read","params":{"uri":"mcp://nexus/commands/result?sessionId=abc&commandId=cmd123"}}
+```
+
 ### Core Debugging Commands
 - **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
-- **Session Management**: `nexus_list_dump_analyze_sessions`, `nexus_list_dump_analyze_session_async_commands`
+- **Session Management**: Available via MCP Resources (`mcp://nexus/sessions/list`, `mcp://nexus/commands/list`)
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
-- **Command Execution**: `nexus_dump_analyze_session_async_command` (🔄 ASYNC QUEUE: Always returns commandId, use `nexus_dump_analyze_session_async_command_status` for results)
-- **Queue Management**: `nexus_dump_analyze_session_async_command_status`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
+- **Command Execution**: `nexus_enqueue_async_dump_analyze_command` (🔄 ASYNC QUEUE: Always returns commandId, use MCP Resources for results)
+- **Queue Management**: `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
 
 ### 🔄 Complete Debugging Workflow
 
@@ -21,7 +40,7 @@ Windows debugging capabilities through WinDBG/CDB integration:
 1. nexus_open_dump_analyze_session {"dumpPath": "C:\\crash.dmp"}
    → Returns: {"sessionId": "sess-000001-abc12345-12345678-0001", ...}
 
-2. nexus_dump_analyze_session_async_command {"sessionId": "sess-000001-abc12345-12345678-0001", "command": "!analyze -v"}
+2. nexus_enqueue_async_dump_analyze_command {"sessionId": "sess-000001-abc12345-12345678-0001", "command": "!analyze -v"}
    → Returns: {"commandId": "cmd-000001-abc12345-12345678-0001", "status": "queued", ...}
 
 3. Listen for real-time notifications:
@@ -29,72 +48,168 @@ Windows debugging capabilities through WinDBG/CDB integration:
    → notifications/commandHeartbeat: {"elapsed": "30s", ...} (for long commands)
    → notifications/commandStatus: {"status": "completed", "result": "ACTUAL_OUTPUT"}
 
-4. OR poll nexus_dump_analyze_session_async_command_status {"commandId": "cmd-000001-abc12345-12345678-0001"}  
+4. OR use MCP Resource: 
+   ```json
+   {"method":"resources/read","params":{"uri":"mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"}}
+   ```
    → Returns: {"status": "executing", ...} (keep polling)
    → Returns: {"status": "completed", "result": "ACTUAL_OUTPUT"}
 
-5. nexus_list_dump_analyze_sessions {} (optional)
-   → Returns: {"sessions": [...]} - List all active sessions
-
-6. nexus_list_dump_analyze_session_async_commands {"sessionId": "sess-000001-abc12345-12345678-0001"} (optional)
-   → Returns: {"commands": [...]} - List all commands for this session
+5. Use MCP Resources for session management:
+   ```json
+   // List all sessions
+   {"method":"resources/read","params":{"uri":"mcp://nexus/sessions/list"}}
+   
+   // List commands for a specific session
+   {"method":"resources/read","params":{"uri":"mcp://nexus/commands/list?sessionId=sess-000001-abc12345"}}
+   
+   // Get command result
+   {"method":"resources/read","params":{"uri":"mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-0001"}}
+   ```
 
 7. nexus_close_dump_analyze_session {"sessionId": "sess-000001-abc12345-12345678-0001"}
    → Returns: {"success": true, ...} - Clean up resources
 ```
 
-**⚠️ CRITICAL**: `nexus_dump_analyze_session_async_command` NEVER returns command results directly. You MUST use `nexus_dump_analyze_session_async_command_status` to get results or listen for notifications!
+**⚠️ CRITICAL**: `nexus_enqueue_async_dump_analyze_command` NEVER returns command results directly. You MUST use MCP Resources (`mcp://nexus/commands/result`) to get results or listen for notifications!
 
-### 📋 Session Management Commands
+### 📋 Session Management (via MCP Resources)
 
-#### `nexus_list_dump_analyze_sessions`
-Lists all active debugging sessions with detailed information.
+Session management is now available through MCP Resources for better integration and discoverability:
 
-**Parameters:** None
+#### Available Resources
 
-**Returns:**
+- **`mcp://nexus/sessions/list`** - List all active debugging sessions
+- **`mcp://nexus/commands/list`** - List commands from all sessions with advanced filtering (sessionId, command text, time range, pagination, sorting)  
+- **`mcp://nexus/commands/result`** - Get status and results of specific commands
+- **`mcp://nexus/docs/workflows`** - Comprehensive crash analysis workflows and examples
+- **`mcp://nexus/docs/usage`** - Complete usage guide for tools and resources
+
+#### How to Use Resources
+
+**1. List Active Sessions:**
 ```json
+// MCP Request
 {
-  "success": true,
-  "operation": "nexus_list_dump_analyze_sessions",
-  "message": "Found 2 active sessions",
-  "sessions": [
-    {
-      "sessionId": "sess-000001-abc12345-12345678-0001",
-      "dumpFile": "crash.dmp",
-      "status": "Active",
-      "createdAt": "2024-09-26 23:15:30 UTC",
-      "lastActivity": "2024-09-26 23:20:15 UTC",
-      "commandsProcessed": 5,
-      "activeCommands": 2
-    }
-  ]
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "resources/read",
+  "params": {
+    "uri": "mcp://nexus/sessions/list"
+  }
+}
+
+// Response
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "contents": [{
+      "type": "text",
+      "text": "{\"sessions\": [...], \"count\": 2, \"timestamp\": \"2024-01-15T10:30:00Z\"}"
+    }]
+  }
 }
 ```
 
-#### `nexus_list_dump_analyze_session_async_commands`
-Lists all async commands for a specific session.
-
-**Parameters:**
-- `sessionId` (required): The exact sessionId from `nexus_open_dump_analyze_session`
-
-**Returns:**
+**2. List Commands (All Sessions):**
 ```json
+// MCP Request
 {
-  "success": true,
-  "operation": "nexus_list_dump_analyze_session_async_commands",
-  "message": "Command listing for session: sess-000001-abc12345-12345678-0001",
-  "commands": [
-    {
-      "commandId": "cmd-000001-abc12345-12345678-0001",
-      "command": "!analyze -v",
-      "status": "completed",
-      "queuedAt": "2024-09-26 23:15:30 UTC",
-      "completedAt": "2024-09-26 23:15:45 UTC"
-    }
-  ]
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "resources/read", 
+  "params": {
+    "uri": "mcp://nexus/commands/list"
+  }
 }
 ```
+
+**3. List Commands (Specific Session):**
+```json
+// MCP Request
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "resources/read",
+  "params": {
+    "uri": "mcp://nexus/commands/list?sessionId=sess-000001-abc12345"
+  }
+}
+```
+
+**4. Get Command Result:**
+```json
+// MCP Request
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "resources/read",
+  "params": {
+    "uri": "mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"
+  }
+}
+
+// Response (Command Completed)
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": {
+    "contents": [{
+      "type": "text", 
+      "text": "{\"sessionId\": \"sess-000001-abc12345\", \"commandId\": \"cmd-000001-abc12345-12345678-0001\", \"status\": \"Completed\", \"result\": \"ACTUAL_WINDBG_OUTPUT\", \"timestamp\": \"2024-01-15T10:30:00Z\"}"
+    }]
+  }
+}
+
+// Response (Command In Progress)
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": {
+    "contents": [{
+      "type": "text",
+      "text": "{\"sessionId\": \"sess-000001-abc12345\", \"commandId\": \"cmd-000001-abc12345-12345678-0001\", \"status\": \"In Progress\", \"result\": null, \"message\": \"Command is still executing - check again in a few seconds.\", \"timestamp\": \"2024-01-15T10:30:00Z\"}"
+    }]
+  }
+}
+```
+
+**5. Get Crash Analysis Workflows:**
+```json
+// MCP Request
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "method": "resources/read",
+  "params": {
+    "uri": "mcp://nexus/docs/workflows"
+  }
+}
+```
+
+**6. Get Usage Guide:**
+```json
+// MCP Request
+{
+  "jsonrpc": "2.0", 
+  "id": 6,
+  "method": "resources/read",
+  "params": {
+    "uri": "mcp://nexus/docs/usage"
+  }
+}
+```
+
+#### Resource Benefits
+
+- **Better Integration**: Resources work seamlessly with MCP clients
+- **Structured Data**: JSON responses with consistent formatting
+- **Error Handling**: Clear error messages with helpful hints
+- **Real-time Updates**: Resources reflect current server state
+- **Documentation**: Built-in usage guides and workflows
+
+> 📚 **For detailed resource specifications and usage patterns:** **[📚 RESOURCES.md](RESOURCES.md)**
 
 ## 📡 Real-Time Notifications
 

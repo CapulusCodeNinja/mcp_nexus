@@ -108,7 +108,7 @@ namespace mcp_nexus_tests.Controllers
             stopwatch.Stop();
 
             // Assert - Serialization should be fast
-            Assert.True(stopwatch.ElapsedMilliseconds < 1000, 
+            Assert.True(stopwatch.ElapsedMilliseconds < 1000,
                 $"{iterations} serializations took {stopwatch.ElapsedMilliseconds}ms, expected < 1000ms");
         }
 
@@ -146,7 +146,7 @@ namespace mcp_nexus_tests.Controllers
             stopwatch.Stop();
 
             // Assert - Should be faster than creating new options each time
-            Assert.True(stopwatch.ElapsedMilliseconds < 500, 
+            Assert.True(stopwatch.ElapsedMilliseconds < 500,
                 $"{iterations} serializations with reused options took {stopwatch.ElapsedMilliseconds}ms, expected < 500ms");
         }
 
@@ -268,9 +268,9 @@ namespace mcp_nexus_tests.Controllers
             stopwatch2.Stop();
 
             // Assert - Both approaches should complete quickly (performance comparison can be flaky)
-            Assert.True(stopwatch1.ElapsedMilliseconds < 1000, 
+            Assert.True(stopwatch1.ElapsedMilliseconds < 1000,
                 $"New options took {stopwatch1.ElapsedMilliseconds}ms, expected < 1000ms");
-            Assert.True(stopwatch2.ElapsedMilliseconds < 1000, 
+            Assert.True(stopwatch2.ElapsedMilliseconds < 1000,
                 $"Reused options took {stopwatch2.ElapsedMilliseconds}ms, expected < 1000ms");
         }
     }

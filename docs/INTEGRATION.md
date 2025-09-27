@@ -1,6 +1,6 @@
 # AI Tool Integration
 
-> 🏠 **[← Back to Main README](../README.md)** | 📚 **Other Docs:** [📋 Tools](TOOLS.md) | [🔧 Configuration](CONFIGURATION.md) | [👨‍💻 Development](DEVELOPMENT.md)
+> 🏠 **[← Back to Main README](../README.md)** | 📚 **Other Docs:** [📋 Tools](TOOLS.md) | [📚 Resources](RESOURCES.md) | [🔧 Configuration](CONFIGURATION.md) | [👨‍💻 Development](DEVELOPMENT.md)
 
 ## Cursor IDE Integration
 
@@ -118,5 +118,6 @@ process.stdout.on('data', (data) => {
 ## Next Steps
 
 - **📋 Tools:** [TOOLS.md](TOOLS.md) - Explore available tools and notification examples
+- **📚 Resources:** [RESOURCES.md](RESOURCES.md) - MCP Resources reference and usage patterns
 - **🔧 Configuration:** [CONFIGURATION.md](CONFIGURATION.md) - Advanced configuration options
 - **👨‍💻 Development:** [DEVELOPMENT.md](DEVELOPMENT.md) - Build custom integrations

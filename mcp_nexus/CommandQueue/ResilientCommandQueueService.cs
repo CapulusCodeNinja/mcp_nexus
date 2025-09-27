@@ -122,13 +122,13 @@ namespace mcp_nexus.CommandQueue
             return commandId;
         }
 
-        public Task<string> GetCommandResult(string commandId)
+        public async Task<string> GetCommandResult(string commandId)
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
 
             if (string.IsNullOrEmpty(commandId))
-                return Task.FromResult($"Command not found: {commandId}");
+                return $"Command not found: {commandId}";
 
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
@@ -136,21 +136,22 @@ namespace mcp_nexus.CommandQueue
                 {
                     try
                     {
-                        var result = command.CompletionSource.Task.Result;
-                        return Task.FromResult(result);
+                        // FIXED: Use await instead of blocking .Result
+                        var result = await command.CompletionSource.Task.ConfigureAwait(false);
+                        return result;
                     }
                     catch (Exception ex)
                     {
-                        return Task.FromResult($"Command failed: {ex.Message}");
+                        return $"Command failed: {ex.Message}";
                     }
                 }
                 else
                 {
-                    return Task.FromResult($"Command is still executing... Please call get_command_status(commandId='{commandId}') again in 5-10 seconds to check if completed.");
+                    return $"Command is still executing... Please call get_command_status(commandId='{commandId}') again in 5-10 seconds to check if completed.";
                 }
             }
 
-            return Task.FromResult($"Command not found: {commandId}");
+            return $"Command not found: {commandId}";
         }
 
         public bool CancelCommand(string commandId)

@@ -83,12 +83,12 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange & Act
             var capabilities = new McpCapabilities();
-            
+
             // Assert
             Assert.NotNull(capabilities.Notifications);
             var notificationsObj = capabilities.Notifications as dynamic;
             Assert.NotNull(notificationsObj);
-            
+
             // Check that tools notification is declared
             var notificationsJson = System.Text.Json.JsonSerializer.Serialize(capabilities.Notifications);
             Assert.Contains("tools", notificationsJson);

@@ -179,14 +179,14 @@ namespace mcp_nexus.Models
     {
         [JsonPropertyName("tools")]
         public object Tools { get; set; } = new { listChanged = true };
-        
+
         [JsonPropertyName("resources")]
-        public object Resources { get; set; } = new 
-        { 
-            subscribe = true, 
-            listChanged = true 
+        public object Resources { get; set; } = new
+        {
+            subscribe = true,
+            listChanged = true
         };
-        
+
         [JsonPropertyName("notifications")]
         public object Notifications { get; set; } = new
         {
@@ -211,7 +211,7 @@ namespace mcp_nexus.Models
             "Provides asynchronous debugging commands with live status updates via server-initiated notifications. " +
             "Supports notifications/commandStatus (execution progress), notifications/commandHeartbeat (long-running command updates), " +
             "notifications/sessionRecovery (debugging session recovery), notifications/serverHealth (server status), " +
-            "and standard MCP notifications/tools/list_changed. All commands execute asynchronously - use nexus_dump_analyze_session_async_command_status() " +
+            "and standard MCP notifications/tools/list_changed. All commands execute asynchronously - use mcp://nexus/commands/result resource " +
             "to get results and monitor for real-time notifications about execution progress.";
     }
 

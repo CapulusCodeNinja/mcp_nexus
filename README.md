@@ -84,6 +84,9 @@ The server automatically exposes all available tools through the MCP protocol wi
 ### 🛠 **[📋 Available Tools](docs/TOOLS.md)**
 Complete tool reference, async workflows, notification examples
 
+### 📖 **[💡 Usage Examples](docs/USAGE_EXAMPLES.md)**
+Step-by-step crash dump analysis workflow with real examples
+
 ### ⚙️ **[🔧 Configuration](docs/CONFIGURATION.md)**  
 Transport modes, Windows service, environment setup, appsettings.json keys
 
@@ -115,22 +118,62 @@ Architecture, testing, contribution guide
 
 ### Windows Debugging Tools
 - **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
-- **Session Management**: `nexus_list_dump_analyze_sessions`, `nexus_list_dump_analyze_session_async_commands`
+- **Session Management**: Available via MCP Resources (`mcp://nexus/sessions/list`, `mcp://nexus/commands/list`)
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
-- **Async Command Queue**: `nexus_dump_analyze_session_async_command`, `nexus_dump_analyze_session_async_command_status`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
+- **Async Command Queue**: `nexus_enqueue_async_dump_analyze_command`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
 
 **🔄 Complete Debugging Workflow:**
 ```bash
 1. nexus_open_dump_analyze_session → Create session, returns sessionId
-2. nexus_dump_analyze_session_async_command → Queue command, returns commandId
+2. nexus_enqueue_async_dump_analyze_command → Queue command, returns commandId
 3. Listen for notifications/commandStatus → Real-time progress updates
-4. nexus_dump_analyze_session_async_command_status → Get final results
-5. nexus_list_dump_analyze_sessions → List all active sessions
-6. nexus_list_dump_analyze_session_async_commands → List commands for session
+4. mcp://nexus/commands/result → Get final results via MCP Resource
+5. Use MCP Resources for session management:
+   - `mcp://nexus/sessions/list` → List all active sessions
+   - `mcp://nexus/commands/list` → List commands for all sessions or filter by sessionId
 7. nexus_close_dump_analyze_session → Clean up resources
 ```
 
-> 📖 **Complete tool reference with examples:** **[📋 TOOLS.md](docs/TOOLS.md)**
+## 📚 MCP Resources
+
+The server provides rich resources for session management and documentation:
+
+### Available Resources
+- **`mcp://nexus/sessions/list`** - List all active debugging sessions
+- **`mcp://nexus/commands/list`** - List commands from all sessions with advanced filtering (sessionId, command text, time range, pagination, sorting)
+- **`mcp://nexus/commands/result`** - Get status and results of specific commands
+- **`mcp://nexus/docs/workflows`** - Comprehensive crash analysis workflows and examples
+- **`mcp://nexus/docs/usage`** - Complete usage guide for tools and resources
+
+### Using Resources
+```json
+// List all sessions
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "resources/read",
+  "params": { "uri": "mcp://nexus/sessions/list" }
+}
+
+// Get command result
+{
+  "jsonrpc": "2.0", 
+  "id": 2,
+  "method": "resources/read",
+  "params": { "uri": "mcp://nexus/commands/result?sessionId=abc123&commandId=cmd456" }
+}
+
+// Get crash analysis workflows
+{
+  "jsonrpc": "2.0",
+  "id": 3, 
+  "method": "resources/read",
+  "params": { "uri": "mcp://nexus/docs/workflows" }
+}
+```
+
+> 📖 **Complete tool reference with examples:** **[📋 TOOLS.md](docs/TOOLS.md)**  
+> 📚 **MCP Resources reference:** **[📚 RESOURCES.md](docs/RESOURCES.md)**
 
 ## 🏃‍♂️ Windows Service
 

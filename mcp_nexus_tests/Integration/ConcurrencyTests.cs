@@ -34,12 +34,12 @@ namespace mcp_nexus_tests.Services
             m_mockCdbSession = new Mock<ICdbSession>();
             m_mockLogger = new Mock<ILogger<CommandQueueService>>();
             m_mockNotificationLogger = new Mock<ILogger<McpNotificationService>>();
-            
+
             // Setup default mock behavior
             m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
             m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync("Mock result");
-            
+
             m_commandQueueService = new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object);
             m_notificationService = new McpNotificationService(m_mockNotificationLogger.Object);
         }
@@ -100,7 +100,7 @@ namespace mcp_nexus_tests.Services
             {
                 var commandId = m_commandQueueService.QueueCommand($"test command {i}");
                 commands.Add(commandId);
-                
+
                 // Cancel every other command
                 if (i % 2 == 0)
                 {
@@ -241,7 +241,7 @@ namespace mcp_nexus_tests.Services
 
             // Act - Remove handlers concurrently while sending notifications
             var tasks = new List<Task>();
-            
+
             // Send notifications concurrently
             for (int i = 0; i < 10; i++)
             {
@@ -271,7 +271,7 @@ namespace mcp_nexus_tests.Services
             // Arrange - Add many commands
             var commandCount = 1000;
             var commands = new List<string>();
-            
+
             for (int i = 0; i < commandCount; i++)
             {
                 var commandId = m_commandQueueService.QueueCommand($"test command {i}");
@@ -287,9 +287,9 @@ namespace mcp_nexus_tests.Services
             {
                 tasks.Add(Task.Run(() =>
                 {
-                var cleanupMethod = typeof(CommandQueueService).GetMethod("CleanupCompletedCommands", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                cleanupMethod!.Invoke(m_commandQueueService, new object?[] { null });
+                    var cleanupMethod = typeof(CommandQueueService).GetMethod("CleanupCompletedCommands",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    cleanupMethod!.Invoke(m_commandQueueService, new object?[] { null });
                 }));
             }
 

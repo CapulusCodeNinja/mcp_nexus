@@ -41,9 +41,9 @@ namespace mcp_nexus_tests.Manual
             {
                 output.WriteLine($"Test: {testCase.Description}");
                 output.WriteLine($"Input:  {testCase.Input}");
-                
+
                 var converted = PathHandler.NormalizeForWindows(testCase.Input);
-                
+
                 if (testCase.Input != converted)
                 {
                     // This simulates the actual log message from WindbgTool
@@ -72,34 +72,34 @@ namespace mcp_nexus_tests.Manual
             // Simulate what happens in NexusOpenDump
             var originalDumpPath = "/mnt/c/inetpub/wwwroot/uploads/dump_20250925_112751.dmp";
             var dumpPath = PathHandler.NormalizeForWindows(originalDumpPath);
-            
+
             output.WriteLine($"AI calls nexus_open_dump_analyze_session with:");
             output.WriteLine($"  dumpPath: \"{originalDumpPath}\"");
             output.WriteLine("");
-            
+
             if (originalDumpPath != dumpPath)
             {
                 // This is the exact log message from WindbgTool.cs line 63
                 output.WriteLine($"[INFO] mcp_nexus.Tools.WindbgTool: Converted WSL path '{originalDumpPath}' to Windows path '{dumpPath}'");
             }
-            
+
             output.WriteLine($"Server processes file: {dumpPath}");
             output.WriteLine("");
 
             // Simulate symbols path conversion
             var originalSymbolsPath = "/mnt/d/symbols";
             var symbolsPath = PathHandler.NormalizeForWindows(originalSymbolsPath);
-            
+
             output.WriteLine($"AI also provides:");
             output.WriteLine($"  symbolsPath: \"{originalSymbolsPath}\"");
             output.WriteLine("");
-            
+
             if (originalSymbolsPath != symbolsPath)
             {
                 // This is the exact log message from WindbgTool.cs line 84
                 output.WriteLine($"[INFO] mcp_nexus.Tools.WindbgTool: Converted WSL symbols path '{originalSymbolsPath}' to Windows path '{symbolsPath}'");
             }
-            
+
             output.WriteLine($"Server uses symbols from: {symbolsPath}");
             output.WriteLine("");
             output.WriteLine("✓ Both paths are now in Windows format and ready for file operations!");

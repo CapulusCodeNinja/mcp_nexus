@@ -21,15 +21,18 @@ namespace mcp_nexus.Protocol
 
             try
             {
+                // Check if user is trying to use a resource URI as a tool name
+                if (toolName.StartsWith("mcp://nexus/commands/") || toolName.StartsWith("mcp://nexus/sessions/") || toolName.StartsWith("mcp://nexus/docs/"))
+                {
+                    throw new McpToolException(-32602, $"TOOL CALL ERROR: '{toolName}' is a RESOURCE URI, not a tool name. Use resources/read method to access resources. Use tools/list to see available tools.");
+                }
+
                 return toolName switch
                 {
                     "nexus_open_dump_analyze_session" => await ExecuteOpenWindbgDump(arguments),
                     "nexus_close_dump_analyze_session" => await ExecuteCloseWindbgDump(arguments),
-                    "nexus_dump_analyze_session_async_command" => await ExecuteRunWindbgCmdAsync(arguments),
-                    "nexus_dump_analyze_session_async_command_status" => await ExecuteGetCommandStatus(arguments),
-                    "nexus_list_dump_analyze_sessions" => await ExecuteListSessions(arguments),
-                    "nexus_list_dump_analyze_session_async_commands" => await ExecuteListCommands(arguments),
-                    _ => throw new McpToolException(-32602, $"Unknown tool: {toolName}")
+                    "nexus_enqueue_async_dump_analyze_command" => await ExecuteRunWindbgCmdAsync(arguments),
+                    _ => throw new McpToolException(-32602, $"Unknown tool: {toolName}. Use tools/list to see available tools.")
                 };
             }
             catch (McpToolException)
@@ -90,7 +93,7 @@ namespace mcp_nexus.Protocol
 
             try
             {
-                var result = await sessionAwareWindbgTool.nexus_dump_analyze_session_async_command(sessionId, command);
+                var result = await sessionAwareWindbgTool.nexus_enqueue_async_dump_analyze_command(sessionId, command);
                 return CreateToolResult(result);
             }
             catch (Exception ex)
@@ -100,27 +103,6 @@ namespace mcp_nexus.Protocol
             }
         }
 
-        private async Task<object> ExecuteGetCommandStatus(JsonElement arguments)
-        {
-            // Get command status using session-aware implementation
-            var commandId = GetRequiredStringArgument(arguments, "commandId");
-            if (commandId == null)
-                throw new McpToolException(-32602, "Missing required parameter: commandId");
-
-            logger.LogDebug("Getting command status for commandId: {CommandId}", commandId);
-
-            try
-            {
-                var result = await sessionAwareWindbgTool.nexus_dump_analyze_session_async_command_status(commandId);
-                // Wrap result in MCP tool result format
-                return CreateToolResult(result);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to get command status for commandId: {CommandId}", commandId);
-                throw new McpToolException(-32603, $"Command status check failed: {ex.Message}", ex);
-            }
-        }
 
 
 
@@ -138,25 +120,6 @@ namespace mcp_nexus.Protocol
             return arguments.TryGetProperty(name, out var property) ? property.GetString() : null;
         }
 
-        private async Task<object> ExecuteListSessions(JsonElement arguments)
-        {
-            logger.LogDebug("Listing all active sessions");
-
-            var result = await sessionAwareWindbgTool.nexus_list_dump_analyze_sessions();
-            return CreateToolResult(result);
-        }
-
-        private async Task<object> ExecuteListCommands(JsonElement arguments)
-        {
-            var sessionId = GetRequiredStringArgument(arguments, "sessionId");
-            if (sessionId == null)
-                throw new McpToolException(-32602, "Missing required parameter: sessionId");
-
-            logger.LogDebug("Listing commands for session: {SessionId}", sessionId);
-
-            var result = await sessionAwareWindbgTool.nexus_list_dump_analyze_session_async_commands(sessionId);
-            return CreateToolResult(result);
-        }
 
         private static object CreateToolResult(object result)
         {

@@ -28,7 +28,7 @@ namespace mcp_nexus_tests.Services
         {
             m_mockLogger = new Mock<ILogger<StdioNotificationBridge>>();
             m_mockNotificationService = new Mock<IMcpNotificationService>();
-            
+
             // Capture stdout for testing
             m_originalOut = Console.Out;
             m_stringWriter = new StringWriter();
@@ -92,7 +92,7 @@ namespace mcp_nexus_tests.Services
                 .Callback<Func<McpNotification, Task>>(handler => registeredHandler = handler);
 
             await m_bridge.InitializeAsync();
-            
+
             // Clear any existing output and add stabilization delays
             m_stringWriter.GetStringBuilder().Clear();
             await Task.Delay(50);
@@ -103,20 +103,20 @@ namespace mcp_nexus_tests.Services
 
             // Assert
             var output = m_stringWriter.ToString();
-            
+
             // Debug output if empty
             if (string.IsNullOrEmpty(output))
             {
                 // The handler was registered but maybe not called
                 Assert.NotNull(registeredHandler);
             }
-            
+
             Assert.NotEmpty(output);
 
             // Verify JSON-RPC format
             var lines = output.Trim().Split('\n');
             var jsonLine = lines[0];
-            
+
             var parsed = JsonDocument.Parse(jsonLine);
             var root = parsed.RootElement;
 
@@ -168,7 +168,7 @@ namespace mcp_nexus_tests.Services
                 .Callback<Func<McpNotification, Task>>(handler => registeredHandler = handler);
 
             await m_bridge.InitializeAsync();
-            
+
             var notification = new McpNotification
             {
                 Method = "notifications/test",

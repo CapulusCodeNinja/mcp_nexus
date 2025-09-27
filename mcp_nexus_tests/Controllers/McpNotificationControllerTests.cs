@@ -39,7 +39,7 @@ namespace mcp_nexus_tests.Controllers
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Headers["Mcp-Session-Id"] = "test-session-123";
             httpContext.Response.Body = new MemoryStream();
-            
+
             m_controller.ControllerContext = new ControllerContext
             {
                 HttpContext = httpContext
@@ -62,7 +62,7 @@ namespace mcp_nexus_tests.Controllers
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = okResult.Value;
-            
+
             m_mockNotificationService.Verify(
                 x => x.SendNotificationAsync("test/notification", request.Params),
                 Times.Once);
@@ -72,7 +72,7 @@ namespace mcp_nexus_tests.Controllers
             var responseType = response.GetType();
             var messageProperty = responseType.GetProperty("message");
             var methodProperty = responseType.GetProperty("method");
-            
+
             Assert.NotNull(messageProperty);
             Assert.NotNull(methodProperty);
             Assert.Equal("Test notification sent", messageProperty.GetValue(response));
@@ -94,7 +94,7 @@ namespace mcp_nexus_tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            
+
             m_mockNotificationService.Verify(
                 x => x.SendNotificationAsync("", null),
                 Times.Once);
@@ -115,7 +115,7 @@ namespace mcp_nexus_tests.Controllers
                 .ThrowsAsync(new InvalidOperationException("Service error"));
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 m_controller.SendTestNotification(request));
         }
 
@@ -126,7 +126,7 @@ namespace mcp_nexus_tests.Controllers
             var httpContext = new DefaultHttpContext();
             httpContext.RequestAborted = new CancellationToken(true); // Immediately cancelled to exit quickly
             httpContext.Response.Body = new MemoryStream();
-            
+
             m_controller.ControllerContext = new ControllerContext
             {
                 HttpContext = httpContext
@@ -150,7 +150,7 @@ namespace mcp_nexus_tests.Controllers
             var httpContext = new DefaultHttpContext();
             httpContext.RequestAborted = new CancellationToken(true); // Immediately cancelled
             httpContext.Response.Body = new MemoryStream();
-            
+
             m_controller.ControllerContext = new ControllerContext
             {
                 HttpContext = httpContext
@@ -204,7 +204,7 @@ namespace mcp_nexus_tests.Controllers
             httpContext.Request.Headers["Mcp-Session-Id"] = "custom-session-456";
             httpContext.RequestAborted = new CancellationToken(true);
             httpContext.Response.Body = new MemoryStream();
-            
+
             m_controller.ControllerContext = new ControllerContext
             {
                 HttpContext = httpContext
@@ -224,7 +224,7 @@ namespace mcp_nexus_tests.Controllers
             var httpContext = new DefaultHttpContext();
             httpContext.RequestAborted = new CancellationToken(true);
             httpContext.Response.Body = new MemoryStream();
-            
+
             m_controller.ControllerContext = new ControllerContext
             {
                 HttpContext = httpContext

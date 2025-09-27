@@ -68,7 +68,7 @@ namespace mcp_nexus_tests.Services
         public void CdbSessionRecoveryService_Constructor_WithNullCdbSession_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CdbSessionRecoveryService(null!, m_mockLogger.Object, m_cancelAllCommandsCallback));
         }
 
@@ -76,7 +76,7 @@ namespace mcp_nexus_tests.Services
         public void CdbSessionRecoveryService_Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CdbSessionRecoveryService(m_mockCdbSession.Object, null!, m_cancelAllCommandsCallback));
         }
 
@@ -84,7 +84,7 @@ namespace mcp_nexus_tests.Services
         public void CdbSessionRecoveryService_Constructor_WithNullCallback_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CdbSessionRecoveryService(m_mockCdbSession.Object, m_mockLogger.Object, null!));
         }
 
@@ -121,7 +121,7 @@ namespace mcp_nexus_tests.Services
                 m_cancelAllCommandsCallback);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 m_recoveryService.RecoverStuckSession(null!));
         }
 
@@ -135,7 +135,7 @@ namespace mcp_nexus_tests.Services
                 m_cancelAllCommandsCallback);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_recoveryService.RecoverStuckSession(""));
         }
 
@@ -149,7 +149,7 @@ namespace mcp_nexus_tests.Services
                 m_cancelAllCommandsCallback);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_recoveryService.RecoverStuckSession("   "));
         }
 
@@ -227,7 +227,7 @@ namespace mcp_nexus_tests.Services
             m_recoveryService.Dispose();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => 
+            await Assert.ThrowsAsync<ObjectDisposedException>(() =>
                 m_recoveryService.RecoverStuckSession("Test recovery"));
         }
 
@@ -244,7 +244,7 @@ namespace mcp_nexus_tests.Services
             // Setup mocks to return successful results
             m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
             m_mockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
-            
+
             // Setup IsActive to return true initially, then false after stop
             m_mockCdbSession.SetupSequence(x => x.IsActive)
                 .Returns(true)  // First call (before stop)
@@ -270,7 +270,7 @@ namespace mcp_nexus_tests.Services
                 m_cancelAllCommandsCallback);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 m_recoveryService.ForceRestartSession(null!));
         }
 
@@ -284,7 +284,7 @@ namespace mcp_nexus_tests.Services
                 m_cancelAllCommandsCallback);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_recoveryService.ForceRestartSession(""));
         }
 
@@ -319,7 +319,7 @@ namespace mcp_nexus_tests.Services
             m_recoveryService.Dispose();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => 
+            await Assert.ThrowsAsync<ObjectDisposedException>(() =>
                 m_recoveryService.ForceRestartSession("Test force restart"));
         }
 
@@ -434,11 +434,11 @@ namespace mcp_nexus_tests.Services
 
             // Assert
             m_mockNotificationService.Verify(x => x.NotifySessionRecoveryAsync(
-                It.IsAny<string>(), 
-                It.IsAny<string>(), 
-                It.IsAny<bool>(), 
-                It.IsAny<string>(), 
-                It.IsAny<string[]>()), 
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<bool>(),
+                It.IsAny<string>(),
+                It.IsAny<string[]>()),
                 Times.AtLeastOnce);
         }
 
@@ -475,7 +475,7 @@ namespace mcp_nexus_tests.Services
             m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
             m_mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
             m_mockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
-            
+
             // After StopSession is called, IsActive should return false
             m_mockCdbSession.SetupSequence(x => x.IsActive)
                 .Returns(true)  // First call (before stop)
@@ -490,11 +490,11 @@ namespace mcp_nexus_tests.Services
 
             // Assert
             m_mockNotificationService.Verify(x => x.NotifySessionRecoveryAsync(
-                It.IsAny<string>(), 
-                It.IsAny<string>(), 
-                It.IsAny<bool>(), 
-                It.IsAny<string>(), 
-                It.IsAny<string[]>()), 
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<bool>(),
+                It.IsAny<string>(),
+                It.IsAny<string[]>()),
                 Times.AtLeastOnce);
         }
 

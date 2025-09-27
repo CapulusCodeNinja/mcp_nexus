@@ -50,7 +50,7 @@ namespace mcp_nexus_tests.Services
             var notification = receivedNotifications[0];
             Assert.Equal("notifications/commandStatus", notification.Method);
             Assert.NotNull(notification.Params);
-            
+
             var statusParams = notification.Params as McpCommandStatusNotification;
             Assert.NotNull(statusParams);
             Assert.Equal("cmd123", statusParams.CommandId);
@@ -80,7 +80,7 @@ namespace mcp_nexus_tests.Services
             Assert.Single(receivedNotifications);
             var notification = receivedNotifications[0];
             Assert.Equal("notifications/sessionRecovery", notification.Method);
-            
+
             var recoveryParams = notification.Params as McpSessionRecoveryNotification;
             Assert.NotNull(recoveryParams);
             Assert.Equal("timeout", recoveryParams.Reason);
@@ -110,7 +110,7 @@ namespace mcp_nexus_tests.Services
             Assert.Single(receivedNotifications);
             var notification = receivedNotifications[0];
             Assert.Equal("notifications/serverHealth", notification.Method);
-            
+
             var healthParams = notification.Params as McpServerHealthNotification;
             Assert.NotNull(healthParams);
             Assert.Equal("healthy", healthParams.Status);
@@ -262,9 +262,9 @@ namespace mcp_nexus_tests.Services
             m_service.Dispose();
 
             // Act & Assert (should not throw)
-            var exception = Record.Exception(() => 
+            var exception = Record.Exception(() =>
                 m_service.RegisterNotificationHandler(_ => Task.CompletedTask));
-            
+
             Assert.Null(exception);
         }
 
@@ -281,12 +281,12 @@ namespace mcp_nexus_tests.Services
 
             // Act
             await m_service.NotifyCommandStatusAsync(
-                "cmd456", 
-                "!process", 
-                "completed", 
-                100, 
-                "Analysis complete", 
-                "Process analysis results...", 
+                "cmd456",
+                "!process",
+                "completed",
+                100,
+                "Analysis complete",
+                "Process analysis results...",
                 null);
 
             // Assert

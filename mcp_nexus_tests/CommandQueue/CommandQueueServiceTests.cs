@@ -25,12 +25,12 @@ namespace mcp_nexus_tests.Services
         {
             m_mockCdbSession = new Mock<ICdbSession>();
             m_mockLogger = new Mock<ILogger<CommandQueueService>>();
-            
+
             // Setup default mock behavior
             m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
             m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync("Mock result");
-            
+
             m_service = new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object);
         }
 

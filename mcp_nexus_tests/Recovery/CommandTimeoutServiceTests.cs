@@ -76,7 +76,7 @@ namespace mcp_nexus_tests.Services
             var onTimeout = new Func<Task>(() => Task.CompletedTask);
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 m_timeoutService.StartCommandTimeout(null!, TimeSpan.FromSeconds(1), onTimeout));
         }
 
@@ -88,7 +88,7 @@ namespace mcp_nexus_tests.Services
             var onTimeout = new Func<Task>(() => Task.CompletedTask);
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => 
+            Assert.Throws<ArgumentException>(() =>
                 m_timeoutService.StartCommandTimeout("", TimeSpan.FromSeconds(1), onTimeout));
         }
 
@@ -99,7 +99,7 @@ namespace mcp_nexus_tests.Services
             m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 m_timeoutService.StartCommandTimeout("test-command", TimeSpan.FromSeconds(1), null!));
         }
 
@@ -129,7 +129,7 @@ namespace mcp_nexus_tests.Services
             var onTimeout = new Func<Task>(() => Task.CompletedTask);
 
             // Act & Assert
-            Assert.Throws<ArgumentOutOfRangeException>(() => 
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
                 m_timeoutService.StartCommandTimeout("test-command", TimeSpan.FromMilliseconds(-1), onTimeout));
         }
 
@@ -141,7 +141,7 @@ namespace mcp_nexus_tests.Services
             var commandId = "test-command-1";
             var firstTimeoutCalled = false;
             var secondTimeoutCalled = false;
-            
+
             var firstOnTimeout = new Func<Task>(() => { firstTimeoutCalled = true; return Task.CompletedTask; });
             var secondOnTimeout = new Func<Task>(() => { secondTimeoutCalled = true; return Task.CompletedTask; });
 
@@ -269,7 +269,7 @@ namespace mcp_nexus_tests.Services
             m_timeoutService.StartCommandTimeout(commandId, TimeSpan.FromSeconds(1), onTimeout);
 
             // Act & Assert
-            Assert.Throws<ArgumentOutOfRangeException>(() => 
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
                 m_timeoutService.ExtendCommandTimeout(commandId, TimeSpan.FromMilliseconds(-1)));
         }
 

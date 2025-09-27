@@ -368,7 +368,7 @@ namespace mcp_nexus_tests.Models
 
             // Assert
             Assert.NotNull(capabilities.Notifications);
-            
+
             var json = JsonSerializer.Serialize(capabilities, new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
