@@ -353,8 +353,9 @@ namespace mcp_nexus.Debugger
 
                     // Give CDB a moment to start up (configurable delay)
                     logger.LogDebug("Allowing CDB process to start up (PID: {ProcessId}), waiting {DelayMs}ms...", m_debuggerProcess.Id, startupDelayMs);
-                    // Prefer async-friendly delay; no cancellation token available here, short bounded wait
-                    Task.Delay(startupDelayMs).GetAwaiter().GetResult();
+                    // FIXED: Use Thread.Sleep for simple synchronous delay
+                    // NOTE: If cancellation token support is needed, consider using Task.Delay(delay, cancellationToken).Wait()
+                    Thread.Sleep(startupDelayMs);
 
                     // Check if the process is still running after startup delay
                     if (m_debuggerProcess.HasExited)
@@ -662,8 +663,9 @@ namespace mcp_nexus.Debugger
                         {
                             logger.LogWarning("No output received for 5 seconds, continuing to wait...");
                         }
-                        // Prefer async-friendly yield without blocking the thread
-                        Task.Delay(50).GetAwaiter().GetResult();
+                        // FIXED: Use Thread.Sleep for simple synchronous delay
+                        // NOTE: If cancellation token support is needed, consider using Task.Delay(50, cancellationToken).Wait()
+                        Thread.Sleep(50);
                         continue;
                     }
 
