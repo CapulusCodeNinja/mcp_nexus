@@ -236,7 +236,8 @@ namespace mcp_nexus.Tools
                         commandId = commandId,
                         success = false,
                         error = $"Session {sessionId} not found. Use nexus_list_sessions to see available sessions.",
-                        operation = "nexus_read_dump_analyze_command_result"
+                        operation = "nexus_read_dump_analyze_command_result",
+                        usage = SessionAwareWindbgTool.USAGE_EXPLANATION
                     };
                 }
 
@@ -258,7 +259,8 @@ namespace mcp_nexus.Tools
                     error = isNotFound ? "Command not found. Use nexus_list_commands to see available commands." : null,
                     completedAt = isCompleted ? DateTime.UtcNow : (DateTime?)null,
                     timestamp = DateTime.UtcNow,
-                    message = isNotFound ? null : (isCompleted ? null : "Command is still executing - check again in a few seconds.")
+                    message = isNotFound ? null : (isCompleted ? null : "Command is still executing - check again in a few seconds."),
+                    usage = SessionAwareWindbgTool.USAGE_EXPLANATION
                 };
 
                 return result;
@@ -273,7 +275,8 @@ namespace mcp_nexus.Tools
                     commandId = commandId,
                     success = false,
                     error = $"Failed to get command result: {ex.Message}",
-                    operation = "nexus_read_dump_analyze_command_result"
+                    operation = "nexus_read_dump_analyze_command_result",
+                    usage = SessionAwareWindbgTool.USAGE_EXPLANATION
                 };
             }
         }
