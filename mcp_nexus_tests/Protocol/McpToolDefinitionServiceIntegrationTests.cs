@@ -38,7 +38,7 @@ namespace mcp_nexus_tests.Services
 
 			// Assert
 			// Core tools for first release: nexus_open_dump_analyze_session, nexus_dump_analyze_session_async_command, nexus_dump_analyze_session_async_command_status, nexus_close_dump_analyze_session
-			Assert.Equal(6, tools.Length);
+			Assert.Equal(4, tools.Length);
 		}
 
 		[Fact]

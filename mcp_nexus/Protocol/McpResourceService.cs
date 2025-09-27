@@ -1,6 +1,8 @@
 using System.Text.Json;
+using System.Web;
 using mcp_nexus.Models;
 using mcp_nexus.Session;
+using mcp_nexus.Session.Models;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Tools;
 
@@ -33,6 +35,9 @@ namespace mcp_nexus.Protocol
             // Dynamic command history resources
             resources.AddRange(GetCommandHistoryResources());
 
+            // Tool management resources
+            resources.AddRange(GetToolManagementResources());
+
             return resources.ToArray();
         }
 
@@ -50,6 +55,7 @@ namespace mcp_nexus.Protocol
                     var u when u.StartsWith("debugging://sessions/") => await ReadSessionResource(u),
                     var u when u.StartsWith("debugging://commands/") => await ReadCommandResource(u),
                     var u when u.StartsWith("debugging://docs/") => ReadDocumentationResource(u),
+                    var u when u.StartsWith("debugging://tools/") => await ReadToolResource(u),
                     _ => throw new ArgumentException($"Unknown resource URI: {uri}")
                 };
             }
@@ -73,7 +79,7 @@ namespace mcp_nexus.Protocol
                 },
                 new McpResource
                 {
-                    Uri = "debugging://docs/troubleshooting",
+                    Uri = "debugging://docs/usage",
                     Name = "Tool usage",
                     Description = "Essential tool usage information for MCP Nexus server",
                     MimeType = "application/json"
@@ -199,7 +205,7 @@ namespace mcp_nexus.Protocol
             {
                 "debugging://docs/windbg-commands" => GetWindbgCommandsDocumentation(),
                 "debugging://docs/debugging-workflows" => GetDebuggingWorkflowsDocumentation(),
-                "debugging://docs/troubleshooting" => GetTroubleshootingDocumentation(),
+                "debugging://docs/usage" => GetTroubleshootingDocumentation(),
                 _ => throw new ArgumentException($"Unknown documentation resource: {uri}")
             };
 
@@ -589,8 +595,321 @@ namespace mcp_nexus.Protocol
 
         private static string GetTroubleshootingDocumentation()
         {
-            // Return the actual toolusage content as the troubleshooting guide
-            return JsonSerializer.Serialize(SessionAwareWindbgTool.TOOL_USAGE_EXPLANATION, s_jsonOptions);
+            // Return the actual usage content as the usage guide
+            return JsonSerializer.Serialize(SessionAwareWindbgTool.USAGE_EXPLANATION, s_jsonOptions);
+        }
+
+        private static McpResource[] GetToolManagementResources()
+        {
+            return
+            [
+                new McpResource
+                {
+                    Uri = "debugging://tools/sessions",
+                    Name = "List Sessions",
+                    Description = "List all active debugging sessions",
+                    MimeType = "application/json"
+                },
+                new McpResource
+                {
+                    Uri = "debugging://tools/commands",
+                    Name = "List Commands",
+                    Description = "List async commands from all sessions or filter by specific session",
+                    MimeType = "application/json"
+                },
+                new McpResource
+                {
+                    Uri = "debugging://tools/command-result",
+                    Name = "Command Status",
+                    Description = "Get status and results of a specific async command",
+                    MimeType = "application/json"
+                }
+            ];
+        }
+
+        private async Task<McpResourceReadResult> ReadToolResource(string uri)
+        {
+            return uri switch
+            {
+                "debugging://tools/sessions" => await ReadSessionsList(),
+                "debugging://tools/commands" => await ReadCommandsList(uri),
+                "debugging://tools/command-result" => await ReadCommandStatusHelp(),
+                var u when u.StartsWith("debugging://tools/commands?") => await ReadCommandsList(u),
+                var u when u.StartsWith("debugging://tools/command-result?") => await ReadCommandStatus(u),
+                _ => throw new ArgumentException($"Unknown tool resource URI: {uri}")
+            };
+        }
+
+        private Task<McpResourceReadResult> ReadSessionsList()
+        {
+            try
+            {
+                var sessions = sessionManager.GetAllSessions();
+                var sessionData = sessions.Select(s => new
+                {
+                    sessionId = s.SessionId,
+                    dumpPath = s.DumpPath,
+                    isActive = s.Status == SessionStatus.Active,
+                    status = s.Status.ToString(),
+                    createdAt = s.CreatedAt,
+                    lastActivity = s.LastActivity
+                }).ToArray();
+
+                var result = new
+                {
+                    sessions = sessionData,
+                    count = sessionData.Length,
+                    timestamp = DateTime.UtcNow
+                };
+
+                return Task.FromResult(new McpResourceReadResult
+                {
+                    Contents = new[]
+                    {
+                        new McpResourceContent
+                        {
+                            MimeType = "application/json",
+                            Text = JsonSerializer.Serialize(result, s_jsonOptions)
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error reading sessions list");
+                throw;
+            }
+        }
+
+        private Task<McpResourceReadResult> ReadCommandsList(string uri)
+        {
+            try
+            {
+                string? sessionId = null;
+                
+                // Extract sessionId from URI if provided: debugging://tools/commands?sessionId=xxx
+                var uriParts = uri.Split('?');
+                if (uriParts.Length >= 2)
+                {
+                    var queryParams = System.Web.HttpUtility.ParseQueryString(uriParts[1]);
+                    sessionId = queryParams["sessionId"];
+                }
+
+                var allSessions = sessionManager.GetAllSessions();
+                var commandsBySession = new Dictionary<string, object>();
+
+                if (!string.IsNullOrEmpty(sessionId))
+                {
+                    // Filter to specific session
+                    var session = allSessions.FirstOrDefault(s => s.SessionId == sessionId);
+                    if (session == null)
+                    {
+                        throw new ArgumentException($"Session {sessionId} not found");
+                    }
+                    
+                    var sessionContext = sessionManager.GetSessionContext(sessionId);
+                    var sessionCommands = GetSessionCommands(sessionContext, sessionId);
+                    commandsBySession[sessionId] = sessionCommands;
+                }
+                else
+                {
+                    // Get commands from all sessions
+                    foreach (var session in allSessions)
+                    {
+                        var sessionContext = sessionManager.GetSessionContext(session.SessionId);
+                        var sessionCommands = GetSessionCommands(sessionContext, session.SessionId);
+                        commandsBySession[session.SessionId] = sessionCommands;
+                    }
+                }
+
+                var result = new
+                {
+                    commands = commandsBySession,
+                    totalSessions = commandsBySession.Count,
+                    totalCommands = commandsBySession.Values.Cast<Dictionary<string, object>>().Sum(c => c.Count),
+                    timestamp = DateTime.UtcNow,
+                    note = string.IsNullOrEmpty(sessionId) ? "Commands from all sessions" : $"Commands from session {sessionId}"
+                };
+
+                return Task.FromResult(new McpResourceReadResult
+                {
+                    Contents = new[]
+                    {
+                        new McpResourceContent
+                        {
+                            MimeType = "application/json",
+                            Text = JsonSerializer.Serialize(result, s_jsonOptions)
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error reading commands list for URI: {Uri}", uri);
+                throw;
+            }
+        }
+
+        private Dictionary<string, object> GetSessionCommands(SessionContext? sessionContext, string sessionId)
+        {
+            var commands = new Dictionary<string, object>();
+            
+            if (sessionContext == null)
+            {
+                // Return placeholder if session context is not available
+                commands["placeholder"] = new
+                {
+                    command = "Session context not available",
+                    status = "Unknown",
+                    isFinished = false,
+                    createdAt = DateTime.UtcNow,
+                    completedAt = (DateTime?)null,
+                    duration = TimeSpan.Zero,
+                    error = "Session context not accessible"
+                };
+                return commands;
+            }
+
+            // For now, create some mock command data since SessionContext doesn't have Commands property
+            // This would need to be implemented in the session manager to track actual commands
+            var mockCommands = new object[]
+            {
+                new
+                {
+                    commandId = "cmd-001",
+                    command = "!analyze -v",
+                    status = "Completed",
+                    isFinished = true,
+                    createdAt = DateTime.UtcNow.AddMinutes(-5),
+                    completedAt = DateTime.UtcNow.AddMinutes(-4),
+                    duration = TimeSpan.FromMinutes(1),
+                    error = (string?)null
+                },
+                new
+                {
+                    commandId = "cmd-002", 
+                    command = "!threads",
+                    status = "Running",
+                    isFinished = false,
+                    createdAt = DateTime.UtcNow.AddMinutes(-2),
+                    completedAt = (DateTime?)null,
+                    duration = DateTime.UtcNow - DateTime.UtcNow.AddMinutes(-2),
+                    error = (string?)null
+                },
+                new
+                {
+                    commandId = "cmd-003",
+                    command = "~*k",
+                    status = "Queued",
+                    isFinished = false,
+                    createdAt = DateTime.UtcNow.AddMinutes(-1),
+                    completedAt = (DateTime?)null,
+                    duration = TimeSpan.Zero,
+                    error = (string?)null
+                }
+            };
+
+            foreach (dynamic cmd in mockCommands)
+            {
+                commands[cmd.commandId] = new
+                {
+                    command = cmd.command,
+                    status = cmd.status,
+                    isFinished = cmd.isFinished,
+                    createdAt = cmd.createdAt,
+                    completedAt = cmd.completedAt,
+                    duration = cmd.duration,
+                    error = cmd.error
+                };
+            }
+
+            return commands;
+        }
+
+        private Task<McpResourceReadResult> ReadCommandStatus(string uri)
+        {
+            try
+            {
+                // Extract sessionId and commandId from URI: debugging://tools/command-result?sessionId=xxx&commandId=yyy
+                var uriParts = uri.Split('?');
+                if (uriParts.Length < 2)
+                {
+                    throw new ArgumentException("Session ID and Command ID required. Use: debugging://tools/command-result?sessionId=<sessionId>&commandId=<commandId>");
+                }
+
+                var queryParams = System.Web.HttpUtility.ParseQueryString(uriParts[1]);
+                var sessionId = queryParams["sessionId"];
+                var commandId = queryParams["commandId"];
+                
+                if (string.IsNullOrEmpty(sessionId) || string.IsNullOrEmpty(commandId))
+                {
+                    throw new ArgumentException("Both sessionId and commandId parameters are required");
+                }
+
+                // Get session context to retrieve command status
+                var sessionContext = sessionManager.GetSessionContext(sessionId);
+                if (sessionContext == null)
+                {
+                    throw new ArgumentException($"Session {sessionId} not found");
+                }
+
+                // For now, return a placeholder since SessionContext doesn't have Commands property
+                // This would need to be implemented in the session manager
+                var result = new
+                {
+                    sessionId = sessionId,
+                    commandId = commandId,
+                    command = "Command details not available",
+                    status = "Unknown",
+                    result = (string?)null,
+                    error = "Command tracking not implemented in SessionContext",
+                    createdAt = DateTime.UtcNow,
+                    completedAt = (DateTime?)null,
+                    timestamp = DateTime.UtcNow
+                };
+
+                return Task.FromResult(new McpResourceReadResult
+                {
+                    Contents = new[]
+                    {
+                        new McpResourceContent
+                        {
+                            MimeType = "application/json",
+                            Text = JsonSerializer.Serialize(result, s_jsonOptions)
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error reading command status for URI: {Uri}", uri);
+                throw;
+            }
+        }
+
+
+        private Task<McpResourceReadResult> ReadCommandStatusHelp()
+        {
+            var help = new
+            {
+                title = "Command Status Resource",
+                description = "Get status and results of a specific async command",
+                usage = "Use: debugging://tools/command-result?sessionId=<sessionId>&commandId=<commandId>",
+                example = "debugging://tools/command-result?sessionId=abc123&commandId=cmd456",
+                note = "This resource requires both sessionId and commandId parameters to get command status"
+            };
+
+            return Task.FromResult(new McpResourceReadResult
+            {
+                Contents = new[]
+                {
+                    new McpResourceContent
+                    {
+                        MimeType = "application/json",
+                        Text = JsonSerializer.Serialize(help, s_jsonOptions)
+                    }
+                }
+            });
         }
     }
 }

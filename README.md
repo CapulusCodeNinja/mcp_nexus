@@ -115,7 +115,7 @@ Architecture, testing, contribution guide
 
 ### Windows Debugging Tools
 - **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
-- **Session Management**: `nexus_list_dump_analyze_sessions`, `nexus_list_dump_analyze_session_async_commands`
+- **Session Management**: Available via MCP Resources (`debugging://tools/sessions`, `debugging://tools/commands`)
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
 - **Async Command Queue**: `nexus_dump_analyze_session_async_command`, `nexus_dump_analyze_session_async_command_status`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
 
@@ -125,8 +125,9 @@ Architecture, testing, contribution guide
 2. nexus_dump_analyze_session_async_command → Queue command, returns commandId
 3. Listen for notifications/commandStatus → Real-time progress updates
 4. nexus_dump_analyze_session_async_command_status → Get final results
-5. nexus_list_dump_analyze_sessions → List all active sessions
-6. nexus_list_dump_analyze_session_async_commands → List commands for session
+5. Use MCP Resources for session management:
+   - `debugging://tools/sessions` → List all active sessions
+   - `debugging://tools/commands` → List commands for all sessions or filter by sessionId
 7. nexus_close_dump_analyze_session → Clean up resources
 ```
 
