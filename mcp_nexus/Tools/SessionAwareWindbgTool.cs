@@ -423,13 +423,13 @@ namespace mcp_nexus.Tools
                     NextSteps = new List<string>
                     {
                         "Wait a moment and check status again",
-                        "Monitor notifications for execution updates",
+                        "Use 'commands' resource to monitor execution status",
                         "Commands execute sequentially in session queue"
                     },
                     UsageHints = new List<string>
                     {
                         "Command is waiting in queue",
-                        "Watch for notifications/commandStatus updates",
+                        "Check 'commands' resource for status updates",
                         "Execution order is first-in-first-out per session"
                     }
                 },

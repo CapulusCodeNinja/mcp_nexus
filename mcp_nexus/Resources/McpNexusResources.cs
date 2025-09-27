@@ -232,13 +232,13 @@ namespace mcp_nexus.Resources
                 {
                     "All commands are asynchronous - use the commandId to track progress",
                     "Resources are parameterless and return all available data",
-                    "STDIO mode provides real-time notifications, HTTP mode does not",
+                    "Use 'commands' resource to monitor command status",
                     "Always close sessions when no longer needed to free resources"
                 },
                 transport_limitations = new
                 {
-                    stdio = "✅ Full functionality with real-time notifications",
-                    http = "⚠️ Basic functionality only - no notifications available"
+                    stdio = "✅ Full functionality with all features",
+                    http = "⚠️ Basic functionality only - limited features"
                 }
             };
 

@@ -207,12 +207,10 @@ namespace mcp_nexus.Models
         [JsonPropertyName("version")]
         public string Version { get; set; } = VersionHelper.GetFileVersion();
         [JsonPropertyName("description")]
-        public string Description { get; set; } = "Windows Debugging Tools MCP Server with real-time command notifications. " +
-            "Provides asynchronous debugging commands with live status updates via server-initiated notifications. " +
-            "Supports notifications/commandStatus (execution progress), notifications/commandHeartbeat (long-running command updates), " +
-            "notifications/sessionRecovery (debugging session recovery), notifications/serverHealth (server status), " +
-            "and standard MCP notifications/tools/list_changed. All commands execute asynchronously - use 'nexus_read_dump_analyze_command_result' tool " +
-            "to get results and monitor for real-time notifications about execution progress.";
+        public string Description { get; set; } = "Windows Debugging Tools MCP Server for crash dump analysis. " +
+            "Provides asynchronous debugging commands with comprehensive session management. " +
+            "All commands execute asynchronously - use 'nexus_read_dump_analyze_command_result' tool " +
+            "to get results and the 'commands' resource to monitor execution status.";
     }
 
     // ===== SERVER NOTIFICATION MODELS =====
