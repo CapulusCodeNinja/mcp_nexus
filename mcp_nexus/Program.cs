@@ -3,12 +3,13 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using NLog.Web;
 using AspNetCoreRateLimit;
+using ModelContextProtocol.Server;
 
 using mcp_nexus.Constants;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Notifications;
-using mcp_nexus.Protocol;
+// Protocol services removed - now using SDK
 using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure;
 using mcp_nexus.Session;
@@ -699,21 +700,13 @@ namespace mcp_nexus
             services.AddSingleton<IMcpNotificationService, McpNotificationService>();
             Console.Error.WriteLine("Registered McpNotificationService for server-initiated notifications");
 
-            // Register MCP resource service for context and data resources
-            services.AddSingleton<McpResourceService>();
-            Console.Error.WriteLine("Registered McpResourceService for MCP resources support");
+            // MCP resources are now handled by the SDK via [McpServerResource] attributes
+            Console.Error.WriteLine("MCP resources will be handled by SDK via [McpServerResource] attributes");
         }
 
         private static void ConfigureHttpServices(IServiceCollection services, IConfiguration configuration)
         {
             Console.WriteLine("Configuring MCP server for HTTP...");
-
-            services.AddControllers()
-                .AddJsonOptions(options =>
-                {
-                    options.JsonSerializerOptions.PropertyNamingPolicy = null; // Don't change property names - MCP protocol requires exact field names
-                    options.JsonSerializerOptions.WriteIndented = true;
-                });
 
             // Configure HTTP request timeout to 15 minutes (longer than command timeout)
             services.Configure<IISServerOptions>(options =>
@@ -747,36 +740,29 @@ namespace mcp_nexus
             services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
             services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
 
-            // MIGRATION: Register tool discovery without stdio transport for HTTP mode
-            // Note: Tools are discovered automatically via [McpServerToolType] attribute
-            // HTTP mode uses controllers instead of stdio transport
+            // Use official SDK for HTTP mode (SDK doesn't have HTTP transport yet, so use STDIO)
+            services.AddMcpServer()
+                .WithStdioServerTransport()
+                .WithToolsFromAssembly()
+                .WithResourcesFromAssembly();
 
-            // Register MCP services for HTTP endpoint compatibility
-            services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
-            services.AddSingleton<IMcpToolExecutionService, McpToolExecutionService>();
-            services.AddSingleton<IMcpProtocolService, McpProtocolService>();
-            // Note: IMcpNotificationService now registered in shared RegisterServices() method
-
-            Console.WriteLine("MCP server configured for HTTP with controllers, CORS, and tool discovery");
+            Console.WriteLine("MCP server configured for HTTP with official SDK (STDIO transport)");
         }
 
         private static void ConfigureStdioServices(IServiceCollection services)
         {
             Console.Error.WriteLine("Configuring MCP server for stdio...");
 
-            // Add the MCP protocol service for logging comparison
-            services.AddSingleton<IMcpProtocolService, McpProtocolService>();
-
-            // Note: IMcpNotificationService is now registered in shared RegisterServices() method
-
+            // Use official SDK for stdio mode
             services.AddMcpServer()
                 .WithStdioServerTransport()
-                .WithToolsFromAssembly();
+                .WithToolsFromAssembly()
+                .WithResourcesFromAssembly();
 
             // CRITICAL FIX: Bridge notification service to stdio MCP server
             services.AddSingleton<IStdioNotificationBridge, StdioNotificationBridge>();
 
-            Console.Error.WriteLine("MCP server configured with stdio transport and tools from assembly");
+            Console.Error.WriteLine("MCP server configured with stdio transport, tools, and resources from assembly");
         }
 
         private static void ConfigureHttpPipeline(WebApplication app)
@@ -786,9 +772,11 @@ namespace mcp_nexus
             app.UseIpRateLimiting();
             app.UseCors();
             app.UseRouting();
-            app.MapControllers();
+            
+            // Note: HTTP mode now uses STDIO transport via SDK
+            // Custom controllers removed - SDK handles MCP protocol
 
-            Console.WriteLine("HTTP request pipeline configured");
+            Console.WriteLine("HTTP request pipeline configured with official SDK");
         }
     }
 }
