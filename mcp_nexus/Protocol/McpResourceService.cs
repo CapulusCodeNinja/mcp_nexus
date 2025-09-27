@@ -80,7 +80,7 @@ namespace mcp_nexus.Protocol
                 new McpResource
                 {
                     Uri = "debugging://docs/usage",
-                    Name = "Tool usage",
+                    Name = "Usage",
                     Description = "Essential tool usage information for MCP Nexus server",
                     MimeType = "application/json"
                 }
@@ -620,7 +620,7 @@ namespace mcp_nexus.Protocol
                 new McpResource
                 {
                     Uri = "debugging://tools/command-result",
-                    Name = "Command Status",
+                    Name = "Command Result",
                     Description = "Get status and results of a specific async command",
                     MimeType = "application/json"
                 }

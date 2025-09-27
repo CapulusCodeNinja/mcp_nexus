@@ -89,7 +89,7 @@ namespace mcp_nexus.Tools
                     new
                     {
                         uri = "debugging://docs/usage",
-                        name = "Tool Usage",
+                        name = "Usage",
                         description = "Essential tool usage information for MCP Nexus server"
                     },
                     new
@@ -107,7 +107,7 @@ namespace mcp_nexus.Tools
                     new
                     {
                         uri = "debugging://tools/command-result",
-                        name = "Command Status",
+                        name = "Command Result",
                         description = "Get status and results of a specific async command"
                     }
                 },
