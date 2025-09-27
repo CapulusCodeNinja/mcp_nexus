@@ -104,17 +104,37 @@ namespace mcp_nexus.Tools
                     {
                         uri = "sessions://list",
                         name = "List Sessions",
-                        description = "List all active debugging sessions",
-                        input = (object?)null,
-                        note = (string?)"Access via MCP resources/read method"
+                        description = "List all debugging sessions with advanced filtering options",
+                        input = new { 
+                            sessionId = "string (optional) - Filter by session ID (partial match)",
+                            dumpPath = "string (optional) - Filter by dump file path (partial match)",
+                            status = "string (optional) - Filter by session status (Initializing, Active, Disposing, Disposed, Error)",
+                            isActive = "bool (optional) - Filter by active status (true/false)",
+                            createdFrom = "DateTime (optional) - Filter sessions created from this time",
+                            createdTo = "DateTime (optional) - Filter sessions created until this time",
+                            limit = "int (optional) - Limit number of results",
+                            offset = "int (optional) - Skip number of results (pagination)",
+                            sortBy = "string (optional) - Sort by field (sessionId, dumpPath, status, createdAt)",
+                            order = "string (optional) - Sort order (asc, desc)"
+                        },
+                        note = (string?)"Use: sessions://list?status=Active&isActive=true&limit=10&sortBy=createdAt&order=desc"
                     },
                     new
                     {
                         uri = "commands://list",
                         name = "List Commands",
-                        description = "List async commands from all sessions or filter by specific session",
-                        input = new { sessionId = "string (optional)" },
-                        note = (string?)"Use: commands://list or commands://list?sessionId=<sessionId>"
+                        description = "List async commands from all sessions with advanced filtering options",
+                        input = new { 
+                            sessionId = "string (optional) - Filter by specific session",
+                            command = "string (optional) - Filter by command text (case-insensitive)",
+                            from = "DateTime (optional) - Filter commands from this time",
+                            to = "DateTime (optional) - Filter commands until this time",
+                            limit = "int (optional) - Limit number of results",
+                            offset = "int (optional) - Skip number of results (pagination)",
+                            sortBy = "string (optional) - Sort by field (command, status, createdAt)",
+                            order = "string (optional) - Sort order (asc, desc)"
+                        },
+                        note = (string?)"Use: commands://list?sessionId=abc123&command=!analyze&limit=10&sortBy=createdAt&order=desc"
                     },
                     new
                     {

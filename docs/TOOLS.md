@@ -50,7 +50,7 @@ Session management is now available through MCP Resources for better integration
 #### Available Resources
 
 - **`sessions://list`** - List all active debugging sessions
-- **`commands://list`** - List commands from all sessions or filter by sessionId  
+- **`commands://list`** - List commands from all sessions with advanced filtering (sessionId, command text, time range, pagination, sorting)  
 - **`commands://result`** - Get status and results of specific commands
 - **`docs://workflows`** - Comprehensive crash analysis workflows and examples
 - **`docs://usage`** - Complete usage guide for tools and resources

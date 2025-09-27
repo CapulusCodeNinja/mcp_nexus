@@ -9,7 +9,7 @@ This document provides a comprehensive reference for all MCP Resources available
 | Resource | Purpose | Parameters |
 |----------|---------|------------|
 | `sessions://list` | List all active sessions | None |
-| `commands://list` | List commands from sessions | `sessionId` (optional) |
+| `commands://list` | List commands from sessions | `sessionId`, `command`, `from`, `to`, `limit`, `offset`, `sortBy`, `order` (all optional) |
 | `commands://result` | Get command status/result | `sessionId`, `commandId` (required) |
 | `docs://workflows` | Get crash analysis workflows | None |
 | `docs://usage` | Get complete usage guide | None |
@@ -44,19 +44,34 @@ This document provides a comprehensive reference for all MCP Resources available
 ### Command Management
 
 #### `commands://list`
-**Purpose:** List commands from all sessions or specific session  
-**Parameters:** `sessionId` (optional)  
-**Returns:** Commands organized by session
+**Purpose:** List commands from all sessions with advanced filtering options  
+**Parameters:** All optional - `sessionId`, `command`, `from`, `to`, `limit`, `offset`, `sortBy`, `order`  
+**Returns:** Commands organized by session with applied filters
 
-**All Sessions:**
+**Basic Usage:**
 ```
-commands://list
+commands://list                                    # All commands
+commands://list?sessionId=abc123                  # Specific session
 ```
 
-**Specific Session:**
+**Advanced Filtering:**
 ```
-commands://list?sessionId=sess-000001-abc12345
+commands://list?command=!analyze                  # Filter by command text
+commands://list?from=2024-01-15T10:00:00Z         # Time range filtering
+commands://list?limit=10&offset=20                # Pagination
+commands://list?sortBy=createdAt&order=desc       # Sorting
+commands://list?sessionId=abc123&command=!analyze&limit=5&sortBy=command&order=asc  # Combined
 ```
+
+**Filter Parameters:**
+- `sessionId` - Filter by specific session ID
+- `command` - Filter by command text (case-insensitive substring match)
+- `from` - Filter commands created from this DateTime (ISO 8601 format)
+- `to` - Filter commands created until this DateTime (ISO 8601 format)
+- `limit` - Maximum number of results to return
+- `offset` - Number of results to skip (for pagination)
+- `sortBy` - Sort field: `command`, `status`, `createdAt` (default: `createdAt`)
+- `order` - Sort order: `asc`, `desc` (default: `desc`)
 
 **Example Response:**
 ```json

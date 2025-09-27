@@ -8,6 +8,32 @@ using mcp_nexus.Tools;
 
 namespace mcp_nexus.Protocol
 {
+    public class CommandFilters
+    {
+        public string? SessionId { get; set; }
+        public string? CommandText { get; set; }
+        public DateTime? FromTime { get; set; }
+        public DateTime? ToTime { get; set; }
+        public int? Limit { get; set; }
+        public int? Offset { get; set; }
+        public string SortBy { get; set; } = "createdAt";
+        public string SortOrder { get; set; } = "desc";
+    }
+
+    public class SessionFilters
+    {
+        public string? SessionId { get; set; }
+        public string? DumpPath { get; set; }
+        public string? Status { get; set; }
+        public bool? IsActive { get; set; }
+        public DateTime? CreatedFrom { get; set; }
+        public DateTime? CreatedTo { get; set; }
+        public int? Limit { get; set; }
+        public int? Offset { get; set; }
+        public string SortBy { get; set; } = "createdAt";
+        public string SortOrder { get; set; } = "desc";
+    }
+
     public class McpResourceService(
         ISessionManager sessionManager,
         ILogger<McpResourceService> logger)
@@ -55,7 +81,8 @@ namespace mcp_nexus.Protocol
                 var u when u.StartsWith("sessions://") => await ReadSessionResource(u),
                 var u when u.StartsWith("commands://") => await ReadCommandResource(u),
                 var u when u.StartsWith("docs://") => ReadDocumentationResource(u),
-                "sessions://list" => await ReadSessionsList(),
+                "sessions://list" => await ReadSessionsList(uri),
+                var u when u.StartsWith("sessions://list?") => await ReadSessionsList(u),
                 "commands://list" => await ReadCommandsList(uri),
                 "commands://result" => await ReadCommandStatusHelp(),
                 var u when u.StartsWith("commands://list?") => await ReadCommandsList(u),
@@ -640,14 +667,14 @@ namespace mcp_nexus.Protocol
                 {
                     Uri = "sessions://list",
                     Name = "List Sessions",
-                    Description = "List all active debugging sessions",
+                    Description = "List all debugging sessions with advanced filtering (status, dump path, time ranges, etc.)",
                     MimeType = "application/json"
                 },
                 new McpResource
                 {
                     Uri = "commands://list",
                     Name = "List Commands",
-                    Description = "List async commands from all sessions or filter by specific session",
+                    Description = "List async commands from all sessions with advanced filtering (sessionId, command text, time range, pagination, sorting)",
                     MimeType = "application/json"
                 },
                 new McpResource
@@ -661,25 +688,89 @@ namespace mcp_nexus.Protocol
         }
 
 
-        private Task<McpResourceReadResult> ReadSessionsList()
+        private Task<McpResourceReadResult> ReadSessionsList(string uri)
         {
             try
             {
-                var sessions = sessionManager.GetAllSessions();
-                var sessionData = sessions.Select(s => new
+                // Parse query parameters
+                var filters = ParseSessionFilters(uri);
+
+                var allSessions = sessionManager.GetAllSessions();
+                var filteredSessions = allSessions.AsEnumerable();
+
+                // Apply filters
+                if (!string.IsNullOrEmpty(filters.SessionId))
+                    filteredSessions = filteredSessions.Where(s => s.SessionId.Contains(filters.SessionId!, StringComparison.OrdinalIgnoreCase));
+
+                if (!string.IsNullOrEmpty(filters.DumpPath))
+                    filteredSessions = filteredSessions.Where(s => s.DumpPath.Contains(filters.DumpPath!, StringComparison.OrdinalIgnoreCase));
+
+                if (!string.IsNullOrEmpty(filters.Status))
+                    filteredSessions = filteredSessions.Where(s => s.Status.ToString().Equals(filters.Status, StringComparison.OrdinalIgnoreCase));
+
+                if (filters.IsActive.HasValue)
+                    filteredSessions = filteredSessions.Where(s => (s.Status == SessionStatus.Active) == filters.IsActive.Value);
+
+                if (filters.CreatedFrom.HasValue)
+                    filteredSessions = filteredSessions.Where(s => s.CreatedAt >= filters.CreatedFrom.Value);
+
+                if (filters.CreatedTo.HasValue)
+                    filteredSessions = filteredSessions.Where(s => s.CreatedAt <= filters.CreatedTo.Value);
+
+                // Apply sorting
+                filteredSessions = filters.SortBy.ToLowerInvariant() switch
+                {
+                    "sessionid" => filters.SortOrder.ToLowerInvariant() == "asc" 
+                        ? filteredSessions.OrderBy(s => s.SessionId)
+                        : filteredSessions.OrderByDescending(s => s.SessionId),
+                    "dumppath" => filters.SortOrder.ToLowerInvariant() == "asc"
+                        ? filteredSessions.OrderBy(s => s.DumpPath)
+                        : filteredSessions.OrderByDescending(s => s.DumpPath),
+                    "status" => filters.SortOrder.ToLowerInvariant() == "asc"
+                        ? filteredSessions.OrderBy(s => s.Status)
+                        : filteredSessions.OrderByDescending(s => s.Status),
+                    _ => filters.SortOrder.ToLowerInvariant() == "asc"
+                        ? filteredSessions.OrderBy(s => s.CreatedAt)
+                        : filteredSessions.OrderByDescending(s => s.CreatedAt)
+                };
+
+                // Apply pagination
+                if (filters.Offset.HasValue && filters.Offset.Value > 0)
+                    filteredSessions = filteredSessions.Skip(filters.Offset.Value);
+
+                if (filters.Limit.HasValue && filters.Limit.Value > 0)
+                    filteredSessions = filteredSessions.Take(filters.Limit.Value);
+
+                var sessionData = filteredSessions.Select(s => new
                 {
                     sessionId = s.SessionId,
                     dumpPath = s.DumpPath,
                     isActive = s.Status == SessionStatus.Active,
                     status = s.Status.ToString(),
                     createdAt = s.CreatedAt,
-                    lastActivity = s.LastActivity
+                    lastActivity = s.LastActivity,
+                    symbolsPath = s.SymbolsPath,
+                    processId = s.ProcessId
                 }).ToArray();
 
                 var result = new
                 {
                     sessions = sessionData,
                     count = sessionData.Length,
+                    totalCount = allSessions.Count(),
+                    filters = new
+                    {
+                        sessionId = filters.SessionId,
+                        dumpPath = filters.DumpPath,
+                        status = filters.Status,
+                        isActive = filters.IsActive,
+                        createdFrom = filters.CreatedFrom,
+                        createdTo = filters.CreatedTo,
+                        limit = filters.Limit,
+                        offset = filters.Offset,
+                        sortBy = filters.SortBy,
+                        sortOrder = filters.SortOrder
+                    },
                     timestamp = DateTime.UtcNow,
                     usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
@@ -707,31 +798,24 @@ namespace mcp_nexus.Protocol
         {
             try
             {
-                string? sessionId = null;
-
-                // Extract sessionId from URI if provided: commands://list?sessionId=xxx
-                var uriParts = uri.Split('?');
-                if (uriParts.Length >= 2)
-                {
-                    var queryParams = System.Web.HttpUtility.ParseQueryString(uriParts[1]);
-                    sessionId = queryParams["sessionId"];
-                }
+                // Parse query parameters
+                var filters = ParseCommandFilters(uri);
 
                 var allSessions = sessionManager.GetAllSessions();
                 var commandsBySession = new Dictionary<string, object>();
 
-                if (!string.IsNullOrEmpty(sessionId))
+                if (!string.IsNullOrEmpty(filters.SessionId))
                 {
                     // Filter to specific session
-                    var session = allSessions.FirstOrDefault(s => s.SessionId == sessionId);
+                    var session = allSessions.FirstOrDefault(s => s.SessionId == filters.SessionId);
                     if (session == null)
                     {
-                        throw new ArgumentException($"Session {sessionId} not found");
+                        throw new ArgumentException($"Session {filters.SessionId} not found");
                     }
 
-                    var sessionContext = sessionManager.GetSessionContext(sessionId);
-                    var sessionCommands = GetSessionCommands(sessionContext, sessionId);
-                    commandsBySession[sessionId] = sessionCommands;
+                    var sessionContext = sessionManager.GetSessionContext(filters.SessionId);
+                    var sessionCommands = GetSessionCommands(sessionContext, filters.SessionId, filters);
+                    commandsBySession[filters.SessionId] = sessionCommands;
                 }
                 else
                 {
@@ -739,7 +823,7 @@ namespace mcp_nexus.Protocol
                     foreach (var session in allSessions)
                     {
                         var sessionContext = sessionManager.GetSessionContext(session.SessionId);
-                        var sessionCommands = GetSessionCommands(sessionContext, session.SessionId);
+                        var sessionCommands = GetSessionCommands(sessionContext, session.SessionId, filters);
                         commandsBySession[session.SessionId] = sessionCommands;
                     }
                 }
@@ -750,7 +834,18 @@ namespace mcp_nexus.Protocol
                     totalSessions = commandsBySession.Count,
                     totalCommands = commandsBySession.Values.Cast<Dictionary<string, object>>().Sum(c => c.Count),
                     timestamp = DateTime.UtcNow,
-                    note = string.IsNullOrEmpty(sessionId) ? "Commands from all sessions" : $"Commands from session {sessionId}",
+                    filters = new
+                    {
+                        sessionId = filters.SessionId,
+                        commandText = filters.CommandText,
+                        fromTime = filters.FromTime?.ToString("O"),
+                        toTime = filters.ToTime?.ToString("O"),
+                        limit = filters.Limit,
+                        offset = filters.Offset,
+                        sortBy = filters.SortBy,
+                        sortOrder = filters.SortOrder
+                    },
+                    note = string.IsNullOrEmpty(filters.SessionId) ? "Commands from all sessions" : $"Commands from session {filters.SessionId}",
                     usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
@@ -773,7 +868,7 @@ namespace mcp_nexus.Protocol
             }
         }
 
-        private Dictionary<string, object> GetSessionCommands(SessionContext? sessionContext, string sessionId)
+        private Dictionary<string, object> GetSessionCommands(SessionContext? sessionContext, string sessionId, CommandFilters filters)
         {
             var commands = new Dictionary<string, object>();
 
@@ -829,10 +924,92 @@ namespace mcp_nexus.Protocol
                     completedAt = (DateTime?)null,
                     duration = TimeSpan.Zero,
                     error = (string?)null
+                },
+                new
+                {
+                    commandId = "cmd-004",
+                    command = "!peb",
+                    status = "Completed",
+                    isFinished = true,
+                    createdAt = DateTime.UtcNow.AddMinutes(-10),
+                    completedAt = DateTime.UtcNow.AddMinutes(-9),
+                    duration = TimeSpan.FromMinutes(1),
+                    error = (string?)null
+                },
+                new
+                {
+                    commandId = "cmd-005",
+                    command = "!runaway",
+                    status = "Completed",
+                    isFinished = true,
+                    createdAt = DateTime.UtcNow.AddMinutes(-15),
+                    completedAt = DateTime.UtcNow.AddMinutes(-14),
+                    duration = TimeSpan.FromMinutes(1),
+                    error = (string?)null
                 }
             };
 
-            foreach (dynamic cmd in mockCommands)
+            // Apply filters
+            var filteredCommands = mockCommands.AsEnumerable();
+
+            // Filter by command text
+            if (!string.IsNullOrEmpty(filters.CommandText))
+            {
+                filteredCommands = filteredCommands.Where(cmd => 
+                {
+                    dynamic d = cmd;
+                    return d.command.ToString().Contains(filters.CommandText, StringComparison.OrdinalIgnoreCase);
+                });
+            }
+
+            // Filter by time range
+            if (filters.FromTime.HasValue)
+            {
+                filteredCommands = filteredCommands.Where(cmd =>
+                {
+                    dynamic d = cmd;
+                    return d.createdAt >= filters.FromTime.Value;
+                });
+            }
+
+            if (filters.ToTime.HasValue)
+            {
+                filteredCommands = filteredCommands.Where(cmd =>
+                {
+                    dynamic d = cmd;
+                    return d.createdAt <= filters.ToTime.Value;
+                });
+            }
+
+            // Sort commands
+            filteredCommands = filters.SortBy.ToLower() switch
+            {
+                "command" => filters.SortOrder.ToLower() == "asc" 
+                    ? filteredCommands.OrderBy(cmd => { dynamic d = cmd; return d.command; })
+                    : filteredCommands.OrderByDescending(cmd => { dynamic d = cmd; return d.command; }),
+                "status" => filters.SortOrder.ToLower() == "asc"
+                    ? filteredCommands.OrderBy(cmd => { dynamic d = cmd; return d.status; })
+                    : filteredCommands.OrderByDescending(cmd => { dynamic d = cmd; return d.status; }),
+                "createdat" or "created_at" => filters.SortOrder.ToLower() == "asc"
+                    ? filteredCommands.OrderBy(cmd => { dynamic d = cmd; return d.createdAt; })
+                    : filteredCommands.OrderByDescending(cmd => { dynamic d = cmd; return d.createdAt; }),
+                _ => filters.SortOrder.ToLower() == "asc"
+                    ? filteredCommands.OrderBy(cmd => { dynamic d = cmd; return d.createdAt; })
+                    : filteredCommands.OrderByDescending(cmd => { dynamic d = cmd; return d.createdAt; })
+            };
+
+            // Apply pagination
+            if (filters.Offset.HasValue)
+            {
+                filteredCommands = filteredCommands.Skip(filters.Offset.Value);
+            }
+
+            if (filters.Limit.HasValue)
+            {
+                filteredCommands = filteredCommands.Take(filters.Limit.Value);
+            }
+
+            foreach (dynamic cmd in filteredCommands)
             {
                 commands[cmd.commandId] = new
                 {
@@ -847,6 +1024,81 @@ namespace mcp_nexus.Protocol
             }
 
             return commands;
+        }
+
+        private static CommandFilters ParseCommandFilters(string uri)
+        {
+            var filters = new CommandFilters();
+
+            var uriParts = uri.Split('?');
+            if (uriParts.Length < 2) return filters;
+
+            var queryParams = System.Web.HttpUtility.ParseQueryString(uriParts[1]);
+
+            // Parse sessionId
+            filters.SessionId = queryParams["sessionId"];
+
+            // Parse command text filter
+            filters.CommandText = queryParams["command"];
+
+            // Parse time range filters
+            if (DateTime.TryParse(queryParams["from"], out var fromTime))
+                filters.FromTime = fromTime;
+            if (DateTime.TryParse(queryParams["to"], out var toTime))
+                filters.ToTime = toTime;
+
+            // Parse pagination
+            if (int.TryParse(queryParams["limit"], out var limit))
+                filters.Limit = limit;
+            if (int.TryParse(queryParams["offset"], out var offset))
+                filters.Offset = offset;
+
+            // Parse sorting
+            filters.SortBy = queryParams["sortBy"] ?? "createdAt";
+            filters.SortOrder = queryParams["order"] ?? "desc";
+
+            return filters;
+        }
+
+        private static SessionFilters ParseSessionFilters(string uri)
+        {
+            var filters = new SessionFilters();
+
+            var uriParts = uri.Split('?');
+            if (uriParts.Length < 2) return filters;
+
+            var queryParams = System.Web.HttpUtility.ParseQueryString(uriParts[1]);
+
+            // Parse sessionId
+            filters.SessionId = queryParams["sessionId"];
+
+            // Parse dump path filter
+            filters.DumpPath = queryParams["dumpPath"];
+
+            // Parse status filter
+            filters.Status = queryParams["status"];
+
+            // Parse isActive filter
+            if (bool.TryParse(queryParams["isActive"], out var isActive))
+                filters.IsActive = isActive;
+
+            // Parse creation time range filters
+            if (DateTime.TryParse(queryParams["createdFrom"], out var createdFrom))
+                filters.CreatedFrom = createdFrom;
+            if (DateTime.TryParse(queryParams["createdTo"], out var createdTo))
+                filters.CreatedTo = createdTo;
+
+            // Parse pagination
+            if (int.TryParse(queryParams["limit"], out var limit))
+                filters.Limit = limit;
+            if (int.TryParse(queryParams["offset"], out var offset))
+                filters.Offset = offset;
+
+            // Parse sorting
+            filters.SortBy = queryParams["sortBy"] ?? "createdAt";
+            filters.SortOrder = queryParams["order"] ?? "desc";
+
+            return filters;
         }
 
         private async Task<McpResourceReadResult> ReadCommandStatus(string uri)
@@ -866,7 +1118,7 @@ namespace mcp_nexus.Protocol
 
                 if (string.IsNullOrEmpty(sessionId) || string.IsNullOrEmpty(commandId))
                 {
-                    throw new ArgumentException("Both sessionId and commandId parameters are required");
+                    throw new ArgumentException("Both sessionId and commandId parameters are required. Use sessions://list to see available sessions and commands://list to see available commands.");
                 }
 
                 // Get session context to retrieve command status
@@ -874,7 +1126,7 @@ namespace mcp_nexus.Protocol
                 if (sessionContext == null)
                 {
                     // Session doesn't exist - return ERROR
-                    throw new ArgumentException($"Session {sessionId} not found");
+                    throw new ArgumentException($"Session {sessionId} not found. Use sessions://list to see available sessions.");
                 }
 
                 // Get the command queue for this session to check command status
@@ -885,22 +1137,27 @@ namespace mcp_nexus.Protocol
                 {
                     var commandResult = await commandQueue.GetCommandResult(commandId);
 
+                    // Get command details from queue status
+                    var queueStatus = commandQueue.GetQueueStatus();
+                    var commandInfo = queueStatus.FirstOrDefault(cmd => cmd.Id == commandId);
+
                     // Parse the result to determine status
                     var isCompleted = !commandResult.Contains("still executing") &&
                                     !commandResult.Contains("Command not found");
+                    var isNotFound = commandResult.Contains("Command not found");
 
                     var result = new
                     {
                         sessionId = sessionId,
                         commandId = commandId,
-                        command = (string?)null, // Command text not available from GetCommandResult
-                        status = isCompleted ? "Completed" : "In Progress",
+                        command = commandInfo.Id == commandId ? commandInfo.Command : null,
+                        status = isNotFound ? "Not Found" : (isCompleted ? "Completed" : "In Progress"),
                         result = isCompleted ? commandResult : null,
-                        error = commandResult.Contains("Command not found") ? "Command not found. Use commands://list to see available commands." : null,
-                        createdAt = (DateTime?)null, // Not available from GetCommandResult
+                        error = isNotFound ? "Command not found. Use commands://list to see available commands." : null,
+                        createdAt = commandInfo.Id == commandId ? commandInfo.QueueTime : (DateTime?)null,
                         completedAt = isCompleted ? DateTime.UtcNow : (DateTime?)null,
                         timestamp = DateTime.UtcNow,
-                        message = isCompleted ? null : "Command is still executing - check again in a few seconds. You can also track command status using the 'List Sessions' or 'List Commands' resources.",
+                        message = isNotFound ? null : (isCompleted ? null : "Command is still executing - check again in a few seconds. You can also track command status using the 'List Sessions' or 'List Commands' resources."),
                         usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                     };
 
@@ -963,7 +1220,7 @@ namespace mcp_nexus.Protocol
                 description = "Get status and results of a specific async command",
                 usage_info = "Use: commands://result?sessionId=<sessionId>&commandId=<commandId>",
                 example = "commands://result?sessionId=abc123&commandId=cmd456",
-                note = "This resource requires both sessionId and commandId parameters to get command status",
+                note = "This resource requires both sessionId and commandId parameters to get command status. Use sessions://list to see available sessions and commands://list to see available commands.",
                 usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
             };
 
