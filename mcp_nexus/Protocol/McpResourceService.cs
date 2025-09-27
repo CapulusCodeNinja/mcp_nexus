@@ -781,6 +781,7 @@ namespace mcp_nexus.Protocol
                     {
                         new McpResourceContent
                         {
+                            Uri = uri,
                             MimeType = "application/json",
                             Text = JsonSerializer.Serialize(result, s_jsonOptions)
                         }
@@ -855,6 +856,7 @@ namespace mcp_nexus.Protocol
                     {
                         new McpResourceContent
                         {
+                            Uri = uri,
                             MimeType = "application/json",
                             Text = JsonSerializer.Serialize(result, s_jsonOptions)
                         }
@@ -1026,7 +1028,7 @@ namespace mcp_nexus.Protocol
             return commands;
         }
 
-        private static CommandFilters ParseCommandFilters(string uri)
+        protected static CommandFilters ParseCommandFilters(string uri)
         {
             var filters = new CommandFilters();
 
@@ -1060,7 +1062,7 @@ namespace mcp_nexus.Protocol
             return filters;
         }
 
-        private static SessionFilters ParseSessionFilters(string uri)
+        protected static SessionFilters ParseSessionFilters(string uri)
         {
             var filters = new SessionFilters();
 
