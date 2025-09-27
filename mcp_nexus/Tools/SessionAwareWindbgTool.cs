@@ -32,7 +32,8 @@ namespace mcp_nexus.Tools
                 "Please get further details from the response and the tool listings of the MCP server.",
                 "After opening an analyze session, WinDBG commands can be asynchronously executed.",
                 "The result can be queried (regular polling) by the status API.",
-                "Opening a session without executing commands will not have any effect."
+                "Opening a session without executing commands will not have any effect.",
+                "For comprehensive debugging workflows, access the 'Crash Analysis Workflow' resource via MCP resources."
             },
             tooling_steps = new[]
             {

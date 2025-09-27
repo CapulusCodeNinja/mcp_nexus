@@ -2,6 +2,7 @@ using System.Text.Json;
 using mcp_nexus.Models;
 using mcp_nexus.Session;
 using mcp_nexus.CommandQueue;
+using mcp_nexus.Tools;
 
 namespace mcp_nexus.Protocol
 {
@@ -65,23 +66,16 @@ namespace mcp_nexus.Protocol
             [
                 new McpResource
                 {
-                    Uri = "debugging://docs/windbg-commands",
-                    Name = "WinDBG Command Reference",
-                    Description = "Comprehensive reference of available WinDBG commands with examples and usage",
-                    MimeType = "application/json"
-                },
-                new McpResource
-                {
                     Uri = "debugging://docs/debugging-workflows",
-                    Name = "Debugging Workflows",
+                    Name = "Crash Analysis Workflows",
                     Description = "Common debugging patterns and step-by-step analysis workflows",
                     MimeType = "application/json"
                 },
                 new McpResource
                 {
                     Uri = "debugging://docs/troubleshooting",
-                    Name = "Troubleshooting Guide",
-                    Description = "Common issues and solutions for debugging Windows applications",
+                    Name = "Tool usage",
+                    Description = "Essential tool usage information for MCP Nexus server",
                     MimeType = "application/json"
                 }
             ];
@@ -471,32 +465,122 @@ namespace mcp_nexus.Protocol
         {
             var workflows = new
             {
-                title = "Debugging Workflows",
-                description = "Common debugging patterns and step-by-step analysis workflows",
+                title = "Crash Analysis Workflows",
+                description = "Comprehensive step-by-step analysis workflows for Windows crash dump investigation",
                 workflows = new[]
                 {
                     new
                     {
-                        name = "Crash Analysis",
+                        name = "Basic Crash Analysis",
+                        description = "Essential commands for initial crash investigation",
                         steps = new[]
                         {
                             "!analyze -v",
                             "!threads",
                             "~*k",
-                            "!locks"
-                        }
+                            "!locks",
+                            "!runaway"
+                        },
+                        expectedOutcome = "Identify the faulting thread, exception type, and basic crash context"
                     },
                     new
                     {
-                        name = "Memory Leak Investigation",
+                        name = "Memory Corruption Analysis",
+                        description = "Investigate memory-related crashes and corruption",
                         steps = new[]
                         {
+                            "!analyze -v",
                             "!heap -stat",
                             "!heap -flt s <size>",
                             "!heap -p -a <address>",
-                            "!gchandles"
-                        }
+                            "!address <address>",
+                            "!vprot <address>"
+                        },
+                        expectedOutcome = "Identify heap corruption, invalid memory access, or buffer overflows"
+                    },
+                    new
+                    {
+                        name = "Thread Deadlock Investigation",
+                        description = "Analyze thread synchronization issues and deadlocks",
+                        steps = new[]
+                        {
+                            "!threads",
+                            "!locks",
+                            "!cs -l",
+                            "!cs -o <address>",
+                            "~*k",
+                            "!runaway"
+                        },
+                        expectedOutcome = "Identify deadlocked threads and synchronization objects"
+                    },
+                    new
+                    {
+                        name = "Exception Analysis",
+                        description = "Deep dive into exception handling and stack traces",
+                        steps = new[]
+                        {
+                            "!analyze -v",
+                            "!exception",
+                            "!peb",
+                            "!teb",
+                            "~*k",
+                            "!threads"
+                        },
+                        expectedOutcome = "Understand exception context, thread state, and call stack"
+                    },
+                    new
+                    {
+                        name = "Module and DLL Analysis",
+                        description = "Investigate loaded modules and potential DLL issues",
+                        steps = new[]
+                        {
+                            "lm",
+                            "lmv m <module>",
+                            "!lmi <module>",
+                            "!dh <module>",
+                            "!peb"
+                        },
+                        expectedOutcome = "Identify problematic modules, version mismatches, or loading issues"
+                    },
+                    new
+                    {
+                        name = "Performance and Resource Analysis",
+                        description = "Analyze performance issues and resource consumption",
+                        steps = new[]
+                        {
+                            "!runaway",
+                            "!threads",
+                            "!heap -stat",
+                            "!gchandles",
+                            "!handle",
+                            "!process 0 0"
+                        },
+                        expectedOutcome = "Identify resource leaks, high CPU usage, or memory consumption issues"
+                    },
+                    new
+                    {
+                        name = "Network and I/O Analysis",
+                        description = "Investigate network-related crashes and I/O issues",
+                        steps = new[]
+                        {
+                            "!analyze -v",
+                            "!handle",
+                            "!object",
+                            "!irp",
+                            "!devobj",
+                            "!drvobj"
+                        },
+                        expectedOutcome = "Identify network stack issues, driver problems, or I/O failures"
                     }
+                },
+                generalTips = new[]
+                {
+                    "Always start with !analyze -v for automatic analysis",
+                    "Use ~*k to see all thread call stacks",
+                    "Check !runaway for threads consuming excessive CPU",
+                    "Examine !locks for synchronization issues",
+                    "Use !heap commands for memory-related problems",
+                    "Check loaded modules with lm for version issues"
                 }
             };
 
@@ -505,26 +589,8 @@ namespace mcp_nexus.Protocol
 
         private static string GetTroubleshootingDocumentation()
         {
-            var troubleshooting = new
-            {
-                title = "Troubleshooting Guide",
-                description = "Common issues and solutions for debugging Windows applications",
-                issues = new[]
-                {
-                    new
-                    {
-                        problem = "Access Violation",
-                        solution = "Use !analyze -v to get automatic analysis, then examine the faulting thread with ~*k"
-                    },
-                    new
-                    {
-                        problem = "Deadlock",
-                        solution = "Use !locks to examine lock information and !threads to see thread states"
-                    }
-                }
-            };
-
-            return JsonSerializer.Serialize(troubleshooting, s_jsonOptions);
+            // Return the actual toolusage content as the troubleshooting guide
+            return JsonSerializer.Serialize(SessionAwareWindbgTool.TOOL_USAGE_EXPLANATION, s_jsonOptions);
         }
     }
 }
