@@ -76,19 +76,19 @@ namespace mcp_nexus.Protocol
 
             try
             {
-                return uri switch
-                {
-                    var u when u.StartsWith("sessions://") => await ReadSessionResource(u),
-                    var u when u.StartsWith("commands://") => await ReadCommandResource(u),
-                    var u when u.StartsWith("docs://") => ReadDocumentationResource(u),
-                    "sessions://list" => await ReadSessionsList(uri),
-                    var u when u.StartsWith("sessions://list?") => await ReadSessionsList(u),
-                    "commands://list" => await ReadCommandsList(uri),
-                    "commands://result" => await ReadCommandStatusHelp(),
-                    var u when u.StartsWith("commands://list?") => await ReadCommandsList(u),
-                    var u when u.StartsWith("commands://result?") => await ReadCommandStatus(u),
-                    _ => throw new ArgumentException($"Unknown resource URI: {uri}")
-                };
+            return uri switch
+            {
+                "sessions://list" => await ReadSessionsList(uri),
+                var u when u.StartsWith("sessions://list?") => await ReadSessionsList(u),
+                "commands://list" => await ReadCommandsList(uri),
+                "commands://result" => await ReadCommandStatusHelp(),
+                var u when u.StartsWith("commands://list?") => await ReadCommandsList(u),
+                var u when u.StartsWith("commands://result?") => await ReadCommandStatus(u),
+                var u when u.StartsWith("sessions://") => await ReadSessionResource(u),
+                var u when u.StartsWith("commands://") => await ReadCommandResource(u),
+                var u when u.StartsWith("docs://") => ReadDocumentationResource(u),
+                _ => throw new ArgumentException($"Unknown resource URI: {uri}")
+            };
             }
             catch (Exception ex)
             {

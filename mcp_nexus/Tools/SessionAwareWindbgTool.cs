@@ -392,7 +392,7 @@ namespace mcp_nexus.Tools
                     dumpFile = context?.DumpPath != null ? Path.GetFileName(context.DumpPath) : null,
                     commandId = commandId,
                     success = true,
-                    operation = "nexus_dump_analyze_session_async_command",
+                    operation = "nexus_enqueue_async_dump_analyze_command",
                     message = $"Command queued successfully: {commandId}. Use commands://result to get results.",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
@@ -410,7 +410,7 @@ namespace mcp_nexus.Tools
                     dumpFile = (string?)null,
                     commandId = (string?)null,
                     success = false,
-                    operation = "nexus_dump_analyze_session_async_command",
+                    operation = "nexus_enqueue_async_dump_analyze_command",
                     message = $"Session not found: {ex.Message}",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
@@ -427,7 +427,7 @@ namespace mcp_nexus.Tools
                     dumpFile = (string?)null,
                     commandId = (string?)null,
                     success = false,
-                    operation = "nexus_dump_analyze_session_async_command",
+                    operation = "nexus_enqueue_async_dump_analyze_command",
                     message = $"Error executing command: {ex.Message}",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
