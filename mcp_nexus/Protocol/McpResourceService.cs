@@ -477,7 +477,7 @@ namespace mcp_nexus.Protocol
             {
                 title = "Crash Analysis Workflows",
                 description = "Example workflows for Windows crash dump investigation - these are starting points, not exhaustive lists. AI clients should explore beyond these basic patterns and adapt commands based on specific crash scenarios.",
-                disclaimer = "⚠️ IMPORTANT: These are example workflows below many others. Do not limit yourself to only these patterns - explore additional WinDBG commands, combine different approaches, and adapt based on the specific crash context and symptoms you observe.",
+                disclaimer = "IMPORTANT: These are example workflows below many others. Do not limit yourself to only these patterns - explore additional WinDBG commands, combine different approaches, and adapt based on the specific crash context and symptoms you observe.",
                 workflows = new[]
                 {
                     new
@@ -591,7 +591,34 @@ namespace mcp_nexus.Protocol
                     "Check !runaway for threads consuming excessive CPU",
                     "Examine !locks for synchronization issues",
                     "Use !heap commands for memory-related problems",
-                    "Check loaded modules with lm for version issues"
+                    "Check loaded modules with lm for version issues",
+                    "EXPLORE BEYOND THESE WORKFLOWS: These are just examples - there are hundreds of WinDBG commands available",
+                    "ADAPT AND COMBINE: Mix and match commands based on what you discover in the crash",
+                    "LEARN MORE: Use .help <command> to understand any WinDBG command better",
+                    "BE CREATIVE: Each crash is unique - don't just follow these patterns blindly",
+                    "INVESTIGATE DEEPER: Look for patterns, correlations, and root causes beyond basic analysis"
+                },
+                explorationGuidance = new
+                {
+                    title = "Beyond These Workflows",
+                    message = "These workflows are starting points, not complete solutions. Successful crash analysis requires:",
+                    principles = new[]
+                    {
+                        "Critical thinking and pattern recognition",
+                        "Understanding the specific application and its architecture", 
+                        "Knowledge of Windows internals and common failure modes",
+                        "Ability to adapt and combine different analysis techniques",
+                        "Persistence in following leads and investigating anomalies",
+                        "Documentation of findings and correlation with other evidence"
+                    },
+                    additionalResources = new[]
+                    {
+                        "WinDBG help system: .help <command>",
+                        "Microsoft documentation and KB articles",
+                        "Community forums and expert knowledge",
+                        "Application-specific debugging guides",
+                        "Windows internals books and resources"
+                    }
                 },
                 usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
             };
