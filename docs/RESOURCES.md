@@ -8,17 +8,17 @@ This document provides a comprehensive reference for all MCP Resources available
 
 | Resource | Purpose | Parameters |
 |----------|---------|------------|
-| `sessions://list` | List all active sessions | None |
-| `commands://list` | List commands from sessions | `sessionId`, `command`, `from`, `to`, `limit`, `offset`, `sortBy`, `order` (all optional) |
-| `commands://result` | Get command status/result | `sessionId`, `commandId` (required) |
-| `docs://workflows` | Get crash analysis workflows | None |
-| `docs://usage` | Get complete usage guide | None |
+| `mcp://nexus/sessions/list` | List all active sessions | None |
+| `mcp://nexus/commands/list` | List commands from sessions | `sessionId`, `command`, `from`, `to`, `limit`, `offset`, `sortBy`, `order` (all optional) |
+| `mcp://nexus/commands/result` | Get command status/result | `sessionId`, `commandId` (required) |
+| `mcp://nexus/docs/workflows` | Get crash analysis workflows | None |
+| `mcp://nexus/docs/usage` | Get complete usage guide | None |
 
 ## Resource Details
 
 ### Session Management
 
-#### `sessions://list`
+#### `mcp://nexus/sessions/list`
 **Purpose:** List all active debugging sessions  
 **Parameters:** None  
 **Returns:** Array of session objects with metadata
@@ -43,24 +43,24 @@ This document provides a comprehensive reference for all MCP Resources available
 
 ### Command Management
 
-#### `commands://list`
+#### `mcp://nexus/commands/list`
 **Purpose:** List commands from all sessions with advanced filtering options  
 **Parameters:** All optional - `sessionId`, `command`, `from`, `to`, `limit`, `offset`, `sortBy`, `order`  
 **Returns:** Commands organized by session with applied filters
 
 **Basic Usage:**
 ```
-commands://list                                    # All commands
-commands://list?sessionId=abc123                  # Specific session
+mcp://nexus/commands/list                                    # All commands
+mcp://nexus/commands/list?sessionId=abc123                  # Specific session
 ```
 
 **Advanced Filtering:**
 ```
-commands://list?command=!analyze                  # Filter by command text
-commands://list?from=2024-01-15T10:00:00Z         # Time range filtering
-commands://list?limit=10&offset=20                # Pagination
-commands://list?sortBy=createdAt&order=desc       # Sorting
-commands://list?sessionId=abc123&command=!analyze&limit=5&sortBy=command&order=asc  # Combined
+mcp://nexus/commands/list?command=!analyze                  # Filter by command text
+mcp://nexus/commands/list?from=2024-01-15T10:00:00Z         # Time range filtering
+mcp://nexus/commands/list?limit=10&offset=20                # Pagination
+mcp://nexus/commands/list?sortBy=createdAt&order=desc       # Sorting
+mcp://nexus/commands/list?sessionId=abc123&command=!analyze&limit=5&sortBy=command&order=asc  # Combined
 ```
 
 **Filter Parameters:**
@@ -95,14 +95,14 @@ commands://list?sessionId=abc123&command=!analyze&limit=5&sortBy=command&order=a
 }
 ```
 
-#### `commands://result`
+#### `mcp://nexus/commands/result`
 **Purpose:** Get status and results of a specific command  
 **Parameters:** `sessionId`, `commandId` (both required)  
 **Returns:** Command details with status and results
 
 **URI Format:**
 ```
-commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001
+mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001
 ```
 
 **Completed Command Response:**
@@ -138,7 +138,7 @@ commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-1
 
 ### Documentation
 
-#### `docs://workflows`
+#### `mcp://nexus/docs/workflows`
 **Purpose:** Get comprehensive crash analysis workflows and examples  
 **Parameters:** None  
 **Returns:** Structured workflows with step-by-step guidance
@@ -150,7 +150,7 @@ commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-1
 - General tips and best practices
 - Exploration guidance beyond basic patterns
 
-#### `docs://usage`
+#### `mcp://nexus/docs/usage`
 **Purpose:** Get complete usage guide for tools and resources  
 **Parameters:** None  
 **Returns:** Comprehensive usage documentation
@@ -171,7 +171,7 @@ commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-1
 {
   "error": {
     "code": -32602,
-    "message": "Session not found: sess-invalid. Use sessions://list to see available sessions."
+    "message": "Session not found: sess-invalid. Use mcp://nexus/sessions/list to see available sessions."
   }
 }
 ```
@@ -181,7 +181,7 @@ commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-1
 {
   "error": {
     "code": -32602,
-    "message": "Command not found. Use commands://list to see available commands."
+    "message": "Command not found. Use mcp://nexus/commands/list to see available commands."
   }
 }
 ```
@@ -191,7 +191,7 @@ commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-1
 {
   "error": {
     "code": -32602,
-    "message": "Session ID and Command ID required. Use: commands://result?sessionId=<sessionId>&commandId=<commandId>"
+    "message": "Session ID and Command ID required. Use: mcp://nexus/commands/result?sessionId=<sessionId>&commandId=<commandId>"
   }
 }
 ```
@@ -199,11 +199,11 @@ commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-1
 ## Usage Patterns
 
 ### Complete Debugging Workflow
-1. **Check existing sessions:** `sessions://list`
+1. **Check existing sessions:** `mcp://nexus/sessions/list`
 2. **Create session if needed:** `nexus_open_dump_analyze_session`
 3. **Queue command:** `nexus_enqueue_async_dump_analyze_command`
-4. **Monitor progress:** `commands://result` (poll until completed)
-5. **List all commands:** `commands://list?sessionId=<sessionId>`
+4. **Monitor progress:** `mcp://nexus/commands/result` (poll until completed)
+5. **List all commands:** `mcp://nexus/commands/list?sessionId=<sessionId>`
 6. **Clean up:** `nexus_close_dump_analyze_session`
 
 ### Resource Discovery
@@ -218,23 +218,23 @@ commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-1
 ```
 
 ### Error Recovery
-- Use `sessions://list` to verify session exists
-- Use `commands://list` to see available commands
-- Check `commands://result` for detailed error information
-- Reference `docs://usage` for troubleshooting guidance
+- Use `mcp://nexus/sessions/list` to verify session exists
+- Use `mcp://nexus/commands/list` to see available commands
+- Check `mcp://nexus/commands/result` for detailed error information
+- Reference `mcp://nexus/docs/usage` for troubleshooting guidance
 
 ## Integration Tips
 
 1. **Always validate sessions** before executing commands
-2. **Poll `commands://result`** for command completion (every 1-2 seconds)
-3. **Use `commands://list`** to track command history
-4. **Reference `docs://workflows`** for analysis guidance
-5. **Check `docs://usage`** for complete API reference
+2. **Poll `mcp://nexus/commands/result`** for command completion (every 1-2 seconds)
+3. **Use `mcp://nexus/commands/list`** to track command history
+4. **Reference `mcp://nexus/docs/workflows`** for analysis guidance
+5. **Check `mcp://nexus/docs/usage`** for complete API reference
 
 ## Resource Lifecycle
 
-- **Sessions:** Created via `nexus_open_dump_analyze_session`, listed via `sessions://list`
-- **Commands:** Queued via `nexus_enqueue_async_dump_analyze_command`, tracked via `commands://list` and `commands://result`
-- **Documentation:** Static resources available anytime via `docs://workflows` and `docs://usage`
+- **Sessions:** Created via `nexus_open_dump_analyze_session`, listed via `mcp://nexus/sessions/list`
+- **Commands:** Queued via `nexus_enqueue_async_dump_analyze_command`, tracked via `mcp://nexus/commands/list` and `mcp://nexus/commands/result`
+- **Documentation:** Static resources available anytime via `mcp://nexus/docs/workflows` and `mcp://nexus/docs/usage`
 
 All resources return JSON data wrapped in MCP's standard `contents` array format for consistent integration with MCP clients.

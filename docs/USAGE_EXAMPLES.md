@@ -11,7 +11,7 @@ This document provides step-by-step examples of how to properly use the MCP Nexu
 | Type | Method | Purpose | Examples |
 |------|--------|---------|----------|
 | **Tools** | `tools/call` | Execute actions | `nexus_open_dump_analyze_session`, `nexus_enqueue_async_dump_analyze_command` |
-| **Resources** | `resources/read` | Access data | `commands://result`, `sessions://list`, `docs://workflows` |
+| **Resources** | `resources/read` | Access data | `mcp://nexus/commands/result`, `mcp://nexus/sessions/list`, `mcp://nexus/docs/workflows` |
 
 ### Step 1: Open a Debugging Session
 
@@ -83,7 +83,7 @@ This document provides step-by-step examples of how to properly use the MCP Nexu
 {
   "method": "resources/read",
   "params": {
-    "uri": "commands://result?sessionId=sess-000001-8eead28d-1998ADFF5AE-1088&commandId=cmd-sess-000001-8eead28d-1998ADFF5AE-1088-0001"
+    "uri": "mcp://nexus/commands/result?sessionId=sess-000001-8eead28d-1998ADFF5AE-1088&commandId=cmd-sess-000001-8eead28d-1998ADFF5AE-1088-0001"
   },
   "id": 3
 }
@@ -97,7 +97,7 @@ This document provides step-by-step examples of how to properly use the MCP Nexu
   "result": {
     "contents": [
       {
-        "uri": "commands://result?sessionId=sess-000001-8eead28d-1998ADFF5AE-1088&commandId=cmd-sess-000001-8eead28d-1998ADFF5AE-1088-0001",
+        "uri": "mcp://nexus/commands/result?sessionId=sess-000001-8eead28d-1998ADFF5AE-1088&commandId=cmd-sess-000001-8eead28d-1998ADFF5AE-1088-0001",
         "mimeType": "application/json",
         "text": "{\n  \"status\": \"completed\",\n  \"result\": \"*** ERROR ANALYSIS ***\\n\\n*** WARNING: Unable to verify timestamp for ntoskrnl.exe\\n\\n*** Either you are not connected to the internet or your computer doesn't have the correct time set.\\n\\n*** For analysis of this file, run !analyze -v; .ecxr ; kb\\n\\nFAULTING_IP: \\nnt!KeBugCheckEx+0x1e\\nfffff800`01234567 48894c2408      mov     qword ptr [rsp+8],rcx\\n\\nBUGCHECK_STR:  0x1E\\n\\nDEFAULT_BUCKET_ID:  INVALID_PROCESS_ATTACH_ATTEMPT\\n\\nPROCESS_NAME:  System\\n\\nCURRENT_IRQL:  2\\n\\nLAST_CONTROL_TRANSFER:  from fffff800`01234567 to fffff800`01234567\\n\\nSTACK_TEXT:  \\nfffff800`01234567 fffff800`01234567 : 00000000`0000001e 00000000`00000000 00000000`00000000 00000000`00000000 : nt!KeBugCheckEx+0x1e\\n\\nSYMBOL_STACK_INDEX:  0\\n\\nSYMBOL_NAME:  nt!KeBugCheckEx+0x1e\\n\\nFOLLOWUP_NAME:  MachineOwner\\n\\nMODULE_NAME: nt\\n\\nIMAGE_NAME:  ntoskrnl.exe\\n\\nDEBUG_FLR_IMAGE_TIMESTAMP:  0\\n\\nBUCKET_ID:  INVALID_PROCESS_ATTACH_ATTEMPT\\n\\nANALYSIS_VERSION: 6.3.9600.16384 (debuggers(dbg).140716-0322) amd64fre\\n\\nPRIMARY_PROBLEM_CLASS:  INVALID_PROCESS_ATTACH_ATTEMPT\\n\\nBUGCHECK_STR:  0x1E\\n\\nLAST_CONTROL_TRANSFER:  from fffff800`01234567 to fffff800`01234567\\n\\nSTACK_TEXT:  \\nfffff800`01234567 fffff800`01234567 : 00000000`0000001e 00000000`00000000 00000000`00000000 00000000`00000000 : nt!KeBugCheckEx+0x1e\\n\\nSTACK_COMMAND:  .cxr ; kb\\n\\nFAILURE_BUCKET_ID:  INVALID_PROCESS_ATTACH_ATTEMPT\\n\\nBUCKET_ID:  INVALID_PROCESS_ATTACH_ATTEMPT\\n\\nANALYSIS_SOURCE:  FRE\\n\\nFAILURE_ID_HASH_STRING:  km:INVALID_PROCESS_ATTACH_ATTEMPT\\n\\nFAILURE_ID_HASH:  {00000000-0000-0000-0000-000000000000}\\n\\nFollowup: MachineOwner\\n\"\n}"
       }
@@ -112,7 +112,7 @@ This document provides step-by-step examples of how to properly use the MCP Nexu
 {
   "method": "resources/read",
   "params": {
-    "uri": "sessions://list"
+    "uri": "mcp://nexus/sessions/list"
   },
   "id": 4
 }
@@ -124,7 +124,7 @@ This document provides step-by-step examples of how to properly use the MCP Nexu
 {
   "method": "resources/read",
   "params": {
-    "uri": "commands://list?sessionId=sess-000001-8eead28d-1998ADFF5AE-1088"
+    "uri": "mcp://nexus/commands/list?sessionId=sess-000001-8eead28d-1998ADFF5AE-1088"
   },
   "id": 5
 }
@@ -153,7 +153,7 @@ This document provides step-by-step examples of how to properly use the MCP Nexu
 {
   "method": "tools/call",
   "params": {
-    "name": "commands://result?sessionId=abc&commandId=cmd123"
+    "name": "mcp://nexus/commands/result?sessionId=abc&commandId=cmd123"
   }
 }
 ```
@@ -165,7 +165,7 @@ This document provides step-by-step examples of how to properly use the MCP Nexu
   "id": 1,
   "error": {
     "code": -32602,
-    "message": "TOOL CALL ERROR: 'commands://result?sessionId=abc&commandId=cmd123' is a RESOURCE URI, not a tool name. Use resources/read method to access resources. Use tools/list to see available tools."
+    "message": "TOOL CALL ERROR: 'mcp://nexus/commands/result?sessionId=abc&commandId=cmd123' is a RESOURCE URI, not a tool name. Use resources/read method to access resources. Use tools/list to see available tools."
   }
 }
 ```
@@ -176,7 +176,7 @@ This document provides step-by-step examples of how to properly use the MCP Nexu
 {
   "method": "resources/read",
   "params": {
-    "uri": "commands://result?sessionId=abc&commandId=cmd123"
+    "uri": "mcp://nexus/commands/result?sessionId=abc&commandId=cmd123"
   }
 }
 ```
@@ -184,18 +184,18 @@ This document provides step-by-step examples of how to properly use the MCP Nexu
 ## Available Resources
 
 ### Documentation Resources
-- `docs://workflows` - Crash analysis workflows
-- `docs://usage` - Usage information
+- `mcp://nexus/docs/workflows` - Crash analysis workflows
+- `mcp://nexus/docs/usage` - Usage information
 
 ### Session Resources
-- `sessions://list` - List all sessions
-- `sessions://list?status=Active` - Filter by status
-- `sessions://{sessionId}` - Specific session info
+- `mcp://nexus/sessions/list` - List all sessions
+- `mcp://nexus/sessions/list?status=Active` - Filter by status
+- `mcp://nexus/sessions/{sessionId}` - Specific session info
 
 ### Command Resources
-- `commands://list` - List all commands
-- `commands://list?sessionId={sessionId}` - Commands for specific session
-- `commands://result?sessionId={sessionId}&commandId={commandId}` - Get command result
+- `mcp://nexus/commands/list` - List all commands
+- `mcp://nexus/commands/list?sessionId={sessionId}` - Commands for specific session
+- `mcp://nexus/commands/result?sessionId={sessionId}&commandId={commandId}` - Get command result
 
 ## Error Handling
 

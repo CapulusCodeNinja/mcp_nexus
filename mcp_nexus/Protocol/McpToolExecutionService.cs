@@ -22,7 +22,7 @@ namespace mcp_nexus.Protocol
             try
             {
                 // Check if user is trying to use a resource URI as a tool name
-                if (toolName.StartsWith("commands://") || toolName.StartsWith("sessions://") || toolName.StartsWith("docs://"))
+                if (toolName.StartsWith("mcp://nexus/commands/") || toolName.StartsWith("mcp://nexus/sessions/") || toolName.StartsWith("mcp://nexus/docs/"))
                 {
                     throw new McpToolException(-32602, $"TOOL CALL ERROR: '{toolName}' is a RESOURCE URI, not a tool name. Use resources/read method to access resources. Use tools/list to see available tools.");
                 }

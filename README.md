@@ -118,7 +118,7 @@ Architecture, testing, contribution guide
 
 ### Windows Debugging Tools
 - **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
-- **Session Management**: Available via MCP Resources (`sessions://list`, `commands://list`)
+- **Session Management**: Available via MCP Resources (`mcp://nexus/sessions/list`, `mcp://nexus/commands/list`)
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
 - **Async Command Queue**: `nexus_enqueue_async_dump_analyze_command`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
 
@@ -127,10 +127,10 @@ Architecture, testing, contribution guide
 1. nexus_open_dump_analyze_session → Create session, returns sessionId
 2. nexus_enqueue_async_dump_analyze_command → Queue command, returns commandId
 3. Listen for notifications/commandStatus → Real-time progress updates
-4. commands://result → Get final results via MCP Resource
+4. mcp://nexus/commands/result → Get final results via MCP Resource
 5. Use MCP Resources for session management:
-   - `sessions://list` → List all active sessions
-   - `commands://list` → List commands for all sessions or filter by sessionId
+   - `mcp://nexus/sessions/list` → List all active sessions
+   - `mcp://nexus/commands/list` → List commands for all sessions or filter by sessionId
 7. nexus_close_dump_analyze_session → Clean up resources
 ```
 
@@ -139,11 +139,11 @@ Architecture, testing, contribution guide
 The server provides rich resources for session management and documentation:
 
 ### Available Resources
-- **`sessions://list`** - List all active debugging sessions
-- **`commands://list`** - List commands from all sessions with advanced filtering (sessionId, command text, time range, pagination, sorting)
-- **`commands://result`** - Get status and results of specific commands
-- **`docs://workflows`** - Comprehensive crash analysis workflows and examples
-- **`docs://usage`** - Complete usage guide for tools and resources
+- **`mcp://nexus/sessions/list`** - List all active debugging sessions
+- **`mcp://nexus/commands/list`** - List commands from all sessions with advanced filtering (sessionId, command text, time range, pagination, sorting)
+- **`mcp://nexus/commands/result`** - Get status and results of specific commands
+- **`mcp://nexus/docs/workflows`** - Comprehensive crash analysis workflows and examples
+- **`mcp://nexus/docs/usage`** - Complete usage guide for tools and resources
 
 ### Using Resources
 ```json
@@ -152,7 +152,7 @@ The server provides rich resources for session management and documentation:
   "jsonrpc": "2.0",
   "id": 1,
   "method": "resources/read",
-  "params": { "uri": "sessions://list" }
+  "params": { "uri": "mcp://nexus/sessions/list" }
 }
 
 // Get command result
@@ -160,7 +160,7 @@ The server provides rich resources for session management and documentation:
   "jsonrpc": "2.0", 
   "id": 2,
   "method": "resources/read",
-  "params": { "uri": "commands://result?sessionId=abc123&commandId=cmd456" }
+  "params": { "uri": "mcp://nexus/commands/result?sessionId=abc123&commandId=cmd456" }
 }
 
 // Get crash analysis workflows
@@ -168,7 +168,7 @@ The server provides rich resources for session management and documentation:
   "jsonrpc": "2.0",
   "id": 3, 
   "method": "resources/read",
-  "params": { "uri": "docs://workflows" }
+  "params": { "uri": "mcp://nexus/docs/workflows" }
 }
 ```
 

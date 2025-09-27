@@ -14,20 +14,20 @@ Windows debugging capabilities through WinDBG/CDB integration:
 
 **RESOURCES** (use `resources/read` method):
 - Access data: command results, session lists, documentation
-- Examples: `commands://result`, `sessions://list`, `docs://workflows`
+- Examples: `mcp://nexus/commands/result`, `mcp://nexus/sessions/list`, `mcp://nexus/docs/workflows`
 
 **Common Mistake**: Don't use resource URIs as tool names!
 ```json
 // WRONG - This will fail
-{"method":"tools/call","params":{"name":"commands://result?sessionId=abc&commandId=cmd123"}}
+{"method":"tools/call","params":{"name":"mcp://nexus/commands/result?sessionId=abc&commandId=cmd123"}}
 
 // CORRECT - Use resources/read for resources
-{"method":"resources/read","params":{"uri":"commands://result?sessionId=abc&commandId=cmd123"}}
+{"method":"resources/read","params":{"uri":"mcp://nexus/commands/result?sessionId=abc&commandId=cmd123"}}
 ```
 
 ### Core Debugging Commands
 - **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
-- **Session Management**: Available via MCP Resources (`sessions://list`, `commands://list`)
+- **Session Management**: Available via MCP Resources (`mcp://nexus/sessions/list`, `mcp://nexus/commands/list`)
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
 - **Command Execution**: `nexus_enqueue_async_dump_analyze_command` (🔄 ASYNC QUEUE: Always returns commandId, use MCP Resources for results)
 - **Queue Management**: `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
@@ -50,7 +50,7 @@ Windows debugging capabilities through WinDBG/CDB integration:
 
 4. OR use MCP Resource: 
    ```json
-   {"method":"resources/read","params":{"uri":"commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"}}
+   {"method":"resources/read","params":{"uri":"mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"}}
    ```
    → Returns: {"status": "executing", ...} (keep polling)
    → Returns: {"status": "completed", "result": "ACTUAL_OUTPUT"}
@@ -58,20 +58,20 @@ Windows debugging capabilities through WinDBG/CDB integration:
 5. Use MCP Resources for session management:
    ```json
    // List all sessions
-   {"method":"resources/read","params":{"uri":"sessions://list"}}
+   {"method":"resources/read","params":{"uri":"mcp://nexus/sessions/list"}}
    
    // List commands for a specific session
-   {"method":"resources/read","params":{"uri":"commands://list?sessionId=sess-000001-abc12345"}}
+   {"method":"resources/read","params":{"uri":"mcp://nexus/commands/list?sessionId=sess-000001-abc12345"}}
    
    // Get command result
-   {"method":"resources/read","params":{"uri":"commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-0001"}}
+   {"method":"resources/read","params":{"uri":"mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-0001"}}
    ```
 
 7. nexus_close_dump_analyze_session {"sessionId": "sess-000001-abc12345-12345678-0001"}
    → Returns: {"success": true, ...} - Clean up resources
 ```
 
-**⚠️ CRITICAL**: `nexus_enqueue_async_dump_analyze_command` NEVER returns command results directly. You MUST use MCP Resources (`commands://result`) to get results or listen for notifications!
+**⚠️ CRITICAL**: `nexus_enqueue_async_dump_analyze_command` NEVER returns command results directly. You MUST use MCP Resources (`mcp://nexus/commands/result`) to get results or listen for notifications!
 
 ### 📋 Session Management (via MCP Resources)
 
@@ -79,11 +79,11 @@ Session management is now available through MCP Resources for better integration
 
 #### Available Resources
 
-- **`sessions://list`** - List all active debugging sessions
-- **`commands://list`** - List commands from all sessions with advanced filtering (sessionId, command text, time range, pagination, sorting)  
-- **`commands://result`** - Get status and results of specific commands
-- **`docs://workflows`** - Comprehensive crash analysis workflows and examples
-- **`docs://usage`** - Complete usage guide for tools and resources
+- **`mcp://nexus/sessions/list`** - List all active debugging sessions
+- **`mcp://nexus/commands/list`** - List commands from all sessions with advanced filtering (sessionId, command text, time range, pagination, sorting)  
+- **`mcp://nexus/commands/result`** - Get status and results of specific commands
+- **`mcp://nexus/docs/workflows`** - Comprehensive crash analysis workflows and examples
+- **`mcp://nexus/docs/usage`** - Complete usage guide for tools and resources
 
 #### How to Use Resources
 
@@ -95,7 +95,7 @@ Session management is now available through MCP Resources for better integration
   "id": 1,
   "method": "resources/read",
   "params": {
-    "uri": "sessions://list"
+    "uri": "mcp://nexus/sessions/list"
   }
 }
 
@@ -120,7 +120,7 @@ Session management is now available through MCP Resources for better integration
   "id": 2,
   "method": "resources/read", 
   "params": {
-    "uri": "commands://list"
+    "uri": "mcp://nexus/commands/list"
   }
 }
 ```
@@ -133,7 +133,7 @@ Session management is now available through MCP Resources for better integration
   "id": 3,
   "method": "resources/read",
   "params": {
-    "uri": "commands://list?sessionId=sess-000001-abc12345"
+    "uri": "mcp://nexus/commands/list?sessionId=sess-000001-abc12345"
   }
 }
 ```
@@ -146,7 +146,7 @@ Session management is now available through MCP Resources for better integration
   "id": 4,
   "method": "resources/read",
   "params": {
-    "uri": "commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"
+    "uri": "mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"
   }
 }
 
@@ -183,7 +183,7 @@ Session management is now available through MCP Resources for better integration
   "id": 5,
   "method": "resources/read",
   "params": {
-    "uri": "docs://workflows"
+    "uri": "mcp://nexus/docs/workflows"
   }
 }
 ```
@@ -196,7 +196,7 @@ Session management is now available through MCP Resources for better integration
   "id": 6,
   "method": "resources/read",
   "params": {
-    "uri": "docs://usage"
+    "uri": "mcp://nexus/docs/usage"
   }
 }
 ```

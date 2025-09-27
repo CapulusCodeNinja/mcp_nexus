@@ -29,7 +29,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetAllSessions()).Returns(sessions);
 
             // Act
-            var result = await m_resourceService.ReadResource("sessions://list");
+            var result = await m_resourceService.ReadResource("mcp://nexus/sessions/list");
 
             // Assert
             Assert.NotNull(result);
@@ -37,7 +37,7 @@ namespace mcp_nexus_tests.Protocol
             Assert.Single(result.Contents);
             
             var content = result.Contents[0];
-            Assert.Equal("sessions://list", content.Uri);
+            Assert.Equal("mcp://nexus/sessions/list", content.Uri);
             Assert.Equal("application/json", content.MimeType);
             
             var response = JsonSerializer.Deserialize<JsonElement>(content.Text!);
@@ -55,7 +55,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetAllSessions()).Returns(sessions);
 
             // Act
-            var result = await m_resourceService.ReadResource("sessions://list?sessionId=sess-001");
+            var result = await m_resourceService.ReadResource("mcp://nexus/sessions/list?sessionId=sess-001");
 
             // Assert
             var content = result.Contents[0];
@@ -76,7 +76,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetAllSessions()).Returns(sessions);
 
             // Act
-            var result = await m_resourceService.ReadResource("sessions://list?status=Active");
+            var result = await m_resourceService.ReadResource("mcp://nexus/sessions/list?status=Active");
 
             // Assert
             var content = result.Contents[0];
@@ -97,7 +97,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetAllSessions()).Returns(sessions);
 
             // Act
-            var result = await m_resourceService.ReadResource("sessions://list?isActive=true");
+            var result = await m_resourceService.ReadResource("mcp://nexus/sessions/list?isActive=true");
 
             // Assert
             var content = result.Contents[0];
@@ -118,7 +118,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetAllSessions()).Returns(sessions);
 
             // Act
-            var result = await m_resourceService.ReadResource("sessions://list?dumpPath=crash");
+            var result = await m_resourceService.ReadResource("mcp://nexus/sessions/list?dumpPath=crash");
 
             // Assert
             var content = result.Contents[0];
@@ -139,7 +139,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetAllSessions()).Returns(sessions);
 
             // Act
-            var result = await m_resourceService.ReadResource("sessions://list?createdFrom=2024-01-01&createdTo=2024-01-02");
+            var result = await m_resourceService.ReadResource("mcp://nexus/sessions/list?createdFrom=2024-01-01&createdTo=2024-01-02");
 
             // Assert
             var content = result.Contents[0];
@@ -156,7 +156,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetAllSessions()).Returns(sessions);
 
             // Act
-            var result = await m_resourceService.ReadResource("sessions://list?sortBy=sessionId&order=asc");
+            var result = await m_resourceService.ReadResource("mcp://nexus/sessions/list?sortBy=sessionId&order=asc");
 
             // Assert
             var content = result.Contents[0];
@@ -177,7 +177,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetAllSessions()).Returns(sessions);
 
             // Act
-            var result = await m_resourceService.ReadResource("sessions://list?limit=2&offset=1");
+            var result = await m_resourceService.ReadResource("mcp://nexus/sessions/list?limit=2&offset=1");
 
             // Assert
             var content = result.Contents[0];
@@ -197,7 +197,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetAllSessions()).Returns(sessions);
 
             // Act
-            var result = await m_resourceService.ReadResource("sessions://list?status=Disposed&sortBy=createdAt&sortOrder=desc&limit=1");
+            var result = await m_resourceService.ReadResource("mcp://nexus/sessions/list?status=Disposed&sortBy=createdAt&sortOrder=desc&limit=1");
 
             // Assert
             var content = result.Contents[0];
@@ -219,7 +219,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetSessionContext(It.IsAny<string>())).Returns(new SessionContext());
 
             // Act
-            var result = await m_resourceService.ReadResource("commands://list");
+            var result = await m_resourceService.ReadResource("mcp://nexus/commands/list");
 
             // Assert
             Assert.NotNull(result);
@@ -227,7 +227,7 @@ namespace mcp_nexus_tests.Protocol
             Assert.Single(result.Contents);
             
             var content = result.Contents[0];
-            Assert.Equal("commands://list", content.Uri);
+            Assert.Equal("mcp://nexus/commands/list", content.Uri);
             Assert.Equal("application/json", content.MimeType);
             
             var response = JsonSerializer.Deserialize<JsonElement>(content.Text!);
@@ -244,7 +244,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetSessionContext("sess-001")).Returns(new SessionContext());
 
             // Act
-            var result = await m_resourceService.ReadResource("commands://list?sessionId=sess-001");
+            var result = await m_resourceService.ReadResource("mcp://nexus/commands/list?sessionId=sess-001");
 
             // Assert
             var content = result.Contents[0];
@@ -263,7 +263,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetSessionContext(It.IsAny<string>())).Returns(new SessionContext());
 
             // Act
-            var result = await m_resourceService.ReadResource("commands://list?command=analyze");
+            var result = await m_resourceService.ReadResource("mcp://nexus/commands/list?command=analyze");
 
             // Assert
             var content = result.Contents[0];
@@ -280,7 +280,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetSessionContext(It.IsAny<string>())).Returns(new SessionContext());
 
             // Act
-            var result = await m_resourceService.ReadResource("commands://list?from=2024-01-01&to=2024-01-02");
+            var result = await m_resourceService.ReadResource("mcp://nexus/commands/list?from=2024-01-01&to=2024-01-02");
 
             // Assert
             var content = result.Contents[0];
@@ -297,7 +297,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetSessionContext(It.IsAny<string>())).Returns(new SessionContext());
 
             // Act
-            var result = await m_resourceService.ReadResource("commands://list?sortBy=command&sortOrder=asc");
+            var result = await m_resourceService.ReadResource("mcp://nexus/commands/list?sortBy=command&sortOrder=asc");
 
             // Assert
             var content = result.Contents[0];
@@ -314,7 +314,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetSessionContext(It.IsAny<string>())).Returns(new SessionContext());
 
             // Act
-            var result = await m_resourceService.ReadResource("commands://list?limit=2&offset=1");
+            var result = await m_resourceService.ReadResource("mcp://nexus/commands/list?limit=2&offset=1");
 
             // Assert
             var content = result.Contents[0];
@@ -339,7 +339,7 @@ namespace mcp_nexus_tests.Protocol
             m_mockSessionManager.Setup(x => x.GetCommandQueue("sess-001")).Returns(mockCommandQueue.Object);
 
             // Act
-            var result = await m_resourceService.ReadResource("commands://result?sessionId=sess-001&commandId=cmd-001");
+            var result = await m_resourceService.ReadResource("mcp://nexus/commands/result?sessionId=sess-001&commandId=cmd-001");
 
             // Assert
             var content = result.Contents[0];
@@ -359,14 +359,14 @@ namespace mcp_nexus_tests.Protocol
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => 
-                m_resourceService.ReadResource("commands://result?sessionId=invalid-session&commandId=cmd-001"));
+                m_resourceService.ReadResource("mcp://nexus/commands/result?sessionId=invalid-session&commandId=cmd-001"));
         }
 
         [Fact]
         public async Task ReadCommandStatus_WithMissingParameters_ReturnsHelp()
         {
             // Act
-            var result = await m_resourceService.ReadResource("commands://result");
+            var result = await m_resourceService.ReadResource("mcp://nexus/commands/result");
 
             // Assert
             Assert.NotNull(result);
@@ -384,7 +384,7 @@ namespace mcp_nexus_tests.Protocol
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => 
-                m_resourceService.ReadResource("commands://result?commandId=cmd-001"));
+                m_resourceService.ReadResource("mcp://nexus/commands/result?commandId=cmd-001"));
         }
 
         [Fact]
@@ -392,14 +392,14 @@ namespace mcp_nexus_tests.Protocol
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => 
-                m_resourceService.ReadResource("commands://result?sessionId=sess-001"));
+                m_resourceService.ReadResource("mcp://nexus/commands/result?sessionId=sess-001"));
         }
 
         [Fact]
         public void ParseSessionFilters_WithValidParameters_ParsesCorrectly()
         {
             // Arrange
-            var uri = "sessions://list?sessionId=sess-001&status=Active&isActive=true&limit=10&offset=5&sortBy=createdAt&sortOrder=desc";
+            var uri = "mcp://nexus/sessions/list?sessionId=sess-001&status=Active&isActive=true&limit=10&offset=5&sortBy=createdAt&sortOrder=desc";
 
             // Act
             var filters = TestableMcpResourceService.TestParseSessionFilters(uri);
@@ -418,7 +418,7 @@ namespace mcp_nexus_tests.Protocol
         public void ParseCommandFilters_WithValidParameters_ParsesCorrectly()
         {
             // Arrange
-            var uri = "commands://list?sessionId=sess-001&command=analyze&from=2024-01-01&to=2024-01-02&limit=5&offset=0&sortBy=createdAt&sortOrder=asc";
+            var uri = "mcp://nexus/commands/list?sessionId=sess-001&command=analyze&from=2024-01-01&to=2024-01-02&limit=5&offset=0&sortBy=createdAt&sortOrder=asc";
 
             // Act
             var filters = TestableMcpResourceService.TestParseCommandFilters(uri);
@@ -438,7 +438,7 @@ namespace mcp_nexus_tests.Protocol
         public void ParseSessionFilters_WithInvalidParameters_UsesDefaults()
         {
             // Arrange
-            var uri = "sessions://list?invalid=value";
+            var uri = "mcp://nexus/sessions/list?invalid=value";
 
             // Act
             var filters = TestableMcpResourceService.TestParseSessionFilters(uri);
@@ -457,7 +457,7 @@ namespace mcp_nexus_tests.Protocol
         public void ParseCommandFilters_WithInvalidParameters_UsesDefaults()
         {
             // Arrange
-            var uri = "commands://list?invalid=value";
+            var uri = "mcp://nexus/commands/list?invalid=value";
 
             // Act
             var filters = TestableMcpResourceService.TestParseCommandFilters(uri);

@@ -78,15 +78,15 @@ namespace mcp_nexus.Protocol
             {
                 return uri switch
                 {
-                    "sessions://list" => await ReadSessionsList(uri),
-                    var u when u.StartsWith("sessions://list?") => await ReadSessionsList(u),
-                    "commands://list" => await ReadCommandsList(uri),
-                    "commands://result" => await ReadCommandStatusHelp(),
-                    var u when u.StartsWith("commands://list?") => await ReadCommandsList(u),
-                    var u when u.StartsWith("commands://result?") => await ReadCommandStatus(u),
-                    var u when u.StartsWith("sessions://") => await ReadSessionResource(u),
-                    var u when u.StartsWith("commands://") => await ReadCommandResource(u),
-                    var u when u.StartsWith("docs://") => ReadDocumentationResource(u),
+                    "mcp://nexus/sessions/list" => await ReadSessionsList(uri),
+                    var u when u.StartsWith("mcp://nexus/sessions/list?") => await ReadSessionsList(u),
+                    "mcp://nexus/commands/list" => await ReadCommandsList(uri),
+                    "mcp://nexus/commands/result" => await ReadCommandStatusHelp(),
+                    var u when u.StartsWith("mcp://nexus/commands/list?") => await ReadCommandsList(u),
+                    var u when u.StartsWith("mcp://nexus/commands/result?") => await ReadCommandStatus(u),
+                    var u when u.StartsWith("mcp://nexus/sessions/") => await ReadSessionResource(u),
+                    var u when u.StartsWith("mcp://nexus/commands/") => await ReadCommandResource(u),
+                    var u when u.StartsWith("mcp://nexus/docs/") => ReadDocumentationResource(u),
                     _ => throw new ArgumentException($"Unknown resource URI: {uri}. Use resources/list to see available resources, or check the tool descriptions for correct resource URIs.")
                 };
             }
@@ -103,14 +103,14 @@ namespace mcp_nexus.Protocol
             [
                 new McpResource
                 {
-                    Uri = "docs://workflows",
+                    Uri = "mcp://nexus/docs/workflows",
                     Name = "Crash Analysis Workflows",
                     Description = "Common debugging patterns and step-by-step analysis workflows",
                     MimeType = "application/json"
                 },
                 new McpResource
                 {
-                    Uri = "docs://usage",
+                    Uri = "mcp://nexus/docs/usage",
                     Name = "Usage",
                     Description = "Essential tool usage information for MCP Nexus server",
                     MimeType = "application/json"
@@ -127,7 +127,7 @@ namespace mcp_nexus.Protocol
             {
                 resources.Add(new McpResource
                 {
-                    Uri = $"sessions://{session.SessionId}",
+                    Uri = $"mcp://nexus/sessions/{session.SessionId}",
                     Name = $"Session {session.SessionId}",
                     Description = $"Active debugging session for {Path.GetFileName(session.DumpPath ?? "unknown")}",
                     MimeType = "application/json",
@@ -136,7 +136,7 @@ namespace mcp_nexus.Protocol
 
                 resources.Add(new McpResource
                 {
-                    Uri = $"sessions://{session.SessionId}/dump-info",
+                    Uri = $"mcp://nexus/sessions/{session.SessionId}/dump-info",
                     Name = $"Dump Info - {session.SessionId}",
                     Description = $"Detailed information about the dump file for session {session.SessionId}",
                     MimeType = "application/json",
@@ -149,7 +149,7 @@ namespace mcp_nexus.Protocol
             {
                 resources.Add(new McpResource
                 {
-                    Uri = "sessions://active",
+                    Uri = "mcp://nexus/sessions/active",
                     Name = "Active Debugging Sessions",
                     Description = "Real-time list of all active debugging sessions with their status and details",
                     MimeType = "application/json"
@@ -168,7 +168,7 @@ namespace mcp_nexus.Protocol
             {
                 resources.Add(new McpResource
                 {
-                    Uri = $"commands://history/{session.SessionId}",
+                    Uri = $"mcp://nexus/commands/history/{session.SessionId}",
                     Name = $"Command History - {session.SessionId}",
                     Description = $"History of executed WinDBG commands for session {session.SessionId}",
                     MimeType = "application/json",
@@ -181,7 +181,7 @@ namespace mcp_nexus.Protocol
             {
                 resources.Add(new McpResource
                 {
-                    Uri = "commands://history",
+                    Uri = "mcp://nexus/commands/history",
                     Name = "All Command History",
                     Description = "Complete history of executed WinDBG commands across all sessions",
                     MimeType = "application/json"
@@ -193,12 +193,12 @@ namespace mcp_nexus.Protocol
 
         private async Task<McpResourceReadResult> ReadSessionResource(string uri)
         {
-            if (uri == "sessions://active")
+            if (uri == "mcp://nexus/sessions/active")
             {
                 return await ReadActiveSessionsResource();
             }
 
-            // Parse session ID from URI like "sessions://{sessionId}"
+            // Parse session ID from URI like "mcp://nexus/sessions/{sessionId}"
             var sessionId = uri.Split('/').LastOrDefault();
             if (string.IsNullOrEmpty(sessionId))
             {
@@ -215,12 +215,12 @@ namespace mcp_nexus.Protocol
 
         private async Task<McpResourceReadResult> ReadCommandResource(string uri)
         {
-            if (uri == "commands://history")
+            if (uri == "mcp://nexus/commands/history")
             {
                 return await ReadAllCommandHistoryResource();
             }
 
-            // Parse session ID from URI like "commands://history/{sessionId}"
+            // Parse session ID from URI like "mcp://nexus/commands/history/{sessionId}"
             var sessionId = uri.Split('/').LastOrDefault();
             if (string.IsNullOrEmpty(sessionId))
             {
@@ -234,8 +234,8 @@ namespace mcp_nexus.Protocol
         {
             var content = uri switch
             {
-                "docs://workflows" => GetDebuggingWorkflowsDocumentation(),
-                "docs://usage" => GetTroubleshootingDocumentation(),
+                "mcp://nexus/docs/workflows" => GetDebuggingWorkflowsDocumentation(),
+                "mcp://nexus/docs/usage" => GetTroubleshootingDocumentation(),
                 _ => throw new ArgumentException($"Unknown documentation resource: {uri}")
             };
 
@@ -288,7 +288,7 @@ namespace mcp_nexus.Protocol
                 {
                     new McpResourceContent
                     {
-                        Uri = "sessions://active",
+                        Uri = "mcp://nexus/sessions/active",
                         MimeType = "application/json",
                         Text = content
                     }
@@ -302,7 +302,7 @@ namespace mcp_nexus.Protocol
         {
             if (!sessionManager.SessionExists(sessionId))
             {
-                throw new ArgumentException($"Session not found: {sessionId}. Use sessions://list to see available sessions.");
+                throw new ArgumentException($"Session not found: {sessionId}. Use mcp://nexus/sessions/list to see available sessions.");
             }
 
             var session = sessionManager.GetAllSessions().FirstOrDefault(s => s.SessionId == sessionId);
@@ -329,7 +329,7 @@ namespace mcp_nexus.Protocol
                 {
                     new McpResourceContent
                     {
-                        Uri = $"sessions://{sessionId}",
+                        Uri = $"mcp://nexus/sessions/{sessionId}",
                         MimeType = "application/json",
                         Text = content
                     }
@@ -343,7 +343,7 @@ namespace mcp_nexus.Protocol
         {
             if (!sessionManager.SessionExists(sessionId))
             {
-                throw new ArgumentException($"Session not found: {sessionId}. Use sessions://list to see available sessions.");
+                throw new ArgumentException($"Session not found: {sessionId}. Use mcp://nexus/sessions/list to see available sessions.");
             }
 
             var session = sessionManager.GetAllSessions().FirstOrDefault(s => s.SessionId == sessionId);
@@ -372,7 +372,7 @@ namespace mcp_nexus.Protocol
                 {
                     new McpResourceContent
                     {
-                        Uri = $"sessions://{sessionId}/dump-info",
+                        Uri = $"mcp://nexus/sessions/{sessionId}/dump-info",
                         MimeType = "application/json",
                         Text = content
                     }
@@ -412,7 +412,7 @@ namespace mcp_nexus.Protocol
                 {
                     new McpResourceContent
                     {
-                        Uri = "commands://history",
+                        Uri = "mcp://nexus/commands/history",
                         MimeType = "application/json",
                         Text = content
                     }
@@ -426,7 +426,7 @@ namespace mcp_nexus.Protocol
         {
             if (!sessionManager.SessionExists(sessionId))
             {
-                throw new ArgumentException($"Session not found: {sessionId}. Use sessions://list to see available sessions.");
+                throw new ArgumentException($"Session not found: {sessionId}. Use mcp://nexus/sessions/list to see available sessions.");
             }
 
             // TODO: Implement command history retrieval from command queue service
@@ -444,7 +444,7 @@ namespace mcp_nexus.Protocol
                 {
                     new McpResourceContent
                     {
-                        Uri = $"commands://history/{sessionId}",
+                        Uri = $"mcp://nexus/commands/history/{sessionId}",
                         MimeType = "application/json",
                         Text = content
                     }
@@ -665,21 +665,21 @@ namespace mcp_nexus.Protocol
             [
                 new McpResource
                 {
-                    Uri = "sessions://list",
+                    Uri = "mcp://nexus/sessions/list",
                     Name = "List Sessions",
                     Description = "List all debugging sessions with advanced filtering (status, dump path, time ranges, etc.)",
                     MimeType = "application/json"
                 },
                 new McpResource
                 {
-                    Uri = "commands://list",
+                    Uri = "mcp://nexus/commands/list",
                     Name = "List Commands",
                     Description = "List async commands from all sessions with advanced filtering (sessionId, command text, time range, pagination, sorting)",
                     MimeType = "application/json"
                 },
                 new McpResource
                 {
-                    Uri = "commands://result",
+                    Uri = "mcp://nexus/commands/result",
                     Name = "Command Result",
                     Description = "Get status and results of a specific async command",
                     MimeType = "application/json"
@@ -1107,11 +1107,11 @@ namespace mcp_nexus.Protocol
         {
             try
             {
-                // Extract sessionId and commandId from URI: commands://result?sessionId=xxx&commandId=yyy
+                // Extract sessionId and commandId from URI: mcp://nexus/commands/result?sessionId=xxx&commandId=yyy
                 var uriParts = uri.Split('?');
                 if (uriParts.Length < 2)
                 {
-                    throw new ArgumentException("RESOURCE ACCESS ERROR: Session ID and Command ID required. Use: commands://result?sessionId=<sessionId>&commandId=<commandId>. This is a RESOURCE, not a tool - use resources/read method to access it.");
+                    throw new ArgumentException("RESOURCE ACCESS ERROR: Session ID and Command ID required. Use: mcp://nexus/commands/result?sessionId=<sessionId>&commandId=<commandId>. This is a RESOURCE, not a tool - use resources/read method to access it.");
                 }
 
                 var queryParams = System.Web.HttpUtility.ParseQueryString(uriParts[1]);
@@ -1120,7 +1120,7 @@ namespace mcp_nexus.Protocol
 
                 if (string.IsNullOrEmpty(sessionId) || string.IsNullOrEmpty(commandId))
                 {
-                    throw new ArgumentException("RESOURCE ACCESS ERROR: Both sessionId and commandId parameters are required. Use sessions://list to see available sessions and commands://list to see available commands. This is a RESOURCE, not a tool - use resources/read method to access it.");
+                    throw new ArgumentException("RESOURCE ACCESS ERROR: Both sessionId and commandId parameters are required. Use mcp://nexus/sessions/list to see available sessions and mcp://nexus/commands/list to see available commands. This is a RESOURCE, not a tool - use resources/read method to access it.");
                 }
 
                 // Get session context to retrieve command status
@@ -1128,7 +1128,7 @@ namespace mcp_nexus.Protocol
                 if (sessionContext == null)
                 {
                     // Session doesn't exist - return ERROR
-                    throw new ArgumentException($"Session {sessionId} not found. Use sessions://list to see available sessions.");
+                    throw new ArgumentException($"Session {sessionId} not found. Use mcp://nexus/sessions/list to see available sessions.");
                 }
 
                 // Get the command queue for this session to check command status
@@ -1155,7 +1155,7 @@ namespace mcp_nexus.Protocol
                         command = commandInfo.Id == commandId ? commandInfo.Command : null,
                         status = isNotFound ? "Not Found" : (isCompleted ? "Completed" : "In Progress"),
                         result = isCompleted ? commandResult : null,
-                        error = isNotFound ? "Command not found. Use commands://list to see available commands." : null,
+                        error = isNotFound ? "Command not found. Use mcp://nexus/commands/list to see available commands." : null,
                         createdAt = commandInfo.Id == commandId ? commandInfo.QueueTime : (DateTime?)null,
                         completedAt = isCompleted ? DateTime.UtcNow : (DateTime?)null,
                         timestamp = DateTime.UtcNow,
@@ -1220,9 +1220,9 @@ namespace mcp_nexus.Protocol
             {
                 title = "Command Status Resource",
                 description = "Get status and results of a specific async command",
-                usage_info = "Use: commands://result?sessionId=<sessionId>&commandId=<commandId>",
-                example = "commands://result?sessionId=abc123&commandId=cmd456",
-                note = "This resource requires both sessionId and commandId parameters to get command status. Use sessions://list to see available sessions and commands://list to see available commands.",
+                usage_info = "Use: mcp://nexus/commands/result?sessionId=<sessionId>&commandId=<commandId>",
+                example = "mcp://nexus/commands/result?sessionId=abc123&commandId=cmd456",
+                note = "This resource requires both sessionId and commandId parameters to get command status. Use mcp://nexus/sessions/list to see available sessions and mcp://nexus/commands/list to see available commands.",
                 usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
             };
 

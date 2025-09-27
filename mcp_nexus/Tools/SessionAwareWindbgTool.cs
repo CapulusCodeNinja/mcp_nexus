@@ -77,14 +77,13 @@ namespace mcp_nexus.Tools
                 usage_notes = new[]
                 {
                     "Use resources/read method to access these resources",
-                    "Example: {\"method\":\"resources/read\",\"params\":{\"uri\":\"commands://result?sessionId=abc&commandId=cmd123\"}}",
                     "Resources provide data access, tools provide action execution"
                 },
                 available_resources = new object[]
                 {
                     new
                     {
-                        uri = "docs://workflows",
+                        uri = "mcp://nexus/docs/workflows",
                         name = "Crash Analysis Workflows",
                         description = "Comprehensive step-by-step analysis workflows for Windows crash dump investigation",
                         input = (object?)null,
@@ -92,7 +91,7 @@ namespace mcp_nexus.Tools
                     },
                     new
                     {
-                        uri = "docs://usage",
+                        uri = "mcp://nexus/docs/usage",
                         name = "Usage",
                         description = "Essential tool usage information for MCP Nexus server",
                         input = (object?)null,
@@ -100,7 +99,7 @@ namespace mcp_nexus.Tools
                     },
                     new
                     {
-                        uri = "sessions://list",
+                        uri = "mcp://nexus/sessions/list",
                         name = "List Sessions",
                         description = "List all debugging sessions with advanced filtering options",
                         input = new {
@@ -115,11 +114,11 @@ namespace mcp_nexus.Tools
                             sortBy = "string (optional) - Sort by field (sessionId, dumpPath, status, createdAt)",
                             order = "string (optional) - Sort order (asc, desc)"
                         },
-                        note = (string?)"Use: sessions://list?status=Active&isActive=true&limit=10&sortBy=createdAt&order=desc"
+                        note = (string?)"Use: mcp://nexus/sessions/list?status=Active&isActive=true&limit=10&sortBy=createdAt&order=desc"
                     },
                     new
                     {
-                        uri = "commands://list",
+                        uri = "mcp://nexus/commands/list",
                         name = "List Commands",
                         description = "List async commands from all sessions with advanced filtering options",
                         input = new {
@@ -132,24 +131,18 @@ namespace mcp_nexus.Tools
                             sortBy = "string (optional) - Sort by field (command, status, createdAt)",
                             order = "string (optional) - Sort order (asc, desc)"
                         },
-                        note = (string?)"Use: commands://list?sessionId=abc123&command=!analyze&limit=10&sortBy=createdAt&order=desc"
+                        note = (string?)"Use: mcp://nexus/commands/list?sessionId=abc123&command=!analyze&limit=10&sortBy=createdAt&order=desc"
                     },
                     new
                     {
-                        uri = "commands://result",
+                        uri = "mcp://nexus/commands/result",
                         name = "Command Result",
                         description = "Get status and results of a specific async command",
                         input = new { sessionId = "string (required)", commandId = "string (required)" },
-                        example = "commands://result?sessionId=sess-000001-abc123&commandId=cmd-sess-000001-abc123-0001",
+                        example = "mcp://nexus/commands/result?sessionId=sess-000001-abc123&commandId=cmd-sess-000001-abc123-0001",
                         usage = "Use resources/read method with this URI to get command results",
                         note = (string?)"This is a RESOURCE, not a tool. Use resources/read method to access it."
                     }
-                },
-                additional_notes = new[]
-                {
-                    "Access resources using the MCP resources/list and resources/read methods",
-                    "Resources provide additional context and documentation beyond core tools",
-                    "Session management is now handled through resources for better integration"
                 }
             }
         };
@@ -232,7 +225,7 @@ namespace mcp_nexus.Tools
                     commandId = (string?)null,
                     success = true,
                     operation = "nexus_open_dump_analyze_session",
-                    message = $"Session created successfully: {sessionId}. Use sessions://list to manage sessions.",
+                    message = $"Session created successfully: {sessionId}. Use mcp://nexus/sessions/list to manage sessions.",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
@@ -296,7 +289,7 @@ namespace mcp_nexus.Tools
                         commandId = (string?)null,
                         success = false,
                         operation = "nexus_close_dump_analyze_session",
-                        message = $"Session not found or already closed: {sessionId}. Use sessions://list to see available sessions.",
+                        message = $"Session not found or already closed: {sessionId}. Use mcp://nexus/sessions/list to see available sessions.",
                         usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                     };
 
@@ -349,7 +342,7 @@ namespace mcp_nexus.Tools
         /// <summary>
         /// Execute a debugger command asynchronously in the specified session
         /// </summary>
-        [Description("ASYNC COMMAND: Execute debugger command in background queue. NEVER returns results directly! Always returns commandId. MUST use commands://result resource to get actual results.")]
+        [Description("ASYNC COMMAND: Execute debugger command in background queue. NEVER returns results directly! Always returns commandId. MUST use mcp://nexus/commands/result resource to get actual results.")]
         public Task<object> nexus_enqueue_async_dump_analyze_command(
             [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
             [Description("Debugger command to execute (e.g., '!analyze -v', 'k', '!peb')")] string command)
@@ -373,7 +366,7 @@ namespace mcp_nexus.Tools
                         commandId = (string?)null,
                         success = false,
                         operation = "nexus_enqueue_async_dump_analyze_command",
-                        message = $"Session not found or expired: {sessionId}. Use sessions://list to see available sessions.",
+                        message = $"Session not found or expired: {sessionId}. Use mcp://nexus/sessions/list to see available sessions.",
                         usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                     };
 
@@ -393,7 +386,7 @@ namespace mcp_nexus.Tools
                     commandId = commandId,
                     success = true,
                     operation = "nexus_enqueue_async_dump_analyze_command",
-                    message = $"Command queued successfully: {commandId}. Use commands://result to get results.",
+                    message = $"Command queued successfully: {commandId}. Use mcp://nexus/commands/result to get results.",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
