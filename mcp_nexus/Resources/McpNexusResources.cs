@@ -23,19 +23,9 @@ namespace mcp_nexus.Resources
     [McpServerResourceType]
     public static class McpNexusResources
     {
-        [McpServerResource, Description("List all active debugging sessions with advanced filtering options")]
+        [McpServerResource, Description("List all active debugging sessions")]
         public static async Task<string> GetSessions(
-            IServiceProvider serviceProvider,
-            [Description("Filter by session ID (partial match)")] string? sessionId = null,
-            [Description("Filter by dump file path (partial match)")] string? dumpPath = null,
-            [Description("Filter by session status (Initializing, Active, Disposing, Disposed, Error)")] string? status = null,
-            [Description("Filter by active status (true/false)")] bool? isActive = null,
-            [Description("Filter sessions created from this time")] DateTime? createdFrom = null,
-            [Description("Filter sessions created until this time")] DateTime? createdTo = null,
-            [Description("Limit number of results")] int? limit = null,
-            [Description("Skip number of results (pagination)")] int? offset = null,
-            [Description("Sort by field (sessionId, dumpPath, status, createdAt)")] string sortBy = "createdAt",
-            [Description("Sort order (asc, desc)")] string order = "desc")
+            IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
             var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
@@ -43,44 +33,12 @@ namespace mcp_nexus.Resources
             try
             {
                 var allSessions = sessionManager.GetAllSessions();
-                var filteredSessions = allSessions.AsEnumerable();
-
-                // Apply filters
-                if (!string.IsNullOrEmpty(sessionId))
-                    filteredSessions = filteredSessions.Where(s => s.SessionId.Contains(sessionId, StringComparison.OrdinalIgnoreCase));
-                if (!string.IsNullOrEmpty(dumpPath))
-                    filteredSessions = filteredSessions.Where(s => s.DumpPath?.Contains(dumpPath, StringComparison.OrdinalIgnoreCase) ?? false);
-                if (!string.IsNullOrEmpty(status))
-                    filteredSessions = filteredSessions.Where(s => s.Status.ToString().Equals(status, StringComparison.OrdinalIgnoreCase));
-                if (isActive.HasValue)
-                    filteredSessions = filteredSessions.Where(s => s.Status == SessionStatus.Active == isActive.Value);
-                if (createdFrom.HasValue)
-                    filteredSessions = filteredSessions.Where(s => s.CreatedAt >= createdFrom.Value);
-                if (createdTo.HasValue)
-                    filteredSessions = filteredSessions.Where(s => s.CreatedAt <= createdTo.Value);
-
-                // Apply sorting
-                filteredSessions = sortBy.ToLowerInvariant() switch
-                {
-                    "sessionid" => order.ToLowerInvariant() == "asc" ? filteredSessions.OrderBy(s => s.SessionId) : filteredSessions.OrderByDescending(s => s.SessionId),
-                    "dumppath" => order.ToLowerInvariant() == "asc" ? filteredSessions.OrderBy(s => s.DumpPath) : filteredSessions.OrderByDescending(s => s.DumpPath),
-                    "status" => order.ToLowerInvariant() == "asc" ? filteredSessions.OrderBy(s => s.Status) : filteredSessions.OrderByDescending(s => s.Status),
-                    "createdat" => order.ToLowerInvariant() == "asc" ? filteredSessions.OrderBy(s => s.CreatedAt) : filteredSessions.OrderByDescending(s => s.CreatedAt),
-                    _ => filteredSessions.OrderByDescending(s => s.CreatedAt) // Default sort
-                };
-
-                // Apply pagination
-                var paginatedSessions = filteredSessions.Skip(offset ?? 0).Take(limit ?? int.MaxValue).ToList();
+                var sessions = allSessions.OrderByDescending(s => s.CreatedAt).ToList();
 
                 var result = new
                 {
-                    sessions = paginatedSessions,
-                    count = paginatedSessions.Count,
-                    total = filteredSessions.Count(),
-                    limit,
-                    offset,
-                    sortBy,
-                    order,
+                    sessions = sessions,
+                    count = sessions.Count,
                     timestamp = DateTime.UtcNow
                 };
 
@@ -93,17 +51,9 @@ namespace mcp_nexus.Resources
             }
         }
 
-        [McpServerResource, Description("List async commands from all sessions with advanced filtering options")]
+        [McpServerResource, Description("List async commands from all sessions")]
         public static async Task<string> GetCommands(
-            IServiceProvider serviceProvider,
-            [Description("Filter by specific session")] string? sessionId = null,
-            [Description("Filter by command text (case-insensitive)")] string? command = null,
-            [Description("Filter commands from this time")] DateTime? from = null,
-            [Description("Filter commands until this time")] DateTime? to = null,
-            [Description("Limit number of results")] int? limit = null,
-            [Description("Skip number of results (pagination)")] int? offset = null,
-            [Description("Sort by field (command, status, createdAt)")] string sortBy = "createdAt",
-            [Description("Sort order (asc, desc)")] string order = "desc")
+            IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
             var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
@@ -113,28 +63,12 @@ namespace mcp_nexus.Resources
                 var allSessions = sessionManager.GetAllSessions();
                 var commandsBySession = new Dictionary<string, object>();
 
-                if (!string.IsNullOrEmpty(sessionId))
+                // Get commands from all sessions
+                foreach (var session in allSessions)
                 {
-                    // Filter to specific session
-                    var session = allSessions.FirstOrDefault(s => s.SessionId == sessionId);
-                    if (session == null)
-                    {
-                        throw new ArgumentException($"Session {sessionId} not found");
-                    }
-
-                    var sessionContext = sessionManager.GetSessionContext(sessionId);
-                    var sessionCommands = GetSessionCommands(sessionContext, sessionId, command, from, to, limit, offset, sortBy, order);
-                    commandsBySession[sessionId] = sessionCommands;
-                }
-                else
-                {
-                    // Get commands from all sessions
-                    foreach (var session in allSessions)
-                    {
-                        var sessionContext = sessionManager.GetSessionContext(session.SessionId);
-                        var sessionCommands = GetSessionCommands(sessionContext, session.SessionId, command, from, to, limit, offset, sortBy, order);
-                        commandsBySession[session.SessionId] = sessionCommands;
-                    }
+                    var sessionContext = sessionManager.GetSessionContext(session.SessionId);
+                    var sessionCommands = GetSessionCommands(sessionContext, session.SessionId, null, null, null, null, null, "createdAt", "desc");
+                    commandsBySession[session.SessionId] = sessionCommands;
                 }
 
                 var result = new
@@ -143,18 +77,7 @@ namespace mcp_nexus.Resources
                     totalSessions = commandsBySession.Count,
                     totalCommands = commandsBySession.Values.Cast<Dictionary<string, object>>().Sum(c => c.Count),
                     timestamp = DateTime.UtcNow,
-                    filters = new
-                    {
-                        sessionId,
-                        command,
-                        from = from?.ToString("O"),
-                        to = to?.ToString("O"),
-                        limit,
-                        offset,
-                        sortBy,
-                        order
-                    },
-                    note = string.IsNullOrEmpty(sessionId) ? "Commands from all sessions" : $"Commands from session {sessionId}"
+                    note = "Commands from all sessions"
                 };
 
                 return JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
@@ -166,49 +89,6 @@ namespace mcp_nexus.Resources
             }
         }
 
-        [McpServerResource, Description("Get status and results of a specific async command")]
-        public static async Task<string> GetCommandResult(
-            IServiceProvider serviceProvider,
-            [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
-            [Description("Command ID from nexus_enqueue_async_dump_analyze_command")] string commandId)
-        {
-            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-            var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
-
-            try
-            {
-                if (!sessionManager.SessionExists(sessionId))
-                {
-                    throw new ArgumentException($"Session {sessionId} not found. Use mcp://nexus/sessions/list to see available sessions.");
-                }
-
-                var commandQueue = sessionManager.GetCommandQueue(sessionId);
-                var commandResult = await commandQueue.GetCommandResult(commandId);
-
-                // Parse the result to determine status
-                var isCompleted = !commandResult.Contains("still executing") && !commandResult.Contains("Command not found");
-                var isNotFound = commandResult.Contains("Command not found");
-
-                var result = new
-                {
-                    sessionId = sessionId,
-                    commandId = commandId,
-                    status = isNotFound ? "Not Found" : (isCompleted ? "Completed" : "In Progress"),
-                    result = isCompleted ? commandResult : null,
-                    error = isNotFound ? "Command not found. Use mcp://nexus/commands/list to see available commands." : null,
-                    completedAt = isCompleted ? DateTime.UtcNow : (DateTime?)null,
-                    timestamp = DateTime.UtcNow,
-                    message = isNotFound ? null : (isCompleted ? null : "Command is still executing - check again in a few seconds.")
-                };
-
-                return JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error reading command result for session {SessionId}, command {CommandId}", sessionId, commandId);
-                throw;
-            }
-        }
 
         [McpServerResource, Description("Common debugging patterns and step-by-step analysis workflows")]
         public static async Task<string> GetWorkflows(

@@ -216,5 +216,66 @@ namespace mcp_nexus.Tools
                 return errorResponse;
             }
         }
+
+        [McpServerTool, Description("📋 READ COMMAND RESULT: Get the full WinDBG output and status of a specific async command")]
+        public static async Task<object> nexus_read_dump_analyze_command_result(
+            IServiceProvider serviceProvider,
+            [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
+            [Description("Command ID from nexus_enqueue_async_dump_analyze_command")] string commandId)
+        {
+            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+            var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
+
+            try
+            {
+                if (!sessionManager.SessionExists(sessionId))
+                {
+                    return new
+                    {
+                        sessionId = sessionId,
+                        commandId = commandId,
+                        success = false,
+                        error = $"Session {sessionId} not found. Use nexus_list_sessions to see available sessions.",
+                        operation = "nexus_read_dump_analyze_command_result"
+                    };
+                }
+
+                var commandQueue = sessionManager.GetCommandQueue(sessionId);
+                var commandResult = await commandQueue.GetCommandResult(commandId);
+
+                // Parse the result to determine status
+                var isCompleted = !commandResult.Contains("still executing") && !commandResult.Contains("Command not found");
+                var isNotFound = commandResult.Contains("Command not found");
+
+                var result = new
+                {
+                    sessionId = sessionId,
+                    commandId = commandId,
+                    success = true,
+                    operation = "nexus_read_dump_analyze_command_result",
+                    status = isNotFound ? "Not Found" : (isCompleted ? "Completed" : "In Progress"),
+                    result = isCompleted ? commandResult : null,
+                    error = isNotFound ? "Command not found. Use nexus_list_commands to see available commands." : null,
+                    completedAt = isCompleted ? DateTime.UtcNow : (DateTime?)null,
+                    timestamp = DateTime.UtcNow,
+                    message = isNotFound ? null : (isCompleted ? null : "Command is still executing - check again in a few seconds.")
+                };
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error getting command result for session {SessionId}, command {CommandId}", sessionId, commandId);
+
+                return new
+                {
+                    sessionId = sessionId,
+                    commandId = commandId,
+                    success = false,
+                    error = $"Failed to get command result: {ex.Message}",
+                    operation = "nexus_read_dump_analyze_command_result"
+                };
+            }
+        }
     }
 }
