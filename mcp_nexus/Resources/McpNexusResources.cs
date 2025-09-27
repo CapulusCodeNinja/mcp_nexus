@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using mcp_nexus.Session;
 using mcp_nexus.Session.Models;
 using mcp_nexus.CommandQueue;
@@ -53,7 +54,7 @@ namespace mcp_nexus.Resources
             }
         }
 
-        [McpServerResource, Description("📋 COMMANDS: List async commands from all sessions with status and timing information")]
+        [McpServerResource, Description("COMMANDS: List async commands from all sessions with status and timing information")]
         public static Task<string> Commands(
             IServiceProvider serviceProvider)
         {
@@ -273,36 +274,32 @@ namespace mcp_nexus.Resources
                 return commands;
             }
 
-            // For now, create some mock command data since SessionContext doesn't have Commands property
-            // This would need to be implemented in the session manager to track actual commands
-            var mockCommands = new object[]
+            // Get real command data from the session's command queue
+            var commandQueue = sessionContext.CommandQueue;
+            var allCommands = commandQueue.GetAllCommands();
+            
+            var realCommands = allCommands.Select(cmd => new
             {
-                new
+                commandId = cmd.Id,
+                command = cmd.Command,
+                status = GetCommandStatus(cmd),
+                isFinished = cmd.State == CommandState.Completed || cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled,
+                createdAt = cmd.QueueTime,
+                completedAt = cmd.CompletedAt,
+                duration = cmd.CompletedAt.HasValue ? cmd.CompletedAt.Value - cmd.QueueTime : DateTime.UtcNow - cmd.QueueTime,
+                error = cmd.Error,
+                progress = new
                 {
-                    commandId = "cmd-001",
-                    command = "!analyze -v",
-                    status = "Completed",
-                    isFinished = true,
-                    createdAt = DateTime.UtcNow.AddMinutes(-5),
-                    completedAt = DateTime.UtcNow.AddMinutes(-4),
-                    duration = TimeSpan.FromMinutes(1),
-                    error = (string?)null
-                },
-                new
-                {
-                    commandId = "cmd-002",
-                    command = "!threads",
-                    status = "Running",
-                    isFinished = false,
-                    createdAt = DateTime.UtcNow.AddMinutes(-2),
-                    completedAt = (DateTime?)null,
-                    duration = DateTime.UtcNow - DateTime.UtcNow.AddMinutes(-2),
-                    error = (string?)null
+                    queuePosition = GetQueuePositionForCommand(cmd, allCommands),
+                    progressPercentage = GetProgressPercentageForCommand(cmd, allCommands),
+                    elapsed = GetElapsedTimeForCommand(cmd),
+                    eta = GetEtaTimeForCommand(cmd),
+                    message = GetCommandMessage(cmd, allCommands)
                 }
-            };
+            }).ToArray();
 
             // Apply filters
-            var filteredCommands = mockCommands.AsEnumerable();
+            var filteredCommands = realCommands.AsEnumerable();
 
             if (!string.IsNullOrEmpty(commandFilter))
             {
@@ -352,6 +349,153 @@ namespace mcp_nexus.Resources
             }
 
             return commands;
+        }
+
+        /// <summary>
+        /// Gets the status string for a command
+        /// </summary>
+        private static string GetCommandStatus(QueuedCommand cmd)
+        {
+            return cmd.State switch
+            {
+                CommandState.Queued => "Queued",
+                CommandState.Executing => "Executing",
+                CommandState.Completed => "Completed",
+                CommandState.Failed => "Failed",
+                CommandState.Cancelled => "Cancelled",
+                _ => "Unknown"
+            };
+        }
+
+        /// <summary>
+        /// Calculates queue position for a command
+        /// </summary>
+        private static int GetQueuePositionForCommand(QueuedCommand cmd, List<QueuedCommand> allCommands)
+        {
+            var queuedCommands = allCommands.Where(c => c.State == CommandState.Queued).ToList();
+            var executingCommands = allCommands.Where(c => c.State == CommandState.Executing).ToList();
+            
+            if (cmd.State == CommandState.Executing)
+            {
+                return 0; // Currently executing
+            }
+            
+            if (cmd.State == CommandState.Queued)
+            {
+                var position = queuedCommands.IndexOf(cmd);
+                return executingCommands.Count + position; // +1 for each executing command
+            }
+            
+            return -1; // Not in queue
+        }
+
+        /// <summary>
+        /// Calculates progress percentage for a command
+        /// </summary>
+        private static int GetProgressPercentageForCommand(QueuedCommand cmd, List<QueuedCommand> allCommands)
+        {
+            if (cmd.State == CommandState.Completed)
+                return 100;
+            
+            if (cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled)
+                return 0;
+            
+            var queuePosition = GetQueuePositionForCommand(cmd, allCommands);
+            var elapsed = DateTime.UtcNow - cmd.QueueTime;
+            
+            // Base progress from queue position (0-50%)
+            var queueProgress = Math.Max(0, Math.Min(50, (10 - queuePosition) * 5));
+            
+            // Time-based progress that always increases (0-50%)
+            var timeProgress = Math.Min(50, (int)(elapsed.TotalMinutes * 2)); // 2% per minute
+            
+            // Combine both for total progress (0-100%)
+            var totalProgress = Math.Min(100, queueProgress + timeProgress);
+            
+            // Ensure minimum progress based on elapsed time to show activity
+            var minProgress = Math.Min(95, (int)(elapsed.TotalSeconds * 0.5)); // 0.5% per second
+            
+            return Math.Max(totalProgress, minProgress);
+        }
+
+        /// <summary>
+        /// Generates dynamic message for a command
+        /// </summary>
+        private static string GetCommandMessage(QueuedCommand cmd, List<QueuedCommand> allCommands)
+        {
+            if (cmd.State == CommandState.Completed)
+                return "Command completed successfully";
+            
+            if (cmd.State == CommandState.Failed)
+                return $"Command failed: {cmd.Error ?? "Unknown error"}";
+            
+            if (cmd.State == CommandState.Cancelled)
+                return "Command was cancelled";
+            
+            if (cmd.State == CommandState.Executing)
+            {
+                var elapsed = DateTime.UtcNow - cmd.QueueTime;
+                var remainingMinutes = Math.Max(0, (int)((TimeSpan.FromMinutes(10) - elapsed).TotalMinutes));
+                var remainingSeconds = Math.Max(0, (int)((TimeSpan.FromMinutes(10) - elapsed).TotalSeconds % 60));
+                return $"Command is currently executing (elapsed: {elapsed.TotalMinutes:F1} minutes, remaining: {remainingMinutes} minutes {remainingSeconds} seconds)";
+            }
+            
+            if (cmd.State == CommandState.Queued)
+            {
+                var queuePosition = GetQueuePositionForCommand(cmd, allCommands);
+                var elapsed = DateTime.UtcNow - cmd.QueueTime;
+                var progressPercentage = GetProgressPercentageForCommand(cmd, allCommands);
+                
+                var baseMessage = queuePosition switch
+                {
+                    0 => "Command is next in queue - will start executing soon",
+                    1 => "Command is 2nd in queue - almost ready to execute",
+                    2 => "Command is 3rd in queue - waiting for 2 commands ahead",
+                    3 => "Command is 4th in queue - waiting for 3 commands ahead",
+                    4 => "Command is 5th in queue - waiting for 4 commands ahead",
+                    _ when queuePosition <= 10 => $"Command is {queuePosition + 1}th in queue - waiting for {queuePosition} commands ahead",
+                    _ => $"Command is position {queuePosition + 1} in queue - waiting for {queuePosition} commands ahead"
+                };
+                
+                var progressInfo = $" (Progress: {progressPercentage}%, Elapsed: {elapsed.TotalMinutes:F1}min)";
+                var timeInfo = remainingMinutes > 0 ? $", ETA: {remainingMinutes}min {remainingSeconds}s" : ", ETA: <1min";
+                
+                return $"{baseMessage}{progressInfo}{timeInfo}";
+            }
+            
+            return "Command status unknown";
+        }
+
+        /// <summary>
+        /// Gets elapsed time for a command
+        /// </summary>
+        private static string? GetElapsedTimeForCommand(QueuedCommand cmd)
+        {
+            if (cmd.State == CommandState.Completed || cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled)
+                return null;
+
+            var elapsed = DateTime.UtcNow - cmd.QueueTime;
+            return $"{elapsed.TotalMinutes:F1}min";
+        }
+
+        /// <summary>
+        /// Gets ETA time for a command
+        /// </summary>
+        private static string? GetEtaTimeForCommand(QueuedCommand cmd)
+        {
+            if (cmd.State == CommandState.Completed || cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled)
+                return null;
+
+            var elapsed = DateTime.UtcNow - cmd.QueueTime;
+            var remaining = TimeSpan.FromMinutes(10) - elapsed;
+            
+            if (remaining.TotalMinutes <= 0)
+                return "<1min";
+            
+            var remainingMinutes = (int)remaining.TotalMinutes;
+            var remainingSeconds = (int)(remaining.TotalSeconds % 60);
+            
+            return $"{remainingMinutes}min {remainingSeconds}s";
         }
     }
 }

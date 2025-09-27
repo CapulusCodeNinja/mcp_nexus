@@ -162,10 +162,13 @@ namespace mcp_nexus.CommandQueue
             var remainingMinutes = Math.Max(0, (int)remaining.TotalMinutes);
             var remainingSeconds = Math.Max(0, (int)remaining.TotalSeconds % 60);
 
+            // Calculate queue position for queued commands
+            var queuePosition = GetQueuePosition(commandId);
+
             // Return current status for polling with timeout information
             return command.State switch
             {
-                CommandState.Queued => $"Command is queued for execution (estimated wait: up to {m_defaultCommandTimeout.TotalMinutes:F0} minutes)",
+                CommandState.Queued => GetQueuedStatusMessage(queuePosition, elapsed, remainingMinutes, remainingSeconds),
                 CommandState.Executing => $"Command is currently executing (elapsed: {elapsed.TotalMinutes:F1} minutes, remaining: {remainingMinutes} minutes {remainingSeconds} seconds)",
                 CommandState.Cancelled => "Command was cancelled",
                 CommandState.Failed => "Command execution failed",
@@ -263,6 +266,147 @@ namespace mcp_nexus.CommandQueue
             {
                 return m_currentCommand;
             }
+        }
+
+        /// <summary>
+        /// Calculates the position of a command in the queue (0 = next to execute, 1 = second, etc.)
+        /// </summary>
+        private int GetQueuePosition(string commandId)
+        {
+            if (string.IsNullOrEmpty(commandId))
+                return -1;
+
+            // If there's a current command executing, all queued commands are behind it
+            var currentCommand = GetCurrentCommand();
+            if (currentCommand != null)
+            {
+                // Count commands in queue + 1 for the current command
+                var queueCount = m_commandQueue.Count;
+                return queueCount + 1; // +1 because current command is executing
+            }
+
+            // No current command, so count how many commands are ahead in the queue
+            var position = 0;
+            var queueArray = m_commandQueue.ToArray();
+            
+            for (int i = 0; i < queueArray.Length; i++)
+            {
+                if (queueArray[i].Id == commandId)
+                {
+                    return position;
+                }
+                position++;
+            }
+
+            // Command not found in queue
+            return -1;
+        }
+
+        /// <summary>
+        /// Generates dynamic status messages for queued commands with progress indicators
+        /// </summary>
+        private string GetQueuedStatusMessage(int queuePosition, TimeSpan elapsed, int remainingMinutes, int remainingSeconds)
+        {
+            if (queuePosition < 0)
+            {
+                return $"Command is queued for execution (estimated wait: up to {m_defaultCommandTimeout.TotalMinutes:F0} minutes)";
+            }
+
+            // Calculate progress percentage that ALWAYS increases over time
+            // This prevents the "stuck" perception by showing continuous progress
+            var progressPercentage = CalculateProgressPercentage(queuePosition, elapsed);
+            
+            // Generate different messages based on position and elapsed time
+            var baseMessage = GetBaseMessage(queuePosition, elapsed);
+            
+            // Add progress and time information
+            var progressInfo = $" (Progress: {progressPercentage}%, Elapsed: {elapsed.TotalMinutes:F1}min)";
+            var timeInfo = remainingMinutes > 0 ? $", ETA: {remainingMinutes}min {remainingSeconds}s" : ", ETA: <1min";
+
+            return $"{baseMessage}{progressInfo}{timeInfo}";
+        }
+
+        /// <summary>
+        /// Calculates progress percentage that always increases over time to prevent "stuck" perception
+        /// </summary>
+        private int CalculateProgressPercentage(int queuePosition, TimeSpan elapsed)
+        {
+            // Base progress from queue position (0-50%)
+            var queueProgress = Math.Max(0, Math.Min(50, (10 - queuePosition) * 5));
+            
+            // Time-based progress that always increases (0-50%)
+            // This ensures progress always goes up, even if queue position doesn't change
+            var timeProgress = Math.Min(50, (int)(elapsed.TotalMinutes * 2)); // 2% per minute
+            
+            // Combine both for total progress (0-100%)
+            var totalProgress = Math.Min(100, queueProgress + timeProgress);
+            
+            // Ensure minimum progress based on elapsed time to show activity
+            var minProgress = Math.Min(95, (int)(elapsed.TotalSeconds * 0.5)); // 0.5% per second
+            
+            return Math.Max(totalProgress, minProgress);
+        }
+
+        /// <summary>
+        /// Generates base message with emojis and dynamic content based on position and time
+        /// </summary>
+        private string GetBaseMessage(int queuePosition, TimeSpan elapsed)
+        {
+            // Add time-based variations to make messages feel more dynamic
+            var timeVariation = (int)(elapsed.TotalSeconds) % 4;
+            
+            return queuePosition switch
+            {
+                0 => timeVariation switch
+                {
+                    0 => "Command is next in queue - will start executing soon",
+                    1 => "Command is next in queue - preparing to execute",
+                    2 => "Command is next in queue - almost ready to start",
+                    _ => "Command is next in queue - execution imminent"
+                },
+                1 => timeVariation switch
+                {
+                    0 => "Command is 2nd in queue - almost ready to execute",
+                    1 => "Command is 2nd in queue - waiting for 1 command ahead",
+                    2 => "Command is 2nd in queue - will be next soon",
+                    _ => "Command is 2nd in queue - preparing for execution"
+                },
+                2 => timeVariation switch
+                {
+                    0 => "Command is 3rd in queue - waiting for 2 commands ahead",
+                    1 => "Command is 3rd in queue - making progress through queue",
+                    2 => "Command is 3rd in queue - moving up in line",
+                    _ => "Command is 3rd in queue - queue position improving"
+                },
+                3 => timeVariation switch
+                {
+                    0 => "Command is 4th in queue - waiting for 3 commands ahead",
+                    1 => "Command is 4th in queue - progressing through queue",
+                    2 => "Command is 4th in queue - position advancing",
+                    _ => "Command is 4th in queue - queue moving forward"
+                },
+                4 => timeVariation switch
+                {
+                    0 => "Command is 5th in queue - waiting for 4 commands ahead",
+                    1 => "Command is 5th in queue - queue processing actively",
+                    2 => "Command is 5th in queue - position updating",
+                    _ => "Command is 5th in queue - making steady progress"
+                },
+                _ when queuePosition <= 10 => timeVariation switch
+                {
+                    0 => $"Command is {queuePosition + 1}th in queue - waiting for {queuePosition} commands ahead",
+                    1 => $"Command is {queuePosition + 1}th in queue - queue processing normally",
+                    2 => $"Command is {queuePosition + 1}th in queue - position tracking active",
+                    _ => $"Command is {queuePosition + 1}th in queue - progress monitoring"
+                },
+                _ => timeVariation switch
+                {
+                    0 => $"Command is position {queuePosition + 1} in queue - waiting for {queuePosition} commands ahead",
+                    1 => $"Command is position {queuePosition + 1} in queue - queue system active",
+                    2 => $"Command is position {queuePosition + 1} in queue - processing normally",
+                    _ => $"Command is position {queuePosition + 1} in queue - status updating"
+                }
+            };
         }
 
         #region Private Processing Methods

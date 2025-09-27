@@ -193,7 +193,7 @@ namespace mcp_nexus.Tools
                     command = command,
                     success = true,
                     operation = "nexus_enqueue_async_dump_analyze_command",
-                    message = $"Command queued successfully. Estimated execution time: up to 10 minutes. Use the resource 'commands' to observe the status and the 'nexus_read_dump_analyze_command_result' tool to get results.",
+                    message = $"Command queued successfully. Estimated execution time: up to 10 minutes. Use the 'commands' resource to monitor all commands or the 'nexus_read_dump_analyze_command_result' tool to get specific results.",
                     timeoutMinutes = 10,
                     status = "queued"
                 };
@@ -253,21 +253,53 @@ namespace mcp_nexus.Tools
                 var isExecuting = commandResult.Contains("currently executing");
                 var isQueued = commandResult.Contains("queued for execution");
 
-                var result = new
+                // Extract queue position and progress from message if available
+                string? queuePosition = null;
+                string? progressPercentage = null;
+                
+                if (isQueued)
                 {
-                    sessionId = sessionId,
-                    commandId = commandId,
-                    success = true,
-                    operation = "nexus_read_dump_analyze_command_result",
-                    status = isNotFound ? "Not Found" : (isCompleted ? "Completed" : (isExecuting ? "Executing" : "Queued")),
-                    result = isCompleted ? commandResult : null,
-                    error = isNotFound ? "Command not found. Use nexus_list_commands to see available commands." : null,
-                    completedAt = isCompleted ? DateTime.UtcNow : (DateTime?)null,
-                    timestamp = DateTime.UtcNow,
-                    message = isNotFound ? null : (isCompleted ? null : commandResult), // Include the detailed status message
-                    timeoutMinutes = 10,
-                    usage = SessionAwareWindbgTool.USAGE_EXPLANATION
-                };
+                    // Extract queue position
+                    if (commandResult.Contains("position"))
+                    {
+                        var positionMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"position (\d+) in queue");
+                        if (positionMatch.Success)
+                        {
+                            queuePosition = positionMatch.Groups[1].Value;
+                        }
+                    }
+                    
+                    // Extract progress percentage
+                    var progressMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"Progress: (\d+)%");
+                    if (progressMatch.Success)
+                    {
+                        progressPercentage = progressMatch.Groups[1].Value;
+                    }
+                }
+
+        var result = new
+        {
+            sessionId = sessionId,
+            commandId = commandId,
+            success = true,
+            operation = "nexus_read_dump_analyze_command_result",
+            status = isNotFound ? "Not Found" : (isCompleted ? "Completed" : (isExecuting ? "Executing" : "Queued")),
+            result = isCompleted ? commandResult : null,
+            error = isNotFound ? "Command not found. Use nexus_list_commands to see available commands." : null,
+            completedAt = isCompleted ? DateTime.UtcNow : (DateTime?)null,
+            timestamp = DateTime.UtcNow,
+            message = isNotFound ? null : (isCompleted ? null : commandResult), // Include the detailed status message
+            progress = new
+            {
+                queuePosition = queuePosition,
+                progressPercentage = progressPercentage,
+                elapsed = isNotFound ? null : (isCompleted ? null : GetElapsedTime(commandResult)),
+                eta = isNotFound ? null : (isCompleted ? null : GetEtaTime(commandResult)),
+                message = isNotFound ? null : (isCompleted ? null : commandResult) // Progress message separate from result
+            },
+            timeoutMinutes = 10,
+            usage = SessionAwareWindbgTool.USAGE_EXPLANATION
+        };
 
                 return result;
             }
@@ -285,6 +317,49 @@ namespace mcp_nexus.Tools
                     usage = SessionAwareWindbgTool.USAGE_EXPLANATION
                 };
             }
+        }
+
+        /// <summary>
+        /// Extracts elapsed time from command result message
+        /// </summary>
+        private static string? GetElapsedTime(string commandResult)
+        {
+            if (string.IsNullOrEmpty(commandResult))
+                return null;
+
+            // Look for "Elapsed: X.Xmin" pattern
+            var elapsedMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"Elapsed: ([\d.]+)min");
+            if (elapsedMatch.Success)
+            {
+                return $"{elapsedMatch.Groups[1].Value}min";
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Extracts ETA time from command result message
+        /// </summary>
+        private static string? GetEtaTime(string commandResult)
+        {
+            if (string.IsNullOrEmpty(commandResult))
+                return null;
+
+            // Look for "ETA: Xmin Ys" pattern
+            var etaMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"ETA: ([\d]+)min ([\d]+)s");
+            if (etaMatch.Success)
+            {
+                return $"{etaMatch.Groups[1].Value}min {etaMatch.Groups[2].Value}s";
+            }
+
+            // Look for "ETA: <1min" pattern
+            var etaMinMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"ETA: (<1min)");
+            if (etaMinMatch.Success)
+            {
+                return etaMinMatch.Groups[1].Value;
+            }
+
+            return null;
         }
     }
 }
