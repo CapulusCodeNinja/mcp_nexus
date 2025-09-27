@@ -52,7 +52,7 @@ namespace mcp_nexus.Tools
                     new
                     {
                         step_title = "Tooling - Exec Command",
-                        tool_name = "nexus_dump_analyze_session_async_command",
+                        tool_name = "nexus_enqueue_async_dump_analyze_command",
                         action = "Use the tool to start asynchronous execution of the WinDBG commands.",
                         input = new { command = "string (required)", sessionId = "string (required)" },
                         output = (string?)"commandId",
@@ -105,7 +105,7 @@ namespace mcp_nexus.Tools
                         uri = "sessions://list",
                         name = "List Sessions",
                         description = "List all debugging sessions with advanced filtering options",
-                        input = new { 
+                        input = new {
                             sessionId = "string (optional) - Filter by session ID (partial match)",
                             dumpPath = "string (optional) - Filter by dump file path (partial match)",
                             status = "string (optional) - Filter by session status (Initializing, Active, Disposing, Disposed, Error)",
@@ -124,7 +124,7 @@ namespace mcp_nexus.Tools
                         uri = "commands://list",
                         name = "List Commands",
                         description = "List async commands from all sessions with advanced filtering options",
-                        input = new { 
+                        input = new {
                             sessionId = "string (optional) - Filter by specific session",
                             command = "string (optional) - Filter by command text (case-insensitive)",
                             from = "DateTime (optional) - Filter commands from this time",
@@ -350,7 +350,7 @@ namespace mcp_nexus.Tools
         /// Execute a debugger command asynchronously in the specified session
         /// </summary>
         [Description("🔄 ASYNC COMMAND: Execute debugger command in background queue. NEVER returns results directly! Always returns commandId. MUST use commands://result resource to get actual results.")]
-        public Task<object> nexus_dump_analyze_session_async_command(
+        public Task<object> nexus_enqueue_async_dump_analyze_command(
             [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
             [Description("Debugger command to execute (e.g., '!analyze -v', 'k', '!peb')")] string command)
         {
@@ -372,7 +372,7 @@ namespace mcp_nexus.Tools
                         dumpFile = (string?)null,
                         commandId = (string?)null,
                         success = false,
-                        operation = "nexus_dump_analyze_session_async_command",
+                        operation = "nexus_enqueue_async_dump_analyze_command",
                         message = $"Session not found or expired: {sessionId}. Use sessions://list to see available sessions.",
                         usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                     };

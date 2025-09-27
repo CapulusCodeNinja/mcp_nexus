@@ -117,12 +117,12 @@ Architecture, testing, contribution guide
 - **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
 - **Session Management**: Available via MCP Resources (`sessions://list`, `commands://list`)
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
-- **Async Command Queue**: `nexus_dump_analyze_session_async_command`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
+- **Async Command Queue**: `nexus_enqueue_async_dump_analyze_command`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
 
 **🔄 Complete Debugging Workflow:**
 ```bash
 1. nexus_open_dump_analyze_session → Create session, returns sessionId
-2. nexus_dump_analyze_session_async_command → Queue command, returns commandId
+2. nexus_enqueue_async_dump_analyze_command → Queue command, returns commandId
 3. Listen for notifications/commandStatus → Real-time progress updates
 4. commands://result → Get final results via MCP Resource
 5. Use MCP Resources for session management:

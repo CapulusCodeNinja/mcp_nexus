@@ -10,7 +10,7 @@ Windows debugging capabilities through WinDBG/CDB integration:
 - **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
 - **Session Management**: Available via MCP Resources (`sessions://list`, `commands://list`)
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
-- **Command Execution**: `nexus_dump_analyze_session_async_command` (🔄 ASYNC QUEUE: Always returns commandId, use MCP Resources for results)
+- **Command Execution**: `nexus_enqueue_async_dump_analyze_command` (🔄 ASYNC QUEUE: Always returns commandId, use MCP Resources for results)
 - **Queue Management**: `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
 
 ### 🔄 Complete Debugging Workflow
@@ -21,7 +21,7 @@ Windows debugging capabilities through WinDBG/CDB integration:
 1. nexus_open_dump_analyze_session {"dumpPath": "C:\\crash.dmp"}
    → Returns: {"sessionId": "sess-000001-abc12345-12345678-0001", ...}
 
-2. nexus_dump_analyze_session_async_command {"sessionId": "sess-000001-abc12345-12345678-0001", "command": "!analyze -v"}
+2. nexus_enqueue_async_dump_analyze_command {"sessionId": "sess-000001-abc12345-12345678-0001", "command": "!analyze -v"}
    → Returns: {"commandId": "cmd-000001-abc12345-12345678-0001", "status": "queued", ...}
 
 3. Listen for real-time notifications:
@@ -41,7 +41,7 @@ Windows debugging capabilities through WinDBG/CDB integration:
    → Returns: {"success": true, ...} - Clean up resources
 ```
 
-**⚠️ CRITICAL**: `nexus_dump_analyze_session_async_command` NEVER returns command results directly. You MUST use MCP Resources (`commands://result`) to get results or listen for notifications!
+**⚠️ CRITICAL**: `nexus_enqueue_async_dump_analyze_command` NEVER returns command results directly. You MUST use MCP Resources (`commands://result`) to get results or listen for notifications!
 
 ### 📋 Session Management (via MCP Resources)
 

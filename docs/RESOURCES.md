@@ -201,7 +201,7 @@ commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-1
 ### Complete Debugging Workflow
 1. **Check existing sessions:** `sessions://list`
 2. **Create session if needed:** `nexus_open_dump_analyze_session`
-3. **Queue command:** `nexus_dump_analyze_session_async_command`
+3. **Queue command:** `nexus_enqueue_async_dump_analyze_command`
 4. **Monitor progress:** `commands://result` (poll until completed)
 5. **List all commands:** `commands://list?sessionId=<sessionId>`
 6. **Clean up:** `nexus_close_dump_analyze_session`
@@ -234,7 +234,7 @@ commands://result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-1
 ## Resource Lifecycle
 
 - **Sessions:** Created via `nexus_open_dump_analyze_session`, listed via `sessions://list`
-- **Commands:** Queued via `nexus_dump_analyze_session_async_command`, tracked via `commands://list` and `commands://result`
+- **Commands:** Queued via `nexus_enqueue_async_dump_analyze_command`, tracked via `commands://list` and `commands://result`
 - **Documentation:** Static resources available anytime via `docs://workflows` and `docs://usage`
 
 All resources return JSON data wrapped in MCP's standard `contents` array format for consistent integration with MCP clients.

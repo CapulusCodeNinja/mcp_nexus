@@ -93,7 +93,7 @@ namespace mcp_nexus.Protocol
         {
             return new McpToolSchema
             {
-                Name = "nexus_dump_analyze_session_async_command",
+                Name = "nexus_enqueue_async_dump_analyze_command",
                 Description = System.Text.Json.JsonSerializer.Serialize(
                     SessionAwareWindbgTool.USAGE_EXPLANATION,
                     new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),

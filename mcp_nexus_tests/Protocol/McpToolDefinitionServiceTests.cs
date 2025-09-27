@@ -21,7 +21,7 @@ namespace mcp_nexus_tests.Services
             var tools = service.GetAllTools();
 
             // Assert
-            Assert.Equal(3, tools.Length); // Core tools: nexus_open_dump_analyze_session, nexus_dump_analyze_session_async_command, nexus_close_dump_analyze_session
+            Assert.Equal(3, tools.Length); // Core tools: nexus_open_dump_analyze_session, nexus_enqueue_async_dump_analyze_command, nexus_close_dump_analyze_session
         }
 
         [Fact]
@@ -34,7 +34,7 @@ namespace mcp_nexus_tests.Services
             var tools = service.GetAllTools();
 
             // Assert
-            var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_dump_analyze_session_async_command");
+            var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_enqueue_async_dump_analyze_command");
             Assert.NotNull(asyncTool);
             Assert.Contains("asynchronous execution", asyncTool.Description);
         }

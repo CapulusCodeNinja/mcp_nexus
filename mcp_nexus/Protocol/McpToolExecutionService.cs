@@ -25,7 +25,7 @@ namespace mcp_nexus.Protocol
                 {
                     "nexus_open_dump_analyze_session" => await ExecuteOpenWindbgDump(arguments),
                     "nexus_close_dump_analyze_session" => await ExecuteCloseWindbgDump(arguments),
-                    "nexus_dump_analyze_session_async_command" => await ExecuteRunWindbgCmdAsync(arguments),
+                    "nexus_enqueue_async_dump_analyze_command" => await ExecuteRunWindbgCmdAsync(arguments),
                     _ => throw new McpToolException(-32602, $"Unknown tool: {toolName}")
                 };
             }
@@ -87,7 +87,7 @@ namespace mcp_nexus.Protocol
 
             try
             {
-                var result = await sessionAwareWindbgTool.nexus_dump_analyze_session_async_command(sessionId, command);
+                var result = await sessionAwareWindbgTool.nexus_enqueue_async_dump_analyze_command(sessionId, command);
                 return CreateToolResult(result);
             }
             catch (Exception ex)

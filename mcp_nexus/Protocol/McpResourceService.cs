@@ -76,19 +76,19 @@ namespace mcp_nexus.Protocol
 
             try
             {
-            return uri switch
-            {
-                var u when u.StartsWith("sessions://") => await ReadSessionResource(u),
-                var u when u.StartsWith("commands://") => await ReadCommandResource(u),
-                var u when u.StartsWith("docs://") => ReadDocumentationResource(u),
-                "sessions://list" => await ReadSessionsList(uri),
-                var u when u.StartsWith("sessions://list?") => await ReadSessionsList(u),
-                "commands://list" => await ReadCommandsList(uri),
-                "commands://result" => await ReadCommandStatusHelp(),
-                var u when u.StartsWith("commands://list?") => await ReadCommandsList(u),
-                var u when u.StartsWith("commands://result?") => await ReadCommandStatus(u),
-                _ => throw new ArgumentException($"Unknown resource URI: {uri}")
-            };
+                return uri switch
+                {
+                    var u when u.StartsWith("sessions://") => await ReadSessionResource(u),
+                    var u when u.StartsWith("commands://") => await ReadCommandResource(u),
+                    var u when u.StartsWith("docs://") => ReadDocumentationResource(u),
+                    "sessions://list" => await ReadSessionsList(uri),
+                    var u when u.StartsWith("sessions://list?") => await ReadSessionsList(u),
+                    "commands://list" => await ReadCommandsList(uri),
+                    "commands://result" => await ReadCommandStatusHelp(),
+                    var u when u.StartsWith("commands://list?") => await ReadCommandsList(u),
+                    var u when u.StartsWith("commands://result?") => await ReadCommandStatus(u),
+                    _ => throw new ArgumentException($"Unknown resource URI: {uri}")
+                };
             }
             catch (Exception ex)
             {
@@ -632,7 +632,7 @@ namespace mcp_nexus.Protocol
                     principles = new[]
                     {
                         "Critical thinking and pattern recognition",
-                        "Understanding the specific application and its architecture", 
+                        "Understanding the specific application and its architecture",
                         "Knowledge of Windows internals and common failure modes",
                         "Ability to adapt and combine different analysis techniques",
                         "Persistence in following leads and investigating anomalies",
@@ -720,7 +720,7 @@ namespace mcp_nexus.Protocol
                 // Apply sorting
                 filteredSessions = filters.SortBy.ToLowerInvariant() switch
                 {
-                    "sessionid" => filters.SortOrder.ToLowerInvariant() == "asc" 
+                    "sessionid" => filters.SortOrder.ToLowerInvariant() == "asc"
                         ? filteredSessions.OrderBy(s => s.SessionId)
                         : filteredSessions.OrderByDescending(s => s.SessionId),
                     "dumppath" => filters.SortOrder.ToLowerInvariant() == "asc"
@@ -955,7 +955,7 @@ namespace mcp_nexus.Protocol
             // Filter by command text
             if (!string.IsNullOrEmpty(filters.CommandText))
             {
-                filteredCommands = filteredCommands.Where(cmd => 
+                filteredCommands = filteredCommands.Where(cmd =>
                 {
                     dynamic d = cmd;
                     return d.command.ToString().Contains(filters.CommandText, StringComparison.OrdinalIgnoreCase);
@@ -984,7 +984,7 @@ namespace mcp_nexus.Protocol
             // Sort commands
             filteredCommands = filters.SortBy.ToLower() switch
             {
-                "command" => filters.SortOrder.ToLower() == "asc" 
+                "command" => filters.SortOrder.ToLower() == "asc"
                     ? filteredCommands.OrderBy(cmd => { dynamic d = cmd; return d.command; })
                     : filteredCommands.OrderByDescending(cmd => { dynamic d = cmd; return d.command; }),
                 "status" => filters.SortOrder.ToLower() == "asc"

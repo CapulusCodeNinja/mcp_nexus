@@ -37,7 +37,7 @@ namespace mcp_nexus_tests.Services
             var tools = m_service.GetAllTools();
 
             // Assert
-            // Core tools for first release: nexus_open_dump_analyze_session, nexus_dump_analyze_session_async_command, nexus_close_dump_analyze_session
+            // Core tools for first release: nexus_open_dump_analyze_session, nexus_enqueue_async_dump_analyze_command, nexus_close_dump_analyze_session
             Assert.Equal(3, tools.Length);
         }
 
@@ -65,7 +65,7 @@ namespace mcp_nexus_tests.Services
             var tools = m_service.GetAllTools();
 
             // Assert
-            var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_dump_analyze_session_async_command");
+            var asyncTool = tools.FirstOrDefault(t => t.Name == "nexus_enqueue_async_dump_analyze_command");
             Assert.NotNull(asyncTool);
             Assert.Contains("asynchronous execution", asyncTool.Description);
             Assert.Contains("commandId", asyncTool.Description);
@@ -122,7 +122,7 @@ namespace mcp_nexus_tests.Services
 
             // Assert - Core tools for first release
             Assert.Contains(tools, t => t.Name == "nexus_open_dump_analyze_session");
-            Assert.Contains(tools, t => t.Name == "nexus_dump_analyze_session_async_command");
+            Assert.Contains(tools, t => t.Name == "nexus_enqueue_async_dump_analyze_command");
             // Status tool removed - now handled by MCP Resources
             Assert.Contains(tools, t => t.Name == "nexus_close_dump_analyze_session");
             Assert.DoesNotContain(tools, t => t.Name == "get_session_info");
