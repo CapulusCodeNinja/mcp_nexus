@@ -145,7 +145,7 @@ namespace mcp_nexus.Tools
                         note = (string?)"This is a RESOURCE, not a tool. Use resources/read method to access it."
                     }
                 },
-                usage_notes = new[]
+                additional_notes = new[]
                 {
                     "Access resources using the MCP resources/list and resources/read methods",
                     "Resources provide additional context and documentation beyond core tools",
