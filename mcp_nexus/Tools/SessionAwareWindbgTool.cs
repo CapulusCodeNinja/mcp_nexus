@@ -35,16 +35,17 @@ namespace mcp_nexus.Tools
                 {
                     "Please get further details from the response and the tool listings of the MCP server.",
                     "After opening an analyze session, WinDBG commands can be asynchronously executed.",
-                    "The result can be queried (regular polling) by the status API.",
+                    "Command results can be accessed via the 'Command Result' resource or 'List Commands' resource.",
                     "Opening a session without executing commands will not have any effect."
                 },
-                available_tools = new[]
+                available_tools = new object[]
                 {
                     new
                     {
                         step_title = "Tooling - Open Session",
                         tool_name = "nexus_open_dump_analyze_session",
                         action = "Open the analyze session for the dump file with the tool from Nexus MCP server.",
+                        input = new { dumpPath = "string (required)", symbolsPath = "string (optional)" },
                         output = (string?)"sessionid",
                         note = (string?)"This EXACT sessionid IS REQUIRED TO BE USED for all following commands in the session."
                     },
@@ -53,22 +54,25 @@ namespace mcp_nexus.Tools
                         step_title = "Tooling - Exec Command",
                         tool_name = "nexus_dump_analyze_session_async_command",
                         action = "Use the tool to start asynchronous execution of the WinDBG commands.",
+                        input = new { command = "string (required)", sessionId = "string (required)" },
                         output = (string?)"commandId",
-                        note = (string?)"This EXACT commandId IS REQUIRED TO BE USED for the nexus_dump_analyze_session_async_command_status commands to get the asynchronous result."
+                        note = (string?)"This EXACT commandId IS REQUIRED TO BE USED for the 'Command Result' resource to get the asynchronous result."
                     },
                     new
                     {
-                        step_title = "Tooling - Get Command Status",
-                        tool_name = "nexus_dump_analyze_session_async_command_status",
-                        action = "Use the tool to poll for the status or result of the specific asynchronous execution of the WinDBG commands.",
+                        step_title = "Resource - Get Command Result",
+                        tool_name = "debugging://tools/command-result",
+                        action = "Use the 'Command Result' resource to get the status and results of specific commands.",
+                        input = new { sessionId = "string (required)", commandId = "string (required)" },
                         output = (string?)"result",
-                        note = (string?)null
+                        note = (string?)"Use: debugging://tools/command-result?sessionId=<sessionId>&commandId=<commandId>"
                     },
                     new
                     {
                         step_title = "Tooling - Close Session",
                         tool_name = "nexus_close_dump_analyze_session",
                         action = "Use the tool to close the analyze session of the dump file after all commands are executed or the session is not needed anymore.",
+                        input = new { sessionId = "string (required)" },
                         output = (string?)null,
                         note = (string?)null
                     }
@@ -78,37 +82,47 @@ namespace mcp_nexus.Tools
             {
                 title = "MCP Resources",
                 description = "Additional resources and documentation available through MCP",
-                available_resources = new[]
+                available_resources = new object[]
                 {
                     new
                     {
                         uri = "debugging://docs/crash-analysis-workflows",
                         name = "Crash Analysis Workflows",
-                        description = "Comprehensive step-by-step analysis workflows for Windows crash dump investigation"
+                        description = "Comprehensive step-by-step analysis workflows for Windows crash dump investigation",
+                        input = (object?)null,
+                        note = (string?)"Access via MCP resources/read method"
                     },
                     new
                     {
                         uri = "debugging://docs/usage",
                         name = "Usage",
-                        description = "Essential tool usage information for MCP Nexus server"
+                        description = "Essential tool usage information for MCP Nexus server",
+                        input = (object?)null,
+                        note = (string?)"Access via MCP resources/read method"
                     },
                     new
                     {
                         uri = "debugging://tools/sessions",
                         name = "List Sessions",
-                        description = "List all active debugging sessions"
+                        description = "List all active debugging sessions",
+                        input = (object?)null,
+                        note = (string?)"Access via MCP resources/read method"
                     },
                     new
                     {
                         uri = "debugging://tools/commands",
                         name = "List Commands",
-                        description = "List async commands from all sessions or filter by specific session"
+                        description = "List async commands from all sessions or filter by specific session",
+                        input = new { sessionId = "string (optional)" },
+                        note = (string?)"Use: debugging://tools/commands or debugging://tools/commands?sessionId=<sessionId>"
                     },
                     new
                     {
                         uri = "debugging://tools/command-result",
                         name = "Command Result",
-                        description = "Get status and results of a specific async command"
+                        description = "Get status and results of a specific async command",
+                        input = new { sessionId = "string (required)", commandId = "string (required)" },
+                        note = (string?)"Use: debugging://tools/command-result?sessionId=<sessionId>&commandId=<commandId>"
                     }
                 },
                 usage_notes = new[]
@@ -193,13 +207,13 @@ namespace mcp_nexus.Tools
                 // Return standardized response with required fields
                 var response = new
                 {
-                    usage = USAGE_EXPLANATION,
                     sessionId = sessionId,
                     dumpFile = Path.GetFileName(dumpPath),
                     commandId = (string?)null,
                     success = true,
                     operation = "nexus_open_dump_analyze_session",
-                    message = $"Session created successfully: {sessionId}"
+                    message = $"Session created successfully: {sessionId}",
+                    usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
                 logger.LogInformation("✅ Session {SessionId} created successfully", sessionId);
@@ -228,13 +242,13 @@ namespace mcp_nexus.Tools
 
                 var errorResponse = new
                 {
-                    usage = USAGE_EXPLANATION,
                     sessionId = (string?)null,
                     dumpFile = Path.GetFileName(dumpPath),
                     commandId = (string?)null,
                     success = false,
                     operation = "nexus_open_dump_analyze_session",
-                    message = $"Failed to create debugging session: {ex.Message}"
+                    message = $"Failed to create debugging session: {ex.Message}",
+                    usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
                 return errorResponse;
@@ -257,13 +271,13 @@ namespace mcp_nexus.Tools
                 {
                     var notFoundResponse = new
                     {
-                        usage = USAGE_EXPLANATION,
                         sessionId = sessionId,
                         dumpFile = (string?)null,
                         commandId = (string?)null,
                         success = false,
                         operation = "nexus_close_dump_analyze_session",
-                        message = $"Session not found or already closed: {sessionId}"
+                        message = $"Session not found or already closed: {sessionId}",
+                        usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                     };
 
                     return notFoundResponse;
@@ -275,7 +289,6 @@ namespace mcp_nexus.Tools
                 // Return standardized response with required fields
                 var response = new
                 {
-                    usage = USAGE_EXPLANATION,
                     sessionId = sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
@@ -283,7 +296,8 @@ namespace mcp_nexus.Tools
                     operation = "nexus_close_dump_analyze_session",
                     message = closed
                         ? $"Session closed successfully: {sessionId}"
-                        : $"Session may have already been closed: {sessionId}"
+                        : $"Session may have already been closed: {sessionId}",
+                    usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
                 logger.LogInformation("✅ Session {SessionId} closed successfully", sessionId);
@@ -295,13 +309,13 @@ namespace mcp_nexus.Tools
 
                 var errorResponse = new
                 {
-                    usage = USAGE_EXPLANATION,
                     sessionId = sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
                     success = false,
                     operation = "nexus_close_dump_analyze_session",
-                    message = $"Error closing session: {ex.Message}"
+                    message = $"Error closing session: {ex.Message}",
+                    usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
                 return errorResponse;
@@ -334,13 +348,13 @@ namespace mcp_nexus.Tools
                 {
                     var sessionNotFoundResponse = new
                     {
-                        usage = USAGE_EXPLANATION,
                         sessionId = sessionId,
                         dumpFile = (string?)null,
                         commandId = (string?)null,
                         success = false,
                         operation = "nexus_dump_analyze_session_async_command",
-                        message = $"Session not found or expired: {sessionId}"
+                        message = $"Session not found or expired: {sessionId}",
+                        usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                     };
 
                     return sessionNotFoundResponse;
@@ -354,13 +368,13 @@ namespace mcp_nexus.Tools
                 // Return standardized response with required fields
                 var response = new
                 {
-                    usage = USAGE_EXPLANATION,
                     sessionId = sessionId,
                     dumpFile = context?.DumpPath != null ? Path.GetFileName(context.DumpPath) : null,
                     commandId = commandId,
                     success = true,
                     operation = "nexus_dump_analyze_session_async_command",
-                    message = $"Command queued successfully: {commandId}"
+                    message = $"Command queued successfully: {commandId}",
+                    usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
                 logger.LogInformation("✅ Command {CommandId} queued in session {SessionId}", commandId, sessionId);
@@ -372,13 +386,13 @@ namespace mcp_nexus.Tools
 
                 var errorResponse = new
                 {
-                    usage = USAGE_EXPLANATION,
                     sessionId = sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
                     success = false,
                     operation = "nexus_dump_analyze_session_async_command",
-                    message = $"Session not found: {ex.Message}"
+                    message = $"Session not found: {ex.Message}",
+                    usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
                 return errorResponse;
@@ -389,121 +403,19 @@ namespace mcp_nexus.Tools
 
                 var errorResponse = new
                 {
-                    usage = USAGE_EXPLANATION,
                     sessionId = sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
                     success = false,
                     operation = "nexus_dump_analyze_session_async_command",
-                    message = $"Error executing command: {ex.Message}"
+                    message = $"Error executing command: {ex.Message}",
+                    usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
                 return errorResponse;
             }
         }
 
-        /// <summary>
-        /// Get the status and result of a previously queued command
-        /// </summary>
-        [Description("📊 COMMAND STATUS: Get the result/status of a queued command. This is how you get actual command results from async operations.")]
-        public async Task<object> nexus_dump_analyze_session_async_command_status(
-            [Description("Command ID returned by nexus_dump_analyze_session_async_command")] string commandId)
-        {
-            logger.LogInformation("📊 Checking command status: {CommandId}", commandId);
-
-            return await GetCommandStatusAsync(commandId);
-        }
-
-        private async Task<object> GetCommandStatusAsync(string commandId)
-        {
-            try
-            {
-                // Extract session ID from command ID format (strict validation)
-                var parts = commandId.Split('-');
-                if (parts.Length < 5) // cmd-sess-XXXXXX-YYYYYYYY-ZZZZ format
-                {
-                    var errorResponse = new
-                    {
-                        usage = USAGE_EXPLANATION,
-                        sessionId = (string?)null,
-                        dumpFile = (string?)null,
-                        commandId = commandId,
-                        success = false,
-                        operation = "nexus_dump_analyze_session_async_command_status",
-                        message = $"Invalid command ID format: {commandId}"
-                    };
-
-                    return errorResponse;
-                }
-
-                // Extract sessionId from commandId (by design, not a fallback)
-                var sessionId = $"{parts[1]}-{parts[2]}-{parts[3]}"; // Extract "sess-XXXXXX-YYYYYYYY"
-
-                // Validate session
-                if (!sessionManager.SessionExists(sessionId))
-                {
-                    var sessionNotFoundResponse = new
-                    {
-                        usage = USAGE_EXPLANATION,
-                        sessionId = sessionId,
-                        dumpFile = (string?)null,
-                        commandId = commandId,
-                        success = false,
-                        operation = "nexus_dump_analyze_session_async_command_status",
-                        message = $"Session not found or expired for command: {commandId}"
-                    };
-
-                    return sessionNotFoundResponse;
-                }
-
-                // Get command result
-                var commandQueue = sessionManager.GetCommandQueue(sessionId);
-                var result = await commandQueue.GetCommandResult(commandId);
-                var context = sessionManager.GetSessionContext(sessionId);
-
-                // Determine status from result
-                var status = result switch
-                {
-                    var r when r.StartsWith("Command is still") => "queued",
-                    var r when r.StartsWith("Command not found") => "not_found",
-                    var r when r.Contains("cancelled") => "cancelled",
-                    var r when r.Contains("failed") => "failed",
-                    _ => "completed"
-                };
-
-                // Return standardized response with required fields
-                var response = new
-                {
-                    usage = USAGE_EXPLANATION,
-                    sessionId = sessionId,
-                    dumpFile = context?.DumpPath != null ? Path.GetFileName(context.DumpPath) : null,
-                    commandId = commandId,
-                    success = true,
-                    operation = "nexus_dump_analyze_session_async_command_status",
-                    message = $"Command status: {status}",
-                    result = result // Keep the debugger output
-                };
-
-                return response;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "❌ Error checking command status: {CommandId}", commandId);
-
-                var errorResponse = new
-                {
-                    usage = USAGE_EXPLANATION,
-                    sessionId = (string?)null,
-                    dumpFile = (string?)null,
-                    commandId = commandId,
-                    success = false,
-                    operation = "nexus_dump_analyze_session_async_command_status",
-                    message = $"Error checking command status: {ex.Message}"
-                };
-
-                return errorResponse;
-            }
-        }
 
         #endregion
 

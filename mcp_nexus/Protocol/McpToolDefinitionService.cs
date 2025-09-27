@@ -20,7 +20,6 @@ namespace mcp_nexus.Protocol
                 // NEXUS DEBUGGER COMMANDS - Core functionality for crash dump analysis
                 CreateNexusOpenDumpAnalyzeSessionTool(),
                 CreateNexusDumpAnalyzeSessionAsyncCommandTool(),
-                CreateNexusDumpAnalyzeSessionAsyncCommandStatusTool(),
                 CreateNexusCloseDumpAnalyzeSessionTool(),
                 // NOTE: Remote debugging and command cancellation will be added in future releases
             ];
@@ -119,29 +118,6 @@ namespace mcp_nexus.Protocol
             };
         }
 
-        private static McpToolSchema CreateNexusDumpAnalyzeSessionAsyncCommandStatusTool()
-        {
-            return new McpToolSchema
-            {
-                Name = "nexus_dump_analyze_session_async_command_status",
-                Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.USAGE_EXPLANATION,
-                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
-                InputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        commandId = new
-                        {
-                            type = "string",
-                            description = "REQUIRED: The EXACT commandId that was returned by nexus_dump_analyze_session_async_command. Format: 'cmd-sess-XXXXXX-YYYYYYYY-ZZZZ'. DO NOT make up your own values!"
-                        }
-                    },
-                    required = new[] { "commandId" }
-                }
-            };
-        }
 
     }
 }

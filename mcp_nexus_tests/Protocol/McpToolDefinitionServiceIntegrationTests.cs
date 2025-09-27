@@ -37,8 +37,8 @@ namespace mcp_nexus_tests.Services
 			var tools = m_service.GetAllTools();
 
 			// Assert
-			// Core tools for first release: nexus_open_dump_analyze_session, nexus_dump_analyze_session_async_command, nexus_dump_analyze_session_async_command_status, nexus_close_dump_analyze_session
-			Assert.Equal(4, tools.Length);
+			// Core tools for first release: nexus_open_dump_analyze_session, nexus_dump_analyze_session_async_command, nexus_close_dump_analyze_session
+			Assert.Equal(3, tools.Length);
 		}
 
 		[Fact]
@@ -111,8 +111,7 @@ namespace mcp_nexus_tests.Services
 			// Act
 			var tools = m_service.GetAllTools();
 
-		// Assert - Only status checking (command cancellation removed for first release)
-		Assert.Contains(tools, t => t.Name == "nexus_dump_analyze_session_async_command_status");
+		// Assert - Status tool removed, now handled by MCP Resources
 		}
 
 	[Fact]
@@ -124,7 +123,7 @@ namespace mcp_nexus_tests.Services
 		// Assert - Core tools for first release
 		Assert.Contains(tools, t => t.Name == "nexus_open_dump_analyze_session");
 		Assert.Contains(tools, t => t.Name == "nexus_dump_analyze_session_async_command");
-		Assert.Contains(tools, t => t.Name == "nexus_dump_analyze_session_async_command_status");
+		// Status tool removed - now handled by MCP Resources
 		Assert.Contains(tools, t => t.Name == "nexus_close_dump_analyze_session");
 		Assert.DoesNotContain(tools, t => t.Name == "get_session_info");
 		Assert.DoesNotContain(tools, t => t.Name == "get_current_time");
@@ -184,31 +183,11 @@ namespace mcp_nexus_tests.Services
 			Assert.Contains("dumpPath", schemaJson);
 		}
 
-		[Fact]
-		public void GetAllTools_GetCommandStatusToolEmphasizesRequirement()
-		{
-			// Act
-			var tools = m_service.GetAllTools();
-
-			// Assert
-			var statusTool = tools.First(t => t.Name == "nexus_dump_analyze_session_async_command_status");
-			Assert.Contains("poll for the status", statusTool.Description);
-			Assert.Contains("REQUIRED TO BE USED", statusTool.Description);
-		}
+		// Status tool removed - now handled by MCP Resources
 
 	// Test removed - nexus_list_debugger_commands no longer advertised
 
-		[Fact]
-		public void GetAllTools_StatusToolHasCorrectDescription()
-		{
-			// Act
-			var tools = m_service.GetAllTools();
-
-			// Assert
-			var statusTool = tools.First(t => t.Name == "nexus_dump_analyze_session_async_command_status");
-			Assert.Contains("poll for the status", statusTool.Description);
-			Assert.Contains("REQUIRED TO BE USED", statusTool.Description);
-		}
+		// Status tool removed - now handled by MCP Resources
 
 		[Fact]
 		public void GetAllTools_GetCurrentTimeToolExists()

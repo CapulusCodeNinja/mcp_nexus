@@ -248,7 +248,8 @@ namespace mcp_nexus.Protocol
             {
                 totalSessions = sessions.Count(),
                 activeSessions = sessionData,
-                lastUpdated = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC")
+                lastUpdated = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC"),
+                usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
             }, s_jsonOptions);
 
             var result = new McpResourceReadResult
@@ -587,7 +588,8 @@ namespace mcp_nexus.Protocol
                     "Examine !locks for synchronization issues",
                     "Use !heap commands for memory-related problems",
                     "Check loaded modules with lm for version issues"
-                }
+                },
+                usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
             };
 
             return JsonSerializer.Serialize(workflows, s_jsonOptions);
@@ -659,7 +661,8 @@ namespace mcp_nexus.Protocol
                 {
                     sessions = sessionData,
                     count = sessionData.Length,
-                    timestamp = DateTime.UtcNow
+                    timestamp = DateTime.UtcNow,
+                    usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
                 return Task.FromResult(new McpResourceReadResult
@@ -728,7 +731,8 @@ namespace mcp_nexus.Protocol
                     totalSessions = commandsBySession.Count,
                     totalCommands = commandsBySession.Values.Cast<Dictionary<string, object>>().Sum(c => c.Count),
                     timestamp = DateTime.UtcNow,
-                    note = string.IsNullOrEmpty(sessionId) ? "Commands from all sessions" : $"Commands from session {sessionId}"
+                    note = string.IsNullOrEmpty(sessionId) ? "Commands from all sessions" : $"Commands from session {sessionId}",
+                    usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
                 return Task.FromResult(new McpResourceReadResult
@@ -877,10 +881,11 @@ namespace mcp_nexus.Protocol
                         createdAt = (DateTime?)null, // Not available from GetCommandResult
                         completedAt = isCompleted ? DateTime.UtcNow : (DateTime?)null,
                         timestamp = DateTime.UtcNow,
-                        message = isCompleted ? null : "Command is still executing - check again in a few seconds. You can also track command status using the 'List Sessions' or 'List Commands' resources."
+                        message = isCompleted ? null : "Command is still executing - check again in a few seconds. You can also track command status using the 'List Sessions' or 'List Commands' resources.",
+                        usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                     };
 
-                    return Task.FromResult(new McpResourceReadResult
+                    return new McpResourceReadResult
                     {
                         Contents = new[]
                         {
@@ -890,7 +895,7 @@ namespace mcp_nexus.Protocol
                                 Text = JsonSerializer.Serialize(result, s_jsonOptions)
                             }
                         }
-                    });
+                    };
                 }
                 catch (Exception ex)
                 {
@@ -906,10 +911,11 @@ namespace mcp_nexus.Protocol
                         createdAt = (DateTime?)null,
                         completedAt = (DateTime?)null,
                         timestamp = DateTime.UtcNow,
-                        message = "Error accessing command queue"
+                        message = "Error accessing command queue",
+                        usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                     };
 
-                    return Task.FromResult(new McpResourceReadResult
+                    return new McpResourceReadResult
                     {
                         Contents = new[]
                         {
@@ -919,7 +925,7 @@ namespace mcp_nexus.Protocol
                                 Text = JsonSerializer.Serialize(errorResult, s_jsonOptions)
                             }
                         }
-                    });
+                    };
                 }
             }
             catch (Exception ex)
@@ -936,9 +942,10 @@ namespace mcp_nexus.Protocol
             {
                 title = "Command Status Resource",
                 description = "Get status and results of a specific async command",
-                usage = "Use: debugging://tools/command-result?sessionId=<sessionId>&commandId=<commandId>",
+                usage_info = "Use: debugging://tools/command-result?sessionId=<sessionId>&commandId=<commandId>",
                 example = "debugging://tools/command-result?sessionId=abc123&commandId=cmd456",
-                note = "This resource requires both sessionId and commandId parameters to get command status"
+                note = "This resource requires both sessionId and commandId parameters to get command status",
+                usage = SessionAwareWindbgTool.USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
             };
 
             return Task.FromResult(new McpResourceReadResult

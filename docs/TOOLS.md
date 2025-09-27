@@ -10,8 +10,8 @@ Windows debugging capabilities through WinDBG/CDB integration:
 - **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
 - **Session Management**: Available via MCP Resources (`debugging://tools/sessions`, `debugging://tools/commands`)
 - **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
-- **Command Execution**: `nexus_dump_analyze_session_async_command` (🔄 ASYNC QUEUE: Always returns commandId, use `nexus_dump_analyze_session_async_command_status` for results)
-- **Queue Management**: `nexus_dump_analyze_session_async_command_status`, `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
+- **Command Execution**: `nexus_dump_analyze_session_async_command` (🔄 ASYNC QUEUE: Always returns commandId, use MCP Resources for results)
+- **Queue Management**: `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
 
 ### 🔄 Complete Debugging Workflow
 
@@ -29,7 +29,7 @@ Windows debugging capabilities through WinDBG/CDB integration:
    → notifications/commandHeartbeat: {"elapsed": "30s", ...} (for long commands)
    → notifications/commandStatus: {"status": "completed", "result": "ACTUAL_OUTPUT"}
 
-4. OR poll nexus_dump_analyze_session_async_command_status {"commandId": "cmd-000001-abc12345-12345678-0001"}  
+4. OR use MCP Resource: debugging://tools/command-result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001  
    → Returns: {"status": "executing", ...} (keep polling)
    → Returns: {"status": "completed", "result": "ACTUAL_OUTPUT"}
 
@@ -41,7 +41,7 @@ Windows debugging capabilities through WinDBG/CDB integration:
    → Returns: {"success": true, ...} - Clean up resources
 ```
 
-**⚠️ CRITICAL**: `nexus_dump_analyze_session_async_command` NEVER returns command results directly. You MUST use `nexus_dump_analyze_session_async_command_status` to get results or listen for notifications!
+**⚠️ CRITICAL**: `nexus_dump_analyze_session_async_command` NEVER returns command results directly. You MUST use MCP Resources (`debugging://tools/command-result`) to get results or listen for notifications!
 
 ### 📋 Session Management (via MCP Resources)
 

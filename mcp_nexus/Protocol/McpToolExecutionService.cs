@@ -26,7 +26,6 @@ namespace mcp_nexus.Protocol
                     "nexus_open_dump_analyze_session" => await ExecuteOpenWindbgDump(arguments),
                     "nexus_close_dump_analyze_session" => await ExecuteCloseWindbgDump(arguments),
                     "nexus_dump_analyze_session_async_command" => await ExecuteRunWindbgCmdAsync(arguments),
-                    "nexus_dump_analyze_session_async_command_status" => await ExecuteGetCommandStatus(arguments),
                     _ => throw new McpToolException(-32602, $"Unknown tool: {toolName}")
                 };
             }
@@ -98,27 +97,6 @@ namespace mcp_nexus.Protocol
             }
         }
 
-        private async Task<object> ExecuteGetCommandStatus(JsonElement arguments)
-        {
-            // Get command status using session-aware implementation
-            var commandId = GetRequiredStringArgument(arguments, "commandId");
-            if (commandId == null)
-                throw new McpToolException(-32602, "Missing required parameter: commandId");
-
-            logger.LogDebug("Getting command status for commandId: {CommandId}", commandId);
-
-            try
-            {
-                var result = await sessionAwareWindbgTool.nexus_dump_analyze_session_async_command_status(commandId);
-                // Wrap result in MCP tool result format
-                return CreateToolResult(result);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to get command status for commandId: {CommandId}", commandId);
-                throw new McpToolException(-32603, $"Command status check failed: {ex.Message}", ex);
-            }
-        }
 
 
 
