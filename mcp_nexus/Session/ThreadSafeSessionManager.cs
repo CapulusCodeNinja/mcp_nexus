@@ -27,9 +27,8 @@ namespace mcp_nexus.Session
         // CONCURRENCY: Thread-safe session storage
         private readonly ConcurrentDictionary<string, SessionInfo> m_sessions = new();
 
-        // LOCKING: Separate locks for different concerns to prevent deadlocks
+        // LOCKING: Single semaphore for session creation to prevent race conditions
         private readonly SemaphoreSlim m_sessionCreationSemaphore = new(1, 1);
-        private readonly object m_cleanupLock = new();
 
         // CANCELLATION: Global shutdown coordination
         private readonly CancellationTokenSource m_shutdownCts = new();
@@ -298,7 +297,17 @@ namespace mcp_nexus.Session
             if (DateTime.UtcNow - lastActivity > m_config.SessionTimeout)
             {
                 // ASYNC CLEANUP: Schedule cleanup without blocking caller
-                _ = Task.Run(async () => await CleanupExpiredSession(sessionId), CancellationToken.None);
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await CleanupExpiredSession(sessionId);
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogError(ex, "Error during async cleanup of session {SessionId}", sessionId);
+                    }
+                }, CancellationToken.None);
                 return false;
             }
 

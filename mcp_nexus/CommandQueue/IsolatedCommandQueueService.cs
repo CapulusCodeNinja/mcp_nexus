@@ -11,6 +11,21 @@ using mcp_nexus.Session;
 namespace mcp_nexus.CommandQueue
 {
     /// <summary>
+    /// Detailed command information for type-safe status checking
+    /// </summary>
+    public class CommandInfo
+    {
+        public string CommandId { get; set; } = string.Empty;
+        public string Command { get; set; } = string.Empty;
+        public CommandState State { get; set; }
+        public DateTime QueueTime { get; set; }
+        public TimeSpan Elapsed { get; set; }
+        public TimeSpan Remaining { get; set; }
+        public int QueuePosition { get; set; }
+        public bool IsCompleted { get; set; }
+    }
+
+    /// <summary>
     /// Thread-safe, isolated command queue service for a single debugging session
     /// Prevents session state pollution and provides deadlock-free operation
     /// </summary>
@@ -120,7 +135,7 @@ namespace mcp_nexus.CommandQueue
                     }
                 }, CancellationToken.None);
 
-                m_logger.LogInformation("📋 Command {CommandId} queued in session {SessionId} (timeout: {TimeoutMinutes} minutes)", 
+                m_logger.LogInformation("📋 Command {CommandId} queued in session {SessionId} (timeout: {TimeoutMinutes} minutes)",
                     commandId, m_sessionId, m_defaultCommandTimeout.TotalMinutes);
                 return commandId;
             }
@@ -173,6 +188,52 @@ namespace mcp_nexus.CommandQueue
                 CommandState.Cancelled => "Command was cancelled",
                 CommandState.Failed => "Command execution failed",
                 _ => "Command status unknown"
+            };
+        }
+
+        /// <summary>
+        /// Gets the current state of a command without parsing strings
+        /// </summary>
+        public CommandState? GetCommandState(string commandId)
+        {
+            ThrowIfDisposed();
+
+            if (string.IsNullOrEmpty(commandId))
+                return null;
+
+            if (!m_activeCommands.TryGetValue(commandId, out var command))
+                return null;
+
+            return command.State;
+        }
+
+        /// <summary>
+        /// Gets detailed command information including state, queue position, and progress
+        /// </summary>
+        public CommandInfo? GetCommandInfo(string commandId)
+        {
+            ThrowIfDisposed();
+
+            if (string.IsNullOrEmpty(commandId))
+                return null;
+
+            if (!m_activeCommands.TryGetValue(commandId, out var command))
+                return null;
+
+            var elapsed = DateTime.UtcNow - command.QueueTime;
+            var remaining = m_defaultCommandTimeout - elapsed;
+            var queuePosition = GetQueuePosition(commandId);
+
+            return new CommandInfo
+            {
+                CommandId = commandId,
+                Command = command.Command,
+                State = command.State,
+                QueueTime = command.QueueTime,
+                Elapsed = elapsed,
+                Remaining = remaining,
+                QueuePosition = queuePosition,
+                IsCompleted = command.CompletionSource.Task.IsCompleted
             };
         }
 
@@ -288,7 +349,7 @@ namespace mcp_nexus.CommandQueue
             // No current command, so count how many commands are ahead in the queue
             var position = 0;
             var queueArray = m_commandQueue.ToArray();
-            
+
             for (int i = 0; i < queueArray.Length; i++)
             {
                 if (queueArray[i].Id == commandId)
@@ -315,10 +376,10 @@ namespace mcp_nexus.CommandQueue
             // Calculate progress percentage that ALWAYS increases over time
             // This prevents the "stuck" perception by showing continuous progress
             var progressPercentage = CalculateProgressPercentage(queuePosition, elapsed);
-            
+
             // Generate different messages based on position and elapsed time
             var baseMessage = GetBaseMessage(queuePosition, elapsed);
-            
+
             // Add progress and time information
             var progressInfo = $" (Progress: {progressPercentage}%, Elapsed: {elapsed.TotalMinutes:F1}min)";
             var timeInfo = remainingMinutes > 0 ? $", ETA: {remainingMinutes}min {remainingSeconds}s" : ", ETA: <1min";
@@ -333,17 +394,17 @@ namespace mcp_nexus.CommandQueue
         {
             // Base progress from queue position (0-50%)
             var queueProgress = Math.Max(0, Math.Min(50, (10 - queuePosition) * 5));
-            
+
             // Time-based progress that always increases (0-50%)
             // This ensures progress always goes up, even if queue position doesn't change
             var timeProgress = Math.Min(50, (int)(elapsed.TotalMinutes * 2)); // 2% per minute
-            
+
             // Combine both for total progress (0-100%)
             var totalProgress = Math.Min(100, queueProgress + timeProgress);
-            
+
             // Ensure minimum progress based on elapsed time to show activity
             var minProgress = Math.Min(95, (int)(elapsed.TotalSeconds * 0.5)); // 0.5% per second
-            
+
             return Math.Max(totalProgress, minProgress);
         }
 
@@ -354,7 +415,7 @@ namespace mcp_nexus.CommandQueue
         {
             // Add time-based variations to make messages feel more dynamic
             var timeVariation = (int)(elapsed.TotalSeconds) % 4;
-            
+
             return queuePosition switch
             {
                 0 => timeVariation switch
@@ -443,6 +504,9 @@ namespace mcp_nexus.CommandQueue
 
                         // EXECUTE: Process command with proper error handling
                         await ExecuteCommandSafely(command);
+
+                        // RELEASE: Release semaphore after command completion to allow next command
+                        m_queueSemaphore.Release();
                     }
                     catch (OperationCanceledException)
                     {
@@ -453,6 +517,9 @@ namespace mcp_nexus.CommandQueue
                     {
                         m_logger.LogError(ex, "Unexpected error in command processor for session {SessionId}", m_sessionId);
                         // Continue processing other commands
+
+                        // RELEASE: Release semaphore even on error to prevent deadlock
+                        m_queueSemaphore.Release();
                     }
                 }
             }

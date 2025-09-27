@@ -69,8 +69,11 @@ namespace mcp_nexus.Recovery
             {
                 try
                 {
-                    await m_notificationService?.NotifySessionRecoveryAsync(
-                        reason, "Recovery Started", false, $"Starting recovery attempt #{m_recoveryAttempts}")!;
+                    if (m_notificationService != null)
+                    {
+                        await m_notificationService.NotifySessionRecoveryAsync(
+                            reason, "Recovery Started", false, $"Starting recovery attempt #{m_recoveryAttempts}");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -108,8 +111,11 @@ namespace mcp_nexus.Recovery
                     {
                         try
                         {
-                            await m_notificationService?.NotifySessionRecoveryAsync(
-                                reason, "Recovery Completed", true, "Session recovered successfully after cancellation")!;
+                            if (m_notificationService != null)
+                            {
+                                await m_notificationService.NotifySessionRecoveryAsync(
+                                    reason, "Recovery Completed", true, "Session recovered successfully after cancellation");
+                            }
                         }
                         catch (Exception ex)
                         {

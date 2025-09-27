@@ -254,24 +254,19 @@ namespace mcp_nexus.Debugger
         {
             try
             {
-                // Check if we need to stop current session (outside lock to avoid deadlock)
-                bool needsStop;
-                lock (m_lifecycleLock)
-                {
-                    needsStop = m_isActive;
-                }
-
-                if (needsStop)
-                {
-                    logger.LogDebug("Session is already active - stopping current session before starting new one");
-                    // CRITICAL FIX: Make this method async to avoid blocking
-                    // For now, we'll just log and continue - the session will be stopped by the queue
-                    logger.LogWarning("Session is already active - this should be handled by the command queue");
-                }
-
+                // FIXED: Single lock acquisition to prevent race conditions
                 lock (m_lifecycleLock)
                 {
                     logger.LogDebug("Acquired lifecycle lock for StartSession");
+
+                    // Check if we need to stop current session
+                    if (m_isActive)
+                    {
+                        logger.LogDebug("Session is already active - stopping current session before starting new one");
+                        // CRITICAL FIX: Make this method async to avoid blocking
+                        // For now, we'll just log and continue - the session will be stopped by the queue
+                        logger.LogWarning("Session is already active - this should be handled by the command queue");
+                    }
 
                     logger.LogDebug("Searching for CDB executable...");
                     var cdbPath = FindCdbPath();

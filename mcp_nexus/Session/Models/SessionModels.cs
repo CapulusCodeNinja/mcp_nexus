@@ -54,14 +54,14 @@ namespace mcp_nexus.Session.Models
         /// <summary>Process ID of the CDB debugger process</summary>
         public int? ProcessId { get; init; }
 
-        /// <summary>Thread-safe last activity tracking (use Volatile for access)</summary>
-        public long LastActivityTicks;
+        /// <summary>Thread-safe last activity tracking using volatile read/write for lock-free access</summary>
+        private long m_lastActivityTicks;
 
-        /// <summary>Thread-safe way to get/set last activity time</summary>
+        /// <summary>Thread-safe way to get/set last activity time using volatile operations</summary>
         public DateTime LastActivity
         {
-            get => new(Volatile.Read(ref LastActivityTicks));
-            set => Volatile.Write(ref LastActivityTicks, value.Ticks);
+            get => new(Volatile.Read(ref m_lastActivityTicks));
+            set => Volatile.Write(ref m_lastActivityTicks, value.Ticks);
         }
 
         private volatile bool m_disposed = false;

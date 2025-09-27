@@ -8,6 +8,10 @@ namespace mcp_nexus.CommandQueue
         int CancelAllCommands(string? reason = null);
         IEnumerable<(string Id, string Command, DateTime QueueTime, string Status)> GetQueueStatus();
         QueuedCommand? GetCurrentCommand();
+
+        // Type-safe status checking methods
+        CommandState? GetCommandState(string commandId);
+        CommandInfo? GetCommandInfo(string commandId);
     }
 }
 

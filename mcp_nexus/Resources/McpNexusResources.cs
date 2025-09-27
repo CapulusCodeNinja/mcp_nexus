@@ -69,9 +69,21 @@ namespace mcp_nexus.Resources
                 // Get commands from all sessions
                 foreach (var session in allSessions)
                 {
-                    var sessionContext = sessionManager.GetSessionContext(session.SessionId);
-                    var sessionCommands = GetSessionCommands(sessionContext, session.SessionId, null, null, null, null, null, "createdAt", "desc");
-                    commandsBySession[session.SessionId] = sessionCommands;
+                    try
+                    {
+                        // Get the command queue for this session
+                        var commandQueue = sessionManager.GetCommandQueue(session.SessionId);
+                        var sessionCommands = GetSessionCommandsFromQueue(commandQueue, session.SessionId);
+                        commandsBySession[session.SessionId] = sessionCommands;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to get commands for session {SessionId}", session.SessionId);
+                        commandsBySession[session.SessionId] = new Dictionary<string, object>
+                        {
+                            ["error"] = $"Failed to get commands: {ex.Message}"
+                        };
+                    }
                 }
 
                 var result = new
@@ -170,7 +182,7 @@ namespace mcp_nexus.Resources
                     },
                     new
                     {
-                        name = "nexus_close_dump_analyze_session", 
+                        name = "nexus_close_dump_analyze_session",
                         description = "🔒 CLOSE SESSION: Close an active debugging session and clean up resources",
                         parameters = new[] { "sessionId (required)" },
                         returns = "Confirmation of session closure"
@@ -201,7 +213,7 @@ namespace mcp_nexus.Resources
                     },
                     new
                     {
-                        name = "commands", 
+                        name = "commands",
                         description = "📋 COMMANDS: List async commands from all sessions",
                         parameters = "None (returns all commands)",
                         returns = "Array of command information including status, timing, and results"
@@ -246,105 +258,84 @@ namespace mcp_nexus.Resources
             return Task.FromResult(JsonSerializer.Serialize(usage, new JsonSerializerOptions { WriteIndented = true }));
         }
 
-        private static Dictionary<string, object> GetSessionCommands(
-            SessionContext? sessionContext,
-            string sessionId,
-            string? commandFilter,
-            DateTime? fromTime,
-            DateTime? toTime,
-            int? limit,
-            int? offset,
-            string sortBy,
-            string order)
+        /// <summary>
+        /// Gets commands from a command queue service
+        /// </summary>
+        private static Dictionary<string, object> GetSessionCommandsFromQueue(ICommandQueueService commandQueue, string sessionId)
         {
             var commands = new Dictionary<string, object>();
 
-            if (sessionContext == null)
+            try
             {
-                commands["placeholder"] = new
+                // Get the current command and queue status
+                var currentCommand = commandQueue.GetCurrentCommand();
+                var queueStatus = commandQueue.GetQueueStatus().ToList();
+
+                // Create a list of all commands (current + queued)
+                var allCommands = new List<QueuedCommand>();
+
+                // Add current command if it exists
+                if (currentCommand != null)
                 {
-                    command = "Session context not available",
-                    status = "Unknown",
-                    isFinished = false,
+                    allCommands.Add(currentCommand);
+                }
+
+                // Add queued commands from queue status
+                foreach (var (id, command, queueTime, status) in queueStatus)
+                {
+                    // Skip if this is the current command (already added)
+                    if (currentCommand != null && id == currentCommand.Id)
+                        continue;
+
+                    // Create a QueuedCommand for queued items
+                    var queuedCmd = new QueuedCommand(
+                        id,
+                        command,
+                        queueTime,
+                        new TaskCompletionSource<string>(),
+                        new CancellationTokenSource(),
+                        status == "Executing" ? CommandState.Executing : CommandState.Queued
+                    );
+                    allCommands.Add(queuedCmd);
+                }
+
+                var realCommands = allCommands.Select(cmd => new
+                {
+                    commandId = cmd.Id,
+                    command = cmd.Command,
+                    status = GetCommandStatus(cmd),
+                    isFinished = cmd.State == CommandState.Completed || cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled,
+                    createdAt = cmd.QueueTime,
+                    completedAt = (DateTime?)null, // QueuedCommand doesn't have CompletedAt
+                    duration = DateTime.UtcNow - cmd.QueueTime,
+                    error = (string?)null, // QueuedCommand doesn't have Error property
+                    progress = new
+                    {
+                        queuePosition = GetQueuePositionForCommand(cmd, allCommands),
+                        progressPercentage = GetProgressPercentageForCommand(cmd, allCommands),
+                        elapsed = GetElapsedTimeForCommand(cmd),
+                        eta = GetEtaTimeForCommand(cmd),
+                        message = GetCommandMessage(cmd, allCommands)
+                    }
+                }).ToArray();
+
+                // Convert to dictionary
+                foreach (var cmd in realCommands)
+                {
+                    commands[cmd.commandId] = cmd;
+                }
+            }
+            catch (Exception ex)
+            {
+                commands["error"] = new
+                {
+                    error = $"Failed to get commands: {ex.Message}",
+                    command = "Error",
+                    status = "Error",
+                    isFinished = true,
                     createdAt = DateTime.UtcNow,
                     completedAt = (DateTime?)null,
-                    duration = TimeSpan.Zero,
-                    error = "Session context not accessible"
-                };
-                return commands;
-            }
-
-            // Get real command data from the session's command queue
-            var commandQueue = sessionContext.CommandQueue;
-            var allCommands = commandQueue.GetAllCommands();
-            
-            var realCommands = allCommands.Select(cmd => new
-            {
-                commandId = cmd.Id,
-                command = cmd.Command,
-                status = GetCommandStatus(cmd),
-                isFinished = cmd.State == CommandState.Completed || cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled,
-                createdAt = cmd.QueueTime,
-                completedAt = cmd.CompletedAt,
-                duration = cmd.CompletedAt.HasValue ? cmd.CompletedAt.Value - cmd.QueueTime : DateTime.UtcNow - cmd.QueueTime,
-                error = cmd.Error,
-                progress = new
-                {
-                    queuePosition = GetQueuePositionForCommand(cmd, allCommands),
-                    progressPercentage = GetProgressPercentageForCommand(cmd, allCommands),
-                    elapsed = GetElapsedTimeForCommand(cmd),
-                    eta = GetEtaTimeForCommand(cmd),
-                    message = GetCommandMessage(cmd, allCommands)
-                }
-            }).ToArray();
-
-            // Apply filters
-            var filteredCommands = realCommands.AsEnumerable();
-
-            if (!string.IsNullOrEmpty(commandFilter))
-            {
-                filteredCommands = filteredCommands.Where(cmd =>
-                {
-                    dynamic d = cmd;
-                    return d.command.ToString().Contains(commandFilter, StringComparison.OrdinalIgnoreCase);
-                });
-            }
-
-            if (fromTime.HasValue)
-            {
-                filteredCommands = filteredCommands.Where(cmd =>
-                {
-                    dynamic d = cmd;
-                    return d.createdAt >= fromTime.Value;
-                });
-            }
-
-            if (toTime.HasValue)
-            {
-                filteredCommands = filteredCommands.Where(cmd =>
-                {
-                    dynamic d = cmd;
-                    return d.createdAt <= toTime.Value;
-                });
-            }
-
-            // Apply pagination
-            if (offset.HasValue)
-                filteredCommands = filteredCommands.Skip(offset.Value);
-            if (limit.HasValue)
-                filteredCommands = filteredCommands.Take(limit.Value);
-
-            foreach (dynamic cmd in filteredCommands)
-            {
-                commands[cmd.commandId] = new
-                {
-                    command = cmd.command,
-                    status = cmd.status,
-                    isFinished = cmd.isFinished,
-                    createdAt = cmd.createdAt,
-                    completedAt = cmd.completedAt,
-                    duration = cmd.duration,
-                    error = cmd.error
+                    duration = TimeSpan.Zero
                 };
             }
 
@@ -374,18 +365,18 @@ namespace mcp_nexus.Resources
         {
             var queuedCommands = allCommands.Where(c => c.State == CommandState.Queued).ToList();
             var executingCommands = allCommands.Where(c => c.State == CommandState.Executing).ToList();
-            
+
             if (cmd.State == CommandState.Executing)
             {
                 return 0; // Currently executing
             }
-            
+
             if (cmd.State == CommandState.Queued)
             {
                 var position = queuedCommands.IndexOf(cmd);
                 return executingCommands.Count + position; // +1 for each executing command
             }
-            
+
             return -1; // Not in queue
         }
 
@@ -396,25 +387,25 @@ namespace mcp_nexus.Resources
         {
             if (cmd.State == CommandState.Completed)
                 return 100;
-            
+
             if (cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled)
                 return 0;
-            
+
             var queuePosition = GetQueuePositionForCommand(cmd, allCommands);
             var elapsed = DateTime.UtcNow - cmd.QueueTime;
-            
+
             // Base progress from queue position (0-50%)
             var queueProgress = Math.Max(0, Math.Min(50, (10 - queuePosition) * 5));
-            
+
             // Time-based progress that always increases (0-50%)
             var timeProgress = Math.Min(50, (int)(elapsed.TotalMinutes * 2)); // 2% per minute
-            
+
             // Combine both for total progress (0-100%)
             var totalProgress = Math.Min(100, queueProgress + timeProgress);
-            
+
             // Ensure minimum progress based on elapsed time to show activity
             var minProgress = Math.Min(95, (int)(elapsed.TotalSeconds * 0.5)); // 0.5% per second
-            
+
             return Math.Max(totalProgress, minProgress);
         }
 
@@ -425,13 +416,13 @@ namespace mcp_nexus.Resources
         {
             if (cmd.State == CommandState.Completed)
                 return "Command completed successfully";
-            
+
             if (cmd.State == CommandState.Failed)
-                return $"Command failed: {cmd.Error ?? "Unknown error"}";
-            
+                return "Command failed: Unknown error";
+
             if (cmd.State == CommandState.Cancelled)
                 return "Command was cancelled";
-            
+
             if (cmd.State == CommandState.Executing)
             {
                 var elapsed = DateTime.UtcNow - cmd.QueueTime;
@@ -439,13 +430,13 @@ namespace mcp_nexus.Resources
                 var remainingSeconds = Math.Max(0, (int)((TimeSpan.FromMinutes(10) - elapsed).TotalSeconds % 60));
                 return $"Command is currently executing (elapsed: {elapsed.TotalMinutes:F1} minutes, remaining: {remainingMinutes} minutes {remainingSeconds} seconds)";
             }
-            
+
             if (cmd.State == CommandState.Queued)
             {
                 var queuePosition = GetQueuePositionForCommand(cmd, allCommands);
                 var elapsed = DateTime.UtcNow - cmd.QueueTime;
                 var progressPercentage = GetProgressPercentageForCommand(cmd, allCommands);
-                
+
                 var baseMessage = queuePosition switch
                 {
                     0 => "Command is next in queue - will start executing soon",
@@ -456,13 +447,18 @@ namespace mcp_nexus.Resources
                     _ when queuePosition <= 10 => $"Command is {queuePosition + 1}th in queue - waiting for {queuePosition} commands ahead",
                     _ => $"Command is position {queuePosition + 1} in queue - waiting for {queuePosition} commands ahead"
                 };
-                
+
+                // Calculate remaining time
+                var remaining = TimeSpan.FromMinutes(10) - elapsed;
+                var remainingMinutes = Math.Max(0, (int)remaining.TotalMinutes);
+                var remainingSeconds = Math.Max(0, (int)(remaining.TotalSeconds % 60));
+
                 var progressInfo = $" (Progress: {progressPercentage}%, Elapsed: {elapsed.TotalMinutes:F1}min)";
                 var timeInfo = remainingMinutes > 0 ? $", ETA: {remainingMinutes}min {remainingSeconds}s" : ", ETA: <1min";
-                
+
                 return $"{baseMessage}{progressInfo}{timeInfo}";
             }
-            
+
             return "Command status unknown";
         }
 
@@ -488,14 +484,97 @@ namespace mcp_nexus.Resources
 
             var elapsed = DateTime.UtcNow - cmd.QueueTime;
             var remaining = TimeSpan.FromMinutes(10) - elapsed;
-            
+
             if (remaining.TotalMinutes <= 0)
                 return "<1min";
-            
+
             var remainingMinutes = (int)remaining.TotalMinutes;
             var remainingSeconds = (int)(remaining.TotalSeconds % 60);
-            
+
             return $"{remainingMinutes}min {remainingSeconds}s";
+        }
+
+        [McpServerResource, Description("📊 METRICS: Get comprehensive performance metrics and statistics")]
+        public static Task<string> Metrics(
+            IServiceProvider serviceProvider)
+        {
+            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+            var metricsService = serviceProvider.GetRequiredService<mcp_nexus.Metrics.AdvancedMetricsService>();
+
+            try
+            {
+                var snapshot = metricsService.GetMetricsSnapshot();
+                return Task.FromResult(JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true }));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error getting metrics");
+                throw;
+            }
+        }
+
+        [McpServerResource, Description("🔧 CIRCUITS: Get circuit breaker status and health information")]
+        public static Task<string> Circuits(
+            IServiceProvider serviceProvider)
+        {
+            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+            var circuitBreakerService = serviceProvider.GetRequiredService<mcp_nexus.Resilience.CircuitBreakerService>();
+
+            try
+            {
+                var statuses = circuitBreakerService.GetAllCircuitStatuses();
+                var result = new
+                {
+                    circuits = statuses,
+                    totalCircuits = statuses.Count,
+                    healthyCircuits = statuses.Count(s => s.Value.IsHealthy),
+                    timestamp = DateTime.UtcNow
+                };
+                return Task.FromResult(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error getting circuit statuses");
+                throw;
+            }
+        }
+
+        [McpServerResource, Description("🏥 HEALTH: Get comprehensive system health status")]
+        public static Task<string> Health(
+            IServiceProvider serviceProvider)
+        {
+            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+            var healthService = serviceProvider.GetRequiredService<mcp_nexus.Health.AdvancedHealthService>();
+
+            try
+            {
+                var status = healthService.GetHealthStatus();
+                return Task.FromResult(JsonSerializer.Serialize(status, new JsonSerializerOptions { WriteIndented = true }));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error getting health status");
+                throw;
+            }
+        }
+
+        [McpServerResource, Description("💾 CACHE: Get cache statistics and memory usage information")]
+        public static Task<string> Cache(
+            IServiceProvider serviceProvider)
+        {
+            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+            var cacheService = serviceProvider.GetRequiredService<mcp_nexus.Caching.IntelligentCacheService<string, object>>();
+
+            try
+            {
+                var stats = cacheService.GetStatistics();
+                return Task.FromResult(JsonSerializer.Serialize(stats, new JsonSerializerOptions { WriteIndented = true }));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error getting cache statistics");
+                throw;
+            }
         }
     }
 }

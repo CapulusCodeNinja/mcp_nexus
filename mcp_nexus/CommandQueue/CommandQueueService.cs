@@ -541,6 +541,75 @@ namespace mcp_nexus.CommandQueue
             }
         }
 
+        public CommandState? GetCommandState(string commandId)
+        {
+            if (string.IsNullOrEmpty(commandId))
+                return null;
+
+            if (!m_activeCommands.TryGetValue(commandId, out var command))
+                return null;
+
+            return command.State;
+        }
+
+        public CommandInfo? GetCommandInfo(string commandId)
+        {
+            if (string.IsNullOrEmpty(commandId))
+                return null;
+
+            if (!m_activeCommands.TryGetValue(commandId, out var command))
+                return null;
+
+            var elapsed = DateTime.UtcNow - command.QueueTime;
+            var remaining = TimeSpan.FromMinutes(10) - elapsed; // Default timeout
+            var queuePosition = GetQueuePosition(commandId);
+
+            return new CommandInfo
+            {
+                CommandId = commandId,
+                Command = command.Command,
+                State = command.State,
+                QueueTime = command.QueueTime,
+                Elapsed = elapsed,
+                Remaining = remaining,
+                QueuePosition = queuePosition,
+                IsCompleted = command.CompletionSource.Task.IsCompleted
+            };
+        }
+
+        private int GetQueuePosition(string commandId)
+        {
+            if (string.IsNullOrEmpty(commandId))
+                return -1;
+
+            // If there's a current command executing, all queued commands are behind it
+            lock (m_currentCommandLock)
+            {
+                if (m_currentCommand != null)
+                {
+                    // Count commands in queue + 1 for the current command
+                    var queueCount = m_commandQueue.Count;
+                    return queueCount + 1; // +1 because current command is executing
+                }
+            }
+
+            // No current command, so count how many commands are ahead in the queue
+            var position = 0;
+            var queueArray = m_commandQueue.ToArray();
+
+            for (int i = 0; i < queueArray.Length; i++)
+            {
+                if (queueArray[i].Id == commandId)
+                {
+                    return position;
+                }
+                position++;
+            }
+
+            // Command not found in queue
+            return -1;
+        }
+
         public void Dispose()
         {
             m_logger.LogInformation("Shutting down CommandQueueService");

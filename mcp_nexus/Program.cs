@@ -5,6 +5,8 @@ using NLog.Web;
 using AspNetCoreRateLimit;
 using ModelContextProtocol.Server;
 using ModelContextProtocol.AspNetCore;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 using mcp_nexus.Constants;
 using mcp_nexus.Debugger;
@@ -645,6 +647,22 @@ namespace mcp_nexus
             services.AddSingleton<ICommandTimeoutService, CommandTimeoutService>();
             Console.Error.WriteLine("Registered CommandTimeoutService for automated timeouts");
 
+            // A+++++ ADVANCED SERVICES - Register all advanced services for maximum quality
+            services.AddSingleton<mcp_nexus.Metrics.AdvancedMetricsService>();
+            Console.Error.WriteLine("Registered AdvancedMetricsService for comprehensive performance monitoring");
+
+            services.AddSingleton<mcp_nexus.Resilience.CircuitBreakerService>();
+            Console.Error.WriteLine("Registered CircuitBreakerService for advanced fault tolerance");
+
+            services.AddSingleton<mcp_nexus.Caching.IntelligentCacheService<string, object>>();
+            Console.Error.WriteLine("Registered IntelligentCacheService for memory optimization");
+
+            services.AddSingleton<mcp_nexus.Security.AdvancedSecurityService>();
+            Console.Error.WriteLine("Registered AdvancedSecurityService for input validation and threat detection");
+
+            services.AddSingleton<mcp_nexus.Health.AdvancedHealthService>();
+            Console.Error.WriteLine("Registered AdvancedHealthService for comprehensive system monitoring");
+
             services.AddSingleton<ICdbSessionRecoveryService>(serviceProvider =>
             {
                 var cdbSession = serviceProvider.GetRequiredService<ICdbSession>();
@@ -773,11 +791,134 @@ namespace mcp_nexus
             app.UseIpRateLimiting();
             app.UseCors();
             app.UseRouting();
-            
+
+            // Add JSON-RPC request/response logging middleware (only when debug logging is enabled)
+            var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
+
+            // Check if JSON-RPC debug logging should be enabled
+            var enableJsonRpcLogging = ShouldEnableJsonRpcLogging(loggerFactory);
+
+            if (enableJsonRpcLogging)
+            {
+                app.Use(async (context, next) =>
+                {
+                    if (context.Request.Path == "/" && context.Request.Method == "POST")
+                    {
+                        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+
+                        // Log the request
+                        context.Request.EnableBuffering();
+                        var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+                        context.Request.Body.Position = 0;
+
+                        // Format JSON for readability
+                        var formattedRequest = FormatJsonForLogging(requestBody);
+                        logger.LogInformation("📨 JSON-RPC Request:\n{RequestBody}", formattedRequest);
+
+                        // Capture the response
+                        var originalBodyStream = context.Response.Body;
+                        using var responseBody = new MemoryStream();
+                        context.Response.Body = responseBody;
+
+                        await next();
+
+                        // Log the response
+                        responseBody.Seek(0, SeekOrigin.Begin);
+                        var responseBodyText = await new StreamReader(responseBody).ReadToEndAsync();
+                        responseBody.Seek(0, SeekOrigin.Begin);
+
+                        // Format JSON for readability (handle SSE format)
+                        var formattedResponse = FormatSseResponseForLogging(responseBodyText);
+                        logger.LogInformation("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
+
+                        await responseBody.CopyToAsync(originalBodyStream);
+                    }
+                    else
+                    {
+                        await next();
+                    }
+                });
+
+                Console.WriteLine("JSON-RPC debug logging middleware enabled");
+            }
+            else
+            {
+                Console.WriteLine("JSON-RPC debug logging middleware disabled (not in debug mode)");
+            }
+
             // Use the official SDK's HTTP transport with MapMcp
             app.MapMcp();
 
             Console.WriteLine("HTTP request pipeline configured with official SDK");
+        }
+
+        /// <summary>
+        /// Determines if JSON-RPC debug logging should be enabled based on logging levels
+        /// </summary>
+        private static bool ShouldEnableJsonRpcLogging(ILoggerFactory loggerFactory)
+        {
+            // Check if debug logging is enabled for the application
+            var debugLogger = loggerFactory.CreateLogger("MCP.JsonRpc");
+            return debugLogger.IsEnabled(LogLevel.Debug);
+        }
+
+        /// <summary>
+        /// Formats Server-Sent Events (SSE) response for better human readability in logs
+        /// </summary>
+        private static string FormatSseResponseForLogging(string sseResponse)
+        {
+            try
+            {
+                var lines = sseResponse.Split('\n');
+                var formattedLines = new List<string>();
+
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("event: "))
+                    {
+                        formattedLines.Add($"event: {line.Substring(7)}");
+                    }
+                    else if (line.StartsWith("data: "))
+                    {
+                        var jsonData = line.Substring(6);
+                        var formattedJson = FormatJsonForLogging(jsonData);
+                        formattedLines.Add($"data: {formattedJson}");
+                    }
+                    else if (!string.IsNullOrWhiteSpace(line))
+                    {
+                        formattedLines.Add(line);
+                    }
+                }
+
+                return string.Join("\n", formattedLines);
+            }
+            catch
+            {
+                // If formatting fails, return as-is
+                return sseResponse;
+            }
+        }
+
+        /// <summary>
+        /// Formats JSON string for better human readability in logs
+        /// </summary>
+        private static string FormatJsonForLogging(string json)
+        {
+            try
+            {
+                // Try to parse and pretty-print the JSON
+                using var document = JsonDocument.Parse(json);
+                using var stream = new MemoryStream();
+                using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
+                document.WriteTo(writer);
+                writer.Flush();
+                return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+            }
+            catch (JsonException)
+            {
+                // If it's not valid JSON, return as-is
+                return json;
+            }
         }
     }
 }

@@ -370,8 +370,11 @@ namespace mcp_nexus.CommandQueue
             {
                 try
                 {
-                    await m_notificationService?.NotifyCommandStatusAsync(
-                        queuedCommand.Id, queuedCommand.Command, "executing", 10, "Command started execution")!;
+                    if (m_notificationService != null)
+                    {
+                        await m_notificationService.NotifyCommandStatusAsync(
+                            queuedCommand.Id, queuedCommand.Command, "executing", 10, "Command started execution");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -415,8 +418,11 @@ namespace mcp_nexus.CommandQueue
                             var elapsed = DateTime.UtcNow - commandStartTime;
                             var details = DetermineHeartbeatDetails(queuedCommand.Command, elapsed);
 
-                            await m_notificationService?.NotifyCommandHeartbeatAsync(
-                                queuedCommand.Id, queuedCommand.Command, elapsed, details)!;
+                            if (m_notificationService != null)
+                            {
+                                await m_notificationService.NotifyCommandHeartbeatAsync(
+                                    queuedCommand.Id, queuedCommand.Command, elapsed, details);
+                            }
                         }
                     }
                 }
@@ -466,8 +472,11 @@ namespace mcp_nexus.CommandQueue
                 {
                     try
                     {
-                        await m_notificationService?.NotifyCommandStatusAsync(
-                            queuedCommand.Id, queuedCommand.Command, "completed", 100, "Command completed successfully", result)!;
+                        if (m_notificationService != null)
+                        {
+                            await m_notificationService.NotifyCommandStatusAsync(
+                                queuedCommand.Id, queuedCommand.Command, "completed", 100, "Command completed successfully", result);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -493,9 +502,12 @@ namespace mcp_nexus.CommandQueue
                 {
                     try
                     {
-                        await m_notificationService?.NotifyCommandStatusAsync(
-                            queuedCommand.Id, queuedCommand.Command, "cancelled", progress: null,
-                            message: "Command execution was cancelled", result: null, error: null)!;
+                        if (m_notificationService != null)
+                        {
+                            await m_notificationService.NotifyCommandStatusAsync(
+                                queuedCommand.Id, queuedCommand.Command, "cancelled", progress: null,
+                                message: "Command execution was cancelled", result: null, error: null);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -525,8 +537,11 @@ namespace mcp_nexus.CommandQueue
                 {
                     try
                     {
-                        await m_notificationService?.NotifyCommandStatusAsync(
-                            queuedCommand.Id, queuedCommand.Command, "failed", null, "Command execution failed", null, ex.Message)!;
+                        if (m_notificationService != null)
+                        {
+                            await m_notificationService.NotifyCommandStatusAsync(
+                                queuedCommand.Id, queuedCommand.Command, "failed", null, "Command execution failed", null, ex.Message);
+                        }
                     }
                     catch (Exception notificationEx)
                     {
@@ -730,6 +745,75 @@ namespace mcp_nexus.CommandQueue
 
                 m_lastStatsLog = now;
             }
+        }
+
+        public CommandState? GetCommandState(string commandId)
+        {
+            if (string.IsNullOrEmpty(commandId))
+                return null;
+
+            if (!m_activeCommands.TryGetValue(commandId, out var command))
+                return null;
+
+            return command.State;
+        }
+
+        public CommandInfo? GetCommandInfo(string commandId)
+        {
+            if (string.IsNullOrEmpty(commandId))
+                return null;
+
+            if (!m_activeCommands.TryGetValue(commandId, out var command))
+                return null;
+
+            var elapsed = DateTime.UtcNow - command.QueueTime;
+            var remaining = m_defaultCommandTimeout - elapsed;
+            var queuePosition = GetQueuePosition(commandId);
+
+            return new CommandInfo
+            {
+                CommandId = commandId,
+                Command = command.Command,
+                State = command.State,
+                QueueTime = command.QueueTime,
+                Elapsed = elapsed,
+                Remaining = remaining,
+                QueuePosition = queuePosition,
+                IsCompleted = command.CompletionSource.Task.IsCompleted
+            };
+        }
+
+        private int GetQueuePosition(string commandId)
+        {
+            if (string.IsNullOrEmpty(commandId))
+                return -1;
+
+            // If there's a current command executing, all queued commands are behind it
+            lock (m_currentCommandLock)
+            {
+                if (m_currentCommand != null)
+                {
+                    // Count commands in queue + 1 for the current command
+                    var queueCount = m_commandQueue.Count;
+                    return queueCount + 1; // +1 because current command is executing
+                }
+            }
+
+            // No current command, so count how many commands are ahead in the queue
+            var position = 0;
+            var queueArray = m_commandQueue.ToArray();
+
+            for (int i = 0; i < queueArray.Length; i++)
+            {
+                if (queueArray[i].Id == commandId)
+                {
+                    return position;
+                }
+                position++;
+            }
+
+            // Command not found in queue
+            return -1;
         }
 
         public void Dispose()
