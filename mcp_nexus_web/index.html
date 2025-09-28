@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crash Dump Analyzer</title>
-    <link rel="stylesheet" href="styles.css?v=20250925191500">
+    <link rel="stylesheet" href="styles.css?v=20250925193500">
 </head>
 <body>
     <div class="topbar">
@@ -30,6 +30,7 @@
                 <div class="tab disabled" data-type="cdb_analyze">WinDbg Output</div>
                 <div class="tab disabled" data-type="console">Console Log</div>
                 <div class="tab disabled" data-type="dump">Dump File</div>
+                <div class="tab" data-type="jobinfo">Job Info</div>
             </div>
             <div class="viewer-body" id="viewerBody">
                 <p>Upload dump files to start analysis. Jobs are processed server-side in the background.</p>
@@ -271,12 +272,50 @@
                 }
                 
                 viewerBody.innerHTML = `
-                    <p><strong>Job ID:</strong> ${job.id}</p>
-                    <p><strong>Created:</strong> ${job.created}</p>
-                    <p><strong>Updated:</strong> ${job.updated}</p>
-                    <p><strong>Status:</strong> ${job.status.toUpperCase()}</p>
-                    ${job.error ? `<p><strong>Error:</strong> ${job.error}</p>` : ''}
-                    ${job.status === 'processing' ? '<p>Analysis in progress...</p>' : ''}
+                    <div class="job-details-card">
+                        <div class="job-details-header">
+                            <h2>📊 Job Details</h2>
+                            <div class="status-badge status-${job.status.toLowerCase()}">${job.status.toUpperCase()}</div>
+                        </div>
+                        
+                        <div class="job-details-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">🆔 Job ID</div>
+                                <div class="detail-value">${job.id}</div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <div class="detail-label">📅 Created</div>
+                                <div class="detail-value">${new Date(job.created).toLocaleString()}</div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <div class="detail-label">🔄 Updated</div>
+                                <div class="detail-value">${new Date(job.updated).toLocaleString()}</div>
+                            </div>
+                            
+                            ${job.error ? `
+                            <div class="detail-item error-item">
+                                <div class="detail-label">❌ Error</div>
+                                <div class="detail-value error-text">${job.error}</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                        
+                        ${job.status === 'processing' ? `
+                        <div class="processing-indicator">
+                            <div class="spinner"></div>
+                            <span>Analysis in progress...</span>
+                        </div>
+                        ` : ''}
+                        
+                        ${job.status === 'completed' ? `
+                        <div class="completion-message">
+                            <div class="success-icon">✅</div>
+                            <span>Analysis completed! Select a tab above to view results.</span>
+                        </div>
+                        ` : ''}
+                    </div>
                 `;
             }
         }
@@ -312,7 +351,10 @@
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => {
                 const type = tab.dataset.type;
-                if (analysis.files && analysis.files[type]) {
+                if (type === 'jobinfo') {
+                    // Job Info tab is always available
+                    tab.classList.remove('disabled');
+                } else if (analysis.files && analysis.files[type]) {
                     tab.classList.remove('disabled');
                 } else {
                     tab.classList.add('disabled');
@@ -320,8 +362,134 @@
             });
         }
 
+        function showJobInfo() {
+            const viewerBody = document.getElementById('viewerBody');
+            
+            if (!selectedJob) {
+                viewerBody.innerHTML = '<p>No job selected.</p>';
+                return;
+            }
+            
+            // Update active tab
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('[data-type="jobinfo"]').classList.add('active');
+            
+            const job = selectedJob;
+            const createdDate = new Date(job.created);
+            const updatedDate = new Date(job.updated);
+            const duration = Math.round((updatedDate - createdDate) / 1000); // seconds
+            
+            viewerBody.innerHTML = `
+                <div class="job-info-panel">
+                    <div class="job-info-header">
+                        <h2>🔍 Job Information</h2>
+                        <div class="status-badge status-${job.status.toLowerCase()}">${job.status.toUpperCase()}</div>
+                    </div>
+                    
+                    <div class="job-info-sections">
+                        <div class="info-section">
+                            <h3>📋 Basic Information</h3>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">Job ID:</span>
+                                    <span class="info-value monospace">${job.id}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Job Name:</span>
+                                    <span class="info-value monospace">${job.name}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">File Name:</span>
+                                    <span class="info-value monospace">${job.fileName || 'N/A'}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Status:</span>
+                                    <span class="info-value status-${job.status.toLowerCase()}">${job.status.toUpperCase()}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-section">
+                            <h3>⏱️ Timing Information</h3>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">Created:</span>
+                                    <span class="info-value">${createdDate.toLocaleString()}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Updated:</span>
+                                    <span class="info-value">${updatedDate.toLocaleString()}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Duration:</span>
+                                    <span class="info-value">${Math.floor(duration / 60)}m ${duration % 60}s</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">File Path:</span>
+                                    <span class="info-value monospace small">${job.filePath || 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${job.error ? `
+                        <div class="info-section error-section">
+                            <h3>❌ Error Information</h3>
+                            <div class="error-content">
+                                <pre class="error-text">${job.error}</pre>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${job.note ? `
+                        <div class="info-section note-section">
+                            <h3>📝 Notes</h3>
+                            <div class="note-content">
+                                <p class="note-text">${job.note}</p>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="info-section">
+                            <h3>🔧 Technical Details</h3>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">Analysis Directory:</span>
+                                    <span class="info-value monospace small">~/analysis/${job.name}/</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Expected Files:</span>
+                                    <span class="info-value">analysis.md, cdb_analyze.txt, console.txt, dump.dmp</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Processing Queue:</span>
+                                    <span class="info-value">Server-side background processing</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Components:</span>
+                                    <span class="info-value">WinDbg Analysis + AI Analysis (cursor-agent)</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-section">
+                            <h3>📊 Raw Job Data</h3>
+                            <div class="raw-data">
+                                <pre class="json-data">${JSON.stringify(job, null, 2)}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         async function loadAnalysisContent(analysis, type) {
             const viewerBody = document.getElementById('viewerBody');
+            
+            if (type === 'jobinfo') {
+                // Show job information - always available
+                showJobInfo();
+                return;
+            }
             
             if (!analysis.files || !analysis.files[type]) {
                 viewerBody.innerHTML = '<p>Content not available.</p>';

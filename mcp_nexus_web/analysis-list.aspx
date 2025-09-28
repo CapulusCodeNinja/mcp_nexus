@@ -19,11 +19,11 @@
                     var files = new System.Collections.Generic.Dictionary<string, object>();
                     
                     try {
-                        // Check for MD file (should match directory name)
-                        var mdFile = d.GetFiles(d.Name + ".md").FirstOrDefault();
+                        // Check for MD file (prefer clean naming)
+                        var mdFile = d.GetFiles("analysis.md").FirstOrDefault();
                         if (mdFile == null) {
-                            // Fallback to analysis.md for existing files
-                            mdFile = d.GetFiles("analysis.md").FirstOrDefault();
+                            // Fallback to timestamped name for backward compatibility
+                            mdFile = d.GetFiles(d.Name + ".md").FirstOrDefault();
                         }
                     if (mdFile != null) {
                         files["analysis"] = new System.Collections.Generic.Dictionary<string, object> {

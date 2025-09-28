@@ -2,6 +2,7 @@
 <%@ Import Namespace="System.IO" %>
 <%@ Import Namespace="System.Web.Script.Serialization" %>
 <%@ Import Namespace="System.Diagnostics" %>
+<%@ Import Namespace="System.Linq" %>
 <%
     // Simple queue processor that directly processes files
     Response.ContentType = "text/plain";
@@ -155,28 +156,74 @@ void ProcessDumpFileSimple(string filePath, string jobId)
             }
             else
             {
-                // Check if analysis files were actually created
+                // Check if analysis files were actually created (handle timing mismatches)
                 string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
                 string analysisDir = Server.MapPath("~/analysis");
-                string expectedDir = Path.Combine(analysisDir, fileNameWithoutExt);
                 
-                bool hasAnalysis = false;
+                bool hasAnyFiles = false;
+                bool hasAnalysisMd = false;
+                string actualDir = null;
+                
+                // Try exact match first
+                string expectedDir = Path.Combine(analysisDir, fileNameWithoutExt);
                 if (Directory.Exists(expectedDir))
                 {
-                    string[] expectedFiles = { fileNameWithoutExt + ".md", "analysis.md", "console.txt", "cdb_analyze.txt" };
-                    foreach (string expectedFile in expectedFiles)
+                    actualDir = expectedDir;
+                }
+                else
+                {
+                    // Handle timing mismatches - look for directories with similar pattern
+                    if (Directory.Exists(analysisDir))
                     {
-                        if (File.Exists(Path.Combine(expectedDir, expectedFile)))
+                        string basePattern = fileNameWithoutExt.Length >= 17 ? fileNameWithoutExt.Substring(0, 17) : fileNameWithoutExt;
+                        var matchingDirs = Directory.GetDirectories(analysisDir)
+                            .Where(d => Path.GetFileName(d).StartsWith(basePattern))
+                            .OrderByDescending(d => Directory.GetLastWriteTime(d))
+                            .ToArray();
+                        
+                        if (matchingDirs.Length > 0)
                         {
-                            hasAnalysis = true;
+                            actualDir = matchingDirs[0];
+                        }
+                    }
+                }
+                
+                if (actualDir != null)
+                {
+                    // Check for any analysis files
+                    string[] analysisFiles = { "analysis.md", fileNameWithoutExt + ".md" };
+                    string[] otherFiles = { "console.txt", "cdb_analyze.txt", "dump.dmp" };
+                    
+                    foreach (string file in analysisFiles)
+                    {
+                        if (File.Exists(Path.Combine(actualDir, file)))
+                        {
+                            hasAnalysisMd = true;
+                            hasAnyFiles = true;
+                            break;
+                        }
+                    }
+                    
+                    foreach (string file in otherFiles)
+                    {
+                        if (File.Exists(Path.Combine(actualDir, file)))
+                        {
+                            hasAnyFiles = true;
                             break;
                         }
                     }
                 }
                 
-                if (hasAnalysis)
+                if (hasAnyFiles)
                 {
-                    UpdateJobStatus(jobId, "completed");
+                    if (hasAnalysisMd)
+                    {
+                        UpdateJobStatus(jobId, "completed");
+                    }
+                    else
+                    {
+                        UpdateJobStatus(jobId, "completed", "Partial analysis - AI component failed but WinDbg analysis completed successfully");
+                    }
                 }
                 else
                 {
@@ -218,7 +265,23 @@ void UpdateJobStatus(string jobId, string status, string error = null)
                 jobDict["updated"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 if (error != null)
                 {
-                    jobDict["error"] = error;
+                    if (status == "completed")
+                    {
+                        // For completed jobs with messages, use "note" instead of "error"
+                        jobDict["note"] = error;
+                        if (jobDict.ContainsKey("error"))
+                        {
+                            jobDict.Remove("error");
+                        }
+                    }
+                    else
+                    {
+                        jobDict["error"] = error;
+                        if (jobDict.ContainsKey("note"))
+                        {
+                            jobDict.Remove("note");
+                        }
+                    }
                 }
             }
             jobs.Add(job);

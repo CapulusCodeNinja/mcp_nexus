@@ -45,8 +45,9 @@
                                 {
                                     string analysisDir = Server.MapPath("~/analysis/" + jobName);
                                     
-                                    // Check for analysis report (MD file)
-                                    enhancedJob["hasAnalysis"] = File.Exists(Path.Combine(analysisDir, jobName + ".md"));
+                                    // Check for analysis report (MD file) - prefer clean naming
+                                    enhancedJob["hasAnalysis"] = File.Exists(Path.Combine(analysisDir, "analysis.md")) || 
+                                                                File.Exists(Path.Combine(analysisDir, jobName + ".md"));
                                     
                                     // Check for WinDbg output
                                     enhancedJob["hasWinDbg"] = File.Exists(Path.Combine(analysisDir, "cdb_analyze.txt"));

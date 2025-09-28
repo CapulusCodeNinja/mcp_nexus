@@ -47,6 +47,9 @@
             case "deletefailed":
                 HandleDeleteFailedRequest();
                 break;
+            case "deletejob":
+                HandleDeleteJobRequest();
+                break;
             default:
                 Response.ContentType = "application/json";
                 Response.Write("{\"success\": false, \"error\": \"Unknown action: " + action + "\"}");
@@ -1307,6 +1310,128 @@
         catch (Exception ex)
         {
             Response.Write("[ERROR] Error deleting failed entries: " + ex.Message + "\n");
+        }
+    }
+
+    void HandleDeleteJobRequest()
+    {
+        Response.ContentType = "text/plain";
+        string jobId = Request.QueryString["jobid"];
+        
+        if (string.IsNullOrEmpty(jobId))
+        {
+            Response.Write("[ERROR] Job ID parameter is required\n");
+            return;
+        }
+        
+        Response.Write("=== DELETING SPECIFIC JOB ===\n\n");
+        Response.Write("Job ID: " + jobId + "\n\n");
+        
+        var deletedFromQueue = false;
+        var deletedFolderCount = 0;
+        string jobName = null;
+        
+        try
+        {
+            // Step 1: Remove job from queue
+            Response.Write("Step 1: Removing job from queue...\n");
+            string queueFile = Server.MapPath("~/App_Data/queue.json");
+            
+            if (File.Exists(queueFile))
+            {
+                string json = File.ReadAllText(queueFile);
+                var serializer = new JavaScriptSerializer();
+                var queueData = serializer.DeserializeObject(json) as Dictionary<string, object>;
+                
+                if (queueData != null && queueData.ContainsKey("jobs"))
+                {
+                    var jobsArray = queueData["jobs"] as object[];
+                    if (jobsArray != null)
+                    {
+                        var keptJobs = new List<object>();
+                        
+                        foreach (var job in jobsArray)
+                        {
+                            var jobDict = job as Dictionary<string, object>;
+                            if (jobDict != null && jobDict.ContainsKey("id"))
+                            {
+                                string currentJobId = jobDict["id"].ToString();
+                                if (currentJobId == jobId)
+                                {
+                                    // Found the job to delete
+                                    deletedFromQueue = true;
+                                    if (jobDict.ContainsKey("name"))
+                                    {
+                                        jobName = jobDict["name"].ToString();
+                                    }
+                                    Response.Write("[OK] Found job in queue: " + jobName + "\n");
+                                }
+                                else
+                                {
+                                    keptJobs.Add(job);
+                                }
+                            }
+                        }
+                        
+                        if (deletedFromQueue)
+                        {
+                            // Update queue with job removed
+                            var updatedQueue = new { jobs = keptJobs.ToArray() };
+                            File.WriteAllText(queueFile, serializer.Serialize(updatedQueue));
+                            Response.Write("[OK] Removed job from queue\n");
+                        }
+                        else
+                        {
+                            Response.Write("[INFO] Job not found in queue\n");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Response.Write("[INFO] Queue file does not exist\n");
+            }
+            
+            // Step 2: Delete analysis folder if we found the job name
+            if (!string.IsNullOrEmpty(jobName))
+            {
+                Response.Write("\nStep 2: Deleting analysis folder...\n");
+                string analysisDir = Server.MapPath("~/analysis");
+                string jobFolder = Path.Combine(analysisDir, jobName);
+                
+                if (Directory.Exists(jobFolder))
+                {
+                    Directory.Delete(jobFolder, true);
+                    deletedFolderCount = 1;
+                    Response.Write("[OK] Deleted analysis folder: " + jobName + "\n");
+                }
+                else
+                {
+                    Response.Write("[INFO] Analysis folder not found: " + jobName + "\n");
+                }
+            }
+            else
+            {
+                Response.Write("\nStep 2: Skipping folder deletion (job name not found)\n");
+            }
+            
+            Response.Write("\n=== DELETE JOB COMPLETE ===\n");
+            if (deletedFromQueue)
+            {
+                Response.Write("[SUCCESS] Job " + jobId + " deleted successfully\n");
+                Response.Write("[OK] Removed from queue: " + (deletedFromQueue ? "Yes" : "No") + "\n");
+                Response.Write("[OK] Deleted folders: " + deletedFolderCount + "\n");
+                Response.Write("[INFO] Refresh the main page to see the updated list\n");
+            }
+            else
+            {
+                Response.Write("[WARNING] Job " + jobId + " was not found in the queue\n");
+                Response.Write("[INFO] The job may have already been deleted or never existed\n");
+            }
+        }
+        catch (Exception ex)
+        {
+            Response.Write("[ERROR] Error deleting job: " + ex.Message + "\n");
         }
     }
 

@@ -14,26 +14,56 @@ This command defines a comprehensive process for an AI to analyze a Windows cras
 
 ### 🎯 **OBJECTIVE**
 
-Analyze the crash dump file specified by `[filename]` to determine the root cause. The AI must produce a professional Markdown (MD) **page** that adheres to enterprise debugging standards, providing a comprehensive analysis and all necessary information for a developer to solve the issue.
+Analyze the crash dump file specified by `[filename]` to determine the root cause. The AI must produce a professional, comprehensive report in **Markdown (MD) format**, adhering to enterprise debugging standards. The report must provide a complete analysis and all necessary information for a developer to solve the issue, including a definitive **Root Cause Analysis (RCA)**. Prioritize depth of investigation to fully isolate the fault and provide actionable insights. The report must be ready for immediate developer action and be as exhaustive as possible.
 
 ***
 
-### 🔧 **REQUIRED PREPARATION STEPS**
+### **USAGE GUIDE**
 
-The following steps must be performed sequentially. Ensure all mandatory rules are followed at each stage.
+#### MCP Tools 🛠️
 
-**MANDATORY** In case any preparation fails, do not continue with anything further, just output some details about the failure in a MD file as described in the "MANDATORY OUTPUT FORMAT" section and just `exit` instead. No need to follow "ISSUE LOG PAGES" in that special situation but please provide some helpful information to find the underlaying issue.
+Core debugging tools for **crash dump analysis**.
 
-1.  **Confirm MCP servers:** Confirm MCP servers are available
-2.  **List available MCP Tools:** List all the available MCP servers and there tools
-3.  **Verify MCP Tools:** Verify that `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session` and `nexus_enqueue_async_dump_analyze_command` is available in your tool list
-4.  **Analyze issue** In case the verification fails elaborate what the issue might be as the server is set in the global mcp.json of the user account `droller`. Check the configuration file and test the connection.
+* **TOOLS**: Use `tools/call` method to execute debugging operations (**open session**, **run commands**, **close session**).
+* **RESOURCES**: Use `resources/read` method to access data (**command results**, **session lists**, **documentation**).
+* After opening an analyze session, **WinDBG commands** can be asynchronously executed.
+* Command results can be accessed via the **'Command Result' resource** or **'List Commands' resource**.
+* Opening a session without executing commands will not have any effect.
+
+##### Available Tools
+
+| Step Title | Tool Name | Action | Input | Output | Note |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Tooling - Open Session** | `nexus_open_dump_analyze_session` | Open the analyze session for the dump file with the tool from Nexus MCP server. | `dumpFile` (string, required), `symbolsPath` (string, optional) | `sessionid` | This **EXACT sessionid IS REQUIRED TO BE USED** for all following commands in the session. |
+| **Tooling - Exec Command** | `nexus_enqueue_async_dump_analyze_command` | Use the tool to start asynchronous execution of the WinDBG commands. | `command` (string, required), `sessionId` (string, required) | `commandId` | This **EXACT commandId IS REQUIRED TO BE USED** for the 'Command Result' resource to get the asynchronous result. |
+| **Tooling - Close Session** | `nexus_close_dump_analyze_session` | Use the tool to close the analyze session of the dump file after all commands are executed or the session is not needed anymore. | `sessionId` (string, required) | *(null)* | *(null)* |
+
+---
+
+#### MCP Resources 📚
+
+Access data and results using the **`resources/read` method** (**NOT `tools/call`**).
+
+* Use the `resources/read` method to access these resources.
+* **Resources** provide data access; **tools** provide action execution.
+
+##### Available Resources
+
+| URI | Name | Description | Input | Note/Usage |
+| :--- | :--- | :--- | :--- | :--- |
+| `workflows` | **Crash Analysis Workflows** | Comprehensive step-by-step analysis workflows for Windows crash dump investigation. | *(null)* | Access via `MCP resources/read` method. |
+| `usage` | **Usage** | Essential tool usage information for MCP Nexus server. | *(null)* | Access via `MCP resources/read` method. |
+| `sessions` | **List Sessions** | List all debugging sessions with status and activity information. | *(null)* | Use: `sessions` resource (no parameters - returns all sessions). |
+| `commands` | **List Commands** | List async commands from all sessions with status and timing information. | *(null)* | Use: `commands` resource (no parameters - returns all commands). |
+| `nexus_read_dump_analyze_command_result` | **Command Result** | Get status and results of a specific async command. | `sessionId` (string, required), `commandId` (string, required) | **This is a TOOL, not a resource.** Call it directly with parameters. |
+
+***
 
 ### 🔧 **REQUIRED ACTIONS & WORKFLOW**
 
 The following steps must be performed sequentially. Ensure all mandatory rules are followed at each stage.
 
-1.  **Initialize Analysis:** Open the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`
+1.  **Initialize Analysis:** Open the analyze session for the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`
 2.  **Source Code Retrieval:**
     * Set the source server path: `.srcpath srv\*[workingdir]\source`
     * Enable source verbosity: `.srcnoisy 3`
@@ -50,7 +80,7 @@ The following steps must be performed sequentially. Ensure all mandatory rules a
 4.  **File Generation & Verification:**
     * Generate all required files and ensure they strictly follow all mandatory rules, usability, and style guidelines
     * Read all generated files to confirm they meet all criteria before finalizing the task
-5.  **MANDATORY EXIT:** You MUST immediately exit/terminate after completing the analysis report. Do not wait for additional input. Use `exit()` or equivalent to terminate the session immediately after generating the final report.
+5.  **CRITICAL EXIT:** You **MUST** immediately exit/terminate after completing the analysis report. Do not wait for additional input.
 
 ***
 

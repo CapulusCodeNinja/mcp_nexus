@@ -6,6 +6,12 @@
     <title>Admin - Crash Dump Analyzer</title>
     <link rel="stylesheet" href="styles.css">
     <style>
+        /* Override body overflow for admin page */
+        body {
+            height: auto !important;
+            overflow: visible !important;
+            min-height: 100vh;
+        }
         /* Additional admin-specific styles */
         .admin-grid {
             display: grid;
@@ -64,6 +70,59 @@
         .admin-btn.danger:hover {
             background: #e5484d;
         }
+
+        .delete-job-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #30363d;
+        }
+
+        .input-label {
+            color: #e6edf3;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .job-id-input {
+            flex: 1;
+            padding: 8px 12px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #e6edf3;
+            font-size: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            min-width: 0;
+        }
+
+        .job-id-input:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+        }
+
+        .job-id-input::placeholder {
+            color: #8b949e;
+        }
+
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .job-id-input {
+                margin-bottom: 0;
+            }
+        }
         
         .admin-btn.warning {
             background: #fb8500;
@@ -80,8 +139,12 @@
             padding: 16px;
             font-family: 'Consolas', 'Monaco', monospace;
             font-size: 12px;
+            line-height: 1.4;
+            color: #e6edf3;
             white-space: pre-wrap;
+            word-break: break-word;
             max-height: 400px;
+            min-height: 200px;
             overflow-y: auto;
             margin-top: 16px;
         }
@@ -138,10 +201,18 @@
             opacity: 0.6;
         }
         
-        /* Make System Status panel more compact */
+        /* Make System Status panel more compact and ensure proper positioning */
         .panel.system-status {
             min-height: auto;
             padding: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .admin-grid {
+            position: relative;
+            z-index: 0;
         }
         
         @media (max-width: 768px) {
@@ -173,7 +244,7 @@
         </div>
     </div>
 
-    <div class="layout" style="grid-template-columns: 1fr; max-width: 1200px; margin: 24px auto;">
+    <div style="max-width: 1200px; margin: 24px auto;">
         <!-- System Status Overview -->
         <div class="panel system-status">
             <h2>System Status</h2>
@@ -206,7 +277,7 @@
         </div>
 
         <!-- Admin Actions -->
-        <div class="admin-grid">
+        <div class="admin-grid" style="margin-top: 24px;">
             <div class="admin-card">
                 <h3><span class="status-indicator online"></span>Queue Management</h3>
                 <p>Monitor and control the analysis queue. View current jobs, restart stuck processes, and manage the processing pipeline.</p>
@@ -242,6 +313,13 @@
                     <button class="admin-btn warning" onclick="deleteFailedEntries()">🗑️ Delete Failed</button>
                     <button class="admin-btn warning" onclick="resetAnalysisList()">🗑️ Reset All</button>
                     <button class="admin-btn" onclick="refreshAnalysisList()">🔄 Refresh List</button>
+                </div>
+                <div class="delete-job-section">
+                    <label for="jobIdInput" class="input-label">Delete Specific Job:</label>
+                    <div class="input-group">
+                        <input type="text" id="jobIdInput" class="job-id-input" placeholder="Enter Job ID (e.g., 4fa1e0f5-50c1-4439-bb06-9140ea3bd86c)" />
+                        <button class="admin-btn danger" onclick="deleteJobById()">🗑️ Delete Job</button>
+                    </div>
                 </div>
             </div>
 
@@ -303,6 +381,44 @@ Available actions:
                 showOutput(result);
             } catch (error) {
                 showOutput('Error deleting failed entries: ' + error.message);
+            }
+        }
+
+        async function deleteJobById() {
+            const jobIdInput = document.getElementById('jobIdInput');
+            const jobId = jobIdInput.value.trim();
+            
+            if (!jobId) {
+                alert('Please enter a Job ID');
+                jobIdInput.focus();
+                return;
+            }
+            
+            // Validate Job ID format (UUID)
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(jobId)) {
+                alert('Invalid Job ID format. Please enter a valid UUID (e.g., 4fa1e0f5-50c1-4439-bb06-9140ea3bd86c)');
+                jobIdInput.focus();
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete job "${jobId}"? This will permanently remove the job from the queue and delete its analysis files.`)) {
+                return;
+            }
+            
+            showOutput(`Deleting job ${jobId}...\n`);
+            
+            try {
+                const response = await fetch(`admin-api.aspx?action=deletejob&jobid=${encodeURIComponent(jobId)}`);
+                const result = await response.text();
+                showOutput(result);
+                
+                // Clear the input field on success
+                if (result.includes('SUCCESS') || result.includes('deleted')) {
+                    jobIdInput.value = '';
+                }
+            } catch (error) {
+                showOutput('Error deleting job: ' + error.message);
             }
         }
 
