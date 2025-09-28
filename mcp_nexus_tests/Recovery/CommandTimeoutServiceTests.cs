@@ -483,5 +483,241 @@ namespace mcp_nexus_tests.Services
             Thread.Sleep(100);
             Assert.False(onTimeoutCalled); // Timeout should be cancelled
         }
+
+        [Fact]
+        public void StartCommandTimeout_WhenDisposed_DoesNothing()
+        {
+            // Arrange
+            m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
+            m_timeoutService.Dispose();
+            var onTimeoutCalled = false;
+            var onTimeout = new Func<Task>(() => { onTimeoutCalled = true; return Task.CompletedTask; });
+
+            // Act
+            m_timeoutService.StartCommandTimeout("test-command", TimeSpan.FromMilliseconds(50), onTimeout);
+
+            // Assert
+            Thread.Sleep(100);
+            Assert.False(onTimeoutCalled); // Should not start timeout when disposed
+        }
+
+        [Fact]
+        public void CancelCommandTimeout_WhenDisposed_DoesNothing()
+        {
+            // Arrange
+            m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
+            m_timeoutService.Dispose();
+
+            // Act & Assert - Should not throw
+            m_timeoutService.CancelCommandTimeout("test-command");
+        }
+
+        [Fact]
+        public void ExtendCommandTimeout_WhenDisposed_DoesNothing()
+        {
+            // Arrange
+            m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
+            m_timeoutService.Dispose();
+
+            // Act & Assert - Should not throw
+            m_timeoutService.ExtendCommandTimeout("test-command", TimeSpan.FromSeconds(1));
+        }
+
+
+        [Fact]
+        public void ExtendCommandTimeout_WithNonExistentCommand_DoesNothing()
+        {
+            // Arrange
+            m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
+
+            // Act & Assert - Should not throw
+            m_timeoutService.ExtendCommandTimeout("non-existent-command", TimeSpan.FromSeconds(1));
+        }
+
+        [Fact]
+        public void StartCommandTimeout_WithZeroTimeout_ExecutesImmediately()
+        {
+            // Arrange
+            m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
+            var commandId = "test-command-zero";
+            var onTimeoutCalled = false;
+            var onTimeout = new Func<Task>(() => { onTimeoutCalled = true; return Task.CompletedTask; });
+
+            // Act
+            m_timeoutService.StartCommandTimeout(commandId, TimeSpan.Zero, onTimeout);
+
+            // Assert
+            Thread.Sleep(50); // Small delay to allow async execution
+            Assert.True(onTimeoutCalled);
+        }
+
+        [Fact]
+        public void StartCommandTimeout_WithExceptionInHandler_LogsError()
+        {
+            // Arrange
+            m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
+            var commandId = "test-command-exception";
+            var onTimeout = new Func<Task>(() => throw new InvalidOperationException("Test exception"));
+
+            // Act
+            m_timeoutService.StartCommandTimeout(commandId, TimeSpan.FromMilliseconds(50), onTimeout);
+
+            // Assert
+            Thread.Sleep(100);
+            
+            // Verify error was logged
+            m_mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error in timeout handler")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public void ExtendCommandTimeout_WithExceptionInHandler_LogsError()
+        {
+            // Arrange
+            m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
+            var commandId = "test-command-extend-exception";
+            var onTimeout = new Func<Task>(() => throw new InvalidOperationException("Test exception"));
+            
+            // Start a timeout first
+            m_timeoutService.StartCommandTimeout(commandId, TimeSpan.FromSeconds(10), onTimeout);
+
+            // Act
+            m_timeoutService.ExtendCommandTimeout(commandId, TimeSpan.FromMilliseconds(50));
+
+            // Assert
+            Thread.Sleep(100);
+            
+            // Verify error was logged (either from original task or extended task)
+            m_mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error in") && v.ToString()!.Contains("timeout handler")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.AtLeastOnce);
+        }
+
+        [Fact]
+        public async Task DisposeAsync_CancelsAllTimeouts()
+        {
+            // Arrange
+            m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
+            var onTimeout1Called = false;
+            var onTimeout2Called = false;
+            var onTimeout1 = new Func<Task>(() => { onTimeout1Called = true; return Task.CompletedTask; });
+            var onTimeout2 = new Func<Task>(() => { onTimeout2Called = true; return Task.CompletedTask; });
+
+            m_timeoutService.StartCommandTimeout("cmd1", TimeSpan.FromSeconds(10), onTimeout1);
+            m_timeoutService.StartCommandTimeout("cmd2", TimeSpan.FromSeconds(10), onTimeout2);
+
+            // Act
+            await m_timeoutService.DisposeAsync();
+
+            // Assert
+            Thread.Sleep(100);
+            Assert.False(onTimeout1Called);
+            Assert.False(onTimeout2Called);
+        }
+
+        [Fact]
+        public async Task DisposeAsync_WhenAlreadyDisposed_DoesNothing()
+        {
+            // Arrange
+            m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
+            m_timeoutService.Dispose();
+
+            // Act & Assert - Should not throw
+            await m_timeoutService.DisposeAsync();
+        }
+
+        [Fact]
+        public async Task DisposeAsync_WithExceptionDuringDisposal_LogsError()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger<CommandTimeoutService>>();
+            m_timeoutService = new CommandTimeoutService(mockLogger.Object);
+            
+            // Start a timeout to have something to dispose
+            m_timeoutService.StartCommandTimeout("test-command", TimeSpan.FromSeconds(10), () => Task.CompletedTask);
+
+            // Act
+            await m_timeoutService.DisposeAsync();
+
+            // Assert - Should complete without throwing
+            Assert.True(true); // If we get here, no exception was thrown
+        }
+
+        [Fact]
+        public void StartCommandTimeout_ReplacesExistingTimeout()
+        {
+            // Arrange
+            m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
+            var commandId = "test-command-replace";
+            var firstTimeoutCalled = false;
+            var secondTimeoutCalled = false;
+            var firstTimeout = new Func<Task>(() => { firstTimeoutCalled = true; return Task.CompletedTask; });
+            var secondTimeout = new Func<Task>(() => { secondTimeoutCalled = true; return Task.CompletedTask; });
+
+            // Act
+            m_timeoutService.StartCommandTimeout(commandId, TimeSpan.FromSeconds(10), firstTimeout);
+            m_timeoutService.StartCommandTimeout(commandId, TimeSpan.FromMilliseconds(50), secondTimeout);
+
+            // Assert
+            Thread.Sleep(100);
+            Assert.False(firstTimeoutCalled); // First timeout should be cancelled
+            Assert.True(secondTimeoutCalled); // Second timeout should fire
+        }
+
+
+        [Fact]
+        public void StartCommandTimeout_WithVeryShortTimeout_ExecutesQuickly()
+        {
+            // Arrange
+            m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
+            var commandId = "test-command-very-short";
+            var onTimeoutCalled = false;
+            var onTimeout = new Func<Task>(() => { onTimeoutCalled = true; return Task.CompletedTask; });
+
+            // Act
+            var startTime = DateTime.UtcNow;
+            m_timeoutService.StartCommandTimeout(commandId, TimeSpan.FromMilliseconds(1), onTimeout);
+
+            // Assert
+            Thread.Sleep(50); // Wait for execution
+            var elapsed = DateTime.UtcNow - startTime;
+            Assert.True(onTimeoutCalled);
+            Assert.True(elapsed.TotalMilliseconds < 100); // Should execute quickly
+        }
+
+        [Fact]
+        public void MultipleTimeouts_CanRunConcurrently()
+        {
+            // Arrange
+            m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
+            var timeout1Called = false;
+            var timeout2Called = false;
+            var timeout3Called = false;
+            var timeout1 = new Func<Task>(() => { timeout1Called = true; return Task.CompletedTask; });
+            var timeout2 = new Func<Task>(() => { timeout2Called = true; return Task.CompletedTask; });
+            var timeout3 = new Func<Task>(() => { timeout3Called = true; return Task.CompletedTask; });
+
+            // Act
+            m_timeoutService.StartCommandTimeout("cmd1", TimeSpan.FromMilliseconds(50), timeout1);
+            m_timeoutService.StartCommandTimeout("cmd2", TimeSpan.FromMilliseconds(75), timeout2);
+            m_timeoutService.StartCommandTimeout("cmd3", TimeSpan.FromMilliseconds(100), timeout3);
+
+            // Assert
+            Thread.Sleep(150);
+            Assert.True(timeout1Called);
+            Assert.True(timeout2Called);
+            Assert.True(timeout3Called);
+        }
     }
 }

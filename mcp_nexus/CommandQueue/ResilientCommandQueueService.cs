@@ -45,10 +45,10 @@ namespace mcp_nexus.CommandQueue
             ICdbSessionRecoveryService recoveryService,
             IMcpNotificationService? notificationService = null)
         {
-            m_cdbSession = cdbSession;
-            m_logger = logger;
-            m_timeoutService = timeoutService;
-            m_recoveryService = recoveryService;
+            m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
+            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_timeoutService = timeoutService ?? throw new ArgumentNullException(nameof(timeoutService));
+            m_recoveryService = recoveryService ?? throw new ArgumentNullException(nameof(recoveryService));
             m_notificationService = notificationService;
 
             // INITIALIZE: Create blocking collection for thread-safe producer/consumer

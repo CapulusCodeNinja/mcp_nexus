@@ -120,8 +120,10 @@ namespace mcp_nexus.Recovery
                 // Cancel existing timeout immediately to prevent it from firing
                 m_logger.LogDebug("Cancelling existing timeout for command {CommandId}", commandId);
                 existingInfo.CancellationTokenSource.Cancel();
-                existingInfo.CancellationTokenSource.Dispose();
                 m_logger.LogDebug("Existing timeout cancelled for command {CommandId}", commandId);
+                
+                // Note: We don't dispose the CancellationTokenSource here to avoid race conditions
+                // The original task will dispose it in its finally block
 
                 // Create new timeout with the additional time, preserving the original handler
                 var newCts = new CancellationTokenSource();
