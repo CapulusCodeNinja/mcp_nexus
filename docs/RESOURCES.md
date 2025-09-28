@@ -10,24 +10,22 @@ MCP Nexus provides resources for session management, command tracking, and docum
 
 ## 🔍 Quick Reference
 
-| Resource | Purpose | Parameters | Real-time |
-|----------|---------|------------|-----------|
-| `sessions` | List all active analysis sessions | None | ✅ |
-| `commands` | List commands with status and timing | None | ✅ |
-| `workflows` | Get crash analysis workflows | None | ❌ |
-| `usage` | Get complete usage guide | None | ❌ |
-| `metrics` | Get performance metrics | None | ✅ |
-| `circuits` | Get circuit breaker status | None | ✅ |
-| `health` | Get system health status | None | ✅ |
-| `cache` | Get cache statistics | None | ✅ |
+| Resource | Purpose |
+|----------|---------|
+| `sessions` | List all active analysis sessions |
+| `commands` | List commands with status and timing |
+| `workflows` | Get crash analysis workflows |
+| `usage` | Get complete usage guide |
+| `metrics` | Get performance metrics |
+| `circuits` | Get circuit breaker status |
+| `health` | Get system health status |
+| `cache` | Get cache statistics |
 
 ## 📋 Session Management Resources
 
 ### `sessions`
 
-**Purpose**: List all active crash dump analysis sessions  
-**Parameters**: None  
-**Real-time**: ✅ Updates as sessions are created/closed
+**Purpose**: List all active crash dump analysis sessions
 
 **Example Request**:
 ```json
@@ -62,8 +60,6 @@ MCP Nexus provides resources for session management, command tracking, and docum
 ### `commands`
 
 **Purpose**: List commands from all sessions with status and timing information
-**Parameters**: None
-**Real-time**: ✅ Updates as commands are queued/completed
 
 **Example Request**:
 ```json
@@ -81,9 +77,7 @@ MCP Nexus provides resources for session management, command tracking, and docum
 
 ### `workflows`
 
-**Purpose**: Get comprehensive crash analysis workflows and examples  
-**Parameters**: None  
-**Real-time**: ❌ Static content
+**Purpose**: Get comprehensive crash analysis workflows and examples
 
 **Example Request**:
 ```json
@@ -99,9 +93,7 @@ MCP Nexus provides resources for session management, command tracking, and docum
 
 ### `usage`
 
-**Purpose**: Get complete usage guide for tools and resources  
-**Parameters**: None  
-**Real-time**: ❌ Static content
+**Purpose**: Get complete usage guide for tools and resources
 
 **Example Request**:
 ```json
@@ -119,27 +111,19 @@ MCP Nexus provides resources for session management, command tracking, and docum
 
 ### `metrics`
 
-**Purpose**: Get comprehensive performance metrics and statistics  
-**Parameters**: None  
-**Real-time**: ✅ Updates as system runs
+**Purpose**: Get comprehensive performance metrics and statistics
 
 ### `circuits`
 
-**Purpose**: Get circuit breaker status and health information  
-**Parameters**: None  
-**Real-time**: ✅ Updates as circuit states change
+**Purpose**: Get circuit breaker status and health information
 
 ### `health`
 
-**Purpose**: Get comprehensive system health status  
-**Parameters**: None  
-**Real-time**: ✅ Updates as system health changes
+**Purpose**: Get comprehensive system health status
 
 ### `cache`
 
-**Purpose**: Get cache statistics and memory usage information  
-**Parameters**: None  
-**Real-time**: ✅ Updates as cache usage changes
+**Purpose**: Get cache statistics and memory usage information
 
 ## 🚨 Error Handling
 

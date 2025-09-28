@@ -291,65 +291,49 @@ Comprehensive test coverage includes:
 - **Mock Tests**: Proper mocking for fast test execution
 
 
-## 📊 Performance Optimization
+## 📊 Performance Features
 
-### Memory Management
+### Caching System
 
-**Session Management**:
-- Implement session pooling
-- Use weak references for large objects
-- Implement automatic cleanup
-- Monitor memory usage
+**IntelligentCacheService**:
+- **Memory-based caching** - 100MB default limit with configurable size
+- **TTL support** - 30-minute default time-to-live for cache entries
+- **Automatic cleanup** - Expired entries cleaned every 5 minutes
+- **Memory monitoring** - Tracks cache memory usage and triggers eviction
+- **Generic implementation** - Supports any key/value type
 
-**Command Execution**:
-- Use async/await patterns
-- Implement command queuing
-- Use cancellation tokens
-- Cache frequently used results
+### Metrics Collection
 
-### Analysis Optimization
+**AdvancedMetricsService**:
+- **Performance counters** - Tracks command executions, session operations
+- **Success/failure tracking** - Monitors operation success rates
+- **Histogram support** - Tracks operation timing and distributions
+- **Automatic collection** - Metrics gathered every 30 seconds
+- **Resource monitoring** - Memory and performance statistics
 
-**Parallel Processing**:
-- Execute independent commands in parallel
-- Use Task.Run for CPU-intensive operations
-- Implement work stealing for load balancing
-- Use concurrent collections
+### Symbol Caching
 
-**Caching Strategy**:
-- Cache symbol information
-- Cache analysis results
-- Implement LRU cache eviction
-- Use memory-mapped files for large data
+**Symbol Server Configuration**:
+- **Local symbol cache** - Cached symbols for faster loading
+- **Multiple symbol servers** - Microsoft, NuGet, Avast symbol sources
+- **Hot/Cold cache strategy** - Fast local access with server fallback
+- **Configurable timeouts** - 5-minute command, 5-minute symbol server timeouts
 
-## 🔒 Security Considerations
+## 🔒 Security Features
 
-### File Access Security
+### Command Validation
 
-**Dump File Access**:
-- Validate file paths
-- Check file permissions
-- Sanitize user input
-- Implement access controls
+**Implemented Security**:
+- **Dangerous command blocking** - Commands like `format`, `del`, `shutdown` are blocked
+- **Path traversal protection** - Prevents `../` directory traversal attacks
+- **SQL injection protection** - Basic SQL injection pattern detection
+- **Input validation** - Empty and whitespace-only commands are rejected
+- **Command length limits** - Commands limited to 1000 characters maximum
 
-**Symbol Server Security**:
-- Use HTTPS for symbol downloads
-- Validate symbol signatures
-- Implement rate limiting
-- Cache symbols securely
-
-### Process Security
-
-**Debugging Process Security**:
-- Run with minimal privileges
-- Isolate debugging processes
-- Implement process sandboxing
-- Monitor resource usage
-
-**Network Security**:
-- Use secure connections
-- Implement authentication
-- Validate all inputs
-- Log security events
+**Security Service**:
+- `AdvancedSecurityService.ValidateCommand()` method
+- `SecurityValidationResult` class for validation results
+- Regex patterns for path traversal and SQL injection detection
 
 ## 🚀 Deployment
 
