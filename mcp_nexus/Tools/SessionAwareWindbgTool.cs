@@ -36,7 +36,7 @@ namespace mcp_nexus.Tools
                     "TOOLS: Use tools/call method to execute debugging operations (open session, run commands, close session)",
                     "RESOURCES: Use resources/read method to access data (command results, session lists, documentation)",
                     "After opening an analyze session, WinDBG commands can be asynchronously executed.",
-                    "Command results can be accessed via the 'Command Result' resource or 'List Commands' resource.",
+                    "Command results can be accessed via the 'nexus_read_dump_analyze_command_result' tool or 'List Commands' resource.",
                     "Opening a session without executing commands will not have any effect."
                 },
                 available_tools = new object[]
@@ -57,7 +57,7 @@ namespace mcp_nexus.Tools
                         action = "Use the tool to start asynchronous execution of the WinDBG commands.",
                         input = new { command = "string (required)", sessionId = "string (required)" },
                         output = (string?)"commandId",
-                        note = (string?)"This EXACT commandId IS REQUIRED TO BE USED for the 'Command Result' resource to get the asynchronous result."
+                        note = (string?)"This EXACT commandId IS REQUIRED TO BE USED for the 'nexus_read_dump_analyze_command_result' tool to get the asynchronous result."
                     },
                     new
                     {
@@ -67,6 +67,15 @@ namespace mcp_nexus.Tools
                         input = new { sessionId = "string (required)" },
                         output = (string?)null,
                         note = (string?)null
+                    },
+                    new
+                    {
+                        step_title = "Tooling - Get Command Result",
+                        tool_name = "nexus_read_dump_analyze_command_result",
+                        action = "Get status and results of a specific async command that was previously queued.",
+                        input = new { sessionId = "string (required)", commandId = "string (required)" },
+                        output = (string?)"command result and status",
+                        note = (string?)"Use this tool to retrieve results from commands executed with nexus_enqueue_async_dump_analyze_command"
                     }
                 }
             },
@@ -115,13 +124,35 @@ namespace mcp_nexus.Tools
                     },
                     new
                     {
-                        uri = "nexus_read_dump_analyze_command_result",
-                        name = "Command Result",
-                        description = "Get status and results of a specific async command",
-                        input = new { sessionId = "string (required)", commandId = "string (required)" },
-                        example = "Use 'nexus_read_dump_analyze_command_result' tool with sessionId and commandId parameters",
-                        usage = "Use this tool directly with sessionId and commandId parameters",
-                        note = (string?)"This is a TOOL, not a resource. Call it directly with parameters."
+                        uri = "metrics",
+                        name = "Performance Metrics",
+                        description = "Get comprehensive performance metrics and statistics",
+                        input = (object?)null,
+                        note = (string?)"Use: metrics resource (no parameters - returns performance data)"
+                    },
+                    new
+                    {
+                        uri = "circuits",
+                        name = "Circuit Breaker Status",
+                        description = "Get circuit breaker status and health information",
+                        input = (object?)null,
+                        note = (string?)"Use: circuits resource (no parameters - returns circuit status)"
+                    },
+                    new
+                    {
+                        uri = "health",
+                        name = "System Health",
+                        description = "Get comprehensive system health status",
+                        input = (object?)null,
+                        note = (string?)"Use: health resource (no parameters - returns health status)"
+                    },
+                    new
+                    {
+                        uri = "cache",
+                        name = "Cache Statistics",
+                        description = "Get cache statistics and memory usage information",
+                        input = (object?)null,
+                        note = (string?)"Use: cache resource (no parameters - returns cache stats)"
                     }
                 }
             }

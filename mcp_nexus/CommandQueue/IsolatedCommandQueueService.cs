@@ -57,6 +57,8 @@ namespace mcp_nexus.CommandQueue
         // CONFIGURATION: Timeout settings
         private readonly TimeSpan m_defaultCommandTimeout = TimeSpan.FromMinutes(10);
         private readonly TimeSpan m_heartbeatInterval = TimeSpan.FromSeconds(30);
+        private readonly TimeSpan m_shutdownTimeout = TimeSpan.FromSeconds(5); // Reduced from 10 seconds
+        private readonly TimeSpan m_forceShutdownTimeout = TimeSpan.FromSeconds(2); // Force shutdown after this
 
         public IsolatedCommandQueueService(
             ICdbSession cdbSession,
@@ -319,6 +321,18 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
+        /// Forces immediate shutdown of the command queue service
+        /// This should only be used in emergency situations
+        /// </summary>
+        public void ForceShutdownImmediate()
+        {
+            if (m_disposed) return;
+            
+            m_logger.LogWarning("🚨 Force shutdown requested for session {SessionId}", m_sessionId);
+            ForceShutdown();
+        }
+
+        /// <summary>
         /// Gets thread-safe performance statistics
         /// </summary>
         public (long Total, long Completed, long Failed, long Cancelled) GetPerformanceStats()
@@ -479,16 +493,46 @@ namespace mcp_nexus.CommandQueue
             try
             {
                 m_logger.LogTrace("🔄 Starting to enumerate commands from BlockingCollection for session {SessionId}", m_sessionId);
+                
+                // SAFETY: Check if collection is disposed before accessing it
+                bool isAddingCompleted;
+                int count;
+                try
+                {
+                    isAddingCompleted = m_commandQueue.IsAddingCompleted;
+                    count = m_commandQueue.Count;
+                }
+                catch (ObjectDisposedException)
+                {
+                    m_logger.LogTrace("🔄 BlockingCollection is disposed, exiting processor for session {SessionId}", m_sessionId);
+                    return;
+                }
+                
                 m_logger.LogTrace("🔄 BlockingCollection state - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
-                    m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
+                    isAddingCompleted, count, m_sessionId);
                 m_logger.LogTrace("🔄 About to call GetConsumingEnumerable with cancellation token for session {SessionId}", m_sessionId);
                 
-                // PROCESS: Use BlockingCollection's built-in blocking enumeration
-                foreach (var command in m_commandQueue.GetConsumingEnumerable(m_processingCts.Token))
+                // PROCESS: Use BlockingCollection's built-in blocking enumeration with timeout handling
+                using var timeoutCts = new CancellationTokenSource(m_forceShutdownTimeout);
+                using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                    m_processingCts.Token, 
+                    timeoutCts.Token);
+                
+                foreach (var command in m_commandQueue.GetConsumingEnumerable(combinedCts.Token))
                 {
                     m_logger.LogTrace("🔄 Dequeued command {CommandId} from queue for session {SessionId}", command?.Id ?? "null", m_sessionId);
-                    m_logger.LogTrace("🔄 BlockingCollection state after dequeue - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
-                        m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
+                    
+                    // SAFETY: Check if collection is disposed before accessing it
+                    try
+                    {
+                        m_logger.LogTrace("🔄 BlockingCollection state after dequeue - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
+                            m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        m_logger.LogTrace("🔄 BlockingCollection is disposed during processing, exiting for session {SessionId}", m_sessionId);
+                        return;
+                    }
                     try
                     {
                         // CANCELLATION: Check if command was cancelled while queued
@@ -508,12 +552,32 @@ namespace mcp_nexus.CommandQueue
                         if (command != null)
                         {
                             m_logger.LogTrace("🔄 Starting execution of command {CommandId} for session {SessionId}", command.Id, m_sessionId);
-                            m_logger.LogTrace("🔄 BlockingCollection state before execution - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
-                                m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
+                            
+                            // SAFETY: Check if collection is disposed before accessing it
+                            try
+                            {
+                                m_logger.LogTrace("🔄 BlockingCollection state before execution - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
+                                    m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
+                            }
+                            catch (ObjectDisposedException)
+                            {
+                                m_logger.LogTrace("🔄 BlockingCollection is disposed before execution, skipping command {CommandId} for session {SessionId}", command.Id, m_sessionId);
+                                continue;
+                            }
+                            
                             await ExecuteCommandSafely(command);
                             m_logger.LogTrace("✅ Completed execution of command {CommandId} for session {SessionId}", command.Id, m_sessionId);
-                            m_logger.LogTrace("🔄 BlockingCollection state after execution - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
-                                m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
+                            
+                            // SAFETY: Check if collection is disposed before accessing it
+                            try
+                            {
+                                m_logger.LogTrace("🔄 BlockingCollection state after execution - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
+                                    m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
+                            }
+                            catch (ObjectDisposedException)
+                            {
+                                m_logger.LogTrace("🔄 BlockingCollection is disposed after execution, continuing for session {SessionId}", m_sessionId);
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -562,6 +626,14 @@ namespace mcp_nexus.CommandQueue
                     command.CancellationTokenSource.Token,
                     timeoutCts.Token,
                     m_processingCts.Token);
+
+                // SHUTDOWN CHECK: Check if we're being shut down before executing
+                if (m_processingCts.Token.IsCancellationRequested)
+                {
+                    m_logger.LogTrace("🔄 Shutdown requested, skipping command {CommandId} in session {SessionId}", command.Id, m_sessionId);
+                    CompleteCommandSafely(command, "Command skipped due to shutdown", CommandState.Cancelled);
+                    return;
+                }
 
                 // HEARTBEAT: Start heartbeat for long-running commands
                 m_logger.LogTrace("🔄 Starting heartbeat for command {CommandId} in session {SessionId}", command.Id, m_sessionId);
@@ -687,6 +759,34 @@ namespace mcp_nexus.CommandQueue
                 throw new ObjectDisposedException(nameof(IsolatedCommandQueueService));
         }
 
+        /// <summary>
+        /// Forces immediate shutdown by cancelling all operations and clearing the queue
+        /// </summary>
+        private void ForceShutdown()
+        {
+            m_logger.LogWarning("🔄 Force shutdown initiated for session {SessionId}", m_sessionId);
+            
+            // Cancel all pending commands immediately
+            foreach (var command in m_activeCommands.Values)
+            {
+                try
+                {
+                    if (!command.CompletionSource.Task.IsCompleted)
+                    {
+                        command.CancellationTokenSource.Cancel();
+                        command.CompletionSource.TrySetResult("Force shutdown");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogWarning(ex, "Error during force shutdown for command {CommandId}", command.Id);
+                }
+            }
+            
+            // Clear current command
+            m_currentCommand = null;
+        }
+
         #endregion
 
         #region IDisposable Implementation
@@ -701,16 +801,22 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                // SHUTDOWN: Cancel processing
+                // SHUTDOWN: Cancel processing immediately
                 m_processingCts.Cancel();
 
-                // WAIT: Wait for processor to finish (with timeout)
-                if (!m_processingTask.Wait(TimeSpan.FromSeconds(10)))
+                // COMPLETE QUEUE: Signal that no more items will be added to prevent race conditions
+                try
                 {
-                    m_logger.LogWarning("⚠️ Command processor did not stop within timeout for session {SessionId}", m_sessionId);
+                    m_commandQueue.CompleteAdding();
+                    m_logger.LogTrace("🔄 BlockingCollection completed adding for session {SessionId}", m_sessionId);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Already disposed, ignore
+                    m_logger.LogTrace("🔄 BlockingCollection already disposed for session {SessionId}", m_sessionId);
                 }
 
-                // CLEANUP: Cancel all pending commands
+                // CLEANUP: Cancel all pending commands immediately (don't wait for processing)
                 var cancelledCount = 0;
                 foreach (var command in m_activeCommands.Values)
                 {
@@ -735,8 +841,38 @@ namespace mcp_nexus.CommandQueue
                     m_logger.LogInformation("🚫 Cancelled {Count} pending commands during disposal", cancelledCount);
                 }
 
+                // WAIT: Wait for processor to finish (with shorter timeout)
+                var waitResult = m_processingTask.Wait(m_shutdownTimeout);
+                if (!waitResult)
+                {
+                    m_logger.LogWarning("⚠️ Command processor did not stop within {TimeoutSeconds}s for session {SessionId}, forcing shutdown", 
+                        m_shutdownTimeout.TotalSeconds, m_sessionId);
+                    
+                    // FORCE SHUTDOWN: Cancel all operations and clear state
+                    ForceShutdown();
+                    
+                    // Try one more time with a very short timeout
+                    if (!m_processingTask.Wait(TimeSpan.FromMilliseconds(500)))
+                    {
+                        m_logger.LogError("❌ Command processor still running after force shutdown for session {SessionId}", m_sessionId);
+                    }
+                }
+                else
+                {
+                    m_logger.LogTrace("✅ Command processor stopped gracefully for session {SessionId}", m_sessionId);
+                }
+
                 // CLEANUP: Dispose resources
-                m_commandQueue.Dispose();
+                try
+                {
+                    m_commandQueue.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Already disposed, ignore
+                    m_logger.LogTrace("🔄 BlockingCollection already disposed for session {SessionId}", m_sessionId);
+                }
+                
                 m_processingCts.Dispose();
 
                 // CLEANUP: Dispose processing task
