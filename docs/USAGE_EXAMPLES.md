@@ -772,11 +772,12 @@ This document provides comprehensive, real-world examples of using MCP Nexus for
 - **Monitor memory usage** during analysis
 - **Clean up resources** promptly when done
 
-### 5. Security Considerations
-- **Run with appropriate permissions** for system dumps
-- **Secure dump file access** with proper file permissions
-- **Use secure symbol servers** for symbol loading
-- **Monitor resource usage** to prevent abuse
+### 5. Security Features
+- **Command validation** - Dangerous commands are blocked (format, del, shutdown, etc.)
+- **Path traversal protection** - Prevents `../` directory traversal attacks
+- **SQL injection protection** - Basic SQL injection pattern detection
+- **Input validation** - Empty and whitespace-only commands are rejected
+- **Command length limits** - Commands limited to 1000 characters maximum
 
 ---
 

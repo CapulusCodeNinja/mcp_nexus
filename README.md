@@ -109,9 +109,13 @@ dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http
 3. **Get results**:
    ```json
    {
-     "method": "resources/read",
+     "method": "tools/call",
      "params": {
-       "uri": "mcp://nexus/commands/result?sessionId=sess-123&commandId=cmd-456"
+       "name": "nexus_read_dump_analyze_command_result",
+       "arguments": {
+         "sessionId": "sess-123",
+         "commandId": "cmd-456"
+       }
      }
    }
    ```
@@ -215,18 +219,14 @@ MCP Nexus provides live updates during analysis:
 - **`nexus_enqueue_async_dump_analyze_command`**: Execute debugging commands
 - **`nexus_read_dump_analyze_command_result`**: Get command results
 
-### Advanced Analysis Tools
-- **`nexus_start_remote_debug`**: Start remote debugging session
-- **`nexus_stop_remote_debug`**: Stop remote debugging session
-- **`nexus_debugger_command_cancel`**: Cancel running commands
-- **`nexus_list_debugger_commands`**: List available debugging commands
 
 ### MCP Resources
-- **`mcp://nexus/sessions/list`**: List all active analysis sessions
-- **`mcp://nexus/commands/list`**: List commands with filtering options
-- **`mcp://nexus/commands/result`**: Get detailed command results
-- **`mcp://nexus/docs/workflows`**: Access analysis workflows and patterns
-- **`mcp://nexus/docs/usage`**: Complete usage guide and examples
+- **`sessions`**: List all active analysis sessions
+- **`commands`**: List commands with filtering options
+- **`workflows`**: Access analysis workflows and patterns
+- **`usage`**: Complete usage guide and examples
+- **`metrics`**: Performance metrics and statistics
+- **`health`**: System health status
 
 ## 📊 Analysis Workflows
 
@@ -368,7 +368,7 @@ MCP Nexus
 
 ### Common Issues
 - **Symbol Loading**: Ensure symbol path is configured correctly
-- **Permission Errors**: Run with administrator privileges for system dumps
+- **Permission Errors**: Check file access permissions
 - **Timeout Issues**: Increase command timeout for large dumps
 - **Memory Issues**: Ensure sufficient RAM for large dump analysis
 

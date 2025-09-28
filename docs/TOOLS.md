@@ -154,68 +154,12 @@
 }
 ```
 
-## 🔧 Advanced Analysis Tools
-
-### Remote Debugging
-
-#### `nexus_start_remote_debug`
-**Purpose**: Start a remote debugging session
-**Category**: Remote Debugging
-**Real-time**: ✅ Provides connection progress updates
-
-**Parameters**:
-- `targetMachine` (string, required): Target machine name or IP address
-- `port` (number, optional): Debug port (default: 5005)
-- `timeoutMinutes` (number, optional): Connection timeout in minutes (default: 5)
-
-**Example**:
-```json
-{
-  "method": "tools/call",
-  "params": {
-    "name": "nexus_start_remote_debug",
-    "arguments": {
-      "targetMachine": "192.168.1.100",
-      "port": 5005,
-      "timeoutMinutes": 10
-    }
-  }
-}
-```
-
-#### `nexus_stop_remote_debug`
-**Purpose**: Stop a remote debugging session
-**Category**: Remote Debugging
-**Real-time**: ✅ Provides disconnection progress updates
-
-**Parameters**:
-- `sessionId` (string, required): Remote debugging session ID
-
-### Command Management
-
-#### `nexus_debugger_command_cancel`
-**Purpose**: Cancel a running command
-**Category**: Command Management
-**Real-time**: ✅ Provides cancellation progress updates
-
-**Parameters**:
-- `sessionId` (string, required): Active session ID
-- `commandId` (string, required): Command ID to cancel
-
-#### `nexus_list_debugger_commands`
-**Purpose**: List available debugging commands
-**Category**: Command Management
-**Real-time**: ❌ Synchronous operation
-
-**Parameters**:
-- `sessionId` (string, optional): Filter commands for specific session
-- `category` (string, optional): Filter by command category
 
 ## 📊 MCP Resources
 
 ### Session Management Resources
 
-#### `mcp://nexus/sessions/list`
+#### `sessions`
 **Purpose**: List all active analysis sessions
 **Category**: Session Data
 **Parameters**: None
@@ -225,31 +169,15 @@
 {
   "method": "resources/read",
   "params": {
-    "uri": "mcp://nexus/sessions/list"
-  }
-}
-```
-
-**Response**:
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "result": {
-    "contents": [
-      {
-        "type": "text",
-        "text": "{\n  \"sessions\": [\n    {\n      \"sessionId\": \"sess-000001-abc12345-12345678-0001\",\n      \"dumpPath\": \"C:\\\\crashes\\\\application.dmp\",\n      \"isActive\": true,\n      \"status\": \"Active\",\n      \"createdAt\": \"2024-01-15T10:00:00Z\",\n      \"lastActivity\": \"2024-01-15T10:30:00Z\",\n      \"symbolsLoaded\": true,\n      \"dumpSize\": \"256MB\"\n    }\n  ],\n  \"count\": 1,\n  \"timestamp\": \"2024-01-15T10:30:00Z\"\n}"
-      }
-    ]
+    "uri": "sessions"
   }
 }
 ```
 
 ### Command Management Resources
 
-#### `mcp://nexus/commands/list`
-**Purpose**: List commands with advanced filtering options
+#### `commands`
+**Purpose**: List commands with filtering options
 **Category**: Command Data
 **Parameters**: All optional
 - `sessionId`: Filter by specific session
@@ -266,31 +194,14 @@
 {
   "method": "resources/read",
   "params": {
-    "uri": "mcp://nexus/commands/list?sessionId=sess-000001-abc12345&limit=10&sortBy=createdAt&order=desc"
-  }
-}
-```
-
-#### `mcp://nexus/commands/result`
-**Purpose**: Get detailed command results
-**Category**: Command Data
-**Parameters**: Required
-- `sessionId`: Session ID
-- `commandId`: Command ID
-
-**Example**:
-```json
-{
-  "method": "resources/read",
-  "params": {
-    "uri": "mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"
+    "uri": "commands?sessionId=sess-000001-abc12345&limit=10&sortBy=createdAt&order=desc"
   }
 }
 ```
 
 ### Documentation Resources
 
-#### `mcp://nexus/docs/workflows`
+#### `workflows`
 **Purpose**: Access crash analysis workflows and patterns
 **Category**: Documentation
 **Parameters**: None
@@ -300,14 +211,46 @@
 {
   "method": "resources/read",
   "params": {
-    "uri": "mcp://nexus/docs/workflows"
+    "uri": "workflows"
   }
 }
 ```
 
-#### `mcp://nexus/docs/usage`
+#### `usage`
 **Purpose**: Access complete usage guide and examples
 **Category**: Documentation
+**Parameters**: None
+
+**Example**:
+```json
+{
+  "method": "resources/read",
+  "params": {
+    "uri": "usage"
+  }
+}
+```
+
+### System Resources
+
+#### `metrics`
+**Purpose**: Get performance metrics and statistics
+**Category**: System Data
+**Parameters**: None
+
+#### `circuits`
+**Purpose**: Get circuit breaker status
+**Category**: System Data
+**Parameters**: None
+
+#### `health`
+**Purpose**: Get system health status
+**Category**: System Data
+**Parameters**: None
+
+#### `cache`
+**Purpose**: Get cache statistics
+**Category**: System Data
 **Parameters**: None
 
 ## 🔄 Complete Analysis Workflow
@@ -344,9 +287,13 @@
 3. **Monitor Progress** (via notifications or polling):
    ```json
    {
-     "method": "resources/read",
+     "method": "tools/call",
      "params": {
-       "uri": "mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"
+       "name": "nexus_read_dump_analyze_command_result",
+       "arguments": {
+         "sessionId": "sess-000001-abc12345-12345678-0001",
+         "commandId": "cmd-000001-abc12345-12345678-0001"
+       }
      }
    }
    ```
@@ -354,9 +301,13 @@
 4. **Get Analysis Results**:
    ```json
    {
-     "method": "resources/read",
+     "method": "tools/call",
      "params": {
-       "uri": "mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"
+       "name": "nexus_read_dump_analyze_command_result",
+       "arguments": {
+         "sessionId": "sess-000001-abc12345-12345678-0001",
+         "commandId": "cmd-000001-abc12345-12345678-0001"
+       }
      }
    }
    ```

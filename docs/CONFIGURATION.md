@@ -10,7 +10,6 @@
 - **Windows 10/11** or **Windows Server 2016+**
 - **.NET 8.0** or later
 - **Windows Debugging Tools** (WinDBG/CDB)
-- **Administrator privileges** (for system dump analysis)
 
 ### Installation Steps
 
@@ -382,7 +381,6 @@ set MCP_NEXUS_CDB_PATH=C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe
 
 **Dump File Access**:
 - Ensure MCP Nexus has read access to dump files
-- For system dumps, run with administrator privileges
 - Consider using dedicated service account for production
 
 **Symbol Server Access**:
@@ -408,7 +406,6 @@ set MCP_NEXUS_CDB_PATH=C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe
 - Ensure sufficient disk space for symbol cache
 
 **Permission Errors**:
-- Run with administrator privileges
 - Check file access permissions
 - Verify service account permissions
 
