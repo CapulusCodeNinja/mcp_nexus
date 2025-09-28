@@ -328,9 +328,16 @@
                 const analyses = await response.json();
                 console.log('Available analyses:', analyses);
                 
-                // Find the analysis that matches this job name
-                const analysis = analyses.find(a => a.name === jobName);
-                console.log('Found analysis:', analysis);
+                // Find the analysis that matches this job name (handle timing mismatches)
+                let analysis = analyses.find(a => a.name === jobName);
+                
+                if (!analysis && jobName.startsWith('dump_') && jobName.length >= 19) {
+                    // Handle timing mismatches - look for directories with similar pattern
+                    const basePattern = jobName.substring(0, 19); // dump_20250928_1938
+                    console.log('Looking for analysis with base pattern:', basePattern);
+                    analysis = analyses.find(a => a.name.startsWith(basePattern));
+                    console.log('Found analysis with pattern matching:', analysis);
+                }
                 
                 if (analysis) {
                     console.log('Analysis files:', analysis.files);
@@ -339,6 +346,7 @@
                     updateTabStates(analysis);
                 } else {
                     console.log('No analysis found for job:', jobName);
+                    console.log('Available analysis names:', analyses.map(a => a.name));
                     document.getElementById('viewerBody').innerHTML = '<p>Analysis results not found. The analysis may still be processing.</p>';
                 }
             } catch (error) {
@@ -348,16 +356,22 @@
         }
 
         function updateTabStates(analysis) {
+            console.log('updateTabStates called with analysis:', analysis);
+            console.log('Available files:', analysis.files);
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => {
                 const type = tab.dataset.type;
+                console.log('Processing tab type:', type);
                 if (type === 'jobinfo') {
                     // Job Info tab is always available
                     tab.classList.remove('disabled');
+                    console.log('Enabled jobinfo tab');
                 } else if (analysis.files && analysis.files[type]) {
                     tab.classList.remove('disabled');
+                    console.log('Enabled tab:', type, 'with file:', analysis.files[type]);
                 } else {
                     tab.classList.add('disabled');
+                    console.log('Disabled tab:', type, 'no file found');
                 }
             });
         }
@@ -560,7 +574,16 @@
                     `;
                 } else {
                     // Show text content (console, cdb_analyze)
-                    viewerBody.innerHTML = `<div class="analysis-content"><div class="text-content">${content}</div></div>`;
+                    console.log('Loading text content for type:', type);
+                    console.log('Content length:', content.length);
+                    // Escape HTML in content to prevent rendering issues
+                    const escapedContent = content
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                    viewerBody.innerHTML = `<div class="analysis-content"><pre class="text-content">${escapedContent}</pre></div>`;
                 }
             } catch (error) {
                 console.error('Failed to load content:', error);
@@ -608,7 +631,14 @@
                         fetch('analysis-list.aspx')
                             .then(response => response.json())
                             .then(analyses => {
-                                const analysis = analyses.find(a => a.name === selectedJob.name);
+                                // Find analysis with flexible matching (handle timing mismatches)
+                                let analysis = analyses.find(a => a.name === selectedJob.name);
+                                
+                                if (!analysis && selectedJob.name.startsWith('dump_') && selectedJob.name.length >= 19) {
+                                    const basePattern = selectedJob.name.substring(0, 19);
+                                    analysis = analyses.find(a => a.name.startsWith(basePattern));
+                                }
+                                
                                 if (analysis) {
                                     loadAnalysisContent(analysis, type);
                                 }

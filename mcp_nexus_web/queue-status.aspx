@@ -44,19 +44,68 @@
                                 if (status == "completed")
                                 {
                                     string analysisDir = Server.MapPath("~/analysis/" + jobName);
+                                    string actualAnalysisDir = null;
                                     
-                                    // Check for analysis report (MD file) - prefer clean naming
-                                    enhancedJob["hasAnalysis"] = File.Exists(Path.Combine(analysisDir, "analysis.md")) || 
-                                                                File.Exists(Path.Combine(analysisDir, jobName + ".md"));
+                                    // Try exact match first
+                                    if (Directory.Exists(analysisDir))
+                                    {
+                                        actualAnalysisDir = analysisDir;
+                                    }
+                                    else
+                                    {
+                                        // Handle timing mismatches - look for directories with similar pattern
+                                        string analysisRootDir = Server.MapPath("~/analysis");
+                                        if (Directory.Exists(analysisRootDir))
+                                        {
+                                            string basePattern = jobName;
+                                            if (jobName.Length >= 19 && jobName.StartsWith("dump_"))
+                                            {
+                                                // For dump_20250928_193822 -> look for dump_20250928_1938*
+                                                basePattern = jobName.Substring(0, 19); // dump_20250928_1938
+                                            }
+                                            else if (jobName.Length >= 17)
+                                            {
+                                                basePattern = jobName.Substring(0, 17);
+                                            }
+                                            
+                                            var matchingDirs = Directory.GetDirectories(analysisRootDir)
+                                                .Where(d => Path.GetFileName(d).StartsWith(basePattern))
+                                                .OrderByDescending(d => Directory.GetLastWriteTime(d))
+                                                .ToArray();
+                                            
+                                            if (matchingDirs.Length > 0)
+                                            {
+                                                actualAnalysisDir = matchingDirs[0];
+                                            }
+                                        }
+                                    }
                                     
-                                    // Check for WinDbg output
-                                    enhancedJob["hasWinDbg"] = File.Exists(Path.Combine(analysisDir, "cdb_analyze.txt"));
-                                    
-                                    // Check for console log
-                                    enhancedJob["hasConsole"] = File.Exists(Path.Combine(analysisDir, "console.txt"));
-                                    
-                                    // Check for dump file (should always be true for completed jobs)
-                                    enhancedJob["hasDump"] = Directory.GetFiles(analysisDir, "*.dmp").Length > 0;
+                                    if (actualAnalysisDir != null)
+                                    {
+                                        string actualDirName = Path.GetFileName(actualAnalysisDir);
+                                        
+                                        // Check for analysis report (MD file) - prefer clean naming
+                                        enhancedJob["hasAnalysis"] = File.Exists(Path.Combine(actualAnalysisDir, "analysis.md")) || 
+                                                                    File.Exists(Path.Combine(actualAnalysisDir, jobName + ".md")) ||
+                                                                    File.Exists(Path.Combine(actualAnalysisDir, actualDirName + ".md"));
+                                        
+                                        // Check for WinDbg output
+                                        enhancedJob["hasWinDbg"] = File.Exists(Path.Combine(actualAnalysisDir, "cdb_analyze.txt"));
+                                        
+                                        // Check for console log
+                                        enhancedJob["hasConsole"] = File.Exists(Path.Combine(actualAnalysisDir, "console.txt"));
+                                        
+                                        // Check for dump file (should always be true for completed jobs)
+                                        enhancedJob["hasDump"] = Directory.GetFiles(actualAnalysisDir, "*.dmp").Length > 0;
+                                    }
+                                    else
+                                    {
+                                        // No analysis directory found
+                                        enhancedJob["hasAnalysis"] = false;
+                                        enhancedJob["hasWinDbg"] = false;
+                                        enhancedJob["hasConsole"] = false;
+                                        enhancedJob["hasDump"] = false;
+                                    }
                                 }
                                 else
                                 {

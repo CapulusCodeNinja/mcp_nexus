@@ -44,7 +44,9 @@ void ProcessQueue()
     for (int i = 0; i < jobs.Count; i++)
     {
         var jobDict = jobs[i] as Dictionary<string, object>;
-        if (jobDict != null && jobDict.ContainsKey("status") && jobDict["status"].ToString() == "processing")
+        if (jobDict != null && jobDict.ContainsKey("status") && 
+            (jobDict["status"].ToString() == "processing" || 
+             (jobDict["status"].ToString() == "completed" && jobDict.ContainsKey("note"))))
         {
             string filePath = jobDict["filePath"].ToString();
             string jobId = jobDict["id"].ToString();
@@ -55,12 +57,48 @@ void ProcessQueue()
             string expectedDir = Path.Combine(analysisDir, fileNameWithoutExt);
             
             bool hasAnalysis = false;
+            string actualDir = null;
+            
+            // Try exact match first
             if (Directory.Exists(expectedDir))
             {
-                string[] expectedFiles = { fileNameWithoutExt + ".md", "analysis.md", "console.txt", "cdb_analyze.txt" };
+                actualDir = expectedDir;
+            }
+            else
+            {
+                // Handle timing mismatches - look for directories with similar pattern
+                if (Directory.Exists(analysisDir))
+                {
+                    string basePattern = fileNameWithoutExt;
+                    if (fileNameWithoutExt.Length >= 19 && fileNameWithoutExt.StartsWith("dump_"))
+                    {
+                        // For dump_20250928_193822 -> look for dump_20250928_1938*
+                        basePattern = fileNameWithoutExt.Substring(0, 19); // dump_20250928_1938
+                    }
+                    else if (fileNameWithoutExt.Length >= 17)
+                    {
+                        basePattern = fileNameWithoutExt.Substring(0, 17);
+                    }
+                    
+                    var matchingDirs = Directory.GetDirectories(analysisDir)
+                        .Where(d => Path.GetFileName(d).StartsWith(basePattern))
+                        .OrderByDescending(d => Directory.GetLastWriteTime(d))
+                        .ToArray();
+                    
+                    if (matchingDirs.Length > 0)
+                    {
+                        actualDir = matchingDirs[0];
+                    }
+                }
+            }
+            
+            if (actualDir != null)
+            {
+                string actualDirName = Path.GetFileName(actualDir);
+                string[] expectedFiles = { fileNameWithoutExt + ".md", actualDirName + ".md", "analysis.md", "console.txt", "cdb_analyze.txt" };
                 foreach (string expectedFile in expectedFiles)
                 {
-                    if (File.Exists(Path.Combine(expectedDir, expectedFile)))
+                    if (File.Exists(Path.Combine(actualDir, expectedFile)))
                     {
                         hasAnalysis = true;
                         break;
@@ -70,7 +108,32 @@ void ProcessQueue()
             
             if (hasAnalysis)
             {
-                UpdateJobStatus(jobId, "completed");
+                // Check if this is a full analysis (has MD file) or partial
+                bool hasFullAnalysis = false;
+                if (actualDir != null)
+                {
+                    string actualDirName = Path.GetFileName(actualDir);
+                    string[] fullAnalysisFiles = { fileNameWithoutExt + ".md", actualDirName + ".md", "analysis.md" };
+                    foreach (string file in fullAnalysisFiles)
+                    {
+                        if (File.Exists(Path.Combine(actualDir, file)))
+                        {
+                            hasFullAnalysis = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (hasFullAnalysis)
+                {
+                    // Full analysis available - clear any previous notes
+                    UpdateJobStatus(jobId, "completed", null);
+                }
+                else
+                {
+                    // Only partial analysis available
+                    UpdateJobStatus(jobId, "completed", "Partial analysis - AI component failed but WinDbg analysis completed successfully");
+                }
             }
         }
     }
@@ -263,24 +326,34 @@ void UpdateJobStatus(string jobId, string status, string error = null)
             {
                 jobDict["status"] = status;
                 jobDict["updated"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                if (error != null)
+                
+                if (status == "completed")
                 {
-                    if (status == "completed")
+                    if (error != null)
                     {
                         // For completed jobs with messages, use "note" instead of "error"
                         jobDict["note"] = error;
-                        if (jobDict.ContainsKey("error"))
-                        {
-                            jobDict.Remove("error");
-                        }
                     }
                     else
                     {
-                        jobDict["error"] = error;
+                        // Clear any existing notes for fully completed jobs
                         if (jobDict.ContainsKey("note"))
                         {
                             jobDict.Remove("note");
                         }
+                    }
+                    // Always remove error for completed jobs
+                    if (jobDict.ContainsKey("error"))
+                    {
+                        jobDict.Remove("error");
+                    }
+                }
+                else if (error != null)
+                {
+                    jobDict["error"] = error;
+                    if (jobDict.ContainsKey("note"))
+                    {
+                        jobDict.Remove("note");
                     }
                 }
             }
