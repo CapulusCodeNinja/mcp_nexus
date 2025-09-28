@@ -6,9 +6,9 @@ This command defines a comprehensive process for an AI to analyze a Windows cras
 
 ### 🔒 **MANDATORY CONSTRAINTS**
 
-* **Source Code:** Prefer source code loaded from the actual source code server instead of reconstruct it. In any case please leave a note about where the source is coming from.
-* **Dump Analysis** You are supposed to use the capabilites of the Nexus MCP server to anaylze the dump file.
-* **MCP connection** **DO NOT** use other tools like curl to establish the connction. The server and tools should be avalible
+* **Source Code:** Prefer source code loaded from the actual source code server instead of **reconstructing** it. In any case, please leave a note about where the source is coming from.
+* **Dump Analysis:** You are supposed to use the **capabilities** of the Nexus MCP server to **analyze** the dump file.
+* **MCP connection:** **DO NOT** use other tools like **curl** to establish the **connection**. The server and tools should be **available**.
 
 ***
 
@@ -37,6 +37,7 @@ Core debugging tools for **crash dump analysis**.
 | **Tooling - Open Session** | `nexus_open_dump_analyze_session` | Open the analyze session for the dump file with the tool from Nexus MCP server. | `dumpFile` (string, required), `symbolsPath` (string, optional) | `sessionid` | This **EXACT sessionid IS REQUIRED TO BE USED** for all following commands in the session. |
 | **Tooling - Exec Command** | `nexus_enqueue_async_dump_analyze_command` | Use the tool to start asynchronous execution of the WinDBG commands. | `command` (string, required), `sessionId` (string, required) | `commandId` | This **EXACT commandId IS REQUIRED TO BE USED** for the 'Command Result' resource to get the asynchronous result. |
 | **Tooling - Close Session** | `nexus_close_dump_analyze_session` | Use the tool to close the analyze session of the dump file after all commands are executed or the session is not needed anymore. | `sessionId` (string, required) | *(null)* | *(null)* |
+| `nexus_read_dump_analyze_command_result` | **Command Result** | Get status and results of a specific async command. | `sessionId` (string, required), `commandId` (string, required) | *(null)* | *(null)* |
 
 ---
 
@@ -55,7 +56,6 @@ Access data and results using the **`resources/read` method** (**NOT `tools/call
 | `usage` | **Usage** | Essential tool usage information for MCP Nexus server. | *(null)* | Access via `MCP resources/read` method. |
 | `sessions` | **List Sessions** | List all debugging sessions with status and activity information. | *(null)* | Use: `sessions` resource (no parameters - returns all sessions). |
 | `commands` | **List Commands** | List async commands from all sessions with status and timing information. | *(null)* | Use: `commands` resource (no parameters - returns all commands). |
-| `nexus_read_dump_analyze_command_result` | **Command Result** | Get status and results of a specific async command. | `sessionId` (string, required), `commandId` (string, required) | **This is a TOOL, not a resource.** Call it directly with parameters. |
 
 ***
 
@@ -63,24 +63,30 @@ Access data and results using the **`resources/read` method** (**NOT `tools/call
 
 The following steps must be performed sequentially. Ensure all mandatory rules are followed at each stage.
 
-1.  **Initialize Analysis:** Open the analyze session for the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`
-2.  **Source Code Retrieval:**
+1. **Initialize Analysis:** Open the analyze session for the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`.
+2. **Source Code Retrieval:**
     * Set the source server path: `.srcpath srv\*[workingdir]\source`
     * Enable source verbosity: `.srcnoisy 3`
     * Enable the source server: `.srcfix+`
     * Attempt to get the source for the analysis: `lsa .`
-    * If source is not found, try `lsa [ADDRESS]` where `ADDRESS` is the instruction address
-    * Note: Source files (if found) will be in `[workingdir]/source`
-3.  **Comprehensive and in-depth Analysis:**
-    * Perform a thorough analysis to pinpoint the **exact root cause**
-    * Gather all helpful information from the dump
-    * For exceptions, collect all necessary data, including the type and the `what()` string
-    * For timeouts, execute WinDbg commands in single, sequential steps
-    * Run extended WinDbg commands to gain a more detailed view of the issue
-4.  **File Generation & Verification:**
-    * Generate all required files and ensure they strictly follow all mandatory rules, usability, and style guidelines
-    * Read all generated files to confirm they meet all criteria before finalizing the task
-5.  **CRITICAL EXIT:** You **MUST** immediately exit/terminate after completing the analysis report. Do not wait for additional input.
+    * If source is not found, try `lsa [ADDRESS]` where `ADDRESS` is the instruction address.
+    * Note: Source files (if found) will be in `[workingdir]/source`.
+3. **Comprehensive and in-depth Analysis:**
+    * Perform a thorough analysis to pinpoint the **exact root cause**.
+    * Gather all helpful information from the dump.
+    * For exceptions, collect all necessary data, including the type and the `what()` string.
+    * For timeouts, execute WinDbg commands in single, sequential steps.
+    * Run extended WinDbg commands to gain a more detailed view of the issue.
+    * **Consider checking** the `workflows` resource for **helpful** commands for the specific issue.
+4. **Analyze the root cause:**
+    * **Summarize** the results from the previous steps.
+    * Analyze all the current data in-depth to find the root cause of the crash.
+    * Make an internet research for common ways to **analyze** the specific type of crashes.
+    * Consider to reiterate and go back and forth between this and the previous step. **Run further needed or more advanced analysis commands to get the full picture.**
+5. **File Generation & Verification:**
+    * Generate all required files and ensure they strictly follow all mandatory rules, usability, and style guidelines.
+    * Read all generated files to confirm they meet all criteria before finalizing the task.
+6. **CRITICAL EXIT:** You **MUST** immediately exit/terminate after completing the analysis report. Do not wait for additional input.
 
 ***
 
@@ -88,15 +94,15 @@ The following steps must be performed sequentially. Ensure all mandatory rules a
 
 Each crash dump analysis must result in a single, comprehensive issue log page with the following mandatory sections in the specified order:
 
-1.  **Table of Contents:** Generate an automatic Table of Contents at the beginning of the document to improve navigation.
-2.  **Executive Summary:** A concise summary of the issue and its severity.
-3.  **System Information:** Key details about the system where the crash occurred.
-4.  **Root Cause Analysis:** A detailed explanation of the precise root cause.
-5.  **Faulting Thread Stack Trace:** The full stack trace of the thread that caused the crash.
-6.  **Source Code at Faulting Position:** The source code snippet where the crash occurred.
-7.  **Source Code Analysis:** An analysis of the code snippet, explaining why it led to the crash.
-8.  **WinDbg Command Output:** The complete output of all WinDbg commands performed.
-9.  **Recommended Fixes and Actions:** Concrete suggestions for a solution, including C++ code examples.
+1. **Table of Contents:** Generate an automatic Table of Contents at the beginning of the document to improve navigation.
+2. **Executive Summary:** A concise summary of the issue and its severity.
+3. **System Information:** Key details about the system where the crash occurred.
+4. **Root Cause Analysis:** A detailed explanation of the precise root cause.
+5. **Faulting Thread Stack Trace:** The full stack trace of the thread that caused the crash.
+6. **Source Code at Faulting Position:** The source code snippet where the crash occurred.
+7. **Source Code Analysis:** An analysis of the code snippet, explaining why it led to the crash.
+8. **WinDbg Command Output:** The complete output of all WinDbg commands performed with the command itself.
+9. **Recommended Fixes and Actions:** Concrete suggestions for a solution, including C++ code examples.
 10. **Conclusion & Recommendations:** A final verdict and actionable recommendations, presented as a findings card.
 
 ***
@@ -109,6 +115,7 @@ All output pages must be in Markdown and adhere to the following structure and s
 * The output file must have the same name as the dump file, but with an `.md` extension.
 * **Create the output directory:** You MUST create the `[outputdir]` directory if it doesn't exist.
 * **Example:** For dump file `crash_data.dmp`, create the file `[outputdir]/crash_data.md`.
+* **Citation:** In case external references were used, please mention them (In-text Citations, citations, reference list, bibliography).
 
 ***
 
@@ -119,8 +126,8 @@ All output pages must be in Markdown and adhere to the following structure and s
     * The numbers should be formatted as part of the content, allowing the user to copy and paste the code without them.
     * **Example format:**
         ```markdown
-        1   line of code
-        2   another line of code
+        1 line of code
+        2 another line of code
         ```
 * **Font:** Use a monospace font for all code and command content.
 * **Stack Traces:** Each frame in a stack trace **must** be on its own numbered line.
