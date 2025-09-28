@@ -271,7 +271,7 @@ namespace mcp_nexus.Models
         public string? Message { get; set; }
 
         [JsonPropertyName("timestamp")]
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.Now;
 
         [JsonPropertyName("result")]
         public string? Result { get; set; }
@@ -321,7 +321,7 @@ namespace mcp_nexus.Models
         public string? Details { get; set; }
 
         [JsonPropertyName("timestamp")]
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.Now;
     }
 
     /// <summary>
@@ -359,7 +359,7 @@ namespace mcp_nexus.Models
         public string Message { get; set; } = string.Empty;
 
         [JsonPropertyName("timestamp")]
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.Now;
 
         [JsonPropertyName("affectedCommands")]
         public string[]? AffectedCommands { get; set; }
@@ -400,7 +400,7 @@ namespace mcp_nexus.Models
         public int ActiveCommands { get; set; }
 
         [JsonPropertyName("timestamp")]
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.Now;
 
         [JsonPropertyName("uptime")]
         public TimeSpan? Uptime { get; set; }
@@ -447,7 +447,7 @@ namespace mcp_nexus.Models
         public SessionContext? Context { get; set; }
 
         [JsonPropertyName("timestamp")]
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.Now;
     }
 }
 

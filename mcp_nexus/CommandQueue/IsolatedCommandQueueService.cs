@@ -37,20 +37,16 @@ namespace mcp_nexus.CommandQueue
         private readonly IMcpNotificationService m_notificationService;
 
         // CONCURRENCY: Thread-safe collections
-        private readonly ConcurrentQueue<QueuedCommand> m_commandQueue = new();
+        private readonly BlockingCollection<QueuedCommand> m_commandQueue;
         private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands = new();
 
-        // SYNCHRONIZATION: Semaphore for queue processing
-        private readonly SemaphoreSlim m_queueSemaphore = new(0, int.MaxValue);
-
-        // CURRENT COMMAND: Thread-safe current command tracking
+        // CURRENT COMMAND: Thread-safe current command tracking (volatile is sufficient)
         private volatile QueuedCommand? m_currentCommand;
-        private readonly object m_currentCommandLock = new();
 
         // LIFECYCLE: Cancellation and disposal
         private readonly CancellationTokenSource m_processingCts = new();
         private readonly Task m_processingTask;
-        private volatile bool m_disposed = false;
+        private bool m_disposed = false;
 
         // COUNTERS: Thread-safe performance tracking
         private long m_commandCounter = 0;
@@ -73,10 +69,15 @@ namespace mcp_nexus.CommandQueue
             m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             m_sessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
 
+            // INITIALIZE: Create blocking collection for thread-safe producer/consumer
+            m_commandQueue = new BlockingCollection<QueuedCommand>();
+
             m_logger.LogInformation("🚀 IsolatedCommandQueueService initializing for session {SessionId}", sessionId);
 
             // PROCESSING: Start dedicated processing task for this session
+            m_logger.LogTrace("🔄 Starting background processing task for session {SessionId}", sessionId);
             m_processingTask = Task.Run(ProcessCommandQueueAsync, m_processingCts.Token);
+            m_logger.LogTrace("✅ Background processing task started for session {SessionId}, Task ID: {TaskId}", sessionId, m_processingTask.Id);
 
             m_logger.LogInformation("✅ IsolatedCommandQueueService created for session {SessionId}", sessionId);
         }
@@ -92,7 +93,7 @@ namespace mcp_nexus.CommandQueue
             var commandNumber = Interlocked.Increment(ref m_commandCounter);
             var commandId = $"cmd-{m_sessionId}-{commandNumber:D4}";
 
-            m_logger.LogDebug("🔄 Queueing command {CommandId} in session {SessionId}: {Command}",
+            m_logger.LogTrace("🔄 Queueing command {CommandId} in session {SessionId}: {Command}",
                 commandId, m_sessionId, command);
 
             // IMMUTABLE: Create command object
@@ -106,19 +107,24 @@ namespace mcp_nexus.CommandQueue
             );
 
             // ATOMIC: Add to tracking dictionary first
+            m_logger.LogTrace("🔄 Adding command {CommandId} to active commands dictionary for session {SessionId}", commandId, m_sessionId);
             if (!m_activeCommands.TryAdd(commandId, queuedCommand))
             {
                 queuedCommand.CancellationTokenSource.Dispose();
                 throw new InvalidOperationException($"Command ID conflict: {commandId}");
             }
+            m_logger.LogTrace("✅ Successfully added command {CommandId} to active commands dictionary for session {SessionId}", commandId, m_sessionId);
 
             try
             {
-                // QUEUE: Add to processing queue
-                m_commandQueue.Enqueue(queuedCommand);
-
-                // SIGNAL: Release semaphore to wake up processor
-                m_queueSemaphore.Release();
+                // QUEUE: Add to processing queue (automatically signals consumer)
+                m_logger.LogTrace("🔄 Adding command {CommandId} to BlockingCollection for session {SessionId}", commandId, m_sessionId);
+                m_logger.LogTrace("🔄 BlockingCollection state before add - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
+                    m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
+                m_commandQueue.Add(queuedCommand);
+                m_logger.LogTrace("✅ Successfully added command {CommandId} to BlockingCollection for session {SessionId}", commandId, m_sessionId);
+                m_logger.LogTrace("🔄 BlockingCollection state after add - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
+                    m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
 
                 // NOTIFICATION: Send queued notification (async)
                 _ = Task.Run(async () =>
@@ -248,18 +254,16 @@ namespace mcp_nexus.CommandQueue
                 command.CancellationTokenSource.Cancel();
 
                 // CURRENT: If it's currently executing, cancel CDB operation
-                lock (m_currentCommandLock)
+                var currentCommand = m_currentCommand; // volatile read is thread-safe
+                if (ReferenceEquals(currentCommand, command))
                 {
-                    if (ReferenceEquals(m_currentCommand, command))
+                    try
                     {
-                        try
-                        {
-                            m_cdbSession.CancelCurrentOperation();
-                        }
-                        catch (Exception ex)
-                        {
-                            m_logger.LogWarning(ex, "Failed to cancel current CDB operation for command {CommandId}", commandId);
-                        }
+                        m_cdbSession.CancelCurrentOperation();
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogWarning(ex, "Failed to cancel current CDB operation for command {CommandId}", commandId);
                     }
                 }
 
@@ -323,10 +327,20 @@ namespace mcp_nexus.CommandQueue
 
         public QueuedCommand? GetCurrentCommand()
         {
-            lock (m_currentCommandLock)
-            {
-                return m_currentCommand;
-            }
+            return m_currentCommand; // volatile read is thread-safe
+        }
+
+        /// <summary>
+        /// Gets thread-safe performance statistics
+        /// </summary>
+        public (long Total, long Completed, long Failed, long Cancelled) GetPerformanceStats()
+        {
+            var completed = Interlocked.Read(ref m_completedCommands);
+            var failed = Interlocked.Read(ref m_failedCommands);
+            var cancelled = Interlocked.Read(ref m_cancelledCommands);
+            var total = completed + failed + cancelled;
+            
+            return (total, completed, failed, cancelled);
         }
 
         /// <summary>
@@ -341,18 +355,16 @@ namespace mcp_nexus.CommandQueue
             var currentCommand = GetCurrentCommand();
             if (currentCommand != null)
             {
-                // Count commands in queue + 1 for the current command
-                var queueCount = m_commandQueue.Count;
-                return queueCount + 1; // +1 because current command is executing
+                // For BlockingCollection, we can't safely get count, so estimate based on active commands
+                var queuedCommands = m_activeCommands.Values.Count(cmd => cmd.State == CommandState.Queued);
+                return queuedCommands; // All queued commands are behind the current one
             }
 
-            // No current command, so count how many commands are ahead in the queue
+            // No current command, count how many commands are ahead in the queue
             var position = 0;
-            var queueArray = m_commandQueue.ToArray();
-
-            for (int i = 0; i < queueArray.Length; i++)
+            foreach (var cmd in m_activeCommands.Values.Where(cmd => cmd.State == CommandState.Queued))
             {
-                if (queueArray[i].Id == commandId)
+                if (cmd.Id == commandId)
                 {
                     return position;
                 }
@@ -474,71 +486,89 @@ namespace mcp_nexus.CommandQueue
 
         private async Task ProcessCommandQueueAsync()
         {
-            m_logger.LogDebug("🔄 Command processor started for session {SessionId}", m_sessionId);
+            m_logger.LogTrace("🔄 Command processor started for session {SessionId}", m_sessionId);
 
             try
             {
-                while (!m_processingCts.Token.IsCancellationRequested)
+                m_logger.LogTrace("🔄 Starting to enumerate commands from BlockingCollection for session {SessionId}", m_sessionId);
+                m_logger.LogTrace("🔄 BlockingCollection state - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
+                    m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
+                m_logger.LogTrace("🔄 About to call GetConsumingEnumerable with cancellation token for session {SessionId}", m_sessionId);
+                
+                // PROCESS: Use BlockingCollection's built-in blocking enumeration
+                foreach (var command in m_commandQueue.GetConsumingEnumerable(m_processingCts.Token))
                 {
+                    m_logger.LogTrace("🔄 Dequeued command {CommandId} from queue for session {SessionId}", command?.Id ?? "null", m_sessionId);
+                    m_logger.LogTrace("🔄 BlockingCollection state after dequeue - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
+                        m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
                     try
                     {
-                        // WAIT: Wait for command to be available
-                        await m_queueSemaphore.WaitAsync(m_processingCts.Token);
-
-                        // DEQUEUE: Get next command
-                        if (!m_commandQueue.TryDequeue(out var command))
-                            continue;
-
                         // CANCELLATION: Check if command was cancelled while queued
-                        if (command.CancellationTokenSource.Token.IsCancellationRequested)
+                        m_logger.LogTrace("🔄 Checking cancellation status for command {CommandId} in session {SessionId}", command?.Id ?? "null", m_sessionId);
+                        if (command?.CancellationTokenSource.Token.IsCancellationRequested == true)
                         {
+                            m_logger.LogTrace("🔄 Command {CommandId} was cancelled while queued in session {SessionId}", command.Id, m_sessionId);
                             CompleteCommandSafely(command, "Command was cancelled while queued", CommandState.Cancelled);
                             continue;
                         }
 
-                        // CURRENT: Set as current command atomically
-                        lock (m_currentCommandLock)
-                        {
-                            m_currentCommand = command;
-                        }
+                        // CURRENT: Set as current command (volatile write is thread-safe)
+                        m_logger.LogTrace("🔄 Setting command {CommandId} as current command for session {SessionId}", command?.Id ?? "null", m_sessionId);
+                        m_currentCommand = command;
 
                         // EXECUTE: Process command with proper error handling
-                        await ExecuteCommandSafely(command);
-
-                        // RELEASE: Release semaphore after command completion to allow next command
-                        m_queueSemaphore.Release();
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // EXPECTED: Normal shutdown
-                        break;
+                        if (command != null)
+                        {
+                            m_logger.LogTrace("🔄 Starting execution of command {CommandId} for session {SessionId}", command.Id, m_sessionId);
+                            m_logger.LogTrace("🔄 BlockingCollection state before execution - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
+                                m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
+                            await ExecuteCommandSafely(command);
+                            m_logger.LogTrace("✅ Completed execution of command {CommandId} for session {SessionId}", command.Id, m_sessionId);
+                            m_logger.LogTrace("🔄 BlockingCollection state after execution - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
+                                m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
+                        }
                     }
                     catch (Exception ex)
                     {
-                        m_logger.LogError(ex, "Unexpected error in command processor for session {SessionId}", m_sessionId);
-                        // Continue processing other commands
-
-                        // RELEASE: Release semaphore even on error to prevent deadlock
-                        m_queueSemaphore.Release();
+                        m_logger.LogError(ex, "Unexpected error processing command {CommandId} for session {SessionId}", 
+                            command?.Id ?? "unknown", m_sessionId);
+                        // Continue processing next command
                     }
+                    
+                    m_logger.LogTrace("🔄 Finished processing command {CommandId}, continuing to next command in queue for session {SessionId}", 
+                        command?.Id ?? "null", m_sessionId);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // EXPECTED: Normal shutdown
+                m_logger.LogTrace("🔄 Command processor cancelled for session {SessionId}", m_sessionId);
+            }
+            catch (Exception ex)
+            {
+                // UNEXPECTED: Log any other exceptions
+                m_logger.LogError(ex, "🔄 Unexpected error in ProcessCommandQueueAsync for session {SessionId}", m_sessionId);
             }
             finally
             {
-                m_logger.LogDebug("🔄 Command processor stopped for session {SessionId}", m_sessionId);
+                m_logger.LogTrace("🔄 Command processor stopped for session {SessionId}", m_sessionId);
             }
         }
 
         private async Task ExecuteCommandSafely(QueuedCommand command)
         {
             var stopwatch = Stopwatch.StartNew();
+            m_logger.LogTrace("🔄 ExecuteCommandSafely started for command {CommandId} in session {SessionId}", command.Id, m_sessionId);
 
             try
             {
                 // NOTIFICATION: Notify execution start
+                m_logger.LogTrace("🔄 Sending execution notification for command {CommandId} in session {SessionId}", command.Id, m_sessionId);
                 await NotifyCommandStatus(command, "executing", progress: 0);
 
                 // EXECUTION: Execute with timeout and cancellation
+                m_logger.LogTrace("🔄 Creating cancellation tokens for command {CommandId} in session {SessionId} (timeout: {TimeoutMs}ms)", 
+                    command.Id, m_sessionId, m_defaultCommandTimeout.TotalMilliseconds);
                 using var timeoutCts = new CancellationTokenSource(m_defaultCommandTimeout);
                 using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
                     command.CancellationTokenSource.Token,
@@ -546,13 +576,18 @@ namespace mcp_nexus.CommandQueue
                     m_processingCts.Token);
 
                 // HEARTBEAT: Start heartbeat for long-running commands
+                m_logger.LogTrace("🔄 Starting heartbeat for command {CommandId} in session {SessionId}", command.Id, m_sessionId);
                 var heartbeatTask = StartHeartbeatAsync(command, stopwatch, combinedCts.Token);
 
                 try
                 {
+                    m_logger.LogTrace("🔄 About to call CDB ExecuteCommand for command {CommandId} in session {SessionId}: {Command}", 
+                        command.Id, m_sessionId, command.Command);
                     var result = await m_cdbSession.ExecuteCommand(command.Command, combinedCts.Token);
+                    m_logger.LogTrace("🔄 CDB ExecuteCommand completed for command {CommandId} in session {SessionId}", command.Id, m_sessionId);
 
                     // SUCCESS: Complete successfully
+                    m_logger.LogTrace("🔄 Completing command {CommandId} successfully in session {SessionId}", command.Id, m_sessionId);
                     CompleteCommandSafely(command, result, CommandState.Completed);
                     Interlocked.Increment(ref m_completedCommands);
 
@@ -561,8 +596,9 @@ namespace mcp_nexus.CommandQueue
                 }
                 finally
                 {
-                    // Stop heartbeat
-                    try { await heartbeatTask; } catch { /* Ignore heartbeat errors */ }
+                    // Stop heartbeat - DON'T AWAIT as it blocks queue processing!
+                    // The heartbeat task will be cancelled by the combinedCts.Token
+                    m_logger.LogTrace("🔄 Heartbeat task will be cancelled by token for command {CommandId} in session {SessionId}", command.Id, m_sessionId);
                 }
             }
             catch (OperationCanceledException) when (command.CancellationTokenSource.Token.IsCancellationRequested)
@@ -588,13 +624,10 @@ namespace mcp_nexus.CommandQueue
             }
             finally
             {
-                // CLEANUP: Clear current command
-                lock (m_currentCommandLock)
+                // CLEANUP: Clear current command (volatile write is thread-safe)
+                if (ReferenceEquals(m_currentCommand, command))
                 {
-                    if (ReferenceEquals(m_currentCommand, command))
-                    {
-                        m_currentCommand = null;
-                    }
+                    m_currentCommand = null;
                 }
             }
         }
@@ -627,13 +660,17 @@ namespace mcp_nexus.CommandQueue
 
         private void CompleteCommandSafely(QueuedCommand command, string result, CommandState state)
         {
+            m_logger.LogTrace("🔄 CompleteCommandSafely called for command {CommandId} with state {State} in session {SessionId}", 
+                command.Id, state, m_sessionId);
             try
             {
                 // ATOMIC: Update command state
+                m_logger.LogTrace("🔄 Updating command {CommandId} state to {State} in session {SessionId}", command.Id, state, m_sessionId);
                 var updatedCommand = command with { State = state };
                 m_activeCommands.TryUpdate(command.Id, updatedCommand, command);
 
                 // COMPLETION: Set result (thread-safe)
+                m_logger.LogTrace("🔄 Setting completion result for command {CommandId} in session {SessionId}", command.Id, m_sessionId);
                 command.CompletionSource.TrySetResult(result);
 
                 // NOTIFICATION: Notify completion (fire-and-forget)
@@ -671,7 +708,7 @@ namespace mcp_nexus.CommandQueue
 
         private void ThrowIfDisposed()
         {
-            if (m_disposed)
+            if (m_disposed || m_processingCts.Token.IsCancellationRequested)
                 throw new ObjectDisposedException(nameof(IsolatedCommandQueueService));
         }
 
@@ -724,7 +761,7 @@ namespace mcp_nexus.CommandQueue
                 }
 
                 // CLEANUP: Dispose resources
-                m_queueSemaphore.Dispose();
+                m_commandQueue.Dispose();
                 m_processingCts.Dispose();
 
                 // CLEANUP: Dispose processing task

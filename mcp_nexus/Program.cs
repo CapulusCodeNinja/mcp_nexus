@@ -668,12 +668,32 @@ namespace mcp_nexus
                 var cdbSession = serviceProvider.GetRequiredService<ICdbSession>();
                 var logger = serviceProvider.GetRequiredService<ILogger<CdbSessionRecoveryService>>();
                 var notificationService = serviceProvider.GetService<IMcpNotificationService>();
+                var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
 
-                // Create a callback that will be resolved when the command queue service is available
+                // Create a callback that works with the session manager to cancel commands
                 Func<string, int> cancelAllCommandsCallback = reason =>
                 {
-                    var commandQueueService = serviceProvider.GetRequiredService<ICommandQueueService>();
-                    return commandQueueService.CancelAllCommands(reason);
+                    // Get all active sessions and cancel their commands
+                    var sessions = sessionManager.GetAllSessions();
+                    int totalCancelled = 0;
+                    
+                    foreach (var session in sessions)
+                    {
+                        try
+                        {
+                            var commandQueue = sessionManager.GetCommandQueue(session.SessionId);
+                            if (commandQueue != null)
+                            {
+                                totalCancelled += commandQueue.CancelAllCommands(reason);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogWarning(ex, "Failed to cancel commands for session {SessionId}: {Reason}", session.SessionId, reason);
+                        }
+                    }
+                    
+                    return totalCancelled;
                 };
 
                 return new CdbSessionRecoveryService(cdbSession, logger, cancelAllCommandsCallback, notificationService);

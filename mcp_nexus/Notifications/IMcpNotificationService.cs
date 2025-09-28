@@ -60,12 +60,32 @@ namespace mcp_nexus.Notifications
         /// <summary>
         /// Register a notification handler for outgoing notifications
         /// </summary>
-        void RegisterNotificationHandler(Func<McpNotification, Task> handler);
+        Guid RegisterNotificationHandler(Func<McpNotification, Task> handler);
 
         /// <summary>
-        /// Unregister a notification handler
+        /// Unregister a notification handler by ID
+        /// </summary>
+        void UnregisterNotificationHandler(Guid handlerId);
+
+        /// <summary>
+        /// Unregister a notification handler by reference
         /// </summary>
         void UnregisterNotificationHandler(Func<McpNotification, Task> handler);
+
+        /// <summary>
+        /// Get all registered handler IDs
+        /// </summary>
+        IReadOnlyList<Guid> GetRegisteredHandlerIds();
+
+        /// <summary>
+        /// Get the number of registered handlers
+        /// </summary>
+        int GetHandlerCount();
+
+        /// <summary>
+        /// Clear all registered handlers
+        /// </summary>
+        void ClearAllHandlers();
     }
 }
 

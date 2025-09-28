@@ -28,13 +28,11 @@ namespace mcp_nexus.CommandQueue
     {
         private readonly ICdbSession m_cdbSession;
         private readonly ILogger<CommandQueueService> m_logger;
-        private readonly ConcurrentQueue<QueuedCommand> m_commandQueue = new();
-        private readonly SemaphoreSlim m_queueSemaphore = new(0);
+        private readonly BlockingCollection<QueuedCommand> m_commandQueue;
         private readonly CancellationTokenSource m_serviceCts = new();
         private readonly Task m_processingTask;
         private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands = new();
-        private QueuedCommand? m_currentCommand;
-        private readonly object m_currentCommandLock = new();
+        private volatile QueuedCommand? m_currentCommand;
         private bool m_disposed;
 
         // FIXED: Add cleanup mechanism for completed commands
@@ -52,6 +50,9 @@ namespace mcp_nexus.CommandQueue
         {
             m_cdbSession = cdbSession;
             m_logger = logger;
+
+            // INITIALIZE: Create blocking collection for thread-safe producer/consumer
+            m_commandQueue = new BlockingCollection<QueuedCommand>();
 
             m_logger.LogInformation("🚀 CommandQueueService CONSTRUCTOR started");
 
@@ -92,11 +93,8 @@ namespace mcp_nexus.CommandQueue
             m_logger.LogInformation("📝 Adding to activeCommands dictionary: {CommandId}", commandId);
             m_activeCommands[commandId] = queuedCommand;
 
-            m_logger.LogInformation("📋 Enqueueing command: {CommandId}", commandId);
-            m_commandQueue.Enqueue(queuedCommand);
-
-            m_logger.LogInformation("🔔 Releasing semaphore for command: {CommandId}", commandId);
-            m_queueSemaphore.Release(); // Signal that a command is available
+            m_logger.LogInformation("📋 Adding command to queue: {CommandId}", commandId);
+            m_commandQueue.Add(queuedCommand); // Automatically signals consumer
 
             m_logger.LogInformation("✅ QueueCommand COMPLETE: {CommandId} (Queue size: {QueueSize})",
                 commandId, m_commandQueue.Count);
@@ -164,13 +162,11 @@ namespace mcp_nexus.CommandQueue
                 }
 
                 // If this is the currently executing command, also cancel the CDB operation
-                lock (m_currentCommandLock)
+                var currentCommand = m_currentCommand; // volatile read is thread-safe
+                if (currentCommand?.Id == commandId)
                 {
-                    if (m_currentCommand?.Id == commandId)
-                    {
-                        m_logger.LogWarning("Cancelling currently executing command {CommandId}", commandId);
-                        m_cdbSession.CancelCurrentOperation();
-                    }
+                    m_logger.LogWarning("Cancelling currently executing command {CommandId}", commandId);
+                    m_cdbSession.CancelCurrentOperation();
                 }
 
                 return true;
@@ -211,10 +207,7 @@ namespace mcp_nexus.CommandQueue
 
             // Snapshot current command for targeted cancellation
             string? currentId;
-            lock (m_currentCommandLock)
-            {
-                currentId = m_currentCommand?.Id;
-            }
+            currentId = m_currentCommand?.Id; // volatile read is thread-safe
 
             // Cancel everything currently tracked
             var commandsSnapshot = new List<QueuedCommand>(m_activeCommands.Values);
@@ -268,10 +261,7 @@ namespace mcp_nexus.CommandQueue
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
 
-            lock (m_currentCommandLock)
-            {
-                return m_currentCommand;
-            }
+            return m_currentCommand; // volatile read is thread-safe
         }
 
         public IEnumerable<(string Id, string Command, DateTime QueueTime, string Status)> GetQueueStatus()
@@ -281,17 +271,14 @@ namespace mcp_nexus.CommandQueue
 
             var results = new List<(string, string, DateTime, string)>();
 
-            // Add current command
-            lock (m_currentCommandLock)
+            // Add current command (volatile read is thread-safe)
+            if (m_currentCommand != null)
             {
-                if (m_currentCommand != null)
-                {
-                    results.Add((m_currentCommand.Id, m_currentCommand.Command, m_currentCommand.QueueTime, "Executing"));
-                }
+                results.Add((m_currentCommand.Id, m_currentCommand.Command, m_currentCommand.QueueTime, "Executing"));
             }
 
-            // Add queued commands
-            foreach (var cmd in m_commandQueue)
+            // Add queued commands from active commands (BlockingCollection doesn't support enumeration)
+            foreach (var cmd in m_activeCommands.Values.Where(c => c.State == CommandState.Queued))
             {
                 results.Add(cmd.CancellationTokenSource.Token.IsCancellationRequested
                     ? (cmd.Id, cmd.Command, cmd.QueueTime, "Cancelled")
@@ -307,18 +294,12 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                while (!m_serviceCts.Token.IsCancellationRequested)
+                // PROCESS: Use BlockingCollection's built-in blocking enumeration
+                foreach (var queuedCommand in m_commandQueue.GetConsumingEnumerable(m_serviceCts.Token))
                 {
-                    m_logger.LogInformation("⏳ BACKGROUND PROCESSOR: Waiting for command (semaphore)...");
-
-                    // Wait for a command to be available
-                    await m_queueSemaphore.WaitAsync(m_serviceCts.Token);
-
-                    m_logger.LogInformation("🔔 BACKGROUND PROCESSOR: Semaphore released, checking queue...");
-
-                    if (m_commandQueue.TryDequeue(out var queuedCommand))
+                    try
                     {
-                        m_logger.LogInformation("📦 BACKGROUND PROCESSOR: Dequeued command {CommandId}: {Command}",
+                        m_logger.LogInformation("📦 BACKGROUND PROCESSOR: Processing command {CommandId}: {Command}",
                             queuedCommand.Id, queuedCommand.Command);
 
                         // Check if command was cancelled while queued
@@ -332,11 +313,8 @@ namespace mcp_nexus.CommandQueue
                             continue;
                         }
 
-                        // FIXED: Set as current command with state transition
-                        lock (m_currentCommandLock)
-                        {
-                            m_currentCommand = queuedCommand;
-                        }
+                        // CURRENT: Set as current command (volatile write is thread-safe)
+                        m_currentCommand = queuedCommand;
 
                         // Update command state to executing
                         UpdateCommandState(queuedCommand.Id, CommandState.Executing);
@@ -426,14 +404,19 @@ namespace mcp_nexus.CommandQueue
                         }
                         finally
                         {
-                            // Clear current command
-                            lock (m_currentCommandLock)
+                            // CLEANUP: Clear current command (volatile write is thread-safe)
+                            if (ReferenceEquals(m_currentCommand, queuedCommand))
                             {
                                 m_currentCommand = null;
                             }
 
                             CleanupCommand(queuedCommand);
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogError(ex, "Unexpected error processing command {CommandId} for session", queuedCommand?.Id ?? "unknown");
+                        // Continue processing next command
                     }
                 }
             }
@@ -583,23 +566,19 @@ namespace mcp_nexus.CommandQueue
                 return -1;
 
             // If there's a current command executing, all queued commands are behind it
-            lock (m_currentCommandLock)
+            var currentCommand = m_currentCommand; // volatile read is thread-safe
+            if (currentCommand != null)
             {
-                if (m_currentCommand != null)
-                {
-                    // Count commands in queue + 1 for the current command
-                    var queueCount = m_commandQueue.Count;
-                    return queueCount + 1; // +1 because current command is executing
-                }
+                // For BlockingCollection, we can't safely get count, so estimate based on active commands
+                var queuedCommands = m_activeCommands.Values.Count(cmd => cmd.State == CommandState.Queued);
+                return queuedCommands; // All queued commands are behind the current one
             }
 
-            // No current command, so count how many commands are ahead in the queue
+            // No current command, count how many commands are ahead in the queue
             var position = 0;
-            var queueArray = m_commandQueue.ToArray();
-
-            for (int i = 0; i < queueArray.Length; i++)
+            foreach (var cmd in m_activeCommands.Values.Where(cmd => cmd.State == CommandState.Queued))
             {
-                if (queueArray[i].Id == commandId)
+                if (cmd.Id == commandId)
                 {
                     return position;
                 }
@@ -691,7 +670,7 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                m_queueSemaphore.Dispose();
+                m_commandQueue.Dispose();
             }
             catch (ObjectDisposedException)
             {

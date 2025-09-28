@@ -42,7 +42,7 @@ namespace mcp_nexus.Resources
                 {
                     sessions = sessions,
                     count = sessions.Count,
-                    timestamp = DateTime.UtcNow
+                    timestamp = DateTimeOffset.Now
                 };
 
                 return Task.FromResult(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
@@ -91,7 +91,7 @@ namespace mcp_nexus.Resources
                     commands = commandsBySession,
                     totalSessions = commandsBySession.Count,
                     totalCommands = commandsBySession.Values.Cast<Dictionary<string, object>>().Sum(c => c.Count),
-                    timestamp = DateTime.UtcNow,
+                    timestamp = DateTimeOffset.Now,
                     note = "Commands from all sessions"
                 };
 
@@ -528,7 +528,7 @@ namespace mcp_nexus.Resources
                     circuits = statuses,
                     totalCircuits = statuses.Count,
                     healthyCircuits = statuses.Count(s => s.Value.IsHealthy),
-                    timestamp = DateTime.UtcNow
+                    timestamp = DateTimeOffset.Now
                 };
                 return Task.FromResult(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
             }

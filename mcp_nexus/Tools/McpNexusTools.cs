@@ -285,8 +285,8 @@ namespace mcp_nexus.Tools
                     status = commandInfo.State.ToString(),
                     result = commandInfo.IsCompleted ? commandResult : null,
                     error = (string?)null,
-                    completedAt = commandInfo.IsCompleted ? DateTime.UtcNow : (DateTime?)null,
-                    timestamp = DateTime.UtcNow,
+                    completedAt = commandInfo.IsCompleted ? DateTimeOffset.Now : (DateTimeOffset?)null,
+                    timestamp = DateTimeOffset.Now,
                     message = commandInfo.IsCompleted ? null : statusMessage,
                     progress = new
                     {

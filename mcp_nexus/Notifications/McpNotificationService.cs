@@ -251,20 +251,35 @@ namespace mcp_nexus.Notifications
             }
         }
 
-        public void RegisterNotificationHandler(Func<McpNotification, Task> handler)
+        public Guid RegisterNotificationHandler(Func<McpNotification, Task> handler)
         {
-            if (m_disposed) return;
+            if (m_disposed) return Guid.Empty;
 
             var id = Guid.NewGuid();
             m_notificationHandlers[id] = handler;
             m_logger.LogDebug("Registered notification handler {HandlerId} (Total: {HandlerCount})", id, m_notificationHandlers.Count);
+            return id;
+        }
+
+        public void UnregisterNotificationHandler(Guid handlerId)
+        {
+            if (m_disposed) return;
+
+            if (m_notificationHandlers.TryRemove(handlerId, out _))
+            {
+                m_logger.LogDebug("Unregistered notification handler {HandlerId} (Total: {HandlerCount})", handlerId, m_notificationHandlers.Count);
+            }
+            else
+            {
+                m_logger.LogWarning("Attempted to unregister non-existent notification handler {HandlerId}", handlerId);
+            }
         }
 
         public void UnregisterNotificationHandler(Func<McpNotification, Task> handler)
         {
             if (m_disposed) return;
 
-            // Find and remove the handler by value
+            // Find and remove the handler by value (less efficient but backward compatible)
             var handlerToRemove = m_notificationHandlers.FirstOrDefault(kvp => kvp.Value == handler);
             if (!handlerToRemove.Equals(default(KeyValuePair<Guid, Func<McpNotification, Task>>)))
             {
@@ -279,11 +294,33 @@ namespace mcp_nexus.Notifications
             }
         }
 
+        public IReadOnlyList<Guid> GetRegisteredHandlerIds()
+        {
+            if (m_disposed) return Array.Empty<Guid>();
+            return m_notificationHandlers.Keys.ToList();
+        }
+
+        public int GetHandlerCount()
+        {
+            if (m_disposed) return 0;
+            return m_notificationHandlers.Count;
+        }
+
+        public void ClearAllHandlers()
+        {
+            if (m_disposed) return;
+
+            var count = m_notificationHandlers.Count;
+            m_notificationHandlers.Clear();
+            m_logger.LogDebug("Cleared all {Count} notification handlers", count);
+        }
+
         public void Dispose()
         {
             if (m_disposed) return;
 
             m_disposed = true;
+            m_notificationHandlers.Clear();
             m_logger.LogDebug("McpNotificationService disposed");
         }
     }
