@@ -422,8 +422,8 @@ namespace mcp_nexus
             // Logging Configuration
             logger.Info("");
             logger.Info("┌─ Logging Configuration ────────────────────────────────────────────");
-            logger.Info($"│ Default Level:     {configuration["Logging:LogLevel:Default"] ?? "Not configured"}");
-            logger.Info($"│ ASP.NET Core Level: {configuration["Logging:LogLevel:Microsoft.AspNetCore"] ?? "Not configured"}");
+            logger.Info($"│ Log Level:         {configuration["Logging:LogLevel"] ?? "Not configured"}");
+            logger.Info($"│ Environment:       {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Not set"}");
 
             // Environment Variables (relevant ones)
             logger.Info("");
@@ -569,7 +569,7 @@ namespace mcp_nexus
                 webBuilder.Host.UseWindowsService();
             }
 
-            ConfigureLogging(webBuilder.Logging, commandLineArgs.ServiceMode);
+            ConfigureLogging(webBuilder.Logging, commandLineArgs.ServiceMode, webBuilder.Configuration);
             RegisterServices(webBuilder.Services, webBuilder.Configuration, commandLineArgs.CustomCdbPath);
             ConfigureHttpServices(webBuilder.Services, webBuilder.Configuration);
 
@@ -591,7 +591,7 @@ namespace mcp_nexus
             await Console.Error.WriteLineAsync("Configuring for stdio transport...");
             var builder = Host.CreateApplicationBuilder(args);
 
-            ConfigureLogging(builder.Logging, false);
+            ConfigureLogging(builder.Logging, false, builder.Configuration);
 
             // Log startup banner for stdio mode
             LogStartupBanner(commandLineArgs, "stdio", null);
@@ -626,7 +626,7 @@ namespace mcp_nexus
             await host.RunAsync();
         }
 
-        private static void ConfigureLogging(ILoggingBuilder logging, bool isServiceMode)
+        private static void ConfigureLogging(ILoggingBuilder logging, bool isServiceMode, IConfiguration configuration)
         {
             // Note: We use Console.Error for stdio mode compatibility
             var logMessage = "Configuring logging...";
@@ -640,10 +640,26 @@ namespace mcp_nexus
                 Console.Error.WriteLine(logMessage);
             }
 
+            // Get log level from configuration
+            var logLevelString = configuration["Logging:LogLevel"] ?? "Information";
+            var minLevel = ParseLogLevel(logLevelString);
+
+            // Configure NLog with the log level
+            var nlogConfig = NLog.LogManager.Configuration;
+            if (nlogConfig != null)
+            {
+                // Update the minimum level for all loggers
+                foreach (var rule in nlogConfig.LoggingRules)
+                {
+                    rule.SetLoggingLevels(GetNLogLevel(minLevel), NLog.LogLevel.Fatal);
+                }
+            }
+
             logging.ClearProviders();
             logging.AddNLogWeb();
+            logging.SetMinimumLevel(minLevel);
 
-            var completeMessage = "Logging configured with NLog";
+            var completeMessage = $"Logging configured with NLog (Level: {minLevel})";
             if (isServiceMode)
             {
                 Console.WriteLine(completeMessage);
@@ -652,6 +668,34 @@ namespace mcp_nexus
             {
                 Console.Error.WriteLine(completeMessage);
             }
+        }
+
+        private static LogLevel ParseLogLevel(string logLevelString)
+        {
+            return logLevelString.ToLowerInvariant() switch
+            {
+                "trace" => LogLevel.Trace,
+                "debug" => LogLevel.Debug,
+                "information" => LogLevel.Information,
+                "warning" => LogLevel.Warning,
+                "error" => LogLevel.Error,
+                "critical" => LogLevel.Critical,
+                _ => throw new ArgumentException($"Invalid log level '{logLevelString}'. Valid values are: Trace, Debug, Information, Warning, Error, Critical", nameof(logLevelString))
+            };
+        }
+
+        private static NLog.LogLevel GetNLogLevel(LogLevel logLevel)
+        {
+            return logLevel switch
+            {
+                LogLevel.Trace => NLog.LogLevel.Trace,
+                LogLevel.Debug => NLog.LogLevel.Debug,
+                LogLevel.Information => NLog.LogLevel.Info,
+                LogLevel.Warning => NLog.LogLevel.Warn,
+                LogLevel.Error => NLog.LogLevel.Error,
+                LogLevel.Critical => NLog.LogLevel.Fatal,
+                _ => throw new ArgumentException($"Invalid log level '{logLevel}'. This should not happen as it's an internal conversion.", nameof(logLevel))
+            };
         }
 
         private static void RegisterServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath)
