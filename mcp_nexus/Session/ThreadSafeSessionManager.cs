@@ -679,6 +679,9 @@ namespace mcp_nexus.Session
 
             m_logger.LogInformation("🛑 ThreadSafeSessionManager disposing...");
 
+            // MARK AS DISPOSED FIRST to prevent new operations
+            m_disposed = true;
+
             try
             {
                 // SHUTDOWN: Signal shutdown
@@ -693,7 +696,7 @@ namespace mcp_nexus.Session
                     m_logger.LogWarning("⚠️ Session monitor did not stop within timeout");
                 }
 
-                // CLEANUP: Close all sessions BEFORE marking as disposed
+                // CLEANUP: Close all sessions using internal method (no disposal checks)
                 var sessionIds = m_sessions.Keys.ToList();
                 var cleanupTasks = sessionIds.Select(id => CloseSessionInternalAsync(id, CancellationToken.None));
 
@@ -705,9 +708,6 @@ namespace mcp_nexus.Session
                 {
                     m_logger.LogError(ex, "Error during bulk session cleanup");
                 }
-
-                // NOW mark as disposed after cleanup is complete
-                m_disposed = true;
 
                 // CLEANUP: Dispose resources
                 m_shutdownCts.Dispose();
