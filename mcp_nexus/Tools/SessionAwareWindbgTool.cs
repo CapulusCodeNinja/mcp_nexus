@@ -327,6 +327,36 @@ namespace mcp_nexus.Tools
                 logger.LogInformation("Session {SessionId} closed successfully", sessionId);
                 return response;
             }
+            catch (ArgumentNullException ex)
+            {
+                logger.LogWarning("Invalid session ID (null): {Message}", ex.Message);
+                var errorResponse = new
+                {
+                    sessionId = sessionId,
+                    dumpFile = (string?)null,
+                    commandId = (string?)null,
+                    success = false,
+                    operation = "nexus_close_dump_analyze_session",
+                    message = "Session ID cannot be null",
+                    usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
+                };
+                return errorResponse;
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning("Invalid session ID (empty/whitespace): {Message}", ex.Message);
+                var errorResponse = new
+                {
+                    sessionId = sessionId,
+                    dumpFile = (string?)null,
+                    commandId = (string?)null,
+                    success = false,
+                    operation = "nexus_close_dump_analyze_session",
+                    message = "Session ID cannot be empty or whitespace",
+                    usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
+                };
+                return errorResponse;
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error closing session {SessionId}", sessionId);

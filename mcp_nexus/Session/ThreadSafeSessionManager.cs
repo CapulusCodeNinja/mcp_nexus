@@ -214,8 +214,14 @@ namespace mcp_nexus.Session
         {
             ThrowIfDisposed();
 
-            if (string.IsNullOrEmpty(sessionId))
-                return false;
+            if (sessionId == null)
+                throw new ArgumentNullException(nameof(sessionId));
+            
+            if (string.IsNullOrWhiteSpace(sessionId))
+                throw new ArgumentException("Session ID cannot be empty or whitespace.", nameof(sessionId));
+
+            // Check for cancellation before proceeding
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (!m_sessions.TryRemove(sessionId, out var session))
             {
@@ -227,7 +233,10 @@ namespace mcp_nexus.Session
 
             try
             {
-                await SafeCleanupSession(session);
+                // Check for cancellation before cleanup
+                cancellationToken.ThrowIfCancellationRequested();
+                
+                await SafeCleanupSession(session, cancellationToken);
                 Interlocked.Increment(ref m_totalSessionsClosed);
 
                 // NOTIFICATION: Notify session closure
@@ -272,7 +281,7 @@ namespace mcp_nexus.Session
 
             try
             {
-                await SafeCleanupSession(session);
+                await SafeCleanupSession(session, cancellationToken);
                 Interlocked.Increment(ref m_totalSessionsClosed);
 
                 // Skip notifications during shutdown to avoid potential issues
@@ -288,8 +297,13 @@ namespace mcp_nexus.Session
 
         public bool SessionExists(string sessionId)
         {
-            if (string.IsNullOrEmpty(sessionId))
-                return false;
+            ThrowIfDisposed();
+
+            if (sessionId == null)
+                throw new ArgumentNullException(nameof(sessionId));
+            
+            if (string.IsNullOrWhiteSpace(sessionId))
+                throw new ArgumentException("Session ID cannot be empty or whitespace.", nameof(sessionId));
 
             // FAST PATH: Check existence without locks
             if (!m_sessions.TryGetValue(sessionId, out var session))
@@ -429,7 +443,7 @@ namespace mcp_nexus.Session
                 ?? m_logger;
         }
 
-        private ICdbSession CreateCdbSession(ILogger sessionLogger, string sessionId)
+        protected virtual ICdbSession CreateCdbSession(ILogger sessionLogger, string sessionId)
         {
             // Create CdbSession with session-specific configuration
             // Cast logger to the correct generic type
@@ -445,7 +459,7 @@ namespace mcp_nexus.Session
                 m_cdbOptions.SymbolSearchPath);
         }
 
-        private ICommandQueueService CreateCommandQueue(ICdbSession cdbSession, ILogger sessionLogger, string sessionId)
+        protected virtual ICommandQueueService CreateCommandQueue(ICdbSession cdbSession, ILogger sessionLogger, string sessionId)
         {
             // Create isolated command queue for this session
             return new IsolatedCommandQueueService(cdbSession, sessionLogger, m_notificationService, sessionId);
@@ -551,7 +565,7 @@ namespace mcp_nexus.Session
 
             try
             {
-                await SafeCleanupSession(session);
+                await SafeCleanupSession(session, CancellationToken.None);
                 Interlocked.Increment(ref m_totalSessionsExpired);
 
                 // Notification for expired session
@@ -577,9 +591,10 @@ namespace mcp_nexus.Session
             }
         }
 
-        private async Task SafeCleanupSession(SessionInfo session)
+        private async Task SafeCleanupSession(SessionInfo session, CancellationToken cancellationToken = default)
         {
             using var timeoutCts = new CancellationTokenSource(m_config.DisposalTimeout);
+            using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
             try
             {
@@ -594,7 +609,7 @@ namespace mcp_nexus.Session
                     {
                         m_logger.LogWarning(ex, "Error disposing command queue for session {SessionId}", session.SessionId);
                     }
-                }, timeoutCts.Token);
+                }, combinedCts.Token);
 
                 await SafeDisposeCdbSession(session.CdbSession);
 

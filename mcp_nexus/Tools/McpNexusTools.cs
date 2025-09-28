@@ -123,6 +123,30 @@ namespace mcp_nexus.Tools
                 logger.LogInformation("Session {SessionId} closed successfully", sessionId);
                 return response;
             }
+            catch (ArgumentNullException ex)
+            {
+                logger.LogWarning("Invalid session ID (null): {Message}", ex.Message);
+                var errorResponse = new
+                {
+                    sessionId = sessionId,
+                    success = false,
+                    operation = "nexus_close_dump_analyze_session",
+                    message = "Session ID cannot be null"
+                };
+                return errorResponse;
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning("Invalid session ID (empty/whitespace): {Message}", ex.Message);
+                var errorResponse = new
+                {
+                    sessionId = sessionId,
+                    success = false,
+                    operation = "nexus_close_dump_analyze_session",
+                    message = "Session ID cannot be empty or whitespace"
+                };
+                return errorResponse;
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to close debugging session: {SessionId}", sessionId);

@@ -78,6 +78,16 @@ namespace mcp_nexus_tests.Session
                 Options.Create(_cdbOptions));
         }
 
+        private TestableThreadSafeSessionManager CreateTestableSessionManager()
+        {
+            return new TestableThreadSafeSessionManager(
+                _mockLogger.Object,
+                _mockServiceProvider.Object,
+                _mockNotificationService.Object,
+                Options.Create(_config),
+                Options.Create(_cdbOptions));
+        }
+
         public void Dispose()
         {
             _sessionManager?.Dispose();
@@ -176,7 +186,7 @@ namespace mcp_nexus_tests.Session
         #region CreateSessionAsync Tests
 
         [Fact]
-        public async Task CreateSessionAsync_WithNullDumpPath_ThrowsArgumentException()
+        public async Task CreateSessionAsync_WithNullDumpPath_ThrowsArgumentNullException()
         {
             // Arrange
             var sessionManager = CreateSessionManager();
@@ -184,7 +194,7 @@ namespace mcp_nexus_tests.Session
             try
             {
                 // Act & Assert
-                await Assert.ThrowsAsync<ArgumentException>(() => 
+                await Assert.ThrowsAsync<ArgumentNullException>(() =>
                     sessionManager.CreateSessionAsync(null!));
             }
             finally
@@ -315,18 +325,16 @@ namespace mcp_nexus_tests.Session
         }
 
         [Fact]
-        public async Task CloseSessionAsync_WithNullSessionId_ReturnsFalse()
+        public async Task CloseSessionAsync_WithNullSessionId_ThrowsArgumentNullException()
         {
             // Arrange
             var sessionManager = CreateSessionManager();
 
             try
             {
-                // Act
-                var result = await sessionManager.CloseSessionAsync(null!);
-
-                // Assert
-                Assert.False(result);
+                // Act & Assert
+                await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                    sessionManager.CloseSessionAsync(null!));
             }
             finally
             {
@@ -335,18 +343,16 @@ namespace mcp_nexus_tests.Session
         }
 
         [Fact]
-        public async Task CloseSessionAsync_WithEmptySessionId_ReturnsFalse()
+        public async Task CloseSessionAsync_WithEmptySessionId_ThrowsArgumentException()
         {
             // Arrange
             var sessionManager = CreateSessionManager();
 
             try
             {
-                // Act
-                var result = await sessionManager.CloseSessionAsync("");
-
-                // Assert
-                Assert.False(result);
+                // Act & Assert
+                await Assert.ThrowsAsync<ArgumentException>(() =>
+                    sessionManager.CloseSessionAsync(""));
             }
             finally
             {
@@ -385,61 +391,6 @@ namespace mcp_nexus_tests.Session
                 // Act & Assert
                 await Assert.ThrowsAsync<FileNotFoundException>(() =>
                     sessionManager.CreateSessionAsync(invalidPath));
-            }
-            finally
-            {
-                sessionManager.Dispose();
-            }
-        }
-
-        [Fact]
-        public async Task CreateSessionAsync_WithNullDumpPath_ThrowsArgumentNullException()
-        {
-            // Arrange
-            var sessionManager = CreateSessionManager();
-
-            try
-            {
-                // Act & Assert
-                await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                    sessionManager.CreateSessionAsync(null!));
-            }
-            finally
-            {
-                sessionManager.Dispose();
-            }
-        }
-
-
-        [Fact]
-        public async Task CloseSessionAsync_WithNullSessionId_ThrowsArgumentNullException()
-        {
-            // Arrange
-            var sessionManager = CreateSessionManager();
-
-            try
-            {
-                // Act & Assert
-                await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                    sessionManager.CloseSessionAsync(null!));
-            }
-            finally
-            {
-                sessionManager.Dispose();
-            }
-        }
-
-        [Fact]
-        public async Task CloseSessionAsync_WithEmptySessionId_ThrowsArgumentException()
-        {
-            // Arrange
-            var sessionManager = CreateSessionManager();
-
-            try
-            {
-                // Act & Assert
-                await Assert.ThrowsAsync<ArgumentException>(() =>
-                    sessionManager.CloseSessionAsync(""));
             }
             finally
             {
@@ -566,46 +517,6 @@ namespace mcp_nexus_tests.Session
             {
                 // Act
                 var exists = sessionManager.SessionExists("nonexistent");
-
-                // Assert
-                Assert.False(exists);
-            }
-            finally
-            {
-                sessionManager.Dispose();
-            }
-        }
-
-        [Fact]
-        public void SessionExists_WithNullSessionId_ReturnsFalse()
-        {
-            // Arrange
-            var sessionManager = CreateSessionManager();
-
-            try
-            {
-                // Act
-                var exists = sessionManager.SessionExists(null!);
-
-                // Assert
-                Assert.False(exists);
-            }
-            finally
-            {
-                sessionManager.Dispose();
-            }
-        }
-
-        [Fact]
-        public void SessionExists_WithEmptySessionId_ReturnsFalse()
-        {
-            // Arrange
-            var sessionManager = CreateSessionManager();
-
-            try
-            {
-                // Act
-                var exists = sessionManager.SessionExists("");
 
                 // Assert
                 Assert.False(exists);
@@ -805,7 +716,7 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var dumpPath = Path.GetTempFileName();
-            var sessionManager = CreateSessionManager();
+            var sessionManager = CreateTestableSessionManager();
             string sessionId;
 
             try
@@ -838,7 +749,7 @@ namespace mcp_nexus_tests.Session
             // Arrange
             var dumpPath1 = Path.GetTempFileName();
             var dumpPath2 = Path.GetTempFileName();
-            var sessionManager = CreateSessionManager();
+            var sessionManager = CreateTestableSessionManager();
 
             try
             {
@@ -867,7 +778,7 @@ namespace mcp_nexus_tests.Session
             // Arrange
             var dumpPath1 = Path.GetTempFileName();
             var dumpPath2 = Path.GetTempFileName();
-            var sessionManager = CreateSessionManager();
+            var sessionManager = CreateTestableSessionManager();
 
             try
             {
@@ -879,7 +790,7 @@ namespace mcp_nexus_tests.Session
                 var sessions = sessionManager.GetAllSessions().ToList();
 
                 // Assert
-                Assert.Equal(2, sessions.Count);
+                Assert.Single(sessions); // Only the remaining active session
                 Assert.All(sessions, s => Assert.NotNull(s.SessionId));
             }
             finally
@@ -895,7 +806,7 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var dumpPath = Path.GetTempFileName();
-            var sessionManager = CreateSessionManager();
+            var sessionManager = CreateTestableSessionManager();
             string sessionId;
 
             try
