@@ -1,0 +1,346 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+using mcp_nexus.Resources;
+using mcp_nexus.Session;
+using mcp_nexus.Session.Models;
+using mcp_nexus.CommandQueue;
+using mcp_nexus.Metrics;
+using mcp_nexus.Health;
+using mcp_nexus.Resilience;
+using mcp_nexus.Caching;
+using mcp_nexus;
+
+namespace mcp_nexus_tests.Resources
+{
+    public class McpNexusResourcesTests
+    {
+        [Fact]
+        public void McpNexusResources_ClassExists()
+        {
+            // Act & Assert
+            Assert.NotNull(typeof(McpNexusResources));
+        }
+
+        [Fact]
+        public void McpNexusResources_IsStaticClass()
+        {
+            // Act & Assert
+            Assert.True(typeof(McpNexusResources).IsAbstract && typeof(McpNexusResources).IsSealed);
+        }
+
+        [Fact]
+        public void McpNexusResources_HasExpectedMethods()
+        {
+            // Arrange
+            var type = typeof(McpNexusResources);
+            var methodNames = type.GetMethods().Select(m => m.Name).ToHashSet();
+
+            // Assert
+            Assert.Contains("Sessions", methodNames);
+            Assert.Contains("Commands", methodNames);
+            Assert.Contains("Workflows", methodNames);
+            Assert.Contains("Usage", methodNames);
+            Assert.Contains("Metrics", methodNames);
+            Assert.Contains("Circuits", methodNames);
+            Assert.Contains("Health", methodNames);
+            Assert.Contains("Cache", methodNames);
+        }
+
+        [Fact]
+        public void McpNexusResources_MethodsAreStatic()
+        {
+            // Arrange
+            var type = typeof(McpNexusResources);
+            var methods = type.GetMethods().Where(m => m.DeclaringType == type);
+
+            // Act & Assert
+            foreach (var method in methods)
+            {
+                Assert.True(method.IsStatic, $"Method {method.Name} should be static");
+            }
+        }
+
+        [Fact]
+        public void McpNexusResources_MethodsReturnTask()
+        {
+            // Arrange
+            var type = typeof(McpNexusResources);
+            var methods = type.GetMethods().Where(m => m.DeclaringType == type);
+
+            // Act & Assert
+            foreach (var method in methods)
+            {
+                Assert.True(typeof(Task).IsAssignableFrom(method.ReturnType), 
+                    $"Method {method.Name} should return Task or Task<T>");
+            }
+        }
+
+        [Fact]
+        public void McpNexusResources_MethodsHaveCorrectParameters()
+        {
+            // Arrange
+            var type = typeof(McpNexusResources);
+            var methods = type.GetMethods().Where(m => m.DeclaringType == type);
+
+            // Act & Assert
+            foreach (var method in methods)
+            {
+                var parameters = method.GetParameters();
+                Assert.True(parameters.Length >= 1, $"Method {method.Name} should have at least one parameter");
+                Assert.Equal(typeof(IServiceProvider), parameters[0].ParameterType);
+            }
+        }
+
+        [Fact]
+        public void McpNexusResources_UsageMethodHasCorrectParameters()
+        {
+            // Arrange
+            var type = typeof(McpNexusResources);
+            var usageMethod = type.GetMethod("Usage");
+
+            // Act & Assert
+            Assert.NotNull(usageMethod);
+            var parameters = usageMethod!.GetParameters();
+            Assert.Single(parameters);
+            Assert.Equal(typeof(IServiceProvider), parameters[0].ParameterType);
+        }
+
+        [Fact]
+        public async Task McpNexusResources_WithNullServiceProvider_ThrowsArgumentNullException()
+        {
+            // Act & Assert - The methods will throw ArgumentNullException when trying to get services from null provider
+            await Assert.ThrowsAsync<ArgumentNullException>(() => McpNexusResources.Sessions(null!));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => McpNexusResources.Commands(null!));
+            // Workflows and Usage methods don't require services, so they won't throw
+            await Assert.ThrowsAsync<ArgumentNullException>(() => McpNexusResources.Metrics(null!));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => McpNexusResources.Circuits(null!));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => McpNexusResources.Health(null!));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => McpNexusResources.Cache(null!));
+        }
+
+        [Fact]
+        public async Task McpNexusResources_UsageWithValidServiceProvider_ReturnsUsageData()
+        {
+            // Arrange
+            var mockServiceProvider = new Mock<IServiceProvider>();
+
+            // Act
+            var result = await McpNexusResources.Usage(mockServiceProvider.Object);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("MCP Nexus Usage Guide", result);
+        }
+
+        [Fact]
+        public async Task McpNexusResources_WorkflowsWithValidServiceProvider_ReturnsWorkflowsData()
+        {
+            // Arrange
+            var mockServiceProvider = new Mock<IServiceProvider>();
+
+            // Act
+            var result = await McpNexusResources.Workflows(mockServiceProvider.Object);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("Crash Analysis Workflows", result);
+            Assert.Contains("Basic Crash Analysis", result);
+            Assert.Contains("Memory Corruption Analysis", result);
+            Assert.Contains("Thread Deadlock Investigation", result);
+            Assert.Contains("!analyze -v", result);
+        }
+
+        [Fact]
+        public void GetCommandStatus_WithDifferentStates_ReturnsCorrectStatus()
+        {
+            // Arrange
+            var queuedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Queued);
+            var method = typeof(McpNexusResources).GetMethod("GetCommandStatus", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            Assert.Equal("Queued", (string)method!.Invoke(null, new object[] { queuedCommand })!);
+        }
+
+        [Fact]
+        public void GetQueuePositionForCommand_WithExecutingCommand_ReturnsZero()
+        {
+            // Arrange
+            var executingCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
+            var allCommands = new List<QueuedCommand> { executingCommand };
+            var method = typeof(McpNexusResources).GetMethod("GetQueuePositionForCommand", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (int)method!.Invoke(null, new object[] { executingCommand, allCommands })!;
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact]
+        public void GetQueuePositionForCommand_WithQueuedCommand_ReturnsPosition()
+        {
+            // Arrange
+            var queuedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Queued);
+            var allCommands = new List<QueuedCommand> { queuedCommand };
+            var method = typeof(McpNexusResources).GetMethod("GetQueuePositionForCommand", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (int)method!.Invoke(null, new object[] { queuedCommand, allCommands })!;
+
+            // Assert
+            Assert.Equal(0, result); // First in queue
+        }
+
+        [Fact]
+        public void GetProgressPercentageForCommand_WithCompletedCommand_Returns100()
+        {
+            // Arrange
+            var completedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Completed);
+            var allCommands = new List<QueuedCommand> { completedCommand };
+            var method = typeof(McpNexusResources).GetMethod("GetProgressPercentageForCommand", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (int)method!.Invoke(null, new object[] { completedCommand, allCommands })!;
+
+            // Assert
+            Assert.Equal(100, result);
+        }
+
+        [Fact]
+        public void GetProgressPercentageForCommand_WithFailedCommand_Returns0()
+        {
+            // Arrange
+            var failedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Failed);
+            var allCommands = new List<QueuedCommand> { failedCommand };
+            var method = typeof(McpNexusResources).GetMethod("GetProgressPercentageForCommand", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (int)method!.Invoke(null, new object[] { failedCommand, allCommands })!;
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact]
+        public void GetCommandMessage_WithCompletedCommand_ReturnsSuccessMessage()
+        {
+            // Arrange
+            var completedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Completed);
+            var allCommands = new List<QueuedCommand> { completedCommand };
+            var method = typeof(McpNexusResources).GetMethod("GetCommandMessage", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (string)method!.Invoke(null, new object[] { completedCommand, allCommands })!;
+
+            // Assert
+            Assert.Equal("Command completed successfully", result);
+        }
+
+        [Fact]
+        public void GetCommandMessage_WithFailedCommand_ReturnsFailureMessage()
+        {
+            // Arrange
+            var failedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Failed);
+            var allCommands = new List<QueuedCommand> { failedCommand };
+            var method = typeof(McpNexusResources).GetMethod("GetCommandMessage", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (string)method!.Invoke(null, new object[] { failedCommand, allCommands })!;
+
+            // Assert
+            Assert.Equal("Command failed: Unknown error", result);
+        }
+
+        [Fact]
+        public void GetCommandMessage_WithCancelledCommand_ReturnsCancelledMessage()
+        {
+            // Arrange
+            var cancelledCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Cancelled);
+            var allCommands = new List<QueuedCommand> { cancelledCommand };
+            var method = typeof(McpNexusResources).GetMethod("GetCommandMessage", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (string)method!.Invoke(null, new object[] { cancelledCommand, allCommands })!;
+
+            // Assert
+            Assert.Equal("Command was cancelled", result);
+        }
+
+        [Fact]
+        public void GetElapsedTimeForCommand_WithCompletedCommand_ReturnsNull()
+        {
+            // Arrange
+            var completedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Completed);
+            var method = typeof(McpNexusResources).GetMethod("GetElapsedTimeForCommand", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (string?)method!.Invoke(null, new object[] { completedCommand })!;
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetElapsedTimeForCommand_WithExecutingCommand_ReturnsElapsedTime()
+        {
+            // Arrange
+            var executingCommand = new QueuedCommand("test", "command", DateTime.UtcNow.AddMinutes(-5), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
+            var method = typeof(McpNexusResources).GetMethod("GetElapsedTimeForCommand", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (string?)method!.Invoke(null, new object[] { executingCommand })!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("min", result);
+        }
+
+        [Fact]
+        public void GetEtaTimeForCommand_WithCompletedCommand_ReturnsNull()
+        {
+            // Arrange
+            var completedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Completed);
+            var method = typeof(McpNexusResources).GetMethod("GetEtaTimeForCommand", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (string?)method!.Invoke(null, new object[] { completedCommand })!;
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetEtaTimeForCommand_WithExecutingCommand_ReturnsEtaTime()
+        {
+            // Arrange
+            var executingCommand = new QueuedCommand("test", "command", DateTime.UtcNow.AddMinutes(-2), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
+            var method = typeof(McpNexusResources).GetMethod("GetEtaTimeForCommand", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (string?)method!.Invoke(null, new object[] { executingCommand })!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("min", result);
+        }
+    }
+}
