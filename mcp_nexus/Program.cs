@@ -24,6 +24,21 @@ namespace mcp_nexus
     {
         private static async Task Main(string[] args)
         {
+            // Set environment based on configuration if not already set
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")))
+            {
+                // Check if we're running in service mode
+                if (args.Contains("--service") || args.Contains("--install") || args.Contains("--uninstall") || args.Contains("--update"))
+                {
+                    Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Service");
+                }
+                else
+                {
+                    // Default to Production for non-development builds
+                    Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
+                }
+            }
+
             // Check if this is a help request first
             if (args.Length > 0 && (args[0] == "--help" || args[0] == "-h" || args[0] == "help"))
             {
