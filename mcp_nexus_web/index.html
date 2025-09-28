@@ -5,12 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crash Dump Analyzer</title>
     <link rel="stylesheet" href="styles.css?v=20250925193500">
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #30363d;
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 6px;
+        }
+        .status-completed { color: #3fb950; }
+        .status-processing { color: #f85149; }
+        .status-processing-white { color: #ffffff; }
+        .status-error { color: #f85149; }
+        .status-pending { color: #ffa657; }
+        .connection-status {
+            display: flex;
+            align-items: center;
+            margin-right: 12px;
+            font-size: 12px;
+            color: #7d8590;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            background: #3fb950;
+            animation: pulse 2s infinite;
+        }
+        .status-dot.disconnected {
+            background: #f85149;
+            animation: none;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
 </head>
 <body>
     <div class="topbar">
         <div class="topbar-inner">
             <a class="brand" href="#">Crash Dump Analyzer</a>
             <div class="menu">
+                <div class="connection-status" id="connectionStatus" title="Real-time updates">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Live</span>
+                </div>
                 <button class="upload-btn-header" id="uploadBtn">📁 Upload Dumps</button>
                 <a href="admin.html" class="upload-btn-header" style="text-decoration: none;">⚙️ Admin</a>
             </div>
@@ -67,6 +116,7 @@
         let jobs = [];
         let selectedJob = null;
         let pollInterval = null;
+        let isPolling = false;
 
         // Modal functionality
         const uploadModal = document.getElementById('uploadModal');
@@ -160,6 +210,10 @@
                 
                 if (result.success) {
                     jobs = result.jobs || [];
+                    
+                    // Clean up old tab preferences for jobs that no longer exist
+                    cleanupOldTabPreferences();
+                    
                     renderJobs();
                 } else {
                     console.error('Failed to load jobs:', result.error);
@@ -167,6 +221,28 @@
             } catch (error) {
                 console.error('Load jobs error:', error);
             }
+        }
+
+        function cleanupOldTabPreferences() {
+            // Get all localStorage keys that start with 'selectedTab_'
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('selectedTab_')) {
+                    const jobId = key.replace('selectedTab_', '');
+                    // Check if this job still exists
+                    const jobExists = jobs.some(job => job.id === jobId);
+                    if (!jobExists) {
+                        keysToRemove.push(key);
+                    }
+                }
+            }
+            
+            // Remove old preferences
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                console.log('Cleaned up old tab preference:', key);
+            });
         }
 
         function renderJobs() {
@@ -213,7 +289,7 @@
                 jobStatus.className = 'job-status-detailed';
                 
                 if (job.status === 'processing') {
-                    jobStatus.innerHTML = '<span class="spinner"></span> PROCESSING';
+                    jobStatus.innerHTML = '<span class="spinner"></span> <span class="status-processing-white">PROCESSING</span>';
                 } else if (job.status === 'completed') {
                     // Show individual file status indicators
                     const indicators = [
@@ -249,6 +325,10 @@
             
             // Save selection to localStorage
             localStorage.setItem('selectedJobId', job.id);
+            
+            // Also save the selected tab for this job
+            const savedTabType = localStorage.getItem(`selectedTab_${job.id}`) || 'analysis';
+            localStorage.setItem('currentSelectedTab', savedTabType);
             
             renderJobs(); // Re-render to show selection
             
@@ -341,8 +421,23 @@
                 
                 if (analysis) {
                     console.log('Analysis files:', analysis.files);
-                    // Load the analysis report by default
-                    loadAnalysisContent(analysis, 'analysis');
+                    
+                    // Restore the previously selected tab for this job, or default to 'analysis'
+                    const savedTabType = localStorage.getItem(`selectedTab_${jobName}`) || 
+                                        localStorage.getItem('currentSelectedTab') || 
+                                        'analysis';
+                    
+                    console.log('Restoring tab:', savedTabType, 'for job:', jobName);
+                    console.log('Available tabs for this analysis:', Object.keys(analysis.files || {}));
+                    
+                    // Make sure the tab exists and is available
+                    const tabExists = document.querySelector(`[data-type="${savedTabType}"]`);
+                    const tabType = (tabExists && (savedTabType === 'jobinfo' || (analysis.files && analysis.files[savedTabType]))) 
+                                   ? savedTabType 
+                                   : 'analysis';
+                    
+                    // Load the saved or default tab
+                    loadAnalysisContent(analysis, tabType);
                     updateTabStates(analysis);
                 } else {
                     console.log('No analysis found for job:', jobName);
@@ -387,6 +482,12 @@
             // Update active tab
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelector('[data-type="jobinfo"]').classList.add('active');
+            
+            // Save the selected tab for the current job
+            if (selectedJob) {
+                localStorage.setItem(`selectedTab_${selectedJob.id}`, 'jobinfo');
+                localStorage.setItem('currentSelectedTab', 'jobinfo');
+            }
             
             const job = selectedJob;
             const createdDate = new Date(job.created);
@@ -522,6 +623,12 @@
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 document.querySelector(`[data-type="${type}"]`).classList.add('active');
                 
+                // Save the selected tab for the current job
+                if (selectedJob) {
+                    localStorage.setItem(`selectedTab_${selectedJob.id}`, type);
+                    localStorage.setItem('currentSelectedTab', type);
+                }
+                
                 if (type === 'analysis') {
                     // Render markdown
                     // Function to generate heading IDs
@@ -648,17 +755,111 @@
             });
         });
 
+        // Real-time polling system
+        function startPolling() {
+            if (isPolling) return; // Prevent multiple polling intervals
+            
+            isPolling = true;
+            console.log('Starting real-time polling...');
+            
+            // Initial load
+            loadJobs();
+            
+            // Set up polling interval
+            pollInterval = setInterval(async () => {
+                try {
+                    await loadJobsWithStatusTracking();
+                } catch (error) {
+                    console.error('Polling error:', error);
+                }
+            }, 3000); // Poll every 3 seconds
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+                isPolling = false;
+                console.log('Stopped real-time polling');
+            }
+        }
+
+        async function loadJobsWithStatusTracking() {
+            try {
+                const response = await fetch('queue-status.aspx');
+                const result = await response.json();
+                
+                // Update connection status
+                updateConnectionStatus(true);
+                
+                if (result.success) {
+                    const newJobs = result.jobs || [];
+                    
+                    // Status changes are now handled by automatic polling updates
+                    
+                    jobs = newJobs;
+                    renderJobs();
+                    
+                    // Update selected job if it changed
+                    if (selectedJob) {
+                        const updatedSelectedJob = jobs.find(j => j.id === selectedJob.id);
+                        if (updatedSelectedJob && 
+                            (updatedSelectedJob.status !== selectedJob.status || 
+                             updatedSelectedJob.updated !== selectedJob.updated)) {
+                            
+                            console.log('Selected job updated:', updatedSelectedJob);
+                            selectedJob = updatedSelectedJob;
+                            
+                            // Refresh the viewer if job completed
+                            if (updatedSelectedJob.status === 'completed') {
+                                selectJob(updatedSelectedJob);
+                            }
+                        }
+                    }
+                } else {
+                    console.error('Failed to load jobs:', result.error);
+                    updateConnectionStatus(false);
+                }
+            } catch (error) {
+                console.error('Load jobs error:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = document.querySelector('.status-text');
+            
+            if (statusDot && statusText) {
+                if (connected) {
+                    statusDot.classList.remove('disconnected');
+                    statusText.textContent = 'Live';
+                    statusText.style.color = '#7d8590';
+                } else {
+                    statusDot.classList.add('disconnected');
+                    statusText.textContent = 'Offline';
+                    statusText.style.color = '#f85149';
+                }
+            }
+        }
+
+
         // Initialize
         loadJobs();
         startPolling();
 
-        // Stop polling when page is hidden
+        // Stop polling when page is hidden, resume when visible
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 stopPolling();
             } else {
                 startPolling();
             }
+        });
+
+        // Stop polling when page is about to unload
+        window.addEventListener('beforeunload', () => {
+            stopPolling();
         });
 
         // Add smooth scrolling for anchor links in markdown content
