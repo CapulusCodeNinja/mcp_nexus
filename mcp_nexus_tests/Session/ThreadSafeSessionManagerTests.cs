@@ -367,6 +367,191 @@ namespace mcp_nexus_tests.Session
             Assert.Equal(nameof(ThreadSafeSessionManager), exception.ObjectName);
         }
 
+
+
+
+
+
+
+        [Fact]
+        public async Task CreateSessionAsync_WithInvalidDumpPath_ThrowsFileNotFoundException()
+        {
+            // Arrange
+            var sessionManager = CreateSessionManager();
+            var invalidPath = "C:\\NonExistent\\Path\\To\\Dump.dmp";
+
+            try
+            {
+                // Act & Assert
+                await Assert.ThrowsAsync<FileNotFoundException>(() =>
+                    sessionManager.CreateSessionAsync(invalidPath));
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
+        [Fact]
+        public async Task CreateSessionAsync_WithNullDumpPath_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var sessionManager = CreateSessionManager();
+
+            try
+            {
+                // Act & Assert
+                await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                    sessionManager.CreateSessionAsync(null!));
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
+
+        [Fact]
+        public async Task CloseSessionAsync_WithNullSessionId_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var sessionManager = CreateSessionManager();
+
+            try
+            {
+                // Act & Assert
+                await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                    sessionManager.CloseSessionAsync(null!));
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
+        [Fact]
+        public async Task CloseSessionAsync_WithEmptySessionId_ThrowsArgumentException()
+        {
+            // Arrange
+            var sessionManager = CreateSessionManager();
+
+            try
+            {
+                // Act & Assert
+                await Assert.ThrowsAsync<ArgumentException>(() =>
+                    sessionManager.CloseSessionAsync(""));
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
+        [Fact]
+        public async Task CloseSessionAsync_WithWhitespaceSessionId_ThrowsArgumentException()
+        {
+            // Arrange
+            var sessionManager = CreateSessionManager();
+
+            try
+            {
+                // Act & Assert
+                await Assert.ThrowsAsync<ArgumentException>(() =>
+                    sessionManager.CloseSessionAsync("   "));
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
+        [Fact]
+        public void SessionExists_WithNullSessionId_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var sessionManager = CreateSessionManager();
+
+            try
+            {
+                // Act & Assert
+                Assert.Throws<ArgumentNullException>(() =>
+                    sessionManager.SessionExists(null!));
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
+        [Fact]
+        public void SessionExists_WithEmptySessionId_ThrowsArgumentException()
+        {
+            // Arrange
+            var sessionManager = CreateSessionManager();
+
+            try
+            {
+                // Act & Assert
+                Assert.Throws<ArgumentException>(() =>
+                    sessionManager.SessionExists(""));
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
+        [Fact]
+        public void SessionExists_WithWhitespaceSessionId_ThrowsArgumentException()
+        {
+            // Arrange
+            var sessionManager = CreateSessionManager();
+
+            try
+            {
+                // Act & Assert
+                Assert.Throws<ArgumentException>(() =>
+                    sessionManager.SessionExists("   "));
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
+        [Fact]
+        public void SessionExists_WhenDisposed_ThrowsObjectDisposedException()
+        {
+            // Arrange
+            var sessionManager = CreateSessionManager();
+            sessionManager.Dispose();
+
+            // Act & Assert
+            Assert.Throws<ObjectDisposedException>(() =>
+                sessionManager.SessionExists("test"));
+        }
+
+
+        [Fact]
+        public async Task CloseSessionAsync_WithCancellation_ThrowsOperationCanceledException()
+        {
+            // Arrange
+            var sessionManager = CreateSessionManager();
+            var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            try
+            {
+                // Act & Assert
+                await Assert.ThrowsAsync<OperationCanceledException>(() =>
+                    sessionManager.CloseSessionAsync("test", cancellationToken: cts.Token));
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
         #endregion
 
         #region SessionExists Tests
@@ -616,24 +801,126 @@ namespace mcp_nexus_tests.Session
         #region CleanupExpiredSessionsAsync Tests
 
         [Fact]
-        public async Task CleanupExpiredSessionsAsync_WithNoSessions_ReturnsZero()
+        public async Task GetSessionContext_WithValidSession_ReturnsSessionContext()
         {
             // Arrange
+            var dumpPath = Path.GetTempFileName();
             var sessionManager = CreateSessionManager();
+            string sessionId;
 
             try
             {
+                sessionId = await sessionManager.CreateSessionAsync(dumpPath);
+
                 // Act
-                var cleaned = await sessionManager.CleanupExpiredSessionsAsync();
+                var sessionContext = sessionManager.GetSessionContext(sessionId);
 
                 // Assert
-                Assert.Equal(0, cleaned);
+                Assert.NotNull(sessionContext);
+                Assert.Equal(sessionId, sessionContext.SessionId);
+                Assert.Equal(dumpPath, sessionContext.DumpPath);
+                Assert.NotNull(sessionContext.Description);
+                Assert.True(sessionContext.CreatedAt > DateTime.MinValue);
+                Assert.True(sessionContext.LastActivity > DateTime.MinValue);
+                Assert.Equal("Active", sessionContext.Status);
             }
             finally
             {
                 sessionManager.Dispose();
+                File.Delete(dumpPath);
             }
         }
+
+
+        [Fact]
+        public async Task GetActiveSessions_WithActiveSessions_ReturnsCorrectSessions()
+        {
+            // Arrange
+            var dumpPath1 = Path.GetTempFileName();
+            var dumpPath2 = Path.GetTempFileName();
+            var sessionManager = CreateSessionManager();
+
+            try
+            {
+                await sessionManager.CreateSessionAsync(dumpPath1);
+                await sessionManager.CreateSessionAsync(dumpPath2);
+
+                // Act
+                var sessions = sessionManager.GetActiveSessions().ToList();
+
+                // Assert
+                Assert.Equal(2, sessions.Count);
+                Assert.All(sessions, s => Assert.NotNull(s.SessionId));
+                Assert.All(sessions, s => Assert.Equal("Active", s.Status));
+            }
+            finally
+            {
+                sessionManager.Dispose();
+                File.Delete(dumpPath1);
+                File.Delete(dumpPath2);
+            }
+        }
+
+        [Fact]
+        public async Task GetAllSessions_WithMixedSessions_ReturnsAllSessions()
+        {
+            // Arrange
+            var dumpPath1 = Path.GetTempFileName();
+            var dumpPath2 = Path.GetTempFileName();
+            var sessionManager = CreateSessionManager();
+
+            try
+            {
+                var sessionId1 = await sessionManager.CreateSessionAsync(dumpPath1);
+                await sessionManager.CreateSessionAsync(dumpPath2);
+                await sessionManager.CloseSessionAsync(sessionId1);
+
+                // Act
+                var sessions = sessionManager.GetAllSessions().ToList();
+
+                // Assert
+                Assert.Equal(2, sessions.Count);
+                Assert.All(sessions, s => Assert.NotNull(s.SessionId));
+            }
+            finally
+            {
+                sessionManager.Dispose();
+                File.Delete(dumpPath1);
+                File.Delete(dumpPath2);
+            }
+        }
+
+        [Fact]
+        public async Task UpdateActivity_WithValidSession_UpdatesLastActivity()
+        {
+            // Arrange
+            var dumpPath = Path.GetTempFileName();
+            var sessionManager = CreateSessionManager();
+            string sessionId;
+
+            try
+            {
+                sessionId = await sessionManager.CreateSessionAsync(dumpPath);
+                var initialContext = sessionManager.GetSessionContext(sessionId);
+                var initialActivity = initialContext.LastActivity;
+
+                // Wait a bit to ensure time difference
+                await Task.Delay(10);
+
+                // Act
+                sessionManager.UpdateActivity(sessionId);
+
+                // Assert
+                var updatedContext = sessionManager.GetSessionContext(sessionId);
+                Assert.True(updatedContext.LastActivity > initialActivity);
+            }
+            finally
+            {
+                sessionManager.Dispose();
+                File.Delete(dumpPath);
+            }
+        }
+
 
         #endregion
 

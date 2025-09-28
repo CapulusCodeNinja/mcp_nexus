@@ -402,6 +402,82 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
+        public void GetCommandState_WithValidCommandId_ReturnsCommandState()
+        {
+            // Arrange
+            m_service = new ResilientCommandQueueService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_mockTimeoutService.Object,
+                m_mockRecoveryService.Object);
+
+            var commandId = m_service.QueueCommand("version");
+
+            // Act
+            var state = m_service.GetCommandState(commandId);
+
+            // Assert
+            Assert.NotNull(state);
+            Assert.True(state == CommandState.Queued || state == CommandState.Executing || state == CommandState.Completed);
+        }
+
+        [Fact]
+        public void GetCommandState_WithNonExistentCommandId_ReturnsNull()
+        {
+            // Arrange
+            m_service = new ResilientCommandQueueService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_mockTimeoutService.Object,
+                m_mockRecoveryService.Object);
+
+            // Act
+            var state = m_service.GetCommandState("non-existent-id");
+
+            // Assert
+            Assert.Null(state);
+        }
+
+        [Fact]
+        public void GetCommandInfo_WithValidCommandId_ReturnsCommandInfo()
+        {
+            // Arrange
+            m_service = new ResilientCommandQueueService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_mockTimeoutService.Object,
+                m_mockRecoveryService.Object);
+
+            var commandId = m_service.QueueCommand("version");
+
+            // Act
+            var info = m_service.GetCommandInfo(commandId);
+
+            // Assert
+            Assert.NotNull(info);
+            Assert.Equal(commandId, info.CommandId);
+            Assert.Equal("version", info.Command);
+            Assert.True(info.QueueTime <= DateTime.UtcNow);
+        }
+
+        [Fact]
+        public void GetCommandInfo_WithNonExistentCommandId_ReturnsNull()
+        {
+            // Arrange
+            m_service = new ResilientCommandQueueService(
+                m_mockCdbSession.Object,
+                m_mockLogger.Object,
+                m_mockTimeoutService.Object,
+                m_mockRecoveryService.Object);
+
+            // Act
+            var info = m_service.GetCommandInfo("non-existent-id");
+
+            // Assert
+            Assert.Null(info);
+        }
+
+        [Fact]
         public async Task GetCommandResult_CommandStillExecuting_ReturnsPendingMessage()
         {
             // Arrange
