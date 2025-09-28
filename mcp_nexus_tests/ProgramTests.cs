@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Reflection;
+using System.Text;
 using mcp_nexus;
 using Xunit;
 
@@ -302,6 +303,236 @@ namespace mcp_nexus_tests
             Assert.Contains("Host", propertyNames);
             Assert.Contains("HostFromCommandLine", propertyNames);
             Assert.Contains("PortFromCommandLine", propertyNames);
+        }
+
+        [Fact]
+        public async Task Program_ShowHelpAsync_OutputsHelpText()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var showHelpMethod = programType.GetMethod("ShowHelpAsync", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(showHelpMethod);
+
+            // Capture console output
+            using var stringWriter = new StringWriter();
+            var originalOut = Console.Out;
+            Console.SetOut(stringWriter);
+
+            try
+            {
+                // Act
+                await (Task)showHelpMethod!.Invoke(null, null)!;
+
+                // Assert
+                var output = stringWriter.ToString();
+                Assert.NotNull(output);
+                Assert.True(output.Length > 0);
+                Assert.Contains("MCP Nexus", output);
+                Assert.Contains("USAGE:", output);
+                Assert.Contains("DESCRIPTION:", output);
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+        }
+
+        [Fact]
+        public void Program_ParseCommandLineArguments_WithUninstallFlag_SetsUninstall()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var parseMethod = programType.GetMethod("ParseCommandLineArguments", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(parseMethod);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { new[] { "--uninstall" } });
+
+            // Assert
+            Assert.NotNull(result);
+            var resultType = result!.GetType();
+
+            var uninstallProperty = resultType.GetProperty("Uninstall");
+            Assert.NotNull(uninstallProperty);
+            Assert.True((bool)uninstallProperty.GetValue(result)!);
+        }
+
+        [Fact]
+        public void Program_ParseCommandLineArguments_WithForceUninstallFlag_SetsForceUninstall()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var parseMethod = programType.GetMethod("ParseCommandLineArguments", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(parseMethod);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { new[] { "--force-uninstall" } });
+
+            // Assert
+            Assert.NotNull(result);
+            var resultType = result!.GetType();
+
+            var forceUninstallProperty = resultType.GetProperty("ForceUninstall");
+            Assert.NotNull(forceUninstallProperty);
+            Assert.True((bool)forceUninstallProperty.GetValue(result)!);
+        }
+
+        [Fact]
+        public void Program_ParseCommandLineArguments_WithUpdateFlag_SetsUpdate()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var parseMethod = programType.GetMethod("ParseCommandLineArguments", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(parseMethod);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { new[] { "--update" } });
+
+            // Assert
+            Assert.NotNull(result);
+            var resultType = result!.GetType();
+
+            var updateProperty = resultType.GetProperty("Update");
+            Assert.NotNull(updateProperty);
+            Assert.True((bool)updateProperty.GetValue(result)!);
+        }
+
+        [Fact]
+        public void Program_ParseCommandLineArguments_WithInvalidPort_HandlesGracefully()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var parseMethod = programType.GetMethod("ParseCommandLineArguments", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(parseMethod);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { new[] { "--port", "invalid" } });
+
+            // Assert
+            Assert.NotNull(result);
+            var resultType = result!.GetType();
+
+            var portProperty = resultType.GetProperty("Port");
+            Assert.NotNull(portProperty);
+            var portValue = (int?)portProperty.GetValue(result);
+            // Should handle invalid port gracefully (null or default value)
+            Assert.True(portValue == null || portValue == 0);
+        }
+
+        [Fact]
+        public void Program_ParseCommandLineArguments_WithNegativePort_HandlesGracefully()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var parseMethod = programType.GetMethod("ParseCommandLineArguments", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(parseMethod);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { new[] { "--port", "-1" } });
+
+            // Assert
+            Assert.NotNull(result);
+            var resultType = result!.GetType();
+
+            var portProperty = resultType.GetProperty("Port");
+            Assert.NotNull(portProperty);
+            var portValue = (int?)portProperty.GetValue(result);
+            // Should handle negative port gracefully
+            Assert.True(portValue == null || portValue < 0);
+        }
+
+        [Fact]
+        public void Program_ParseCommandLineArguments_WithEmptyCdbPath_HandlesGracefully()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var parseMethod = programType.GetMethod("ParseCommandLineArguments", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(parseMethod);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { new[] { "--cdb-path", "" } });
+
+            // Assert
+            Assert.NotNull(result);
+            var resultType = result!.GetType();
+
+            var cdbPathProperty = resultType.GetProperty("CustomCdbPath");
+            Assert.NotNull(cdbPathProperty);
+            var cdbPathValue = (string?)cdbPathProperty.GetValue(result);
+            Assert.Equal("", cdbPathValue);
+        }
+
+        [Fact]
+        public void Program_ParseCommandLineArguments_WithEmptyHost_HandlesGracefully()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var parseMethod = programType.GetMethod("ParseCommandLineArguments", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(parseMethod);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { new[] { "--host", "" } });
+
+            // Assert
+            Assert.NotNull(result);
+            var resultType = result!.GetType();
+
+            var hostProperty = resultType.GetProperty("Host");
+            Assert.NotNull(hostProperty);
+            var hostValue = (string?)hostProperty.GetValue(result);
+            Assert.Equal("", hostValue);
+        }
+
+        [Fact]
+        public void Program_ParseCommandLineArguments_WithUnknownFlag_HandlesGracefully()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var parseMethod = programType.GetMethod("ParseCommandLineArguments", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(parseMethod);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { new[] { "--unknown-flag", "value" } });
+
+            // Assert
+            Assert.NotNull(result);
+            var resultType = result!.GetType();
+
+            // Should still return a valid CommandLineArguments object with defaults
+            var useHttpProperty = resultType.GetProperty("UseHttp");
+            Assert.NotNull(useHttpProperty);
+            Assert.False((bool)useHttpProperty.GetValue(result)!);
+        }
+
+
+        [Fact]
+        public void Program_CommandLineArguments_DefaultValues_AreCorrect()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var nestedTypes = programType.GetNestedTypes(BindingFlags.NonPublic);
+            var commandLineArgsType = nestedTypes.FirstOrDefault(t => t.Name == "CommandLineArguments");
+            Assert.NotNull(commandLineArgsType);
+
+            // Act
+            var instance = Activator.CreateInstance(commandLineArgsType!);
+
+            // Assert
+            Assert.NotNull(instance);
+            var instanceType = instance!.GetType();
+
+            // Check default values
+            Assert.Null(instanceType.GetProperty("CustomCdbPath")!.GetValue(instance));
+            Assert.False((bool)instanceType.GetProperty("UseHttp")!.GetValue(instance)!);
+            Assert.False((bool)instanceType.GetProperty("ServiceMode")!.GetValue(instance)!);
+            Assert.False((bool)instanceType.GetProperty("Install")!.GetValue(instance)!);
+            Assert.False((bool)instanceType.GetProperty("Uninstall")!.GetValue(instance)!);
+            Assert.False((bool)instanceType.GetProperty("ForceUninstall")!.GetValue(instance)!);
+            Assert.False((bool)instanceType.GetProperty("Update")!.GetValue(instance)!);
+            Assert.Null(instanceType.GetProperty("Port")!.GetValue(instance));
+            Assert.Null(instanceType.GetProperty("Host")!.GetValue(instance));
+            Assert.False((bool)instanceType.GetProperty("HostFromCommandLine")!.GetValue(instance)!);
+            Assert.False((bool)instanceType.GetProperty("PortFromCommandLine")!.GetValue(instance)!);
         }
     }
 }
