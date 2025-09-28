@@ -51,7 +51,7 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public void CommandQueueService_CleanupPerformance_CompletesWithinReasonableTime()
+        public async Task CommandQueueService_CleanupPerformance_CompletesWithinReasonableTime()
         {
             // Arrange - Add many completed commands to test cleanup performance
             var commands = new List<string>();
@@ -62,7 +62,7 @@ namespace mcp_nexus_tests.Services
             }
 
             // Wait for commands to complete
-            Thread.Sleep(100);
+            await Task.Delay(100);
 
             // Act - Measure cleanup performance
             var stopwatch = Stopwatch.StartNew();

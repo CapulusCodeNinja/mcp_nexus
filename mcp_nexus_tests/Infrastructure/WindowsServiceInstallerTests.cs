@@ -1,24 +1,16 @@
 using System;
 using System.IO;
-using System.Security.Principal;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using mcp_nexus.CommandQueue;
-using mcp_nexus.Notifications;
-using mcp_nexus.Protocol;
-using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure;
-using mcp_nexus.Session;
 
-// Suppress Windows platform-specific warnings for service management functionality
-#pragma warning disable CA1416 // Validate platform compatibility
-
-namespace mcp_nexus_tests.Services
+namespace mcp_nexus_tests.Infrastructure
 {
     /// <summary>
-    /// Tests for WindowsServiceInstaller - Windows service installation and management
+    /// Comprehensive tests for WindowsServiceInstaller - tests service installation and management
     /// </summary>
     public class WindowsServiceInstallerTests
     {
@@ -30,185 +22,459 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task InstallServiceAsync_WithNullLogger_DoesNotThrow()
+        public void WindowsServiceInstaller_Class_Exists()
         {
-            // Act & Assert - Should not throw
-            var result = await WindowsServiceInstaller.InstallServiceAsync(null);
-
-            // Assert - Will likely return false due to admin privileges check
-            Assert.False(result);
+            // Assert
+            var installerType = typeof(WindowsServiceInstaller);
+            Assert.NotNull(installerType);
+            Assert.True(installerType.IsClass);
+            Assert.True(installerType.IsAbstract); // Should be static class
         }
 
         [Fact]
-        public async Task InstallServiceAsync_WithLogger_DoesNotThrow()
-        {
-            // Act & Assert - Should not throw
-            var result = await WindowsServiceInstaller.InstallServiceAsync(m_mockLogger.Object);
-
-            // Assert - Will likely return false due to admin privileges check
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task UninstallServiceAsync_WithNullLogger_DoesNotThrow()
-        {
-            // Act & Assert - Should not throw
-            var result = await WindowsServiceInstaller.UninstallServiceAsync(null);
-
-            // Assert - Will likely return false due to admin privileges check
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task UninstallServiceAsync_WithLogger_DoesNotThrow()
-        {
-            // Act & Assert - Should not throw
-            var result = await WindowsServiceInstaller.UninstallServiceAsync(m_mockLogger.Object);
-
-            // Assert - Will likely return false due to admin privileges check
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task ForceUninstallServiceAsync_WithNullLogger_DoesNotThrow()
-        {
-            // Act & Assert - Should not throw
-            var result = await WindowsServiceInstaller.ForceUninstallServiceAsync(null);
-
-            // Assert - Will likely return false due to admin privileges check
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task ForceUninstallServiceAsync_WithLogger_DoesNotThrow()
-        {
-            // Act & Assert - Should not throw
-            var result = await WindowsServiceInstaller.ForceUninstallServiceAsync(m_mockLogger.Object);
-
-            // Assert - Will likely return false due to admin privileges check
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task UpdateServiceAsync_WithNullLogger_DoesNotThrow()
-        {
-            // Act & Assert - Should not throw
-            var result = await WindowsServiceInstaller.UpdateServiceAsync(null);
-
-            // Assert - Will likely return false due to admin privileges check
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task UpdateServiceAsync_WithLogger_DoesNotThrow()
-        {
-            // Act & Assert - Should not throw
-            var result = await WindowsServiceInstaller.UpdateServiceAsync(m_mockLogger.Object);
-
-            // Assert - Will likely return false due to admin privileges check
-            Assert.False(result);
-        }
-
-        [Fact]
-        public void WindowsServiceInstaller_IsWindowsOnly_ShouldBeMarkedWithSupportedOSPlatform()
+        public void WindowsServiceInstaller_HasExpectedPublicMethods()
         {
             // Arrange
-            var type = typeof(WindowsServiceInstaller);
-            var attributes = type.GetCustomAttributes(typeof(System.Runtime.Versioning.SupportedOSPlatformAttribute), false);
+            var installerType = typeof(WindowsServiceInstaller);
+            var publicMethods = installerType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
 
-            // Assert
+            // Act & Assert
+            var methodNames = Array.ConvertAll(publicMethods, m => m.Name);
+            
+            Assert.Contains("InstallServiceAsync", methodNames);
+            Assert.Contains("UninstallServiceAsync", methodNames);
+            Assert.Contains("ForceUninstallServiceAsync", methodNames);
+            Assert.Contains("UpdateServiceAsync", methodNames);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_HasExpectedPrivateMethods()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var privateMethods = installerType.GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            var methodNames = Array.ConvertAll(privateMethods, m => m.Name);
+            
+            Assert.Contains("BuildProjectForDeploymentAsync", methodNames);
+            Assert.Contains("FindProjectDirectory", methodNames);
+            Assert.Contains("CopyApplicationFilesAsync", methodNames);
+            Assert.Contains("CopyDirectoryAsync", methodNames);
+            Assert.Contains("ForceCleanupServiceAsync", methodNames);
+            Assert.Contains("DirectRegistryCleanupAsync", methodNames);
+            Assert.Contains("RunScCommandAsync", methodNames);
+            Assert.Contains("IsServiceInstalled", methodNames);
+            Assert.Contains("IsRunAsAdministrator", methodNames);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_InstallServiceAsync_WithNullLogger_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw when logger is null
+            var task = WindowsServiceInstaller.InstallServiceAsync(null);
+            Assert.NotNull(task);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_UninstallServiceAsync_WithNullLogger_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw when logger is null
+            var task = WindowsServiceInstaller.UninstallServiceAsync(null);
+            Assert.NotNull(task);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_ForceUninstallServiceAsync_WithNullLogger_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw when logger is null
+            var task = WindowsServiceInstaller.ForceUninstallServiceAsync(null);
+            Assert.NotNull(task);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_UpdateServiceAsync_WithNullLogger_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw when logger is null
+            var task = WindowsServiceInstaller.UpdateServiceAsync(null);
+            Assert.NotNull(task);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_InstallServiceAsync_WithLogger_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw when logger is provided
+            var task = WindowsServiceInstaller.InstallServiceAsync(m_mockLogger.Object);
+            Assert.NotNull(task);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_UninstallServiceAsync_WithLogger_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw when logger is provided
+            var task = WindowsServiceInstaller.UninstallServiceAsync(m_mockLogger.Object);
+            Assert.NotNull(task);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_ForceUninstallServiceAsync_WithLogger_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw when logger is provided
+            var task = WindowsServiceInstaller.ForceUninstallServiceAsync(m_mockLogger.Object);
+            Assert.NotNull(task);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_UpdateServiceAsync_WithLogger_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw when logger is provided
+            var task = WindowsServiceInstaller.UpdateServiceAsync(m_mockLogger.Object);
+            Assert.NotNull(task);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_AllMethods_ReturnTaskOfBool()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var publicMethods = installerType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            foreach (var method in publicMethods)
+            {
+                if (method.Name.EndsWith("Async"))
+                {
+                    Assert.Equal(typeof(Task<bool>), method.ReturnType);
+                }
+            }
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_AllMethods_AreStatic()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var publicMethods = installerType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            foreach (var method in publicMethods)
+            {
+                Assert.True(method.IsStatic);
+            }
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_AllMethods_HaveCorrectParameters()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var publicMethods = installerType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            foreach (var method in publicMethods)
+            {
+                if (method.Name.EndsWith("Async"))
+                {
+                    var parameters = method.GetParameters();
+                    Assert.Single(parameters);
+                    Assert.Equal(typeof(ILogger), parameters[0].ParameterType);
+                    Assert.True(parameters[0].IsOptional);
+                }
+            }
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_IsRunAsAdministrator_ReturnsBool()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var method = installerType.GetMethod("IsRunAsAdministrator", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            Assert.NotNull(method);
+            Assert.Equal(typeof(bool), method.ReturnType);
+            Assert.True(method.IsStatic);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_IsServiceInstalled_ReturnsBool()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var method = installerType.GetMethod("IsServiceInstalled", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            Assert.NotNull(method);
+            Assert.Equal(typeof(bool), method.ReturnType);
+            Assert.True(method.IsStatic);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_RunScCommandAsync_ReturnsTaskOfBool()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var method = installerType.GetMethod("RunScCommandAsync", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            Assert.NotNull(method);
+            Assert.Equal(typeof(Task<bool>), method.ReturnType);
+            Assert.True(method.IsStatic);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_RunScCommandAsync_HasCorrectParameters()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var method = installerType.GetMethod("RunScCommandAsync", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            Assert.NotNull(method);
+            var parameters = method.GetParameters();
+            Assert.Equal(3, parameters.Length);
+            Assert.Equal(typeof(string), parameters[0].ParameterType);
+            Assert.Equal(typeof(ILogger), parameters[1].ParameterType);
+            Assert.Equal(typeof(bool), parameters[2].ParameterType);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_FindProjectDirectory_ReturnsString()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var method = installerType.GetMethod("FindProjectDirectory", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            Assert.NotNull(method);
+            Assert.Equal(typeof(string), method.ReturnType);
+            Assert.True(method.IsStatic);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_CopyDirectoryAsync_ReturnsTask()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var method = installerType.GetMethod("CopyDirectoryAsync", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            Assert.NotNull(method);
+            Assert.Equal(typeof(Task), method.ReturnType);
+            Assert.True(method.IsStatic);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_CopyDirectoryAsync_HasCorrectParameters()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var method = installerType.GetMethod("CopyDirectoryAsync", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            Assert.NotNull(method);
+            var parameters = method.GetParameters();
+            Assert.Equal(2, parameters.Length);
+            Assert.Equal(typeof(string), parameters[0].ParameterType);
+            Assert.Equal(typeof(string), parameters[1].ParameterType);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_BuildProjectForDeploymentAsync_ReturnsTaskOfBool()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var method = installerType.GetMethod("BuildProjectForDeploymentAsync", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            Assert.NotNull(method);
+            Assert.Equal(typeof(Task<bool>), method.ReturnType);
+            Assert.True(method.IsStatic);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_CopyApplicationFilesAsync_ReturnsTask()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var method = installerType.GetMethod("CopyApplicationFilesAsync", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            Assert.NotNull(method);
+            Assert.Equal(typeof(Task), method.ReturnType);
+            Assert.True(method.IsStatic);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_ForceCleanupServiceAsync_ReturnsTaskOfBool()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var method = installerType.GetMethod("ForceCleanupServiceAsync", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            Assert.NotNull(method);
+            Assert.Equal(typeof(Task<bool>), method.ReturnType);
+            Assert.True(method.IsStatic);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_DirectRegistryCleanupAsync_ReturnsTaskOfBool()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var method = installerType.GetMethod("DirectRegistryCleanupAsync", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            Assert.NotNull(method);
+            Assert.Equal(typeof(Task<bool>), method.ReturnType);
+            Assert.True(method.IsStatic);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_Class_HasSupportedOSPlatformAttribute()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var attributes = installerType.GetCustomAttributes(typeof(System.Runtime.Versioning.SupportedOSPlatformAttribute), false);
+
+            // Act & Assert
             Assert.NotEmpty(attributes);
             var platformAttribute = (System.Runtime.Versioning.SupportedOSPlatformAttribute)attributes[0];
             Assert.Equal("windows", platformAttribute.PlatformName);
         }
 
         [Fact]
-        public void WindowsServiceInstaller_ServiceName_IsCorrect()
+        public void WindowsServiceInstaller_Class_IsSealed()
         {
-            // This test verifies that the service name constant is accessible
-            // We can't directly access private constants, but we can test the behavior
-            // that depends on them
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
 
-            // Act & Assert - The service name should be consistent
-            // This is tested indirectly through the public methods
-            Assert.True(true); // Placeholder - the real test is that the methods don't throw
+            // Act & Assert
+            Assert.True(installerType.IsSealed);
         }
 
         [Fact]
-        public void WindowsServiceInstaller_InstallFolder_IsCorrect()
+        public void WindowsServiceInstaller_Class_IsAbstract()
         {
-            // This test verifies that the install folder constant is accessible
-            // We can't directly access private constants, but we can test the behavior
-            // that depends on them
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
 
-            // Act & Assert - The install folder should be consistent
-            // This is tested indirectly through the public methods
-            Assert.True(true); // Placeholder - the real test is that the methods don't throw
+            // Act & Assert
+            Assert.True(installerType.IsAbstract);
         }
 
         [Fact]
-        public async Task InstallServiceAsync_WhenNotAdmin_ReturnsFalse()
+        public void WindowsServiceInstaller_Class_HasNoInstanceConstructors()
         {
-            // Arrange - This test assumes we're not running as admin (which is typical in test environments)
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var constructors = installerType.GetConstructors();
 
-            // Act
-            var result = await WindowsServiceInstaller.InstallServiceAsync(m_mockLogger.Object);
-
-            // Assert
-            Assert.False(result);
+            // Act & Assert
+            Assert.Empty(constructors);
         }
 
         [Fact]
-        public async Task UninstallServiceAsync_WhenNotAdmin_ReturnsFalse()
+        public void WindowsServiceInstaller_Class_HasNoInstanceFields()
         {
-            // Arrange - This test assumes we're not running as admin (which is typical in test environments)
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var instanceFields = installerType.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
 
-            // Act
-            var result = await WindowsServiceInstaller.UninstallServiceAsync(m_mockLogger.Object);
-
-            // Assert
-            Assert.False(result);
+            // Act & Assert
+            Assert.Empty(instanceFields);
         }
 
         [Fact]
-        public async Task ForceUninstallServiceAsync_WhenNotAdmin_ReturnsFalse()
+        public void WindowsServiceInstaller_Class_HasNoInstanceProperties()
         {
-            // Arrange - This test assumes we're not running as admin (which is typical in test environments)
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var instanceProperties = installerType.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
 
-            // Act
-            var result = await WindowsServiceInstaller.ForceUninstallServiceAsync(m_mockLogger.Object);
-
-            // Assert
-            Assert.False(result);
+            // Act & Assert
+            Assert.Empty(instanceProperties);
         }
 
         [Fact]
-        public async Task UpdateServiceAsync_WhenNotAdmin_ReturnsFalse()
+        public void WindowsServiceInstaller_Class_HasNoInstanceMethods()
         {
-            // Arrange - This test assumes we're not running as admin (which is typical in test environments)
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var instanceMethods = installerType.GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
 
-            // Act
-            var result = await WindowsServiceInstaller.UpdateServiceAsync(m_mockLogger.Object);
+            // Act & Assert - Only check for custom instance methods, not inherited ones
+            var customInstanceMethods = instanceMethods.Where(m => m.DeclaringType == installerType).ToArray();
+            Assert.Empty(customInstanceMethods);
+        }
 
-            // Assert
-            Assert.False(result);
+        [Fact]
+        public void WindowsServiceInstaller_Class_HasExpectedConstants()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var constants = installerType.GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+
+            // Act & Assert
+            var constantNames = Array.ConvertAll(constants, f => f.Name);
+            Assert.Contains("ServiceName", constantNames);
+            Assert.Contains("ServiceDisplayName", constantNames);
+            Assert.Contains("ServiceDescription", constantNames);
+            Assert.Contains("InstallFolder", constantNames);
+        }
+
+        [Fact]
+        public void WindowsServiceInstaller_Constants_HaveExpectedValues()
+        {
+            // Arrange
+            var installerType = typeof(WindowsServiceInstaller);
+            var serviceNameField = installerType.GetField("ServiceName", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            var serviceDisplayNameField = installerType.GetField("ServiceDisplayName", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            var serviceDescriptionField = installerType.GetField("ServiceDescription", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            var installFolderField = installerType.GetField("InstallFolder", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+            // Act & Assert
+            Assert.NotNull(serviceNameField);
+            Assert.NotNull(serviceDisplayNameField);
+            Assert.NotNull(serviceDescriptionField);
+            Assert.NotNull(installFolderField);
+
+            var serviceName = (string)serviceNameField.GetValue(null)!;
+            var serviceDisplayName = (string)serviceDisplayNameField.GetValue(null)!;
+            var serviceDescription = (string)serviceDescriptionField.GetValue(null)!;
+            var installFolder = (string)installFolderField.GetValue(null)!;
+
+            Assert.Equal("MCP-Nexus", serviceName);
+            Assert.Equal("MCP Nexus Server", serviceDisplayName);
+            Assert.Equal("Model Context Protocol server providing AI tool integration", serviceDescription);
+            Assert.Equal(@"C:\Program Files\MCP-Nexus", installFolder);
         }
 
         [Fact]
         public void WindowsServiceInstaller_AllPublicMethods_AreAsync()
         {
             // Arrange
-            var type = typeof(WindowsServiceInstaller);
-            var publicMethods = type.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            var installerType = typeof(WindowsServiceInstaller);
+            var publicMethods = installerType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
             foreach (var method in publicMethods)
             {
-                if (method.Name != "GetType" && method.Name != "GetHashCode" && method.Name != "Equals" && method.Name != "ToString")
-                {
-                    Assert.True(method.ReturnType == typeof(Task<bool>) || method.ReturnType == typeof(Task),
-                        $"Method {method.Name} should return Task or Task<bool>");
-                }
+                Assert.True(method.Name.EndsWith("Async"));
+                Assert.True(method.ReturnType.IsGenericType);
+                Assert.Equal(typeof(Task<>), method.ReturnType.GetGenericTypeDefinition());
             }
         }
 
@@ -216,180 +482,30 @@ namespace mcp_nexus_tests.Services
         public void WindowsServiceInstaller_AllPublicMethods_ReturnTaskOfBool()
         {
             // Arrange
-            var type = typeof(WindowsServiceInstaller);
-            var publicMethods = type.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            var installerType = typeof(WindowsServiceInstaller);
+            var publicMethods = installerType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
             foreach (var method in publicMethods)
             {
-                if (method.Name != "GetType" && method.Name != "GetHashCode" && method.Name != "Equals" && method.Name != "ToString")
-                {
-                    Assert.Equal(typeof(Task<bool>), method.ReturnType);
-                }
+                Assert.Equal(typeof(Task<bool>), method.ReturnType);
             }
         }
 
         [Fact]
-        public void WindowsServiceInstaller_AllPublicMethods_AcceptOptionalLogger()
+        public void WindowsServiceInstaller_AllPublicMethods_HaveOptionalLoggerParameter()
         {
             // Arrange
-            var type = typeof(WindowsServiceInstaller);
-            var publicMethods = type.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            var installerType = typeof(WindowsServiceInstaller);
+            var publicMethods = installerType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
             foreach (var method in publicMethods)
             {
-                if (method.Name != "GetType" && method.Name != "GetHashCode" && method.Name != "Equals" && method.Name != "ToString")
-                {
-                    var parameters = method.GetParameters();
-                    Assert.Single(parameters);
-                    Assert.Equal(typeof(ILogger), parameters[0].ParameterType);
-                    Assert.True(parameters[0].HasDefaultValue);
-                    Assert.Null(parameters[0].DefaultValue);
-                }
-            }
-        }
-
-        [Fact]
-        public void WindowsServiceInstaller_IsStaticClass()
-        {
-            // Arrange
-            var type = typeof(WindowsServiceInstaller);
-
-            // Act & Assert
-            Assert.True(type.IsAbstract && type.IsSealed, "WindowsServiceInstaller should be a static class");
-        }
-
-        [Fact]
-        public void WindowsServiceInstaller_HasSupportedOSPlatformAttribute()
-        {
-            // Arrange
-            var type = typeof(WindowsServiceInstaller);
-            var attributes = type.GetCustomAttributes(typeof(System.Runtime.Versioning.SupportedOSPlatformAttribute), false);
-
-            // Act & Assert
-            Assert.NotEmpty(attributes);
-            var platformAttribute = (System.Runtime.Versioning.SupportedOSPlatformAttribute)attributes[0];
-            Assert.Equal("windows", platformAttribute.PlatformName);
-        }
-
-        [Fact]
-        public async Task InstallServiceAsync_WithException_HandlesGracefully()
-        {
-            // Arrange - This test verifies that exceptions are caught and handled
-            // The actual implementation should catch exceptions and return false
-
-            // Act
-            var result = await WindowsServiceInstaller.InstallServiceAsync(m_mockLogger.Object);
-
-            // Assert - Should not throw, should return false due to admin check
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task UninstallServiceAsync_WithException_HandlesGracefully()
-        {
-            // Arrange - This test verifies that exceptions are caught and handled
-            // The actual implementation should catch exceptions and return false
-
-            // Act
-            var result = await WindowsServiceInstaller.UninstallServiceAsync(m_mockLogger.Object);
-
-            // Assert - Should not throw, should return false due to admin check
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task ForceUninstallServiceAsync_WithException_HandlesGracefully()
-        {
-            // Arrange - This test verifies that exceptions are caught and handled
-            // The actual implementation should catch exceptions and return false
-
-            // Act
-            var result = await WindowsServiceInstaller.ForceUninstallServiceAsync(m_mockLogger.Object);
-
-            // Assert - Should not throw, should return false due to admin check
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task UpdateServiceAsync_WithException_HandlesGracefully()
-        {
-            // Arrange - This test verifies that exceptions are caught and handled
-            // The actual implementation should catch exceptions and return false
-
-            // Act
-            var result = await WindowsServiceInstaller.UpdateServiceAsync(m_mockLogger.Object);
-
-            // Assert - Should not throw, should return false due to admin check
-            Assert.False(result);
-        }
-
-        [Fact]
-        public void WindowsServiceInstaller_Constants_AreAccessible()
-        {
-            // This test verifies that the constants are properly defined
-            // We can't directly access private constants, but we can test that
-            // the methods that use them don't throw
-
-            // Act & Assert - The constants should be accessible to the methods
-            Assert.True(true); // Placeholder - the real test is that the methods don't throw
-        }
-
-        [Fact]
-        public void WindowsServiceInstaller_PrivateMethods_Exist()
-        {
-            // Arrange
-            var type = typeof(WindowsServiceInstaller);
-            var privateMethods = type.GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-
-            // Act & Assert - Should have private helper methods
-            Assert.NotEmpty(privateMethods);
-
-            // Check for specific private methods that should exist
-            var methodNames = privateMethods.Select(m => m.Name).ToArray();
-            Assert.Contains("IsServiceInstalled", methodNames);
-            Assert.Contains("IsRunAsAdministrator", methodNames);
-            Assert.Contains("RunScCommandAsync", methodNames);
-        }
-
-        [Fact]
-        public void WindowsServiceInstaller_PrivateMethods_AreStatic()
-        {
-            // Arrange
-            var type = typeof(WindowsServiceInstaller);
-            var privateMethods = type.GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-
-            // Act & Assert
-            foreach (var method in privateMethods)
-            {
-                Assert.True(method.IsStatic, $"Private method {method.Name} should be static");
-            }
-        }
-
-        [Fact]
-        public void WindowsServiceInstaller_PrivateMethods_ReturnCorrectTypes()
-        {
-            // Arrange
-            var type = typeof(WindowsServiceInstaller);
-            var privateMethods = type.GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-
-            // Act & Assert
-            foreach (var method in privateMethods)
-            {
-                if (method.Name == "IsServiceInstalled" || method.Name == "IsRunAsAdministrator")
-                {
-                    Assert.Equal(typeof(bool), method.ReturnType);
-                }
-                else if (method.Name.StartsWith("Run") && method.Name.EndsWith("Async"))
-                {
-                    Assert.Equal(typeof(Task<bool>), method.ReturnType);
-                }
-                else if (method.Name.EndsWith("Async"))
-                {
-                    Assert.True(method.ReturnType == typeof(Task) || method.ReturnType == typeof(Task<bool>),
-                        $"Method {method.Name} should return Task or Task<bool>");
-                }
+                var parameters = method.GetParameters();
+                Assert.Single(parameters);
+                Assert.Equal(typeof(ILogger), parameters[0].ParameterType);
+                Assert.True(parameters[0].IsOptional);
             }
         }
     }

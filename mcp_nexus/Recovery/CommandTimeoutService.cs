@@ -44,7 +44,7 @@ namespace mcp_nexus.Recovery
             if (m_timeouts.TryRemove(commandId, out var existingInfo))
             {
                 existingInfo.CancellationTokenSource.Cancel();
-                existingInfo.CancellationTokenSource.Dispose();
+                // Don't dispose immediately - let the task handle its own cleanup
             }
 
             var cts = new CancellationTokenSource();
@@ -61,8 +61,12 @@ namespace mcp_nexus.Recovery
                 {
                     await Task.Delay(timeout, cts.Token);
 
-                    // Check cancellation again after delay
-                    cts.Token.ThrowIfCancellationRequested();
+                    // Check if we're still the active timeout
+                    if (!m_timeouts.TryGetValue(commandId, out var currentInfo) || currentInfo.CancellationTokenSource != cts)
+                    {
+                        m_logger.LogTrace("Timeout superseded for command {CommandId}", commandId);
+                        return;
+                    }
 
                     m_logger.LogError("Command {CommandId} timed out after {TimeoutMinutes:F1} minutes",
                         commandId, timeout.TotalMinutes);
