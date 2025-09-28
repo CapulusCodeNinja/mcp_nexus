@@ -257,7 +257,7 @@ MCP Nexus provides live updates during analysis:
 
 ## ⚙️ Configuration
 
-### Debugging Tools Setup
+### Quick Setup
 ```bash
 # Install Windows Debugging Tools
 # Download from Microsoft or install via Windows SDK
@@ -266,18 +266,29 @@ MCP Nexus provides live updates during analysis:
 dotnet run --project mcp_nexus/mcp_nexus.csproj -- --cdb-path "C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe"
 ```
 
-### Analysis Parameters
+### Configuration Files
+- **`appsettings.json`** - Main configuration (Production defaults)
+- **`appsettings.Development.json`** - Development overrides
+- **`appsettings.Production.json`** - Production overrides  
+- **`appsettings.Service.json`** - Windows service overrides
+
+### Simplified Logging
+The logging system now uses a single `LogLevel` setting:
+
 ```json
 {
-  "McpNexus": {
-    "Debugging": {
-      "CommandTimeoutMs": 600000,
-      "SymbolServerTimeoutMs": 300000,
-      "SymbolSearchPath": "srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols"
-    }
+  "Logging": {
+    "LogLevel": "Information"  // Trace, Debug, Information, Warning, Error, Critical
   }
 }
 ```
+
+**Environment Defaults:**
+- **Development**: `"Debug"`
+- **Service/Production**: `"Information"`
+
+### 📖 **[Complete Configuration Guide](docs/CONFIGURATION.md)**
+For detailed configuration options, environment settings, and best practices, see the comprehensive configuration documentation.
 
 ## 🧪 Testing
 
