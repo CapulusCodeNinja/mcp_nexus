@@ -13,7 +13,7 @@ MCP Nexus provides resources for session management, command tracking, and docum
 | Resource | Purpose | Parameters | Real-time |
 |----------|---------|------------|-----------|
 | `sessions` | List all active analysis sessions | None | ✅ |
-| `commands` | List commands with filtering | `sessionId`, `command`, `from`, `to`, `limit`, `offset`, `sortBy`, `order` | ✅ |
+| `commands` | List commands with status and timing | None | ✅ |
 | `workflows` | Get crash analysis workflows | None | ❌ |
 | `usage` | Get complete usage guide | None | ❌ |
 | `metrics` | Get performance metrics | None | ✅ |
@@ -61,11 +61,11 @@ MCP Nexus provides resources for session management, command tracking, and docum
 
 ### `commands`
 
-**Purpose**: List commands from all sessions with advanced filtering options  
-**Parameters**: All optional  
+**Purpose**: List commands from all sessions with status and timing information
+**Parameters**: None
 **Real-time**: ✅ Updates as commands are queued/completed
 
-**Basic Usage**:
+**Example Request**:
 ```json
 {
   "jsonrpc": "2.0",
@@ -76,28 +76,6 @@ MCP Nexus provides resources for session management, command tracking, and docum
   }
 }
 ```
-
-**Advanced Filtering**:
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 3,
-  "method": "resources/read",
-  "params": {
-    "uri": "commands?sessionId=sess-000001-abc12345&command=!analyze&limit=10&sortBy=createdAt&order=desc"
-  }
-}
-```
-
-**Filter Parameters**:
-- `sessionId`: Filter by specific session ID
-- `command`: Filter by command text (case-insensitive substring match)
-- `from`: Filter commands created from this DateTime (ISO 8601 format)
-- `to`: Filter commands created until this DateTime (ISO 8601 format)
-- `limit`: Maximum number of results to return
-- `offset`: Number of results to skip (for pagination)
-- `sortBy`: Sort field: `command`, `status`, `createdAt` (default: `createdAt`)
-- `order`: Sort order: `asc`, `desc` (default: `desc`)
 
 ## 📚 Documentation Resources
 
