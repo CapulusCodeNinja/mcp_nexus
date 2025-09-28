@@ -93,30 +93,11 @@ namespace mcp_nexus.CommandQueue
             m_logger.LogInformation("Queued command {CommandId}: {Command}", commandId, command);
             m_logger.LogDebug("Queue depth: {QueueDepth}", m_commandQueue.Count);
 
-            // IMPROVED: Better fire-and-forget with proper task tracking
+            // NOTIFICATION: Send queued notification (fire-and-forget)
             if (m_notificationService != null)
             {
-                var notificationTask = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await m_notificationService.NotifyCommandStatusAsync(
-                            commandId, command, "queued", 0, "Command queued for execution");
-                    }
-                    catch (Exception ex)
-                    {
-                        m_logger.LogWarning(ex, "Failed to send queued notification for command {CommandId}", commandId);
-                    }
-                }, CancellationToken.None);
-
-                // Track the task to prevent unobserved exceptions
-                _ = notificationTask.ContinueWith(t =>
-                {
-                    if (t.IsFaulted)
-                    {
-                        m_logger.LogError(t.Exception?.GetBaseException(), "Notification task failed for command {CommandId}", commandId);
-                    }
-                }, TaskContinuationOptions.OnlyOnFaulted);
+                NotificationHelper.NotifyCommandStatusFireAndForget(
+                    m_notificationService, m_logger, commandId, command, "queued", 0, "Command queued for execution");
             }
 
             return commandId;
@@ -356,22 +337,12 @@ namespace mcp_nexus.CommandQueue
             m_logger.LogInformation("Executing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
             m_logger.LogDebug("Command wait time: {WaitTime:F1}s", waitTime);
 
-            // FIXED: Proper fire-and-forget with error handling
-            _ = Task.Run(async () =>
+            // NOTIFICATION: Send executing notification (fire-and-forget)
+            if (m_notificationService != null)
             {
-                try
-                {
-                    if (m_notificationService != null)
-                    {
-                        await m_notificationService.NotifyCommandStatusAsync(
-                            queuedCommand.Id, queuedCommand.Command, "executing", 10, "Command started execution");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    m_logger.LogWarning(ex, "Failed to send executing notification for command {CommandId}", queuedCommand.Id);
-                }
-            }, CancellationToken.None);
+                NotificationHelper.NotifyCommandStatusFireAndForget(
+                    m_notificationService, m_logger, queuedCommand.Id, queuedCommand.Command, "executing", 10, "Command started execution");
+            }
 
             // Determine timeout based on command complexity
             var timeout = DetermineCommandTimeout(queuedCommand.Command);
@@ -458,22 +429,12 @@ namespace mcp_nexus.CommandQueue
 
                 LogConcurrencyStats();
 
-                // Send completion notification
-                _ = Task.Run(async () =>
+                // NOTIFICATION: Send completion notification (fire-and-forget)
+                if (m_notificationService != null)
                 {
-                    try
-                    {
-                        if (m_notificationService != null)
-                        {
-                            await m_notificationService.NotifyCommandStatusAsync(
-                                queuedCommand.Id, queuedCommand.Command, "completed", 100, "Command completed successfully", result);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        m_logger.LogWarning(ex, "Failed to send completion notification for command {CommandId}", queuedCommand.Id);
-                    }
-                });
+                    NotificationHelper.NotifyCommandStatusFireAndForget(
+                        m_notificationService, m_logger, queuedCommand.Id, queuedCommand.Command, "completed", 100, "Command completed successfully", result);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -488,23 +449,13 @@ namespace mcp_nexus.CommandQueue
 
                 LogConcurrencyStats();
 
-                // Send cancellation notification
-                _ = Task.Run(async () =>
+                // NOTIFICATION: Send cancellation notification (fire-and-forget)
+                if (m_notificationService != null)
                 {
-                    try
-                    {
-                        if (m_notificationService != null)
-                        {
-                            await m_notificationService.NotifyCommandStatusAsync(
-                                queuedCommand.Id, queuedCommand.Command, "cancelled", progress: null,
-                                message: "Command execution was cancelled", result: null, error: null);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        m_logger.LogWarning(ex, "Failed to send cancellation notification for command {CommandId}", queuedCommand.Id);
-                    }
-                });
+                    NotificationHelper.NotifyCommandStatusFireAndForget(
+                        m_notificationService, m_logger, queuedCommand.Id, queuedCommand.Command, "cancelled", 
+                        progress: 0, message: "Command execution was cancelled", result: null, error: null);
+                }
             }
             catch (Exception ex)
             {
@@ -523,22 +474,13 @@ namespace mcp_nexus.CommandQueue
 
                 LogConcurrencyStats();
 
-                // Send error notification
-                _ = Task.Run(async () =>
+                // NOTIFICATION: Send error notification (fire-and-forget)
+                if (m_notificationService != null)
                 {
-                    try
-                    {
-                        if (m_notificationService != null)
-                        {
-                            await m_notificationService.NotifyCommandStatusAsync(
-                                queuedCommand.Id, queuedCommand.Command, "failed", null, "Command execution failed", null, ex.Message);
-                        }
-                    }
-                    catch (Exception notificationEx)
-                    {
-                        m_logger.LogWarning(notificationEx, "Failed to send error notification for command {CommandId}", queuedCommand.Id);
-                    }
-                });
+                    NotificationHelper.NotifyCommandStatusFireAndForget(
+                        m_notificationService, m_logger, queuedCommand.Id, queuedCommand.Command, "failed", 
+                        progress: 0, message: "Command execution failed", result: null, error: ex.Message);
+                }
             }
             finally
             {

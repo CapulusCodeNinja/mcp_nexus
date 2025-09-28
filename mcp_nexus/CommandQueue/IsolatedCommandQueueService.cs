@@ -126,20 +126,8 @@ namespace mcp_nexus.CommandQueue
                 m_logger.LogTrace("🔄 BlockingCollection state after add - IsAddingCompleted: {IsAddingCompleted}, Count: {Count} for session {SessionId}", 
                     m_commandQueue.IsAddingCompleted, m_commandQueue.Count, m_sessionId);
 
-                // NOTIFICATION: Send queued notification (async)
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await m_notificationService.NotifyCommandStatusAsync(
-                            m_sessionId, commandId, command, "queued",
-                            result: null, progress: 0);
-                    }
-                    catch (Exception ex)
-                    {
-                        m_logger.LogWarning(ex, "Failed to send queued notification for command {CommandId}", commandId);
-                    }
-                }, CancellationToken.None);
+                // NOTIFICATION: Send queued notification (fire-and-forget)
+                NotifyCommandStatusFireAndForget(commandId, command, "queued", result: null, progress: 0);
 
                 m_logger.LogInformation("📋 Command {CommandId} queued in session {SessionId} (timeout: {TimeoutMinutes} minutes)",
                     commandId, m_sessionId, m_defaultCommandTimeout.TotalMinutes);
@@ -562,9 +550,9 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                // NOTIFICATION: Notify execution start
+                // NOTIFICATION: Notify execution start (fire-and-forget to avoid blocking)
                 m_logger.LogTrace("🔄 Sending execution notification for command {CommandId} in session {SessionId}", command.Id, m_sessionId);
-                await NotifyCommandStatus(command, "executing", progress: 0);
+                NotifyCommandStatusFireAndForget(command, "executing", progress: 0);
 
                 // EXECUTION: Execute with timeout and cancellation
                 m_logger.LogTrace("🔄 Creating cancellation tokens for command {CommandId} in session {SessionId} (timeout: {TimeoutMs}ms)", 
@@ -640,22 +628,20 @@ namespace mcp_nexus.CommandQueue
                 {
                     await Task.Delay(m_heartbeatInterval, cancellationToken);
 
-                    // Send heartbeat notification
-                    try
-                    {
-                        await m_notificationService.NotifyCommandHeartbeatAsync(
-                            m_sessionId, command.Id, command.Command, stopwatch.Elapsed);
-                    }
-                    catch (Exception ex)
-                    {
-                        m_logger.LogWarning(ex, "Failed to send heartbeat for command {CommandId}", command.Id);
-                    }
+                    // Send heartbeat notification (fire-and-forget)
+                    NotifyCommandHeartbeatFireAndForget(command, stopwatch.Elapsed);
                 }
             }
             catch (OperationCanceledException)
             {
                 // Expected when command completes
             }
+        }
+
+        private void NotifyCommandHeartbeatFireAndForget(QueuedCommand command, TimeSpan elapsed)
+        {
+            NotificationHelper.NotifyCommandHeartbeatFireAndForget(
+                m_notificationService, m_logger, m_sessionId, command.Id, command.Command, elapsed);
         }
 
         private void CompleteCommandSafely(QueuedCommand command, string result, CommandState state)
@@ -674,18 +660,8 @@ namespace mcp_nexus.CommandQueue
                 command.CompletionSource.TrySetResult(result);
 
                 // NOTIFICATION: Notify completion (fire-and-forget)
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        var progress = state == CommandState.Completed ? 100 : 0;
-                        await NotifyCommandStatus(updatedCommand, state.ToString().ToLowerInvariant(), result, progress);
-                    }
-                    catch (Exception ex)
-                    {
-                        m_logger.LogWarning(ex, "Failed to send completion notification for command {CommandId}", command.Id);
-                    }
-                }, CancellationToken.None);
+                var progress = state == CommandState.Completed ? 100 : 0;
+                NotifyCommandStatusFireAndForget(updatedCommand, state.ToString().ToLowerInvariant(), result, progress);
             }
             catch (Exception ex)
             {
@@ -693,17 +669,16 @@ namespace mcp_nexus.CommandQueue
             }
         }
 
-        private async Task NotifyCommandStatus(QueuedCommand command, string status, string? result = null, int progress = 0)
+        private void NotifyCommandStatusFireAndForget(QueuedCommand command, string status, string? result = null, int progress = 0)
         {
-            try
-            {
-                await m_notificationService.NotifyCommandStatusAsync(
-                    m_sessionId, command.Id, command.Command, status, result, progress);
-            }
-            catch (Exception ex)
-            {
-                m_logger.LogWarning(ex, "Failed to send status notification for command {CommandId}", command.Id);
-            }
+            NotificationHelper.NotifyCommandStatusFireAndForget(
+                m_notificationService, m_logger, m_sessionId, command.Id, command.Command, status, result, progress);
+        }
+
+        private void NotifyCommandStatusFireAndForget(string commandId, string command, string status, string? result = null, int progress = 0)
+        {
+            NotificationHelper.NotifyCommandStatusFireAndForget(
+                m_notificationService, m_logger, m_sessionId, commandId, command, status, result, progress);
         }
 
         private void ThrowIfDisposed()
