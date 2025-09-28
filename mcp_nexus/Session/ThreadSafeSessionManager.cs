@@ -92,8 +92,11 @@ namespace mcp_nexus.Session
             ThrowIfDisposed();
 
             // VALIDATION: Early parameter validation (no locks needed)
+            if (dumpPath == null)
+                throw new ArgumentNullException(nameof(dumpPath));
+            
             if (string.IsNullOrWhiteSpace(dumpPath))
-                throw new ArgumentException("Dump path cannot be null or empty", nameof(dumpPath));
+                throw new ArgumentException("Dump path cannot be empty or whitespace", nameof(dumpPath));
 
             if (!File.Exists(dumpPath))
                 throw new FileNotFoundException($"Dump file not found: {dumpPath}");

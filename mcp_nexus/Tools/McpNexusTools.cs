@@ -24,23 +24,23 @@ namespace mcp_nexus.Tools
         [McpServerTool, Description("🚀 OPEN SESSION: Create a new debugging session for a crash dump file. Returns sessionId that MUST be used for all subsequent operations.")]
         public static async Task<object> nexus_open_dump_analyze_session(
             IServiceProvider serviceProvider,
-            [Description("Full path to the crash dump file (.dmp)")] string dumpFilePath,
+            [Description("Full path to the crash dump file (.dmp)")] string dumpPath,
             [Description("Optional path to symbol files directory")] string? symbolsPath = null)
         {
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
             var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
 
-            logger.LogInformation("🔓 Opening new debugging session for dump: {DumpPath}", dumpFilePath);
+            logger.LogInformation("🔓 Opening new debugging session for dump: {DumpPath}", dumpPath);
 
             try
             {
-                var sessionId = await sessionManager.CreateSessionAsync(dumpFilePath, symbolsPath);
+                var sessionId = await sessionManager.CreateSessionAsync(dumpPath, symbolsPath);
                 var context = sessionManager.GetSessionContext(sessionId);
 
                 var response = new
                 {
                     sessionId = sessionId,
-                    dumpFile = Path.GetFileName(dumpFilePath),
+                    dumpFile = Path.GetFileName(dumpPath),
                     commandId = (string?)null,
                     success = true,
                     operation = "nexus_open_dump_analyze_session",
@@ -68,12 +68,12 @@ namespace mcp_nexus.Tools
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to create debugging session for {DumpPath}", dumpFilePath);
+                logger.LogError(ex, "Failed to create debugging session for {DumpPath}", dumpPath);
 
                 var errorResponse = new
                 {
                     sessionId = (string?)null,
-                    dumpFile = Path.GetFileName(dumpFilePath),
+                    dumpFile = Path.GetFileName(dumpPath),
                     commandId = (string?)null,
                     success = false,
                     operation = "nexus_open_dump_analyze_session",
