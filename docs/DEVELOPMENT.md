@@ -10,29 +10,32 @@ MCP Nexus is built with a modular architecture designed for Windows crash dump a
 
 ### Core Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    AI Integration Layer                     │
-├─────────────────────────────────────────────────────────────┤
-│  MCP Protocol Handler  │  Real-time Notifications  │  AI   │
-│                        │                           │ Client│
-└─────────────────────────────────────────────────────────────┘
-                                │
-┌─────────────────────────────────────────────────────────────┐
-│                 Analysis Engine Core                        │
-├─────────────────────────────────────────────────────────────┤
-│  Crash Analysis  │  Memory Analysis  │  Thread Analysis    │
-│  Performance     │  Pattern          │  Workflow           │
-│  Analysis        │  Recognition      │  Engine             │
-└─────────────────────────────────────────────────────────────┘
-                                │
-┌─────────────────────────────────────────────────────────────┐
-│              Microsoft Debugging Tools Integration         │
-├─────────────────────────────────────────────────────────────┤
-│  WinDBG/CDB Wrapper  │  Symbol Resolution  │  Command Queue │
-│  Process Management  │  Error Handling     │  Result Cache  │
-└─────────────────────────────────────────────────────────────┘
-```
+#### AI Integration Layer
+| Component | Description |
+|-----------|-------------|
+| **MCP Protocol Handler** | Handles Model Context Protocol communication |
+| **Real-time Notifications** | Live progress updates during analysis |
+| **AI Client** | Interface for AI-powered analysis requests |
+
+#### Analysis Engine Core
+| Component | Description |
+|-----------|-------------|
+| **Crash Analysis** | Core crash dump processing and analysis |
+| **Memory Analysis** | Memory corruption and leak detection |
+| **Thread Analysis** | Thread state and deadlock analysis |
+| **Performance Analysis** | Performance bottleneck identification |
+| **Pattern Recognition** | Common crash pattern detection |
+| **Workflow Engine** | Orchestrates analysis workflows |
+
+#### Microsoft Debugging Tools Integration
+| Component | Description |
+|-----------|-------------|
+| **WinDBG/CDB Wrapper** | Interface to Microsoft debugging tools |
+| **Symbol Resolution** | Symbol loading and resolution |
+| **Command Queue** | Asynchronous command execution |
+| **Process Management** | Process attachment and control |
+| **Error Handling** | Robust error recovery and logging |
+| **Result Cache** | Cached analysis results for performance |
 
 ### Component Details
 
@@ -46,7 +49,7 @@ MCP Nexus is built with a modular architecture designed for Windows crash dump a
 - **Memory Analysis**: Heap corruption, memory leaks, and allocation analysis
 - **Thread Analysis**: Deadlock detection and synchronization issue analysis
 - **Performance Analysis**: CPU usage, resource exhaustion, and bottleneck identification
-- **Pattern Recognition**: AI-powered identification of common crash patterns
+- **Pattern Recognition**: Identification of common crash patterns
 - **Workflow Engine**: Orchestrates complex analysis workflows
 
 #### Microsoft Debugging Tools Integration
@@ -97,7 +100,7 @@ MCP Nexus is built with a modular architecture designed for Windows crash dump a
 
 **Key Features**:
 - Multi-step analysis workflows
-- AI-powered pattern recognition
+- Pattern recognition
 - Structured result generation
 - Comprehensive reporting
 
@@ -125,7 +128,7 @@ Add tool definition to `McpToolDefinitionService`:
 new McpToolSchema
 {
     Name = "nexus_analyze_memory_corruption",
-    Description = "🔍 MEMORY ANALYSIS: Analyzes heap corruption and memory leaks with AI-powered pattern recognition",
+    Description = "🔍 MEMORY ANALYSIS: Analyzes heap corruption and memory leaks with pattern recognition",
     InputSchema = new
     {
         type = "object",
@@ -201,9 +204,6 @@ await _notificationService.NotifyCommandStatusAsync(
 Update dependency injection in `Program.cs`:
 
 ```csharp
-// Register new analysis service
-builder.Services.AddScoped<IMemoryAnalysisService, MemoryAnalysisService>();
-
 // Register tool execution
 builder.Services.AddScoped<IMcpToolExecutionService, McpToolExecutionService>();
 ```
@@ -276,10 +276,10 @@ dotnet test --filter "Notification" --logger "console;verbosity=minimal" --nolog
 ### Test Performance
 
 The test suite is optimized for speed:
-- **All tests**: ~4-5 seconds
-- **527 tests**: All using proper mocking for fast execution
+- **All tests**: ~56 seconds
+- **1,189 tests**: All using proper mocking for fast execution
 - **Coverage**: 46%+ line coverage with comprehensive analysis testing
-- **Analysis Tests**: 7 dedicated test classes for analysis functionality
+- **Analysis Tests**: 15 test categories covering all major functionality
 
 ### Analysis Testing
 
@@ -290,175 +290,6 @@ Comprehensive test coverage includes:
 - **Bridge Tests**: Stdio notification bridge functionality
 - **Mock Tests**: Proper mocking for fast test execution
 
-## 🔄 Adding New Analysis Workflows
-
-### 1. Define Workflow Schema
-
-Add workflow definition to `McpWorkflowService`:
-
-```csharp
-new AnalysisWorkflow
-{
-    Id = "driver-crash-analysis",
-    Name = "Driver Crash Analysis",
-    Description = "Comprehensive analysis workflow for kernel driver crashes",
-    Complexity = "Advanced",
-    EstimatedTime = "30-60 minutes",
-    Steps = new[]
-    {
-        new WorkflowStep
-        {
-            Step = 1,
-            Command = "!analyze -v",
-            Description = "Run comprehensive crash analysis",
-            ExpectedOutcome = "Identify crash type and driver involved"
-        },
-        new WorkflowStep
-        {
-            Step = 2,
-            Command = "!irql",
-            Description = "Check IRQL level and context",
-            ExpectedOutcome = "Understand system state at crash"
-        },
-        new WorkflowStep
-        {
-            Step = 3,
-            Command = "lm",
-            Description = "List loaded modules and drivers",
-            ExpectedOutcome = "Identify problematic driver"
-        }
-    },
-    CommonIssues = new[]
-    {
-        "Driver memory corruption",
-        "IRQL not less than or equal",
-        "Driver timeout",
-        "System instability"
-    }
-}
-```
-
-### 2. Implement Workflow Logic
-
-Add workflow execution to `AnalysisWorkflowService`:
-
-```csharp
-public async Task<AnalysisResult> ExecuteDriverCrashAnalysisAsync(
-    string sessionId, string workflowId, CancellationToken cancellationToken)
-{
-    var workflow = GetWorkflow(workflowId);
-    var results = new List<CommandResult>();
-    
-    foreach (var step in workflow.Steps)
-    {
-        await _notificationService.NotifyWorkflowProgressAsync(
-            sessionId, workflowId, step.Step, workflow.Steps.Length, 
-            $"Executing step {step.Step}: {step.Description}");
-        
-        var result = await ExecuteWorkflowStep(sessionId, step, cancellationToken);
-        results.Add(result);
-        
-        if (!result.Success)
-        {
-            break; // Stop on first failure
-        }
-    }
-    
-    return new AnalysisResult
-    {
-        WorkflowId = workflowId,
-        SessionId = sessionId,
-        Steps = results,
-        Success = results.All(r => r.Success),
-        CompletedAt = DateTime.UtcNow
-    };
-}
-```
-
-### 3. Add Workflow Notifications
-
-```csharp
-// Workflow start
-await _notificationService.NotifyWorkflowStartedAsync(
-    sessionId, workflowId, "Driver Crash Analysis");
-
-// Step progress
-await _notificationService.NotifyWorkflowProgressAsync(
-    sessionId, workflowId, currentStep, totalSteps, 
-    $"Executing step {currentStep}: {stepDescription}");
-
-// Workflow completion
-await _notificationService.NotifyWorkflowCompletedAsync(
-    sessionId, workflowId, success, results);
-```
-
-## 🔧 Adding New Analysis Patterns
-
-### 1. Define Pattern Schema
-
-Add pattern definition to `AnalysisPatternService`:
-
-```csharp
-new AnalysisPattern
-{
-    Id = "buffer-overflow",
-    Name = "Buffer Overflow",
-    ExceptionCode = "0xC0000005",
-    Description = "Buffer overflow causing access violation",
-    CommonCauses = new[]
-    {
-        "Insufficient bounds checking",
-        "Unsafe string operations",
-        "Array index out of bounds",
-        "Stack overflow"
-    },
-    AnalysisCommands = new[]
-    {
-        "!analyze -v",
-        "kb",
-        "!address",
-        "!heap -p -a"
-    },
-    Severity = "High",
-    Frequency = "Very Common",
-    PreventionStrategies = new[]
-    {
-        "Use bounds checking",
-        "Implement stack canaries",
-        "Use safe string functions",
-        "Enable compiler security features"
-    }
-}
-```
-
-### 2. Implement Pattern Recognition
-
-Add pattern recognition logic to `PatternRecognitionService`:
-
-```csharp
-public async Task<PatternMatch> RecognizePatternAsync(
-    string sessionId, string analysisResult)
-{
-    var patterns = await GetAnalysisPatternsAsync();
-    var matches = new List<PatternMatch>();
-    
-    foreach (var pattern in patterns)
-    {
-        var confidence = CalculatePatternConfidence(analysisResult, pattern);
-        if (confidence > 0.7) // 70% confidence threshold
-        {
-            matches.Add(new PatternMatch
-            {
-                Pattern = pattern,
-                Confidence = confidence,
-                MatchedFeatures = ExtractMatchedFeatures(analysisResult, pattern)
-            });
-        }
-    }
-    
-    return matches.OrderByDescending(m => m.Confidence).FirstOrDefault();
-}
-```
 
 ## 📊 Performance Optimization
 
@@ -578,41 +409,6 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "mcp_nexus.dll"]
 ```
-
-## 🔮 Future Enhancements
-
-### Planned Features
-
-**AI Integration**:
-- Machine learning for pattern recognition
-- Automated analysis suggestions
-- Intelligent workflow selection
-- Natural language analysis queries
-
-**Analysis Capabilities**:
-- Advanced memory analysis
-- Performance profiling
-- Security vulnerability detection
-- Automated report generation
-
-**Platform Improvements**:
-- Cloud-based analysis
-- Team collaboration features
-- Advanced visualization
-- Integration with CI/CD pipelines
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Add your analysis tool implementation
-4. Write comprehensive tests
-5. Update documentation
-6. Ensure all quality gates pass:
-   - ✅ Build with zero warnings
-   - ✅ All tests passing (527 tests)
-   - ✅ No excluded/disabled tests
-7. Submit a pull request
 
 ---
 

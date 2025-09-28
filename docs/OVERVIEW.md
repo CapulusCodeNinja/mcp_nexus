@@ -6,7 +6,7 @@
 
 ## 🎯 What is MCP Nexus?
 
-MCP Nexus is a revolutionary platform that bridges the gap between complex Windows debugging and AI-powered analysis. It transforms the traditionally complex and time-consuming process of crash dump analysis into an intelligent, automated workflow that AI systems can understand and execute.
+MCP Nexus is a platform that provides structured access to Windows debugging tools through the Model Context Protocol. It makes crash dump analysis more accessible by providing standardized tools and real-time progress tracking.
 
 ### The Problem We Solve
 
@@ -18,46 +18,49 @@ MCP Nexus is a revolutionary platform that bridges the gap between complex Windo
 - 🔧 **Tool Complexity**: WinDBG/CDB have steep learning curves
 
 **MCP Nexus Solution:**
-- 🤖 **AI-Powered**: Leverages AI to understand and execute analysis workflows
-- ⚡ **Automated**: Reduces analysis time from hours to minutes
-- 📚 **Structured Results**: Provides consistent, AI-friendly output formats
-- 🔄 **Real-time Updates**: Live progress tracking and intelligent notifications
+- 🔧 **Structured Access**: Provides standardized tools for debugging operations
+- ⚡ **Real-time Updates**: Live progress tracking and notifications
+- 📚 **Consistent Results**: Provides structured output formats
+- 🔄 **MCP Integration**: Works with AI clients through Model Context Protocol
 - 🛠️ **Professional Tools**: Built on Microsoft's industry-standard debugging infrastructure
 
 ## 🏗️ Architecture Overview
 
 ### Core Components
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    AI Integration Layer                     │
-├─────────────────────────────────────────────────────────────┤
-│  MCP Protocol Handler  │  Real-time Notifications  │  AI   │
-│                        │                           │ Client│
-└─────────────────────────────────────────────────────────────┘
-                                │
-┌─────────────────────────────────────────────────────────────┐
-│                 Analysis Engine Core                        │
-├─────────────────────────────────────────────────────────────┤
-│  Crash Analysis  │  Memory Analysis  │  Thread Analysis    │
-│  Performance     │  Pattern          │  Workflow           │
-│  Analysis        │  Recognition      │  Engine             │
-└─────────────────────────────────────────────────────────────┘
-                                │
-┌─────────────────────────────────────────────────────────────┐
-│              Microsoft Debugging Tools Integration         │
-├─────────────────────────────────────────────────────────────┤
-│  WinDBG/CDB Wrapper  │  Symbol Resolution  │  Command Queue │
-│  Process Management  │  Error Handling     │  Result Cache  │
-└─────────────────────────────────────────────────────────────┘
-```
+#### AI Integration Layer
+| Component | Description |
+|-----------|-------------|
+| **MCP Protocol Handler** | Handles Model Context Protocol communication |
+| **Real-time Notifications** | Live progress updates during analysis |
+| **AI Client** | Interface for AI-powered analysis requests |
+
+#### Analysis Engine Core
+| Component | Description |
+|-----------|-------------|
+| **Crash Analysis** | Core crash dump processing and analysis |
+| **Memory Analysis** | Memory corruption and leak detection |
+| **Thread Analysis** | Thread state and deadlock analysis |
+| **Performance Analysis** | Performance bottleneck identification |
+| **Pattern Recognition** | Common crash pattern detection |
+| **Workflow Engine** | Orchestrates analysis workflows |
+
+#### Microsoft Debugging Tools Integration
+| Component | Description |
+|-----------|-------------|
+| **WinDBG/CDB Wrapper** | Interface to Microsoft debugging tools |
+| **Symbol Resolution** | Symbol loading and resolution |
+| **Command Queue** | Asynchronous command execution |
+| **Process Management** | Process attachment and control |
+| **Error Handling** | Robust error recovery and logging |
+| **Result Cache** | Cached analysis results for performance |
 
 ### Analysis Workflow
 
 1. **📁 Dump Ingestion**: Load crash dump files (.dmp, .mdmp, etc.)
 2. **🔍 Initial Analysis**: Run automated analysis commands
 3. **📊 Pattern Recognition**: Identify common crash patterns and causes
-4. **🧠 AI Processing**: AI interprets results and suggests next steps
+4. **📊 Analysis Processing**: Structured analysis of crash dump data
 5. **📋 Report Generation**: Create structured analysis reports
 6. **🎯 Root Cause Identification**: Pinpoint the exact cause of the crash
 
@@ -230,19 +233,6 @@ graph TD
 - **Resource Cleanup**: Automatic cleanup of analysis resources
 - **Error Recovery**: Robust error handling and recovery mechanisms
 
-## 🔮 Future Roadmap
-
-### Planned Features
-- **Machine Learning Integration**: AI-powered pattern recognition and analysis
-- **Advanced Workflows**: More sophisticated analysis workflows
-- **Cloud Integration**: Cloud-based analysis and reporting
-- **Team Collaboration**: Multi-user analysis and sharing capabilities
-
-### Extensibility
-- **Plugin System**: Extensible architecture for custom analysis tools
-- **Custom Workflows**: User-defined analysis workflows
-- **API Integration**: Integration with external analysis tools
-- **Reporting**: Advanced reporting and visualization capabilities
 
 ## 🎯 Getting Started
 
@@ -262,4 +252,4 @@ graph TD
 
 ---
 
-**MCP Nexus** - Transforming Windows crash analysis with AI-powered insights and professional debugging tools.
+**MCP Nexus** - Professional Windows crash dump analysis using Microsoft debugging tools.

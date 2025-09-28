@@ -274,6 +274,7 @@ dotnet run --project mcp_nexus/mcp_nexus.csproj -- --cdb-path "C:\Program Files\
 [![Tests](https://img.shields.io/badge/tests-1,189%20passing-brightgreen?style=flat-square)](https://github.com/your-username/mcp_nexus)
 [![Coverage](https://img.shields.io/badge/coverage-46%25+-green?style=flat-square)](https://github.com/your-username/mcp_nexus)
 [![Build](https://img.shields.io/badge/build-0%20warnings-brightgreen?style=flat-square)](https://github.com/your-username/mcp_nexus)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
 
 ### Test Suite Overview
 
@@ -379,15 +380,25 @@ MCP Nexus
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+The Apache License 2.0 is a permissive open-source license that allows you to:
+- ✅ Use the software for any purpose
+- ✅ Distribute the software
+- ✅ Modify the software
+- ✅ Distribute modified versions
+- ✅ Use the software in commercial applications
+
+For more information, see the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) documentation.
 
 ## 🙏 Acknowledgments
 
 - [Model Context Protocol](https://modelcontextprotocol.io/) specification
-- Microsoft Windows Debugging Tools team
-- .NET and ASP.NET Core teams
-- Windows debugging community
+- [C# SDK for Model Context Protocol](https://github.com/modelcontextprotocol/csharp-sdk)
+- [ModelContextProtocol.AspNetCore NuGet package](https://www.nuget.org/packages/ModelContextProtocol.AspNetCore/absoluteLatest)
+- [Microsoft debugging tools](https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/)
+- [NLog](https://nlog-project.org/)
 
 ---
 
-**MCP Nexus** - Transforming Windows crash analysis with AI-powered insights and professional debugging tools.
+**MCP Nexus** - Professional Windows crash dump analysis using Microsoft debugging tools.
