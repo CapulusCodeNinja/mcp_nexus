@@ -82,7 +82,7 @@ namespace mcp_nexus.Recovery
                     m_timeouts.TryRemove(commandId, out _);
                     cts.Dispose();
                 }
-            }, cts.Token);
+            });
         }
 
         public void CancelCommandTimeout(string commandId)
