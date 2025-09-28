@@ -417,3 +417,7 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Code coverage reports
+coverage-report/
+TestResults/
