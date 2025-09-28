@@ -85,7 +85,7 @@ namespace mcp_nexus_tests.Models
             Assert.NotEmpty(version);
             
             // Should contain at least some numbers
-            Assert.True(version.Any(char.IsDigit));
+            Assert.Contains(version, c => char.IsDigit(c));
         }
 
         [Fact]
@@ -99,7 +99,7 @@ namespace mcp_nexus_tests.Models
             Assert.NotEmpty(version);
             
             // Should contain dots as separators
-            Assert.True(version.Contains("."));
+            Assert.Contains(".", version);
         }
 
         [Fact]

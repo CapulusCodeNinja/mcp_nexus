@@ -42,7 +42,7 @@ namespace mcp_nexus_tests.Security
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("AdvancedSecurityService initialized")),
                     It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
         }
 
@@ -99,7 +99,7 @@ namespace mcp_nexus_tests.Security
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Command passed security validation")),
                     It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
         }
 
@@ -137,7 +137,7 @@ namespace mcp_nexus_tests.Security
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Security validation failed for command")),
                     It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
         }
 
@@ -365,7 +365,7 @@ namespace mcp_nexus_tests.Security
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("File path validation failed")),
                     It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
         }
 
@@ -448,7 +448,7 @@ namespace mcp_nexus_tests.Security
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Invalid session ID format")),
                     It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
         }
 

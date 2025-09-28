@@ -1,32 +1,63 @@
 # Configuration Guide
 
-> 🏠 **[← Back to Main README](../README.md)** | 📚 **Other Docs:** [📋 Tools](TOOLS.md) | [📚 Resources](RESOURCES.md) | [🤖 Integration](INTEGRATION.md) | [👨‍💻 Development](DEVELOPMENT.md)
+**Windows Crash Dump Analysis Configuration**
 
-## Command Line Options
+> 🏠 **[← Back to Main README](../README.md)** | 📚 **Other Docs:** [🔍 Overview](OVERVIEW.md) | [📋 Tools](TOOLS.md) | [📚 Resources](RESOURCES.md) | [🤖 Integration](INTEGRATION.md) | [👨‍💻 Development](DEVELOPMENT.md)
 
-- `--http`: Run in HTTP transport mode
-- `--service`: Run in Windows service mode (implies --http)
+## 🚀 Quick Setup
+
+### Prerequisites
+- **Windows 10/11** or **Windows Server 2016+**
+- **.NET 8.0** or later
+- **Windows Debugging Tools** (WinDBG/CDB)
+- **Administrator privileges** (for system dump analysis)
+
+### Installation Steps
+
+1. **Install Windows Debugging Tools**:
+   ```bash
+   # Download from Microsoft
+   # Or install via Windows SDK
+   # Default location: C:\Program Files\Windows Kits\10\Debuggers\x64\
+   ```
+
+2. **Clone and Build MCP Nexus**:
+   ```bash
+   git clone https://github.com/your-username/mcp_nexus.git
+   cd mcp_nexus
+   dotnet build
+   ```
+
+3. **Configure AI Client** (see [Integration Guide](INTEGRATION.md))
+
+## ⚙️ Command Line Options
+
+### Basic Options
+- `--http`: Run in HTTP transport mode (for web integration)
+- `--service`: Run as Windows service (implies --http)
 - `--cdb-path <path>`: Custom path to CDB.exe for debugging tools
-- `--install`: Install MCP Nexus as Windows service (Windows only)
-- `--update`: Update existing Windows service files and restart (Windows only)
-- `--uninstall`: Uninstall MCP Nexus Windows service (Windows only)
-- `--force-uninstall`: Force uninstall service with registry cleanup (Windows only)
 - `--help`: Show command line help
 
-## Environment Variables
+### Service Management (Windows)
+- `--install`: Install MCP Nexus as Windows service
+- `--update`: Update existing Windows service files and restart
+- `--uninstall`: Uninstall MCP Nexus Windows service
+- `--force-uninstall`: Force uninstall with registry cleanup
 
+### Environment Variables
 - `MCP_NEXUS_CDB_PATH`: Default CDB.exe path
 - `MCP_NEXUS_LOG_LEVEL`: Logging level (Debug, Info, Warn, Error)
+- `MCP_NEXUS_SYMBOL_PATH`: Default symbol search path
 
-## Transport Modes
+## 🔧 Analysis Configuration
 
-## Application Settings (appsettings.json)
+### Application Settings (appsettings.json)
 
 MCP Nexus reads configuration from `appsettings.json` under the `McpNexus` root key.
 
-### Session Management
+#### Session Management
 
-Section: `McpNexus:SessionManagement`
+**Section**: `McpNexus:SessionManagement`
 
 ```json
 {
@@ -43,17 +74,17 @@ Section: `McpNexus:SessionManagement`
 }
 ```
 
-Notes:
-- `MaxConcurrentSessions` (>0): Max active sessions allowed. Set high (1000) since sessions are lightweight and auto-expire.
-- `SessionTimeoutMinutes` (>0): Idle timeout before auto-closing a session.
-- `CleanupIntervalMinutes` (>0): How often expired sessions are cleaned.
-- `DisposalTimeoutSeconds` (>0): Max time to dispose a session during cleanup.
-- `DefaultCommandTimeoutMinutes` (>0): Default per-session command timeout.
-- `MemoryCleanupThresholdMB` (>0): Memory threshold to trigger extra cleanup.
+**Configuration Details:**
+- `MaxConcurrentSessions` (>0): Maximum active analysis sessions
+- `SessionTimeoutMinutes` (>0): Idle timeout before auto-closing sessions
+- `CleanupIntervalMinutes` (>0): How often expired sessions are cleaned
+- `DisposalTimeoutSeconds` (>0): Max time to dispose a session during cleanup
+- `DefaultCommandTimeoutMinutes` (>0): Default per-session command timeout
+- `MemoryCleanupThresholdMB` (>0): Memory threshold to trigger extra cleanup
 
-### Debugging (CDB)
+#### Debugging Tools Configuration
 
-Section: `McpNexus:Debugging`
+**Section**: `McpNexus:Debugging`
 
 ```json
 {
@@ -64,62 +95,162 @@ Section: `McpNexus:Debugging`
       "SymbolServerTimeoutMs": 300000,
       "SymbolServerMaxRetries": 1,
       "SymbolSearchPath": "srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols",
-      "StartupDelayMs": 2000
+      "StartupDelayMs": 2000,
+      "EnableVerboseLogging": false,
+      "MaxDumpSizeMB": 2048,
+      "AutoSymbolLoading": true
     }
   }
 }
 ```
 
-Notes:
-- `CdbPath`: Optional absolute path to `cdb.exe`. CLI `--cdb-path` overrides.
-- `CommandTimeoutMs` (>0): Timeout for CDB operations.
-- `SymbolServerTimeoutMs` (>=0): Symbol fetch timeout.
-- `SymbolServerMaxRetries` (>=0): Retries for symbol server calls.
-- `SymbolSearchPath`: Windows symbol path (use doubled backslashes in JSON).
-- `StartupDelayMs`: Initial delay for CDB process startup.
+**Configuration Details:**
+- `CdbPath`: Optional absolute path to `cdb.exe` (CLI `--cdb-path` overrides)
+- `CommandTimeoutMs` (>0): Timeout for CDB operations (10 minutes default)
+- `SymbolServerTimeoutMs` (>=0): Symbol fetch timeout (5 minutes default)
+- `SymbolServerMaxRetries` (>=0): Retries for symbol server calls
+- `SymbolSearchPath`: Windows symbol path (use doubled backslashes in JSON)
+- `StartupDelayMs`: Initial delay for CDB process startup
+- `EnableVerboseLogging`: Enable detailed debugging output
+- `MaxDumpSizeMB`: Maximum dump file size to process (2GB default)
+- `AutoSymbolLoading`: Automatically load symbols during analysis
 
-> Validation: Options are validated at startup; invalid values will fail fast with a clear error.
+#### Analysis Configuration
 
-### Stdio Transport (Recommended)
-- **Protocol**: JSON-RPC over stdin/stdout
-- **Performance**: High performance, low latency
-- **Notifications**: Real-time via stdout
-- **Use Case**: Direct integration with AI tools
-- **Command**: `dotnet run --project mcp_nexus/mcp_nexus.csproj`
+**Section**: `McpNexus:Analysis`
 
-### HTTP Transport
-- **Protocol**: JSON-RPC over HTTP
-- **Endpoint**: `http://localhost:5000/mcp`
-- **Notifications**: Server-Sent Events (SSE) at `/mcp/notifications`
-- **Use Case**: Development, debugging, web integration
-- **Command**: `dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http`
+```json
+{
+  "McpNexus": {
+    "Analysis": {
+      "DefaultAnalysisCommands": [
+        "!analyze -v",
+        "!locks",
+        "!runaway",
+        "!memusage"
+      ],
+      "EnablePatternRecognition": true,
+      "AutoGenerateReports": true,
+      "ReportFormat": "json",
+      "IncludeStackTraces": true,
+      "IncludeMemoryAnalysis": true,
+      "IncludeThreadAnalysis": true
+    }
+  }
+}
+```
 
-## Debugging Tools Setup
+**Configuration Details:**
+- `DefaultAnalysisCommands`: Commands to run automatically on dump load
+- `EnablePatternRecognition`: Enable AI-powered pattern recognition
+- `AutoGenerateReports`: Automatically generate analysis reports
+- `ReportFormat`: Report format (json, xml, text)
+- `IncludeStackTraces`: Include stack trace analysis in reports
+- `IncludeMemoryAnalysis`: Include memory analysis in reports
+- `IncludeThreadAnalysis`: Include thread analysis in reports
 
-For Windows debugging capabilities:
+## 🔍 Symbol Server Configuration
 
-1. **Install Windows Debugging Tools**:
-   - Download from Microsoft
-   - Or install via Windows SDK
+### Microsoft Symbol Server
 
-2. **Configure CDB Path** (optional):
+**Default Configuration:**
+```json
+{
+  "SymbolSearchPath": "srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols"
+}
+```
+
+**Custom Symbol Servers:**
+```json
+{
+  "SymbolSearchPath": "srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols;srv*C:\\LocalSymbols*\\\\server\\symbols"
+}
+```
+
+### Symbol Server Setup
+
+1. **Create Symbol Directory**:
    ```bash
-   dotnet run --project mcp_nexus/mcp_nexus.csproj -- --cdb-path "C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe"
+   mkdir C:\Symbols
    ```
 
-3. **Automatic Detection**: If no path specified, the system searches:
-   - Windows Kits installation paths
-   - System PATH environment
-   - Common installation directories
+2. **Configure Symbol Path**:
+   ```json
+   {
+     "McpNexus": {
+       "Debugging": {
+         "SymbolSearchPath": "srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols"
+       }
+     }
+   }
+   ```
 
-## Windows Service Configuration
+3. **Test Symbol Loading**:
+   ```bash
+   # Run a test analysis to verify symbol loading
+   dotnet run --project mcp_nexus/mcp_nexus.csproj
+   ```
+
+## 🌐 Transport Modes
+
+### Stdio Transport (Recommended for AI)
+
+**Protocol**: JSON-RPC over stdin/stdout
+**Performance**: High performance, low latency
+**Notifications**: Real-time via stdout
+**Use Case**: Direct integration with AI tools like Cursor IDE
+
+**Command**:
+```bash
+dotnet run --project mcp_nexus/mcp_nexus.csproj
+```
+
+**Configuration**:
+```json
+{
+  "servers": {
+    "mcp-nexus": {
+      "command": "dotnet",
+      "args": ["run", "--project", "./mcp_nexus/mcp_nexus.csproj"],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+### HTTP Transport
+
+**Protocol**: JSON-RPC over HTTP
+**Endpoint**: `http://localhost:5000/mcp`
+**Notifications**: Server-Sent Events (SSE) at `/mcp/notifications`
+**Use Case**: Development, debugging, web integration
+
+**Command**:
+```bash
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http
+```
+
+**Configuration**:
+```json
+{
+  "servers": {
+    "mcp-nexus-http": {
+      "url": "http://localhost:5000/mcp",
+      "type": "http"
+    }
+  }
+}
+```
+
+## 🏃‍♂️ Windows Service Configuration
 
 ### Installation
+
 ```bash
 # Install as Windows service (requires administrator privileges)
 dotnet run --project mcp_nexus/mcp_nexus.csproj -- --install
 
-# Update existing Windows service (stop, update files, restart)
+# Update existing Windows service
 dotnet run --project mcp_nexus/mcp_nexus.csproj -- --update
 
 # Uninstall the Windows service
@@ -127,6 +258,7 @@ dotnet run --project mcp_nexus/mcp_nexus.csproj -- --uninstall
 ```
 
 ### Service Features
+
 - **Auto-start**: Service starts automatically on system boot
 - **HTTP Mode**: Service runs in HTTP transport mode with notifications
 - **Program Files**: Installed to `C:\Program Files\MCP-Nexus`
@@ -135,6 +267,7 @@ dotnet run --project mcp_nexus/mcp_nexus.csproj -- --uninstall
 - **Safe Updates**: Automatic backups to `C:\Program Files\MCP-Nexus\backups\[timestamp]`
 
 ### Service Management
+
 ```bash
 # Check service status
 sc query "MCP-Nexus"
@@ -148,11 +281,182 @@ sc stop "MCP-Nexus"
 # Notifications: http://localhost:5000/mcp/notifications
 ```
 
+## 🔧 Debugging Tools Setup
+
+### Windows Debugging Tools Installation
+
+1. **Download from Microsoft**:
+   - Visit [Windows SDK Downloads](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
+   - Download Windows 10/11 SDK
+   - Install with "Debugging Tools for Windows" option
+
+2. **Install via Windows SDK**:
+   ```bash
+   # Download Windows SDK installer
+   # Run installer and select "Debugging Tools for Windows"
+   ```
+
+3. **Verify Installation**:
+   ```bash
+   # Check if CDB is available
+   "C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe" -version
+   ```
+
+### CDB Path Configuration
+
+**Automatic Detection**:
+MCP Nexus automatically searches for CDB in:
+- Windows Kits installation paths
+- System PATH environment
+- Common installation directories
+
+**Manual Configuration**:
+```bash
+# Command line
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --cdb-path "C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe"
+
+# Environment variable
+set MCP_NEXUS_CDB_PATH=C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe
+
+# Configuration file
+{
+  "McpNexus": {
+    "Debugging": {
+      "CdbPath": "C:\\Program Files\\Windows Kits\\10\\Debuggers\\x64\\cdb.exe"
+    }
+  }
+}
+```
+
+## 📊 Performance Tuning
+
+### Memory Configuration
+
+**For Large Dump Files**:
+```json
+{
+  "McpNexus": {
+    "SessionManagement": {
+      "MemoryCleanupThresholdMB": 2048,
+      "MaxConcurrentSessions": 10
+    },
+    "Debugging": {
+      "MaxDumpSizeMB": 4096,
+      "CommandTimeoutMs": 1200000
+    }
+  }
+}
+```
+
+**For High-Volume Analysis**:
+```json
+{
+  "McpNexus": {
+    "SessionManagement": {
+      "MaxConcurrentSessions": 100,
+      "SessionTimeoutMinutes": 60,
+      "CleanupIntervalMinutes": 2
+    }
+  }
+}
+```
+
+### Symbol Server Optimization
+
+**Local Symbol Cache**:
+```json
+{
+  "McpNexus": {
+    "Debugging": {
+      "SymbolSearchPath": "srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols",
+      "SymbolServerTimeoutMs": 600000,
+      "SymbolServerMaxRetries": 3
+    }
+  }
+}
+```
+
+## 🔒 Security Configuration
+
+### File Access Permissions
+
+**Dump File Access**:
+- Ensure MCP Nexus has read access to dump files
+- For system dumps, run with administrator privileges
+- Consider using dedicated service account for production
+
+**Symbol Server Access**:
+- Configure firewall rules for symbol server access
+- Use HTTPS for symbol server connections
+- Consider proxy configuration for corporate environments
+
+### Service Account Configuration
+
+**Recommended Service Account**:
+- Create dedicated service account for MCP Nexus
+- Grant minimal required permissions
+- Configure for automatic logon if needed
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+**Symbol Loading Failures**:
+- Check symbol path configuration
+- Verify internet connectivity
+- Check firewall settings
+- Ensure sufficient disk space for symbol cache
+
+**Permission Errors**:
+- Run with administrator privileges
+- Check file access permissions
+- Verify service account permissions
+
+**Timeout Issues**:
+- Increase command timeout values
+- Check system resources
+- Verify dump file accessibility
+
+**Memory Issues**:
+- Increase memory limits
+- Reduce concurrent sessions
+- Check system available memory
+
+### Debugging Configuration
+
+**Enable Verbose Logging**:
+```json
+{
+  "McpNexus": {
+    "Debugging": {
+      "EnableVerboseLogging": true
+    }
+  }
+}
+```
+
+**Log Level Configuration**:
+```bash
+# Environment variable
+set MCP_NEXUS_LOG_LEVEL=Debug
+
+# Command line
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --log-level Debug
+```
+
+### Getting Help
+
+1. **Check Logs**: Review application logs for detailed error information
+2. **Test Manually**: Use WinDBG directly to verify dump accessibility
+3. **Read Documentation**: Check [🔍 Overview](OVERVIEW.md) for analysis guidance
+4. **Community Support**: Report issues on GitHub
+
 ---
 
 ## Next Steps
 
-- **📋 Tools:** [TOOLS.md](TOOLS.md) - Learn about available tools and notifications
-- **📚 Resources:** [RESOURCES.md](RESOURCES.md) - MCP Resources reference and usage patterns
-- **🤖 Integration:** [INTEGRATION.md](INTEGRATION.md) - Connect with AI tools like Cursor IDE
+- **🔍 Overview:** [OVERVIEW.md](OVERVIEW.md) - Understand the analysis capabilities
+- **📋 Tools:** [TOOLS.md](TOOLS.md) - Learn about available analysis tools
+- **📚 Resources:** [RESOURCES.md](RESOURCES.md) - MCP Resources reference
+- **🤖 Integration:** [INTEGRATION.md](INTEGRATION.md) - Set up AI integration
 - **👨‍💻 Development:** [DEVELOPMENT.md](DEVELOPMENT.md) - Understand the architecture

@@ -312,7 +312,7 @@ namespace mcp_nexus_tests.Metrics
         }
 
         [Fact]
-        public void GetMetricsSnapshot_IsThreadSafe()
+        public async Task GetMetricsSnapshot_IsThreadSafe()
         {
             // Arrange
             var tasks = new List<Task>();
@@ -330,7 +330,7 @@ namespace mcp_nexus_tests.Metrics
                 }));
             }
 
-            Task.WaitAll(tasks.ToArray());
+            await Task.WhenAll(tasks);
 
             // Assert
             var snapshot = m_metricsService.GetMetricsSnapshot();

@@ -22,7 +22,7 @@ namespace mcp_nexus_tests.Session
         private readonly Mock<ILogger> _mockSessionLogger;
         private readonly SessionConfiguration _config;
         private readonly CdbSessionOptions _cdbOptions;
-        private ThreadSafeSessionManager? _sessionManager;
+        private ThreadSafeSessionManager _sessionManager = null!;
 
         public ThreadSafeSessionManagerTests()
         {

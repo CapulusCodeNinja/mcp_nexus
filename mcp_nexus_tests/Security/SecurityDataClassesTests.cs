@@ -191,7 +191,7 @@ namespace mcp_nexus_tests.Security
             }
             else
             {
-                Assert.True(false, "Valid result should be valid");
+                Assert.Fail("Valid result should be valid");
             }
 
             if (!invalidResult.IsValid)
@@ -200,7 +200,7 @@ namespace mcp_nexus_tests.Security
             }
             else
             {
-                Assert.True(false, "Invalid result should be invalid");
+                Assert.Fail("Invalid result should be invalid");
             }
         }
 

@@ -6,12 +6,14 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using mcp_nexus.Infrastructure;
+using System.Runtime.Versioning;
 
 namespace mcp_nexus_tests.Infrastructure
 {
     /// <summary>
     /// Comprehensive tests for WindowsServiceInstaller - tests service installation and management
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class WindowsServiceInstallerTests
     {
         private readonly Mock<ILogger> m_mockLogger;
@@ -472,7 +474,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Act & Assert
             foreach (var method in publicMethods)
             {
-                Assert.True(method.Name.EndsWith("Async"));
+                Assert.EndsWith("Async", method.Name);
                 Assert.True(method.ReturnType.IsGenericType);
                 Assert.Equal(typeof(Task<>), method.ReturnType.GetGenericTypeDefinition());
             }

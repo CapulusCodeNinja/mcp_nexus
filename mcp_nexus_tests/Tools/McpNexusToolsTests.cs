@@ -389,7 +389,7 @@ namespace mcp_nexus_tests.Tools
 
             m_mockSessionManager
                 .Setup(x => x.GetSessionContext(sessionId))
-                .Returns((SessionContext?)null);
+                .Returns((SessionContext?)null!);
 
             // Act
             var result = await McpNexusTools.nexus_enqueue_async_dump_analyze_command(

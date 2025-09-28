@@ -199,7 +199,7 @@ namespace mcp_nexus_tests.Resilience
         }
 
         [Fact]
-        public void Reset_ResetsCircuitToClosed()
+        public async Task Reset_ResetsCircuitToClosed()
         {
             // Arrange
             var operation = new Func<Task<string>>(() => throw new InvalidOperationException("Test exception"));
@@ -207,7 +207,7 @@ namespace mcp_nexus_tests.Resilience
             // Act - Cause circuit to open
             for (int i = 0; i < 3; i++)
             {
-                try { m_circuitBreaker.ExecuteAsync(operation, "test-operation").Wait(); } catch { }
+                try { await m_circuitBreaker.ExecuteAsync(operation, "test-operation"); } catch { }
             }
 
             Assert.Equal(CircuitState.Open, m_circuitBreaker.GetState());

@@ -1,186 +1,303 @@
 # Available Tools
 
-> 🏠 **[← Back to Main README](../README.md)** | 📚 **Other Docs:** [🔧 Configuration](CONFIGURATION.md) | [🤖 Integration](INTEGRATION.md) | [👨‍💻 Development](DEVELOPMENT.md)
+**Windows Crash Dump Analysis Tools**
 
-## Debugging Tools (10 tools)
+> 🏠 **[← Back to Main README](../README.md)** | 📚 **Other Docs:** [🔍 Overview](OVERVIEW.md) | [📚 Resources](RESOURCES.md) | [🔧 Configuration](CONFIGURATION.md) | [🤖 Integration](INTEGRATION.md) | [👨‍💻 Development](DEVELOPMENT.md)
 
-Windows debugging capabilities through WinDBG/CDB integration:
+## 🛠️ Tool Categories
 
-### Tools vs Resources
+### Core Analysis Tools
+- **Session Management**: Open, close, and manage crash dump analysis sessions
+- **Command Execution**: Execute debugging commands with real-time progress tracking
+- **Result Retrieval**: Get analysis results and command outputs
+- **Session Monitoring**: Track active sessions and command status
 
-**TOOLS** (use `tools/call` method):
-- Execute actions: open sessions, run commands, close sessions
-- Examples: `nexus_open_dump_analyze_session`, `nexus_enqueue_async_dump_analyze_command`
+### Advanced Analysis Tools
+- **Remote Debugging**: Start and stop remote debugging sessions
+- **Command Management**: Cancel running commands and list available commands
+- **Resource Management**: Monitor system resources and cleanup
 
-**RESOURCES** (use `resources/read` method):
-- Access data: command results, session lists, documentation
-- Examples: `mcp://nexus/commands/result`, `mcp://nexus/sessions/list`, `mcp://nexus/docs/workflows`
+### MCP Resources
+- **Session Data**: List and query active analysis sessions
+- **Command Data**: Access command results and status information
+- **Documentation**: Access analysis workflows and usage guides
 
-**Common Mistake**: Don't use resource URIs as tool names!
+## 🔍 Core Analysis Tools
+
+### Session Management
+
+#### `nexus_open_dump_analyze_session`
+**Purpose**: Open a crash dump file for analysis
+**Category**: Session Management
+**Real-time**: ✅ Provides live progress updates
+
+**Parameters**:
+- `dumpPath` (string, required): Path to the crash dump file (.dmp, .mdmp, etc.)
+- `symbolsPath` (string, optional): Custom symbol search path
+- `timeoutMinutes` (number, optional): Session timeout in minutes (default: 30)
+
+**Example**:
 ```json
-// WRONG - This will fail
-{"method":"tools/call","params":{"name":"mcp://nexus/commands/result?sessionId=abc&commandId=cmd123"}}
-
-// CORRECT - Use resources/read for resources
-{"method":"resources/read","params":{"uri":"mcp://nexus/commands/result?sessionId=abc&commandId=cmd123"}}
+{
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_open_dump_analyze_session",
+    "arguments": {
+      "dumpPath": "C:\\crashes\\application.dmp",
+      "symbolsPath": "C:\\Symbols",
+      "timeoutMinutes": 60
+    }
+  }
+}
 ```
 
-### Core Debugging Commands
-- **Crash Dump Analysis**: `nexus_open_dump_analyze_session`, `nexus_close_dump_analyze_session`
-- **Session Management**: Available via MCP Resources (`mcp://nexus/sessions/list`, `mcp://nexus/commands/list`)
-- **Remote Debugging**: `nexus_start_remote_debug`, `nexus_stop_remote_debug`  
-- **Command Execution**: `nexus_enqueue_async_dump_analyze_command` (🔄 ASYNC QUEUE: Always returns commandId, use MCP Resources for results)
-- **Queue Management**: `nexus_debugger_command_cancel`, `nexus_list_debugger_commands`
-
-### 🔄 Complete Debugging Workflow
-
-**IMPORTANT**: All WinDBG commands use an async queue system with real-time notifications:
-
-```bash
-1. nexus_open_dump_analyze_session {"dumpPath": "C:\\crash.dmp"}
-   → Returns: {"sessionId": "sess-000001-abc12345-12345678-0001", ...}
-
-2. nexus_enqueue_async_dump_analyze_command {"sessionId": "sess-000001-abc12345-12345678-0001", "command": "!analyze -v"}
-   → Returns: {"commandId": "cmd-000001-abc12345-12345678-0001", "status": "queued", ...}
-
-3. Listen for real-time notifications:
-   → notifications/commandStatus: {"status": "executing", "progress": 25, ...}
-   → notifications/commandHeartbeat: {"elapsed": "30s", ...} (for long commands)
-   → notifications/commandStatus: {"status": "completed", "result": "ACTUAL_OUTPUT"}
-
-4. OR use MCP Resource: 
-   ```json
-   {"method":"resources/read","params":{"uri":"mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"}}
-   ```
-   → Returns: {"status": "executing", ...} (keep polling)
-   → Returns: {"status": "completed", "result": "ACTUAL_OUTPUT"}
-
-5. Use MCP Resources for session management:
-   ```json
-   // List all sessions
-   {"method":"resources/read","params":{"uri":"mcp://nexus/sessions/list"}}
-   
-   // List commands for a specific session
-   {"method":"resources/read","params":{"uri":"mcp://nexus/commands/list?sessionId=sess-000001-abc12345"}}
-   
-   // Get command result
-   {"method":"resources/read","params":{"uri":"mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-0001"}}
-   ```
-
-7. nexus_close_dump_analyze_session {"sessionId": "sess-000001-abc12345-12345678-0001"}
-   → Returns: {"success": true, ...} - Clean up resources
-```
-
-**⚠️ CRITICAL**: `nexus_enqueue_async_dump_analyze_command` NEVER returns command results directly. You MUST use MCP Resources (`mcp://nexus/commands/result`) to get results or listen for notifications!
-
-### 📋 Session Management (via MCP Resources)
-
-Session management is now available through MCP Resources for better integration and discoverability:
-
-#### Available Resources
-
-- **`mcp://nexus/sessions/list`** - List all active debugging sessions
-- **`mcp://nexus/commands/list`** - List commands from all sessions with advanced filtering (sessionId, command text, time range, pagination, sorting)  
-- **`mcp://nexus/commands/result`** - Get status and results of specific commands
-- **`mcp://nexus/docs/workflows`** - Comprehensive crash analysis workflows and examples
-- **`mcp://nexus/docs/usage`** - Complete usage guide for tools and resources
-
-#### How to Use Resources
-
-**1. List Active Sessions:**
+**Response**:
 ```json
-// MCP Request
 {
   "jsonrpc": "2.0",
   "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"sessionId\": \"sess-000001-abc12345-12345678-0001\",\n  \"dumpFile\": \"application.dmp\",\n  \"success\": true,\n  \"message\": \"Session created successfully\",\n  \"symbolsLoaded\": true,\n  \"dumpSize\": \"256MB\",\n  \"createdAt\": \"2024-01-15T10:00:00Z\"\n}"
+      }
+    ]
+  }
+}
+```
+
+#### `nexus_close_dump_analyze_session`
+**Purpose**: Close an analysis session and cleanup resources
+**Category**: Session Management
+**Real-time**: ✅ Provides cleanup progress updates
+
+**Parameters**:
+- `sessionId` (string, required): Session ID to close
+
+**Example**:
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_close_dump_analyze_session",
+    "arguments": {
+      "sessionId": "sess-000001-abc12345-12345678-0001"
+    }
+  }
+}
+```
+
+### Command Execution
+
+#### `nexus_enqueue_async_dump_analyze_command`
+**Purpose**: Execute debugging commands asynchronously with progress tracking
+**Category**: Command Execution
+**Real-time**: ✅ Provides live progress updates and notifications
+
+**Parameters**:
+- `sessionId` (string, required): Active session ID
+- `command` (string, required): WinDBG/CDB command to execute
+- `timeoutMinutes` (number, optional): Command timeout in minutes (default: 10)
+
+**Example**:
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_enqueue_async_dump_analyze_command",
+    "arguments": {
+      "sessionId": "sess-000001-abc12345-12345678-0001",
+      "command": "!analyze -v",
+      "timeoutMinutes": 15
+    }
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"sessionId\": \"sess-000001-abc12345-12345678-0001\",\n  \"commandId\": \"cmd-000001-abc12345-12345678-0001\",\n  \"success\": true,\n  \"message\": \"Command queued successfully\",\n  \"status\": \"queued\",\n  \"createdAt\": \"2024-01-15T10:00:00Z\"\n}"
+      }
+    ]
+  }
+}
+```
+
+#### `nexus_read_dump_analyze_command_result`
+**Purpose**: Get the result of a completed command
+**Category**: Command Execution
+**Real-time**: ❌ Synchronous operation
+
+**Parameters**:
+- `sessionId` (string, required): Active session ID
+- `commandId` (string, required): Command ID to get results for
+
+**Example**:
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_read_dump_analyze_command_result",
+    "arguments": {
+      "sessionId": "sess-000001-abc12345-12345678-0001",
+      "commandId": "cmd-000001-abc12345-12345678-0001"
+    }
+  }
+}
+```
+
+## 🔧 Advanced Analysis Tools
+
+### Remote Debugging
+
+#### `nexus_start_remote_debug`
+**Purpose**: Start a remote debugging session
+**Category**: Remote Debugging
+**Real-time**: ✅ Provides connection progress updates
+
+**Parameters**:
+- `targetMachine` (string, required): Target machine name or IP address
+- `port` (number, optional): Debug port (default: 5005)
+- `timeoutMinutes` (number, optional): Connection timeout in minutes (default: 5)
+
+**Example**:
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_start_remote_debug",
+    "arguments": {
+      "targetMachine": "192.168.1.100",
+      "port": 5005,
+      "timeoutMinutes": 10
+    }
+  }
+}
+```
+
+#### `nexus_stop_remote_debug`
+**Purpose**: Stop a remote debugging session
+**Category**: Remote Debugging
+**Real-time**: ✅ Provides disconnection progress updates
+
+**Parameters**:
+- `sessionId` (string, required): Remote debugging session ID
+
+### Command Management
+
+#### `nexus_debugger_command_cancel`
+**Purpose**: Cancel a running command
+**Category**: Command Management
+**Real-time**: ✅ Provides cancellation progress updates
+
+**Parameters**:
+- `sessionId` (string, required): Active session ID
+- `commandId` (string, required): Command ID to cancel
+
+#### `nexus_list_debugger_commands`
+**Purpose**: List available debugging commands
+**Category**: Command Management
+**Real-time**: ❌ Synchronous operation
+
+**Parameters**:
+- `sessionId` (string, optional): Filter commands for specific session
+- `category` (string, optional): Filter by command category
+
+## 📊 MCP Resources
+
+### Session Management Resources
+
+#### `mcp://nexus/sessions/list`
+**Purpose**: List all active analysis sessions
+**Category**: Session Data
+**Parameters**: None
+
+**Example**:
+```json
+{
   "method": "resources/read",
   "params": {
     "uri": "mcp://nexus/sessions/list"
   }
 }
+```
 
-// Response
+**Response**:
+```json
 {
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "contents": [{
-      "type": "text",
-      "text": "{\"sessions\": [...], \"count\": 2, \"timestamp\": \"2024-01-15T10:30:00Z\"}"
-    }]
+    "contents": [
+      {
+        "type": "text",
+        "text": "{\n  \"sessions\": [\n    {\n      \"sessionId\": \"sess-000001-abc12345-12345678-0001\",\n      \"dumpPath\": \"C:\\\\crashes\\\\application.dmp\",\n      \"isActive\": true,\n      \"status\": \"Active\",\n      \"createdAt\": \"2024-01-15T10:00:00Z\",\n      \"lastActivity\": \"2024-01-15T10:30:00Z\",\n      \"symbolsLoaded\": true,\n      \"dumpSize\": \"256MB\"\n    }\n  ],\n  \"count\": 1,\n  \"timestamp\": \"2024-01-15T10:30:00Z\"\n}"
+      }
+    ]
   }
 }
 ```
 
-**2. List Commands (All Sessions):**
-```json
-// MCP Request
-{
-  "jsonrpc": "2.0",
-  "id": 2,
-  "method": "resources/read", 
-  "params": {
-    "uri": "mcp://nexus/commands/list"
-  }
-}
-```
+### Command Management Resources
 
-**3. List Commands (Specific Session):**
+#### `mcp://nexus/commands/list`
+**Purpose**: List commands with advanced filtering options
+**Category**: Command Data
+**Parameters**: All optional
+- `sessionId`: Filter by specific session
+- `command`: Filter by command text
+- `from`: Filter by start time
+- `to`: Filter by end time
+- `limit`: Maximum results
+- `offset`: Skip results
+- `sortBy`: Sort field (command, status, createdAt)
+- `order`: Sort order (asc, desc)
+
+**Example**:
 ```json
-// MCP Request
 {
-  "jsonrpc": "2.0",
-  "id": 3,
   "method": "resources/read",
   "params": {
-    "uri": "mcp://nexus/commands/list?sessionId=sess-000001-abc12345"
+    "uri": "mcp://nexus/commands/list?sessionId=sess-000001-abc12345&limit=10&sortBy=createdAt&order=desc"
   }
 }
 ```
 
-**4. Get Command Result:**
+#### `mcp://nexus/commands/result`
+**Purpose**: Get detailed command results
+**Category**: Command Data
+**Parameters**: Required
+- `sessionId`: Session ID
+- `commandId`: Command ID
+
+**Example**:
 ```json
-// MCP Request
 {
-  "jsonrpc": "2.0",
-  "id": 4,
   "method": "resources/read",
   "params": {
     "uri": "mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"
   }
 }
-
-// Response (Command Completed)
-{
-  "jsonrpc": "2.0",
-  "id": 4,
-  "result": {
-    "contents": [{
-      "type": "text", 
-      "text": "{\"sessionId\": \"sess-000001-abc12345\", \"commandId\": \"cmd-000001-abc12345-12345678-0001\", \"status\": \"Completed\", \"result\": \"ACTUAL_WINDBG_OUTPUT\", \"timestamp\": \"2024-01-15T10:30:00Z\"}"
-    }]
-  }
-}
-
-// Response (Command In Progress)
-{
-  "jsonrpc": "2.0",
-  "id": 4,
-  "result": {
-    "contents": [{
-      "type": "text",
-      "text": "{\"sessionId\": \"sess-000001-abc12345\", \"commandId\": \"cmd-000001-abc12345-12345678-0001\", \"status\": \"In Progress\", \"result\": null, \"message\": \"Command is still executing - check again in a few seconds.\", \"timestamp\": \"2024-01-15T10:30:00Z\"}"
-    }]
-  }
-}
 ```
 
-**5. Get Crash Analysis Workflows:**
+### Documentation Resources
+
+#### `mcp://nexus/docs/workflows`
+**Purpose**: Access crash analysis workflows and patterns
+**Category**: Documentation
+**Parameters**: None
+
+**Example**:
 ```json
-// MCP Request
 {
-  "jsonrpc": "2.0",
-  "id": 5,
   "method": "resources/read",
   "params": {
     "uri": "mcp://nexus/docs/workflows"
@@ -188,81 +305,235 @@ Session management is now available through MCP Resources for better integration
 }
 ```
 
-**6. Get Usage Guide:**
-```json
-// MCP Request
-{
-  "jsonrpc": "2.0", 
-  "id": 6,
-  "method": "resources/read",
-  "params": {
-    "uri": "mcp://nexus/docs/usage"
-  }
-}
-```
+#### `mcp://nexus/docs/usage`
+**Purpose**: Access complete usage guide and examples
+**Category**: Documentation
+**Parameters**: None
 
-#### Resource Benefits
+## 🔄 Complete Analysis Workflow
 
-- **Better Integration**: Resources work seamlessly with MCP clients
-- **Structured Data**: JSON responses with consistent formatting
-- **Error Handling**: Clear error messages with helpful hints
-- **Real-time Updates**: Resources reflect current server state
-- **Documentation**: Built-in usage guides and workflows
+### Step-by-Step Process
 
-> 📚 **For detailed resource specifications and usage patterns:** **[📚 RESOURCES.md](RESOURCES.md)**
+1. **Open Analysis Session**:
+   ```json
+   {
+     "method": "tools/call",
+     "params": {
+       "name": "nexus_open_dump_analyze_session",
+       "arguments": {
+         "dumpPath": "C:\\crashes\\application.dmp"
+       }
+     }
+   }
+   ```
+
+2. **Execute Analysis Commands**:
+   ```json
+   {
+     "method": "tools/call",
+     "params": {
+       "name": "nexus_enqueue_async_dump_analyze_command",
+       "arguments": {
+         "sessionId": "sess-000001-abc12345-12345678-0001",
+         "command": "!analyze -v"
+       }
+     }
+   }
+   ```
+
+3. **Monitor Progress** (via notifications or polling):
+   ```json
+   {
+     "method": "resources/read",
+     "params": {
+       "uri": "mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"
+     }
+   }
+   ```
+
+4. **Get Analysis Results**:
+   ```json
+   {
+     "method": "resources/read",
+     "params": {
+       "uri": "mcp://nexus/commands/result?sessionId=sess-000001-abc12345&commandId=cmd-000001-abc12345-12345678-0001"
+     }
+   }
+   ```
+
+5. **Close Session**:
+   ```json
+   {
+     "method": "tools/call",
+     "params": {
+       "name": "nexus_close_dump_analyze_session",
+       "arguments": {
+         "sessionId": "sess-000001-abc12345-12345678-0001"
+       }
+     }
+   }
+   ```
 
 ## 📡 Real-Time Notifications
 
-The server sends live notifications about command progress:
+### Notification Types
 
-### Standard MCP Notifications
-- **`notifications/tools/list_changed`**: When available tools change
+#### `notifications/commandStatus`
+**Purpose**: Command execution progress updates
+**Frequency**: Real-time during command execution
 
-### MCP Nexus Custom Notifications  
-- **`notifications/commandStatus`**: Command execution progress (queued → executing → completed)
-- **`notifications/commandHeartbeat`**: Long-running command updates with elapsed time
-- **`notifications/sessionRecovery`**: Debugging session recovery events
-- **`notifications/serverHealth`**: Server status updates
-  
-Notes:
-- Notifications are broadcast automatically; clients do not need to register.
-- In HTTP mode, connect to SSE at `GET /mcp/notifications` and read `data:` lines.
-- In stdio mode, parse JSON-RPC `method` notifications from stdout.
-
-### Notification Benefits
-- **Real-time updates**: No need for constant polling
-- **Progress tracking**: See command execution progress (0-100%)
-- **Heartbeat monitoring**: Know long commands are still running
-- **Error notifications**: Immediate failure alerts
-
-### Notification Example
+**Example**:
 ```json
 {
   "jsonrpc": "2.0",
   "method": "notifications/commandStatus",
   "params": {
-    "commandId": "cmd-123",
+    "commandId": "cmd-000001-abc12345-12345678-0001",
     "command": "!analyze -v",
     "status": "executing",
     "progress": 75,
     "message": "Analyzing crash dump...",
-    "timestamp": "2024-09-25T10:30:00Z"
+    "timestamp": "2024-01-15T10:30:00Z"
   }
 }
 ```
 
-## Tool Categories
+#### `notifications/commandHeartbeat`
+**Purpose**: Long-running command updates
+**Frequency**: Every 30 seconds for long commands
 
-### Time Tools
-- Basic time utilities (implementation details in source)
+**Example**:
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "notifications/commandHeartbeat",
+  "params": {
+    "commandId": "cmd-000001-abc12345-12345678-0001",
+    "command": "!analyze -v",
+    "elapsed": "00:05:30",
+    "message": "Command still running...",
+    "timestamp": "2024-01-15T10:30:00Z"
+  }
+}
+```
 
-### Future Tools
-The platform is designed to accommodate additional tool categories through its modular architecture.
+#### `notifications/sessionRecovery`
+**Purpose**: Session recovery and error events
+**Frequency**: As needed
+
+**Example**:
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "notifications/sessionRecovery",
+  "params": {
+    "sessionId": "sess-000001-abc12345-12345678-0001",
+    "event": "recovered",
+    "message": "Session recovered from timeout",
+    "timestamp": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+## 🎯 Common Analysis Commands
+
+### Basic Analysis Commands
+- `!analyze -v`: Comprehensive crash analysis
+- `!analyze -f`: Force analysis without user input
+- `!analyze -hang`: Analyze hang dumps
+- `!analyze -show`: Show analysis results
+
+### Memory Analysis Commands
+- `!heap -p -a`: Analyze heap corruption
+- `!address`: Show memory usage
+- `!pool`: Show pool usage
+- `!memusage`: Show memory usage statistics
+
+### Thread Analysis Commands
+- `!locks`: Show lock information
+- `!runaway`: Show thread CPU usage
+- `~*k`: Show all thread stacks
+- `!threads`: Show thread information
+
+### Stack Analysis Commands
+- `kb`: Show stack trace with parameters
+- `k`: Show stack trace
+- `kv`: Show stack trace with frame data
+- `kP`: Show stack trace with parameters
+
+## 🚨 Error Handling
+
+### Common Error Scenarios
+
+**Session Not Found**:
+```json
+{
+  "error": {
+    "code": -32602,
+    "message": "Session not found: sess-invalid. Use mcp://nexus/sessions/list to see available sessions."
+  }
+}
+```
+
+**Command Not Found**:
+```json
+{
+  "error": {
+    "code": -32602,
+    "message": "Command not found. Use mcp://nexus/commands/list to see available commands."
+  }
+}
+```
+
+**Dump File Not Accessible**:
+```json
+{
+  "error": {
+    "code": -32602,
+    "message": "Dump file not accessible: C:\\crashes\\application.dmp. Check file path and permissions."
+  }
+}
+```
+
+**Symbol Loading Failed**:
+```json
+{
+  "error": {
+    "code": -32602,
+    "message": "Symbol loading failed. Check symbol path configuration and network connectivity."
+  }
+}
+```
+
+## 🔧 Best Practices
+
+### Tool Usage
+1. **Always validate sessions** before executing commands
+2. **Use async commands** for long-running operations
+3. **Monitor progress** via notifications or polling
+4. **Clean up resources** by closing sessions when done
+5. **Handle errors gracefully** with proper error handling
+
+### Performance Optimization
+1. **Use appropriate timeouts** for different command types
+2. **Limit concurrent sessions** based on system resources
+3. **Configure symbol caching** for better performance
+4. **Monitor memory usage** during analysis
+5. **Use resource cleanup** to prevent memory leaks
+
+### Security Considerations
+1. **Run with appropriate permissions** for system dumps
+2. **Secure dump file access** with proper file permissions
+3. **Use secure symbol servers** for symbol loading
+4. **Monitor resource usage** to prevent abuse
+5. **Implement proper logging** for audit trails
 
 ---
 
 ## Next Steps
 
-- **🔧 Setup:** [CONFIGURATION.md](CONFIGURATION.md) - Configure transport modes and Windows service
-- **🤖 Integration:** [INTEGRATION.md](INTEGRATION.md) - Connect with Cursor IDE and other AI tools
-- **👨‍💻 Development:** [DEVELOPMENT.md](DEVELOPMENT.md) - Add your own tools with notification support
+- **🔍 Overview:** [OVERVIEW.md](OVERVIEW.md) - Understand the analysis capabilities
+- **📚 Resources:** [RESOURCES.md](RESOURCES.md) - MCP Resources reference
+- **🔧 Configuration:** [CONFIGURATION.md](CONFIGURATION.md) - Configure your environment
+- **🤖 Integration:** [INTEGRATION.md](INTEGRATION.md) - Set up AI integration
+- **📊 Examples:** [USAGE_EXAMPLES.md](USAGE_EXAMPLES.md) - See analysis workflows in action
