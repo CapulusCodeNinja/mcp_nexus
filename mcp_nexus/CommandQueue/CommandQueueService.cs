@@ -620,7 +620,15 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                m_processingTask.Wait(TimeSpan.FromSeconds(5));
+                if (!m_processingTask.Wait(TimeSpan.FromSeconds(5)))
+                {
+                    m_logger.LogWarning("Processing task did not complete within 5 seconds during shutdown");
+                }
+            }
+            catch (AggregateException ex) when (ex.InnerException is TaskCanceledException)
+            {
+                // Expected when task is cancelled during shutdown
+                m_logger.LogDebug("Processing task was cancelled during shutdown (expected)");
             }
             catch (Exception ex)
             {

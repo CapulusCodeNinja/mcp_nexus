@@ -761,9 +761,17 @@ namespace mcp_nexus.CommandQueue
                 m_serviceCts.Cancel();
                 m_cleanupTimer?.Dispose();
 
-                if (!m_processingTask.Wait(ApplicationConstants.ServiceShutdownTimeout))
+                try
                 {
-                    m_logger.LogWarning("Processing task did not complete within {TimeoutSeconds} seconds during shutdown", ApplicationConstants.ServiceShutdownTimeout.TotalSeconds);
+                    if (!m_processingTask.Wait(ApplicationConstants.ServiceShutdownTimeout))
+                    {
+                        m_logger.LogWarning("Processing task did not complete within {TimeoutSeconds} seconds during shutdown", ApplicationConstants.ServiceShutdownTimeout.TotalSeconds);
+                    }
+                }
+                catch (AggregateException ex) when (ex.InnerException is TaskCanceledException)
+                {
+                    // Expected when task is cancelled during shutdown
+                    m_logger.LogDebug("Processing task was cancelled during shutdown (expected)");
                 }
             }
             catch (Exception ex)
