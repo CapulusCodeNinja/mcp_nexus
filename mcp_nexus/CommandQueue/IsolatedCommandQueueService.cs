@@ -512,13 +512,8 @@ namespace mcp_nexus.CommandQueue
                     isAddingCompleted, count, m_sessionId);
                 m_logger.LogTrace("🔄 About to call GetConsumingEnumerable with cancellation token for session {SessionId}", m_sessionId);
                 
-                // PROCESS: Use BlockingCollection's built-in blocking enumeration with timeout handling
-                using var timeoutCts = new CancellationTokenSource(m_forceShutdownTimeout);
-                using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
-                    m_processingCts.Token, 
-                    timeoutCts.Token);
-                
-                foreach (var command in m_commandQueue.GetConsumingEnumerable(combinedCts.Token))
+                // PROCESS: Use BlockingCollection's built-in blocking enumeration (no timeout - wait indefinitely for commands)
+                foreach (var command in m_commandQueue.GetConsumingEnumerable(m_processingCts.Token))
                 {
                     m_logger.LogTrace("🔄 Dequeued command {CommandId} from queue for session {SessionId}", command?.Id ?? "null", m_sessionId);
                     
