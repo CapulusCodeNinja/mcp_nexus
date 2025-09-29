@@ -411,9 +411,9 @@
                 // Find the analysis that matches this job name (handle timing mismatches)
                 let analysis = analyses.find(a => a.name === jobName);
                 
-                if (!analysis && jobName.startsWith('dump_') && jobName.length >= 19) {
+                if (!analysis && jobName.startsWith('dump_') && jobName.length >= 17) {
                     // Handle timing mismatches - look for directories with similar pattern
-                    const basePattern = jobName.substring(0, 19); // dump_20250928_1938
+                    const basePattern = jobName.substring(0, 17); // dump_20250928_19
                     console.log('Looking for analysis with base pattern:', basePattern);
                     analysis = analyses.find(a => a.name.startsWith(basePattern));
                     console.log('Found analysis with pattern matching:', analysis);
@@ -741,8 +741,8 @@
                                 // Find analysis with flexible matching (handle timing mismatches)
                                 let analysis = analyses.find(a => a.name === selectedJob.name);
                                 
-                                if (!analysis && selectedJob.name.startsWith('dump_') && selectedJob.name.length >= 19) {
-                                    const basePattern = selectedJob.name.substring(0, 19);
+                                if (!analysis && selectedJob.name.startsWith('dump_') && selectedJob.name.length >= 17) {
+                                    const basePattern = selectedJob.name.substring(0, 17);
                                     analysis = analyses.find(a => a.name.startsWith(basePattern));
                                 }
                                 

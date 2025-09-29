@@ -70,14 +70,14 @@ void ProcessQueue()
                 if (Directory.Exists(analysisDir))
                 {
                     string basePattern = fileNameWithoutExt;
-                    if (fileNameWithoutExt.Length >= 19 && fileNameWithoutExt.StartsWith("dump_"))
+                    if (fileNameWithoutExt.Length >= 17 && fileNameWithoutExt.StartsWith("dump_"))
                     {
-                        // For dump_20250928_193822 -> look for dump_20250928_1938*
-                        basePattern = fileNameWithoutExt.Substring(0, 19); // dump_20250928_1938
+                        // For dump_20250928_193822 -> look for dump_20250928_19*
+                        basePattern = fileNameWithoutExt.Substring(0, 17); // dump_20250928_19
                     }
-                    else if (fileNameWithoutExt.Length >= 17)
+                    else if (fileNameWithoutExt.Length >= 15)
                     {
-                        basePattern = fileNameWithoutExt.Substring(0, 17);
+                        basePattern = fileNameWithoutExt.Substring(0, 15);
                     }
                     
                     var matchingDirs = Directory.GetDirectories(analysisDir)

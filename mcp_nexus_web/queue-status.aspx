@@ -58,14 +58,14 @@
                                         if (Directory.Exists(analysisRootDir))
                                         {
                                             string basePattern = jobName;
-                                            if (jobName.Length >= 19 && jobName.StartsWith("dump_"))
+                                            if (jobName.Length >= 17 && jobName.StartsWith("dump_"))
                                             {
-                                                // For dump_20250928_193822 -> look for dump_20250928_1938*
-                                                basePattern = jobName.Substring(0, 19); // dump_20250928_1938
+                                                // For dump_20250928_193822 -> look for dump_20250928_19*
+                                                basePattern = jobName.Substring(0, 17); // dump_20250928_19
                                             }
-                                            else if (jobName.Length >= 17)
+                                            else if (jobName.Length >= 15)
                                             {
-                                                basePattern = jobName.Substring(0, 17);
+                                                basePattern = jobName.Substring(0, 15);
                                             }
                                             
                                             var matchingDirs = Directory.GetDirectories(analysisRootDir)
