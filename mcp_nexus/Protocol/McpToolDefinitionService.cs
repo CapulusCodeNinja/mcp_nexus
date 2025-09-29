@@ -49,7 +49,7 @@ namespace mcp_nexus.Protocol
                     type = "object",
                     properties = new
                     {
-                        dumpPath = new
+                        dumpFilePath = new
                         {
                             type = "string",
                             description = "Full path to the crash dump file (.dmp)"
@@ -60,7 +60,7 @@ namespace mcp_nexus.Protocol
                             description = "Optional: Path to symbols directory for better analysis"
                         }
                     },
-                    required = new[] { "dumpPath" }
+                    required = new[] { "dumpFilePath" }
                 }
             };
         }
