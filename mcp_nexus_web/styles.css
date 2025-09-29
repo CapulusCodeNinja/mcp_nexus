@@ -540,10 +540,6 @@ li {
     .job-details-grid {
         grid-template-columns: 1fr 1fr;
     }
-    
-    .detail-item:nth-child(4) {
-        grid-column: 1 / -1;
-    }
 }
 
 /* Job Info Panel Styling */

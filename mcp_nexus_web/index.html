@@ -116,6 +116,7 @@
         let jobs = [];
         let selectedJob = null;
         let pollInterval = null;
+        let durationUpdateInterval = null;
         let isPolling = false;
 
         // Modal functionality
@@ -366,21 +367,28 @@
                             
                             <div class="detail-item">
                                 <div class="detail-label">📅 Created</div>
-                                <div class="detail-value">${new Date(job.created).toLocaleString()}</div>
+                                <div class="detail-value" id="created-${job.id}"></div>
                             </div>
                             
                             <div class="detail-item">
                                 <div class="detail-label">🔄 Updated</div>
-                                <div class="detail-value">${new Date(job.updated).toLocaleString()}</div>
+                                <div class="detail-value" id="updated-${job.id}"></div>
                             </div>
                             
-                            ${job.error ? `
+                            <div class="detail-item">
+                                <div class="detail-label">⏱️ Duration</div>
+                                <div class="detail-value" id="duration-${job.id}"></div>
+                            </div>
+                        </div>
+                        
+                        ${job.error ? `
+                        <div class="error-section">
                             <div class="detail-item error-item">
                                 <div class="detail-label">❌ Error</div>
                                 <div class="detail-value error-text">${job.error}</div>
                             </div>
-                            ` : ''}
                         </div>
+                        ` : ''}
                         
                         ${job.status === 'processing' ? `
                         <div class="processing-indicator">
@@ -397,6 +405,19 @@
                         ` : ''}
                     </div>
                 `;
+                
+                // Calculate and populate duration (with small delay to ensure DOM is updated)
+                setTimeout(() => {
+                    // For processing jobs, use current time; for completed jobs, use server time
+                    updateDurationDisplay(job, job.status === 'processing');
+                    
+                    // Start live duration updates for processing jobs
+                    if (job.status === 'processing') {
+                        startDurationUpdates();
+                    } else {
+                        stopDurationUpdates();
+                    }
+                }, 0);
             }
         }
 
@@ -705,6 +726,49 @@
             }
         }
 
+        function updateDurationDisplay(job, useCurrentTime = false) {
+            console.log('updateDurationDisplay called for job:', job.id, 'updated:', job.updated, 'useCurrentTime:', useCurrentTime);
+            
+            // Update Created time
+            const createdElement = document.getElementById(`created-${job.id}`);
+            if (createdElement) {
+                createdElement.textContent = new Date(job.created).toLocaleString();
+                console.log('Updated created time:', new Date(job.created).toLocaleString());
+            } else {
+                console.log('Created element not found for job:', job.id);
+            }
+            
+            // Update Updated time - for processing jobs, show current time
+            const updatedElement = document.getElementById(`updated-${job.id}`);
+            if (updatedElement) {
+                const displayTime = (useCurrentTime && job.status === 'processing') ? 
+                    new Date().toLocaleString() : 
+                    new Date(job.updated).toLocaleString();
+                updatedElement.textContent = displayTime;
+                console.log('Updated updated time:', displayTime);
+            } else {
+                console.log('Updated element not found for job:', job.id);
+            }
+            
+            // Update Duration
+            const durationElement = document.getElementById(`duration-${job.id}`);
+            if (durationElement) {
+                const created = new Date(job.created);
+                // For processing jobs, use current time; for completed jobs, use server timestamp
+                const updated = (useCurrentTime && job.status === 'processing') ? 
+                    new Date() : 
+                    new Date(job.updated);
+                const durationMs = updated - created;
+                const minutes = Math.floor(durationMs / 60000);
+                const seconds = Math.floor((durationMs % 60000) / 1000);
+                const durationText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                durationElement.textContent = durationText;
+                console.log('Updated duration:', durationText);
+            } else {
+                console.log('Duration element not found for job:', job.id);
+            }
+        }
+
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 Bytes';
             const k = 1024;
@@ -725,6 +789,24 @@
             if (pollInterval) {
                 clearInterval(pollInterval);
                 pollInterval = null;
+            }
+        }
+
+        function startDurationUpdates() {
+            if (durationUpdateInterval) clearInterval(durationUpdateInterval);
+            
+            durationUpdateInterval = setInterval(() => {
+                if (selectedJob && selectedJob.status === 'processing') {
+                    // Use current time for live updates
+                    updateDurationDisplay(selectedJob, true);
+                }
+            }, 1000); // Update every second for processing jobs
+        }
+
+        function stopDurationUpdates() {
+            if (durationUpdateInterval) {
+                clearInterval(durationUpdateInterval);
+                durationUpdateInterval = null;
             }
         }
 
@@ -810,6 +892,9 @@
                             console.log('Selected job updated:', updatedSelectedJob);
                             selectedJob = updatedSelectedJob;
                             
+                            // Update duration if job details are currently showing
+                            updateDurationDisplay(updatedSelectedJob);
+                            
                             // Refresh the viewer if job completed
                             if (updatedSelectedJob.status === 'completed') {
                                 selectJob(updatedSelectedJob);
@@ -852,8 +937,12 @@
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 stopPolling();
+                stopDurationUpdates();
             } else {
                 startPolling();
+                if (selectedJob && selectedJob.status === 'processing') {
+                    startDurationUpdates();
+                }
             }
         });
 
