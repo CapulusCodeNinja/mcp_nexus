@@ -94,7 +94,7 @@ namespace mcp_nexus.Session
             // VALIDATION: Early parameter validation (no locks needed)
             if (dumpPath == null)
                 throw new ArgumentNullException(nameof(dumpPath));
-            
+
             if (string.IsNullOrWhiteSpace(dumpPath))
                 throw new ArgumentException("Dump path cannot be empty or whitespace", nameof(dumpPath));
 
@@ -216,7 +216,7 @@ namespace mcp_nexus.Session
 
             if (sessionId == null)
                 throw new ArgumentNullException(nameof(sessionId));
-            
+
             if (string.IsNullOrWhiteSpace(sessionId))
                 throw new ArgumentException("Session ID cannot be empty or whitespace.", nameof(sessionId));
 
@@ -235,7 +235,7 @@ namespace mcp_nexus.Session
             {
                 // Check for cancellation before cleanup
                 cancellationToken.ThrowIfCancellationRequested();
-                
+
                 await SafeCleanupSession(session, cancellationToken);
                 Interlocked.Increment(ref m_totalSessionsClosed);
 
@@ -301,7 +301,7 @@ namespace mcp_nexus.Session
 
             if (sessionId == null)
                 throw new ArgumentNullException(nameof(sessionId));
-            
+
             if (string.IsNullOrWhiteSpace(sessionId))
                 throw new ArgumentException("Session ID cannot be empty or whitespace.", nameof(sessionId));
 

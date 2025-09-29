@@ -662,7 +662,7 @@ namespace mcp_nexus
                 {
                     rule.SetLoggingLevels(GetNLogLevel(minLevel), NLog.LogLevel.Fatal);
                 }
-                
+
                 // Reload the configuration to apply changes
                 NLog.LogManager.Configuration = nlogConfig;
             }
@@ -747,7 +747,7 @@ namespace mcp_nexus
                     // Get all active sessions and cancel their commands
                     var sessions = sessionManager.GetAllSessions();
                     int totalCancelled = 0;
-                    
+
                     foreach (var session in sessions)
                     {
                         try
@@ -763,7 +763,7 @@ namespace mcp_nexus
                             logger.LogWarning(ex, "Failed to cancel commands for session {SessionId}: {Reason}", session.SessionId, reason);
                         }
                     }
-                    
+
                     return totalCancelled;
                 };
 

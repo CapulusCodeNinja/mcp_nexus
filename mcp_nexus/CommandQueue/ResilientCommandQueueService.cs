@@ -453,7 +453,7 @@ namespace mcp_nexus.CommandQueue
                 if (m_notificationService != null)
                 {
                     NotificationHelper.NotifyCommandStatusFireAndForget(
-                        m_notificationService, m_logger, queuedCommand.Id, queuedCommand.Command, "cancelled", 
+                        m_notificationService, m_logger, queuedCommand.Id, queuedCommand.Command, "cancelled",
                         progress: 0, message: "Command execution was cancelled", result: null, error: null);
                 }
             }
@@ -478,7 +478,7 @@ namespace mcp_nexus.CommandQueue
                 if (m_notificationService != null)
                 {
                     NotificationHelper.NotifyCommandStatusFireAndForget(
-                        m_notificationService, m_logger, queuedCommand.Id, queuedCommand.Command, "failed", 
+                        m_notificationService, m_logger, queuedCommand.Id, queuedCommand.Command, "failed",
                         progress: 0, message: "Command execution failed", result: null, error: ex.Message);
                 }
             }

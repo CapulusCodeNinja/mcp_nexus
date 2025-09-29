@@ -125,7 +125,7 @@ namespace mcp_nexus.Recovery
                 m_logger.LogDebug("Cancelling existing timeout for command {CommandId}", commandId);
                 existingInfo.CancellationTokenSource.Cancel();
                 m_logger.LogDebug("Existing timeout cancelled for command {CommandId}", commandId);
-                
+
                 // Note: We don't dispose the CancellationTokenSource here to avoid race conditions
                 // The original task will dispose it in its finally block
 

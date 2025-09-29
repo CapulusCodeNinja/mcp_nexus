@@ -67,29 +67,29 @@ Access data and results using the **`resources/read` method** (**NOT `tools/call
 
 The following steps must be performed sequentially. Ensure all mandatory rules are followed at each stage.
 
-1. **Initialize Analysis:** Open the analyze session for the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`.
+1. **Initialize Analysis:** Open the analyze session for the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`. Feel free to run multiple sessions in parallel if it helps to make the **analysis** faster, the system **resources** allow that and the commands are independent
 2. **Source Code Retrieval:**
-    * Set the source server path: `.srcpath srv\*[workingdir]\source`
-    * Enable source verbosity: `.srcnoisy 3`
-    * Enable the source server: `.srcfix+`
-    * Attempt to get the source for the analysis: `lsa .`
-    * If source is not found, try `lsa [ADDRESS]` where `ADDRESS` is the instruction address.
-    * Note: Source files (if found) will be in `[workingdir]/source`.
+    * Set the source server path: `.srcpath srv\*[workingdir]\source`
+    * Enable source verbosity: `.srcnoisy 3`
+    * Enable the source server: `.srcfix+`
+    * Attempt to get the source for the analysis: `lsa .`
+    * If source is not found, try `lsa [ADDRESS]` where `ADDRESS` is the instruction address.
+    * Note: Source files (if found) will be in `[workingdir]/source`.
 3. **Comprehensive and in-depth Analysis:**
-    * Perform a thorough analysis to pinpoint the **exact root cause**.
-    * Gather all helpful information from the dump.
-    * For exceptions, collect all necessary data, including the type and the `what()` string.
-    * For timeouts, execute WinDbg commands in single, sequential steps.
-    * Run extended WinDbg commands to gain a more detailed view of the issue.
-    * **Consider checking** the `workflows` resource for **helpful** commands for the specific issue.
+    * Perform a thorough analysis to pinpoint the **exact root cause**.
+    * Gather all helpful information from the dump.
+    * For exceptions, collect all necessary data, including the type and the `what()` string.
+    * For timeouts, execute WinDbg commands in single, sequential steps.
+    * Run extended WinDbg commands to gain a more detailed view of the issue.
+    * **Consider checking** the `workflows` resource for **helpful** commands for the specific issue.
 4. **Analyze the root cause:**
-    * **Summarize** the results from the previous steps.
-    * Analyze all the current data in-depth to find the root cause of the crash.
-    * Make an internet research for common ways to **analyze** the specific type of crashes.
-    * Consider to reiterate and go back and forth between this and the previous step. **Run further needed or more advanced analysis commands to get the full picture.**
+    * **Summarize** the results from the previous steps.
+    * Analyze all the current data in-depth to find the root cause of the crash.
+    * Make an internet research for common ways to **analyze** the specific type of crashes.
+    * Consider to reiterate and go back and forth between this and the previous step. **Run further needed or more advanced analysis commands to get the full picture.**
 5. **File Generation & Verification:**
-    * Generate all required files and ensure they strictly follow all mandatory rules, usability, and style guidelines.
-    * Read all generated files to confirm they meet all criteria before finalizing the task.
+    * Generate all required files and ensure they strictly follow all mandatory rules, usability, and style guidelines.
+    * Read all generated files to confirm they meet all criteria before finalizing the task.
 6. **CRITICAL EXIT:** You **MUST** immediately exit/terminate after completing the analysis report. Do not wait for additional input.
 
 ***
@@ -108,6 +108,7 @@ Each crash dump analysis must result in a single, comprehensive issue log page w
 8. **WinDbg Command Output:** The complete output of all WinDbg commands performed with the command itself.
 9. **Recommended Fixes and Actions:** Concrete suggestions for a solution, including C++ code examples.
 10. **Conclusion & Recommendations:** A final verdict and actionable recommendations, presented as a findings card.
+11. **Citation:** In case external references were used, you **HAVE TO** mention and link them (In-text Citations, citations, reference list, bibliography).
 
 ***
 
@@ -119,7 +120,6 @@ All output pages must be in Markdown and adhere to the following structure and s
 * The output file must have the same name as the dump file, but with an `.md` extension.
 * **Create the output directory:** You MUST create the `[outputdir]` directory if it doesn't exist.
 * **Example:** For dump file `crash_data.dmp`, create the file `[outputdir]/crash_data.md`.
-* **Citation:** In case external references were used, please mention them (In-text Citations, citations, reference list, bibliography).
 
 ***
 
@@ -127,12 +127,12 @@ All output pages must be in Markdown and adhere to the following structure and s
 
 * **ALL** code and command output blocks **must** use Markdown's fenced code blocks with proper syntax highlighting. Use `cpp` for C++ code, `assembly` for assembly code, and `shell` for WinDbg command output.
 * **Line Numbers:** Line numbers **must** be manually added to all code blocks, starting from `1` for each block.
-    * The numbers should be formatted as part of the content, allowing the user to copy and paste the code without them.
-    * **Example format:**
-        ```markdown
-        1 line of code
-        2 another line of code
-        ```
+    * The numbers should be formatted as part of the content, allowing the user to copy and paste the code without them.
+    * **Example format:**
+        ```markdown
+        1 line of code
+        2 another line of code
+        ```
 * **Font:** Use a monospace font for all code and command content.
 * **Stack Traces:** Each frame in a stack trace **must** be on its own numbered line.
 * **Spacing:** **DO NOT** use unnecessary spaces between lines within code blocks.
