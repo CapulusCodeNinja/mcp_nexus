@@ -108,7 +108,7 @@ Each crash dump analysis must result in a single, comprehensive issue log page w
 8. **WinDbg Command Output:** The complete output of all WinDbg commands performed with the command itself.
 9. **Recommended Fixes and Actions:** Concrete suggestions for a solution, including C++ code examples.
 10. **Conclusion & Recommendations:** A final verdict and actionable recommendations, presented as a findings card.
-11. **Citation:** In case external references were used, you **HAVE TO** mention and link them (In-text Citations, citations, reference list, bibliography).
+11. **Citation & Reference list:** In case external references were used, you **HAVE TO** mention and explain for what purpose you used the information. Do not forget to add **full, clickable URLs (e.g., starting with `http://` or `https://`)** to the external resources which you have access so that the reader of the analysis can follow up on them.
 
 ***
 
