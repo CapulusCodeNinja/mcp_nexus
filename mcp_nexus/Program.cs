@@ -644,6 +644,15 @@ namespace mcp_nexus
             var logLevelString = configuration["Logging:LogLevel"] ?? "Information";
             var minLevel = ParseLogLevel(logLevelString);
 
+            if (isServiceMode)
+            {
+                Console.WriteLine($"Setting log level to: {logLevelString} ({minLevel})");
+            }
+            else
+            {
+                Console.Error.WriteLine($"Setting log level to: {logLevelString} ({minLevel})");
+            }
+
             // Configure NLog with the log level
             var nlogConfig = NLog.LogManager.Configuration;
             if (nlogConfig != null)
@@ -653,6 +662,9 @@ namespace mcp_nexus
                 {
                     rule.SetLoggingLevels(GetNLogLevel(minLevel), NLog.LogLevel.Fatal);
                 }
+                
+                // Reload the configuration to apply changes
+                NLog.LogManager.Configuration = nlogConfig;
             }
 
             logging.ClearProviders();
