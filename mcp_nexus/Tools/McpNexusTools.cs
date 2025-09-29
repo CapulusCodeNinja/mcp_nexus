@@ -291,7 +291,7 @@ namespace mcp_nexus.Tools
                 var progressPercentage = CalculateProgressPercentage(commandInfo.QueuePosition, commandInfo.Elapsed);
 
                 // Generate status message for non-completed commands
-                var statusMessage = commandInfo.State switch
+                var baseStatusMessage = commandInfo.State switch
                 {
                     CommandState.Queued => GetQueuedStatusMessage(commandInfo.QueuePosition, commandInfo.Elapsed, commandInfo.Remaining),
                     CommandState.Executing => $"Command is currently executing (elapsed: {commandInfo.Elapsed.TotalMinutes:F1} minutes, remaining: {commandInfo.Remaining.TotalMinutes:F0} minutes {commandInfo.Remaining.Seconds} seconds)",
@@ -299,6 +299,10 @@ namespace mcp_nexus.Tools
                     CommandState.Failed => "Command execution failed",
                     _ => "Command status unknown"
                 };
+
+                // Add polling recommendation to the message for non-completed commands
+                var nextCheckIn = GetNextCheckInRecommendation(commandInfo.State, commandInfo.QueuePosition);
+                var statusMessage = commandInfo.IsCompleted ? baseStatusMessage : $"{baseStatusMessage}. {nextCheckIn}";
 
                 var result = new
                 {
@@ -318,9 +322,8 @@ namespace mcp_nexus.Tools
                         progressPercentage = progressPercentage,
                         elapsed = commandInfo.IsCompleted ? null : $"{commandInfo.Elapsed.TotalMinutes:F1}min",
                         eta = commandInfo.IsCompleted ? null : GetEtaTime(commandInfo.Remaining),
-                        message = commandInfo.IsCompleted ? null : statusMessage
+                        checkAgain = commandInfo.IsCompleted ? null : nextCheckIn
                     },
-                    nextCheckIn = commandInfo.IsCompleted ? null : GetNextCheckInRecommendation(commandInfo.State, commandInfo.QueuePosition),
                     timeoutMinutes = 10,
                     usage = SessionAwareWindbgTool.USAGE_EXPLANATION
                 };
