@@ -4,7 +4,7 @@ using Xunit;
 
 namespace mcp_nexus_tests.Models
 {
-    public class McpModelsSerializationTests
+    public class McpModelsTests
     {
         // Use the same JSON options as the application to ensure consistent serialization
         private static readonly JsonSerializerOptions s_jsonOptions = new()

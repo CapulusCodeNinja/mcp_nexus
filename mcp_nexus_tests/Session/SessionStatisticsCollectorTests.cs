@@ -7,7 +7,7 @@ namespace mcp_nexus_tests.Session
     /// <summary>
     /// Tests for SessionStatistics and MemoryUsageInfo data classes - simple data containers
     /// </summary>
-    public class SessionStatisticsTests
+    public class SessionStatisticsCollectorTests
     {
         [Fact]
         public void SessionStatistics_DefaultValues_AreCorrect()

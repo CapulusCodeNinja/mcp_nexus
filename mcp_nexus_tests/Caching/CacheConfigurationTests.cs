@@ -7,7 +7,7 @@ namespace mcp_nexus_tests.Caching
     /// <summary>
     /// Tests for CacheEntry<T> and CacheStatistics data classes
     /// </summary>
-    public class CacheDataClassesTests
+    public class CacheConfigurationTests
     {
         #region CacheEntry<T> Tests
 
