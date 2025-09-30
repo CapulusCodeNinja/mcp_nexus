@@ -32,9 +32,9 @@ namespace mcp_nexus.Infrastructure
         public const int MaxBackupsToKeep = 5;
 
         /// <summary>
-        /// Gets the full path to the backups base folder
+        /// Gets the full path to the backups base folder (outside installation directory to avoid recursion)
         /// </summary>
-        public static string BackupsBaseFolder => Path.Combine(InstallFolder, BackupsFolderName);
+        public static string BackupsBaseFolder => Path.Combine(Path.GetTempPath(), "MCP-Nexus-Backups");
 
         /// <summary>
         /// Gets the full path to the service executable
