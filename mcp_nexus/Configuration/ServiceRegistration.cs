@@ -8,6 +8,7 @@ using mcp_nexus.Session.Models;
 using mcp_nexus.Protocol;
 using mcp_nexus.Tools;
 using NLog;
+using System.Collections.Concurrent;
 
 namespace mcp_nexus.Configuration
 {
@@ -94,6 +95,8 @@ namespace mcp_nexus.Configuration
             services.Configure<SessionConfiguration>(configuration.GetSection("McpNexus:SessionManagement"));
 
             // Register core services
+            // Shared session store (explicit DI singleton instead of static state)
+            services.AddSingleton(new ConcurrentDictionary<string, SessionInfo>());
             services.AddSingleton<ICdbSession, CdbSession>();
             services.AddSingleton<ISessionManager, ThreadSafeSessionManager>();
             services.AddSingleton<SessionAwareWindbgTool>();

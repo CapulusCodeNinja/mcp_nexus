@@ -27,7 +27,7 @@ namespace mcp_nexus.Tools
             [Description("Full path to the crash dump file (.dmp)")] string dumpPath,
             [Description("Optional path to symbol files directory")] string? symbolsPath = null)
         {
-            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("McpNexusTools");
             var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
 
             logger.LogInformation("🔓 Opening new debugging session for dump: {DumpPath}", dumpPath);
@@ -89,7 +89,7 @@ namespace mcp_nexus.Tools
             IServiceProvider serviceProvider,
             [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
         {
-            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("McpNexusTools");
             var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
 
             logger.LogInformation("🔒 Closing debugging session: {SessionId}", sessionId);
@@ -170,7 +170,7 @@ namespace mcp_nexus.Tools
             [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
             [Description("WinDBG command to execute (e.g., '!analyze -v', 'k', '!threads')")] string command)
         {
-            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("McpNexusTools");
             var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
 
             logger.LogInformation("⚡ Queuing command '{Command}' for session: {SessionId}", command, sessionId);
@@ -259,7 +259,7 @@ namespace mcp_nexus.Tools
             [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
             [Description("Command ID from nexus_enqueue_async_dump_analyze_command")] string commandId)
         {
-            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("McpNexusTools");
             var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
 
             try
@@ -314,25 +314,30 @@ namespace mcp_nexus.Tools
                 var nextCheckIn = GetNextCheckInRecommendation(commandInfo.State, commandInfo.QueuePosition);
                 var statusMessage = commandInfo.IsCompleted ? baseStatusMessage : $"{baseStatusMessage}. {nextCheckIn}";
 
+                var isCompleted = commandInfo.IsCompleted;
+                var isFailed = commandInfo.State == CommandState.Failed;
+                var isCancelled = commandInfo.State == CommandState.Cancelled;
+                var success = isCompleted && !(isFailed || isCancelled);
+
                 var result = new
                 {
                     sessionId = sessionId,
                     commandId = commandId,
-                    success = true,
+                    success = success,
                     operation = "nexus_read_dump_analyze_command_result",
                     status = commandInfo.State.ToString(),
-                    result = commandInfo.IsCompleted ? commandResult : null,
-                    error = (string?)null,
-                    completedAt = commandInfo.IsCompleted ? DateTimeOffset.Now : (DateTimeOffset?)null,
+                    result = isCompleted ? commandResult : null,
+                    error = (isFailed || isCancelled) ? (commandResult ?? commandInfo.State.ToString()) : null,
+                    completedAt = isCompleted ? DateTimeOffset.Now : (DateTimeOffset?)null,
                     timestamp = DateTimeOffset.Now,
-                    message = commandInfo.IsCompleted ? null : statusMessage,
+                    message = isCompleted ? null : statusMessage,
                     progress = new
                     {
                         queuePosition = commandInfo.QueuePosition,
                         progressPercentage = progressPercentage,
-                        elapsed = commandInfo.IsCompleted ? null : $"{commandInfo.Elapsed.TotalMinutes:F1}min",
-                        eta = commandInfo.IsCompleted ? null : GetEtaTime(commandInfo.Remaining),
-                        checkAgain = commandInfo.IsCompleted ? null : nextCheckIn
+                        elapsed = isCompleted ? null : $"{commandInfo.Elapsed.TotalMinutes:F1}min",
+                        eta = isCompleted ? null : GetEtaTime(commandInfo.Remaining),
+                        checkAgain = isCompleted ? null : nextCheckIn
                     },
                     timeoutMinutes = 10,
                     usage = SessionAwareWindbgTool.USAGE_EXPLANATION

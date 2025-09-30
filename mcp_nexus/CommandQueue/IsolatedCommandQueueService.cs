@@ -211,6 +211,8 @@ namespace mcp_nexus.CommandQueue
             try
             {
                 m_processingCts.Cancel();
+                // Stop accepting more commands and unblock consumers
+                try { m_commandQueue.CompleteAdding(); } catch { }
                 m_notificationManager.NotifyServiceShutdown("Force shutdown requested");
             }
             catch (Exception ex)
@@ -249,6 +251,9 @@ namespace mcp_nexus.CommandQueue
                 // Signal shutdown
                 m_processingCts.Cancel();
                 m_notificationManager.NotifyServiceShutdown("Service disposed");
+
+                // Complete adding to unblock processing loop immediately
+                try { m_commandQueue.CompleteAdding(); } catch { }
 
                 // Wait for processing to complete
                 try

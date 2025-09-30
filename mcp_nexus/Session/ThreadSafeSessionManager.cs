@@ -13,8 +13,7 @@ namespace mcp_nexus.Session
     public class ThreadSafeSessionManager : ISessionManager, IDisposable
     {
         private readonly ILogger<ThreadSafeSessionManager> m_logger;
-        private static readonly ConcurrentDictionary<string, SessionInfo> s_sessions = new();
-        private readonly ConcurrentDictionary<string, SessionInfo> m_sessions = s_sessions;
+        private readonly ConcurrentDictionary<string, SessionInfo> m_sessions;
         private readonly SemaphoreSlim m_sessionCreationSemaphore = new(1, 1);
         private readonly CancellationTokenSource m_shutdownCts = new();
 
@@ -37,6 +36,9 @@ namespace mcp_nexus.Session
             IOptions<CdbSessionOptions>? cdbOptions = null)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            // Resolve shared session store from DI
+            m_sessions = serviceProvider.GetRequiredService<ConcurrentDictionary<string, SessionInfo>>();
 
             // Create focused components
             m_config = new SessionManagerConfiguration(config, cdbOptions);
