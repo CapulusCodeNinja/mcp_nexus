@@ -13,7 +13,8 @@ namespace mcp_nexus.Session
     public class ThreadSafeSessionManager : ISessionManager, IDisposable
     {
         private readonly ILogger<ThreadSafeSessionManager> m_logger;
-        private readonly ConcurrentDictionary<string, SessionInfo> m_sessions = new();
+        private static readonly ConcurrentDictionary<string, SessionInfo> s_sessions = new();
+        private readonly ConcurrentDictionary<string, SessionInfo> m_sessions = s_sessions;
         private readonly SemaphoreSlim m_sessionCreationSemaphore = new(1, 1);
         private readonly CancellationTokenSource m_shutdownCts = new();
 
@@ -48,6 +49,7 @@ namespace mcp_nexus.Session
 
             m_logger.LogInformation("🚀 ThreadSafeSessionManager initializing with config: MaxSessions={MaxSessions}, Timeout={Timeout}",
                 m_config.Config.MaxConcurrentSessions, m_config.Config.SessionTimeout);
+            m_logger.LogTrace("Session store currently has {Count} session(s)", m_sessions.Count);
 
             m_logger.LogInformation("✅ ThreadSafeSessionManager initialized successfully with focused components");
         }
