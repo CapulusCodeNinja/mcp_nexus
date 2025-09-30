@@ -157,6 +157,12 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
+                Console.WriteLine();
+                Console.WriteLine("═══════════════════════════════════════════════════════════════");
+                Console.WriteLine("                    MCP NEXUS SERVICE UPDATE");
+                Console.WriteLine("═══════════════════════════════════════════════════════════════");
+                Console.WriteLine();
+                
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] UpdateServiceAsync: Starting service update");
                 Console.Error.Flush();
                 

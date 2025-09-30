@@ -19,18 +19,28 @@ namespace mcp_nexus.Infrastructure
 
             try
             {
+                Console.WriteLine("Starting service update process...");
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Starting service update process");
                 Console.Error.Flush();
                 
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Starting service update process");
 
                 // Step 1: Create backup
+                Console.WriteLine("Creating backup of current installation...");
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Creating backup of current installation");
                 Console.Error.Flush();
                 
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Creating backup of current installation");
                 backupPath = await BackupManager.CreateBackupAsync(logger);
                 
+                if (backupPath != null)
+                {
+                    Console.WriteLine($"✓ Backup created successfully: {Path.GetFileName(backupPath)}");
+                }
+                else
+                {
+                    Console.WriteLine("⚠ Backup creation failed, continuing with update");
+                }
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Backup creation completed, path: {backupPath ?? "null"}");
                 Console.Error.Flush();
                 
@@ -40,6 +50,7 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 // Step 2: Stop the service if it's running
+                Console.WriteLine("Stopping service for update...");
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Stopping service for update");
                 Console.Error.Flush();
                 
@@ -56,17 +67,20 @@ namespace mcp_nexus.Infrastructure
                 
                 // Wait for service to stop
                 await Task.Delay(ServiceConfiguration.ServiceStopDelayMs);
-
+                
+                Console.WriteLine("✓ Service stopped successfully");
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Service stop delay completed");
                 Console.Error.Flush();
 
                 // Step 3: Build and deploy new version
+                Console.WriteLine("Building new version...");
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Building new version");
                 Console.Error.Flush();
                 
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Building new version");
                 if (!await ProjectBuilder.BuildProjectForDeploymentAsync(logger))
                 {
+                    Console.WriteLine("✗ Build failed during update");
                     Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Build failed during update");
                     Console.Error.Flush();
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Build failed during update");
@@ -74,12 +88,15 @@ namespace mcp_nexus.Infrastructure
                     return false;
                 }
 
+                Console.WriteLine("✓ Build completed successfully");
+                Console.WriteLine("Deploying new version...");
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Build completed successfully, deploying new version");
                 Console.Error.Flush();
                 
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Deploying new version");
                 if (!await FileOperationsManager.CopyApplicationFilesAsync(logger))
                 {
+                    Console.WriteLine("✗ File deployment failed during update");
                     Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: File deployment failed during update");
                     Console.Error.Flush();
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "File deployment failed during update");
@@ -87,22 +104,32 @@ namespace mcp_nexus.Infrastructure
                     return false;
                 }
 
+                Console.WriteLine("✓ Files deployed successfully");
+
                 // Step 4: Validate new installation
+                Console.WriteLine("Validating installation...");
                 if (!FileOperationsManager.ValidateInstallationFiles(logger))
                 {
+                    Console.WriteLine("✗ Installation validation failed");
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Installation validation failed during update");
                     await RollbackUpdate(backupPath, logger);
                     return false;
                 }
+                Console.WriteLine("✓ Installation validated successfully");
 
                 // Step 5: Start the service
+                Console.WriteLine("Starting updated service...");
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Starting updated service");
                 var startCommand = ServiceConfiguration.GetServiceStartCommand();
                 await ServiceRegistryManager.RunScCommandAsync(startCommand, logger);
+                Console.WriteLine("✓ Service started successfully");
 
                 // Step 6: Cleanup old backups
+                Console.WriteLine("Cleaning up old backups...");
                 await BackupManager.CleanupOldBackupsAsync(ServiceConfiguration.MaxBackupsToKeep, logger);
 
+                Console.WriteLine();
+                Console.WriteLine("🎉 Service update completed successfully!");
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Service update completed successfully");
                 return true;
             }
