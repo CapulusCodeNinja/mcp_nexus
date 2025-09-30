@@ -27,6 +27,14 @@ namespace mcp_nexus.Infrastructure
         // File operation constants
         public const string ExecutableName = "mcp_nexus.exe";
         public const string BackupsFolderName = "backups";
+        public const string ProjectFileName = "mcp_nexus.csproj";
+        public const string BuildConfiguration = "Release";
+        public const int MaxBackupsToKeep = 5;
+        
+        /// <summary>
+        /// Gets the full path to the backups base folder
+        /// </summary>
+        public static string BackupsBaseFolder => Path.Combine(InstallFolder, BackupsFolderName);
         
         /// <summary>
         /// Gets the full path to the service executable
@@ -41,16 +49,16 @@ namespace mcp_nexus.Infrastructure
         /// <summary>
         /// Gets the service creation command arguments
         /// </summary>
-        public static string GetServiceCreateCommand()
+        public static string GetCreateServiceCommand(string executablePath)
         {
-            return $@"create ""{ServiceName}"" binPath= ""{ExecutablePath} {ServiceArguments}"" " +
+            return $@"create ""{ServiceName}"" binPath= ""{executablePath} {ServiceArguments}"" " +
                    $@"start= auto DisplayName= ""{ServiceDisplayName}""";
         }
         
         /// <summary>
         /// Gets the service deletion command arguments
         /// </summary>
-        public static string GetServiceDeleteCommand()
+        public static string GetDeleteServiceCommand()
         {
             return $@"delete ""{ServiceName}""";
         }

@@ -119,7 +119,7 @@ namespace mcp_nexus.Infrastructure
                 await Task.Delay(ServiceConfiguration.ServiceStopDelayMs);
                 
                 // Try to delete again
-                await RunScCommandAsync(ServiceConfiguration.GetServiceDeleteCommand(), logger, allowFailure: true);
+                await RunScCommandAsync(ServiceConfiguration.GetDeleteServiceCommand(), logger, allowFailure: true);
                 await Task.Delay(ServiceConfiguration.ServiceDeleteDelayMs);
                 
                 // Check if cleanup was successful
@@ -282,7 +282,7 @@ namespace mcp_nexus.Infrastructure
         /// <returns>True if service creation was successful, false otherwise</returns>
         public static async Task<bool> CreateServiceAsync(ILogger? logger = null)
         {
-            var installCommand = ServiceConfiguration.GetServiceCreateCommand();
+            var installCommand = ServiceConfiguration.GetCreateServiceCommand(ServiceConfiguration.ExecutablePath);
             var result = await RunScCommandAsync(installCommand, logger);
             
             if (result)
@@ -307,7 +307,7 @@ namespace mcp_nexus.Infrastructure
             await Task.Delay(ServiceConfiguration.ServiceStopDelayMs);
             
             // Then delete it
-            var result = await RunScCommandAsync(ServiceConfiguration.GetServiceDeleteCommand(), logger);
+            var result = await RunScCommandAsync(ServiceConfiguration.GetDeleteServiceCommand(), logger);
             
             if (result)
             {

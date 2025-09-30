@@ -98,6 +98,8 @@ namespace mcp_nexus.Infrastructure
             public const string Mcp = "MCP";
             public const string Tool = "Tool";
             public const string Protocol = "Protocol";
+            public const string Backup = "Backup";
+            public const string Validation = "Validation";
             public const string Debug = "Debug";
             public const string Startup = "Startup";
             public const string Shutdown = "Shutdown";
