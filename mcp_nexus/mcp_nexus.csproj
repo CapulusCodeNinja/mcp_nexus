@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>1.0.4.45</Version>
+    <Version>1.0.4.47</Version>
     <AssemblyVersion>1.0.4.43</AssemblyVersion>
     <FileVersion>1.0.4.43</FileVersion>
     <Product>MCP Nexus</Product>

@@ -63,12 +63,12 @@ namespace mcp_nexus.Session
 
                 // Start CDB session asynchronously
                 var cdbTarget = m_config.ConstructCdbTarget(dumpPath, symbolsPath);
-                var startSuccess = await Task.Run(() => cdbSession.StartSession(cdbTarget, null), cancellationToken);
+                var startSuccess = await cdbSession.StartSession(cdbTarget, null);
 
                 if (!startSuccess)
                 {
                     // Log detailed CDB detection failure information
-                    m_logger.LogError("❌ CDB session startup failed for {DumpPath}", dumpPath);
+                    m_logger.LogError("❌ CDB session startup failed for {DumpPath}: {CdbTarget}", dumpPath, cdbTarget);
                     m_logger.LogError("🔍 This typically means CDB.exe is not installed or not found in:");
                     m_logger.LogError("   - PATH environment variable");
                     m_logger.LogError("   - Standard Windows SDK locations");

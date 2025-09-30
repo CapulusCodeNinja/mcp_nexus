@@ -110,17 +110,18 @@ namespace mcp_nexus.Middleware
         {
             try
             {
-                // Handle Server-Sent Events format
-                if (sseResponse.StartsWith("data: "))
+                // Handle Server-Sent Events format - extract only the JSON data part
+                var lines = sseResponse.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var line in lines)
                 {
-                    var jsonPart = sseResponse.Substring(6).Trim();
-                    if (jsonPart.EndsWith("\n\n"))
+                    if (line.StartsWith("data: "))
                     {
-                        jsonPart = jsonPart.Substring(0, jsonPart.Length - 2);
+                        var jsonPart = line.Substring(6).Trim();
+                        return FormatJsonForLogging(jsonPart);
                     }
-                    return FormatJsonForLogging(jsonPart);
                 }
 
+                // If no data: line found, try to format as JSON directly
                 return FormatJsonForLogging(sseResponse);
             }
             catch

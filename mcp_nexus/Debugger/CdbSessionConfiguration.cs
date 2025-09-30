@@ -206,6 +206,5 @@ namespace mcp_nexus.Debugger
 
             return null;
         }
-
     }
 }
