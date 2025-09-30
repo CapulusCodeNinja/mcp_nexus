@@ -12,7 +12,7 @@ namespace mcp_nexus.CommandQueue
         private readonly CommandRecoveryManager m_recoveryManager;
         private readonly ResilientQueueConfiguration m_config;
         private readonly IMcpNotificationService? m_notificationService;
-        
+
         // Command tracking and metrics
         private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands = new();
         private volatile QueuedCommand? m_currentCommand;
@@ -20,10 +20,10 @@ namespace mcp_nexus.CommandQueue
         private long m_commandsFailed = 0;
         private long m_commandsCancelled = 0;
         private DateTime m_lastStatsLog = DateTime.UtcNow;
-        
+
         // Cleanup management
         private readonly Timer m_cleanupTimer;
-        
+
         public ResilientCommandProcessor(
             ILogger logger,
             CommandRecoveryManager recoveryManager,
@@ -34,11 +34,11 @@ namespace mcp_nexus.CommandQueue
             m_recoveryManager = recoveryManager ?? throw new ArgumentNullException(nameof(recoveryManager));
             m_config = config ?? throw new ArgumentNullException(nameof(config));
             m_notificationService = notificationService;
-            
+
             // Initialize cleanup timer
             m_cleanupTimer = new Timer(CleanupCompletedCommands, null, m_config.CleanupInterval, m_config.CleanupInterval);
         }
-        
+
         /// <summary>
         /// Processes the command queue continuously
         /// </summary>
@@ -48,14 +48,14 @@ namespace mcp_nexus.CommandQueue
         public async Task ProcessCommandQueueAsync(BlockingCollection<QueuedCommand> commandQueue, CancellationToken cancellationToken)
         {
             m_logger.LogInformation("🚀 Starting resilient command processor");
-            
+
             try
             {
                 foreach (var queuedCommand in commandQueue.GetConsumingEnumerable(cancellationToken))
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
-                    
+
                     await ProcessSingleCommandAsync(queuedCommand, cancellationToken);
                 }
             }
@@ -73,40 +73,42 @@ namespace mcp_nexus.CommandQueue
                 m_logger.LogInformation("🏁 Command processor shutdown complete");
             }
         }
-        
+
         /// <summary>
         /// Processes a single command with comprehensive error handling
         /// </summary>
         private async Task ProcessSingleCommandAsync(QueuedCommand queuedCommand, CancellationToken cancellationToken)
         {
             var startTime = DateTime.UtcNow;
-            
+
             try
             {
                 // Set as current command
                 m_currentCommand = queuedCommand;
+
+                // Update the command in active commands (it should already be there from queueing)
                 m_activeCommands[queuedCommand.Id] = queuedCommand;
-                
+
                 // Update command state
                 UpdateCommandState(queuedCommand, CommandState.Executing);
-                
+
                 m_logger.LogInformation("⚡ Processing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
-                
+
                 // Execute command with recovery
                 var result = await m_recoveryManager.ExecuteCommandWithRecoveryAsync(queuedCommand, cancellationToken);
-                
+
                 // Complete successfully
                 CompleteCommand(queuedCommand, result, CommandState.Completed);
                 Interlocked.Increment(ref m_commandsProcessed);
-                
+
                 var elapsed = DateTime.UtcNow - startTime;
-                m_logger.LogInformation("✅ Command {CommandId} completed in {Elapsed}ms", 
+                m_logger.LogInformation("✅ Command {CommandId} completed in {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
-                
+
                 // Send completion notification
                 if (m_notificationService != null)
                 {
-                    await m_notificationService.NotifyCommandStatusAsync(queuedCommand.Id, queuedCommand.Command, "completed", 
+                    await m_notificationService.NotifyCommandStatusAsync(queuedCommand.Id, queuedCommand.Command, "completed",
                         result: result, message: $"Completed in {elapsed.TotalMilliseconds:F0}ms");
                 }
             }
@@ -115,9 +117,9 @@ namespace mcp_nexus.CommandQueue
                 // Command was specifically cancelled
                 CompleteCommand(queuedCommand, "Command was cancelled", CommandState.Cancelled);
                 Interlocked.Increment(ref m_commandsCancelled);
-                
+
                 var elapsed = DateTime.UtcNow - startTime;
-                m_logger.LogWarning("🚫 Command {CommandId} was cancelled after {Elapsed}ms", 
+                m_logger.LogWarning("🚫 Command {CommandId} was cancelled after {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -132,15 +134,15 @@ namespace mcp_nexus.CommandQueue
                 var errorMessage = $"Command execution failed: {ex.Message}";
                 CompleteCommand(queuedCommand, errorMessage, CommandState.Failed);
                 Interlocked.Increment(ref m_commandsFailed);
-                
+
                 var elapsed = DateTime.UtcNow - startTime;
-                m_logger.LogError(ex, "❌ Command {CommandId} failed after {Elapsed}ms", 
+                m_logger.LogError(ex, "❌ Command {CommandId} failed after {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
-                
+
                 // Send failure notification
                 if (m_notificationService != null)
                 {
-                    await m_notificationService.NotifyCommandStatusAsync(queuedCommand.Id, queuedCommand.Command, "failed", 
+                    await m_notificationService.NotifyCommandStatusAsync(queuedCommand.Id, queuedCommand.Command, "failed",
                         error: ex.Message, message: $"Failed after {elapsed.TotalMilliseconds:F0}ms");
                 }
             }
@@ -149,12 +151,12 @@ namespace mcp_nexus.CommandQueue
                 // Clear current command
                 if (m_currentCommand == queuedCommand)
                     m_currentCommand = null;
-                
+
                 // Log periodic statistics
                 LogPeriodicStatistics();
             }
         }
-        
+
         /// <summary>
         /// Completes a command with the given result and state
         /// </summary>
@@ -163,7 +165,7 @@ namespace mcp_nexus.CommandQueue
             try
             {
                 UpdateCommandState(command, state);
-                
+
                 if (!command.CompletionSource.Task.IsCompleted)
                 {
                     if (state == CommandState.Completed)
@@ -171,7 +173,7 @@ namespace mcp_nexus.CommandQueue
                     else if (state == CommandState.Cancelled)
                         command.CompletionSource.SetCanceled();
                     else
-                        command.CompletionSource.SetException(new InvalidOperationException(result));
+                        command.CompletionSource.SetResult(result); // Return error message as result, not exception
                 }
             }
             catch (Exception ex)
@@ -179,7 +181,7 @@ namespace mcp_nexus.CommandQueue
                 m_logger.LogError(ex, "Error completing command {CommandId}", command.Id);
             }
         }
-        
+
         /// <summary>
         /// Updates the state of a command
         /// </summary>
@@ -190,7 +192,7 @@ namespace mcp_nexus.CommandQueue
                 // Update the command record (assuming QueuedCommand is mutable or we track state separately)
                 var updatedCommand = command with { State = newState };
                 m_activeCommands[command.Id] = updatedCommand;
-                
+
                 m_logger.LogTrace("🔄 Command {CommandId} state changed to {State}", command.Id, newState);
             }
             catch (Exception ex)
@@ -198,7 +200,7 @@ namespace mcp_nexus.CommandQueue
                 m_logger.LogError(ex, "Error updating command state for {CommandId}", command.Id);
             }
         }
-        
+
         /// <summary>
         /// Cancels a specific command
         /// </summary>
@@ -207,17 +209,20 @@ namespace mcp_nexus.CommandQueue
         /// <returns>True if the command was found and cancelled</returns>
         public bool CancelCommand(string commandId, string? reason = null)
         {
+            if (string.IsNullOrWhiteSpace(commandId))
+                return false;
+
             if (!m_activeCommands.TryGetValue(commandId, out var command))
             {
                 m_logger.LogWarning("Cannot cancel command {CommandId} - command not found", commandId);
                 return false;
             }
-            
+
             try
             {
                 command.CancellationTokenSource.Cancel();
                 m_recoveryManager.CancelCommand(commandId, reason);
-                
+
                 m_logger.LogInformation("🚫 Cancelled command {CommandId}: {Reason}", commandId, reason ?? "User requested");
                 return true;
             }
@@ -227,7 +232,7 @@ namespace mcp_nexus.CommandQueue
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Cancels all active commands
         /// </summary>
@@ -237,17 +242,27 @@ namespace mcp_nexus.CommandQueue
         {
             var cancelledCount = 0;
             var commandIds = m_activeCommands.Keys.ToList();
-            
+
             foreach (var commandId in commandIds)
             {
                 if (CancelCommand(commandId, reason))
                     cancelledCount++;
             }
-            
+
             m_logger.LogInformation("🚫 Cancelled {Count} commands: {Reason}", cancelledCount, reason ?? "Bulk cancellation");
             return cancelledCount;
         }
-        
+
+        /// <summary>
+        /// Registers a queued command for tracking
+        /// </summary>
+        /// <param name="queuedCommand">The command to register</param>
+        public void RegisterQueuedCommand(QueuedCommand queuedCommand)
+        {
+            m_activeCommands[queuedCommand.Id] = queuedCommand;
+            m_logger.LogTrace("📝 Registered queued command {CommandId} for tracking", queuedCommand.Id);
+        }
+
         /// <summary>
         /// Gets the currently executing command
         /// </summary>
@@ -256,7 +271,83 @@ namespace mcp_nexus.CommandQueue
         {
             return m_currentCommand;
         }
-        
+
+        /// <summary>
+        /// Gets the result of a specific command
+        /// </summary>
+        /// <param name="commandId">Command ID to get result for</param>
+        /// <returns>The command result</returns>
+        public async Task<string> GetCommandResult(string commandId)
+        {
+            if (string.IsNullOrWhiteSpace(commandId))
+                return "Command ID cannot be null or empty";
+
+            if (!m_activeCommands.TryGetValue(commandId, out var queuedCommand))
+                return $"Command not found: {commandId}";
+
+            // Check if command is still executing
+            if (!queuedCommand.CompletionSource.Task.IsCompleted)
+            {
+                var elapsed = DateTime.UtcNow - queuedCommand.QueueTime;
+                return $"Command is still executing (elapsed: {elapsed:mm\\:ss}, command: {commandId})";
+            }
+
+            try
+            {
+                var result = await queuedCommand.CompletionSource.Task;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return $"Command execution failed: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Gets the state of a specific command
+        /// </summary>
+        /// <param name="commandId">Command ID to get state for</param>
+        /// <returns>The command state, or null if not found</returns>
+        public CommandState? GetCommandState(string commandId)
+        {
+            if (string.IsNullOrWhiteSpace(commandId))
+                return null;
+
+            if (!m_activeCommands.TryGetValue(commandId, out var queuedCommand))
+                return null;
+
+            return queuedCommand.State;
+        }
+
+        /// <summary>
+        /// Gets detailed information about a specific command
+        /// </summary>
+        /// <param name="commandId">Command ID to get info for</param>
+        /// <returns>The command info, or null if not found</returns>
+        public CommandInfo? GetCommandInfo(string commandId)
+        {
+            if (string.IsNullOrWhiteSpace(commandId))
+                return null;
+
+            if (!m_activeCommands.TryGetValue(commandId, out var queuedCommand))
+                return null;
+
+            var elapsed = DateTime.UtcNow - queuedCommand.QueueTime;
+            var isCompleted = queuedCommand.CompletionSource.Task.IsCompleted;
+
+            return new CommandInfo
+            {
+                CommandId = queuedCommand.Id,
+                Command = queuedCommand.Command,
+                State = queuedCommand.State,
+                QueueTime = queuedCommand.QueueTime,
+                Elapsed = elapsed,
+                Remaining = TimeSpan.Zero, // Not applicable for resilient queue
+                QueuePosition = 0, // Not applicable for resilient queue
+                IsCompleted = isCompleted
+            };
+        }
+
         /// <summary>
         /// Gets the status of all commands in the queue
         /// </summary>
@@ -264,14 +355,14 @@ namespace mcp_nexus.CommandQueue
         public IEnumerable<(string Id, string Command, DateTime QueueTime, string Status)> GetQueueStatus()
         {
             var results = new List<(string, string, DateTime, string)>();
-            
+
             // Add current command
             var current = m_currentCommand;
             if (current != null)
             {
                 results.Add((current.Id, current.Command, current.QueueTime, "Executing"));
             }
-            
+
             // Add other active commands
             foreach (var kvp in m_activeCommands)
             {
@@ -290,10 +381,10 @@ namespace mcp_nexus.CommandQueue
                     results.Add((command.Id, command.Command, command.QueueTime, status));
                 }
             }
-            
+
             return results;
         }
-        
+
         /// <summary>
         /// Gets performance statistics
         /// </summary>
@@ -306,7 +397,7 @@ namespace mcp_nexus.CommandQueue
                 Interlocked.Read(ref m_commandsCancelled)
             );
         }
-        
+
         /// <summary>
         /// Logs periodic statistics about command processing
         /// </summary>
@@ -321,7 +412,7 @@ namespace mcp_nexus.CommandQueue
                 m_lastStatsLog = now;
             }
         }
-        
+
         /// <summary>
         /// Cleans up completed commands periodically
         /// </summary>
@@ -331,7 +422,7 @@ namespace mcp_nexus.CommandQueue
             {
                 var cutoffTime = DateTime.UtcNow - m_config.CommandRetentionTime;
                 var commandsToRemove = new List<string>();
-                
+
                 foreach (var kvp in m_activeCommands)
                 {
                     var command = kvp.Value;
@@ -341,12 +432,12 @@ namespace mcp_nexus.CommandQueue
                         commandsToRemove.Add(kvp.Key);
                     }
                 }
-                
+
                 foreach (var commandId in commandsToRemove)
                 {
                     m_activeCommands.TryRemove(commandId, out _);
                 }
-                
+
                 if (commandsToRemove.Count > 0)
                 {
                     m_logger.LogDebug("🧹 Cleaned up {Count} completed commands", commandsToRemove.Count);
@@ -357,7 +448,7 @@ namespace mcp_nexus.CommandQueue
                 m_logger.LogError(ex, "Error during command cleanup");
             }
         }
-        
+
         /// <summary>
         /// Disposes of the processor and its resources
         /// </summary>
@@ -367,10 +458,10 @@ namespace mcp_nexus.CommandQueue
             {
                 m_cleanupTimer?.Dispose();
                 m_recoveryManager?.Cleanup();
-                
+
                 // Cancel any remaining commands
                 CancelAllCommands("Service shutdown");
-                
+
                 m_logger.LogInformation("🧹 Resilient command processor disposed");
             }
             catch (Exception ex)

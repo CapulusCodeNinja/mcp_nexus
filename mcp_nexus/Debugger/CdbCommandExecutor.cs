@@ -14,7 +14,7 @@ namespace mcp_nexus.Debugger
         private CancellationTokenSource? m_currentOperationCts;
 
         public CdbCommandExecutor(
-            ILogger<CdbCommandExecutor> logger, 
+            ILogger<CdbCommandExecutor> logger,
             CdbSessionConfiguration config,
             CdbOutputParser outputParser)
         {
@@ -27,7 +27,7 @@ namespace mcp_nexus.Debugger
         /// Executes a command in the CDB session and returns the output
         /// </summary>
         public string ExecuteCommand(
-            string command, 
+            string command,
             CdbProcessManager processManager,
             CancellationToken externalCancellationToken = default)
         {
@@ -84,8 +84,8 @@ namespace mcp_nexus.Debugger
         }
 
         private string ExecuteCommandInternal(
-            string command, 
-            CdbProcessManager processManager, 
+            string command,
+            CdbProcessManager processManager,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();

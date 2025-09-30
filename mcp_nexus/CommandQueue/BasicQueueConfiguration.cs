@@ -10,7 +10,7 @@ namespace mcp_nexus.CommandQueue
         public TimeSpan CleanupInterval { get; }
         public TimeSpan CommandRetentionTime { get; }
         public TimeSpan StatsLogInterval { get; }
-        
+
         public BasicQueueConfiguration(
             TimeSpan? cleanupInterval = null,
             TimeSpan? commandRetentionTime = null,

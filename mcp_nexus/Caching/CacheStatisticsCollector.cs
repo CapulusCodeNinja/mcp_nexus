@@ -18,8 +18,9 @@ namespace mcp_nexus.Caching
         public TimeSpan AverageAge { get; set; }
         public long MemoryPressureBytes { get; set; }
         public double MemoryUtilizationPercent { get; set; }
+        public double MemoryUsagePercent { get; set; }
     }
-    
+
     /// <summary>
     /// Collects and provides statistics about cache performance and usage
     /// </summary>
@@ -30,13 +31,13 @@ namespace mcp_nexus.Caching
         private readonly ILogger m_logger;
         private readonly CacheConfiguration m_config;
         private readonly ConcurrentDictionary<TKey, CacheEntry<TValue>> m_cache;
-        
+
         // Performance counters
         private long m_totalHits = 0;
         private long m_totalMisses = 0;
         private long m_totalSets = 0;
         private long m_totalEvictions = 0;
-        
+
         public CacheStatisticsCollector(
             ILogger logger,
             CacheConfiguration config,
@@ -46,7 +47,7 @@ namespace mcp_nexus.Caching
             m_config = config ?? throw new ArgumentNullException(nameof(config));
             m_cache = cache ?? throw new ArgumentNullException(nameof(cache));
         }
-        
+
         /// <summary>
         /// Records a cache hit
         /// </summary>
@@ -54,7 +55,7 @@ namespace mcp_nexus.Caching
         {
             Interlocked.Increment(ref m_totalHits);
         }
-        
+
         /// <summary>
         /// Records a cache miss
         /// </summary>
@@ -62,7 +63,7 @@ namespace mcp_nexus.Caching
         {
             Interlocked.Increment(ref m_totalMisses);
         }
-        
+
         /// <summary>
         /// Records a cache set operation
         /// </summary>
@@ -70,7 +71,7 @@ namespace mcp_nexus.Caching
         {
             Interlocked.Increment(ref m_totalSets);
         }
-        
+
         /// <summary>
         /// Records cache evictions
         /// </summary>
@@ -79,7 +80,7 @@ namespace mcp_nexus.Caching
         {
             Interlocked.Add(ref m_totalEvictions, count);
         }
-        
+
         /// <summary>
         /// Gets comprehensive cache statistics
         /// </summary>
@@ -90,32 +91,33 @@ namespace mcp_nexus.Caching
             {
                 var now = DateTime.UtcNow;
                 var entries = m_cache.Values.ToList();
-                
+
                 if (entries.Count == 0)
                 {
                     return new CacheStatistics
                     {
                         TotalEntries = 0,
                         HitRatio = 0.0,
-                        MemoryUtilizationPercent = 0.0
+                        MemoryUtilizationPercent = 0.0,
+                        MemoryUsagePercent = 0.0
                     };
                 }
-                
+
                 var totalSize = entries.Sum(e => e.SizeBytes);
                 var expiredCount = entries.Count(e => now > e.ExpiresAt);
                 var totalAccesses = entries.Sum(e => e.AccessCount);
                 var avgAccessCount = (double)totalAccesses / entries.Count;
-                
+
                 var oldestEntry = entries.Min(e => e.CreatedAt);
                 var newestEntry = entries.Max(e => e.CreatedAt);
                 var avgAge = TimeSpan.FromTicks((long)entries.Average(e => (now - e.CreatedAt).Ticks));
-                
+
                 var totalOperations = Interlocked.Read(ref m_totalHits) + Interlocked.Read(ref m_totalMisses);
                 var hitRatio = totalOperations > 0 ? (double)Interlocked.Read(ref m_totalHits) / totalOperations : 0.0;
-                
-                var memoryUtilization = m_config.MaxMemoryBytes > 0 ? 
+
+                var memoryUtilization = m_config.MaxMemoryBytes > 0 ?
                     (double)totalSize / m_config.MaxMemoryBytes * 100.0 : 0.0;
-                
+
                 return new CacheStatistics
                 {
                     TotalEntries = m_cache.Count,
@@ -128,7 +130,8 @@ namespace mcp_nexus.Caching
                     NewestEntry = newestEntry,
                     AverageAge = avgAge,
                     MemoryPressureBytes = Math.Max(0, totalSize - m_config.MaxMemoryBytes),
-                    MemoryUtilizationPercent = memoryUtilization
+                    MemoryUtilizationPercent = memoryUtilization,
+                    MemoryUsagePercent = memoryUtilization
                 };
             }
             catch (Exception ex)
@@ -137,7 +140,7 @@ namespace mcp_nexus.Caching
                 return new CacheStatistics();
             }
         }
-        
+
         /// <summary>
         /// Gets performance counters
         /// </summary>
@@ -151,7 +154,7 @@ namespace mcp_nexus.Caching
                 Interlocked.Read(ref m_totalEvictions)
             );
         }
-        
+
         /// <summary>
         /// Logs a summary of cache statistics
         /// </summary>
@@ -161,7 +164,7 @@ namespace mcp_nexus.Caching
             {
                 var stats = GetStatistics();
                 var counters = GetPerformanceCounters();
-                
+
                 m_logger.LogInformation("💾 Cache Statistics Summary:");
                 m_logger.LogInformation("   Entries: {Total} ({Expired} expired)", stats.TotalEntries, stats.ExpiredEntries);
                 m_logger.LogInformation("   Memory: {MemoryMB:F1}MB ({Utilization:F1}% of {MaxMB:F1}MB)",
@@ -182,7 +185,7 @@ namespace mcp_nexus.Caching
                 m_logger.LogError(ex, "Error logging cache statistics summary");
             }
         }
-        
+
         /// <summary>
         /// Resets performance counters
         /// </summary>
@@ -192,7 +195,7 @@ namespace mcp_nexus.Caching
             Interlocked.Exchange(ref m_totalMisses, 0);
             Interlocked.Exchange(ref m_totalSets, 0);
             Interlocked.Exchange(ref m_totalEvictions, 0);
-            
+
             m_logger.LogDebug("💾 Cache performance counters reset");
         }
     }

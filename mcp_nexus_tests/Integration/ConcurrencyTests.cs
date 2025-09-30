@@ -287,9 +287,7 @@ namespace mcp_nexus_tests.Services
             {
                 tasks.Add(Task.Run(() =>
                 {
-                    var cleanupMethod = typeof(CommandQueueService).GetMethod("CleanupCompletedCommands",
-                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    cleanupMethod!.Invoke(m_commandQueueService, new object?[] { null });
+                    m_commandQueueService.TriggerCleanup();
                 }));
             }
 

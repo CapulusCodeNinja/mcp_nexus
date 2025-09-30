@@ -21,14 +21,14 @@ namespace mcp_nexus_tests.Tools
         {
             m_mockLogger = new Mock<ILogger>();
             m_mockSessionManager = new Mock<ISessionManager>();
-            
+
             // Create a real service provider with mocked services
             var services = new ServiceCollection();
             services.AddSingleton(m_mockSessionManager.Object);
-            
+
             // Use NullLogger to avoid the internal Program class issue
             services.AddSingleton<ILogger<mcp_nexus.Program>>(NullLogger<mcp_nexus.Program>.Instance);
-            
+
             m_serviceProvider = services.BuildServiceProvider();
         }
 
@@ -360,16 +360,16 @@ namespace mcp_nexus_tests.Tools
 
             // Assert
             Assert.NotNull(result);
-            
+
             // Check if result is a Task (which it shouldn't be after await)
             if (result is Task<object> taskObject)
             {
                 result = await taskObject;
             }
-            
+
             // Use dynamic to access anonymous type properties
             dynamic dynamicResult = result;
-            
+
             Assert.Equal(sessionId, dynamicResult.sessionId);
             Assert.False(dynamicResult.success);
             Assert.Contains("not found", (string)dynamicResult.message);
@@ -397,16 +397,16 @@ namespace mcp_nexus_tests.Tools
 
             // Assert
             Assert.NotNull(result);
-            
+
             // Check if result is a Task (which it shouldn't be after await)
             if (result is Task<object> taskObject)
             {
                 result = await taskObject;
             }
-            
+
             // Use dynamic to access anonymous type properties
             dynamic dynamicResult = result;
-            
+
             Assert.False(dynamicResult.success);
             Assert.Contains("context not available", (string)dynamicResult.message);
         }
@@ -698,7 +698,7 @@ namespace mcp_nexus_tests.Tools
         public void GetElapsedTime_WithVariousInputs_ReturnsExpectedResult(string input, string? expected)
         {
             // Use reflection to access the private method
-            var method = typeof(McpNexusTools).GetMethod("GetElapsedTime", 
+            var method = typeof(McpNexusTools).GetMethod("GetElapsedTime",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             Assert.NotNull(method);
 

@@ -42,7 +42,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Act & Assert
             var methodNames = Array.ConvertAll(publicMethods, m => m.Name);
-            
+
             Assert.Contains("InstallServiceAsync", methodNames);
             Assert.Contains("UninstallServiceAsync", methodNames);
             Assert.Contains("ForceUninstallServiceAsync", methodNames);
@@ -58,7 +58,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Act & Assert
             var methodNames = Array.ConvertAll(privateMethods, m => m.Name);
-            
+
             Assert.Contains("BuildProjectForDeploymentAsync", methodNames);
             Assert.Contains("FindProjectDirectory", methodNames);
             Assert.Contains("CopyApplicationFilesAsync", methodNames);
@@ -190,7 +190,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var installerType = typeof(WindowsServiceInstaller);
-            var method = installerType.GetMethod("IsRunAsAdministrator", 
+            var method = installerType.GetMethod("IsRunAsAdministrator",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
@@ -204,7 +204,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var installerType = typeof(WindowsServiceInstaller);
-            var method = installerType.GetMethod("IsServiceInstalled", 
+            var method = installerType.GetMethod("IsServiceInstalled",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
@@ -218,7 +218,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var installerType = typeof(WindowsServiceInstaller);
-            var method = installerType.GetMethod("RunScCommandAsync", 
+            var method = installerType.GetMethod("RunScCommandAsync",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
@@ -232,7 +232,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var installerType = typeof(WindowsServiceInstaller);
-            var method = installerType.GetMethod("RunScCommandAsync", 
+            var method = installerType.GetMethod("RunScCommandAsync",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
@@ -249,7 +249,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var installerType = typeof(WindowsServiceInstaller);
-            var method = installerType.GetMethod("FindProjectDirectory", 
+            var method = installerType.GetMethod("FindProjectDirectory",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
@@ -263,7 +263,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var installerType = typeof(WindowsServiceInstaller);
-            var method = installerType.GetMethod("CopyDirectoryAsync", 
+            var method = installerType.GetMethod("CopyDirectoryAsync",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
@@ -277,7 +277,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var installerType = typeof(WindowsServiceInstaller);
-            var method = installerType.GetMethod("CopyDirectoryAsync", 
+            var method = installerType.GetMethod("CopyDirectoryAsync",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
@@ -293,7 +293,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var installerType = typeof(WindowsServiceInstaller);
-            var method = installerType.GetMethod("BuildProjectForDeploymentAsync", 
+            var method = installerType.GetMethod("BuildProjectForDeploymentAsync",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
@@ -307,7 +307,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var installerType = typeof(WindowsServiceInstaller);
-            var method = installerType.GetMethod("CopyApplicationFilesAsync", 
+            var method = installerType.GetMethod("CopyApplicationFilesAsync",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
@@ -321,7 +321,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var installerType = typeof(WindowsServiceInstaller);
-            var method = installerType.GetMethod("ForceCleanupServiceAsync", 
+            var method = installerType.GetMethod("ForceCleanupServiceAsync",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
@@ -335,7 +335,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var installerType = typeof(WindowsServiceInstaller);
-            var method = installerType.GetMethod("DirectRegistryCleanupAsync", 
+            var method = installerType.GetMethod("DirectRegistryCleanupAsync",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert

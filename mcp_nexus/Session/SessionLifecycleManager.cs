@@ -17,12 +17,12 @@ namespace mcp_nexus.Session
         private readonly IMcpNotificationService m_notificationService;
         private readonly SessionManagerConfiguration m_config;
         private readonly ConcurrentDictionary<string, SessionInfo> m_sessions;
-        
+
         // Thread-safe counters
         private long m_totalSessionsCreated = 0;
         private long m_totalSessionsClosed = 0;
         private long m_totalSessionsExpired = 0;
-        
+
         public SessionLifecycleManager(
             ILogger logger,
             IServiceProvider serviceProvider,
@@ -36,7 +36,7 @@ namespace mcp_nexus.Session
             m_config = config ?? throw new ArgumentNullException(nameof(config));
             m_sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
         }
-        
+
         /// <summary>
         /// Creates a new debugging session
         /// </summary>
@@ -48,27 +48,27 @@ namespace mcp_nexus.Session
         public async Task<SessionInfo> CreateSessionAsync(string sessionId, string dumpPath, string? symbolsPath, CancellationToken cancellationToken)
         {
             var stopwatch = Stopwatch.StartNew();
-            
+
             try
             {
                 m_logger.LogInformation("🔧 Creating session {SessionId} for dump: {DumpPath}", sessionId, dumpPath);
-                
+
                 // Create session components
                 var sessionLogger = CreateSessionLogger(sessionId);
                 var cdbSession = CreateCdbSession(sessionLogger, sessionId);
                 var commandQueue = CreateCommandQueue(cdbSession, sessionLogger, sessionId);
-                
+
                 // Start CDB session asynchronously
                 var cdbTarget = m_config.ConstructCdbTarget(dumpPath, symbolsPath);
                 var startSuccess = await Task.Run(() => cdbSession.StartSession(cdbTarget, null), cancellationToken);
-                
+
                 if (!startSuccess)
                 {
                     // Cleanup on failure
                     await CleanupSessionComponents(cdbSession, commandQueue);
                     throw new InvalidOperationException($"Failed to start CDB session for {dumpPath}");
                 }
-                
+
                 // Create session info
                 var sessionInfo = new SessionInfo
                 {
@@ -81,30 +81,30 @@ namespace mcp_nexus.Session
                     LastActivity = DateTime.UtcNow,
                     ProcessId = GetCdbProcessId(cdbSession)
                 };
-                
+
                 // Add to sessions dictionary
                 m_sessions[sessionId] = sessionInfo;
                 Interlocked.Increment(ref m_totalSessionsCreated);
-                
+
                 stopwatch.Stop();
-                m_logger.LogInformation("✅ Session {SessionId} created successfully in {Elapsed}ms", 
+                m_logger.LogInformation("✅ Session {SessionId} created successfully in {Elapsed}ms",
                     sessionId, stopwatch.ElapsedMilliseconds);
-                
+
                 // Send creation notification
-                await m_notificationService.NotifySessionEventAsync(sessionId, "created", 
+                await m_notificationService.NotifySessionEventAsync(sessionId, "created",
                     $"Session created for {Path.GetFileName(dumpPath)}", GetSessionContext(sessionInfo));
-                
+
                 return sessionInfo;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                m_logger.LogError(ex, "❌ Failed to create session {SessionId} after {Elapsed}ms", 
+                m_logger.LogError(ex, "❌ Failed to create session {SessionId} after {Elapsed}ms",
                     sessionId, stopwatch.ElapsedMilliseconds);
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Closes a debugging session
         /// </summary>
@@ -115,58 +115,58 @@ namespace mcp_nexus.Session
         {
             if (string.IsNullOrWhiteSpace(sessionId))
                 return false;
-            
+
             if (!m_sessions.TryRemove(sessionId, out var sessionInfo))
             {
                 m_logger.LogWarning("Session {SessionId} not found for closure", sessionId);
                 return false;
             }
-            
+
             var stopwatch = Stopwatch.StartNew();
-            
+
             try
             {
                 m_logger.LogInformation("🔒 Closing session {SessionId}", sessionId);
-                
+
                 // Cancel all pending commands
                 var cancelledCount = sessionInfo.CommandQueue.CancelAllCommands("Session closing");
                 if (cancelledCount > 0)
                 {
-                    m_logger.LogInformation("Cancelled {Count} pending commands for session {SessionId}", 
+                    m_logger.LogInformation("Cancelled {Count} pending commands for session {SessionId}",
                         cancelledCount, sessionId);
                 }
-                
+
                 // Stop CDB session
                 var stopSuccess = await sessionInfo.CdbSession.StopSession();
                 if (!stopSuccess)
                 {
                     m_logger.LogWarning("CDB session stop returned false for session {SessionId}", sessionId);
                 }
-                
+
                 // Cleanup components
                 await CleanupSessionComponents(sessionInfo.CdbSession, sessionInfo.CommandQueue);
-                
+
                 Interlocked.Increment(ref m_totalSessionsClosed);
                 stopwatch.Stop();
-                
-                m_logger.LogInformation("✅ Session {SessionId} closed successfully in {Elapsed}ms", 
+
+                m_logger.LogInformation("✅ Session {SessionId} closed successfully in {Elapsed}ms",
                     sessionId, stopwatch.ElapsedMilliseconds);
-                
+
                 // Send closure notification
-                await m_notificationService.NotifySessionEventAsync(sessionId, "closed", 
+                await m_notificationService.NotifySessionEventAsync(sessionId, "closed",
                     "Session closed successfully", GetSessionContext(sessionInfo));
-                
+
                 return true;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                m_logger.LogError(ex, "❌ Error closing session {SessionId} after {Elapsed}ms", 
+                m_logger.LogError(ex, "❌ Error closing session {SessionId} after {Elapsed}ms",
                     sessionId, stopwatch.ElapsedMilliseconds);
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Cleans up expired sessions
         /// </summary>
@@ -175,7 +175,7 @@ namespace mcp_nexus.Session
         {
             var expiredSessions = new List<string>();
             var now = DateTime.UtcNow;
-            
+
             // Find expired sessions
             foreach (var kvp in m_sessions)
             {
@@ -185,12 +185,12 @@ namespace mcp_nexus.Session
                     expiredSessions.Add(kvp.Key);
                 }
             }
-            
+
             if (expiredSessions.Count == 0)
                 return 0;
-            
+
             m_logger.LogInformation("🧹 Cleaning up {Count} expired sessions", expiredSessions.Count);
-            
+
             var cleanedCount = 0;
             foreach (var sessionId in expiredSessions)
             {
@@ -200,11 +200,11 @@ namespace mcp_nexus.Session
                     {
                         cleanedCount++;
                         Interlocked.Increment(ref m_totalSessionsExpired);
-                        
+
                         m_logger.LogInformation("🗑️ Expired session {SessionId} cleaned up", sessionId);
-                        
+
                         // Send expiry notification
-                        await m_notificationService.NotifySessionEventAsync(sessionId, "expired", 
+                        await m_notificationService.NotifySessionEventAsync(sessionId, "expired",
                             "Session expired due to inactivity", null);
                     }
                 }
@@ -213,16 +213,16 @@ namespace mcp_nexus.Session
                     m_logger.LogError(ex, "Error cleaning up expired session {SessionId}", sessionId);
                 }
             }
-            
+
             if (cleanedCount > 0)
             {
-                m_logger.LogInformation("✅ Cleaned up {CleanedCount}/{TotalCount} expired sessions", 
+                m_logger.LogInformation("✅ Cleaned up {CleanedCount}/{TotalCount} expired sessions",
                     cleanedCount, expiredSessions.Count);
             }
-            
+
             return cleanedCount;
         }
-        
+
         /// <summary>
         /// Gets lifecycle statistics
         /// </summary>
@@ -235,7 +235,7 @@ namespace mcp_nexus.Session
                 Interlocked.Read(ref m_totalSessionsExpired)
             );
         }
-        
+
         /// <summary>
         /// Creates a logger for a specific session
         /// </summary>
@@ -245,14 +245,14 @@ namespace mcp_nexus.Session
             var loggerFactory = m_serviceProvider.GetRequiredService<ILoggerFactory>();
             return loggerFactory.CreateLogger($"Session.{sessionId}");
         }
-        
+
         /// <summary>
         /// Creates a CDB session for debugging
         /// </summary>
         private ICdbSession CreateCdbSession(ILogger sessionLogger, string sessionId)
         {
             return new CdbSession(
-                sessionLogger as ILogger<CdbSession> ?? 
+                sessionLogger as ILogger<CdbSession> ??
                     Microsoft.Extensions.Logging.Abstractions.NullLogger<CdbSession>.Instance,
                 m_config.CdbOptions.CommandTimeoutMs,
                 m_config.CdbOptions.CustomCdbPath,
@@ -261,7 +261,7 @@ namespace mcp_nexus.Session
                 m_config.CdbOptions.SymbolSearchPath
             );
         }
-        
+
         /// <summary>
         /// Creates a command queue for the session
         /// </summary>
@@ -274,7 +274,7 @@ namespace mcp_nexus.Session
                 sessionId
             );
         }
-        
+
         /// <summary>
         /// Gets the process ID of a CDB session
         /// </summary>
@@ -292,7 +292,7 @@ namespace mcp_nexus.Session
                 return null;
             }
         }
-        
+
         /// <summary>
         /// Creates a session context for notifications
         /// </summary>
@@ -308,7 +308,7 @@ namespace mcp_nexus.Session
                 Description = $"Session for {Path.GetFileName(sessionInfo.DumpPath)}"
             };
         }
-        
+
         /// <summary>
         /// Cleans up session components safely
         /// </summary>
@@ -323,7 +323,7 @@ namespace mcp_nexus.Session
             {
                 m_logger.LogWarning(ex, "Error disposing command queue during cleanup");
             }
-            
+
             try
             {
                 // Stop and dispose CDB session

@@ -34,7 +34,7 @@ namespace mcp_nexus.Infrastructure
 
                     if (ServiceRegistryManager.IsServiceInstalled())
                     {
-                        OperationLogger.LogWarning(logger, OperationLogger.Operations.Install, 
+                        OperationLogger.LogWarning(logger, OperationLogger.Operations.Install,
                             "Service still exists after uninstall attempt. This may be normal if it's marked for deletion");
                     }
                 }

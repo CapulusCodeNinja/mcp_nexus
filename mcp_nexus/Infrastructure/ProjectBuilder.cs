@@ -83,7 +83,7 @@ namespace mcp_nexus.Infrastructure
         public static string? FindProjectDirectory(string startDirectory)
         {
             var currentDir = new DirectoryInfo(startDirectory);
-            
+
             while (currentDir != null)
             {
                 var projectFile = Path.Combine(currentDir.FullName, ServiceConfiguration.ProjectFileName);
@@ -93,7 +93,7 @@ namespace mcp_nexus.Infrastructure
                 }
                 currentDir = currentDir.Parent;
             }
-            
+
             return null;
         }
     }

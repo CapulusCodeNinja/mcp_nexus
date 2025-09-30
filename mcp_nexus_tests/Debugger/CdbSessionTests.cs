@@ -470,7 +470,7 @@ namespace mcp_nexus_tests.Helper
         {
             // Arrange
             var session = new CdbSession(m_mockLogger.Object);
-            var method = typeof(CdbSession).GetMethod("GetCurrentArchitecture", 
+            var method = typeof(CdbSession).GetMethod("GetCurrentArchitecture",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // Act
@@ -487,7 +487,7 @@ namespace mcp_nexus_tests.Helper
             // Arrange
             var customPath = "C:\\CustomCdb\\cdb.exe";
             var session = new CdbSession(m_mockLogger.Object, 5000, customPath);
-            var method = typeof(CdbSession).GetMethod("FindCdbPath", 
+            var method = typeof(CdbSession).GetMethod("FindCdbPath",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // Act
@@ -503,7 +503,7 @@ namespace mcp_nexus_tests.Helper
             // Arrange
             var customPath = "C:\\NonExistent\\cdb.exe";
             var session = new CdbSession(m_mockLogger.Object, 5000, customPath);
-            var method = typeof(CdbSession).GetMethod("FindCdbPath", 
+            var method = typeof(CdbSession).GetMethod("FindCdbPath",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // Act
@@ -518,7 +518,7 @@ namespace mcp_nexus_tests.Helper
         {
             // Arrange
             var session = new CdbSession(m_mockLogger.Object);
-            var method = typeof(CdbSession).GetMethod("IsCommandComplete", 
+            var method = typeof(CdbSession).GetMethod("IsCommandComplete",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // Act & Assert
@@ -532,7 +532,7 @@ namespace mcp_nexus_tests.Helper
         {
             // Arrange
             var session = new CdbSession(m_mockLogger.Object);
-            var method = typeof(CdbSession).GetMethod("IsCommandComplete", 
+            var method = typeof(CdbSession).GetMethod("IsCommandComplete",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // Act & Assert
@@ -546,7 +546,7 @@ namespace mcp_nexus_tests.Helper
         {
             // Arrange
             var session = new CdbSession(m_mockLogger.Object);
-            var method = typeof(CdbSession).GetMethod("IsCommandComplete", 
+            var method = typeof(CdbSession).GetMethod("IsCommandComplete",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // Act & Assert - Test with empty string instead of null to avoid null reference exception

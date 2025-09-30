@@ -25,7 +25,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void ValidateServiceRegistration_WithNullServiceProvider_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 DependencyInjectionValidator.ValidateServiceRegistration(null!, m_mockLogger.Object));
         }
 
@@ -36,7 +36,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = new Mock<IServiceProvider>().Object;
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, null!));
         }
 
@@ -152,7 +152,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void ValidateCriticalServices_WithNullServiceProvider_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 DependencyInjectionValidator.ValidateCriticalServices(null!, m_mockLogger.Object));
         }
 
@@ -163,7 +163,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = new Mock<IServiceProvider>().Object;
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, null!));
         }
 

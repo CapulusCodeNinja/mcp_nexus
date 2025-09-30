@@ -6,6 +6,7 @@ namespace mcp_nexus.Constants
     public static class ApplicationConstants
     {
         // Command timeout constants
+        public static readonly TimeSpan SimpleCommandTimeout = TimeSpan.FromMinutes(2);
         public static readonly TimeSpan DefaultCommandTimeout = TimeSpan.FromMinutes(5);
         public static readonly TimeSpan MaxCommandTimeout = TimeSpan.FromMinutes(30);
         public static readonly TimeSpan LongRunningCommandTimeout = TimeSpan.FromHours(1);

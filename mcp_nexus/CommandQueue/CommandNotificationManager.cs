@@ -69,11 +69,11 @@ namespace mcp_nexus.CommandQueue
                     {
                         var status = $"Executing for {elapsed.TotalMinutes:F1} minutes...";
                         var progress = Math.Min(95, (int)(elapsed.TotalMinutes * 10)); // Rough progress based on time
-                        
+
                         await m_notificationService.NotifyCommandStatusAsync(
-                            command.Id, 
-                            command.Command, 
-                            status, 
+                            command.Id,
+                            command.Command,
+                            status,
                             progress);
                     }
                     catch (Exception ex)
@@ -95,7 +95,7 @@ namespace mcp_nexus.CommandQueue
         {
             var remainingMinutes = Math.Max(3, queuePosition * 2); // Estimate
             var remainingSeconds = Math.Max(5, queuePosition * 10); // Estimate
-            
+
             return m_config.GetQueuedStatusMessage(queuePosition, elapsed, remainingMinutes, remainingSeconds);
         }
 
@@ -120,7 +120,7 @@ namespace mcp_nexus.CommandQueue
                     {
                         // This could be extended to send queue-level notifications
                         m_logger.LogInformation("Queue Event [{EventType}]: {Message}", eventType, message);
-                        
+
                         // If we had a queue event notification method, we'd call it here
                         // await m_notificationService.NotifyQueueEventAsync(eventType, message, data);
                     }

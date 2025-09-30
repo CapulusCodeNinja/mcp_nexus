@@ -25,7 +25,7 @@ namespace mcp_nexus_tests.CommandQueue
             m_mockCdbSession = new Mock<ICdbSession>();
             m_mockLogger = new Mock<ILogger>();
             m_mockNotificationService = new Mock<IMcpNotificationService>();
-            
+
             m_service = new IsolatedCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,

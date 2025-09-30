@@ -146,7 +146,7 @@ namespace mcp_nexus_tests.Services
 
             // Assert - Just verify that the service doesn't throw and that we can cancel
             m_timeoutService.CancelCommandTimeout(commandId);
-            
+
             // The key test is that we can replace timeouts without throwing
             // The actual timeout execution is flaky due to Task.Run timing issues
             Assert.True(true); // If we get here, the replacement worked
@@ -556,7 +556,7 @@ namespace mcp_nexus_tests.Services
             m_timeoutService = new CommandTimeoutService(m_mockLogger.Object);
             var commandId = "test-command-extend-exception";
             var onTimeout = new Func<Task>(() => throw new InvalidOperationException("Test exception"));
-            
+
             // Start a timeout first
             m_timeoutService.StartCommandTimeout(commandId, TimeSpan.FromMilliseconds(100), onTimeout);
 
@@ -606,7 +606,7 @@ namespace mcp_nexus_tests.Services
             // Arrange
             var mockLogger = new Mock<ILogger<CommandTimeoutService>>();
             m_timeoutService = new CommandTimeoutService(mockLogger.Object);
-            
+
             // Start a timeout to have something to dispose
             m_timeoutService.StartCommandTimeout("test-command", TimeSpan.FromSeconds(10), () => Task.CompletedTask);
 
@@ -632,7 +632,7 @@ namespace mcp_nexus_tests.Services
 
             // Assert - Just verify that the service doesn't throw and that we can cancel
             m_timeoutService.CancelCommandTimeout(commandId);
-            
+
             // The key test is that we can replace timeouts without throwing
             // The actual timeout execution is flaky due to Task.Run timing issues
             Assert.True(true); // If we get here, the replacement worked
@@ -674,7 +674,7 @@ namespace mcp_nexus_tests.Services
             m_timeoutService.CancelCommandTimeout("cmd1");
             m_timeoutService.CancelCommandTimeout("cmd2");
             m_timeoutService.CancelCommandTimeout("cmd3");
-            
+
             // The key test is that we can manage multiple timeouts without throwing
             // The actual timeout execution is flaky due to Task.Run timing issues
             Assert.True(true); // If we get here, the concurrent timeouts worked

@@ -272,7 +272,7 @@ namespace mcp_nexus_tests.Metrics
 
             // Assert
             var snapshot = m_metricsCollector.GetSnapshot();
-            
+
             // Check execution time histogram
             var executionHistogram = snapshot.Histograms.FirstOrDefault(h => h.Name == "command_execution_duration_ms");
             Assert.NotNull(executionHistogram);
@@ -304,7 +304,7 @@ namespace mcp_nexus_tests.Metrics
 
             // Assert
             var snapshot = m_metricsCollector.GetSnapshot();
-            
+
             // Check execution time histogram
             var executionHistogram = snapshot.Histograms.FirstOrDefault(h => h.Name == "command_execution_duration_ms");
             Assert.NotNull(executionHistogram);

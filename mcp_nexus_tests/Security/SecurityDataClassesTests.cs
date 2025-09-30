@@ -71,7 +71,7 @@ namespace mcp_nexus_tests.Security
             // Assert
             Assert.True(result.IsValid);
             Assert.Null(result.ErrorMessage);
-            
+
             // Verify the result is consistent
             Assert.True(result.IsValid);
             Assert.Null(result.ErrorMessage);
@@ -89,7 +89,7 @@ namespace mcp_nexus_tests.Security
             // Assert
             Assert.False(result.IsValid);
             Assert.Equal(errorMessage, result.ErrorMessage);
-            
+
             // Verify the result is consistent
             Assert.False(result.IsValid);
             Assert.Equal(errorMessage, result.ErrorMessage);

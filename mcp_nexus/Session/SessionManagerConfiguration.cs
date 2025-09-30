@@ -10,7 +10,7 @@ namespace mcp_nexus.Session
     {
         public SessionConfiguration Config { get; }
         public CdbSessionOptions CdbOptions { get; }
-        
+
         public SessionManagerConfiguration(
             IOptions<SessionConfiguration>? config = null,
             IOptions<CdbSessionOptions>? cdbOptions = null)
@@ -18,7 +18,7 @@ namespace mcp_nexus.Session
             Config = config?.Value ?? new SessionConfiguration();
             CdbOptions = cdbOptions?.Value ?? new CdbSessionOptions();
         }
-        
+
         /// <summary>
         /// Validates session creation parameters
         /// </summary>
@@ -29,20 +29,20 @@ namespace mcp_nexus.Session
         {
             if (dumpPath == null)
                 return (false, "Dump path cannot be null");
-            
+
             if (string.IsNullOrWhiteSpace(dumpPath))
                 return (false, "Dump path cannot be empty or whitespace");
-            
+
             if (!File.Exists(dumpPath))
                 return (false, $"Dump file not found: {dumpPath}");
-            
+
             // Optional: Validate symbols path if provided
             if (!string.IsNullOrWhiteSpace(symbolsPath) && !Directory.Exists(symbolsPath))
                 return (false, $"Symbols directory not found: {symbolsPath}");
-            
+
             return (true, null);
         }
-        
+
         /// <summary>
         /// Generates a unique session ID with enhanced entropy
         /// </summary>
@@ -55,7 +55,7 @@ namespace mcp_nexus.Session
             var processId = Environment.ProcessId;
             return $"sess-{sessionCounter:D6}-{guid[..8]}-{timestamp:X8}-{processId:X4}";
         }
-        
+
         /// <summary>
         /// Constructs the CDB target string from dump and symbols paths
         /// </summary>
@@ -65,15 +65,15 @@ namespace mcp_nexus.Session
         public string ConstructCdbTarget(string dumpPath, string? symbolsPath = null)
         {
             var target = $"-z \"{dumpPath}\"";
-            
+
             if (!string.IsNullOrWhiteSpace(symbolsPath))
             {
                 target += $" -y \"{symbolsPath}\"";
             }
-            
+
             return target;
         }
-        
+
         /// <summary>
         /// Determines if a session should be considered expired
         /// </summary>
@@ -83,7 +83,7 @@ namespace mcp_nexus.Session
         {
             return DateTime.UtcNow - lastActivity > Config.SessionTimeout;
         }
-        
+
         /// <summary>
         /// Checks if the session limit would be exceeded
         /// </summary>
@@ -93,7 +93,7 @@ namespace mcp_nexus.Session
         {
             return currentSessionCount >= Config.MaxConcurrentSessions;
         }
-        
+
         /// <summary>
         /// Gets the cleanup interval for expired sessions
         /// </summary>
@@ -102,7 +102,7 @@ namespace mcp_nexus.Session
         {
             return Config.CleanupInterval;
         }
-        
+
         /// <summary>
         /// Gets the session timeout duration
         /// </summary>

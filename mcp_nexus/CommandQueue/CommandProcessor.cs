@@ -99,14 +99,14 @@ namespace mcp_nexus.CommandQueue
         private async Task ExecuteCommandSafely(QueuedCommand command)
         {
             var stopwatch = Stopwatch.StartNew();
-            
+
             try
             {
                 m_logger.LogTrace("🔄 Starting execution of command {CommandId}", command.Id);
 
                 // Update command state to executing
                 var updatedCommand = command with { State = CommandState.Executing };
-                
+
                 // Start heartbeat for long-running commands
                 using var heartbeatCts = new CancellationTokenSource();
                 var heartbeatTask = StartHeartbeatAsync(updatedCommand, stopwatch, heartbeatCts.Token);
@@ -130,7 +130,7 @@ namespace mcp_nexus.CommandQueue
                     CompleteCommandSafely(command, result, CommandState.Completed);
                     m_tracker.IncrementCompleted();
 
-                    m_logger.LogInformation("✅ Command {CommandId} completed successfully in {Elapsed}ms", 
+                    m_logger.LogInformation("✅ Command {CommandId} completed successfully in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
                 }
                 catch (OperationCanceledException) when (command.CancellationTokenSource.Token.IsCancellationRequested)
@@ -138,19 +138,19 @@ namespace mcp_nexus.CommandQueue
                     // Command was explicitly cancelled
                     CompleteCommandSafely(command, "Command was cancelled by user request", CommandState.Cancelled);
                     m_tracker.IncrementCancelled();
-                    m_logger.LogWarning("⚠️ Command {CommandId} was cancelled by user in {Elapsed}ms", 
+                    m_logger.LogWarning("⚠️ Command {CommandId} was cancelled by user in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
                 }
                 catch (OperationCanceledException)
                 {
                     // Timeout or service shutdown
-                    var message = stopwatch.Elapsed >= m_config.DefaultCommandTimeout 
+                    var message = stopwatch.Elapsed >= m_config.DefaultCommandTimeout
                         ? $"Command timed out after {m_config.DefaultCommandTimeout.TotalMinutes:F1} minutes"
                         : "Command cancelled due to service shutdown";
-                    
+
                     CompleteCommandSafely(command, message, CommandState.Failed);
                     m_tracker.IncrementFailed();
-                    m_logger.LogWarning("⏰ Command {CommandId} timed out or was cancelled in {Elapsed}ms", 
+                    m_logger.LogWarning("⏰ Command {CommandId} timed out or was cancelled in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
                 }
                 finally
@@ -165,17 +165,17 @@ namespace mcp_nexus.CommandQueue
                 // Unexpected error during execution
                 CompleteCommandSafely(command, $"Command execution failed: {ex.Message}", CommandState.Failed);
                 m_tracker.IncrementFailed();
-                m_logger.LogError(ex, "❌ Command {CommandId} failed with exception in {Elapsed}ms", 
+                m_logger.LogError(ex, "❌ Command {CommandId} failed with exception in {Elapsed}ms",
                     command.Id, stopwatch.ElapsedMilliseconds);
             }
             finally
             {
                 stopwatch.Stop();
-                
+
                 // Don't remove from active commands immediately - let them stay for status checking
                 // They can be cleaned up later by a cleanup mechanism if needed
-                
-                m_logger.LogTrace("🧹 Command {CommandId} processing finished after {Elapsed}ms", 
+
+                m_logger.LogTrace("🧹 Command {CommandId} processing finished after {Elapsed}ms",
                     command.Id, stopwatch.ElapsedMilliseconds);
             }
         }
@@ -190,13 +190,13 @@ namespace mcp_nexus.CommandQueue
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     await Task.Delay(m_config.HeartbeatInterval, cancellationToken);
-                    
+
                     if (!cancellationToken.IsCancellationRequested)
                     {
                         var elapsed = stopwatch.Elapsed;
-                        m_logger.LogTrace("💓 Heartbeat for command {CommandId} - elapsed: {Elapsed}", 
+                        m_logger.LogTrace("💓 Heartbeat for command {CommandId} - elapsed: {Elapsed}",
                             command.Id, elapsed);
-                        
+
                         // Notify about command progress (this could be extended to send notifications)
                         // For now, just log the heartbeat
                     }
@@ -221,16 +221,16 @@ namespace mcp_nexus.CommandQueue
             {
                 // Update the command state (this is a record, so we create a new instance)
                 var completedCommand = command with { State = state };
-                
+
                 // Set the result
                 command.CompletionSource.TrySetResult(result);
-                
+
                 m_logger.LogTrace("✅ Command {CommandId} completed with state {State}", command.Id, state);
             }
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "Error completing command {CommandId}", command.Id);
-                
+
                 // Ensure the completion source is set even if there's an error
                 try
                 {
@@ -250,10 +250,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (commandId == null)
                 throw new ArgumentNullException(nameof(commandId), "Command ID cannot be null or empty");
-                
+
             if (string.IsNullOrWhiteSpace(commandId))
                 return false; // Empty string returns false, null throws
-                
+
             var command = m_tracker.GetCommand(commandId);
             if (command == null)
             {
@@ -271,7 +271,7 @@ namespace mcp_nexus.CommandQueue
 
                 m_logger.LogInformation("🚫 Cancelling command {CommandId}", commandId);
                 command.CancellationTokenSource.Cancel();
-                
+
                 // If it's not currently executing, complete it immediately
                 var currentCommand = m_tracker.GetCurrentCommand();
                 if (currentCommand?.Id != commandId)

@@ -25,7 +25,7 @@ namespace mcp_nexus.Debugger
             int startupDelayMs = 2000)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            
+
             // Create configuration with validation
             m_config = new CdbSessionConfiguration(
                 commandTimeoutMs,
@@ -36,11 +36,11 @@ namespace mcp_nexus.Debugger
                 startupDelayMs);
 
             // Create focused components - use the same logger for now to maintain compatibility
-            m_processManager = new CdbProcessManager(logger as ILogger<CdbProcessManager> ?? 
+            m_processManager = new CdbProcessManager(logger as ILogger<CdbProcessManager> ??
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<CdbProcessManager>.Instance, m_config);
-            m_outputParser = new CdbOutputParser(logger as ILogger<CdbOutputParser> ?? 
+            m_outputParser = new CdbOutputParser(logger as ILogger<CdbOutputParser> ??
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<CdbOutputParser>.Instance);
-            m_commandExecutor = new CdbCommandExecutor(logger as ILogger<CdbCommandExecutor> ?? 
+            m_commandExecutor = new CdbCommandExecutor(logger as ILogger<CdbCommandExecutor> ??
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<CdbCommandExecutor>.Instance, m_config, m_outputParser);
 
             m_logger.LogDebug("CdbSession initialized with focused components");
@@ -66,7 +66,7 @@ namespace mcp_nexus.Debugger
         public void CancelCurrentOperation()
         {
             ThrowIfDisposed();
-            
+
             m_logger.LogWarning("Cancelling current operation");
             m_commandExecutor.CancelCurrentOperation();
         }
@@ -122,7 +122,7 @@ namespace mcp_nexus.Debugger
             if (!IsActive)
                 throw new InvalidOperationException("No active debugging session");
 
-            return Task.Run(() => 
+            return Task.Run(() =>
             {
                 try
                 {

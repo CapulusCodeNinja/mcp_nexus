@@ -165,7 +165,7 @@ namespace mcp_nexus_tests.Health
             // Arrange
             var mockLogger = new Mock<ILogger<HealthCheckService>>();
             var mockSessionManager = new Mock<ISessionManager>();
-            
+
             // This test is challenging because the service doesn't have many external dependencies
             // that we can easily make throw exceptions. The current implementation is quite robust.
             var service = new HealthCheckService(mockLogger.Object, mockSessionManager.Object);

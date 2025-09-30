@@ -14,11 +14,11 @@ namespace mcp_nexus.Configuration
         public static void ConfigureLogging(ILoggingBuilder logging, bool isServiceMode, IConfiguration configuration)
         {
             LogConfigurationStart(isServiceMode);
-            
+
             var logLevel = GetLogLevelFromConfiguration(configuration);
             ConfigureNLogDynamically(configuration, logLevel);
             ConfigureMicrosoftLogging(logging, logLevel);
-            
+
             LogConfigurationComplete(isServiceMode, logLevel);
         }
 

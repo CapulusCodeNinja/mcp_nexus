@@ -18,9 +18,9 @@ namespace mcp_nexus.Infrastructure
             try
             {
                 // Step 1: Create installation directory
-                OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, 
+                OperationLogger.LogInfo(logger, OperationLogger.Operations.Install,
                     "Creating installation directory: {InstallFolder}", ServiceConfiguration.InstallFolder);
-                
+
                 if (Directory.Exists(ServiceConfiguration.InstallFolder))
                 {
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Installation directory already exists, cleaning up");
@@ -71,12 +71,12 @@ namespace mcp_nexus.Infrastructure
             try
             {
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Registering Windows service");
-                
+
                 var executablePath = Path.Combine(ServiceConfiguration.InstallFolder, ServiceConfiguration.ExecutableName);
                 var createCommand = ServiceConfiguration.GetCreateServiceCommand(executablePath);
-                
+
                 OperationLogger.LogDebug(logger, OperationLogger.Operations.Install, "Service creation command: {Command}", createCommand);
-                
+
                 var result = await ServiceRegistryManager.RunScCommandAsync(createCommand, logger);
                 if (!result)
                 {
@@ -104,10 +104,10 @@ namespace mcp_nexus.Infrastructure
             try
             {
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Uninstall, "Unregistering Windows service");
-                
+
                 var deleteCommand = ServiceConfiguration.GetDeleteServiceCommand();
                 OperationLogger.LogDebug(logger, OperationLogger.Operations.Uninstall, "Service deletion command: {Command}", deleteCommand);
-                
+
                 var result = await ServiceRegistryManager.RunScCommandAsync(deleteCommand, logger);
                 if (!result)
                 {
@@ -136,9 +136,9 @@ namespace mcp_nexus.Infrastructure
             {
                 if (Directory.Exists(ServiceConfiguration.InstallFolder))
                 {
-                    OperationLogger.LogInfo(logger, OperationLogger.Operations.Uninstall, 
+                    OperationLogger.LogInfo(logger, OperationLogger.Operations.Uninstall,
                         "Removing installation directory: {InstallFolder}", ServiceConfiguration.InstallFolder);
-                    
+
                     Directory.Delete(ServiceConfiguration.InstallFolder, recursive: true);
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Uninstall, "Installation directory removed successfully");
                 }

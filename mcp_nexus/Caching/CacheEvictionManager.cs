@@ -13,7 +13,7 @@ namespace mcp_nexus.Caching
         private readonly CacheConfiguration m_config;
         private readonly ConcurrentDictionary<TKey, CacheEntry<TValue>> m_cache;
         private readonly Timer m_cleanupTimer;
-        
+
         public CacheEvictionManager(
             ILogger logger,
             CacheConfiguration config,
@@ -22,11 +22,11 @@ namespace mcp_nexus.Caching
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_config = config ?? throw new ArgumentNullException(nameof(config));
             m_cache = cache ?? throw new ArgumentNullException(nameof(cache));
-            
+
             // Start periodic cleanup timer
             m_cleanupTimer = new Timer(PeriodicCleanup, null, m_config.CleanupInterval, m_config.CleanupInterval);
         }
-        
+
         /// <summary>
         /// Checks memory pressure and triggers eviction if necessary
         /// </summary>
@@ -35,13 +35,13 @@ namespace mcp_nexus.Caching
             try
             {
                 var currentMemoryUsage = CalculateCurrentMemoryUsage();
-                
+
                 if (m_config.ShouldTriggerCleanup(currentMemoryUsage))
                 {
                     m_logger.LogDebug("💾 Memory pressure detected: {CurrentMB:F1}MB / {MaxMB:F1}MB - triggering eviction",
                         currentMemoryUsage / (1024.0 * 1024.0),
                         m_config.MaxMemoryBytes / (1024.0 * 1024.0));
-                    
+
                     EvictLeastRecentlyUsed(m_config.GetTargetMemoryAfterCleanup());
                 }
             }
@@ -50,7 +50,7 @@ namespace mcp_nexus.Caching
                 m_logger.LogError(ex, "Error during memory pressure check");
             }
         }
-        
+
         /// <summary>
         /// Removes expired entries from the cache
         /// </summary>
@@ -60,7 +60,7 @@ namespace mcp_nexus.Caching
             var removedCount = 0;
             var now = DateTime.UtcNow;
             var keysToRemove = new List<TKey>();
-            
+
             try
             {
                 // Find expired entries
@@ -70,12 +70,12 @@ namespace mcp_nexus.Caching
                     {
                         keysToRemove.Add(kvp.Key);
                     }
-                    
+
                     // Limit the number of entries processed in one cleanup cycle
                     if (keysToRemove.Count >= m_config.MaxEntriesPerCleanup)
                         break;
                 }
-                
+
                 // Remove expired entries
                 foreach (var key in keysToRemove)
                 {
@@ -84,7 +84,7 @@ namespace mcp_nexus.Caching
                         removedCount++;
                     }
                 }
-                
+
                 if (removedCount > 0)
                 {
                     m_logger.LogDebug("💾 Removed {Count} expired cache entries", removedCount);
@@ -94,10 +94,10 @@ namespace mcp_nexus.Caching
             {
                 m_logger.LogError(ex, "Error removing expired entries");
             }
-            
+
             return removedCount;
         }
-        
+
         /// <summary>
         /// Evicts least recently used entries until target memory is reached
         /// </summary>
@@ -106,35 +106,35 @@ namespace mcp_nexus.Caching
         public int EvictLeastRecentlyUsed(long targetMemoryBytes)
         {
             var evictedCount = 0;
-            
+
             try
             {
                 var currentMemory = CalculateCurrentMemoryUsage();
                 if (currentMemory <= targetMemoryBytes)
                     return 0;
-                
+
                 // Get entries sorted by last accessed time (LRU first)
                 var entriesByLru = m_cache.ToList()
                     .OrderBy(kvp => kvp.Value.LastAccessed)
                     .ThenBy(kvp => kvp.Value.AccessCount) // Secondary sort by access count
                     .ToList();
-                
+
                 foreach (var kvp in entriesByLru)
                 {
                     if (m_cache.TryRemove(kvp.Key, out _))
                     {
                         evictedCount++;
                         currentMemory -= kvp.Value.SizeBytes;
-                        
+
                         if (currentMemory <= targetMemoryBytes)
                             break;
                     }
-                    
+
                     // Safety limit to prevent excessive eviction
                     if (evictedCount >= m_config.MaxEntriesPerCleanup)
                         break;
                 }
-                
+
                 if (evictedCount > 0)
                 {
                     m_logger.LogInformation("💾 Evicted {Count} LRU entries, memory reduced to {MemoryMB:F1}MB",
@@ -145,10 +145,10 @@ namespace mcp_nexus.Caching
             {
                 m_logger.LogError(ex, "Error during LRU eviction");
             }
-            
+
             return evictedCount;
         }
-        
+
         /// <summary>
         /// Calculates the current memory usage of the cache
         /// </summary>
@@ -165,7 +165,7 @@ namespace mcp_nexus.Caching
                 return 0;
             }
         }
-        
+
         /// <summary>
         /// Periodic cleanup callback
         /// </summary>
@@ -174,10 +174,10 @@ namespace mcp_nexus.Caching
             try
             {
                 var expiredRemoved = RemoveExpiredEntries();
-                
+
                 // Check memory pressure after removing expired entries
                 CheckMemoryPressure();
-                
+
                 // Log cleanup summary if any work was done
                 if (expiredRemoved > 0)
                 {
@@ -191,7 +191,7 @@ namespace mcp_nexus.Caching
                 m_logger.LogError(ex, "Error during periodic cleanup");
             }
         }
-        
+
         /// <summary>
         /// Disposes the eviction manager
         /// </summary>

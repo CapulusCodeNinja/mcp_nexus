@@ -50,10 +50,10 @@ namespace mcp_nexus.Middleware
                 {
                     context.Request.EnableBuffering();
                     context.Request.Body.Position = 0;
-                    
+
                     using var reader = new StreamReader(context.Request.Body);
                     var requestBody = await reader.ReadToEndAsync();
-                    
+
                     if (!string.IsNullOrEmpty(requestBody))
                     {
                         using var doc = JsonDocument.Parse(requestBody);

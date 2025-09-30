@@ -28,13 +28,13 @@ namespace mcp_nexus.CommandQueue
         private readonly ICdbSession m_cdbSession;
         private readonly ILogger m_logger;
         private readonly IMcpNotificationService m_notificationService;
-        
+
         // Focused components
         private readonly CommandQueueConfiguration m_config;
         private readonly CommandTracker m_tracker;
         private readonly CommandProcessor m_processor;
         private readonly CommandNotificationManager m_notificationManager;
-        
+
         // Core infrastructure
         private readonly BlockingCollection<QueuedCommand> m_commandQueue;
         private readonly CancellationTokenSource m_processingCts = new();
@@ -53,10 +53,10 @@ namespace mcp_nexus.CommandQueue
 
             // Create configuration
             m_config = new CommandQueueConfiguration(sessionId);
-            
+
             // Create command queue
             m_commandQueue = new BlockingCollection<QueuedCommand>();
-            
+
             // Create focused components
             m_tracker = new CommandTracker(m_logger, m_config, m_commandQueue);
             m_processor = new CommandProcessor(m_cdbSession, m_logger, m_config, m_tracker, m_commandQueue, m_processingCts);
@@ -71,7 +71,7 @@ namespace mcp_nexus.CommandQueue
 
             // Notify startup
             m_notificationManager.NotifyServiceStartup();
-            
+
             m_logger.LogInformation("✅ IsolatedCommandQueueService created for session {SessionId}", sessionId);
         }
 
@@ -118,7 +118,7 @@ namespace mcp_nexus.CommandQueue
                 var queuePosition = m_tracker.GetQueuePosition(commandId);
                 var statusMessage = m_notificationManager.CreateQueuedStatusMessage(queuePosition, TimeSpan.Zero);
                 var progress = m_notificationManager.CalculateQueueProgress(queuePosition, TimeSpan.Zero);
-                
+
                 m_notificationManager.NotifyCommandStatusFireAndForget(commandId, command, statusMessage, null, progress);
 
                 m_logger.LogInformation("✅ Command {CommandId} queued successfully for session {SessionId} (position: {Position})",
@@ -131,7 +131,7 @@ namespace mcp_nexus.CommandQueue
                 // Clean up on failure
                 m_tracker.TryRemoveCommand(commandId, out _);
                 queuedCommand.CancellationTokenSource.Dispose();
-                
+
                 m_logger.LogError(ex, "❌ Failed to queue command {CommandId} for session {SessionId}", commandId, m_config.SessionId);
                 throw;
             }
@@ -181,7 +181,7 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 return false;
-            
+
             var success = m_processor.CancelCommand(commandId);
             if (success)
             {
@@ -194,7 +194,7 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 return 0;
-            
+
             var count = m_tracker.CancelAllCommands(reason);
             if (count > 0)
             {
@@ -207,7 +207,7 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 return Enumerable.Empty<(string, string, DateTime, string)>();
-                
+
             return m_tracker.GetQueueStatus();
         }
 
@@ -215,14 +215,14 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 return null;
-                
+
             return m_tracker.GetCurrentCommand();
         }
 
         public void ForceShutdownImmediate()
         {
             m_logger.LogWarning("🚨 Force shutdown requested for session {SessionId}", m_config.SessionId);
-            
+
             try
             {
                 m_processingCts.Cancel();
@@ -238,7 +238,7 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 return (0, 0, 0, 0);
-                
+
             return m_tracker.GetPerformanceStats();
         }
 
@@ -270,7 +270,7 @@ namespace mcp_nexus.CommandQueue
                 {
                     if (!m_processingTask.Wait(m_config.ShutdownTimeout))
                     {
-                        m_logger.LogWarning("Processing task did not complete within {Timeout}ms, forcing shutdown", 
+                        m_logger.LogWarning("Processing task did not complete within {Timeout}ms, forcing shutdown",
                             m_config.ShutdownTimeout.TotalMilliseconds);
                     }
                 }

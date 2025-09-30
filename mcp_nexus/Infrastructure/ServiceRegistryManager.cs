@@ -29,7 +29,7 @@ namespace mcp_nexus.Infrastructure
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Runs an SC (Service Control) command with the specified arguments
         /// </summary>
@@ -74,8 +74,8 @@ namespace mcp_nexus.Infrastructure
                 {
                     if (!allowFailure)
                     {
-                        OperationLogger.LogError(logger, OperationLogger.Operations.Install, 
-                            "SC command failed with exit code {ExitCode}. Output: {Output}. Error: {Error}", 
+                        OperationLogger.LogError(logger, OperationLogger.Operations.Install,
+                            "SC command failed with exit code {ExitCode}. Output: {Output}. Error: {Error}",
                             process.ExitCode, output.Trim(), error.Trim());
                     }
                     return false;
@@ -85,13 +85,13 @@ namespace mcp_nexus.Infrastructure
             {
                 if (!allowFailure)
                 {
-                    OperationLogger.LogError(logger, OperationLogger.Operations.Install, 
+                    OperationLogger.LogError(logger, OperationLogger.Operations.Install,
                         "Exception running SC command '{Arguments}': {Error}", arguments, ex.Message);
                 }
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Attempts to force cleanup a service that may be marked for deletion
         /// </summary>
@@ -113,15 +113,15 @@ namespace mcp_nexus.Infrastructure
 
                 // Method 2: Try alternative SC command sequence
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Trying alternative cleanup methods");
-                
+
                 // Stop any running instance
                 await RunScCommandAsync(ServiceConfiguration.GetServiceStopCommand(), logger, allowFailure: true);
                 await Task.Delay(ServiceConfiguration.ServiceStopDelayMs);
-                
+
                 // Try to delete again
                 await RunScCommandAsync(ServiceConfiguration.GetDeleteServiceCommand(), logger, allowFailure: true);
                 await Task.Delay(ServiceConfiguration.ServiceDeleteDelayMs);
-                
+
                 // Check if cleanup was successful
                 if (!IsServiceInstalled())
                 {
@@ -135,12 +135,12 @@ namespace mcp_nexus.Infrastructure
             }
             catch (Exception ex)
             {
-                OperationLogger.LogError(logger, OperationLogger.Operations.Install, 
+                OperationLogger.LogError(logger, OperationLogger.Operations.Install,
                     "Error during force cleanup: {Error}", ex.Message);
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Performs direct registry cleanup of service entries
         /// </summary>
@@ -153,7 +153,7 @@ namespace mcp_nexus.Infrastructure
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Attempting direct registry cleanup");
 
                 var serviceKeyPath = $@"SYSTEM\CurrentControlSet\Services\{ServiceConfiguration.ServiceName}";
-                
+
                 // Try to delete the service registry key
                 try
                 {
@@ -161,13 +161,13 @@ namespace mcp_nexus.Infrastructure
                     if (servicesKey?.GetSubKeyNames().Contains(ServiceConfiguration.ServiceName) == true)
                     {
                         servicesKey.DeleteSubKeyTree(ServiceConfiguration.ServiceName, false);
-                        OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, 
+                        OperationLogger.LogInfo(logger, OperationLogger.Operations.Install,
                             "Successfully deleted service registry key: {ServiceKeyPath}", serviceKeyPath);
                     }
                 }
                 catch (Exception ex)
                 {
-                    OperationLogger.LogWarning(logger, OperationLogger.Operations.Install, 
+                    OperationLogger.LogWarning(logger, OperationLogger.Operations.Install,
                         "Could not delete service registry key {ServiceKeyPath}: {Error}", serviceKeyPath, ex.Message);
                 }
 
@@ -177,13 +177,13 @@ namespace mcp_nexus.Infrastructure
                     if (EventLog.SourceExists(ServiceConfiguration.ServiceName))
                     {
                         EventLog.DeleteEventSource(ServiceConfiguration.ServiceName);
-                        OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, 
+                        OperationLogger.LogInfo(logger, OperationLogger.Operations.Install,
                             "Deleted event log source: {ServiceName}", ServiceConfiguration.ServiceName);
                     }
                 }
                 catch (Exception ex)
                 {
-                    OperationLogger.LogWarning(logger, OperationLogger.Operations.Install, 
+                    OperationLogger.LogWarning(logger, OperationLogger.Operations.Install,
                         "Could not delete event log source: {Error}", ex.Message);
                 }
 
@@ -205,12 +205,12 @@ namespace mcp_nexus.Infrastructure
             }
             catch (Exception ex)
             {
-                OperationLogger.LogError(logger, OperationLogger.Operations.Install, 
+                OperationLogger.LogError(logger, OperationLogger.Operations.Install,
                     "Error during direct registry cleanup: {Error}", ex.Message);
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Performs aggressive registry cleanup when standard methods fail
         /// </summary>
@@ -236,17 +236,17 @@ namespace mcp_nexus.Infrastructure
                     {
                         using var key = Registry.LocalMachine.OpenSubKey(path.Substring(0, path.LastIndexOf('\\')), true);
                         var serviceName = path.Substring(path.LastIndexOf('\\') + 1);
-                        
+
                         if (key?.GetSubKeyNames().Contains(serviceName) == true)
                         {
                             key.DeleteSubKeyTree(serviceName, false);
-                            OperationLogger.LogDebug(logger, OperationLogger.Operations.Install, 
+                            OperationLogger.LogDebug(logger, OperationLogger.Operations.Install,
                                 "Deleted registry key: {Path}", path);
                         }
                     }
                     catch (Exception ex)
                     {
-                        OperationLogger.LogDebug(logger, OperationLogger.Operations.Install, 
+                        OperationLogger.LogDebug(logger, OperationLogger.Operations.Install,
                             "Could not delete registry key {Path}: {Error}", path, ex.Message);
                     }
                 }
@@ -262,19 +262,19 @@ namespace mcp_nexus.Infrastructure
                 }
                 else
                 {
-                    OperationLogger.LogWarning(logger, OperationLogger.Operations.Install, 
+                    OperationLogger.LogWarning(logger, OperationLogger.Operations.Install,
                         "Service still appears to be installed after aggressive cleanup");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                OperationLogger.LogError(logger, OperationLogger.Operations.Install, 
+                OperationLogger.LogError(logger, OperationLogger.Operations.Install,
                     "Error during aggressive registry cleanup: {Error}", ex.Message);
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Creates the Windows service registration
         /// </summary>
@@ -284,17 +284,17 @@ namespace mcp_nexus.Infrastructure
         {
             var installCommand = ServiceConfiguration.GetCreateServiceCommand(ServiceConfiguration.ExecutablePath);
             var result = await RunScCommandAsync(installCommand, logger);
-            
+
             if (result)
             {
                 // Set service description
                 var descriptionCommand = ServiceConfiguration.GetServiceDescriptionCommand();
                 await RunScCommandAsync(descriptionCommand, logger, allowFailure: true);
             }
-            
+
             return result;
         }
-        
+
         /// <summary>
         /// Deletes the Windows service registration
         /// </summary>
@@ -305,15 +305,15 @@ namespace mcp_nexus.Infrastructure
             // First try to stop the service
             await RunScCommandAsync(ServiceConfiguration.GetServiceStopCommand(), logger, allowFailure: true);
             await Task.Delay(ServiceConfiguration.ServiceStopDelayMs);
-            
+
             // Then delete it
             var result = await RunScCommandAsync(ServiceConfiguration.GetDeleteServiceCommand(), logger);
-            
+
             if (result)
             {
                 await Task.Delay(ServiceConfiguration.ServiceDeleteDelayMs);
             }
-            
+
             return result;
         }
     }

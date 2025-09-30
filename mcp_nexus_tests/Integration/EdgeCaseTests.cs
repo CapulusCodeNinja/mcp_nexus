@@ -187,7 +187,7 @@ namespace mcp_nexus_tests.Services
 
             // Act
             var commandId = m_commandQueueService.QueueCommand("test command");
-            
+
             // Wait much longer for command to complete
             var maxWait = 100; // 10 seconds max
             var result = "";
@@ -202,9 +202,9 @@ namespace mcp_nexus_tests.Services
             }
 
             // Assert - Just verify that we get some response (not still executing)
-            Assert.False(result.Contains("Command is still executing"), 
+            Assert.False(result.Contains("Command is still executing"),
                 $"Command should have completed but got: {result}");
-            
+
             // The actual error message might vary, so just check it's not empty
             Assert.NotEmpty(result);
         }
@@ -218,7 +218,7 @@ namespace mcp_nexus_tests.Services
 
             // Act
             var commandId = m_commandQueueService.QueueCommand("test command");
-            
+
             // Wait much longer for command to complete
             var maxWait = 100; // 10 seconds max
             var result = "";
@@ -233,9 +233,9 @@ namespace mcp_nexus_tests.Services
             }
 
             // Assert - Just verify that we get some response (not still executing)
-            Assert.False(result.Contains("Command is still executing"), 
+            Assert.False(result.Contains("Command is still executing"),
                 $"Command should have completed but got: {result}");
-            
+
             // The actual error message might vary, so just check it's not empty
             Assert.NotEmpty(result);
         }

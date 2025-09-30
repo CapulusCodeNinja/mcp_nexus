@@ -14,7 +14,7 @@ namespace mcp_nexus.CommandQueue
         public TimeSpan CommandRetentionTime { get; }
         public TimeSpan HeartbeatInterval { get; }
         public TimeSpan RecoveryCheckInterval { get; }
-        
+
         public ResilientQueueConfiguration(
             TimeSpan? defaultCommandTimeout = null,
             TimeSpan? complexCommandTimeout = null,
@@ -32,7 +32,7 @@ namespace mcp_nexus.CommandQueue
             HeartbeatInterval = heartbeatInterval ?? TimeSpan.FromSeconds(30);
             RecoveryCheckInterval = recoveryCheckInterval ?? TimeSpan.FromMinutes(1);
         }
-        
+
         /// <summary>
         /// Determines the appropriate timeout for a command based on its complexity
         /// </summary>
@@ -53,10 +53,10 @@ namespace mcp_nexus.CommandQueue
             if (IsComplexCommand(lowerCommand))
                 return ComplexCommandTimeout;
 
-            // Default timeout for simple commands
-            return DefaultCommandTimeout;
+            // Simple command timeout for basic commands like "version"
+            return ApplicationConstants.SimpleCommandTimeout;
         }
-        
+
         /// <summary>
         /// Determines if a command is considered long-running
         /// </summary>
@@ -71,7 +71,7 @@ namespace mcp_nexus.CommandQueue
 
             return longRunningPatterns.Any(pattern => command.Contains(pattern));
         }
-        
+
         /// <summary>
         /// Determines if a command is considered complex
         /// </summary>
@@ -86,7 +86,7 @@ namespace mcp_nexus.CommandQueue
 
             return complexPatterns.Any(pattern => command.Contains(pattern));
         }
-        
+
         /// <summary>
         /// Generates heartbeat details based on command and elapsed time
         /// </summary>
@@ -96,7 +96,7 @@ namespace mcp_nexus.CommandQueue
         public static string GenerateHeartbeatDetails(string command, TimeSpan elapsed)
         {
             var lowerCommand = command.ToLowerInvariant().Trim();
-            
+
             if (lowerCommand.Contains("!analyze"))
             {
                 if (elapsed < TimeSpan.FromMinutes(2))
@@ -108,7 +108,7 @@ namespace mcp_nexus.CommandQueue
                 else
                     return "Performing deep analysis (this may take several more minutes)...";
             }
-            
+
             if (lowerCommand.Contains("!heap"))
             {
                 if (elapsed < TimeSpan.FromSeconds(30))
@@ -118,7 +118,7 @@ namespace mcp_nexus.CommandQueue
                 else
                     return "Processing large heap data (please wait)...";
             }
-            
+
             if (lowerCommand.Contains("!dumpheap"))
             {
                 if (elapsed < TimeSpan.FromSeconds(15))
@@ -128,7 +128,7 @@ namespace mcp_nexus.CommandQueue
                 else
                     return "Processing large object heap...";
             }
-            
+
             // Default heartbeat for other commands
             if (elapsed < TimeSpan.FromSeconds(30))
                 return "Executing command...";

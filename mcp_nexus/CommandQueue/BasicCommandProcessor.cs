@@ -13,16 +13,16 @@ namespace mcp_nexus.CommandQueue
         private readonly BasicQueueConfiguration m_config;
         private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands;
         private volatile QueuedCommand? m_currentCommand;
-        
+
         // Performance counters
         private long m_commandsProcessed = 0;
         private long m_commandsFailed = 0;
         private long m_commandsCancelled = 0;
         private DateTime m_lastStatsLog = DateTime.UtcNow;
-        
+
         // Cleanup timer
         private readonly Timer m_cleanupTimer;
-        
+
         public BasicCommandProcessor(
             ICdbSession cdbSession,
             ILogger logger,
@@ -33,11 +33,11 @@ namespace mcp_nexus.CommandQueue
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_config = config ?? throw new ArgumentNullException(nameof(config));
             m_activeCommands = activeCommands ?? throw new ArgumentNullException(nameof(activeCommands));
-            
+
             // Initialize cleanup timer
             m_cleanupTimer = new Timer(CleanupCompletedCommands, null, m_config.CleanupInterval, m_config.CleanupInterval);
         }
-        
+
         /// <summary>
         /// Processes the command queue continuously
         /// </summary>
@@ -47,14 +47,14 @@ namespace mcp_nexus.CommandQueue
         public async Task ProcessCommandQueueAsync(BlockingCollection<QueuedCommand> commandQueue, CancellationToken cancellationToken)
         {
             m_logger.LogInformation("🚀 Starting basic command processor");
-            
+
             try
             {
                 foreach (var queuedCommand in commandQueue.GetConsumingEnumerable(cancellationToken))
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
-                    
+
                     await ProcessSingleCommandAsync(queuedCommand, cancellationToken);
                 }
             }
@@ -72,31 +72,31 @@ namespace mcp_nexus.CommandQueue
                 m_logger.LogInformation("🏁 Command processor shutdown complete");
             }
         }
-        
+
         /// <summary>
         /// Processes a single command
         /// </summary>
         private async Task ProcessSingleCommandAsync(QueuedCommand queuedCommand, CancellationToken cancellationToken)
         {
             var startTime = DateTime.UtcNow;
-            
+
             try
             {
                 // Set as current command
                 m_currentCommand = queuedCommand;
                 UpdateCommandState(queuedCommand.Id, CommandState.Executing);
-                
+
                 m_logger.LogInformation("⚡ Processing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
-                
+
                 // Execute command
                 var result = await m_cdbSession.ExecuteCommand(queuedCommand.Command, cancellationToken);
-                
+
                 // Complete successfully
                 CompleteCommand(queuedCommand, result, CommandState.Completed);
                 Interlocked.Increment(ref m_commandsProcessed);
-                
+
                 var elapsed = DateTime.UtcNow - startTime;
-                m_logger.LogInformation("✅ Command {CommandId} completed in {Elapsed}ms", 
+                m_logger.LogInformation("✅ Command {CommandId} completed in {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
             }
             catch (OperationCanceledException) when (queuedCommand.CancellationTokenSource.Token.IsCancellationRequested)
@@ -104,9 +104,9 @@ namespace mcp_nexus.CommandQueue
                 // Command was specifically cancelled
                 CompleteCommand(queuedCommand, "Command was cancelled", CommandState.Cancelled);
                 Interlocked.Increment(ref m_commandsCancelled);
-                
+
                 var elapsed = DateTime.UtcNow - startTime;
-                m_logger.LogWarning("🚫 Command {CommandId} was cancelled after {Elapsed}ms", 
+                m_logger.LogWarning("🚫 Command {CommandId} was cancelled after {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -121,9 +121,9 @@ namespace mcp_nexus.CommandQueue
                 var errorMessage = $"Command execution failed: {ex.Message}";
                 CompleteCommand(queuedCommand, errorMessage, CommandState.Failed);
                 Interlocked.Increment(ref m_commandsFailed);
-                
+
                 var elapsed = DateTime.UtcNow - startTime;
-                m_logger.LogError(ex, "❌ Command {CommandId} failed after {Elapsed}ms", 
+                m_logger.LogError(ex, "❌ Command {CommandId} failed after {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
             }
             finally
@@ -131,12 +131,12 @@ namespace mcp_nexus.CommandQueue
                 // Clear current command
                 if (m_currentCommand == queuedCommand)
                     m_currentCommand = null;
-                
+
                 // Log periodic statistics
                 LogPeriodicStatistics();
             }
         }
-        
+
         /// <summary>
         /// Completes a command with the given result and state
         /// </summary>
@@ -145,7 +145,7 @@ namespace mcp_nexus.CommandQueue
             try
             {
                 UpdateCommandState(command.Id, state);
-                
+
                 if (!command.CompletionSource.Task.IsCompleted)
                 {
                     if (state == CommandState.Completed)
@@ -153,7 +153,7 @@ namespace mcp_nexus.CommandQueue
                     else if (state == CommandState.Cancelled)
                         command.CompletionSource.SetCanceled();
                     else
-                        command.CompletionSource.SetException(new InvalidOperationException(result));
+                        command.CompletionSource.SetResult(result); // Return error message as result, not exception
                 }
             }
             catch (Exception ex)
@@ -161,7 +161,7 @@ namespace mcp_nexus.CommandQueue
                 m_logger.LogError(ex, "Error completing command {CommandId}", command.Id);
             }
         }
-        
+
         /// <summary>
         /// Updates the state of a command
         /// </summary>
@@ -173,7 +173,7 @@ namespace mcp_nexus.CommandQueue
                 {
                     var updatedCommand = command with { State = newState };
                     m_activeCommands[commandId] = updatedCommand;
-                    
+
                     m_logger.LogTrace("🔄 Command {CommandId} state changed to {State}", commandId, newState);
                 }
             }
@@ -182,7 +182,7 @@ namespace mcp_nexus.CommandQueue
                 m_logger.LogError(ex, "Error updating command state for {CommandId}", commandId);
             }
         }
-        
+
         /// <summary>
         /// Gets the currently executing command
         /// </summary>
@@ -191,7 +191,7 @@ namespace mcp_nexus.CommandQueue
         {
             return m_currentCommand;
         }
-        
+
         /// <summary>
         /// Gets performance statistics
         /// </summary>
@@ -204,7 +204,7 @@ namespace mcp_nexus.CommandQueue
                 Interlocked.Read(ref m_commandsCancelled)
             );
         }
-        
+
         /// <summary>
         /// Logs periodic statistics about command processing
         /// </summary>
@@ -219,7 +219,15 @@ namespace mcp_nexus.CommandQueue
                 m_lastStatsLog = now;
             }
         }
-        
+
+        /// <summary>
+        /// Triggers immediate cleanup of completed commands (for testing)
+        /// </summary>
+        public void TriggerCleanup()
+        {
+            CleanupCompletedCommands(null);
+        }
+
         /// <summary>
         /// Cleans up completed commands periodically
         /// </summary>
@@ -229,7 +237,7 @@ namespace mcp_nexus.CommandQueue
             {
                 var cutoffTime = DateTime.UtcNow - m_config.CommandRetentionTime;
                 var commandsToRemove = new List<string>();
-                
+
                 foreach (var kvp in m_activeCommands)
                 {
                     var command = kvp.Value;
@@ -239,12 +247,12 @@ namespace mcp_nexus.CommandQueue
                         commandsToRemove.Add(kvp.Key);
                     }
                 }
-                
+
                 foreach (var commandId in commandsToRemove)
                 {
                     m_activeCommands.TryRemove(commandId, out _);
                 }
-                
+
                 if (commandsToRemove.Count > 0)
                 {
                     m_logger.LogDebug("🧹 Cleaned up {Count} completed commands", commandsToRemove.Count);
@@ -255,7 +263,7 @@ namespace mcp_nexus.CommandQueue
                 m_logger.LogError(ex, "Error during command cleanup");
             }
         }
-        
+
         /// <summary>
         /// Disposes of the processor and its resources
         /// </summary>

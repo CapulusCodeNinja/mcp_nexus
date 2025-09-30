@@ -27,12 +27,12 @@ namespace mcp_nexus.Caching
         private readonly ILogger<IntelligentCacheService<TKey, TValue>> m_logger;
         private readonly ConcurrentDictionary<TKey, CacheEntry<TValue>> m_cache = new();
         private volatile bool m_disposed = false;
-        
+
         // Focused components
         private readonly CacheConfiguration m_config;
         private readonly CacheEvictionManager<TKey, TValue> m_evictionManager;
         private readonly CacheStatisticsCollector<TKey, TValue> m_statisticsCollector;
-        
+
         /// <summary>
         /// Initializes a new instance of the IntelligentCacheService class
         /// </summary>
@@ -47,16 +47,16 @@ namespace mcp_nexus.Caching
             TimeSpan? cleanupInterval = null)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            
+
             // Create focused components
             m_config = new CacheConfiguration(maxMemoryBytes, defaultTtl, cleanupInterval);
             m_evictionManager = new CacheEvictionManager<TKey, TValue>(logger, m_config, m_cache);
             m_statisticsCollector = new CacheStatisticsCollector<TKey, TValue>(logger, m_config, m_cache);
-            
+
             m_logger.LogInformation("💾 IntelligentCacheService initialized with focused components - Max: {MaxMB:F1}MB, TTL: {TTL}",
                 maxMemoryBytes / (1024.0 * 1024.0), m_config.DefaultTtl);
         }
-        
+
         /// <summary>
         /// Attempts to get a value from the cache
         /// </summary>
@@ -70,7 +70,7 @@ namespace mcp_nexus.Caching
                 value = default;
                 return false;
             }
-            
+
             if (m_cache.TryGetValue(key, out var entry))
             {
                 // Check if expired
@@ -81,23 +81,23 @@ namespace mcp_nexus.Caching
                     m_statisticsCollector.RecordMiss();
                     return false;
                 }
-                
+
                 // Update access time for LRU
                 entry.LastAccessed = DateTime.UtcNow;
                 entry.AccessCount++;
                 value = entry.Value;
-                
+
                 m_logger.LogTrace("💾 Cache HIT for key: {Key}", key);
                 m_statisticsCollector.RecordHit();
                 return true;
             }
-            
+
             m_logger.LogTrace("💾 Cache MISS for key: {Key}", key);
             value = default;
             m_statisticsCollector.RecordMiss();
             return false;
         }
-        
+
         /// <summary>
         /// Sets a value in the cache
         /// </summary>
@@ -107,7 +107,7 @@ namespace mcp_nexus.Caching
         public void Set(TKey key, TValue value, TimeSpan? ttl = null)
         {
             if (m_disposed) return;
-            
+
             var expiresAt = DateTime.UtcNow.Add(ttl ?? m_config.DefaultTtl);
             var entry = new CacheEntry<TValue>
             {
@@ -118,16 +118,16 @@ namespace mcp_nexus.Caching
                 AccessCount = 0,
                 SizeBytes = EstimateSize(value)
             };
-            
+
             m_cache.AddOrUpdate(key, entry, (k, existing) => entry);
             m_statisticsCollector.RecordSet();
-            
+
             // Check memory pressure and evict if necessary
             m_evictionManager.CheckMemoryPressure();
-            
+
             m_logger.LogTrace("💾 Cached key: {Key}, expires at: {ExpiresAt}", key, expiresAt);
         }
-        
+
         /// <summary>
         /// Attempts to remove a value from the cache
         /// </summary>
@@ -136,7 +136,7 @@ namespace mcp_nexus.Caching
         public bool TryRemove(TKey key)
         {
             if (m_disposed) return false;
-            
+
             var removed = m_cache.TryRemove(key, out _);
             if (removed)
             {
@@ -144,19 +144,19 @@ namespace mcp_nexus.Caching
             }
             return removed;
         }
-        
+
         /// <summary>
         /// Clears all entries from the cache
         /// </summary>
         public void Clear()
         {
             if (m_disposed) return;
-            
+
             var count = m_cache.Count;
             m_cache.Clear();
             m_logger.LogInformation("💾 Cleared {Count} cache entries", count);
         }
-        
+
         /// <summary>
         /// Gets comprehensive cache statistics
         /// </summary>
@@ -164,10 +164,10 @@ namespace mcp_nexus.Caching
         public CacheStatistics GetStatistics()
         {
             if (m_disposed) return new CacheStatistics();
-            
+
             return m_statisticsCollector.GetStatistics();
         }
-        
+
         /// <summary>
         /// Forces cleanup of expired entries
         /// </summary>
@@ -175,17 +175,17 @@ namespace mcp_nexus.Caching
         public int ForceCleanup()
         {
             if (m_disposed) return 0;
-            
+
             var removedCount = m_evictionManager.RemoveExpiredEntries();
             m_logger.LogDebug("💾 Force cleanup removed {Count} expired entries", removedCount);
             return removedCount;
         }
-        
+
         /// <summary>
         /// Gets the current number of entries in the cache
         /// </summary>
         public int Count => m_disposed ? 0 : m_cache.Count;
-        
+
         /// <summary>
         /// Checks if the cache contains the specified key
         /// </summary>
@@ -194,7 +194,7 @@ namespace mcp_nexus.Caching
         public bool ContainsKey(TKey key)
         {
             if (m_disposed) return false;
-            
+
             if (m_cache.TryGetValue(key, out var entry))
             {
                 // Check if expired
@@ -207,7 +207,7 @@ namespace mcp_nexus.Caching
             }
             return false;
         }
-        
+
         /// <summary>
         /// Estimates the size of a value in bytes
         /// </summary>
@@ -218,7 +218,7 @@ namespace mcp_nexus.Caching
             try
             {
                 if (value == null) return 0;
-                
+
                 return value switch
                 {
                     string str => str.Length * 2, // Unicode characters are 2 bytes
@@ -230,7 +230,7 @@ namespace mcp_nexus.Caching
                     bool => 1,
                     DateTime => 8,
                     Guid => 16,
-                    _ => 64 // Default estimate for complex objects
+                    _ => 100 // Default estimate for complex objects
                 };
             }
             catch (Exception ex)
@@ -239,7 +239,7 @@ namespace mcp_nexus.Caching
                 return 64; // Default fallback
             }
         }
-        
+
         /// <summary>
         /// Disposes the cache service and all resources
         /// </summary>
@@ -247,21 +247,21 @@ namespace mcp_nexus.Caching
         {
             if (m_disposed) return;
             m_disposed = true;
-            
+
             try
             {
                 m_logger.LogInformation("💾 Shutting down IntelligentCacheService");
-                
+
                 // Log final statistics
                 m_statisticsCollector.LogStatisticsSummary();
-                
+
                 // Dispose components
                 m_evictionManager?.Dispose();
-                
+
                 // Clear cache
                 var count = m_cache.Count;
                 m_cache.Clear();
-                
+
                 m_logger.LogInformation("💾 IntelligentCacheService disposed - cleared {Count} entries", count);
             }
             catch (Exception ex)

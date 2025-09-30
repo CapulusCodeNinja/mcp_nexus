@@ -67,7 +67,7 @@ namespace mcp_nexus.Infrastructure
             {
                 var fileName = Path.GetFileName(file);
                 var destFile = Path.Combine(destDir, fileName);
-                
+
                 try
                 {
                     File.Copy(file, destFile, overwrite: true);
@@ -102,7 +102,7 @@ namespace mcp_nexus.Infrastructure
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Validation, "Validating installation files");
 
                 var executablePath = Path.Combine(ServiceConfiguration.InstallFolder, ServiceConfiguration.ExecutableName);
-                
+
                 if (!File.Exists(executablePath))
                 {
                     OperationLogger.LogError(logger, OperationLogger.Operations.Validation, "Required executable not found: {ExecutablePath}", executablePath);

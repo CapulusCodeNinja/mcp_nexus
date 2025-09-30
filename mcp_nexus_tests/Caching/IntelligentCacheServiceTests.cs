@@ -106,7 +106,7 @@ namespace mcp_nexus_tests.Caching
             var key = "expired-key";
             var value = "test-value";
             m_cacheService.Set(key, value, TimeSpan.FromMilliseconds(1));
-            
+
             // Wait for expiration
             Thread.Sleep(10);
 
@@ -277,7 +277,7 @@ namespace mcp_nexus_tests.Caching
 
             // Assert
             Assert.True(result);
-            
+
             // Verify it's actually removed
             var getResult = m_cacheService.TryGet(key, out _);
             Assert.False(getResult);
@@ -328,7 +328,7 @@ namespace mcp_nexus_tests.Caching
             // Assert
             var stats = m_cacheService.GetStatistics();
             Assert.Equal(0, stats.TotalEntries);
-            
+
             Assert.False(m_cacheService.TryGet("key1", out _));
             Assert.False(m_cacheService.TryGet("key2", out _));
             Assert.False(m_cacheService.TryGet("key3", out _));
@@ -393,7 +393,7 @@ namespace mcp_nexus_tests.Caching
             // Arrange
             m_cacheService.Set("key1", "value1", TimeSpan.FromMilliseconds(1));
             m_cacheService.Set("key2", "value2", TimeSpan.FromMinutes(30));
-            
+
             // Wait for first key to expire
             Thread.Sleep(10);
 
@@ -433,7 +433,7 @@ namespace mcp_nexus_tests.Caching
         {
             // Arrange - Create a cache with very small memory limit
             using var smallCache = new IntelligentCacheService<string, string>(
-                m_mockLogger.Object, 
+                m_mockLogger.Object,
                 maxMemoryBytes: 1000); // 1KB limit
 
             // Act - Add many entries to trigger memory pressure
@@ -548,7 +548,7 @@ namespace mcp_nexus_tests.Caching
                     {
                         var key = $"key{taskId}_{j}";
                         var value = $"value{taskId}_{j}";
-                        
+
                         if (random.Next(2) == 0)
                         {
                             m_cacheService.Set(key, value);

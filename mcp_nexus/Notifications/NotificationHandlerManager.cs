@@ -10,12 +10,12 @@ namespace mcp_nexus.Notifications
     {
         private readonly ILogger m_logger;
         private readonly ConcurrentDictionary<Guid, Func<McpNotification, Task>> m_handlers = new();
-        
+
         public NotificationHandlerManager(ILogger logger)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-        
+
         /// <summary>
         /// Registers a notification handler
         /// </summary>
@@ -24,14 +24,17 @@ namespace mcp_nexus.Notifications
         public Guid RegisterHandler(Func<McpNotification, Task> handler)
         {
             if (handler == null)
-                throw new ArgumentNullException(nameof(handler));
-            
+            {
+                m_logger.LogWarning("Attempted to register null notification handler - ignoring");
+                return Guid.Empty;
+            }
+
             var id = Guid.NewGuid();
             m_handlers[id] = handler;
             m_logger.LogDebug("📢 Registered notification handler {HandlerId} (Total: {HandlerCount})", id, m_handlers.Count);
             return id;
         }
-        
+
         /// <summary>
         /// Unregisters a notification handler by ID
         /// </summary>
@@ -43,7 +46,7 @@ namespace mcp_nexus.Notifications
                 m_logger.LogDebug("📢 Unregistered notification handler {HandlerId} (Remaining: {HandlerCount})", handlerId, m_handlers.Count);
             }
         }
-        
+
         /// <summary>
         /// Unregisters a notification handler by reference
         /// </summary>
@@ -51,14 +54,14 @@ namespace mcp_nexus.Notifications
         public void UnregisterHandler(Func<McpNotification, Task> handler)
         {
             if (handler == null) return;
-            
+
             var toRemove = m_handlers.Where(kvp => ReferenceEquals(kvp.Value, handler)).Select(kvp => kvp.Key).ToList();
             foreach (var id in toRemove)
             {
                 UnregisterHandler(id);
             }
         }
-        
+
         /// <summary>
         /// Sends a notification to all registered handlers
         /// </summary>
@@ -68,17 +71,17 @@ namespace mcp_nexus.Notifications
         {
             if (notification == null)
                 throw new ArgumentNullException(nameof(notification));
-            
+
             // Performance: Check count first to avoid unnecessary ToArray() allocation
             if (m_handlers.IsEmpty)
             {
                 m_logger.LogTrace("📢 No notification handlers registered - notification will be dropped: {Method}", notification.Method);
                 return;
             }
-            
+
             // Performance: Only create array when we know there are handlers
             var handlers = m_handlers.Values.ToArray();
-            
+
             var tasks = new List<Task>();
             foreach (var handler in handlers)
             {
@@ -91,7 +94,7 @@ namespace mcp_nexus.Notifications
                     m_logger.LogError(ex, "📢 Error invoking notification handler for method: {Method}", notification.Method);
                 }
             }
-            
+
             try
             {
                 await Task.WhenAll(tasks);
@@ -102,7 +105,7 @@ namespace mcp_nexus.Notifications
                 m_logger.LogError(ex, "📢 Error sending notification to handlers: {Method}", notification.Method);
             }
         }
-        
+
         /// <summary>
         /// Gets all registered handler IDs
         /// </summary>
@@ -111,7 +114,7 @@ namespace mcp_nexus.Notifications
         {
             return m_handlers.Keys.ToList();
         }
-        
+
         /// <summary>
         /// Gets the number of registered handlers
         /// </summary>
@@ -120,7 +123,7 @@ namespace mcp_nexus.Notifications
         {
             return m_handlers.Count;
         }
-        
+
         /// <summary>
         /// Clears all registered handlers
         /// </summary>

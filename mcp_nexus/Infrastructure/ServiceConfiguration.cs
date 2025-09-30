@@ -13,39 +13,39 @@ namespace mcp_nexus.Infrastructure
         public const string ServiceDescription = "Model Context Protocol server providing AI tool integration";
         public const string InstallFolder = @"C:\Program Files\MCP-Nexus";
         public const string ServiceArguments = "--service";
-        
+
         // Timing constants
         public const int ServiceStopDelayMs = 2000;
         public const int ServiceStartDelayMs = 3000;
         public const int ServiceDeleteDelayMs = 3000;
         public const int ServiceCleanupDelayMs = 5000;
-        
+
         // Retry constants
         public const int MaxRetryAttempts = 3;
         public const int RetryDelayMs = 2000;
-        
+
         // File operation constants
         public const string ExecutableName = "mcp_nexus.exe";
         public const string BackupsFolderName = "backups";
         public const string ProjectFileName = "mcp_nexus.csproj";
         public const string BuildConfiguration = "Release";
         public const int MaxBackupsToKeep = 5;
-        
+
         /// <summary>
         /// Gets the full path to the backups base folder
         /// </summary>
         public static string BackupsBaseFolder => Path.Combine(InstallFolder, BackupsFolderName);
-        
+
         /// <summary>
         /// Gets the full path to the service executable
         /// </summary>
         public static string ExecutablePath => Path.Combine(InstallFolder, ExecutableName);
-        
+
         /// <summary>
         /// Gets the full path to the backups folder
         /// </summary>
         public static string BackupsFolder => Path.Combine(InstallFolder, BackupsFolderName);
-        
+
         /// <summary>
         /// Gets the service creation command arguments
         /// </summary>
@@ -54,7 +54,7 @@ namespace mcp_nexus.Infrastructure
             return $@"create ""{ServiceName}"" binPath= ""{executablePath} {ServiceArguments}"" " +
                    $@"start= auto DisplayName= ""{ServiceDisplayName}""";
         }
-        
+
         /// <summary>
         /// Gets the service deletion command arguments
         /// </summary>
@@ -62,7 +62,7 @@ namespace mcp_nexus.Infrastructure
         {
             return $@"delete ""{ServiceName}""";
         }
-        
+
         /// <summary>
         /// Gets the service start command arguments
         /// </summary>
@@ -70,7 +70,7 @@ namespace mcp_nexus.Infrastructure
         {
             return $@"start ""{ServiceName}""";
         }
-        
+
         /// <summary>
         /// Gets the service stop command arguments
         /// </summary>
@@ -78,7 +78,7 @@ namespace mcp_nexus.Infrastructure
         {
             return $@"stop ""{ServiceName}""";
         }
-        
+
         /// <summary>
         /// Gets a timestamped backup folder path
         /// </summary>
@@ -86,7 +86,7 @@ namespace mcp_nexus.Infrastructure
         {
             return Path.Combine(BackupsFolder, DateTime.Now.ToString("yyyyMMdd_HHmmss"));
         }
-        
+
         /// <summary>
         /// Gets the service description command arguments
         /// </summary>

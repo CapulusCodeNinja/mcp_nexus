@@ -23,15 +23,15 @@ namespace mcp_nexus.Models
         [Required(ErrorMessage = "jsonrpc field is required")]
         [RegularExpression("^2\\.0$", ErrorMessage = "jsonrpc must be '2.0'")]
         public string JsonRpc { get; set; } = "2.0";
-        
+
         [JsonPropertyName("method")]
         [Required(AllowEmptyStrings = false, ErrorMessage = "method field is required")]
         [StringLength(100, MinimumLength = 1, ErrorMessage = "method must be between 1 and 100 characters")]
         public string Method { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("params")]
         public JsonElement? Params { get; set; }
-        
+
         [JsonPropertyName("id")]
         public object? Id { get; set; }
     }
@@ -73,12 +73,12 @@ namespace mcp_nexus.Models
         [JsonPropertyName("code")]
         [Required(ErrorMessage = "error code is required")]
         public int Code { get; set; }
-        
+
         [JsonPropertyName("message")]
         [Required(ErrorMessage = "error message is required")]
         [StringLength(1000, ErrorMessage = "error message cannot exceed 1000 characters")]
         public string Message { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("data")]
         public object? Data { get; set; }
     }

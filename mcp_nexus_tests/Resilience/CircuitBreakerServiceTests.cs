@@ -286,11 +286,11 @@ namespace mcp_nexus_tests.Resilience
 
             // Assert
             Assert.Equal("Success", result);
-            
+
             // Circuit1 should be open, circuit2 should be closed
             var status1 = m_circuitBreakerService.GetCircuitStatus(circuitName1);
             var status2 = m_circuitBreakerService.GetCircuitStatus(circuitName2);
-            
+
             Assert.Equal(AdvancedCircuitState.Open, status1.State);
             Assert.Equal(AdvancedCircuitState.Closed, status2.State);
         }
@@ -425,10 +425,10 @@ namespace mcp_nexus_tests.Resilience
             // Assert
             Assert.NotNull(statuses);
             Assert.Equal(2, statuses.Count);
-            
+
             var status1 = statuses[circuitName1];
             var status2 = statuses[circuitName2];
-            
+
             Assert.Equal(AdvancedCircuitState.Open, status1.State);
             Assert.False(status1.IsHealthy);
             Assert.Equal(AdvancedCircuitState.Closed, status2.State);

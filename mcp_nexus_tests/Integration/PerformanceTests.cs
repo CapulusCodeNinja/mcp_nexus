@@ -67,10 +67,8 @@ namespace mcp_nexus_tests.Services
             // Act - Measure cleanup performance
             var stopwatch = Stopwatch.StartNew();
 
-            // Trigger cleanup by calling the private method via reflection
-            var cleanupMethod = typeof(CommandQueueService).GetMethod("CleanupCompletedCommands",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            cleanupMethod!.Invoke(m_commandQueueService, new object?[] { null });
+            // Trigger cleanup using the public method
+            m_commandQueueService.TriggerCleanup();
 
             stopwatch.Stop();
 

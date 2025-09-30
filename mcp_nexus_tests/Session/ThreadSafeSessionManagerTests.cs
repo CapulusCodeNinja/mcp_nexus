@@ -212,7 +212,7 @@ namespace mcp_nexus_tests.Session
             try
             {
                 // Act & Assert
-                await Assert.ThrowsAsync<ArgumentException>(() => 
+                await Assert.ThrowsAsync<ArgumentException>(() =>
                     sessionManager.CreateSessionAsync(""));
             }
             finally
@@ -230,7 +230,7 @@ namespace mcp_nexus_tests.Session
             try
             {
                 // Act & Assert
-                await Assert.ThrowsAsync<ArgumentException>(() => 
+                await Assert.ThrowsAsync<ArgumentException>(() =>
                     sessionManager.CreateSessionAsync("   "));
             }
             finally
@@ -248,7 +248,7 @@ namespace mcp_nexus_tests.Session
             try
             {
                 // Act & Assert
-                await Assert.ThrowsAsync<FileNotFoundException>(() => 
+                await Assert.ThrowsAsync<FileNotFoundException>(() =>
                     sessionManager.CreateSessionAsync("nonexistent.dmp"));
             }
             finally
@@ -268,7 +268,7 @@ namespace mcp_nexus_tests.Session
             try
             {
                 // Act & Assert
-                var exception = await Assert.ThrowsAsync<ObjectDisposedException>(() => 
+                var exception = await Assert.ThrowsAsync<ObjectDisposedException>(() =>
                     sessionManager.CreateSessionAsync(dumpPath));
                 Assert.Equal(nameof(ThreadSafeSessionManager), exception.ObjectName);
             }
@@ -540,7 +540,7 @@ namespace mcp_nexus_tests.Session
             try
             {
                 // Act & Assert
-                Assert.Throws<SessionNotFoundException>(() => 
+                Assert.Throws<SessionNotFoundException>(() =>
                     sessionManager.GetCommandQueue("nonexistent"));
             }
             finally
@@ -562,7 +562,7 @@ namespace mcp_nexus_tests.Session
             try
             {
                 // Act & Assert
-                Assert.Throws<ArgumentException>(() => 
+                Assert.Throws<ArgumentException>(() =>
                     sessionManager.GetSessionContext(null!));
             }
             finally
@@ -580,7 +580,7 @@ namespace mcp_nexus_tests.Session
             try
             {
                 // Act & Assert
-                Assert.Throws<ArgumentException>(() => 
+                Assert.Throws<ArgumentException>(() =>
                     sessionManager.GetSessionContext(""));
             }
             finally
@@ -598,7 +598,7 @@ namespace mcp_nexus_tests.Session
             try
             {
                 // Act & Assert
-                Assert.Throws<SessionNotFoundException>(() => 
+                Assert.Throws<SessionNotFoundException>(() =>
                     sessionManager.GetSessionContext("nonexistent"));
             }
             finally

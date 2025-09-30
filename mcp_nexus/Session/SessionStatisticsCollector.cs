@@ -13,11 +13,11 @@ namespace mcp_nexus.Session
         private readonly SessionLifecycleManager m_lifecycleManager;
         private readonly SessionMonitoringService m_monitoringService;
         private readonly DateTime m_startTime;
-        
+
         // Performance counters
         private long m_totalCommandsProcessed = 0;
         private int m_peakConcurrentSessions = 0;
-        
+
         public SessionStatisticsCollector(
             ILogger logger,
             ConcurrentDictionary<string, SessionInfo> sessions,
@@ -30,7 +30,7 @@ namespace mcp_nexus.Session
             m_monitoringService = monitoringService ?? throw new ArgumentNullException(nameof(monitoringService));
             m_startTime = DateTime.UtcNow;
         }
-        
+
         /// <summary>
         /// Gets comprehensive session statistics
         /// </summary>
@@ -42,17 +42,17 @@ namespace mcp_nexus.Session
                 var activeSessionCount = m_sessions.Count;
                 var lifecycleStats = m_lifecycleManager.GetLifecycleStats();
                 var uptime = DateTime.UtcNow - m_startTime;
-                
+
                 // Update peak concurrent sessions
                 if (activeSessionCount > m_peakConcurrentSessions)
                 {
                     Interlocked.Exchange(ref m_peakConcurrentSessions, activeSessionCount);
                 }
-                
+
                 // Calculate total commands processed
                 var totalCommands = CalculateTotalCommandsProcessed();
                 Interlocked.Exchange(ref m_totalCommandsProcessed, totalCommands);
-                
+
                 return new SessionStatistics
                 {
                     TotalSessionsCreated = lifecycleStats.Created,
@@ -82,7 +82,7 @@ namespace mcp_nexus.Session
                 };
             }
         }
-        
+
         /// <summary>
         /// Gets all active sessions as contexts
         /// </summary>
@@ -92,11 +92,11 @@ namespace mcp_nexus.Session
             try
             {
                 var activeSessions = new List<SessionContext>();
-                
+
                 foreach (var kvp in m_sessions)
                 {
                     var sessionInfo = kvp.Value;
-                    
+
                     try
                     {
                         if (sessionInfo.Status == SessionStatus.Active && !sessionInfo.IsDisposed)
@@ -110,7 +110,7 @@ namespace mcp_nexus.Session
                         m_logger.LogWarning(ex, "Error creating context for session {SessionId}", kvp.Key);
                     }
                 }
-                
+
                 return activeSessions;
             }
             catch (Exception ex)
@@ -119,7 +119,7 @@ namespace mcp_nexus.Session
                 return Enumerable.Empty<SessionContext>();
             }
         }
-        
+
         /// <summary>
         /// Gets all sessions (active and inactive)
         /// </summary>
@@ -136,7 +136,7 @@ namespace mcp_nexus.Session
                 return Enumerable.Empty<SessionInfo>();
             }
         }
-        
+
         /// <summary>
         /// Creates a detailed session context
         /// </summary>
@@ -149,7 +149,7 @@ namespace mcp_nexus.Session
                 // Get queue status safely
                 var queueStatus = GetQueueStatusSafely(sessionInfo);
                 var timeUntilExpiry = CalculateTimeUntilExpiry(sessionInfo);
-                
+
                 return new SessionContext
                 {
                     SessionId = sessionInfo.SessionId,
@@ -167,7 +167,7 @@ namespace mcp_nexus.Session
             catch (Exception ex)
             {
                 m_logger.LogWarning(ex, "Error creating detailed context for session {SessionId}", sessionInfo.SessionId);
-                
+
                 // Return minimal context on error
                 return new SessionContext
                 {
@@ -179,7 +179,7 @@ namespace mcp_nexus.Session
                 };
             }
         }
-        
+
         /// <summary>
         /// Gets queue status safely, handling disposal and errors
         /// </summary>
@@ -189,7 +189,7 @@ namespace mcp_nexus.Session
         {
             try
             {
-                return sessionInfo.CommandQueue?.GetQueueStatus()?.ToList() ?? 
+                return sessionInfo.CommandQueue?.GetQueueStatus()?.ToList() ??
                        new List<(string, string, DateTime, string)>();
             }
             catch (ObjectDisposedException)
@@ -203,7 +203,7 @@ namespace mcp_nexus.Session
                 return new List<(string, string, DateTime, string)>();
             }
         }
-        
+
         /// <summary>
         /// Calculates time until session expiry
         /// </summary>
@@ -225,7 +225,7 @@ namespace mcp_nexus.Session
                 return null;
             }
         }
-        
+
         /// <summary>
         /// Calculates total commands processed across all sessions
         /// </summary>
@@ -235,7 +235,7 @@ namespace mcp_nexus.Session
             try
             {
                 long total = 0;
-                
+
                 foreach (var sessionInfo in m_sessions.Values)
                 {
                     try
@@ -248,7 +248,7 @@ namespace mcp_nexus.Session
                         m_logger.LogTrace(ex, "Error counting commands for session {SessionId}", sessionInfo.SessionId);
                     }
                 }
-                
+
                 return total;
             }
             catch (Exception ex)
@@ -257,7 +257,7 @@ namespace mcp_nexus.Session
                 return 0;
             }
         }
-        
+
         /// <summary>
         /// Gets current memory usage
         /// </summary>
@@ -275,7 +275,7 @@ namespace mcp_nexus.Session
                 return 0;
             }
         }
-        
+
         /// <summary>
         /// Gets current private memory usage
         /// </summary>
@@ -293,7 +293,7 @@ namespace mcp_nexus.Session
                 return 0;
             }
         }
-        
+
         /// <summary>
         /// Logs periodic statistics summary
         /// </summary>
@@ -302,15 +302,15 @@ namespace mcp_nexus.Session
             try
             {
                 var stats = GetStatistics();
-                
+
                 m_logger.LogInformation("📊 Session Statistics Summary:");
                 m_logger.LogInformation("   Active Sessions: {Active}", stats.ActiveSessions);
-                m_logger.LogInformation("   Total Created: {Created}, Closed: {Closed}, Expired: {Expired}", 
+                m_logger.LogInformation("   Total Created: {Created}, Closed: {Closed}, Expired: {Expired}",
                     stats.TotalSessionsCreated, stats.TotalSessionsClosed, stats.TotalSessionsExpired);
                 m_logger.LogInformation("   Commands Processed: {Commands}", stats.TotalCommandsProcessed);
                 m_logger.LogInformation("   Average Lifetime: {Lifetime:hh\\:mm\\:ss}", stats.AverageSessionLifetime);
                 m_logger.LogInformation("   Uptime: {Uptime:dd\\.hh\\:mm\\:ss}", stats.Uptime);
-                m_logger.LogInformation("   Memory Usage: {Memory:N0} bytes ({MemoryMB:F1} MB)", 
+                m_logger.LogInformation("   Memory Usage: {Memory:N0} bytes ({MemoryMB:F1} MB)",
                     stats.MemoryUsage.WorkingSetBytes, stats.MemoryUsage.WorkingSetBytes / (1024.0 * 1024.0));
             }
             catch (Exception ex)

@@ -11,7 +11,7 @@ namespace mcp_nexus.Debugger
         private readonly ILogger<CdbProcessManager> m_logger;
         private readonly CdbSessionConfiguration m_config;
         private readonly object m_lifecycleLock = new();
-        
+
         private Process? m_debuggerProcess;
         private StreamWriter? m_debuggerInput;
         private StreamReader? m_debuggerOutput;
@@ -59,7 +59,7 @@ namespace mcp_nexus.Debugger
 
                     var cdbPath = FindCdbExecutable();
                     var processInfo = CreateProcessStartInfo(cdbPath, target);
-                    
+
                     return StartProcessInternal(processInfo, target);
                 }
             }
@@ -109,13 +109,13 @@ namespace mcp_nexus.Debugger
                 m_logger.LogDebug("  - Process ID: {ProcessId}", process.Id);
                 m_logger.LogDebug("  - Process Name: {ProcessName}", process.ProcessName);
                 m_logger.LogDebug("  - Has Exited: {HasExited}", process.HasExited);
-                
+
                 if (!process.HasExited)
                 {
                     m_logger.LogDebug("  - Start Time: {StartTime}", process.StartTime);
                     m_logger.LogDebug("  - CPU Time: {TotalProcessorTime}", process.TotalProcessorTime);
                     m_logger.LogDebug("  - Memory Usage: {WorkingSet64} bytes", process.WorkingSet64);
-                    
+
                     var commandLine = GetProcessCommandLine(process.Id);
                     m_logger.LogDebug("  - Command Line: {CommandLine}", commandLine ?? "[Unable to retrieve]");
                 }
@@ -129,7 +129,7 @@ namespace mcp_nexus.Debugger
         private string FindCdbExecutable()
         {
             m_logger.LogDebug("Searching for CDB executable...");
-            
+
             try
             {
                 var cdbPath = m_config.FindCdbPath();
@@ -152,7 +152,7 @@ namespace mcp_nexus.Debugger
         private ProcessStartInfo CreateProcessStartInfo(string cdbPath, string target)
         {
             var arguments = $"-z \"{target}\"";
-            
+
             if (!string.IsNullOrWhiteSpace(m_config.SymbolSearchPath))
             {
                 arguments += $" -y \"{m_config.SymbolSearchPath}\"";
@@ -177,7 +177,7 @@ namespace mcp_nexus.Debugger
         private bool StartProcessInternal(ProcessStartInfo processInfo, string target)
         {
             m_logger.LogDebug("Starting CDB process...");
-            
+
             m_debuggerProcess = Process.Start(processInfo);
             if (m_debuggerProcess == null)
             {

@@ -16,12 +16,13 @@ namespace mcp_nexus.CommandQueue
         private readonly CancellationTokenSource m_serviceCts = new();
         private readonly Task m_processingTask;
         private bool m_disposed;
-        
+
         // Focused components
         private readonly ResilientQueueConfiguration m_config;
         private readonly CommandRecoveryManager m_recoveryManager;
         private readonly ResilientCommandProcessor m_processor;
-        
+        private readonly IMcpNotificationService? m_notificationService;
+
         public ResilientCommandQueueService(
             ICdbSession cdbSession,
             ILogger<ResilientCommandQueueService> logger,
@@ -30,19 +31,20 @@ namespace mcp_nexus.CommandQueue
             IMcpNotificationService? notificationService = null)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            
+            m_notificationService = notificationService;
+
             // Create focused components
             m_config = new ResilientQueueConfiguration();
             m_recoveryManager = new CommandRecoveryManager(
                 cdbSession, logger, timeoutService, recoveryService, m_config, notificationService);
             m_processor = new ResilientCommandProcessor(
                 logger, m_recoveryManager, m_config, notificationService);
-            
+
             // Initialize command queue
             m_commandQueue = new BlockingCollection<QueuedCommand>();
-            
+
             m_logger.LogInformation("🚀 Starting resilient command queue with automated recovery");
-            
+
             // Start the background processing task
             try
             {
@@ -55,7 +57,7 @@ namespace mcp_nexus.CommandQueue
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Queues a command for execution
         /// </summary>
@@ -65,10 +67,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
-            
+
             if (string.IsNullOrWhiteSpace(command))
                 throw new ArgumentException("Command cannot be null or empty", nameof(command));
-            
+
             var commandId = Guid.NewGuid().ToString();
             var queuedCommand = new QueuedCommand(
                 commandId,
@@ -77,15 +79,34 @@ namespace mcp_nexus.CommandQueue
                 new TaskCompletionSource<string>(),
                 new CancellationTokenSource()
             );
-            
+
             m_commandQueue.Add(queuedCommand);
-            
+
+            // Register command for tracking immediately
+            m_processor.RegisterQueuedCommand(queuedCommand);
+
             m_logger.LogInformation("📝 Queued resilient command {CommandId}: {Command}", commandId, command);
             m_logger.LogDebug("📊 Queue depth: {QueueDepth}", m_commandQueue.Count);
-            
+
+            // Send queued notification
+            if (m_notificationService != null)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await m_notificationService.NotifyCommandStatusAsync(commandId, command, "queued", 0, "Command queued for execution", null, null);
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogWarning(ex, "Failed to send queued notification for command {CommandId}", commandId);
+                    }
+                });
+            }
+
             return commandId;
         }
-        
+
         /// <summary>
         /// Gets the result of a command
         /// </summary>
@@ -95,20 +116,15 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
-            
+
             if (string.IsNullOrWhiteSpace(commandId))
                 throw new ArgumentException("Command ID cannot be null or empty", nameof(commandId));
-            
-            // The processor manages the active commands, so we need to get the completion source
-            // This is a simplified implementation - in practice, we'd need to track the completion sources
+
             m_logger.LogTrace("⏳ Waiting for resilient command {CommandId} result", commandId);
-            
-            // For now, return a placeholder - this would need to be implemented properly
-            // by having the processor expose a way to get command completion sources
-            await Task.Delay(100); // Simulate some processing
-            return "Resilient command processing - result tracking needs implementation";
+
+            return await m_processor.GetCommandResult(commandId);
         }
-        
+
         /// <summary>
         /// Cancels a specific command
         /// </summary>
@@ -117,11 +133,11 @@ namespace mcp_nexus.CommandQueue
         public bool CancelCommand(string commandId)
         {
             if (m_disposed)
-                return false;
-            
+                throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
+
             return m_processor.CancelCommand(commandId, "User requested cancellation");
         }
-        
+
         /// <summary>
         /// Cancels all commands
         /// </summary>
@@ -131,10 +147,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 return 0;
-            
+
             return m_processor.CancelAllCommands(reason ?? "Bulk cancellation");
         }
-        
+
         /// <summary>
         /// Gets the currently executing command
         /// </summary>
@@ -143,10 +159,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 return null;
-            
+
             return m_processor.GetCurrentCommand();
         }
-        
+
         /// <summary>
         /// Gets the status of all commands in the queue
         /// </summary>
@@ -155,10 +171,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 return Enumerable.Empty<(string, string, DateTime, string)>();
-            
+
             return m_processor.GetQueueStatus();
         }
-        
+
         /// <summary>
         /// Gets performance statistics
         /// </summary>
@@ -167,10 +183,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 return (0, 0, 0);
-            
+
             return m_processor.GetPerformanceStats();
         }
-        
+
         /// <summary>
         /// Gets the state of a specific command
         /// </summary>
@@ -180,12 +196,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed || string.IsNullOrWhiteSpace(commandId))
                 return null;
-            
-            // This would need to be implemented by exposing command state from the processor
-            // For now, return a placeholder
-            return CommandState.Queued;
+
+            return m_processor.GetCommandState(commandId);
         }
-        
+
         /// <summary>
         /// Gets detailed information about a specific command
         /// </summary>
@@ -195,22 +209,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed || string.IsNullOrWhiteSpace(commandId))
                 return null;
-            
-            // This would need to be implemented by exposing command info from the processor
-            // For now, return a placeholder
-            return new CommandInfo
-            {
-                CommandId = commandId,
-                Command = "Unknown",
-                State = CommandState.Queued,
-                QueueTime = DateTime.UtcNow,
-                Elapsed = TimeSpan.Zero,
-                Remaining = TimeSpan.Zero,
-                QueuePosition = 0,
-                IsCompleted = false
-            };
+
+            return m_processor.GetCommandInfo(commandId);
         }
-        
+
         /// <summary>
         /// Disposes the service and all resources
         /// </summary>
@@ -218,19 +220,19 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 return;
-            
+
             m_disposed = true;
-            
+
             try
             {
                 m_logger.LogInformation("🛑 Shutting down resilient command queue service");
-                
+
                 // Signal shutdown
                 m_serviceCts.Cancel();
-                
+
                 // Complete the queue to stop accepting new commands
                 m_commandQueue.CompleteAdding();
-                
+
                 // Wait for processing task to complete
                 if (m_processingTask != null && !m_processingTask.IsCompleted)
                 {
@@ -244,15 +246,15 @@ namespace mcp_nexus.CommandQueue
                         m_logger.LogDebug("Processing task cancelled during shutdown (expected)");
                     }
                 }
-                
+
                 // Dispose components
                 m_processor?.Dispose();
                 m_recoveryManager?.Cleanup();
-                
+
                 // Dispose resources
                 m_commandQueue?.Dispose();
                 m_serviceCts?.Dispose();
-                
+
                 m_logger.LogInformation("✅ Resilient command queue service shutdown complete");
             }
             catch (Exception ex)

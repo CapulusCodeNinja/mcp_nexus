@@ -69,10 +69,10 @@ namespace mcp_nexus.CommandQueue
 
             // Base progress calculation
             var baseProgress = Math.Max(5, 100 - (queuePosition * 15));
-            
+
             // Time-based adjustment (more time = higher progress)
             var timeBonus = Math.Min(10, (int)(elapsed.TotalMinutes * 2));
-            
+
             return Math.Min(90, baseProgress + timeBonus); // Cap at 90% for queued commands
         }
 
@@ -102,7 +102,7 @@ namespace mcp_nexus.CommandQueue
         public string GetQueuedStatusMessage(int queuePosition, TimeSpan elapsed, int remainingMinutes, int remainingSeconds)
         {
             var baseMessage = GetBaseMessage(queuePosition, elapsed);
-            
+
             if (queuePosition <= 0)
                 return baseMessage;
 

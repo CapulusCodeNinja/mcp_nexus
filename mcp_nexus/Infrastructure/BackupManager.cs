@@ -28,7 +28,7 @@ namespace mcp_nexus.Infrastructure
                 // Create backup directory with timestamp
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                 var backupDir = Path.Combine(ServiceConfiguration.BackupsBaseFolder, $"backup_{timestamp}");
-                
+
                 Directory.CreateDirectory(backupDir);
                 OperationLogger.LogDebug(logger, OperationLogger.Operations.Backup, "Created backup directory: {BackupDir}", backupDir);
 

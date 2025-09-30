@@ -64,7 +64,7 @@ namespace mcp_nexus.Debugger
             {
                 if (File.Exists(CustomCdbPath))
                     return CustomCdbPath;
-                
+
                 throw new FileNotFoundException($"Custom CDB path not found: {CustomCdbPath}");
             }
 
@@ -92,7 +92,7 @@ namespace mcp_nexus.Debugger
         private string? FindCdbInStandardLocations()
         {
             var architecture = GetCurrentArchitecture();
-            
+
             var searchPaths = new[]
             {
                 // Windows 11 SDK paths

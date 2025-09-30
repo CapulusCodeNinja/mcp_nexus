@@ -24,15 +24,15 @@ namespace mcp_nexus.Debugger
 
             // CDB typically shows "0:000>" prompt when ready for next command
             var hasPrompt = line.Contains(">") && Regex.IsMatch(line, @"\d+:\d+>");
-            
+
             // Also check for common error patterns that indicate command completion
-            var hasError = line.Contains("Unable to") || 
-                          line.Contains("Invalid") || 
+            var hasError = line.Contains("Unable to") ||
+                          line.Contains("Invalid") ||
                           line.Contains("Error") ||
                           line.Contains("syntax error"); // Added for robustness
 
             var isComplete = hasPrompt || hasError;
-            m_logger.LogTrace("IsCommandComplete checking line: '{Line}' -> {IsComplete} (HasPrompt: {HasPrompt}, HasError: {HasError})", 
+            m_logger.LogTrace("IsCommandComplete checking line: '{Line}' -> {IsComplete} (HasPrompt: {HasPrompt}, HasError: {HasError})",
                 line, isComplete, hasPrompt, hasError);
             return isComplete;
         }
@@ -78,7 +78,7 @@ namespace mcp_nexus.Debugger
         private string ReadAvailableLines(StreamReader reader, string streamName)
         {
             var lines = new List<string>();
-            
+
             try
             {
                 // Read all immediately available lines
@@ -113,7 +113,7 @@ namespace mcp_nexus.Debugger
 
             // Remove sensitive information or control characters if needed
             var sanitized = output.Replace("\0", "\\0"); // Replace null characters
-            
+
             if (sanitized.Length <= maxLength)
                 return sanitized;
 
@@ -134,13 +134,13 @@ namespace mcp_nexus.Debugger
             }
 
             // Check for error patterns
-            analysis.HasErrors = output.Contains("Error") || 
-                               output.Contains("Unable to") || 
+            analysis.HasErrors = output.Contains("Error") ||
+                               output.Contains("Unable to") ||
                                output.Contains("Invalid") ||
                                output.Contains("Failed");
 
             // Check for warnings
-            analysis.HasWarnings = output.Contains("Warning") || 
+            analysis.HasWarnings = output.Contains("Warning") ||
                                  output.Contains("WARN") ||
                                  output.Contains("Caution");
 

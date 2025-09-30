@@ -417,7 +417,7 @@ namespace mcp_nexus_tests.Services
             Assert.True(result1);
             Assert.True(result2);
             Assert.True(result3);
-            
+
             // The health check has a 30-second cooldown, so IsActive might not be called
             // if the cooldown period hasn't passed. This test verifies the method works
             // consistently regardless of the internal cooldown logic.

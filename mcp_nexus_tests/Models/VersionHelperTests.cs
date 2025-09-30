@@ -31,7 +31,7 @@ namespace mcp_nexus_tests.Models
             // Assert
             Assert.NotNull(version);
             Assert.NotEmpty(version);
-            
+
             // Should be in format like "1.0.0.0" or similar
             Assert.Matches(@"^\d+\.\d+\.\d+\.\d+$", version);
         }
@@ -83,7 +83,7 @@ namespace mcp_nexus_tests.Models
             // Assert
             Assert.NotNull(version);
             Assert.NotEmpty(version);
-            
+
             // Should contain at least some numbers
             Assert.Contains(version, c => char.IsDigit(c));
         }
@@ -97,7 +97,7 @@ namespace mcp_nexus_tests.Models
             // Assert
             Assert.NotNull(version);
             Assert.NotEmpty(version);
-            
+
             // Should contain dots as separators
             Assert.Contains(".", version);
         }
@@ -111,12 +111,12 @@ namespace mcp_nexus_tests.Models
             // Assert
             Assert.NotNull(version);
             Assert.NotEmpty(version);
-            
+
             // Should be a valid version format (major.minor.build.revision)
             var parts = version.Split('.');
             Assert.True(parts.Length >= 2); // At least major.minor
             Assert.True(parts.Length <= 4); // At most major.minor.build.revision
-            
+
             // Each part should be numeric
             foreach (var part in parts)
             {
@@ -147,7 +147,7 @@ namespace mcp_nexus_tests.Models
             // Assert
             Assert.NotNull(version);
             Assert.NotEmpty(version);
-            
+
             // The version should be from the executing assembly
             // This is hard to test directly, but we can verify it's a valid version
             Assert.True(version.Length > 0);
@@ -162,7 +162,7 @@ namespace mcp_nexus_tests.Models
             // Assert
             Assert.NotNull(version);
             Assert.NotEmpty(version);
-            
+
             // Should not throw exceptions and return a valid version
             var versionResult = VersionHelper.GetFileVersion();
             Assert.NotNull(versionResult);
@@ -177,7 +177,7 @@ namespace mcp_nexus_tests.Models
             // Assert
             Assert.NotNull(version);
             Assert.NotEmpty(version);
-            
+
             // Parse the version and check it's greater than 0.0.0.0
             var versionParts = version.Split('.');
             if (versionParts.Length >= 1 && int.TryParse(versionParts[0], out var major))
@@ -195,7 +195,7 @@ namespace mcp_nexus_tests.Models
             // Assert
             Assert.NotNull(version);
             Assert.NotEmpty(version);
-            
+
             // Should only contain valid version characters (digits and dots)
             Assert.Matches(@"^[\d\.]+$", version);
         }
@@ -209,7 +209,7 @@ namespace mcp_nexus_tests.Models
             // Assert
             Assert.NotNull(version);
             Assert.NotEmpty(version);
-            
+
             // Should be parseable as a Version
             Assert.True(Version.TryParse(version, out var parsedVersion));
             Assert.NotNull(parsedVersion);
@@ -224,7 +224,7 @@ namespace mcp_nexus_tests.Models
             // Assert
             Assert.NotNull(version);
             Assert.NotEmpty(version);
-            
+
             // Should be a reasonable length (not too short, not too long)
             Assert.True(version.Length >= 5); // At least "1.0.0"
             Assert.True(version.Length <= 20); // Not unreasonably long

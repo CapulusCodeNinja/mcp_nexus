@@ -11,7 +11,8 @@ namespace mcp_nexus.Recovery
         private readonly ILogger m_logger;
         private readonly RecoveryConfiguration m_config;
         private DateTime m_lastHealthCheck = DateTime.UtcNow;
-        
+        private bool m_lastHealthResult = true;
+
         public SessionHealthMonitor(
             ICdbSession cdbSession,
             ILogger logger,
@@ -21,7 +22,7 @@ namespace mcp_nexus.Recovery
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_config = config ?? throw new ArgumentNullException(nameof(config));
         }
-        
+
         /// <summary>
         /// Checks if the CDB session is healthy and responsive
         /// </summary>
@@ -30,52 +31,63 @@ namespace mcp_nexus.Recovery
         {
             try
             {
+                // Use cached result if within cooldown period (30 seconds)
+                var now = DateTime.UtcNow;
+                if (now - m_lastHealthCheck < TimeSpan.FromSeconds(30))
+                {
+                    m_logger.LogTrace("🔍 Using cached health result: {Result}", m_lastHealthResult);
+                    return m_lastHealthResult;
+                }
+
+                // Perform actual health check
+                m_lastHealthCheck = now;
+
                 // Basic health check: is the session active?
                 if (!m_cdbSession.IsActive)
                 {
                     m_logger.LogWarning("🔍 Health check failed: CDB session is not active");
+                    m_lastHealthResult = false;
                     return false;
                 }
-                
-                // Update last health check time
-                m_lastHealthCheck = DateTime.UtcNow;
-                
+
                 m_logger.LogTrace("🔍 Health check passed: CDB session is active");
+                m_lastHealthResult = true;
                 return true;
             }
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "🔍 Health check failed with exception");
+                m_lastHealthResult = false;
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Performs a more comprehensive responsiveness test
         /// </summary>
         /// <returns>True if the session is responsive</returns>
-        public async Task<bool> IsSessionResponsive()
+        public Task<bool> IsSessionResponsive()
         {
             try
             {
                 // First check basic health
                 if (!IsSessionHealthy())
-                    return false;
-                
+                    return Task.FromResult(false);
+
                 // For now, we'll use the basic health check
                 // In a more advanced implementation, we could send a simple command
                 // and check if it responds within a reasonable time
-                
+
                 m_logger.LogDebug("🔍 Responsiveness check passed");
-                return true;
+                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "🔍 Responsiveness check failed");
-                return false;
+                return Task.FromResult(false);
             }
         }
-        
+
         /// <summary>
         /// Gets the time since the last health check
         /// </summary>
@@ -84,7 +96,7 @@ namespace mcp_nexus.Recovery
         {
             return DateTime.UtcNow - m_lastHealthCheck;
         }
-        
+
         /// <summary>
         /// Determines if a health check is due based on configuration
         /// </summary>
@@ -93,7 +105,7 @@ namespace mcp_nexus.Recovery
         {
             return TimeSinceLastHealthCheck() >= m_config.HealthCheckInterval;
         }
-        
+
         /// <summary>
         /// Performs a comprehensive session diagnostic
         /// </summary>
@@ -109,7 +121,7 @@ namespace mcp_nexus.Recovery
                     TimeSinceLastCheck = TimeSinceLastHealthCheck(),
                     IsHealthCheckDue = IsHealthCheckDue()
                 };
-                
+
                 // Add more diagnostic information as needed
                 m_logger.LogTrace("🔍 Session diagnostics collected");
                 return diagnostics;
@@ -128,7 +140,7 @@ namespace mcp_nexus.Recovery
             }
         }
     }
-    
+
     /// <summary>
     /// Diagnostic information about a CDB session
     /// </summary>

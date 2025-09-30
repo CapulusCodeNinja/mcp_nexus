@@ -10,7 +10,7 @@ namespace mcp_nexus.Recovery
         public TimeSpan HealthCheckInterval { get; }
         public int MaxRecoveryAttempts { get; }
         public TimeSpan RecoveryAttemptCooldown { get; }
-        
+
         public RecoveryConfiguration(
             TimeSpan? cancellationTimeout = null,
             TimeSpan? restartDelay = null,
@@ -24,7 +24,7 @@ namespace mcp_nexus.Recovery
             MaxRecoveryAttempts = maxRecoveryAttempts;
             RecoveryAttemptCooldown = recoveryAttemptCooldown ?? TimeSpan.FromMinutes(5);
         }
-        
+
         /// <summary>
         /// Determines if recovery should be attempted based on attempt count and timing
         /// </summary>
@@ -35,11 +35,11 @@ namespace mcp_nexus.Recovery
         {
             if (attemptCount >= MaxRecoveryAttempts)
                 return false;
-            
+
             var timeSinceLastAttempt = DateTime.UtcNow - lastAttemptTime;
             return timeSinceLastAttempt >= RecoveryAttemptCooldown;
         }
-        
+
         /// <summary>
         /// Gets the delay before attempting to restart a session
         /// </summary>

@@ -25,7 +25,7 @@ namespace mcp_nexus_tests.Models
             var invalidJson = "{ invalid json }";
 
             // Act & Assert
-            Assert.Throws<JsonException>(() => 
+            Assert.Throws<JsonException>(() =>
                 JsonSerializer.Deserialize<McpRequest>(invalidJson, s_jsonOptions));
         }
 
@@ -36,7 +36,7 @@ namespace mcp_nexus_tests.Models
             var incompleteJson = "{\"jsonrpc\":\"2.0\",\"method\":\"test\""; // Missing closing brace
 
             // Act & Assert
-            Assert.Throws<JsonException>(() => 
+            Assert.Throws<JsonException>(() =>
                 JsonSerializer.Deserialize<McpRequest>(incompleteJson, s_jsonOptions));
         }
 
@@ -94,7 +94,7 @@ namespace mcp_nexus_tests.Models
             """;
 
             // Act & Assert
-            Assert.Throws<JsonException>(() => 
+            Assert.Throws<JsonException>(() =>
                 JsonSerializer.Deserialize<McpRequest>(wrongTypesJson, s_jsonOptions));
         }
 
@@ -158,7 +158,7 @@ namespace mcp_nexus_tests.Models
             var invalidJson = "{ not valid json at all }";
 
             // Act & Assert
-            Assert.Throws<JsonException>(() => 
+            Assert.Throws<JsonException>(() =>
                 JsonSerializer.Deserialize<McpResponse>(invalidJson, s_jsonOptions));
         }
 

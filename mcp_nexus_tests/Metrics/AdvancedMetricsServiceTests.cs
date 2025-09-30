@@ -226,7 +226,7 @@ namespace mcp_nexus_tests.Metrics
 
             // Assert
             var snapshot = m_metricsService.GetMetricsSnapshot();
-            
+
             var createdCounter = snapshot.Counters["sessions.SESSION_CREATED"];
             Assert.Equal(2, createdCounter.Total);
             Assert.Equal(2, createdCounter.Successful);
@@ -543,7 +543,7 @@ namespace mcp_nexus_tests.Metrics
         {
             // Act & Assert - Should not throw
             m_metricsService.RecordSessionEvent(null!, "EVENT_TYPE", TimeSpan.FromMilliseconds(100));
-            
+
             var snapshot = m_metricsService.GetMetricsSnapshot();
             Assert.True(snapshot.Counters.ContainsKey("sessions.EVENT_TYPE"));
         }
@@ -553,7 +553,7 @@ namespace mcp_nexus_tests.Metrics
         {
             // Act & Assert - Should not throw
             m_metricsService.RecordSessionEvent("session1", "", TimeSpan.FromMilliseconds(100));
-            
+
             var snapshot = m_metricsService.GetMetricsSnapshot();
             Assert.True(snapshot.Counters.ContainsKey("sessions."));
         }

@@ -55,7 +55,7 @@ namespace mcp_nexus.Middleware
         private async Task<string> ReadAndLogRequestAsync(HttpContext context)
         {
             context.Request.EnableBuffering();
-            
+
             string requestBody;
             using (var reader = new StreamReader(context.Request.Body, leaveOpen: true))
             {
@@ -72,7 +72,7 @@ namespace mcp_nexus.Middleware
         private async Task ReadAndLogResponseAsync(HttpContext context, MemoryStream responseBody)
         {
             responseBody.Seek(0, SeekOrigin.Begin);
-            
+
             string responseBodyText;
             using (var reader = new StreamReader(responseBody, leaveOpen: true))
             {

@@ -16,7 +16,7 @@ namespace mcp_nexus.Infrastructure
         public static async Task<bool> PerformUpdateAsync(ILogger? logger = null)
         {
             string? backupPath = null;
-            
+
             try
             {
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Starting service update process");
@@ -33,7 +33,7 @@ namespace mcp_nexus.Infrastructure
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Stopping service for update");
                 var stopCommand = ServiceConfiguration.GetServiceStopCommand();
                 await ServiceRegistryManager.RunScCommandAsync(stopCommand, logger);
-                
+
                 // Wait for service to stop
                 await Task.Delay(ServiceConfiguration.ServiceStopDelayMs);
 
@@ -130,7 +130,7 @@ namespace mcp_nexus.Infrastructure
                 // This is a simplified check - in a real scenario, you might compare
                 // version numbers from the installed service vs. the current build
                 var installedExecutable = Path.Combine(ServiceConfiguration.InstallFolder, ServiceConfiguration.ExecutableName);
-                
+
                 if (!File.Exists(installedExecutable))
                 {
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Service executable not found, update needed");

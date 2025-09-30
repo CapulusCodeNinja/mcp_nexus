@@ -19,20 +19,20 @@ namespace mcp_nexus.Notifications
                 ["commandId"] = commandId,
                 ["status"] = status
             };
-            
+
             if (progress.HasValue)
                 parameters["progress"] = progress.Value;
-            
+
             if (!string.IsNullOrEmpty(message))
                 parameters["message"] = message;
-            
+
             return new McpNotification
             {
                 Method = "notifications/command_status",
                 Params = JsonSerializer.SerializeToElement(parameters)
             };
         }
-        
+
         /// <summary>
         /// Creates a command completion notification
         /// </summary>
@@ -44,14 +44,14 @@ namespace mcp_nexus.Notifications
                 ["commandId"] = commandId,
                 ["result"] = result
             };
-            
+
             return new McpNotification
             {
                 Method = "notifications/command_completion",
                 Params = JsonSerializer.SerializeToElement(parameters)
             };
         }
-        
+
         /// <summary>
         /// Creates a command failure notification
         /// </summary>
@@ -63,17 +63,17 @@ namespace mcp_nexus.Notifications
                 ["commandId"] = commandId,
                 ["error"] = error
             };
-            
+
             if (!string.IsNullOrEmpty(details))
                 parameters["details"] = details;
-            
+
             return new McpNotification
             {
                 Method = "notifications/command_failure",
                 Params = JsonSerializer.SerializeToElement(parameters)
             };
         }
-        
+
         /// <summary>
         /// Creates a command heartbeat notification
         /// </summary>
@@ -85,20 +85,20 @@ namespace mcp_nexus.Notifications
                 ["commandId"] = commandId,
                 ["status"] = status
             };
-            
+
             if (progress.HasValue)
                 parameters["progress"] = progress.Value;
-            
+
             if (!string.IsNullOrEmpty(message))
                 parameters["message"] = message;
-            
+
             return new McpNotification
             {
                 Method = "notifications/command_heartbeat",
                 Params = JsonSerializer.SerializeToElement(parameters)
             };
         }
-        
+
         /// <summary>
         /// Creates a session event notification
         /// </summary>
@@ -109,17 +109,17 @@ namespace mcp_nexus.Notifications
                 ["sessionId"] = sessionId,
                 ["eventType"] = eventType
             };
-            
+
             if (eventData != null)
                 parameters["eventData"] = eventData;
-            
+
             return new McpNotification
             {
                 Method = "notifications/session_event",
                 Params = JsonSerializer.SerializeToElement(parameters)
             };
         }
-        
+
         /// <summary>
         /// Creates a queue event notification
         /// </summary>
@@ -130,17 +130,17 @@ namespace mcp_nexus.Notifications
                 ["sessionId"] = sessionId,
                 ["eventType"] = eventType
             };
-            
+
             if (eventData != null)
                 parameters["eventData"] = eventData;
-            
+
             return new McpNotification
             {
                 Method = "notifications/queue_event",
                 Params = JsonSerializer.SerializeToElement(parameters)
             };
         }
-        
+
         /// <summary>
         /// Creates a recovery notification
         /// </summary>
@@ -152,17 +152,17 @@ namespace mcp_nexus.Notifications
                 ["recoveryType"] = recoveryType,
                 ["status"] = status
             };
-            
+
             if (details != null)
                 parameters["details"] = details;
-            
+
             return new McpNotification
             {
                 Method = "notifications/recovery",
                 Params = JsonSerializer.SerializeToElement(parameters)
             };
         }
-        
+
         /// <summary>
         /// Creates a generic notification with custom method and parameters
         /// </summary>

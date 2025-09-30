@@ -324,7 +324,7 @@ namespace mcp_nexus_tests.Resilience
             // Act & Assert
             // CircuitBreakerOpenException should not count as a failure
             await Assert.ThrowsAsync<CircuitBreakerOpenException>(() => m_circuitBreaker.ExecuteAsync(operation, "test-operation"));
-            
+
             // State should still be Closed since CircuitBreakerOpenException doesn't count as failure
             Assert.Equal(CircuitState.Closed, m_circuitBreaker.GetState());
         }
@@ -364,7 +364,7 @@ namespace mcp_nexus_tests.Resilience
 
             // Assert - All should throw exceptions
             await Assert.ThrowsAsync<InvalidOperationException>(() => Task.WhenAll(operations));
-            
+
             // Circuit should be open after 3 failures
             Assert.Equal(CircuitState.Open, m_circuitBreaker.GetState());
         }

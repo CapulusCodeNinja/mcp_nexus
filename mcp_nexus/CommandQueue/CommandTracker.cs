@@ -9,12 +9,12 @@ namespace mcp_nexus.CommandQueue
     {
         private readonly ILogger m_logger;
         private readonly CommandQueueConfiguration m_config;
-        
+
         // Thread-safe collections and counters
         private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands = new();
         private readonly BlockingCollection<QueuedCommand> m_commandQueue;
         private volatile QueuedCommand? m_currentCommand;
-        
+
         // Performance counters
         private long m_commandCounter = 0;
         private long m_completedCommands = 0;
@@ -70,7 +70,7 @@ namespace mcp_nexus.CommandQueue
         {
             if (string.IsNullOrWhiteSpace(commandId))
                 return null;
-            
+
             return m_activeCommands.TryGetValue(commandId, out var command) ? command : null;
         }
 
@@ -81,7 +81,7 @@ namespace mcp_nexus.CommandQueue
         {
             if (string.IsNullOrWhiteSpace(commandId))
                 return null;
-                
+
             return GetCommand(commandId)?.State;
         }
 
@@ -92,7 +92,7 @@ namespace mcp_nexus.CommandQueue
         {
             if (string.IsNullOrWhiteSpace(commandId))
                 return null;
-                
+
             var command = GetCommand(commandId);
             if (command == null) return null;
 
@@ -182,7 +182,7 @@ namespace mcp_nexus.CommandQueue
             var completed = Interlocked.Read(ref m_completedCommands);
             var failed = Interlocked.Read(ref m_failedCommands);
             var cancelled = Interlocked.Read(ref m_cancelledCommands);
-            
+
             return (
                 Total: completed + failed + cancelled, // Total = sum of completed operations, not queued
                 Completed: completed,
@@ -243,7 +243,7 @@ namespace mcp_nexus.CommandQueue
         private TimeSpan CalculateRemainingTime(int queuePosition)
         {
             if (queuePosition <= 0) return TimeSpan.Zero;
-            
+
             // Estimate based on position and average command time
             var estimatedMinutesPerCommand = 2; // Conservative estimate
             return TimeSpan.FromMinutes(queuePosition * estimatedMinutesPerCommand);

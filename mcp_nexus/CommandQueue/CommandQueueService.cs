@@ -40,11 +40,11 @@ namespace mcp_nexus.CommandQueue
         public CommandQueueService(ICdbSession cdbSession, ILogger<CommandQueueService> logger)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            
+
             // Create focused components
             m_config = new BasicQueueConfiguration();
             m_processor = new BasicCommandProcessor(cdbSession, logger, m_config, m_activeCommands);
-            
+
             // Initialize command queue
             m_commandQueue = new BlockingCollection<QueuedCommand>();
 
@@ -110,25 +110,25 @@ namespace mcp_nexus.CommandQueue
 
             if (string.IsNullOrWhiteSpace(commandId))
                 throw new ArgumentException("Command ID cannot be null or empty", nameof(commandId));
-            
+
             if (!m_activeCommands.TryGetValue(commandId, out var queuedCommand))
-                throw new ArgumentException($"Command not found: {commandId}", nameof(commandId));
-            
+                return $"Command not found: {commandId}";
+
             m_logger.LogTrace("⏳ Waiting for command {CommandId} result", commandId);
-            
+
             try
             {
                 var result = await queuedCommand.CompletionSource.Task;
                 m_logger.LogTrace("✅ Command {CommandId} result retrieved", commandId);
-                        return result;
-                    }
-                    catch (Exception ex)
-                    {
+                return result;
+            }
+            catch (Exception ex)
+            {
                 m_logger.LogError(ex, "❌ Error getting result for command {CommandId}", commandId);
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Cancels a specific command
         /// </summary>
@@ -137,7 +137,7 @@ namespace mcp_nexus.CommandQueue
         public bool CancelCommand(string commandId)
         {
             if (m_disposed)
-                return false;
+                throw new ObjectDisposedException(nameof(CommandQueueService));
 
             if (string.IsNullOrWhiteSpace(commandId))
                 return false;
@@ -148,19 +148,19 @@ namespace mcp_nexus.CommandQueue
                 return false;
             }
 
-                try
-                {
-                    command.CancellationTokenSource.Cancel();
+            try
+            {
+                command.CancellationTokenSource.Cancel();
                 m_logger.LogInformation("🚫 Cancelled command {CommandId}", commandId);
                 return true;
             }
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "Error cancelling command {CommandId}", commandId);
-                    return false;
-                }
+                return false;
+            }
         }
-        
+
         /// <summary>
         /// Cancels all commands
         /// </summary>
@@ -173,13 +173,13 @@ namespace mcp_nexus.CommandQueue
 
             var cancelledCount = 0;
             var commandIds = m_activeCommands.Keys.ToList();
-            
+
             foreach (var commandId in commandIds)
             {
                 if (CancelCommand(commandId))
-                            cancelledCount++;
-                        }
-            
+                    cancelledCount++;
+            }
+
             m_logger.LogInformation("🚫 Cancelled {Count} commands: {Reason}", cancelledCount, reason ?? "Bulk cancellation");
             return cancelledCount;
         }
@@ -201,7 +201,7 @@ namespace mcp_nexus.CommandQueue
             {
                 results.Add((current.Id, current.Command, current.QueueTime, "Executing"));
             }
-            
+
             // Add other active commands
             foreach (var kvp in m_activeCommands)
             {
@@ -232,10 +232,10 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 return null;
-            
+
             return m_processor.GetCurrentCommand();
         }
-        
+
         /// <summary>
         /// Gets the state of a specific command
         /// </summary>
@@ -248,8 +248,8 @@ namespace mcp_nexus.CommandQueue
 
             if (m_activeCommands.TryGetValue(commandId, out var command))
                 return command.State;
-            
-                return null;
+
+            return null;
         }
 
         /// <summary>
@@ -264,22 +264,33 @@ namespace mcp_nexus.CommandQueue
 
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
-            return new CommandInfo
-            {
+                return new CommandInfo
+                {
                     CommandId = command.Id,
-                Command = command.Command,
-                State = command.State,
-                QueueTime = command.QueueTime,
+                    Command = command.Command,
+                    State = command.State,
+                    QueueTime = command.QueueTime,
                     Elapsed = DateTime.UtcNow - command.QueueTime,
                     Remaining = TimeSpan.Zero, // Not applicable for basic queue
                     QueuePosition = 0, // Not applicable for basic queue
                     IsCompleted = command.State is CommandState.Completed or CommandState.Failed or CommandState.Cancelled
                 };
             }
-            
+
             return null;
         }
-        
+
+        /// <summary>
+        /// Triggers cleanup of completed commands (for testing purposes)
+        /// </summary>
+        public void TriggerCleanup()
+        {
+            if (m_disposed)
+                throw new ObjectDisposedException(nameof(CommandQueueService));
+
+            m_processor.TriggerCleanup();
+        }
+
         /// <summary>
         /// Disposes the service and all resources
         /// </summary>
@@ -287,24 +298,24 @@ namespace mcp_nexus.CommandQueue
         {
             if (m_disposed)
                 return;
-            
+
             m_disposed = true;
-            
+
             try
             {
                 m_logger.LogInformation("🛑 Shutting down CommandQueueService");
-                
+
                 // Signal shutdown
                 m_serviceCts.Cancel();
-                
+
                 // Complete the queue to stop accepting new commands
                 m_commandQueue.CompleteAdding();
-                
+
                 // Wait for processing task to complete
                 if (m_processingTask != null && !m_processingTask.IsCompleted)
-            {
-                try
                 {
+                    try
+                    {
                         m_processingTask.Wait(TimeSpan.FromSeconds(10));
                     }
                     catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is TaskCanceledException))
@@ -313,14 +324,14 @@ namespace mcp_nexus.CommandQueue
                         m_logger.LogDebug("Processing task cancelled during shutdown (expected)");
                     }
                 }
-                
+
                 // Dispose components
                 m_processor?.Dispose();
-                
+
                 // Dispose resources
                 m_commandQueue?.Dispose();
                 m_serviceCts?.Dispose();
-                
+
                 m_logger.LogInformation("✅ CommandQueueService shutdown complete");
             }
             catch (Exception ex)

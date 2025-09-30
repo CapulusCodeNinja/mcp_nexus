@@ -18,12 +18,12 @@ namespace mcp_nexus.Recovery
     {
         private readonly ILogger<CdbSessionRecoveryService> m_logger;
         private bool m_disposed = false;
-        
+
         // Focused components
         private readonly RecoveryConfiguration m_config;
         private readonly SessionHealthMonitor m_healthMonitor;
         private readonly RecoveryOrchestrator m_orchestrator;
-        
+
         public CdbSessionRecoveryService(
             ICdbSession cdbSession,
             ILogger<CdbSessionRecoveryService> logger,
@@ -31,16 +31,16 @@ namespace mcp_nexus.Recovery
             IMcpNotificationService? notificationService = null)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            
+
             // Create focused components
             m_config = new RecoveryConfiguration();
             m_healthMonitor = new SessionHealthMonitor(cdbSession, logger, m_config);
             m_orchestrator = new RecoveryOrchestrator(
                 cdbSession, logger, cancelAllCommandsCallback, m_config, m_healthMonitor, notificationService);
-            
+
             m_logger.LogInformation("🔧 CdbSessionRecoveryService initialized with focused components");
         }
-        
+
         /// <summary>
         /// Attempts to recover a stuck CDB session
         /// </summary>
@@ -50,12 +50,15 @@ namespace mcp_nexus.Recovery
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CdbSessionRecoveryService));
-            
+
+            if (reason == null)
+                throw new ArgumentNullException(nameof(reason));
+
             if (string.IsNullOrWhiteSpace(reason))
-                throw new ArgumentException("Reason cannot be null, empty, or whitespace", nameof(reason));
-            
+                throw new ArgumentException("Reason cannot be empty or whitespace", nameof(reason));
+
             m_logger.LogInformation("🔧 Recovery requested: {Reason}", reason);
-            
+
             try
             {
                 return await m_orchestrator.RecoverStuckSessionAsync(reason);
@@ -66,7 +69,7 @@ namespace mcp_nexus.Recovery
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Forces a restart of the CDB session
         /// </summary>
@@ -76,12 +79,15 @@ namespace mcp_nexus.Recovery
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CdbSessionRecoveryService));
-            
+
+            if (reason == null)
+                throw new ArgumentNullException(nameof(reason));
+
             if (string.IsNullOrWhiteSpace(reason))
-                throw new ArgumentException("Reason cannot be null, empty, or whitespace", nameof(reason));
-            
+                throw new ArgumentException("Reason cannot be empty or whitespace", nameof(reason));
+
             m_logger.LogWarning("🔧 Force restart requested: {Reason}", reason);
-            
+
             try
             {
                 return await m_orchestrator.ForceRestartSessionAsync(reason);
@@ -92,7 +98,7 @@ namespace mcp_nexus.Recovery
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Checks if the CDB session is healthy
         /// </summary>
@@ -100,8 +106,8 @@ namespace mcp_nexus.Recovery
         public bool IsSessionHealthy()
         {
             if (m_disposed)
-                return false;
-            
+                throw new ObjectDisposedException(nameof(CdbSessionRecoveryService));
+
             try
             {
                 return m_healthMonitor.IsSessionHealthy();
@@ -112,7 +118,7 @@ namespace mcp_nexus.Recovery
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Gets comprehensive session diagnostics
         /// </summary>
@@ -121,7 +127,7 @@ namespace mcp_nexus.Recovery
         {
             if (m_disposed)
                 return new SessionDiagnostics { ErrorMessage = "Service is disposed" };
-            
+
             try
             {
                 return m_healthMonitor.GetSessionDiagnostics();
@@ -132,7 +138,7 @@ namespace mcp_nexus.Recovery
                 return new SessionDiagnostics { ErrorMessage = ex.Message };
             }
         }
-        
+
         /// <summary>
         /// Gets recovery statistics
         /// </summary>
@@ -141,7 +147,7 @@ namespace mcp_nexus.Recovery
         {
             if (m_disposed)
                 return new RecoveryStatistics();
-            
+
             try
             {
                 return m_orchestrator.GetRecoveryStatistics();
@@ -152,7 +158,7 @@ namespace mcp_nexus.Recovery
                 return new RecoveryStatistics();
             }
         }
-        
+
         /// <summary>
         /// Performs a comprehensive health check if due
         /// </summary>
@@ -161,7 +167,7 @@ namespace mcp_nexus.Recovery
         {
             if (m_disposed)
                 return false;
-            
+
             try
             {
                 if (m_healthMonitor.IsHealthCheckDue())
@@ -169,7 +175,7 @@ namespace mcp_nexus.Recovery
                     m_logger.LogTrace("🔧 Performing scheduled health check");
                     return await m_healthMonitor.IsSessionResponsive();
                 }
-                
+
                 return true; // Not due, assume healthy
             }
             catch (Exception ex)
@@ -178,7 +184,7 @@ namespace mcp_nexus.Recovery
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Disposes the recovery service and all resources
         /// </summary>
@@ -186,16 +192,16 @@ namespace mcp_nexus.Recovery
         {
             if (m_disposed)
                 return;
-            
+
             m_disposed = true;
-            
+
             try
             {
                 m_logger.LogInformation("🔧 Shutting down CdbSessionRecoveryService");
-                
+
                 // Dispose components
                 m_orchestrator?.Dispose();
-                
+
                 m_logger.LogInformation("✅ CdbSessionRecoveryService shutdown complete");
             }
             catch (Exception ex)

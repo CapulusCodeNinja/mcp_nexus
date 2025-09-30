@@ -36,7 +36,7 @@ namespace mcp_nexus_tests.Services
             m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
             m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync("Mock result");
-            
+
             // Setup recovery service to succeed
             m_mockRecoveryService.Setup(x => x.RecoverStuckSession(It.IsAny<string>()))
                 .ReturnsAsync(true);
@@ -215,7 +215,14 @@ namespace mcp_nexus_tests.Services
         [Fact]
         public void CancelCommand_ValidCommandId_ReturnsTrue()
         {
-            // Arrange
+            // Arrange - Setup delayed execution to allow cancellation
+            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(async () =>
+                {
+                    await Task.Delay(500); // Longer delay to allow cancellation
+                    return "Mock result";
+                });
+
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
@@ -224,7 +231,7 @@ namespace mcp_nexus_tests.Services
 
             var commandId = m_service.QueueCommand("version");
 
-            // Act
+            // Act - Cancel immediately after queueing
             var result = m_service.CancelCommand(commandId);
 
             // Assert
@@ -404,7 +411,14 @@ namespace mcp_nexus_tests.Services
         [Fact]
         public void GetCommandState_WithValidCommandId_ReturnsCommandState()
         {
-            // Arrange
+            // Arrange - Setup delayed execution to allow state checking
+            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(async () =>
+                {
+                    await Task.Delay(100); // Small delay to allow state checking
+                    return "Mock result";
+                });
+
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
@@ -413,7 +427,7 @@ namespace mcp_nexus_tests.Services
 
             var commandId = m_service.QueueCommand("version");
 
-            // Act
+            // Act - Check state immediately after queueing
             var state = m_service.GetCommandState(commandId);
 
             // Assert
@@ -441,7 +455,14 @@ namespace mcp_nexus_tests.Services
         [Fact]
         public void GetCommandInfo_WithValidCommandId_ReturnsCommandInfo()
         {
-            // Arrange
+            // Arrange - Setup delayed execution to allow info checking
+            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(async () =>
+                {
+                    await Task.Delay(100); // Small delay to allow info checking
+                    return "Mock result";
+                });
+
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
@@ -450,7 +471,7 @@ namespace mcp_nexus_tests.Services
 
             var commandId = m_service.QueueCommand("version");
 
-            // Act
+            // Act - Check info immediately after queueing
             var info = m_service.GetCommandInfo(commandId);
 
             // Assert

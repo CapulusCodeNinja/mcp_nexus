@@ -26,7 +26,7 @@ namespace mcp_nexus.Infrastructure
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Validates administrator privileges and logs appropriate error messages
         /// </summary>
@@ -37,13 +37,13 @@ namespace mcp_nexus.Infrastructure
         {
             if (IsRunAsAdministrator())
                 return true;
-                
+
             var errorMsg = $"{operation} requires administrator privileges. Please run the command as administrator.";
             OperationLogger.LogError(logger, GetOperationFromString(operation), "{ErrorMsg}", errorMsg);
             await Console.Error.WriteLineAsync($"ERROR: {errorMsg}");
             return false;
         }
-        
+
         /// <summary>
         /// Validates administrator privileges with a custom error message
         /// </summary>
@@ -52,18 +52,18 @@ namespace mcp_nexus.Infrastructure
         /// <param name="logger">Optional logger for error reporting</param>
         /// <returns>True if administrator privileges are available, false otherwise</returns>
         public static async Task<bool> ValidateAdministratorPrivilegesAsync(
-            string operation, 
-            string customErrorMessage, 
+            string operation,
+            string customErrorMessage,
             ILogger? logger = null)
         {
             if (IsRunAsAdministrator())
                 return true;
-                
+
             OperationLogger.LogError(logger, GetOperationFromString(operation), "{ErrorMsg}", customErrorMessage);
             await Console.Error.WriteLineAsync($"ERROR: {customErrorMessage}");
             return false;
         }
-        
+
         /// <summary>
         /// Checks if the current user has write access to the installation directory
         /// </summary>
@@ -86,7 +86,7 @@ namespace mcp_nexus.Infrastructure
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Validates that the installation directory can be accessed and written to
         /// </summary>
@@ -97,14 +97,14 @@ namespace mcp_nexus.Infrastructure
             try
             {
                 var installDir = ServiceConfiguration.InstallFolder;
-                
+
                 // Check if directory exists or can be created
                 if (!Directory.Exists(installDir))
                 {
                     try
                     {
                         Directory.CreateDirectory(installDir);
-                        OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, 
+                        OperationLogger.LogInfo(logger, OperationLogger.Operations.Install,
                             "Created installation directory: {InstallDir}", installDir);
                     }
                     catch (Exception ex)
@@ -115,7 +115,7 @@ namespace mcp_nexus.Infrastructure
                         return false;
                     }
                 }
-                
+
                 // Check write access
                 if (!HasWriteAccessToDirectory(installDir))
                 {
@@ -124,7 +124,7 @@ namespace mcp_nexus.Infrastructure
                     await Console.Error.WriteLineAsync($"ERROR: {errorMsg}");
                     return false;
                 }
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -135,7 +135,7 @@ namespace mcp_nexus.Infrastructure
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Converts a string operation name to the corresponding OperationLogger.Operations constant
         /// </summary>

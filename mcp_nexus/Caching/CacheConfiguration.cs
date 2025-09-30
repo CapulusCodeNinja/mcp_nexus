@@ -10,7 +10,7 @@ namespace mcp_nexus.Caching
         public TimeSpan CleanupInterval { get; }
         public double MemoryPressureThreshold { get; }
         public int MaxEntriesPerCleanup { get; }
-        
+
         public CacheConfiguration(
             long maxMemoryBytes = 100 * 1024 * 1024, // 100MB default
             TimeSpan? defaultTtl = null,
@@ -24,7 +24,7 @@ namespace mcp_nexus.Caching
             MemoryPressureThreshold = memoryPressureThreshold;
             MaxEntriesPerCleanup = maxEntriesPerCleanup;
         }
-        
+
         /// <summary>
         /// Determines if memory pressure cleanup should be triggered
         /// </summary>
@@ -34,7 +34,7 @@ namespace mcp_nexus.Caching
         {
             return currentMemoryUsage > (MaxMemoryBytes * MemoryPressureThreshold);
         }
-        
+
         /// <summary>
         /// Calculates the target memory usage after cleanup
         /// </summary>
