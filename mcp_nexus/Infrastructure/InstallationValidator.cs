@@ -79,15 +79,20 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Validates prerequisites for service updates
+        /// Validates prerequisites for service updates with detailed analysis
         /// </summary>
         /// <param name="logger">Optional logger for validation operations</param>
         /// <returns>True if prerequisites are met, false otherwise</returns>
         public static async Task<bool> ValidateUpdatePrerequisitesAsync(ILogger? logger = null)
         {
-            // Step 1: Validate administrator privileges
-            if (!await ServicePermissionValidator.ValidateAdministratorPrivilegesAsync("Update", logger))
+            // Step 1: Perform detailed privilege analysis
+            var privilegeAnalysis = ServicePermissionValidator.AnalyzeCurrentPrivileges(logger);
+            
+            if (!privilegeAnalysis.HasSufficientPrivileges)
+            {
+                await DisplayDetailedPrivilegeError(privilegeAnalysis, logger);
                 return false;
+            }
 
             // Step 2: Check if service is installed
             if (!ServiceRegistryManager.IsServiceInstalled())
@@ -96,7 +101,7 @@ namespace mcp_nexus.Infrastructure
                 return false;
             }
 
-            // Step 3: Validate installation directory access
+            // Step 3: Validate installation directory access (redundant check, but kept for safety)
             if (!await ServicePermissionValidator.ValidateInstallationDirectoryAccessAsync(logger))
                 return false;
 
