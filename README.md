@@ -74,7 +74,7 @@ MCP Nexus is a platform that provides structured access to Windows debugging too
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/mcp_nexus.git
+git clone https://github.com/CapulusCodeNinja/mcp_nexus.git
 cd mcp_nexus
 
 # Build the project

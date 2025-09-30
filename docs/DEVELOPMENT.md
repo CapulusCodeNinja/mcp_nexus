@@ -341,7 +341,7 @@ Comprehensive test coverage includes:
 
 ```bash
 # Clone repository
-git clone https://github.com/your-username/mcp_nexus.git
+git clone https://github.com/CapulusCodeNinja/mcp_nexus.git
 cd mcp_nexus
 
 # Restore dependencies
