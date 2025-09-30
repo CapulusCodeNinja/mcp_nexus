@@ -71,6 +71,23 @@ namespace mcp_nexus.Infrastructure
                 }
                 Console.WriteLine("✓ Installation validated successfully");
 
+                // Step 6: Start the service
+                Console.WriteLine("Starting service...");
+                var startSuccess = await ServiceRegistryManager.RunScCommandAsync($"start \"{ServiceConfiguration.ServiceName}\"", logger);
+                if (!startSuccess)
+                {
+                    Console.WriteLine("⚠ Warning: Service installed but failed to start");
+                    OperationLogger.LogWarning(logger, OperationLogger.Operations.Install, "Service start failed");
+                }
+                else
+                {
+                    Console.WriteLine("✓ Service started successfully");
+                    OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Service started successfully");
+                    
+                    // Give the service a moment to start
+                    await Task.Delay(2000);
+                }
+
                 Console.WriteLine();
                 Console.WriteLine("🎉 Service installation completed successfully!");
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Service installation completed successfully");
