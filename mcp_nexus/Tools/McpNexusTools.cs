@@ -201,25 +201,39 @@ namespace mcp_nexus.Tools
                 // Try to get queue without throwing to avoid transient races, log details if missing
                 if (!sessionManager.TryGetCommandQueue(sessionId, out var commandQueue) || commandQueue == null)
                 {
-                    var queueMissingResponse = new
+                    // Brief retry loop to handle immediate post-creation race (up to ~1s)
+                    for (int attempt = 1; attempt <= 10; attempt++)
                     {
-                        sessionId = sessionId,
-                        commandId = (string?)null,
-                        success = false,
-                        operation = "nexus_enqueue_async_dump_analyze_command",
-                        message = $"Session {sessionId} is not ready to accept commands (queue unavailable). Please retry shortly."
-                    };
-
-                    // Add extra diagnostics to help troubleshooting
-                    try
-                    {
-                        var activeCount = sessionManager.GetActiveSessions()?.Count() ?? -1;
-                        var allCount = sessionManager.GetAllSessions()?.Count() ?? -1;
-                        logger.LogWarning("Command queue unavailable for session: {SessionId}. Likely transient immediately after creation. ActiveSessions={Active}, AllSessions={All}",
-                            sessionId, activeCount, allCount);
+                        await Task.Delay(100);
+                        if (sessionManager.TryGetCommandQueue(sessionId, out commandQueue) && commandQueue != null)
+                        {
+                            logger.LogTrace("Command queue became available for {SessionId} after {Attempt} attempts", sessionId, attempt);
+                            break;
+                        }
                     }
-                    catch { }
-                    return Task.FromResult((object)queueMissingResponse);
+
+                    if (commandQueue == null)
+                    {
+                        var queueMissingResponse = new
+                        {
+                            sessionId = sessionId,
+                            commandId = (string?)null,
+                            success = false,
+                            operation = "nexus_enqueue_async_dump_analyze_command",
+                            message = $"Session {sessionId} is not ready to accept commands (queue unavailable). Please retry shortly."
+                        };
+
+                        // Add extra diagnostics to help troubleshooting
+                        try
+                        {
+                            var activeCount = sessionManager.GetActiveSessions()?.Count() ?? -1;
+                            var allCount = sessionManager.GetAllSessions()?.Count() ?? -1;
+                            logger.LogWarning("Command queue unavailable for session: {SessionId}. Likely transient immediately after creation. ActiveSessions={Active}, AllSessions={All}",
+                                sessionId, activeCount, allCount);
+                        }
+                        catch { }
+                        return Task.FromResult((object)queueMissingResponse);
+                    }
                 }
 
                 var context = sessionManager.GetSessionContext(sessionId);
