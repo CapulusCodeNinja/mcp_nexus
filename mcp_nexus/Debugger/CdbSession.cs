@@ -641,6 +641,7 @@ namespace mcp_nexus.Debugger
             var startTime = DateTime.Now;
             var linesRead = 0;
             var lastOutputTime = startTime;
+            var maxIdleTime = TimeSpan.FromSeconds(30); // Maximum time to wait without any output
 
             try
             {
@@ -651,13 +652,35 @@ namespace mcp_nexus.Debugger
                     // Check for cancellation first
                     cancellationToken.ThrowIfCancellationRequested();
 
+                    // CRITICAL FIX: Check for absolute timeout regardless of output
+                    var currentElapsed = DateTime.Now - startTime;
+                    if (currentElapsed.TotalMilliseconds >= timeoutMs)
+                    {
+                        logger.LogWarning("⏰ Command execution timed out after {ElapsedMs}ms (timeout: {TimeoutMs}ms), forcing completion", 
+                            currentElapsed.TotalMilliseconds, timeoutMs);
+                        output.AppendLine($"Command execution timed out after {currentElapsed.TotalMilliseconds:F0}ms");
+                        break;
+                    }
+
                     if (m_debuggerOutput.Peek() == -1)
                     {
+                        var idleTime = DateTime.Now - lastOutputTime;
+                        
                         // Check if we've been waiting too long without any output
-                        if ((DateTime.Now - lastOutputTime) > ApplicationConstants.CdbOutputTimeout)
+                        if (idleTime > ApplicationConstants.CdbOutputTimeout)
                         {
-                            logger.LogWarning("No output received for 5 seconds, continuing to wait...");
+                            logger.LogWarning("No output received for {IdleSeconds} seconds, continuing to wait...", idleTime.TotalSeconds);
                         }
+
+                        // ENHANCED: If no output for too long and we have some output, consider it complete
+                        if (idleTime > maxIdleTime && output.Length > 0)
+                        {
+                            logger.LogWarning("⏰ No output for {IdleSeconds} seconds with {OutputLength} chars collected, assuming command completed", 
+                                idleTime.TotalSeconds, output.Length);
+                            output.AppendLine($"Command assumed complete after {idleTime.TotalSeconds:F0}s idle time");
+                            break;
+                        }
+
                         // FIXED: Use Thread.Sleep for simple synchronous delay
                         // NOTE: If cancellation token support is needed, consider using Task.Delay(50, cancellationToken).Wait()
                         Thread.Sleep(50);
@@ -902,9 +925,41 @@ namespace mcp_nexus.Debugger
 
         private bool IsCommandComplete(string line)
         {
+            if (string.IsNullOrEmpty(line))
+                return false;
+
             // CDB typically shows "0:000>" prompt when ready for next command
-            var isComplete = line.Contains(">") && Regex.IsMatch(line, @"\d+:\d+>");
-            logger.LogTrace("IsCommandComplete checking line: '{Line}' -> {IsComplete}", line, isComplete);
+            var hasPrompt = line.Contains(">") && Regex.IsMatch(line, @"\d+:\d+>");
+            
+            // Also check for common error patterns that indicate command completion
+            var hasError = line.Contains("Unable to") || 
+                          line.Contains("Invalid") || 
+                          line.Contains("Error:") ||
+                          line.Contains("Failed to") ||
+                          line.Contains("Cannot") ||
+                          line.Contains("No such") ||
+                          line.Contains("Unrecognized") ||
+                          line.Contains("Syntax error");
+
+            // Check for completion indicators from specific commands
+            var hasCompletionIndicator = line.Contains("quit:") ||
+                                       line.Contains("Quit:") ||
+                                       line.EndsWith("done.") ||
+                                       line.EndsWith("complete.") ||
+                                       line.EndsWith("finished.");
+
+            var isComplete = hasPrompt || hasError || hasCompletionIndicator;
+            
+            if (isComplete)
+            {
+                logger.LogTrace("IsCommandComplete: '{Line}' -> TRUE (prompt={HasPrompt}, error={HasError}, completion={HasCompletion})", 
+                    line, hasPrompt, hasError, hasCompletionIndicator);
+            }
+            else
+            {
+                logger.LogTrace("IsCommandComplete: '{Line}' -> FALSE", line);
+            }
+            
             return isComplete;
         }
 
