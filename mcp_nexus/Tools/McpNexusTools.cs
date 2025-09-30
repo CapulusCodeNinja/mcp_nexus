@@ -190,24 +190,31 @@ namespace mcp_nexus.Tools
                     logger.LogWarning("Attempted to queue command for non-existent session: {SessionId}", sessionId);
                     return Task.FromResult((object)notFoundResponse);
                 }
-
-                var context = sessionManager.GetSessionContext(sessionId);
-                if (context == null)
+                // Try to get queue without throwing to avoid transient races, log details if missing
+                if (!sessionManager.TryGetCommandQueue(sessionId, out var commandQueue) || commandQueue == null)
                 {
-                    var contextErrorResponse = new
+                    var queueMissingResponse = new
                     {
                         sessionId = sessionId,
                         commandId = (string?)null,
                         success = false,
                         operation = "nexus_enqueue_async_dump_analyze_command",
-                        message = $"Session context not available for {sessionId}. Session may be in an invalid state."
+                        message = $"Session {sessionId} is not ready to accept commands (queue unavailable). Please retry shortly."
                     };
 
-                    logger.LogError("Session context not available for session: {SessionId}", sessionId);
-                    return Task.FromResult((object)contextErrorResponse);
+                    // Add extra diagnostics to help troubleshooting
+                    try
+                    {
+                        var activeCount = sessionManager.GetActiveSessions()?.Count() ?? -1;
+                        var allCount = sessionManager.GetAllSessions()?.Count() ?? -1;
+                        logger.LogWarning("Command queue unavailable for session: {SessionId}. Likely transient immediately after creation. ActiveSessions={Active}, AllSessions={All}",
+                            sessionId, activeCount, allCount);
+                    }
+                    catch { }
+                    return Task.FromResult((object)queueMissingResponse);
                 }
 
-                var commandQueue = sessionManager.GetCommandQueue(sessionId);
+                var context = sessionManager.GetSessionContext(sessionId);
                 var commandId = commandQueue.QueueCommand(command);
 
                 var response = new

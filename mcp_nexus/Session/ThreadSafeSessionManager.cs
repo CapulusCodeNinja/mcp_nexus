@@ -154,11 +154,15 @@ namespace mcp_nexus.Session
                 throw new ArgumentException("Session ID cannot be empty or whitespace", nameof(sessionId));
 
             if (!m_sessions.TryGetValue(sessionId, out var session))
+            {
+                m_logger.LogTrace("SessionExists: {SessionId} not found. ActiveCount={ActiveCount}", sessionId, m_sessions.Count);
                 return false;
+            }
 
             // Check if session is expired and schedule cleanup if needed
             if (m_config.IsSessionExpired(session.LastActivity))
             {
+                m_logger.LogTrace("SessionExists: {SessionId} expired. LastActivity={LastActivity}", sessionId, session.LastActivity);
                 // Schedule async cleanup without blocking caller
                 _ = Task.Run(async () =>
                 {
@@ -174,7 +178,10 @@ namespace mcp_nexus.Session
                 return false;
             }
 
-            return session.Status == SessionStatus.Active && !session.IsDisposed;
+            var isActive = session.Status == SessionStatus.Active && !session.IsDisposed;
+            m_logger.LogTrace("SessionExists: {SessionId} found. Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}",
+                sessionId, session.Status, session.IsDisposed, isActive);
+            return isActive;
         }
 
         /// <summary>
@@ -190,8 +197,35 @@ namespace mcp_nexus.Session
                 UpdateActivity(sessionId);
                 return session.CommandQueue;
             }
-
+            m_logger.LogTrace("GetCommandQueue: Queue unavailable for {SessionId}. Found={Found}", sessionId, m_sessions.ContainsKey(sessionId));
             throw new SessionNotFoundException(sessionId);
+        }
+
+        /// <summary>
+        /// Tries to get the command queue for a session without throwing
+        /// </summary>
+        /// <param name="sessionId">Session ID</param>
+        /// <param name="commandQueue">Returned command queue when available</param>
+        /// <returns>True if queue is available for an active, non-disposed session</returns>
+        public bool TryGetCommandQueue(string sessionId, out ICommandQueueService? commandQueue)
+        {
+            commandQueue = null;
+
+            if (string.IsNullOrWhiteSpace(sessionId))
+                return false;
+
+            if (m_sessions.TryGetValue(sessionId, out var session) &&
+                session.Status == SessionStatus.Active && !session.IsDisposed)
+            {
+                UpdateActivity(sessionId);
+                commandQueue = session.CommandQueue;
+                var available = commandQueue != null;
+                m_logger.LogTrace("TryGetCommandQueue: {SessionId} available={Available}", sessionId, available);
+                return available;
+            }
+
+            m_logger.LogTrace("TryGetCommandQueue: {SessionId} not ready or missing", sessionId);
+            return false;
         }
 
         /// <summary>
@@ -214,10 +248,20 @@ namespace mcp_nexus.Session
             var activeSessions = m_statisticsCollector.GetActiveSessions();
             var sessionContext = activeSessions.FirstOrDefault(s => s.SessionId == sessionId);
 
-            if (sessionContext == null)
-                throw new SessionNotFoundException(sessionId, "Session context not available");
+            if (sessionContext != null)
+                return sessionContext;
 
-            return sessionContext;
+            // Fallback: build a minimal context directly to avoid transient snapshot races
+            m_logger.LogTrace("GetSessionContext: Using minimal context fallback for {SessionId}", sessionId);
+            return new SessionContext
+            {
+                SessionId = session.SessionId,
+                DumpPath = session.DumpPath,
+                CreatedAt = session.CreatedAt,
+                LastActivity = session.LastActivity,
+                Status = session.Status.ToString(),
+                Description = $"Session for {Path.GetFileName(session.DumpPath)} (minimal context)"
+            };
         }
 
         /// <summary>

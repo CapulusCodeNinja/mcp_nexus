@@ -48,6 +48,14 @@ namespace mcp_nexus.Session
         ICommandQueueService GetCommandQueue(string sessionId);
 
         /// <summary>
+        /// Try to get command queue for a specific session without throwing when unavailable
+        /// </summary>
+        /// <param name="sessionId">Session identifier</param>
+        /// <param name="commandQueue">Command queue service for the session when available</param>
+        /// <returns>True when a non-disposed, active session with a queue exists</returns>
+        bool TryGetCommandQueue(string sessionId, out ICommandQueueService? commandQueue);
+
+        /// <summary>
         /// Get session context information for AI client guidance
         /// </summary>
         /// <param name="sessionId">Session identifier</param>
