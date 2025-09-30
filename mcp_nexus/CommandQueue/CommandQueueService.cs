@@ -3,24 +3,6 @@ using mcp_nexus.Debugger;
 
 namespace mcp_nexus.CommandQueue
 {
-    public enum CommandState
-    {
-        Queued,
-        Executing,
-        Completed,
-        Cancelled,
-        Failed
-    }
-
-    public record QueuedCommand(
-        string Id,
-        string Command,
-        DateTime QueueTime,
-        TaskCompletionSource<string> CompletionSource,
-        CancellationTokenSource CancellationTokenSource,
-        CommandState State = CommandState.Queued
-    );
-
     /// <summary>
     /// Refactored basic command queue service that orchestrates focused components
     /// </summary>
