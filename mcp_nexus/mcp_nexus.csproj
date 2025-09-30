@@ -4,13 +4,13 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>1.0.5.0</Version>
-    <AssemblyVersion>1.0.5.0</AssemblyVersion>
-    <FileVersion>1.0.5.0</FileVersion>
+    <Version>1.0.4.11</Version>
+    <AssemblyVersion>1.0.4.11</AssemblyVersion>
+    <FileVersion>1.0.4.11</FileVersion>
     <Product>MCP Nexus</Product>
     <Description>Model Context Protocol Server for Windows Debugging Tools</Description>
     <Company>MCP Nexus</Company>
-    <Copyright>Copyright © 2025</Copyright>
+    <Copyright>Copyright © 2025 David Roller (aka CapulusCodeNinja on GitHub)</Copyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">

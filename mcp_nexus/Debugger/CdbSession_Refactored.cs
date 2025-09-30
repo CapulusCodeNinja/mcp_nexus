@@ -167,29 +167,6 @@ namespace mcp_nexus.Debugger
                 throw new ObjectDisposedException(nameof(CdbSession));
         }
 
-        // Backward compatibility methods for tests
-        private string GetCurrentArchitecture()
-        {
-            return m_config.GetCurrentArchitecture();
-        }
-
-        private string? FindCdbPath()
-        {
-            try
-            {
-                return m_config.FindCdbPath();
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private bool IsCommandComplete(string line)
-        {
-            return m_outputParser.IsCommandComplete(line);
-        }
-
         /// <summary>
         /// Disposes the session and all associated resources
         /// </summary>
