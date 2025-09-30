@@ -1,5 +1,7 @@
 using System.CommandLine;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using NLog.Web;
 using AspNetCoreRateLimit;
@@ -12,15 +14,15 @@ using mcp_nexus.Constants;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Notifications;
-// Protocol services removed - now using SDK
 using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure;
 using mcp_nexus.Session;
 using mcp_nexus.Tools;
+using mcp_nexus.Middleware;
 
 namespace mcp_nexus
 {
-    internal class Program
+    public class Program
     {
         private static async Task Main(string[] args)
         {
@@ -821,13 +823,16 @@ namespace mcp_nexus
             // Configure HTTP request timeout to 15 minutes (longer than command timeout)
             services.Configure<IISServerOptions>(options =>
             {
-                options.MaxRequestBodySize = null; // Remove request body size limit
+                options.MaxRequestBodySize = 50 * 1024 * 1024; // 50MB limit for crash dumps
             });
 
             services.Configure<KestrelServerOptions>(options =>
             {
                 options.Limits.RequestHeadersTimeout = ApplicationConstants.HttpRequestTimeout;
                 options.Limits.KeepAliveTimeout = ApplicationConstants.HttpKeepAliveTimeout;
+                options.Limits.MaxRequestBodySize = 50 * 1024 * 1024; // 50MB limit for crash dumps
+                options.Limits.MaxRequestLineSize = 8192; // 8KB limit for request line
+                options.Limits.MaxRequestHeadersTotalSize = 32768; // 32KB limit for headers
             });
 
             services.AddCors(options =>
@@ -849,6 +854,17 @@ namespace mcp_nexus
             services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
             services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
             services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
+
+            // Configure JSON options for security and consistency
+            services.Configure<JsonOptions>(options =>
+            {
+                options.SerializerOptions.PropertyNamingPolicy = null; // MCP requires exact field names
+                options.SerializerOptions.AllowTrailingCommas = false; // Strict JSON parsing
+                options.SerializerOptions.ReadCommentHandling = JsonCommentHandling.Disallow; // No comments
+                options.SerializerOptions.MaxDepth = 64; // Prevent deeply nested attacks
+                options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.Never; // Don't ignore properties
+                options.SerializerOptions.PropertyNameCaseInsensitive = false; // Case sensitive
+            });
 
             // Use official SDK for HTTP mode with proper HTTP transport
             services.AddMcpServer()
@@ -879,57 +895,20 @@ namespace mcp_nexus
         {
             Console.WriteLine("Configuring HTTP request pipeline...");
 
+            // Add security middleware
+            app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+            app.UseMiddleware<ContentTypeValidationMiddleware>();
+
+            // Add core middleware
             app.UseIpRateLimiting();
             app.UseCors();
             app.UseRouting();
 
-            // Add JSON-RPC request/response logging middleware (only when debug logging is enabled)
+            // Add logging middleware if debug logging is enabled
             var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
-
-            // Check if JSON-RPC debug logging should be enabled
-            var enableJsonRpcLogging = ShouldEnableJsonRpcLogging(loggerFactory);
-
-            if (enableJsonRpcLogging)
+            if (ShouldEnableJsonRpcLogging(loggerFactory))
             {
-                app.Use(async (context, next) =>
-                {
-                    if (context.Request.Path == "/" && context.Request.Method == "POST")
-                    {
-                        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-
-                        // Log the request
-                        context.Request.EnableBuffering();
-                        var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
-                        context.Request.Body.Position = 0;
-
-                        // Format JSON for readability
-                        var formattedRequest = FormatJsonForLogging(requestBody);
-                        logger.LogInformation("📨 JSON-RPC Request:\n{RequestBody}", formattedRequest);
-
-                        // Capture the response
-                        var originalBodyStream = context.Response.Body;
-                        using var responseBody = new MemoryStream();
-                        context.Response.Body = responseBody;
-
-                        await next();
-
-                        // Log the response
-                        responseBody.Seek(0, SeekOrigin.Begin);
-                        var responseBodyText = await new StreamReader(responseBody).ReadToEndAsync();
-                        responseBody.Seek(0, SeekOrigin.Begin);
-
-                        // Format JSON for readability (handle SSE format)
-                        var formattedResponse = FormatSseResponseForLogging(responseBodyText);
-                        logger.LogInformation("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
-
-                        await responseBody.CopyToAsync(originalBodyStream);
-                    }
-                    else
-                    {
-                        await next();
-                    }
-                });
-
+                app.UseMiddleware<JsonRpcLoggingMiddleware>();
                 Console.WriteLine("JSON-RPC debug logging middleware enabled");
             }
             else
@@ -1005,10 +984,16 @@ namespace mcp_nexus
                 writer.Flush();
                 return System.Text.Encoding.UTF8.GetString(stream.ToArray());
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
-                // If it's not valid JSON, return as-is
-                return json;
+                // Log the parsing error for debugging and return sanitized version
+                var sanitizedJson = json.Length > 1000 ? json.Substring(0, 1000) + "..." : json;
+                return $"[Invalid JSON - {ex.Message}]: {sanitizedJson}";
+            }
+            catch (Exception ex)
+            {
+                // Handle any other exceptions
+                return $"[JSON formatting error - {ex.Message}]: {json.Substring(0, Math.Min(json.Length, 100))}...";
             }
         }
     }
