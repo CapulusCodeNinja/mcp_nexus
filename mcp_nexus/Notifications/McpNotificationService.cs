@@ -1,6 +1,3 @@
-using System.Collections.Concurrent;
-using System.Text.Json;
-
 using mcp_nexus.Models;
 using mcp_nexus.Session.Models;
 
@@ -12,14 +9,16 @@ namespace mcp_nexus.Notifications
     public class McpNotificationService : IMcpNotificationService, IDisposable
     {
         private readonly ILogger<McpNotificationService> m_logger;
-        // FIXED: Replace ConcurrentBag with ConcurrentDictionary to support removal
-        private readonly ConcurrentDictionary<Guid, Func<McpNotification, Task>> m_notificationHandlers = new();
+        private readonly NotificationHandlerManager m_handlerManager;
+        private readonly NotificationMessageBuilder m_messageBuilder;
         private readonly DateTime m_serverStartTime = DateTime.UtcNow;
         private bool m_disposed;
 
         public McpNotificationService(ILogger<McpNotificationService> logger)
         {
-            m_logger = logger;
+            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_handlerManager = new NotificationHandlerManager(logger);
+            m_messageBuilder = new NotificationMessageBuilder(logger, m_serverStartTime);
             m_logger.LogDebug("McpNotificationService initialized");
         }
 
@@ -34,17 +33,8 @@ namespace mcp_nexus.Notifications
         {
             if (m_disposed) return;
 
-            var notification = new McpCommandStatusNotification
-            {
-                CommandId = commandId,
-                Command = command,
-                Status = status,
-                Progress = progress,
-                Message = message,
-                Result = result,
-                Error = error,
-                Timestamp = DateTime.UtcNow
-            };
+            var notification = m_messageBuilder.CreateCommandStatusNotification(
+                commandId, command, status, progress, message, result, error);
 
             await SendNotificationAsync("notifications/commandStatus", notification);
 
@@ -63,18 +53,8 @@ namespace mcp_nexus.Notifications
         {
             if (m_disposed) return;
 
-            var notification = new McpCommandStatusNotification
-            {
-                SessionId = sessionId,
-                CommandId = commandId,
-                Command = command,
-                Status = status,
-                Progress = progress,
-                Message = message,
-                Result = result,
-                Error = error,
-                Timestamp = DateTime.UtcNow
-            };
+            var notification = m_messageBuilder.CreateSessionCommandStatusNotification(
+                sessionId, commandId, command, status, result, progress, message, error);
 
             await SendNotificationAsync("notifications/commandStatus", notification);
 
@@ -89,23 +69,12 @@ namespace mcp_nexus.Notifications
         {
             if (m_disposed) return;
 
-            var elapsedDisplay = elapsed.TotalMinutes >= 1
-                ? $"{elapsed.TotalMinutes.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}m"
-                : $"{elapsed.TotalSeconds.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)}s";
-
-            var notification = new McpCommandHeartbeatNotification
-            {
-                CommandId = commandId,
-                Command = command,
-                ElapsedSeconds = elapsed.TotalSeconds,
-                ElapsedDisplay = elapsedDisplay,
-                Details = details,
-                Timestamp = DateTime.UtcNow
-            };
+            var notification = m_messageBuilder.CreateCommandHeartbeatNotification(
+                commandId, command, elapsed, details);
 
             await SendNotificationAsync("notifications/commandHeartbeat", notification);
 
-            m_logger.LogTrace("Sent command heartbeat: {CommandId} -> {Elapsed}", commandId, elapsedDisplay);
+            m_logger.LogTrace("Sent command heartbeat: {CommandId} -> {Elapsed}", commandId, notification.ElapsedDisplay);
         }
 
         public async Task NotifyCommandHeartbeatAsync(
@@ -117,24 +86,12 @@ namespace mcp_nexus.Notifications
         {
             if (m_disposed) return;
 
-            var elapsedDisplay = elapsed.TotalMinutes >= 1
-                ? $"{elapsed.TotalMinutes.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}m"
-                : $"{elapsed.TotalSeconds.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)}s";
-
-            var notification = new McpCommandHeartbeatNotification
-            {
-                SessionId = sessionId,
-                CommandId = commandId,
-                Command = command,
-                ElapsedSeconds = elapsed.TotalSeconds,
-                ElapsedDisplay = elapsedDisplay,
-                Details = details,
-                Timestamp = DateTime.UtcNow
-            };
+            var notification = m_messageBuilder.CreateSessionCommandHeartbeatNotification(
+                sessionId, commandId, command, elapsed, details);
 
             await SendNotificationAsync("notifications/commandHeartbeat", notification);
 
-            m_logger.LogTrace("Sent session-aware command heartbeat: {SessionId}/{CommandId} -> {Elapsed}", sessionId, commandId, elapsedDisplay);
+            m_logger.LogTrace("Sent session-aware command heartbeat: {SessionId}/{CommandId} -> {Elapsed}", sessionId, commandId, notification.ElapsedDisplay);
         }
 
         public async Task NotifySessionRecoveryAsync(string reason, string recoveryStep, bool success,
@@ -142,15 +99,8 @@ namespace mcp_nexus.Notifications
         {
             if (m_disposed) return;
 
-            var notification = new McpSessionRecoveryNotification
-            {
-                Reason = reason,
-                RecoveryStep = recoveryStep,
-                Success = success,
-                Message = message,
-                AffectedCommands = affectedCommands,
-                Timestamp = DateTime.UtcNow
-            };
+            var notification = m_messageBuilder.CreateSessionRecoveryNotification(
+                reason, recoveryStep, success, message, affectedCommands);
 
             await SendNotificationAsync("notifications/sessionRecovery", notification);
 
@@ -161,14 +111,8 @@ namespace mcp_nexus.Notifications
         {
             if (m_disposed) return;
 
-            var notification = new McpSessionEventNotification
-            {
-                SessionId = sessionId,
-                EventType = eventType,
-                Message = message,
-                Context = context,
-                Timestamp = DateTime.UtcNow
-            };
+            var notification = m_messageBuilder.CreateSessionEventNotification(
+                sessionId, eventType, message, context);
 
             await SendNotificationAsync("notifications/sessionEvent", notification);
 
@@ -180,15 +124,8 @@ namespace mcp_nexus.Notifications
         {
             if (m_disposed) return;
 
-            var notification = new McpServerHealthNotification
-            {
-                Status = status,
-                CdbSessionActive = cdbSessionActive,
-                QueueSize = queueSize,
-                ActiveCommands = activeCommands,
-                Uptime = uptime ?? (DateTime.UtcNow - m_serverStartTime),
-                Timestamp = DateTime.UtcNow
-            };
+            var notification = m_messageBuilder.CreateServerHealthNotification(
+                status, cdbSessionActive, queueSize, activeCommands, uptime);
 
             await SendNotificationAsync("notifications/serverHealth", notification);
 
@@ -216,103 +153,43 @@ namespace mcp_nexus.Notifications
                 Params = parameters
             };
 
-            // CRITICAL FIX: Use snapshot to prevent race conditions during iteration
-            // PERFORMANCE: Check count first to avoid unnecessary ToArray() allocation
-            if (m_notificationHandlers.IsEmpty)
-            {
-                m_logger.LogTrace("No notification handlers registered - notification will be dropped: {Method}", method);
-                return;
-            }
-
-            // PERFORMANCE: Only create array when we know there are handlers
-            var handlers = m_notificationHandlers.Values.ToArray();
-
-            var tasks = new List<Task>();
-            foreach (var handler in handlers)
-            {
-                try
-                {
-                    tasks.Add(handler(notification));
-                }
-                catch (Exception ex)
-                {
-                    m_logger.LogError(ex, "Error invoking notification handler for method: {Method}", method);
-                }
-            }
-
-            try
-            {
-                await Task.WhenAll(tasks);
-                m_logger.LogTrace("Successfully sent notification to {HandlerCount} handlers: {Method}", handlers.Length, method);
-            }
-            catch (Exception ex)
-            {
-                m_logger.LogError(ex, "Error sending notification to handlers: {Method}", method);
-            }
+            await m_handlerManager.SendNotificationAsync(notification);
         }
 
         public Guid RegisterNotificationHandler(Func<McpNotification, Task> handler)
         {
             if (m_disposed) return Guid.Empty;
-
-            var id = Guid.NewGuid();
-            m_notificationHandlers[id] = handler;
-            m_logger.LogDebug("Registered notification handler {HandlerId} (Total: {HandlerCount})", id, m_notificationHandlers.Count);
-            return id;
+            return m_handlerManager.RegisterHandler(handler);
         }
 
         public void UnregisterNotificationHandler(Guid handlerId)
         {
             if (m_disposed) return;
-
-            if (m_notificationHandlers.TryRemove(handlerId, out _))
-            {
-                m_logger.LogDebug("Unregistered notification handler {HandlerId} (Total: {HandlerCount})", handlerId, m_notificationHandlers.Count);
-            }
-            else
-            {
-                m_logger.LogWarning("Attempted to unregister non-existent notification handler {HandlerId}", handlerId);
-            }
+            m_handlerManager.UnregisterHandler(handlerId);
         }
 
         public void UnregisterNotificationHandler(Func<McpNotification, Task> handler)
         {
             if (m_disposed) return;
-
-            // Find and remove the handler by value (less efficient but backward compatible)
-            var handlerToRemove = m_notificationHandlers.FirstOrDefault(kvp => kvp.Value == handler);
-            if (!handlerToRemove.Equals(default(KeyValuePair<Guid, Func<McpNotification, Task>>)))
-            {
-                if (m_notificationHandlers.TryRemove(handlerToRemove.Key, out _))
-                {
-                    m_logger.LogDebug("Unregistered notification handler {HandlerId} (Total: {HandlerCount})", handlerToRemove.Key, m_notificationHandlers.Count);
-                }
-            }
-            else
-            {
-                m_logger.LogWarning("Attempted to unregister non-existent notification handler");
-            }
+            m_handlerManager.UnregisterHandler(handler);
         }
 
         public IReadOnlyList<Guid> GetRegisteredHandlerIds()
         {
             if (m_disposed) return Array.Empty<Guid>();
-            return m_notificationHandlers.Keys.ToList();
+            return m_handlerManager.GetRegisteredHandlerIds();
         }
 
         public int GetHandlerCount()
         {
             if (m_disposed) return 0;
-            return m_notificationHandlers.Count;
+            return m_handlerManager.GetHandlerCount();
         }
 
         public void ClearAllHandlers()
         {
             if (m_disposed) return;
-
-            var count = m_notificationHandlers.Count;
-            m_notificationHandlers.Clear();
-            m_logger.LogDebug("Cleared all {Count} notification handlers", count);
+            m_handlerManager.ClearAllHandlers();
         }
 
         public void Dispose()
@@ -320,7 +197,7 @@ namespace mcp_nexus.Notifications
             if (m_disposed) return;
 
             m_disposed = true;
-            m_notificationHandlers.Clear();
+            m_handlerManager.ClearAllHandlers();
             m_logger.LogDebug("McpNotificationService disposed");
         }
     }
