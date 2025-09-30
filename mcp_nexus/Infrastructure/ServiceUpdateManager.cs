@@ -19,36 +19,69 @@ namespace mcp_nexus.Infrastructure
 
             try
             {
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Starting service update process");
+                Console.Error.Flush();
+                
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Starting service update process");
 
                 // Step 1: Create backup
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Creating backup of current installation");
+                Console.Error.Flush();
+                
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Creating backup of current installation");
                 backupPath = await BackupManager.CreateBackupAsync(logger);
+                
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Backup creation completed, path: {backupPath ?? "null"}");
+                Console.Error.Flush();
+                
                 if (backupPath == null)
                 {
                     OperationLogger.LogWarning(logger, OperationLogger.Operations.Update, "Backup creation failed, continuing with update");
                 }
 
                 // Step 2: Stop the service if it's running
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Stopping service for update");
+                Console.Error.Flush();
+                
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Stopping service for update");
                 var stopCommand = ServiceConfiguration.GetServiceStopCommand();
+                
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Running stop command: {stopCommand}");
+                Console.Error.Flush();
+                
                 await ServiceRegistryManager.RunScCommandAsync(stopCommand, logger);
 
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Stop command completed, waiting {ServiceConfiguration.ServiceStopDelayMs}ms");
+                Console.Error.Flush();
+                
                 // Wait for service to stop
                 await Task.Delay(ServiceConfiguration.ServiceStopDelayMs);
 
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Service stop delay completed");
+                Console.Error.Flush();
+
                 // Step 3: Build and deploy new version
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Building new version");
+                Console.Error.Flush();
+                
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Building new version");
                 if (!await ProjectBuilder.BuildProjectForDeploymentAsync(logger))
                 {
+                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Build failed during update");
+                    Console.Error.Flush();
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Build failed during update");
                     await RollbackUpdate(backupPath, logger);
                     return false;
                 }
 
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: Build completed successfully, deploying new version");
+                Console.Error.Flush();
+                
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Deploying new version");
                 if (!await FileOperationsManager.CopyApplicationFilesAsync(logger))
                 {
+                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] PerformUpdateAsync: File deployment failed during update");
+                    Console.Error.Flush();
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "File deployment failed during update");
                     await RollbackUpdate(backupPath, logger);
                     return false;
