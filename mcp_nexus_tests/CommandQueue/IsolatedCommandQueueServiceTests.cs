@@ -15,7 +15,7 @@ namespace mcp_nexus_tests.CommandQueue
     public class IsolatedCommandQueueServiceTests : IDisposable
     {
         private readonly Mock<ICdbSession> m_mockCdbSession;
-        private readonly Mock<ILogger> m_mockLogger;
+        private readonly Mock<ILogger<IsolatedCommandQueueService>> m_mockLogger;
         private readonly Mock<IMcpNotificationService> m_mockNotificationService;
         private readonly string m_sessionId = "test-session-123";
         private IsolatedCommandQueueService m_service;
@@ -23,7 +23,7 @@ namespace mcp_nexus_tests.CommandQueue
         public IsolatedCommandQueueServiceTests()
         {
             m_mockCdbSession = new Mock<ICdbSession>();
-            m_mockLogger = new Mock<ILogger>();
+            m_mockLogger = new Mock<ILogger<IsolatedCommandQueueService>>();
             m_mockNotificationService = new Mock<IMcpNotificationService>();
 
             m_service = new IsolatedCommandQueueService(

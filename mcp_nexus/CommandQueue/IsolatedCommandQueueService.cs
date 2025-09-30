@@ -151,15 +151,15 @@ namespace mcp_nexus.CommandQueue
                 return $"Command not found: {commandId}";
             }
 
-                try
-                {
+            try
+            {
                 m_logger.LogTrace("⏳ Waiting for command {CommandId} result in session {SessionId}", commandId, m_config.SessionId);
                 var result = await command.CompletionSource.Task;
                 m_logger.LogTrace("✅ Command {CommandId} result received in session {SessionId}", commandId, m_config.SessionId);
                 return result;
-                }
-                catch (Exception ex)
-                {
+            }
+            catch (Exception ex)
+            {
                 m_logger.LogError(ex, "❌ Error getting result for command {CommandId} in session {SessionId}", commandId, m_config.SessionId);
                 return $"Error getting command result: {ex.Message}";
             }
@@ -227,9 +227,9 @@ namespace mcp_nexus.CommandQueue
             {
                 m_processingCts.Cancel();
                 m_notificationManager.NotifyServiceShutdown("Force shutdown requested");
-                    }
-                    catch (Exception ex)
-                    {
+            }
+            catch (Exception ex)
+            {
                 m_logger.LogError(ex, "Error during force shutdown for session {SessionId}", m_config.SessionId);
             }
         }
@@ -277,20 +277,20 @@ namespace mcp_nexus.CommandQueue
                 catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is TaskCanceledException))
                 {
                     m_logger.LogDebug("Processing task was cancelled during shutdown (expected)");
-                        }
-                        catch (Exception ex)
-                        {
+                }
+                catch (Exception ex)
+                {
                     m_logger.LogWarning(ex, "Error waiting for processing task to complete during disposal");
                 }
 
                 // Dispose resources
-                    m_commandQueue.Dispose();
+                m_commandQueue.Dispose();
                 m_processingCts.Dispose();
-                }
-                catch (Exception ex)
-                {
+            }
+            catch (Exception ex)
+            {
                 m_logger.LogError(ex, "Error during disposal of IsolatedCommandQueueService for session {SessionId}", m_config.SessionId);
-                }
+            }
             finally
             {
                 m_disposed = true;

@@ -22,7 +22,7 @@ namespace mcp_nexus.Infrastructure
                     OperationLogger.LogWarning(logger, OperationLogger.Operations.Backup, "Installation folder does not exist, no backup needed");
                     return null;
                 }
-                
+
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Backup, "Creating backup of current installation");
 
                 // Create backup directory with timestamp
@@ -34,7 +34,7 @@ namespace mcp_nexus.Infrastructure
 
                 // Copy installation files to backup
                 await FileOperationsManager.CopyDirectoryAsync(ServiceConfiguration.InstallFolder, backupDir, logger);
-                
+
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Backup, "Backup created successfully: {BackupDir}", backupDir);
                 return backupDir;
             }

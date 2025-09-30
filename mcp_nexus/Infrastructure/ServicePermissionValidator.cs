@@ -85,11 +85,11 @@ namespace mcp_nexus.Infrastructure
             {
                 using var identity = WindowsIdentity.GetCurrent();
                 var principal = new WindowsPrincipal(identity);
-                
+
                 // If not in admin group at all, it's a standard user token
                 if (!principal.IsInRole(WindowsBuiltInRole.Administrator))
                     return TokenElevationType.Standard;
-                
+
                 // User IS in admin group - now determine elevation level
                 try
                 {

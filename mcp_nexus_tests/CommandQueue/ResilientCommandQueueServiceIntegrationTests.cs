@@ -19,6 +19,7 @@ namespace mcp_nexus_tests.Services
     {
         private readonly Mock<ICdbSession> m_mockCdbSession;
         private readonly Mock<ILogger<ResilientCommandQueueService>> m_mockLogger;
+        private readonly Mock<ILoggerFactory> m_mockLoggerFactory;
         private readonly Mock<ICommandTimeoutService> m_mockTimeoutService;
         private readonly Mock<ICdbSessionRecoveryService> m_mockRecoveryService;
         private readonly Mock<IMcpNotificationService> m_mockNotificationService;
@@ -28,9 +29,13 @@ namespace mcp_nexus_tests.Services
         {
             m_mockCdbSession = new Mock<ICdbSession>();
             m_mockLogger = new Mock<ILogger<ResilientCommandQueueService>>();
+            m_mockLoggerFactory = new Mock<ILoggerFactory>();
             m_mockTimeoutService = new Mock<ICommandTimeoutService>();
             m_mockRecoveryService = new Mock<ICdbSessionRecoveryService>();
             m_mockNotificationService = new Mock<IMcpNotificationService>();
+
+            // Setup logger factory to return appropriate loggers
+            m_mockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
 
             // Setup default mock behavior
             m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
@@ -54,6 +59,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object,
                 m_mockNotificationService.Object);
@@ -67,7 +73,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ResilientCommandQueueService(
-                null!, m_mockLogger.Object, m_mockTimeoutService.Object, m_mockRecoveryService.Object));
+                null!, m_mockLogger.Object, m_mockLoggerFactory.Object, m_mockTimeoutService.Object, m_mockRecoveryService.Object));
         }
 
         [Fact]
@@ -75,7 +81,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ResilientCommandQueueService(
-                m_mockCdbSession.Object, null!, m_mockTimeoutService.Object, m_mockRecoveryService.Object));
+                m_mockCdbSession.Object, null!, m_mockLoggerFactory.Object, m_mockTimeoutService.Object, m_mockRecoveryService.Object));
         }
 
         [Fact]
@@ -83,7 +89,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ResilientCommandQueueService(
-                m_mockCdbSession.Object, m_mockLogger.Object, null!, m_mockRecoveryService.Object));
+                m_mockCdbSession.Object, m_mockLogger.Object, m_mockLoggerFactory.Object, null!, m_mockRecoveryService.Object));
         }
 
         [Fact]
@@ -91,7 +97,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ResilientCommandQueueService(
-                m_mockCdbSession.Object, m_mockLogger.Object, m_mockTimeoutService.Object, null!));
+                m_mockCdbSession.Object, m_mockLogger.Object, m_mockLoggerFactory.Object, m_mockTimeoutService.Object, null!));
         }
 
         [Fact]
@@ -101,6 +107,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object,
                 m_mockNotificationService.Object);
@@ -120,6 +127,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
             m_service.Dispose();
@@ -137,6 +145,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -151,6 +160,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -165,6 +175,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -187,6 +198,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -204,6 +216,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
             m_service.Dispose();
@@ -226,6 +239,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -245,6 +259,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -262,6 +277,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
             m_service.Dispose();
@@ -277,6 +293,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -294,6 +311,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -311,6 +329,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object,
                 m_mockNotificationService.Object);
@@ -341,6 +360,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object,
                 null); // No notification service
@@ -357,6 +377,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -376,6 +397,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -392,6 +414,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -422,6 +445,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -442,6 +466,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -466,6 +491,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -488,6 +514,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -505,6 +532,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -533,6 +561,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -559,6 +588,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -581,6 +611,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
@@ -606,6 +637,7 @@ namespace mcp_nexus_tests.Services
             m_service = new ResilientCommandQueueService(
                 m_mockCdbSession.Object,
                 m_mockLogger.Object,
+                m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 

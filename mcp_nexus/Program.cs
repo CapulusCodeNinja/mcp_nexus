@@ -32,7 +32,7 @@ namespace mcp_nexus
             {
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] MCP Nexus starting...");
                 Console.Error.Flush();
-                
+
                 // Set up global exception handlers FIRST
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Setting up global exception handlers...");
                 Console.Error.Flush();
@@ -46,12 +46,12 @@ namespace mcp_nexus
                 Console.Error.Flush();
                 Environment.Exit(1);
             }
-            
+
             try
             {
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Setting environment variables...");
                 Console.Error.Flush();
-                
+
                 // Set environment based on configuration if not already set
                 if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")))
                 {
@@ -70,145 +70,145 @@ namespace mcp_nexus
                 }
                 Console.Error.Flush();
 
-            // Check if this is a help request first
-            if (args.Length > 0 && (args[0] == "--help" || args[0] == "-h" || args[0] == "help"))
-            {
-                await ShowHelpAsync();
-                return;
-            }
-
-            // Parse command line arguments
-            var commandLineArgs = ParseCommandLineArguments(args);
-
-            // Handle special commands first (Windows only)
-            if (commandLineArgs.Install)
-            {
-                if (OperatingSystem.IsWindows())
+                // Check if this is a help request first
+                if (args.Length > 0 && (args[0] == "--help" || args[0] == "-h" || args[0] == "help"))
                 {
-                    // Create a logger using NLog configuration for the installation process
-                    using var loggerFactory = LoggerFactory.Create(builder =>
+                    await ShowHelpAsync();
+                    return;
+                }
+
+                // Parse command line arguments
+                var commandLineArgs = ParseCommandLineArguments(args);
+
+                // Handle special commands first (Windows only)
+                if (commandLineArgs.Install)
+                {
+                    if (OperatingSystem.IsWindows())
                     {
-                        builder.ClearProviders();
-                        builder.AddNLogWeb();
-                        builder.SetMinimumLevel(LogLevel.Information);
-                    });
-                    var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
+                        // Create a logger using NLog configuration for the installation process
+                        using var loggerFactory = LoggerFactory.Create(builder =>
+                        {
+                            builder.ClearProviders();
+                            builder.AddNLogWeb();
+                            builder.SetMinimumLevel(LogLevel.Information);
+                        });
+                        var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
-                    var success = await WindowsServiceInstaller.InstallServiceAsync(logger);
-                    Environment.Exit(success ? 0 : 1);
-                }
-                else
-                {
-                    await Console.Error.WriteLineAsync("ERROR: Service installation is only supported on Windows.");
-                    Environment.Exit(1);
-                }
-                return;
-            }
-
-            if (commandLineArgs.Uninstall)
-            {
-                if (OperatingSystem.IsWindows())
-                {
-                    // Create a logger using NLog configuration for the uninstallation process
-                    using var loggerFactory = LoggerFactory.Create(builder =>
+                        var success = await WindowsServiceInstaller.InstallServiceAsync(logger);
+                        Environment.Exit(success ? 0 : 1);
+                    }
+                    else
                     {
-                        builder.ClearProviders();
-                        builder.AddNLogWeb();
-                        builder.SetMinimumLevel(LogLevel.Information);
-                    });
-                    var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
-
-                    var success = await WindowsServiceInstaller.UninstallServiceAsync(logger);
-                    Environment.Exit(success ? 0 : 1);
+                        await Console.Error.WriteLineAsync("ERROR: Service installation is only supported on Windows.");
+                        Environment.Exit(1);
+                    }
+                    return;
                 }
-                else
-                {
-                    await Console.Error.WriteLineAsync("ERROR: Service uninstallation is only supported on Windows.");
-                    Environment.Exit(1);
-                }
-                return;
-            }
 
-            if (commandLineArgs.ForceUninstall)
-            {
-                if (OperatingSystem.IsWindows())
+                if (commandLineArgs.Uninstall)
                 {
-                    // Create a logger using NLog configuration for the force uninstallation process
-                    using var loggerFactory = LoggerFactory.Create(builder =>
+                    if (OperatingSystem.IsWindows())
                     {
-                        builder.ClearProviders();
-                        builder.AddNLogWeb();
-                        builder.SetMinimumLevel(LogLevel.Information);
-                    });
-                    var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
+                        // Create a logger using NLog configuration for the uninstallation process
+                        using var loggerFactory = LoggerFactory.Create(builder =>
+                        {
+                            builder.ClearProviders();
+                            builder.AddNLogWeb();
+                            builder.SetMinimumLevel(LogLevel.Information);
+                        });
+                        var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
-                    var success = await WindowsServiceInstaller.ForceUninstallServiceAsync(logger);
-                    Environment.Exit(success ? 0 : 1);
+                        var success = await WindowsServiceInstaller.UninstallServiceAsync(logger);
+                        Environment.Exit(success ? 0 : 1);
+                    }
+                    else
+                    {
+                        await Console.Error.WriteLineAsync("ERROR: Service uninstallation is only supported on Windows.");
+                        Environment.Exit(1);
+                    }
+                    return;
                 }
-                else
-                {
-                    await Console.Error.WriteLineAsync("ERROR: Service uninstallation is only supported on Windows.");
-                    Environment.Exit(1);
-                }
-                return;
-            }
 
-            if (commandLineArgs.Update)
-            {
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Update command detected");
-                Console.Error.Flush();
-                
-                if (OperatingSystem.IsWindows())
+                if (commandLineArgs.ForceUninstall)
                 {
-                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Creating logger for update process...");
+                    if (OperatingSystem.IsWindows())
+                    {
+                        // Create a logger using NLog configuration for the force uninstallation process
+                        using var loggerFactory = LoggerFactory.Create(builder =>
+                        {
+                            builder.ClearProviders();
+                            builder.AddNLogWeb();
+                            builder.SetMinimumLevel(LogLevel.Information);
+                        });
+                        var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
+
+                        var success = await WindowsServiceInstaller.ForceUninstallServiceAsync(logger);
+                        Environment.Exit(success ? 0 : 1);
+                    }
+                    else
+                    {
+                        await Console.Error.WriteLineAsync("ERROR: Service uninstallation is only supported on Windows.");
+                        Environment.Exit(1);
+                    }
+                    return;
+                }
+
+                if (commandLineArgs.Update)
+                {
+                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Update command detected");
                     Console.Error.Flush();
-                    
-                    // Create a logger using NLog configuration for the update process
-                    using var loggerFactory = LoggerFactory.Create(builder =>
-                    {
-                        builder.ClearProviders();
-                        builder.AddNLogWeb();
-                        builder.SetMinimumLevel(LogLevel.Information);
-                    });
-                    var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
-                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Starting update service call...");
-                    Console.Error.Flush();
-                    
-                    var success = await WindowsServiceInstaller.UpdateServiceAsync(logger);
-                    
-                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Update service call completed with result: {success}");
-                    Console.Error.Flush();
-                    
-                    Environment.Exit(success ? 0 : 1);
+                    if (OperatingSystem.IsWindows())
+                    {
+                        Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Creating logger for update process...");
+                        Console.Error.Flush();
+
+                        // Create a logger using NLog configuration for the update process
+                        using var loggerFactory = LoggerFactory.Create(builder =>
+                        {
+                            builder.ClearProviders();
+                            builder.AddNLogWeb();
+                            builder.SetMinimumLevel(LogLevel.Information);
+                        });
+                        var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
+
+                        Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Starting update service call...");
+                        Console.Error.Flush();
+
+                        var success = await WindowsServiceInstaller.UpdateServiceAsync(logger);
+
+                        Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Update service call completed with result: {success}");
+                        Console.Error.Flush();
+
+                        Environment.Exit(success ? 0 : 1);
+                    }
+                    else
+                    {
+                        await Console.Error.WriteLineAsync("ERROR: Service update is only supported on Windows.");
+                        Environment.Exit(1);
+                    }
+                    return;
+                }
+
+                // Determine transport mode
+                bool useHttp = commandLineArgs.UseHttp || commandLineArgs.ServiceMode;
+
+                // Validate service mode is only used on Windows
+                if (commandLineArgs.ServiceMode && !OperatingSystem.IsWindows())
+                {
+                    await Console.Error.WriteLineAsync("ERROR: Service mode is only supported on Windows.");
+                    Environment.Exit(1);
+                    return;
+                }
+
+                if (useHttp)
+                {
+                    await RunHttpServer(args, commandLineArgs);
                 }
                 else
                 {
-                    await Console.Error.WriteLineAsync("ERROR: Service update is only supported on Windows.");
-                    Environment.Exit(1);
+                    await RunStdioServer(args, commandLineArgs);
                 }
-                return;
-            }
-
-            // Determine transport mode
-            bool useHttp = commandLineArgs.UseHttp || commandLineArgs.ServiceMode;
-
-            // Validate service mode is only used on Windows
-            if (commandLineArgs.ServiceMode && !OperatingSystem.IsWindows())
-            {
-                await Console.Error.WriteLineAsync("ERROR: Service mode is only supported on Windows.");
-                Environment.Exit(1);
-                return;
-            }
-
-            if (useHttp)
-            {
-                await RunHttpServer(args, commandLineArgs);
-            }
-            else
-            {
-                await RunStdioServer(args, commandLineArgs);
-            }
             }
             catch (Exception ex)
             {
@@ -224,7 +224,7 @@ namespace mcp_nexus
                     await Console.Error.WriteLineAsync($"TargetSite: {ex.TargetSite}");
                     await Console.Error.WriteLineAsync("Stack Trace:");
                     await Console.Error.WriteLineAsync(ex.StackTrace ?? "No stack trace available");
-                    
+
                     if (ex.InnerException != null)
                     {
                         await Console.Error.WriteLineAsync("Inner Exception:");
@@ -232,7 +232,7 @@ namespace mcp_nexus
                         await Console.Error.WriteLineAsync($"  Message: {ex.InnerException.Message}");
                         await Console.Error.WriteLineAsync($"  Stack Trace: {ex.InnerException.StackTrace}");
                     }
-                    
+
                     await Console.Error.WriteLineAsync("================================================================================");
                     await Console.Error.WriteLineAsync($"Command Line Args: {string.Join(" ", args)}");
                     await Console.Error.WriteLineAsync($"Environment: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}");
@@ -254,7 +254,7 @@ namespace mcp_nexus
                         // Last resort - do nothing, but at least we tried
                     }
                 }
-                
+
                 // Exit with error code
                 Environment.Exit(1);
             }
@@ -881,7 +881,7 @@ namespace mcp_nexus
             try
             {
                 var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC");
-                
+
                 // IMMEDIATE console output with flushing
                 Console.Error.WriteLine("################################################################################");
                 Console.Error.Flush();
@@ -893,7 +893,7 @@ namespace mcp_nexus
                 Console.Error.Flush();
                 Console.Error.WriteLine("################################################################################");
                 Console.Error.Flush();
-                
+
                 if (ex != null)
                 {
                     Console.Error.WriteLine($"Exception Type: {ex.GetType().FullName}");
@@ -908,7 +908,7 @@ namespace mcp_nexus
                     Console.Error.Flush();
                     Console.Error.WriteLine(ex.StackTrace ?? "No stack trace available");
                     Console.Error.Flush();
-                    
+
                     // Handle inner exceptions
                     var innerEx = ex.InnerException;
                     int depth = 1;
@@ -921,7 +921,7 @@ namespace mcp_nexus
                         innerEx = innerEx.InnerException;
                         depth++;
                     }
-                    
+
                     // Handle AggregateException specially
                     if (ex is AggregateException aggEx)
                     {
@@ -937,7 +937,7 @@ namespace mcp_nexus
                 {
                     Console.Error.WriteLine("Exception object is null");
                 }
-                
+
                 Console.Error.WriteLine("################################################################################");
                 Console.Error.WriteLine($"Environment: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}");
                 Console.Error.WriteLine($"OS Version: {Environment.OSVersion}");
@@ -946,7 +946,7 @@ namespace mcp_nexus
                 Console.Error.WriteLine($"Process ID: {Environment.ProcessId}");
                 Console.Error.WriteLine($"Thread ID: {Environment.CurrentManagedThreadId}");
                 Console.Error.WriteLine("################################################################################");
-                
+
                 // AGGRESSIVELY write to multiple crash log locations
                 var logContent = $"{timestamp} - {source} - Terminating: {isTerminating}\n{ex}\n\n";
                 var logLocations = new[]
@@ -955,7 +955,7 @@ namespace mcp_nexus
                     Path.Combine(Path.GetTempPath(), "mcp_nexus_crash.log"),
                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "mcp_nexus_crash.log")
                 };
-                
+
                 foreach (var logFile in logLocations)
                 {
                     try
@@ -970,13 +970,16 @@ namespace mcp_nexus
                         // Try next location
                     }
                 }
-                
+
                 // Also try Windows Event Log as last resort
                 try
                 {
-                    using var eventLog = new System.Diagnostics.EventLog("Application");
-                    eventLog.Source = "MCP Nexus";
-                    eventLog.WriteEntry($"FATAL EXCEPTION - {source}: {ex?.Message}", System.Diagnostics.EventLogEntryType.Error);
+                    if (OperatingSystem.IsWindows())
+                    {
+                        using var eventLog = new System.Diagnostics.EventLog("Application");
+                        eventLog.Source = "MCP Nexus";
+                        eventLog.WriteEntry($"FATAL EXCEPTION - {source}: {ex?.Message}", System.Diagnostics.EventLogEntryType.Error);
+                    }
                 }
                 catch
                 {

@@ -19,19 +19,24 @@ namespace mcp_nexus_tests.Services
     {
         private readonly Mock<ICdbSession> m_mockCdbSession;
         private readonly Mock<ILogger<CommandQueueService>> m_mockLogger;
+        private readonly Mock<ILoggerFactory> m_mockLoggerFactory;
         private readonly CommandQueueService m_service;
 
         public CommandQueueServiceTests()
         {
             m_mockCdbSession = new Mock<ICdbSession>();
             m_mockLogger = new Mock<ILogger<CommandQueueService>>();
+            m_mockLoggerFactory = new Mock<ILoggerFactory>();
+
+            // Setup logger factory to return appropriate loggers
+            m_mockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
 
             // Setup default mock behavior
             m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
             m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync("Mock result");
 
-            m_service = new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object);
+            m_service = new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object, m_mockLoggerFactory.Object);
         }
 
         [Fact]

@@ -26,7 +26,7 @@ namespace mcp_nexus.Infrastructure
                 return IntPtr.Zero;
             }
         }
-        
+
         /// <summary>
         /// Tests if we can access the Service Control Manager (with proper handle cleanup)
         /// </summary>

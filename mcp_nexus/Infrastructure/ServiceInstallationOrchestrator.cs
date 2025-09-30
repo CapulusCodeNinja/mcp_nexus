@@ -83,7 +83,7 @@ namespace mcp_nexus.Infrastructure
                 {
                     Console.WriteLine("✓ Service started successfully");
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Service started successfully");
-                    
+
                     // Give the service a moment to start
                     await Task.Delay(2000);
                 }
@@ -192,9 +192,9 @@ namespace mcp_nexus.Infrastructure
                 Console.WriteLine("                    MCP NEXUS SERVICE UPDATE");
                 Console.WriteLine("═══════════════════════════════════════════════════════════════");
                 Console.WriteLine();
-                
+
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Updating MCP Nexus Windows service");
-                
+
                 if (!await InstallationValidator.ValidateUpdatePrerequisitesAsync(logger))
                     return false;
 
@@ -212,7 +212,7 @@ namespace mcp_nexus.Infrastructure
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Service update failed");
                     return false;
                 }
-                
+
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Service update completed successfully");
                 return true;
             }

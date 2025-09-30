@@ -26,7 +26,7 @@ namespace mcp_nexus.Infrastructure
                 Console.WriteLine("Creating backup of current installation...");
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Creating backup of current installation");
                 backupPath = await BackupManager.CreateBackupAsync(logger);
-                
+
                 if (backupPath != null)
                 {
                     Console.WriteLine($"✓ Backup created successfully: {Path.GetFileName(backupPath)}");
@@ -35,7 +35,7 @@ namespace mcp_nexus.Infrastructure
                 {
                     Console.WriteLine("⚠ Backup creation failed, continuing with update");
                 }
-                
+
                 if (backupPath == null)
                 {
                     OperationLogger.LogWarning(logger, OperationLogger.Operations.Update, "Backup creation failed, continuing with update");
@@ -91,7 +91,7 @@ namespace mcp_nexus.Infrastructure
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Starting updated service");
                 var startCommand = ServiceConfiguration.GetServiceStartCommand();
                 var serviceStarted = await ServiceRegistryManager.RunScCommandAsync(startCommand, logger);
-                
+
                 if (serviceStarted)
                 {
                     // Give the service time to actually start

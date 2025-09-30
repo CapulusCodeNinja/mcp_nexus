@@ -236,9 +236,9 @@ namespace mcp_nexus.CommandQueue
 
                 // Wait for processing task to complete
                 if (m_processingTask != null && !m_processingTask.IsCompleted)
-        {
-            try
-            {
+                {
+                    try
+                    {
                         m_processingTask.Wait(TimeSpan.FromSeconds(10));
                     }
                     catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is TaskCanceledException))

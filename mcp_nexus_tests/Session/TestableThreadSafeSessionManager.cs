@@ -24,10 +24,11 @@ namespace mcp_nexus_tests.Session
         public TestableThreadSafeSessionManager(
             ILogger<ThreadSafeSessionManager> logger,
             IServiceProvider serviceProvider,
+            ILoggerFactory loggerFactory,
             IMcpNotificationService notificationService,
             IOptions<SessionConfiguration>? config = null,
             IOptions<CdbSessionOptions>? cdbOptions = null)
-            : base(logger, serviceProvider, notificationService, config, cdbOptions)
+            : base(logger, serviceProvider, loggerFactory, notificationService, config, cdbOptions)
         {
             _mockCdbSession = new Mock<ICdbSession>();
             _mockCommandQueue = new Mock<ICommandQueueService>();
