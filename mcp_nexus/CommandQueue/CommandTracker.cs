@@ -56,6 +56,21 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
+        /// Updates the state of an existing command in a thread-safe way
+        /// </summary>
+        public void UpdateState(string commandId, CommandState newState)
+        {
+            if (string.IsNullOrWhiteSpace(commandId)) return;
+
+            if (m_activeCommands.TryGetValue(commandId, out var existing))
+            {
+                var updated = existing with { State = newState };
+                m_activeCommands[commandId] = updated;
+                m_logger.LogTrace("Command {CommandId} state updated to {State}", commandId, newState);
+            }
+        }
+
+        /// <summary>
         /// Removes a command from the tracking dictionary
         /// </summary>
         public bool TryRemoveCommand(string commandId, out QueuedCommand? command)
@@ -226,6 +241,8 @@ namespace mcp_nexus.CommandQueue
                     {
                         command.CancellationTokenSource.Cancel();
                         command.CompletionSource.TrySetResult($"Command cancelled: {reasonText}");
+                        // update state to cancelled
+                        UpdateState(command.Id, CommandState.Cancelled);
                         cancelledCount++;
                         IncrementCancelled();
                     }

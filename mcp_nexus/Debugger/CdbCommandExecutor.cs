@@ -175,7 +175,7 @@ namespace mcp_nexus.Debugger
                 m_logger.LogDebug("Starting to read debugger output with cancellation support...");
 
                 // Use a shorter idle timeout to detect hangs faster
-                var idleTimeoutMs = 30000; // 30 seconds of no output means it's stuck
+                var idleTimeoutMs = Math.Min(10000, m_config.CommandTimeoutMs / 3); // 10s or 1/3 of total, whichever smaller
 
                 while (true)
                 {

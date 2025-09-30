@@ -155,16 +155,18 @@ namespace mcp_nexus.Session
             if (string.IsNullOrWhiteSpace(sessionId))
                 throw new ArgumentException("Session ID cannot be empty or whitespace", nameof(sessionId));
 
+            m_logger.LogInformation("SessionExists called for {SessionId}", sessionId);
+
             if (!m_sessions.TryGetValue(sessionId, out var session))
             {
-                m_logger.LogTrace("SessionExists: {SessionId} not found. ActiveCount={ActiveCount}", sessionId, m_sessions.Count);
+                m_logger.LogInformation("SessionExists: {SessionId} not found. ActiveCount={ActiveCount}", sessionId, m_sessions.Count);
                 return false;
             }
 
             // Check if session is expired and schedule cleanup if needed
             if (m_config.IsSessionExpired(session.LastActivity))
             {
-                m_logger.LogTrace("SessionExists: {SessionId} expired. LastActivity={LastActivity}", sessionId, session.LastActivity);
+                m_logger.LogInformation("SessionExists: {SessionId} expired. LastActivity={LastActivity}", sessionId, session.LastActivity);
                 // Schedule async cleanup without blocking caller
                 _ = Task.Run(async () =>
                 {
@@ -199,7 +201,7 @@ namespace mcp_nexus.Session
                 UpdateActivity(sessionId);
                 return session.CommandQueue;
             }
-            m_logger.LogTrace("GetCommandQueue: Queue unavailable for {SessionId}. Found={Found}", sessionId, m_sessions.ContainsKey(sessionId));
+            m_logger.LogWarning("GetCommandQueue: Queue unavailable for {SessionId}. Found={Found}", sessionId, m_sessions.ContainsKey(sessionId));
             throw new SessionNotFoundException(sessionId);
         }
 
@@ -226,7 +228,7 @@ namespace mcp_nexus.Session
                 return available;
             }
 
-            m_logger.LogTrace("TryGetCommandQueue: {SessionId} not ready or missing", sessionId);
+            m_logger.LogWarning("TryGetCommandQueue: {SessionId} not ready or missing", sessionId);
             return false;
         }
 
