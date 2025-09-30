@@ -209,5 +209,3 @@ namespace mcp_nexus.Debugger
 
     }
 }
-
-}
