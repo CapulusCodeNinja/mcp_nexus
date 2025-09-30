@@ -94,6 +94,10 @@ namespace mcp_nexus.Session
                     ProcessId = GetCdbProcessId(cdbSession)
                 };
 
+                // Session is ready for use now
+                sessionInfo.Status = SessionStatus.Active;
+                m_logger.LogTrace("Session {SessionId} status set to Active", sessionId);
+
                 // Add to sessions dictionary
                 m_sessions[sessionId] = sessionInfo;
                 Interlocked.Increment(ref m_totalSessionsCreated);
