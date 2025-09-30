@@ -177,28 +177,6 @@ namespace mcp_nexus.Tools
 
             try
             {
-                if (!sessionManager.SessionExists(sessionId))
-                {
-                    var notFoundResponse = new
-                    {
-                        sessionId = sessionId,
-                        commandId = (string?)null,
-                        success = false,
-                        operation = "nexus_enqueue_async_dump_analyze_command",
-                        message = $"Session {sessionId} not found. Use 'sessions' resource to see available sessions."
-                    };
-
-                    logger.LogWarning("Attempted to queue command for non-existent session: {SessionId}", sessionId);
-                    // Extra diagnostics
-                    try
-                    {
-                        var activeCount = sessionManager.GetActiveSessions()?.Count() ?? -1;
-                        var allCount = sessionManager.GetAllSessions()?.Count() ?? -1;
-                        logger.LogTrace("Session not found diagnostics: ActiveSessions={Active}, AllSessions={All}", activeCount, allCount);
-                    }
-                    catch { }
-                    return Task.FromResult((object)notFoundResponse);
-                }
                 // Try to get queue without throwing to avoid transient races, log details if missing
                 if (!sessionManager.TryGetCommandQueue(sessionId, out var commandQueue) || commandQueue == null)
                 {
