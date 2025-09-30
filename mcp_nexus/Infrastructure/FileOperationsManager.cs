@@ -59,35 +59,80 @@ namespace mcp_nexus.Infrastructure
         /// <param name="logger">Optional logger for copy operations</param>
         public static async Task CopyDirectoryAsync(string sourceDir, string destDir, ILogger? logger = null)
         {
-            // Create destination directory if it doesn't exist
-            Directory.CreateDirectory(destDir);
-
-            // Copy all files in the current directory
-            foreach (var file in Directory.GetFiles(sourceDir))
+            try
             {
-                var fileName = Path.GetFileName(file);
-                var destFile = Path.Combine(destDir, fileName);
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Starting copy from {sourceDir} to {destDir}");
+                Console.Error.Flush();
 
-                try
+                // Create destination directory if it doesn't exist
+                Directory.CreateDirectory(destDir);
+                
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Created destination directory");
+                Console.Error.Flush();
+
+                // Get file count for progress tracking
+                var allFiles = Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories);
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Found {allFiles.Length} files to copy");
+                Console.Error.Flush();
+
+                // Copy all files in the current directory
+                var currentFiles = Directory.GetFiles(sourceDir);
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Copying {currentFiles.Length} files in current directory");
+                Console.Error.Flush();
+
+                int filesCopied = 0;
+                foreach (var file in currentFiles)
                 {
-                    File.Copy(file, destFile, overwrite: true);
-                    OperationLogger.LogTrace(logger, OperationLogger.Operations.Install, "Copied: {FileName}", fileName);
+                    var fileName = Path.GetFileName(file);
+                    var destFile = Path.Combine(destDir, fileName);
+
+                    try
+                    {
+                        Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Copying file {++filesCopied}/{currentFiles.Length}: {fileName}");
+                        Console.Error.Flush();
+                        
+                        File.Copy(file, destFile, overwrite: true);
+                        OperationLogger.LogTrace(logger, OperationLogger.Operations.Install, "Copied: {FileName}", fileName);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Failed to copy {fileName}: {ex.Message}");
+                        Console.Error.Flush();
+                        OperationLogger.LogWarning(logger, OperationLogger.Operations.Install, "Failed to copy file {FileName}: {Error}", fileName, ex.Message);
+                    }
                 }
-                catch (Exception ex)
+
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Finished copying files in current directory");
+                Console.Error.Flush();
+
+                // Recursively copy subdirectories
+                var subDirs = Directory.GetDirectories(sourceDir);
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Processing {subDirs.Length} subdirectories");
+                Console.Error.Flush();
+
+                int dirsCopied = 0;
+                foreach (var subDir in subDirs)
                 {
-                    OperationLogger.LogWarning(logger, OperationLogger.Operations.Install, "Failed to copy file {FileName}: {Error}", fileName, ex.Message);
+                    var dirName = Path.GetFileName(subDir);
+                    var destSubDir = Path.Combine(destDir, dirName);
+                    
+                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Processing subdirectory {++dirsCopied}/{subDirs.Length}: {dirName}");
+                    Console.Error.Flush();
+                    
+                    await CopyDirectoryAsync(subDir, destSubDir, logger);
                 }
+
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Completed copy operation for {sourceDir}");
+                Console.Error.Flush();
+
+                await Task.CompletedTask;
             }
-
-            // Recursively copy subdirectories
-            foreach (var subDir in Directory.GetDirectories(sourceDir))
+            catch (Exception ex)
             {
-                var dirName = Path.GetFileName(subDir);
-                var destSubDir = Path.Combine(destDir, dirName);
-                await CopyDirectoryAsync(subDir, destSubDir, logger);
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: EXCEPTION - {ex.Message}");
+                Console.Error.Flush();
+                throw;
             }
-
-            await Task.CompletedTask;
         }
 
         /// <summary>
