@@ -210,12 +210,12 @@ namespace mcp_nexus.Debugger
                 {
                     var output = result.StandardOutput.ReadToEnd();
                     var errorOutput = result.StandardError.ReadToEnd();
-                    
+
                     Console.WriteLine($"   'where cdb.exe' exit code: {result.ExitCode}");
                     Console.WriteLine($"   'where cdb.exe' output: '{output.Trim()}'");
                     if (!string.IsNullOrEmpty(errorOutput))
                         Console.WriteLine($"   'where cdb.exe' error: '{errorOutput.Trim()}'");
-                    
+
                     if (result.ExitCode == 0 && !string.IsNullOrEmpty(output))
                     {
                         var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);

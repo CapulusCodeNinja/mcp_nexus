@@ -35,13 +35,30 @@ namespace mcp_nexus.Configuration
         /// </summary>
         private static void RegisterCoreServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath)
         {
-            // Configure CDB session options
+            // Configure CDB session options with runtime path detection
             services.Configure<CdbSessionOptions>(options =>
             {
                 options.CommandTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:CommandTimeoutMs");
                 options.SymbolServerTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerTimeoutMs");
                 options.SymbolServerMaxRetries = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries");
                 options.SymbolSearchPath = configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath");
+
+                // Set custom CDB path from command line or configuration, or detect at runtime
+                options.CustomCdbPath = customCdbPath ?? configuration.GetValue<string>("McpNexus:Debugging:CdbPath");
+
+                // If no custom path specified, detect CDB path during service registration (industry standard)
+                if (string.IsNullOrWhiteSpace(options.CustomCdbPath))
+                {
+                    var cdbConfig = new mcp_nexus.Debugger.CdbSessionConfiguration(
+                        commandTimeoutMs: options.CommandTimeoutMs,
+                        customCdbPath: null, // Force auto-detection
+                        symbolServerTimeoutMs: options.SymbolServerTimeoutMs,
+                        symbolServerMaxRetries: options.SymbolServerMaxRetries,
+                        symbolSearchPath: options.SymbolSearchPath ?? "",
+                        startupDelayMs: configuration.GetValue<int>("McpNexus:Debugging:StartupDelayMs")
+                    );
+                    options.CustomCdbPath = cdbConfig.FindCdbPath();
+                }
             });
 
             // Configure session management options

@@ -9,6 +9,7 @@ using ModelContextProtocol.Server;
 using ModelContextProtocol.AspNetCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using mcp_nexus.Constants;
 using mcp_nexus.Debugger;
@@ -491,7 +492,7 @@ namespace mcp_nexus
             // Debugging Configuration
             logger.Info("");
             logger.Info("┌─ Debugging Configuration ──────────────────────────────────────────");
-            logger.Info($"│ CDB Path:                {configuration["McpNexus:Debugging:CdbPath"] ?? "Not configured"}");
+            logger.Info($"│ CDB Path:                {configuration["McpNexus:Debugging:CdbPath"] ?? "Auto-detect during service registration"}");
             logger.Info($"│ Command Timeout:         {configuration["McpNexus:Debugging:CommandTimeoutMs"] ?? "Not configured"}ms");
             logger.Info($"│ Symbol Server Timeout:   {configuration["McpNexus:Debugging:SymbolServerTimeoutMs"] ?? "Not configured"}ms");
             logger.Info($"│ Symbol Server Retries:   {configuration["McpNexus:Debugging:SymbolServerMaxRetries"] ?? "Not configured"}");
@@ -668,6 +669,12 @@ namespace mcp_nexus
 
             var app = webBuilder.Build();
             ConfigureHttpPipeline(app);
+
+            // Log the resolved CDB path after service registration
+            var cdbOptions = app.Services.GetService<IOptions<mcp_nexus.Session.Models.CdbSessionOptions>>()?.Value;
+            var resolvedCdbPath = cdbOptions?.CustomCdbPath ?? "Auto-detection failed";
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+            logger.LogInformation("🔧 CDB Path resolved: {CdbPath}", resolvedCdbPath);
 
             var startMessage = commandLineArgs.ServiceMode ?
                 "Starting MCP Nexus as Windows service..." :
