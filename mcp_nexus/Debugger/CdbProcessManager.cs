@@ -135,16 +135,23 @@ namespace mcp_nexus.Debugger
                 var cdbPath = m_config.FindCdbPath();
                 if (string.IsNullOrEmpty(cdbPath))
                 {
-                    m_logger.LogError("CDB.exe not found. Please install Windows SDK or specify custom CDB path.");
-                    throw new FileNotFoundException("CDB.exe not found. Please install Windows SDK or specify custom CDB path.");
+                    var errorMessage = "❌ CDB.exe not found anywhere on system. Please install Windows SDK with Debugging Tools or specify custom CDB path in configuration.";
+                    m_logger.LogError(errorMessage);
+                    m_logger.LogError("🔍 CDB search details:");
+                    m_logger.LogError("   - PATH environment variable: Searched all directories");
+                    m_logger.LogError("   - Standard SDK locations: Searched Windows Kits 10/8.1/8.0");
+                    m_logger.LogError("   - Visual Studio locations: Searched VS 2022 installations");
+                    m_logger.LogError("   - Architecture: {Architecture}", m_config.GetCurrentArchitecture());
+                    m_logger.LogError("💡 SOLUTION: Install Windows SDK from https://developer.microsoft.com/windows/downloads/windows-sdk/");
+                    throw new FileNotFoundException(errorMessage);
                 }
 
-                m_logger.LogInformation("Found CDB at: {CdbPath}", cdbPath);
+                m_logger.LogInformation("✅ Found CDB at: {CdbPath}", cdbPath);
                 return cdbPath;
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Failed to find CDB executable");
+                m_logger.LogError(ex, "❌ Failed to find CDB executable - this will prevent debugging sessions from starting");
                 throw;
             }
         }
