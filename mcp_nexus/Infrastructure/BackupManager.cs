@@ -17,19 +17,11 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CreateBackupAsync: Starting backup creation");
-                Console.Error.Flush();
-                
                 if (!Directory.Exists(ServiceConfiguration.InstallFolder))
                 {
-                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CreateBackupAsync: Installation folder does not exist: {ServiceConfiguration.InstallFolder}");
-                    Console.Error.Flush();
                     OperationLogger.LogWarning(logger, OperationLogger.Operations.Backup, "Installation folder does not exist, no backup needed");
                     return null;
                 }
-
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CreateBackupAsync: Installation folder exists: {ServiceConfiguration.InstallFolder}");
-                Console.Error.Flush();
                 
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Backup, "Creating backup of current installation");
 
@@ -37,20 +29,11 @@ namespace mcp_nexus.Infrastructure
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                 var backupDir = Path.Combine(ServiceConfiguration.BackupsBaseFolder, $"backup_{timestamp}");
 
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CreateBackupAsync: Creating backup directory: {backupDir}");
-                Console.Error.Flush();
-                
                 Directory.CreateDirectory(backupDir);
                 OperationLogger.LogDebug(logger, OperationLogger.Operations.Backup, "Created backup directory: {BackupDir}", backupDir);
 
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CreateBackupAsync: Starting file copy from {ServiceConfiguration.InstallFolder} to {backupDir}");
-                Console.Error.Flush();
-                
                 // Copy installation files to backup
                 await FileOperationsManager.CopyDirectoryAsync(ServiceConfiguration.InstallFolder, backupDir, logger);
-
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CreateBackupAsync: File copy completed successfully");
-                Console.Error.Flush();
                 
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Backup, "Backup created successfully: {BackupDir}", backupDir);
                 return backupDir;

@@ -163,54 +163,25 @@ namespace mcp_nexus.Infrastructure
                 Console.WriteLine("═══════════════════════════════════════════════════════════════");
                 Console.WriteLine();
                 
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] UpdateServiceAsync: Starting service update");
-                Console.Error.Flush();
-                
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Updating MCP Nexus Windows service");
-
-                // Step 1: Validate prerequisites
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] UpdateServiceAsync: Validating prerequisites");
-                Console.Error.Flush();
                 
                 if (!await InstallationValidator.ValidateUpdatePrerequisitesAsync(logger))
-                {
-                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] UpdateServiceAsync: Prerequisites validation failed");
-                    Console.Error.Flush();
                     return false;
-                }
-
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] UpdateServiceAsync: Prerequisites validated successfully");
-                Console.Error.Flush();
 
                 // Step 2: Check if update is needed
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] UpdateServiceAsync: Checking if update is needed");
-                Console.Error.Flush();
-                
                 if (!ServiceUpdateManager.IsUpdateNeeded(logger))
                 {
-                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] UpdateServiceAsync: Service is already up to date");
-                    Console.Error.Flush();
+                    Console.WriteLine("Service is already up to date.");
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Service is already up to date");
                     return true;
                 }
 
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] UpdateServiceAsync: Update is needed, starting update process");
-                Console.Error.Flush();
-
                 // Step 3: Perform the update
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] UpdateServiceAsync: Calling PerformUpdateAsync");
-                Console.Error.Flush();
-                
                 if (!await ServiceUpdateManager.PerformUpdateAsync(logger))
                 {
-                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] UpdateServiceAsync: PerformUpdateAsync failed");
-                    Console.Error.Flush();
                     OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Service update failed");
                     return false;
                 }
-
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] UpdateServiceAsync: PerformUpdateAsync completed successfully");
-                Console.Error.Flush();
                 
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Update, "Service update completed successfully");
                 return true;

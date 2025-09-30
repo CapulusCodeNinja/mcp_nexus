@@ -85,61 +85,22 @@ namespace mcp_nexus.Infrastructure
         /// <returns>True if prerequisites are met, false otherwise</returns>
         public static async Task<bool> ValidateUpdatePrerequisitesAsync(ILogger? logger = null)
         {
-            try
+            // Step 1: Simple admin check (revert to old behavior)
+            if (!await ServicePermissionValidator.ValidateAdministratorPrivilegesAsync("Update", logger))
+                return false;
+
+            // Step 2: Check if service is installed
+            if (!ServiceRegistryManager.IsServiceInstalled())
             {
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] ValidateUpdatePrerequisitesAsync: Starting validation");
-                Console.Error.Flush();
-
-                // Step 1: Simple admin check (revert to old behavior)
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] ValidateUpdatePrerequisitesAsync: Checking admin privileges");
-                Console.Error.Flush();
-                
-                if (!await ServicePermissionValidator.ValidateAdministratorPrivilegesAsync("Update", logger))
-                {
-                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] ValidateUpdatePrerequisitesAsync: Admin privileges check failed");
-                    Console.Error.Flush();
-                    return false;
-                }
-
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] ValidateUpdatePrerequisitesAsync: Admin privileges check passed");
-                Console.Error.Flush();
-
-                // Step 2: Check if service is installed
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] ValidateUpdatePrerequisitesAsync: Checking if service is installed");
-                Console.Error.Flush();
-                
-                if (!ServiceRegistryManager.IsServiceInstalled())
-                {
-                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] ValidateUpdatePrerequisitesAsync: Service not installed");
-                    Console.Error.Flush();
-                    OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Service is not installed, cannot update");
-                    return false;
-                }
-
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] ValidateUpdatePrerequisitesAsync: Service is installed");
-                Console.Error.Flush();
-
-                // Step 3: Validate installation directory access (redundant check, but kept for safety)
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] ValidateUpdatePrerequisitesAsync: Checking installation directory access");
-                Console.Error.Flush();
-                
-                if (!await ServicePermissionValidator.ValidateInstallationDirectoryAccessAsync(logger))
-                {
-                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] ValidateUpdatePrerequisitesAsync: Installation directory access check failed");
-                    Console.Error.Flush();
-                    return false;
-                }
-
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] ValidateUpdatePrerequisitesAsync: All validation checks passed");
-                Console.Error.Flush();
-                return true;
+                OperationLogger.LogError(logger, OperationLogger.Operations.Update, "Service is not installed, cannot update");
+                return false;
             }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] ValidateUpdatePrerequisitesAsync: EXCEPTION - {ex.Message}");
-                Console.Error.Flush();
-                throw;
-            }
+
+            // Step 3: Validate installation directory access (redundant check, but kept for safety)
+            if (!await ServicePermissionValidator.ValidateInstallationDirectoryAccessAsync(logger))
+                return false;
+
+            return true;
         }
 
         /// <summary>
