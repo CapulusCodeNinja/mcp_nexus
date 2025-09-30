@@ -105,9 +105,12 @@ namespace mcp_nexus.Infrastructure
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Finished copying files in current directory");
                 Console.Error.Flush();
 
-                // Recursively copy subdirectories
-                var subDirs = Directory.GetDirectories(sourceDir);
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Processing {subDirs.Length} subdirectories");
+                // Recursively copy subdirectories (excluding backup folders to prevent infinite recursion)
+                var subDirs = Directory.GetDirectories(sourceDir)
+                    .Where(dir => !Path.GetFileName(dir).Equals("backups", StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+                    
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] CopyDirectoryAsync: Processing {subDirs.Length} subdirectories (excluding backup folders)");
                 Console.Error.Flush();
 
                 int dirsCopied = 0;
