@@ -263,6 +263,9 @@ namespace mcp_nexus.Session
         /// </summary>
         private ICdbSession CreateCdbSession(ILogger sessionLogger, string sessionId)
         {
+            // Diagnostic logging to see what CDB path is actually being used
+            m_logger.LogInformation("🔧 Creating CDB session with path: {CdbPath}", m_config.CdbOptions.CustomCdbPath ?? "NULL");
+            
             return new CdbSession(
                 sessionLogger as ILogger<CdbSession> ??
                     Microsoft.Extensions.Logging.Abstractions.NullLogger<CdbSession>.Instance,

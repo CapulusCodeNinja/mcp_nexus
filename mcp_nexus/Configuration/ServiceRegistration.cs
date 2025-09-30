@@ -7,6 +7,7 @@ using mcp_nexus.Session;
 using mcp_nexus.Session.Models;
 using mcp_nexus.Protocol;
 using mcp_nexus.Tools;
+using NLog;
 
 namespace mcp_nexus.Configuration
 {
@@ -35,6 +36,9 @@ namespace mcp_nexus.Configuration
         /// </summary>
         private static void RegisterCoreServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath)
         {
+            // Get NLog logger for service registration
+            var logger = LogManager.GetCurrentClassLogger();
+            
             // Configure CDB session options with simple auto-detection
             services.Configure<CdbSessionOptions>(options =>
             {
@@ -48,20 +52,20 @@ namespace mcp_nexus.Configuration
                 
                 if (!string.IsNullOrWhiteSpace(configuredPath) && File.Exists(configuredPath))
                 {
-                    // Valid configured path
+                    // Valid configured path - use it
                     options.CustomCdbPath = configuredPath;
-                    Console.WriteLine($"✅ CDB used from config: {configuredPath}");
+                    logger.Info("✅ CDB used from config: {CdbPath}", configuredPath);
                 }
                 else
                 {
                     // Log why we're auto-detecting
                     if (!string.IsNullOrWhiteSpace(configuredPath))
                     {
-                        Console.WriteLine($"⚠️ Configured CDB '{configuredPath}' not found - use autodetect");
+                        logger.Warn("⚠️ Configured CDB '{ConfiguredPath}' not found - use autodetect", configuredPath);
                     }
                     else
                     {
-                        Console.WriteLine("🔍 No CDB path configured - use autodetect");
+                        logger.Info("🔍 No CDB path configured - use autodetect");
                     }
                     
                     // Auto-detect CDB path
@@ -77,11 +81,11 @@ namespace mcp_nexus.Configuration
                     
                     if (options.CustomCdbPath != null)
                     {
-                        Console.WriteLine($"✅ CDB used from auto-detect: {options.CustomCdbPath}");
+                        logger.Info("✅ CDB used from auto-detect: {CdbPath}", options.CustomCdbPath);
                     }
                     else
                     {
-                        Console.WriteLine("❌ CDB auto-detect failed - no CDB found");
+                        logger.Error("❌ CDB auto-detect failed - no CDB found");
                     }
                 }
             });
