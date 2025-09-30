@@ -74,30 +74,32 @@ namespace mcp_nexus.Debugger
         /// <summary>
         /// Starts a debugging session with the specified target
         /// </summary>
-        public async Task<bool> StartSession(string target, string? arguments = null)
+        public Task<bool> StartSession(string target, string? arguments = null)
         {
             ThrowIfDisposed();
 
             if (string.IsNullOrWhiteSpace(target))
                 throw new ArgumentException("Target cannot be null or empty", nameof(target));
 
-            m_logger.LogDebug("StartSession called with target: {Target}, arguments: {Arguments}", target, arguments);
+            m_logger.LogInformation("🔧 StartSession called with target: {Target}, arguments: {Arguments}", target, arguments);
+            m_logger.LogInformation("🔧 ProcessManager is null: {IsNull}", m_processManager == null);
 
             try
             {
-                // Add overall timeout to prevent hanging
-                using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(m_config.CommandTimeoutMs));
-                return await Task.Run(() => m_processManager.StartProcess(target), cts.Token);
+                m_logger.LogInformation("🔧 About to call StartProcess directly");
+                var result = m_processManager?.StartProcess(target) ?? throw new InvalidOperationException("Process manager not initialized");
+                m_logger.LogInformation("🔧 StartProcess returned: {Result}", result);
+                return Task.FromResult(result);
             }
             catch (OperationCanceledException)
             {
-                m_logger.LogError("StartSession timed out after {TimeoutMs}ms for target: {Target}", m_config.CommandTimeoutMs, target);
-                return false;
+                m_logger.LogError("❌ StartSession timed out after {TimeoutMs}ms for target: {Target}", m_config.CommandTimeoutMs, target);
+                return Task.FromResult(false);
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Failed to start CDB session with target: {Target}", target);
-                return false;
+                m_logger.LogError(ex, "❌ Failed to start CDB session with target: {Target}", target);
+                return Task.FromResult(false);
             }
         }
 
