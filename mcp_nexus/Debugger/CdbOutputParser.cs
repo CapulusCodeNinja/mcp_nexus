@@ -3,11 +3,16 @@ using System.Text.RegularExpressions;
 namespace mcp_nexus.Debugger
 {
     /// <summary>
-    /// Handles parsing and analysis of CDB debugger output
+    /// Handles parsing and analysis of CDB debugger output using hybrid approach
+    /// Prioritizes ultra-safe patterns over risky string matching to prevent brittleness
     /// </summary>
     public class CdbOutputParser
     {
         private readonly ILogger<CdbOutputParser> m_logger;
+
+        // State tracking for context-aware parsing
+        private string? m_currentCommand;
+        private readonly List<string> m_outputBuffer = new();
 
         public CdbOutputParser(ILogger<CdbOutputParser> logger)
         {
@@ -15,26 +20,95 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Determines if a command has completed based on the output line
+        /// Sets the current command context for stateful parsing
+        /// </summary>
+        public void SetCurrentCommand(string command)
+        {
+            m_currentCommand = command?.Trim();
+            m_outputBuffer.Clear();
+            m_logger.LogTrace("🎯 Set command context: '{Command}'", m_currentCommand);
+        }
+
+        /// <summary>
+        /// HYBRID: Ultra-safe command completion detection that minimizes brittleness
+        /// Uses only the most reliable patterns and lets timeouts handle edge cases
         /// </summary>
         public bool IsCommandComplete(string line)
         {
             if (string.IsNullOrEmpty(line))
                 return false;
 
-            // CDB typically shows "0:000>" prompt when ready for next command
-            var hasPrompt = line.Contains(">") && Regex.IsMatch(line, @"\d+:\d+>");
+            AddLineToBuffer(line);
 
-            // Also check for common error patterns that indicate command completion
-            var hasError = line.Contains("Unable to") ||
-                          line.Contains("Invalid") ||
-                          line.Contains("Error") ||
-                          line.Contains("syntax error"); // Added for robustness
+            // 1. PRIMARY: CDB prompts (100% reliable - format stable for 20+ years)
+            if (IsCdbPromptDetected(line))
+            {
+                LogCompletionDetected("CDB prompt", line);
+                ResetParserState();
+                return true;
+            }
 
-            var isComplete = hasPrompt || hasError;
-            m_logger.LogTrace("IsCommandComplete checking line: '{Line}' -> {IsComplete} (HasPrompt: {HasPrompt}, HasError: {HasError})",
-                line, isComplete, hasPrompt, hasError);
-            return isComplete;
+            // 2. SECONDARY: Ultra-safe patterns only (binary/structural formats)
+            if (IsUltraSafeCompletionDetected(line))
+            {
+                LogCompletionDetected("Ultra-safe pattern", line);
+                ResetParserState();
+                return true;
+            }
+
+            // 3. FALLBACK: Let timeouts handle everything else to avoid brittleness
+            LogCommandStillExecuting(line);
+            return false;
+        }
+
+        /// <summary>
+        /// Adds a line to the output buffer for context tracking
+        /// </summary>
+        private void AddLineToBuffer(string line)
+        {
+            m_outputBuffer.Add(line);
+        }
+
+        /// <summary>
+        /// Detects CDB prompt patterns using ultra-reliable regex
+        /// </summary>
+        private bool IsCdbPromptDetected(string line)
+        {
+            return CdbCompletionPatterns.IsCdbPrompt(line);
+        }
+
+        /// <summary>
+        /// Detects ultra-safe completion patterns that are guaranteed stable
+        /// </summary>
+        private bool IsUltraSafeCompletionDetected(string line)
+        {
+            return CdbCompletionPatterns.IsUltraSafeCompletion(line);
+        }
+
+        /// <summary>
+        /// Logs when command completion is detected
+        /// </summary>
+        private void LogCompletionDetected(string detectionType, string line)
+        {
+            m_logger.LogTrace("✅ COMPLETION detected via {DetectionType}: '{Line}'", detectionType, line);
+        }
+
+        /// <summary>
+        /// Logs when command is still executing
+        /// </summary>
+        private void LogCommandStillExecuting(string line)
+        {
+            m_logger.LogTrace("⏳ Command still executing: '{Line}' (Buffer: {BufferSize} lines)",
+                line, m_outputBuffer.Count);
+        }
+
+        /// <summary>
+        /// Resets parser state after command completion
+        /// </summary>
+        private void ResetParserState()
+        {
+            m_currentCommand = null;
+            m_outputBuffer.Clear();
         }
 
         /// <summary>

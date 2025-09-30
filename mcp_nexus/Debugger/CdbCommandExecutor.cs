@@ -39,6 +39,9 @@ namespace mcp_nexus.Debugger
 
             m_logger.LogInformation("🎯 [LOCKLESS] CDB ExecuteCommand START: {Command}", command);
 
+            // BULLETPROOF: Set command context for stateful parsing
+            m_outputParser.SetCurrentCommand(command);
+
             // Set up cancellation
             CancellationTokenSource operationCts;
             lock (m_cancellationLock)
