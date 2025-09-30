@@ -1,0 +1,342 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using mcp_nexus.Debugger;
+using mcp_nexus.CommandQueue;
+using mcp_nexus.Session.Models;
+using mcp_nexus.Notifications;
+
+namespace mcp_nexus.Session
+{
+    /// <summary>
+    /// Manages the lifecycle of debugging sessions including creation, closure, and cleanup
+    /// </summary>
+    public class SessionLifecycleManager
+    {
+        private readonly ILogger m_logger;
+        private readonly IServiceProvider m_serviceProvider;
+        private readonly IMcpNotificationService m_notificationService;
+        private readonly SessionManagerConfiguration m_config;
+        private readonly ConcurrentDictionary<string, SessionInfo> m_sessions;
+        
+        // Thread-safe counters
+        private long m_totalSessionsCreated = 0;
+        private long m_totalSessionsClosed = 0;
+        private long m_totalSessionsExpired = 0;
+        
+        public SessionLifecycleManager(
+            ILogger logger,
+            IServiceProvider serviceProvider,
+            IMcpNotificationService notificationService,
+            SessionManagerConfiguration config,
+            ConcurrentDictionary<string, SessionInfo> sessions)
+        {
+            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            m_config = config ?? throw new ArgumentNullException(nameof(config));
+            m_sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
+        }
+        
+        /// <summary>
+        /// Creates a new debugging session
+        /// </summary>
+        /// <param name="sessionId">Unique session identifier</param>
+        /// <param name="dumpPath">Path to the dump file</param>
+        /// <param name="symbolsPath">Optional symbols path</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>The created session info</returns>
+        public async Task<SessionInfo> CreateSessionAsync(string sessionId, string dumpPath, string? symbolsPath, CancellationToken cancellationToken)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            
+            try
+            {
+                m_logger.LogInformation("🔧 Creating session {SessionId} for dump: {DumpPath}", sessionId, dumpPath);
+                
+                // Create session components
+                var sessionLogger = CreateSessionLogger(sessionId);
+                var cdbSession = CreateCdbSession(sessionLogger, sessionId);
+                var commandQueue = CreateCommandQueue(cdbSession, sessionLogger, sessionId);
+                
+                // Start CDB session asynchronously
+                var cdbTarget = m_config.ConstructCdbTarget(dumpPath, symbolsPath);
+                var startSuccess = await Task.Run(() => cdbSession.StartSession(cdbTarget, null), cancellationToken);
+                
+                if (!startSuccess)
+                {
+                    // Cleanup on failure
+                    await CleanupSessionComponents(cdbSession, commandQueue);
+                    throw new InvalidOperationException($"Failed to start CDB session for {dumpPath}");
+                }
+                
+                // Create session info
+                var sessionInfo = new SessionInfo
+                {
+                    SessionId = sessionId,
+                    DumpPath = dumpPath,
+                    SymbolsPath = symbolsPath,
+                    CdbSession = cdbSession,
+                    CommandQueue = commandQueue,
+                    CreatedAt = DateTime.UtcNow,
+                    LastActivity = DateTime.UtcNow,
+                    ProcessId = GetCdbProcessId(cdbSession)
+                };
+                
+                // Add to sessions dictionary
+                m_sessions[sessionId] = sessionInfo;
+                Interlocked.Increment(ref m_totalSessionsCreated);
+                
+                stopwatch.Stop();
+                m_logger.LogInformation("✅ Session {SessionId} created successfully in {Elapsed}ms", 
+                    sessionId, stopwatch.ElapsedMilliseconds);
+                
+                // Send creation notification
+                await m_notificationService.NotifySessionEventAsync(sessionId, "created", 
+                    $"Session created for {Path.GetFileName(dumpPath)}", GetSessionContext(sessionInfo));
+                
+                return sessionInfo;
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                m_logger.LogError(ex, "❌ Failed to create session {SessionId} after {Elapsed}ms", 
+                    sessionId, stopwatch.ElapsedMilliseconds);
+                throw;
+            }
+        }
+        
+        /// <summary>
+        /// Closes a debugging session
+        /// </summary>
+        /// <param name="sessionId">Session ID to close</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>True if the session was closed successfully</returns>
+        public async Task<bool> CloseSessionAsync(string sessionId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId))
+                return false;
+            
+            if (!m_sessions.TryRemove(sessionId, out var sessionInfo))
+            {
+                m_logger.LogWarning("Session {SessionId} not found for closure", sessionId);
+                return false;
+            }
+            
+            var stopwatch = Stopwatch.StartNew();
+            
+            try
+            {
+                m_logger.LogInformation("🔒 Closing session {SessionId}", sessionId);
+                
+                // Cancel all pending commands
+                var cancelledCount = sessionInfo.CommandQueue.CancelAllCommands("Session closing");
+                if (cancelledCount > 0)
+                {
+                    m_logger.LogInformation("Cancelled {Count} pending commands for session {SessionId}", 
+                        cancelledCount, sessionId);
+                }
+                
+                // Stop CDB session
+                var stopSuccess = await sessionInfo.CdbSession.StopSession();
+                if (!stopSuccess)
+                {
+                    m_logger.LogWarning("CDB session stop returned false for session {SessionId}", sessionId);
+                }
+                
+                // Cleanup components
+                await CleanupSessionComponents(sessionInfo.CdbSession, sessionInfo.CommandQueue);
+                
+                Interlocked.Increment(ref m_totalSessionsClosed);
+                stopwatch.Stop();
+                
+                m_logger.LogInformation("✅ Session {SessionId} closed successfully in {Elapsed}ms", 
+                    sessionId, stopwatch.ElapsedMilliseconds);
+                
+                // Send closure notification
+                await m_notificationService.NotifySessionEventAsync(sessionId, "closed", 
+                    "Session closed successfully", GetSessionContext(sessionInfo));
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                m_logger.LogError(ex, "❌ Error closing session {SessionId} after {Elapsed}ms", 
+                    sessionId, stopwatch.ElapsedMilliseconds);
+                return false;
+            }
+        }
+        
+        /// <summary>
+        /// Cleans up expired sessions
+        /// </summary>
+        /// <returns>Number of sessions cleaned up</returns>
+        public async Task<int> CleanupExpiredSessionsAsync()
+        {
+            var expiredSessions = new List<string>();
+            var now = DateTime.UtcNow;
+            
+            // Find expired sessions
+            foreach (var kvp in m_sessions)
+            {
+                var sessionInfo = kvp.Value;
+                if (m_config.IsSessionExpired(sessionInfo.LastActivity))
+                {
+                    expiredSessions.Add(kvp.Key);
+                }
+            }
+            
+            if (expiredSessions.Count == 0)
+                return 0;
+            
+            m_logger.LogInformation("🧹 Cleaning up {Count} expired sessions", expiredSessions.Count);
+            
+            var cleanedCount = 0;
+            foreach (var sessionId in expiredSessions)
+            {
+                try
+                {
+                    if (await CloseSessionAsync(sessionId))
+                    {
+                        cleanedCount++;
+                        Interlocked.Increment(ref m_totalSessionsExpired);
+                        
+                        m_logger.LogInformation("🗑️ Expired session {SessionId} cleaned up", sessionId);
+                        
+                        // Send expiry notification
+                        await m_notificationService.NotifySessionEventAsync(sessionId, "expired", 
+                            "Session expired due to inactivity", null);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogError(ex, "Error cleaning up expired session {SessionId}", sessionId);
+                }
+            }
+            
+            if (cleanedCount > 0)
+            {
+                m_logger.LogInformation("✅ Cleaned up {CleanedCount}/{TotalCount} expired sessions", 
+                    cleanedCount, expiredSessions.Count);
+            }
+            
+            return cleanedCount;
+        }
+        
+        /// <summary>
+        /// Gets lifecycle statistics
+        /// </summary>
+        /// <returns>Lifecycle statistics</returns>
+        public (long Created, long Closed, long Expired) GetLifecycleStats()
+        {
+            return (
+                Interlocked.Read(ref m_totalSessionsCreated),
+                Interlocked.Read(ref m_totalSessionsClosed),
+                Interlocked.Read(ref m_totalSessionsExpired)
+            );
+        }
+        
+        /// <summary>
+        /// Creates a logger for a specific session
+        /// </summary>
+        private ILogger CreateSessionLogger(string sessionId)
+        {
+            // Create a scoped logger with session context
+            var loggerFactory = m_serviceProvider.GetRequiredService<ILoggerFactory>();
+            return loggerFactory.CreateLogger($"Session.{sessionId}");
+        }
+        
+        /// <summary>
+        /// Creates a CDB session for debugging
+        /// </summary>
+        private ICdbSession CreateCdbSession(ILogger sessionLogger, string sessionId)
+        {
+            return new CdbSession(
+                sessionLogger as ILogger<CdbSession> ?? 
+                    Microsoft.Extensions.Logging.Abstractions.NullLogger<CdbSession>.Instance,
+                m_config.CdbOptions.CommandTimeoutMs,
+                m_config.CdbOptions.CustomCdbPath,
+                m_config.CdbOptions.SymbolServerTimeoutMs,
+                m_config.CdbOptions.SymbolServerMaxRetries,
+                m_config.CdbOptions.SymbolSearchPath
+            );
+        }
+        
+        /// <summary>
+        /// Creates a command queue for the session
+        /// </summary>
+        private ICommandQueueService CreateCommandQueue(ICdbSession cdbSession, ILogger sessionLogger, string sessionId)
+        {
+            return new IsolatedCommandQueueService(
+                cdbSession,
+                sessionLogger,
+                m_notificationService,
+                sessionId
+            );
+        }
+        
+        /// <summary>
+        /// Gets the process ID of a CDB session
+        /// </summary>
+        private int? GetCdbProcessId(ICdbSession cdbSession)
+        {
+            try
+            {
+                // This would need to be implemented based on the CDB session's process tracking
+                // For now, return null as a placeholder
+                return null;
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogWarning(ex, "Could not retrieve CDB process ID");
+                return null;
+            }
+        }
+        
+        /// <summary>
+        /// Creates a session context for notifications
+        /// </summary>
+        private SessionContext GetSessionContext(SessionInfo sessionInfo)
+        {
+            return new SessionContext
+            {
+                SessionId = sessionInfo.SessionId,
+                DumpPath = sessionInfo.DumpPath,
+                CreatedAt = sessionInfo.CreatedAt,
+                LastActivity = sessionInfo.LastActivity,
+                Status = sessionInfo.Status.ToString(),
+                Description = $"Session for {Path.GetFileName(sessionInfo.DumpPath)}"
+            };
+        }
+        
+        /// <summary>
+        /// Cleans up session components safely
+        /// </summary>
+        private async Task CleanupSessionComponents(ICdbSession cdbSession, ICommandQueueService commandQueue)
+        {
+            try
+            {
+                // Dispose command queue first
+                commandQueue?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogWarning(ex, "Error disposing command queue during cleanup");
+            }
+            
+            try
+            {
+                // Stop and dispose CDB session
+                if (cdbSession.IsActive)
+                {
+                    await cdbSession.StopSession();
+                }
+                cdbSession?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogWarning(ex, "Error disposing CDB session during cleanup");
+            }
+        }
+    }
+}

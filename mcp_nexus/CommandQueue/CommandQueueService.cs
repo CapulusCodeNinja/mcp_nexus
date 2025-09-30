@@ -1,7 +1,4 @@
 using System.Collections.Concurrent;
-using System.Linq;
-
-using mcp_nexus.Constants;
 using mcp_nexus.Debugger;
 
 namespace mcp_nexus.CommandQueue
@@ -24,56 +21,55 @@ namespace mcp_nexus.CommandQueue
         CommandState State = CommandState.Queued
     );
 
+    /// <summary>
+    /// Refactored basic command queue service that orchestrates focused components
+    /// </summary>
     public class CommandQueueService : IDisposable, ICommandQueueService
     {
-        private readonly ICdbSession m_cdbSession;
         private readonly ILogger<CommandQueueService> m_logger;
         private readonly BlockingCollection<QueuedCommand> m_commandQueue;
         private readonly CancellationTokenSource m_serviceCts = new();
         private readonly Task m_processingTask;
         private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands = new();
-        private volatile QueuedCommand? m_currentCommand;
         private bool m_disposed;
 
-        // FIXED: Add cleanup mechanism for completed commands
-        private readonly Timer m_cleanupTimer;
-        private readonly TimeSpan m_cleanupInterval = ApplicationConstants.CleanupInterval;
-        private readonly TimeSpan m_commandRetentionTime = ApplicationConstants.CommandRetentionTime;
-
-        // IMPROVED: Add concurrency monitoring
-        private long m_commandsProcessed = 0;
-        private long m_commandsFailed = 0;
-        private long m_commandsCancelled = 0;
-        private DateTime m_lastStatsLog = DateTime.UtcNow;
+        // Focused components
+        private readonly BasicQueueConfiguration m_config;
+        private readonly BasicCommandProcessor m_processor;
 
         public CommandQueueService(ICdbSession cdbSession, ILogger<CommandQueueService> logger)
         {
-            m_cdbSession = cdbSession;
-            m_logger = logger;
-
-            // INITIALIZE: Create blocking collection for thread-safe producer/consumer
+            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            
+            // Create focused components
+            m_config = new BasicQueueConfiguration();
+            m_processor = new BasicCommandProcessor(cdbSession, logger, m_config, m_activeCommands);
+            
+            // Initialize command queue
             m_commandQueue = new BlockingCollection<QueuedCommand>();
 
-            m_logger.LogInformation("🚀 CommandQueueService CONSTRUCTOR started");
+            m_logger.LogInformation("🚀 CommandQueueService initializing with focused components");
 
             // Start the background processing task
             try
             {
-                m_processingTask = Task.Run(ProcessCommandQueue, m_serviceCts.Token);
+                m_processingTask = Task.Run(() => m_processor.ProcessCommandQueueAsync(m_commandQueue, m_serviceCts.Token), m_serviceCts.Token);
                 m_logger.LogInformation("✅ CommandQueueService background task started successfully");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "❌ FAILED to start CommandQueueService background task");
+                m_logger.LogError(ex, "❌ Failed to start CommandQueueService background task");
                 throw;
             }
 
-            // FIXED: Start cleanup timer for completed commands
-            m_cleanupTimer = new Timer(CleanupCompletedCommands, null, m_cleanupInterval, m_cleanupInterval);
-
-            m_logger.LogInformation("🎯 CommandQueueService fully initialized");
+            m_logger.LogInformation("🎯 CommandQueueService fully initialized with focused components");
         }
 
+        /// <summary>
+        /// Queues a command for execution
+        /// </summary>
+        /// <param name="command">The command to execute</param>
+        /// <returns>The unique command ID</returns>
         public string QueueCommand(string command)
         {
             if (m_disposed)
@@ -94,610 +90,243 @@ namespace mcp_nexus.CommandQueue
             m_activeCommands[commandId] = queuedCommand;
 
             m_logger.LogInformation("📋 Adding command to queue: {CommandId}", commandId);
-            m_commandQueue.Add(queuedCommand); // Automatically signals consumer
+            m_commandQueue.Add(queuedCommand);
 
-            m_logger.LogInformation("✅ QueueCommand COMPLETE: {CommandId} (Queue size: {QueueSize})",
-                commandId, m_commandQueue.Count);
+            m_logger.LogDebug("📊 Queue depth: {QueueDepth}", m_commandQueue.Count);
+            m_logger.LogInformation("✅ QueueCommand END: {CommandId}", commandId);
 
             return commandId;
         }
 
+        /// <summary>
+        /// Gets the result of a command
+        /// </summary>
+        /// <param name="commandId">The command ID</param>
+        /// <returns>The command result</returns>
         public async Task<string> GetCommandResult(string commandId)
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
 
-            if (string.IsNullOrEmpty(commandId))
-                return $"Command not found: {commandId}";
-
-            // NOTE: Completed commands stay in m_activeCommands for result retrieval
-            if (m_activeCommands.TryGetValue(commandId, out var command))
+            if (string.IsNullOrWhiteSpace(commandId))
+                throw new ArgumentException("Command ID cannot be null or empty", nameof(commandId));
+            
+            if (!m_activeCommands.TryGetValue(commandId, out var queuedCommand))
+                throw new ArgumentException($"Command not found: {commandId}", nameof(commandId));
+            
+            m_logger.LogTrace("⏳ Waiting for command {CommandId} result", commandId);
+            
+            try
             {
-                // DON'T WAIT! Check if completed, return status immediately
-                if (command.CompletionSource.Task.IsCompleted)
-                {
-                    try
-                    {
-                        // FIXED: Use await instead of blocking .Result
-                        var result = await command.CompletionSource.Task.ConfigureAwait(false);
+                var result = await queuedCommand.CompletionSource.Task;
+                m_logger.LogTrace("✅ Command {CommandId} result retrieved", commandId);
                         return result;
                     }
                     catch (Exception ex)
                     {
-                        return $"Command failed: {ex.Message}";
-                    }
-                }
-                else
-                {
-                    // Command still running - return status immediately, don't wait!
-                    return $"Command is still executing... Please call get_command_status(commandId='{commandId}') again in 5-10 seconds to check if completed.";
-                }
+                m_logger.LogError(ex, "❌ Error getting result for command {CommandId}", commandId);
+                throw;
             }
-
-            return $"Command not found: {commandId}";
         }
-
+        
+        /// <summary>
+        /// Cancels a specific command
+        /// </summary>
+        /// <param name="commandId">The command ID to cancel</param>
+        /// <returns>True if the command was cancelled</returns>
         public bool CancelCommand(string commandId)
         {
             if (m_disposed)
-                throw new ObjectDisposedException(nameof(CommandQueueService));
-
-            if (string.IsNullOrEmpty(commandId))
                 return false;
 
-            // First check if command is in active commands (executing or completed)
-            if (m_activeCommands.TryGetValue(commandId, out var command))
+            if (string.IsNullOrWhiteSpace(commandId))
+                return false;
+
+            if (!m_activeCommands.TryGetValue(commandId, out var command))
             {
-                m_logger.LogInformation("Cancelling command {CommandId}: {Command}", commandId, command.Command);
+                m_logger.LogWarning("Cannot cancel command {CommandId} - command not found", commandId);
+                return false;
+            }
 
                 try
                 {
                     command.CancellationTokenSource.Cancel();
-                }
-                catch (ObjectDisposedException)
-                {
-                    // Token was already disposed, which means command completed/cancelled already
-                    m_logger.LogDebug("CancellationTokenSource already disposed for command {CommandId}", commandId);
-                    return false;
-                }
-
-                // If this is the currently executing command, also cancel the CDB operation
-                var currentCommand = m_currentCommand; // volatile read is thread-safe
-                if (currentCommand?.Id == commandId)
-                {
-                    m_logger.LogWarning("Cancelling currently executing command {CommandId}", commandId);
-                    m_cdbSession.CancelCurrentOperation();
-                }
-
+                m_logger.LogInformation("🚫 Cancelled command {CommandId}", commandId);
                 return true;
             }
-
-            // Check if command is still in the queue (not yet started)
-            var queuedCommand = m_commandQueue.FirstOrDefault(c => c.Id == commandId);
-            if (queuedCommand != null)
+            catch (Exception ex)
             {
-                m_logger.LogInformation("Cancelling queued command {CommandId}: {Command}", commandId, queuedCommand.Command);
-
-                try
-                {
-                    queuedCommand.CancellationTokenSource.Cancel();
-                }
-                catch (ObjectDisposedException)
-                {
-                    m_logger.LogDebug("CancellationTokenSource already disposed for queued command {CommandId}", commandId);
+                m_logger.LogError(ex, "Error cancelling command {CommandId}", commandId);
                     return false;
                 }
-
-                return true;
-            }
-
-            m_logger.LogWarning("Attempted to cancel non-existent command: {CommandId}", commandId);
-            return false;
         }
-
+        
+        /// <summary>
+        /// Cancels all commands
+        /// </summary>
+        /// <param name="reason">The reason for cancellation</param>
+        /// <returns>The number of commands cancelled</returns>
         public int CancelAllCommands(string? reason = null)
         {
             if (m_disposed)
-                throw new ObjectDisposedException(nameof(CommandQueueService));
-
-            var reasonText = string.IsNullOrWhiteSpace(reason) ? "No reason provided" : reason;
-            m_logger.LogWarning("Cancelling ALL commands. Reason: {Reason}", reasonText);
+                return 0;
 
             var cancelledCount = 0;
-
-            // Snapshot current command for targeted cancellation
-            string? currentId;
-            currentId = m_currentCommand?.Id; // volatile read is thread-safe
-
-            // Cancel everything currently tracked
-            var commandsSnapshot = new List<QueuedCommand>(m_activeCommands.Values);
-            foreach (var cmd in commandsSnapshot)
+            var commandIds = m_activeCommands.Keys.ToList();
+            
+            foreach (var commandId in commandIds)
             {
-                try
-                {
-                    // Skip commands that already completed
-                    if (!cmd.CompletionSource.Task.IsCompleted)
-                    {
-                        try
-                        {
-                            cmd.CancellationTokenSource.Cancel();
+                if (CancelCommand(commandId))
                             cancelledCount++;
                         }
-                        catch (ObjectDisposedException)
-                        {
-                            // CTS already disposed; nothing to cancel
-                        }
-
-                        // Ensure waiters get a result if not already completed
-                        cmd.CompletionSource.TrySetResult($"Command was cancelled. Reason: {reasonText}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    m_logger.LogError(ex, "Error cancelling command {CommandId}", cmd.Id);
-                }
-            }
-
-            // If one is executing, request debugger-side cancellation
-            if (!string.IsNullOrEmpty(currentId))
-            {
-                try
-                {
-                    m_logger.LogWarning("Requesting CDB cancellation for currently executing command: {CommandId}", currentId);
-                    m_cdbSession.CancelCurrentOperation();
-                }
-                catch (Exception ex)
-                {
-                    m_logger.LogError(ex, "Error requesting CDB cancellation for current command: {CommandId}", currentId);
-                }
-            }
-
-            m_logger.LogInformation("Cancelled {Count} command(s)", cancelledCount);
+            
+            m_logger.LogInformation("🚫 Cancelled {Count} commands: {Reason}", cancelledCount, reason ?? "Bulk cancellation");
             return cancelledCount;
         }
 
-        public QueuedCommand? GetCurrentCommand()
-        {
-            if (m_disposed)
-                throw new ObjectDisposedException(nameof(CommandQueueService));
-
-            return m_currentCommand; // volatile read is thread-safe
-        }
-
+        /// <summary>
+        /// Gets the status of all commands in the queue
+        /// </summary>
+        /// <returns>Collection of command status information</returns>
         public IEnumerable<(string Id, string Command, DateTime QueueTime, string Status)> GetQueueStatus()
         {
             if (m_disposed)
-                throw new ObjectDisposedException(nameof(CommandQueueService));
+                return Enumerable.Empty<(string, string, DateTime, string)>();
 
             var results = new List<(string, string, DateTime, string)>();
 
-            // Add current command (volatile read is thread-safe)
-            if (m_currentCommand != null)
+            // Add current command
+            var current = m_processor.GetCurrentCommand();
+            if (current != null)
             {
-                results.Add((m_currentCommand.Id, m_currentCommand.Command, m_currentCommand.QueueTime, "Executing"));
+                results.Add((current.Id, current.Command, current.QueueTime, "Executing"));
             }
-
-            // Add queued commands from active commands (BlockingCollection doesn't support enumeration)
-            foreach (var cmd in m_activeCommands.Values.Where(c => c.State == CommandState.Queued))
+            
+            // Add other active commands
+            foreach (var kvp in m_activeCommands)
             {
-                results.Add(cmd.CancellationTokenSource.Token.IsCancellationRequested
-                    ? (cmd.Id, cmd.Command, cmd.QueueTime, "Cancelled")
-                    : (cmd.Id, cmd.Command, cmd.QueueTime, "Queued"));
+                var command = kvp.Value;
+                if (command != current)
+                {
+                    var status = command.State switch
+                    {
+                        CommandState.Queued => "Queued",
+                        CommandState.Executing => "Executing",
+                        CommandState.Completed => "Completed",
+                        CommandState.Cancelled => "Cancelled",
+                        CommandState.Failed => "Failed",
+                        _ => "Unknown"
+                    };
+                    results.Add((command.Id, command.Command, command.QueueTime, status));
+                }
             }
 
             return results;
         }
 
-        private async Task ProcessCommandQueue()
+        /// <summary>
+        /// Gets the currently executing command
+        /// </summary>
+        /// <returns>The current command, or null if none is executing</returns>
+        public QueuedCommand? GetCurrentCommand()
         {
-            m_logger.LogInformation("🔥 BACKGROUND PROCESSOR: ProcessCommandQueue started");
-
-            try
-            {
-                // PROCESS: Use BlockingCollection's built-in blocking enumeration
-                foreach (var queuedCommand in m_commandQueue.GetConsumingEnumerable(m_serviceCts.Token))
-                {
-                    try
-                    {
-                        m_logger.LogInformation("📦 BACKGROUND PROCESSOR: Processing command {CommandId}: {Command}",
-                            queuedCommand.Id, queuedCommand.Command);
-
-                        // Check if command was cancelled while queued
-                        if (queuedCommand.CancellationTokenSource.Token.IsCancellationRequested)
-                        {
-                            m_logger.LogInformation("❌ BACKGROUND PROCESSOR: Skipping cancelled command {CommandId}: {Command}",
-                                queuedCommand.Id, queuedCommand.Command);
-
-                            queuedCommand.CompletionSource.SetResult("Command was cancelled while queued.");
-                            CleanupCommand(queuedCommand);
-                            continue;
-                        }
-
-                        // CURRENT: Set as current command (volatile write is thread-safe)
-                        m_currentCommand = queuedCommand;
-
-                        // Update command state to executing
-                        UpdateCommandState(queuedCommand.Id, CommandState.Executing);
-
-                        var waitTime = (DateTime.UtcNow - queuedCommand.QueueTime).TotalSeconds;
-                        m_logger.LogInformation("🚀 BACKGROUND PROCESSOR: Starting execution of {CommandId}: {Command} (waited {WaitTime:F1}s in queue)",
-                            queuedCommand.Id, queuedCommand.Command, waitTime);
-
-                        m_logger.LogInformation("🔧 BACKGROUND PROCESSOR: Checking CDB session status...");
-                        m_logger.LogInformation("🔧 BACKGROUND PROCESSOR: CdbSession.IsActive = {IsActive}", m_cdbSession.IsActive);
-
-                        try
-                        {
-                            m_logger.LogInformation("⚡ BACKGROUND PROCESSOR: Calling CdbSession.ExecuteCommand for {CommandId}", queuedCommand.Id);
-
-                            // Execute the command
-                            var result = await m_cdbSession.ExecuteCommand(queuedCommand.Command, queuedCommand.CancellationTokenSource.Token);
-
-                            m_logger.LogInformation("✅ BACKGROUND PROCESSOR: CdbSession.ExecuteCommand completed for {CommandId}", queuedCommand.Id);
-
-                            // CRITICAL FIX: Atomic completion and state update
-                            var resultMessage = queuedCommand.CancellationTokenSource.Token.IsCancellationRequested
-                                ? "Command execution was cancelled."
-                                : result;
-
-                            var wasCompleted = queuedCommand.CompletionSource.TrySetResult(resultMessage);
-
-                            // Update state atomically - this is safe even if another thread modified the command
-                            UpdateCommandState(queuedCommand.Id, CommandState.Completed);
-
-                            if (wasCompleted)
-                            {
-                                Interlocked.Increment(ref m_commandsProcessed);
-                            }
-                            else
-                            {
-                                m_logger.LogDebug("Command {CommandId} was already completed by another thread (race condition handled)", queuedCommand.Id);
-                            }
-
-                            LogConcurrencyStats();
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            m_logger.LogInformation("Command {CommandId} was cancelled during execution", queuedCommand.Id);
-
-                            // FIXED: Use TrySetResult to prevent double-completion and update state
-                            var wasCompleted = queuedCommand.CompletionSource.TrySetResult("Command execution was cancelled.");
-                            if (wasCompleted)
-                            {
-                                UpdateCommandState(queuedCommand.Id, CommandState.Cancelled);
-                                Interlocked.Increment(ref m_commandsCancelled);
-                            }
-                            else
-                            {
-                                m_logger.LogDebug("Command {CommandId} was already completed by another thread during cancellation", queuedCommand.Id);
-                            }
-
-                            LogConcurrencyStats();
-                        }
-                        catch (Exception ex)
-                        {
-                            m_logger.LogError(ex, "Error executing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
-
-                            // STANDARDIZED: Consistent error message formatting
-                            var errorMessage = ex switch
-                            {
-                                OperationCanceledException => "Command execution was cancelled",
-                                TimeoutException => "Command execution timed out",
-                                InvalidOperationException => $"Invalid operation: {ex.Message}",
-                                ArgumentException => $"Invalid argument: {ex.Message}",
-                                _ => $"Command execution failed: {ex.GetType().Name}: {ex.Message}"
-                            };
-
-                            var wasCompleted = queuedCommand.CompletionSource.TrySetResult(errorMessage);
-                            UpdateCommandState(queuedCommand.Id, CommandState.Failed);
-
-                            if (wasCompleted)
-                            {
-                                Interlocked.Increment(ref m_commandsFailed);
-                            }
-                            else
-                            {
-                                m_logger.LogDebug("Command {CommandId} was already completed by another thread during error handling", queuedCommand.Id);
-                            }
-
-                            LogConcurrencyStats();
-                        }
-                        finally
-                        {
-                            // CLEANUP: Clear current command (volatile write is thread-safe)
-                            if (ReferenceEquals(m_currentCommand, queuedCommand))
-                            {
-                                m_currentCommand = null;
-                            }
-
-                            CleanupCommand(queuedCommand);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        m_logger.LogError(ex, "Unexpected error processing command {CommandId} for session", queuedCommand?.Id ?? "unknown");
-                        // Continue processing next command
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                m_logger.LogInformation("Command queue processing was cancelled");
-            }
-            catch (Exception ex)
-            {
-                m_logger.LogError(ex, "Unexpected error in command queue processing");
-            }
+            if (m_disposed)
+                return null;
+            
+            return m_processor.GetCurrentCommand();
         }
-
-        private void CleanupCommand(QueuedCommand command)
-        {
-            // DON'T remove from m_activeCommands - let completed commands stay for retrieval!
-            // Only dispose the cancellation token to free resources
-            command.CancellationTokenSource.Dispose();
-
-            m_logger.LogDebug("Cleaned up command resources for {CommandId} (kept in activeCommands for result retrieval)", command.Id);
-        }
-
-        // CRITICAL FIX: Make state updates atomic
-        private void UpdateCommandState(string commandId, CommandState newState)
-        {
-            if (m_activeCommands.TryGetValue(commandId, out var command))
-            {
-                // Create updated command with new state
-                var updatedCommand = command with { State = newState };
-                // Use TryUpdate to ensure atomic state transition
-                if (!m_activeCommands.TryUpdate(commandId, updatedCommand, command))
-                {
-                    // If update failed, the command was modified by another thread
-                    // This is expected in concurrent scenarios, so we log and continue
-                    m_logger.LogTrace("Command {CommandId} state update failed - command was modified by another thread", commandId);
-                }
-            }
-        }
-
-        // IMPROVED: Add concurrency statistics logging
-        private void LogConcurrencyStats()
-        {
-            var now = DateTime.UtcNow;
-            if ((now - m_lastStatsLog) >= ApplicationConstants.StatsLogInterval)
-            {
-                var processed = Interlocked.Read(ref m_commandsProcessed);
-                var failed = Interlocked.Read(ref m_commandsFailed);
-                var cancelled = Interlocked.Read(ref m_commandsCancelled);
-                var total = processed + failed + cancelled;
-
-                if (total > 0)
-                {
-                    var successRate = total > 0 ? (double)processed / total * 100 : 0;
-                    m_logger.LogInformation("Concurrency Stats - Processed: {Processed}, Failed: {Failed}, Cancelled: {Cancelled}, Success Rate: {SuccessRate:F1}%",
-                        processed, failed, cancelled, successRate);
-                }
-
-                m_lastStatsLog = now;
-            }
-        }
-
-        // FIXED: Add cleanup method for completed commands
-        private void CleanupCompletedCommands(object? state)
-        {
-            try
-            {
-                if (m_disposed) return;
-
-                var cutoffTime = DateTime.UtcNow - m_commandRetentionTime;
-                // PERFORMANCE: Use Span<List<string>> to avoid repeated allocations
-                var commandsToRemove = new List<string>();
-
-                // PERFORMANCE: Use ValueTuple to avoid boxing in foreach
-                foreach (var (key, command) in m_activeCommands)
-                {
-                    if (command.State == CommandState.Completed ||
-                        command.State == CommandState.Cancelled ||
-                        command.State == CommandState.Failed)
-                    {
-                        if (command.QueueTime < cutoffTime)
-                        {
-                            commandsToRemove.Add(key);
-                        }
-                    }
-                }
-
-                // PERFORMANCE: Batch removal to reduce dictionary operations
-                foreach (var commandId in commandsToRemove)
-                {
-                    if (m_activeCommands.TryRemove(commandId, out var command))
-                    {
-                        command.CancellationTokenSource.Dispose();
-                        m_logger.LogDebug("Cleaned up old completed command: {CommandId}", commandId);
-                    }
-                }
-
-                if (commandsToRemove.Count > 0)
-                {
-                    m_logger.LogDebug("Cleaned up {Count} old completed commands", commandsToRemove.Count);
-                }
-            }
-            catch (Exception ex)
-            {
-                m_logger.LogError(ex, "Error during command cleanup");
-            }
-        }
-
+        
+        /// <summary>
+        /// Gets the state of a specific command
+        /// </summary>
+        /// <param name="commandId">The command ID</param>
+        /// <returns>The command state, or null if not found</returns>
         public CommandState? GetCommandState(string commandId)
         {
-            if (string.IsNullOrEmpty(commandId))
+            if (m_disposed || string.IsNullOrWhiteSpace(commandId))
                 return null;
 
-            if (!m_activeCommands.TryGetValue(commandId, out var command))
+            if (m_activeCommands.TryGetValue(commandId, out var command))
+                return command.State;
+            
                 return null;
-
-            return command.State;
         }
 
+        /// <summary>
+        /// Gets detailed information about a specific command
+        /// </summary>
+        /// <param name="commandId">The command ID</param>
+        /// <returns>Command information, or null if not found</returns>
         public CommandInfo? GetCommandInfo(string commandId)
         {
-            if (string.IsNullOrEmpty(commandId))
+            if (m_disposed || string.IsNullOrWhiteSpace(commandId))
                 return null;
 
-            if (!m_activeCommands.TryGetValue(commandId, out var command))
-                return null;
-
-            var elapsed = DateTime.UtcNow - command.QueueTime;
-            var remaining = TimeSpan.FromMinutes(10) - elapsed; // Default timeout
-            var queuePosition = GetQueuePosition(commandId);
-
+            if (m_activeCommands.TryGetValue(commandId, out var command))
+            {
             return new CommandInfo
             {
-                CommandId = commandId,
+                    CommandId = command.Id,
                 Command = command.Command,
                 State = command.State,
                 QueueTime = command.QueueTime,
-                Elapsed = elapsed,
-                Remaining = remaining,
-                QueuePosition = queuePosition,
-                IsCompleted = command.CompletionSource.Task.IsCompleted
-            };
-        }
-
-        private int GetQueuePosition(string commandId)
-        {
-            if (string.IsNullOrEmpty(commandId))
-                return -1;
-
-            // If there's a current command executing, all queued commands are behind it
-            var currentCommand = m_currentCommand; // volatile read is thread-safe
-            if (currentCommand != null)
-            {
-                // For BlockingCollection, we can't safely get count, so estimate based on active commands
-                var queuedCommands = m_activeCommands.Values.Count(cmd => cmd.State == CommandState.Queued);
-                return queuedCommands; // All queued commands are behind the current one
+                    Elapsed = DateTime.UtcNow - command.QueueTime,
+                    Remaining = TimeSpan.Zero, // Not applicable for basic queue
+                    QueuePosition = 0, // Not applicable for basic queue
+                    IsCompleted = command.State is CommandState.Completed or CommandState.Failed or CommandState.Cancelled
+                };
             }
-
-            // No current command, count how many commands are ahead in the queue
-            var position = 0;
-            foreach (var cmd in m_activeCommands.Values.Where(cmd => cmd.State == CommandState.Queued))
-            {
-                if (cmd.Id == commandId)
-                {
-                    return position;
-                }
-                position++;
-            }
-
-            // Command not found in queue
-            return -1;
+            
+            return null;
         }
-
+        
+        /// <summary>
+        /// Disposes the service and all resources
+        /// </summary>
         public void Dispose()
         {
-            m_logger.LogInformation("Shutting down CommandQueueService");
-
-            // Check if already disposed
-            try
-            {
-                if (m_serviceCts.Token.IsCancellationRequested)
-                {
-                    m_logger.LogWarning("CommandQueueService already disposed");
-                    return;
-                }
-            }
-            catch (ObjectDisposedException)
-            {
-                m_logger.LogWarning("CommandQueueService already disposed (CTS disposed)");
+            if (m_disposed)
                 return;
-            }
-
-            try
-            {
-                m_serviceCts.Cancel();
-            }
-            catch (ObjectDisposedException)
-            {
-                m_logger.LogWarning("CancellationTokenSource already disposed during shutdown");
-                return;
-            }
-
-            try
-            {
-                if (!m_processingTask.Wait(TimeSpan.FromSeconds(5)))
-                {
-                    m_logger.LogWarning("Processing task did not complete within 5 seconds during shutdown");
-                }
-            }
-            catch (AggregateException ex) when (ex.InnerException is TaskCanceledException)
-            {
-                // Expected when task is cancelled during shutdown
-                m_logger.LogDebug("Processing task was cancelled during shutdown (expected)");
-            }
-            catch (Exception ex)
-            {
-                m_logger.LogError(ex, "Error waiting for processing task to complete");
-            }
-
-            // Cancel all pending commands with disposal guards
-            foreach (var command in m_activeCommands.Values)
-            {
-                try
-                {
-                    if (!command.CancellationTokenSource.Token.IsCancellationRequested)
-                    {
-                        command.CancellationTokenSource.Cancel();
-                    }
-                    command.CompletionSource.TrySetResult("Service is shutting down.");
-                }
-                catch (ObjectDisposedException)
-                {
-                    // CancellationTokenSource already disposed, ignore
-                }
-                catch (Exception ex)
-                {
-                    m_logger.LogError(ex, "Error cancelling command {CommandId}", command.Id);
-                }
-
-                try
-                {
-                    command.CancellationTokenSource.Dispose();
-                }
-                catch (ObjectDisposedException)
-                {
-                    // Already disposed, ignore
-                }
-            }
-
-            m_activeCommands.Clear();
-
-            try
-            {
-                m_serviceCts.Dispose();
-            }
-            catch (ObjectDisposedException)
-            {
-                // Already disposed, ignore
-            }
-
-            try
-            {
-                m_commandQueue.Dispose();
-            }
-            catch (ObjectDisposedException)
-            {
-                // Already disposed, ignore
-            }
-
-            // FIXED: Dispose cleanup timer
-            try
-            {
-                m_cleanupTimer?.Dispose();
-            }
-            catch (Exception ex)
-            {
-                m_logger.LogError(ex, "Error disposing cleanup timer");
-            }
-
+            
             m_disposed = true;
-            m_logger.LogInformation("CommandQueueService disposed");
+            
+            try
+            {
+                m_logger.LogInformation("🛑 Shutting down CommandQueueService");
+                
+                // Signal shutdown
+                m_serviceCts.Cancel();
+                
+                // Complete the queue to stop accepting new commands
+                m_commandQueue.CompleteAdding();
+                
+                // Wait for processing task to complete
+                if (m_processingTask != null && !m_processingTask.IsCompleted)
+            {
+                try
+                {
+                        m_processingTask.Wait(TimeSpan.FromSeconds(10));
+                    }
+                    catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is TaskCanceledException))
+                    {
+                        // Expected during shutdown
+                        m_logger.LogDebug("Processing task cancelled during shutdown (expected)");
+                    }
+                }
+                
+                // Dispose components
+                m_processor?.Dispose();
+                
+                // Dispose resources
+                m_commandQueue?.Dispose();
+                m_serviceCts?.Dispose();
+                
+                m_logger.LogInformation("✅ CommandQueueService shutdown complete");
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogError(ex, "💥 Error during CommandQueueService disposal");
+            }
         }
     }
 }
-
