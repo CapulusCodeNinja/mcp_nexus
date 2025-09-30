@@ -132,21 +132,26 @@ namespace mcp_nexus.Debugger
 
             try
             {
-                var cdbPath = m_config.FindCdbPath();
+                // Use the resolved CDB path from configuration (already resolved by DI)
+                var cdbPath = m_config.CustomCdbPath;
                 if (string.IsNullOrEmpty(cdbPath))
                 {
-                    var errorMessage = "❌ CDB.exe not found anywhere on system. Please install Windows SDK with Debugging Tools or specify custom CDB path in configuration.";
+                    var errorMessage = "❌ CDB path not configured. This should have been resolved during service startup.";
                     m_logger.LogError(errorMessage);
-                    m_logger.LogError("🔍 CDB search details:");
-                    m_logger.LogError("   - PATH environment variable: Searched all directories");
-                    m_logger.LogError("   - Standard SDK locations: Searched Windows Kits 10/8.1/8.0");
-                    m_logger.LogError("   - Visual Studio locations: Searched VS 2022 installations");
-                    m_logger.LogError("   - Architecture: {Architecture}", m_config.GetCurrentArchitecture());
-                    m_logger.LogError("💡 SOLUTION: Install Windows SDK from https://developer.microsoft.com/windows/downloads/windows-sdk/");
+                    m_logger.LogError("💡 This indicates a configuration or DI issue - CDB path should be auto-detected during service registration.");
                     throw new FileNotFoundException(errorMessage);
                 }
 
-                m_logger.LogInformation("✅ Found CDB at: {CdbPath}", cdbPath);
+                // Verify the configured path actually exists
+                if (!File.Exists(cdbPath))
+                {
+                    var errorMessage = $"❌ Configured CDB path does not exist: {cdbPath}";
+                    m_logger.LogError(errorMessage);
+                    m_logger.LogError("💡 The CDB path was resolved during startup but the file is no longer accessible.");
+                    throw new FileNotFoundException(errorMessage);
+                }
+
+                m_logger.LogInformation("✅ Using CDB at: {CdbPath}", cdbPath);
                 return cdbPath;
             }
             catch (Exception ex)
