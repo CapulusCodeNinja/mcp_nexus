@@ -59,9 +59,9 @@ namespace mcp_nexus.Infrastructure
                 result.CanWriteToInstallDirectory = CanWriteToInstallDirectory();
                 result.CanAccessRegistry = CanAccessServiceRegistry();
 
-                // Overall assessment
+                // Overall assessment - Limited tokens might be sufficient for some operations
                 result.HasSufficientPrivileges = result.IsInAdministratorsGroup &&
-                                                result.IsElevated &&
+                                                (result.IsElevated || result.TokenElevationType == TokenElevationType.Limited) &&
                                                 result.CanAccessServiceControlManager;
 
                 LogPrivilegeAnalysis(result, logger);
@@ -86,20 +86,30 @@ namespace mcp_nexus.Infrastructure
                 using var identity = WindowsIdentity.GetCurrent();
                 var principal = new WindowsPrincipal(identity);
 
-                // If not in admin group at all, it's limited
+                // If not in admin group at all, it's a standard user token
                 if (!principal.IsInRole(WindowsBuiltInRole.Administrator))
-                    return TokenElevationType.Limited;
+                    return TokenElevationType.Standard;
 
-                // Try to determine if we have full elevation by testing a privileged operation
+                // User IS in admin group - now determine elevation level
                 try
                 {
-                    // Attempt to open service control manager with full access
+                    // Test if we can access privileged resources
                     var scm = Win32ServiceManager.OpenServiceControlManager();
-                    return scm != IntPtr.Zero ? TokenElevationType.Full : TokenElevationType.Default;
+                    if (scm != IntPtr.Zero)
+                    {
+                        // Can access SCM - fully elevated
+                        return TokenElevationType.Full;
+                    }
+                    else
+                    {
+                        // In admin group but can't access SCM - UAC limited token
+                        return TokenElevationType.Limited;
+                    }
                 }
                 catch
                 {
-                    return TokenElevationType.Default;
+                    // In admin group but privileged operations fail - UAC limited token
+                    return TokenElevationType.Limited;
                 }
             }
             catch

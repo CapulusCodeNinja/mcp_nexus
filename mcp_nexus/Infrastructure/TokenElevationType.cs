@@ -11,17 +11,22 @@ namespace mcp_nexus.Infrastructure
         Unknown,
 
         /// <summary>
-        /// Token is a limited token (UAC filtered)
+        /// Token belongs to a standard user (not in Administrators group)
+        /// </summary>
+        Standard,
+
+        /// <summary>
+        /// Token is a limited admin token (UAC filtered - admin user but privileges stripped)
         /// </summary>
         Limited,
 
         /// <summary>
-        /// Token has default privileges (standard user or admin without elevation)
+        /// Token has default admin privileges (admin user, no UAC filtering)
         /// </summary>
         Default,
 
         /// <summary>
-        /// Token is fully elevated with administrator privileges
+        /// Token is fully elevated with all administrator privileges
         /// </summary>
         Full
     }
