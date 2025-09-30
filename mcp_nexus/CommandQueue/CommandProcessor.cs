@@ -103,6 +103,7 @@ namespace mcp_nexus.CommandQueue
             try
             {
                 m_logger.LogTrace("🔄 Starting execution of command {CommandId}", command.Id);
+                m_logger.LogTrace("Debugger session IsActive={IsActive} for {SessionId}", m_cdbSession.IsActive, m_config.SessionId);
 
                 // Update command state to executing
                 var updatedCommand = command with { State = CommandState.Executing };
@@ -127,7 +128,16 @@ namespace mcp_nexus.CommandQueue
                     try { await heartbeatTask; } catch { /* Ignore heartbeat cancellation */ }
 
                     // Complete successfully
-                    CompleteCommandSafely(command, result, CommandState.Completed);
+                    // Log small preview of result for diagnostics
+                    try
+                    {
+                        var preview = result?.Length > 300 ? result.Substring(0, 300) + "..." : result;
+                        m_logger.LogTrace("Command {CommandId} result preview: {Preview}", command.Id, preview);
+                    }
+                    catch { }
+
+                    CompleteCommandSafely(command, result ?? string.Empty, CommandState.Completed);
+                    
                     m_tracker.IncrementCompleted();
 
                     m_logger.LogInformation("✅ Command {CommandId} completed successfully in {Elapsed}ms",

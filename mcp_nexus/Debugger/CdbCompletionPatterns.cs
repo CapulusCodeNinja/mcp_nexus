@@ -13,7 +13,7 @@ namespace mcp_nexus.Debugger
         /// Matches patterns like "0:000>", "1:001>", etc.
         /// </summary>
         public static readonly Regex CdbPromptPattern = new Regex(
-            @"^(\s*)?(\d+):(\d{3})>\s*$",
+            @"^(\s*)?(\d+):(\d{3})(:[A-Za-z0-9_\-]+)?>\s*$",
             RegexOptions.Compiled | RegexOptions.Multiline);
 
         /// <summary>
@@ -21,7 +21,7 @@ namespace mcp_nexus.Debugger
         /// Matches patterns like "\n0:000>" at the end of a line
         /// </summary>
         public static readonly Regex CdbPromptEndPattern = new Regex(
-            @"(?:^|\r?\n)(\d+):(\d{3})>\s*$",
+            @"(?:^|\r?\n)(\d+):(\d{3})(:[A-Za-z0-9_\-]+)?>\s*$",
             RegexOptions.Compiled);
 
         /// <summary>
@@ -32,6 +32,8 @@ namespace mcp_nexus.Debugger
             "^ Syntax error in",    // CDB syntax error format - always starts with ^
             "ModLoad:",             // Module load notification - binary format
             "ModUnload:",           // Module unload notification - binary format
+            "Source search path is:", // .srcpath confirmation
+            "Symbol search path is:", // .symfix/.sympath confirmation
         };
 
         /// <summary>
