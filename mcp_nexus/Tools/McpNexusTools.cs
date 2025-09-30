@@ -96,6 +96,7 @@ namespace mcp_nexus.Tools
 
             try
             {
+                logger.LogInformation("[Tool] About to call SessionExists for {SessionId}", sessionId);
                 if (!sessionManager.SessionExists(sessionId))
                 {
                     var notFoundResponse = new
