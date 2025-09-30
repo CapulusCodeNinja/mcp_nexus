@@ -80,8 +80,17 @@ namespace mcp_nexus.Notifications
                 // Use lock to ensure atomic writes to stdout
                 lock (m_stdoutLock)
                 {
-                    Console.WriteLine(jsonMessage);
-                    Console.Out.Flush();
+                    try
+                    {
+                        Console.WriteLine(jsonMessage);
+                        Console.Out.Flush();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // Console.Out was already disposed during shutdown - ignore
+                        m_logger.LogTrace("Console.Out was disposed during shutdown - notification not sent");
+                        return Task.CompletedTask;
+                    }
                 }
 
                 m_logger.LogDebug("Successfully sent MCP notification via stdio: {Method}", notification.Method);

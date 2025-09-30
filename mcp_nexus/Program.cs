@@ -27,20 +27,22 @@ namespace mcp_nexus
     {
         private static async Task Main(string[] args)
         {
-            // Set environment based on configuration if not already set
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")))
+            try
             {
-                // Check if we're running in service mode
-                if (args.Contains("--service") || args.Contains("--install") || args.Contains("--uninstall") || args.Contains("--update"))
+                // Set environment based on configuration if not already set
+                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")))
                 {
-                    Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Service");
+                    // Check if we're running in service mode
+                    if (args.Contains("--service") || args.Contains("--install") || args.Contains("--uninstall") || args.Contains("--update"))
+                    {
+                        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Service");
+                    }
+                    else
+                    {
+                        // Default to Production for non-development builds
+                        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
+                    }
                 }
-                else
-                {
-                    // Default to Production for non-development builds
-                    Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
-                }
-            }
 
             // Check if this is a help request first
             if (args.Length > 0 && (args[0] == "--help" || args[0] == "-h" || args[0] == "help"))
@@ -167,6 +169,55 @@ namespace mcp_nexus
             else
             {
                 await RunStdioServer(args, commandLineArgs);
+            }
+            }
+            catch (Exception ex)
+            {
+                // Comprehensive exception logging to help diagnose crashes
+                try
+                {
+                    await Console.Error.WriteLineAsync("================================================================================");
+                    await Console.Error.WriteLineAsync("FATAL UNHANDLED EXCEPTION IN MCP NEXUS");
+                    await Console.Error.WriteLineAsync("================================================================================");
+                    await Console.Error.WriteLineAsync($"Exception Type: {ex.GetType().FullName}");
+                    await Console.Error.WriteLineAsync($"Message: {ex.Message}");
+                    await Console.Error.WriteLineAsync($"Source: {ex.Source}");
+                    await Console.Error.WriteLineAsync($"TargetSite: {ex.TargetSite}");
+                    await Console.Error.WriteLineAsync("Stack Trace:");
+                    await Console.Error.WriteLineAsync(ex.StackTrace ?? "No stack trace available");
+                    
+                    if (ex.InnerException != null)
+                    {
+                        await Console.Error.WriteLineAsync("Inner Exception:");
+                        await Console.Error.WriteLineAsync($"  Type: {ex.InnerException.GetType().FullName}");
+                        await Console.Error.WriteLineAsync($"  Message: {ex.InnerException.Message}");
+                        await Console.Error.WriteLineAsync($"  Stack Trace: {ex.InnerException.StackTrace}");
+                    }
+                    
+                    await Console.Error.WriteLineAsync("================================================================================");
+                    await Console.Error.WriteLineAsync($"Command Line Args: {string.Join(" ", args)}");
+                    await Console.Error.WriteLineAsync($"Environment: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}");
+                    await Console.Error.WriteLineAsync($"OS Version: {Environment.OSVersion}");
+                    await Console.Error.WriteLineAsync($".NET Version: {Environment.Version}");
+                    await Console.Error.WriteLineAsync($"Working Directory: {Environment.CurrentDirectory}");
+                    await Console.Error.WriteLineAsync("================================================================================");
+                }
+                catch
+                {
+                    // If console logging fails, try to write to a file
+                    try
+                    {
+                        var logFile = Path.Combine(Environment.CurrentDirectory, "mcp_nexus_crash.log");
+                        await File.WriteAllTextAsync(logFile, $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss UTC} - FATAL ERROR: {ex}");
+                    }
+                    catch
+                    {
+                        // Last resort - do nothing, but at least we tried
+                    }
+                }
+                
+                // Exit with error code
+                Environment.Exit(1);
             }
         }
 
@@ -652,8 +703,7 @@ namespace mcp_nexus
         {
             Console.WriteLine("Configuring HTTP request pipeline...");
 
-            // Add security middleware
-            app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+            // Add security middleware (GlobalExceptionHandlerMiddleware removed - was causing crashes)
             app.UseMiddleware<ContentTypeValidationMiddleware>();
 
             // Add core middleware

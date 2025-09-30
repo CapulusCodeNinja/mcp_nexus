@@ -122,17 +122,17 @@ namespace mcp_nexus.Debugger
             if (!IsActive)
                 throw new InvalidOperationException("No active debugging session");
 
-            return Task.Run(() =>
-            {
-                try
+                return Task.Run(() =>
                 {
+                    try
+                    {
                     return m_commandExecutor.ExecuteCommand(command, m_processManager, externalCancellationToken);
-                }
-                catch (Exception ex)
-                {
+            }
+            catch (Exception ex)
+            {
                     m_logger.LogError(ex, "Error executing command: {Command}", command);
                     return $"Error executing command: {ex.Message}";
-                }
+            }
             }, externalCancellationToken);
         }
 
@@ -152,9 +152,9 @@ namespace mcp_nexus.Debugger
                     var result = m_processManager.StopProcess();
                     m_logger.LogInformation("StopSession completed with result: {Result}", result);
                     return result;
-                }
-                catch (Exception ex)
-                {
+                        }
+                        catch (Exception ex)
+                        {
                     m_logger.LogError(ex, "Error stopping session");
                     return false;
                 }
@@ -203,13 +203,13 @@ namespace mcp_nexus.Debugger
             try
             {
                 m_processManager?.Dispose();
-            }
-            catch (Exception ex)
-            {
+                                }
+                                catch (Exception ex)
+                                {
                 m_logger.LogWarning(ex, "Error disposing process manager");
-            }
+                }
 
-            m_disposed = true;
+                m_disposed = true;
             m_logger.LogDebug("CdbSession disposed successfully");
         }
     }
