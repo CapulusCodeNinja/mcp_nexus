@@ -26,6 +26,7 @@ namespace mcp_nexus.Infrastructure
                 // Step 2: Check if service already exists and uninstall if needed
                 if (ServiceRegistryManager.IsServiceInstalled())
                 {
+                    Console.WriteLine("Existing service found, uninstalling first...");
                     OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Service already installed. Uninstalling first");
                     await UninstallServiceAsync(logger); // Continue even if uninstall has issues
 
@@ -37,29 +38,41 @@ namespace mcp_nexus.Infrastructure
                         OperationLogger.LogWarning(logger, OperationLogger.Operations.Install,
                             "Service still exists after uninstall attempt. This may be normal if it's marked for deletion");
                     }
+                    Console.WriteLine("✓ Previous service uninstalled");
                 }
 
                 // Step 3: Perform installation steps
+                Console.WriteLine("Performing installation steps...");
                 if (!await ServiceInstallationSteps.PerformInstallationStepsAsync(logger))
                 {
+                    Console.WriteLine("✗ Installation steps failed");
                     OperationLogger.LogError(logger, OperationLogger.Operations.Install, "Installation steps failed");
                     return false;
                 }
+                Console.WriteLine("✓ Installation steps completed");
 
                 // Step 4: Register the service
+                Console.WriteLine("Registering Windows service...");
                 if (!await ServiceInstallationSteps.RegisterServiceAsync(logger))
                 {
+                    Console.WriteLine("✗ Service registration failed");
                     OperationLogger.LogError(logger, OperationLogger.Operations.Install, "Service registration failed");
                     return false;
                 }
+                Console.WriteLine("✓ Service registered successfully");
 
                 // Step 5: Validate installation
+                Console.WriteLine("Validating installation...");
                 if (!InstallationValidator.ValidateInstallationSuccess(logger))
                 {
+                    Console.WriteLine("✗ Installation validation failed");
                     OperationLogger.LogError(logger, OperationLogger.Operations.Install, "Installation validation failed");
                     return false;
                 }
+                Console.WriteLine("✓ Installation validated successfully");
 
+                Console.WriteLine();
+                Console.WriteLine("🎉 Service installation completed successfully!");
                 OperationLogger.LogInfo(logger, OperationLogger.Operations.Install, "Service installation completed successfully");
                 return true;
             }
