@@ -32,9 +32,9 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Starts the CDB debugger process with the specified target
+        /// Starts the CDB debugger process with the specified target and optional explicit cdbPath override
         /// </summary>
-        public bool StartProcess(string target)
+        public bool StartProcess(string target, string? cdbPathOverride)
         {
             ThrowIfDisposed();
 
@@ -50,7 +50,12 @@ namespace mcp_nexus.Debugger
                         StopProcessInternal();
                     }
 
-                    var cdbPath = FindCdbExecutable();
+                    var cdbPath = !string.IsNullOrWhiteSpace(cdbPathOverride) ? cdbPathOverride : FindCdbExecutable();
+                    if (!File.Exists(cdbPath))
+                    {
+                        m_logger.LogError("❌ Configured CDB path does not exist: {CdbPath}", cdbPath);
+                        return false;
+                    }
                     var processInfo = CreateProcessStartInfo(cdbPath, target);
 
                     return StartProcessInternal(processInfo, target);
@@ -61,6 +66,14 @@ namespace mcp_nexus.Debugger
                 m_logger.LogError(ex, "Failed to start CDB process with target: {Target}", target);
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Backward-compatible overload
+        /// </summary>
+        public bool StartProcess(string target)
+        {
+            return StartProcess(target, null);
         }
 
         /// <summary>

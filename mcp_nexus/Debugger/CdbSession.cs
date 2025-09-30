@@ -87,7 +87,7 @@ namespace mcp_nexus.Debugger
             try
             {
                 m_logger.LogInformation("🔧 About to call StartProcess directly");
-                var result = m_processManager?.StartProcess(target) ?? throw new InvalidOperationException("Process manager not initialized");
+                var result = m_processManager?.StartProcess(target, m_config.CustomCdbPath) ?? throw new InvalidOperationException("Process manager not initialized");
                 m_logger.LogInformation("🔧 StartProcess returned: {Result}", result);
                 return Task.FromResult(result);
             }
