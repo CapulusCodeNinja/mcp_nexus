@@ -178,7 +178,7 @@ namespace mcp_nexus.Session
                 return false;
             }
 
-            var isActive = session.Status == SessionStatus.Active && !session.IsDisposed;
+            var isActive = (session.Status == SessionStatus.Active || session.Status == SessionStatus.Initializing) && !session.IsDisposed;
             m_logger.LogTrace("SessionExists: {SessionId} found. Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}",
                 sessionId, session.Status, session.IsDisposed, isActive);
             return isActive;
@@ -192,7 +192,7 @@ namespace mcp_nexus.Session
         public ICommandQueueService GetCommandQueue(string sessionId)
         {
             if (m_sessions.TryGetValue(sessionId, out var session) &&
-                session.Status == SessionStatus.Active && !session.IsDisposed)
+                (session.Status == SessionStatus.Active || session.Status == SessionStatus.Initializing) && !session.IsDisposed)
             {
                 UpdateActivity(sessionId);
                 return session.CommandQueue;
@@ -215,7 +215,7 @@ namespace mcp_nexus.Session
                 return false;
 
             if (m_sessions.TryGetValue(sessionId, out var session) &&
-                session.Status == SessionStatus.Active && !session.IsDisposed)
+                (session.Status == SessionStatus.Active || session.Status == SessionStatus.Initializing) && !session.IsDisposed)
             {
                 UpdateActivity(sessionId);
                 commandQueue = session.CommandQueue;
