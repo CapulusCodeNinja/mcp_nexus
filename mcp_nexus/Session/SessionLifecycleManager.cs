@@ -67,9 +67,18 @@ namespace mcp_nexus.Session
 
                 if (!startSuccess)
                 {
+                    // Log detailed CDB detection failure information
+                    m_logger.LogError("❌ CDB session startup failed for {DumpPath}", dumpPath);
+                    m_logger.LogError("🔍 This typically means CDB.exe is not installed or not found in:");
+                    m_logger.LogError("   - PATH environment variable");
+                    m_logger.LogError("   - Standard Windows SDK locations");
+                    m_logger.LogError("   - Visual Studio installations");
+                    m_logger.LogError("💡 SOLUTION: Install Windows SDK with Debugging Tools from:");
+                    m_logger.LogError("   https://developer.microsoft.com/windows/downloads/windows-sdk/");
+                    
                     // Cleanup on failure
                     await CleanupSessionComponents(cdbSession, commandQueue);
-                    throw new InvalidOperationException($"Failed to start CDB session for {dumpPath}");
+                    throw new InvalidOperationException($"Failed to start CDB session for {dumpPath}. CDB.exe not found - please install Windows SDK with Debugging Tools.");
                 }
 
                 // Create session info
