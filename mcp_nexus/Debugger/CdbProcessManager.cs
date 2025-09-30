@@ -169,7 +169,8 @@ namespace mcp_nexus.Debugger
 
         private ProcessStartInfo CreateProcessStartInfo(string cdbPath, string target)
         {
-            var arguments = $"-z \"{target}\"";
+            // If target already contains flags, use as-is; otherwise treat as dump path
+            var arguments = target.StartsWith("-") ? target : $"-z \"{target}\"";
 
             if (!string.IsNullOrWhiteSpace(m_config.SymbolSearchPath))
             {
@@ -177,7 +178,10 @@ namespace mcp_nexus.Debugger
                 m_logger.LogDebug("Using symbol search path: {SymbolSearchPath}", m_config.SymbolSearchPath);
             }
 
-            m_logger.LogDebug("CDB arguments: {Arguments}", arguments);
+            // Run from CDB directory to avoid path issues
+            var workingDirectory = Path.GetDirectoryName(cdbPath) ?? Environment.CurrentDirectory;
+
+            m_logger.LogDebug("CDB call: {CdbPath} {Arguments}", cdbPath, arguments);
 
             return new ProcessStartInfo
             {
@@ -188,7 +192,7 @@ namespace mcp_nexus.Debugger
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true,
-                WorkingDirectory = Path.GetDirectoryName(target) ?? Environment.CurrentDirectory
+                WorkingDirectory = workingDirectory
             };
         }
 
