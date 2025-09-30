@@ -28,6 +28,174 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
+        /// Performs detailed privilege analysis and reports specific issues
+        /// </summary>
+        /// <param name="logger">Optional logger for detailed reporting</param>
+        /// <returns>Detailed privilege analysis result</returns>
+        public static PrivilegeAnalysisResult AnalyzeCurrentPrivileges(ILogger? logger = null)
+        {
+            var result = new PrivilegeAnalysisResult();
+
+            try
+            {
+                using var identity = WindowsIdentity.GetCurrent();
+                var principal = new WindowsPrincipal(identity);
+
+                result.UserName = identity.Name ?? "Unknown";
+                result.AuthenticationType = identity.AuthenticationType ?? "Unknown";
+                result.IsAuthenticated = identity.IsAuthenticated;
+
+                // Check administrator role
+                result.IsInAdministratorsGroup = principal.IsInRole(WindowsBuiltInRole.Administrator);
+                result.IsInPowerUsersGroup = principal.IsInRole(WindowsBuiltInRole.PowerUser);
+                result.IsInUsersGroup = principal.IsInRole(WindowsBuiltInRole.User);
+
+                // Check token elevation level
+                result.TokenElevationType = GetTokenElevationType();
+                result.IsElevated = result.TokenElevationType == TokenElevationType.Full;
+
+                // Check specific service-related permissions
+                result.CanAccessServiceControlManager = CanAccessServiceControlManager();
+                result.CanWriteToInstallDirectory = CanWriteToInstallDirectory();
+                result.CanAccessRegistry = CanAccessServiceRegistry();
+
+                // Overall assessment
+                result.HasSufficientPrivileges = result.IsInAdministratorsGroup &&
+                                                result.IsElevated &&
+                                                result.CanAccessServiceControlManager;
+
+                LogPrivilegeAnalysis(result, logger);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.ErrorMessage = ex.Message;
+                OperationLogger.LogError(logger, OperationLogger.Operations.Install,
+                    "Failed to analyze privileges: {Error}", ex.Message);
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Gets the token elevation type for the current process
+        /// </summary>
+        private static TokenElevationType GetTokenElevationType()
+        {
+            try
+            {
+                using var identity = WindowsIdentity.GetCurrent();
+                var principal = new WindowsPrincipal(identity);
+
+                // If not in admin group at all, it's limited
+                if (!principal.IsInRole(WindowsBuiltInRole.Administrator))
+                    return TokenElevationType.Limited;
+
+                // Try to determine if we have full elevation by testing a privileged operation
+                try
+                {
+                    // Attempt to open service control manager with full access
+                    var scm = Win32ServiceManager.OpenServiceControlManager();
+                    return scm != IntPtr.Zero ? TokenElevationType.Full : TokenElevationType.Default;
+                }
+                catch
+                {
+                    return TokenElevationType.Default;
+                }
+            }
+            catch
+            {
+                return TokenElevationType.Unknown;
+            }
+        }
+
+        /// <summary>
+        /// Tests if we can access the Service Control Manager
+        /// </summary>
+        private static bool CanAccessServiceControlManager()
+        {
+            try
+            {
+                var scm = Win32ServiceManager.OpenServiceControlManager();
+                return scm != IntPtr.Zero;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Tests if we can write to the installation directory
+        /// </summary>
+        private static bool CanWriteToInstallDirectory()
+        {
+            try
+            {
+                var installDir = ServiceConfiguration.InstallFolder;
+                return HasWriteAccessToDirectory(installDir);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Tests if we can access service-related registry keys
+        /// </summary>
+        private static bool CanAccessServiceRegistry()
+        {
+            try
+            {
+                using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                    @"SYSTEM\CurrentControlSet\Services", writable: true);
+                return key != null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Logs detailed privilege analysis results
+        /// </summary>
+        private static void LogPrivilegeAnalysis(PrivilegeAnalysisResult result, ILogger? logger)
+        {
+            OperationLogger.LogInfo(logger, OperationLogger.Operations.Install,
+                "🔍 PRIVILEGE ANALYSIS:");
+            OperationLogger.LogInfo(logger, OperationLogger.Operations.Install,
+                "  User: {UserName} ({AuthType})", result.UserName, result.AuthenticationType);
+            OperationLogger.LogInfo(logger, OperationLogger.Operations.Install,
+                "  In Administrators Group: {IsAdmin}", result.IsInAdministratorsGroup);
+            OperationLogger.LogInfo(logger, OperationLogger.Operations.Install,
+                "  Token Elevation: {TokenType}", result.TokenElevationType);
+            OperationLogger.LogInfo(logger, OperationLogger.Operations.Install,
+                "  Can Access SCM: {CanAccessSCM}", result.CanAccessServiceControlManager);
+            OperationLogger.LogInfo(logger, OperationLogger.Operations.Install,
+                "  Can Write Install Dir: {CanWrite}", result.CanWriteToInstallDirectory);
+            OperationLogger.LogInfo(logger, OperationLogger.Operations.Install,
+                "  Can Access Registry: {CanRegistry}", result.CanAccessRegistry);
+            OperationLogger.LogInfo(logger, OperationLogger.Operations.Install,
+                "  ✅ Sufficient Privileges: {HasPrivileges}", result.HasSufficientPrivileges);
+
+            if (!result.HasSufficientPrivileges)
+            {
+                OperationLogger.LogWarning(logger, OperationLogger.Operations.Install,
+                    "❌ MISSING REQUIREMENTS:");
+                if (!result.IsInAdministratorsGroup)
+                    OperationLogger.LogWarning(logger, OperationLogger.Operations.Install,
+                        "  - User is not in Administrators group");
+                if (!result.IsElevated)
+                    OperationLogger.LogWarning(logger, OperationLogger.Operations.Install,
+                        "  - Process token is not fully elevated (UAC issue)");
+                if (!result.CanAccessServiceControlManager)
+                    OperationLogger.LogWarning(logger, OperationLogger.Operations.Install,
+                        "  - Cannot access Service Control Manager");
+            }
+        }
+
+        /// <summary>
         /// Validates administrator privileges and logs appropriate error messages
         /// </summary>
         /// <param name="operation">The operation being performed (for logging)</param>
