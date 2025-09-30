@@ -266,9 +266,10 @@ namespace mcp_nexus.Session
             // Diagnostic logging to see what CDB path is actually being used
             m_logger.LogInformation("🔧 Creating CDB session with path: {CdbPath}", m_config.CdbOptions.CustomCdbPath ?? "NULL");
             
+            // Use typed logger so logs from CdbSession appear properly
+            var typedCdbLogger = m_loggerFactory.CreateLogger<CdbSession>();
             return new CdbSession(
-                sessionLogger as ILogger<CdbSession> ??
-                    Microsoft.Extensions.Logging.Abstractions.NullLogger<CdbSession>.Instance,
+                typedCdbLogger,
                 m_config.CdbOptions.CommandTimeoutMs,
                 m_config.CdbOptions.CustomCdbPath,
                 m_config.CdbOptions.SymbolServerTimeoutMs,

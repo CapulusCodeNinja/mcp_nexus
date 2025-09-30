@@ -50,13 +50,6 @@ namespace mcp_nexus.Debugger
                         StopProcessInternal();
                     }
 
-                    // Validate target file exists
-                    if (!File.Exists(target))
-                    {
-                        m_logger.LogError("Target file does not exist: {Target}", target);
-                        return false;
-                    }
-
                     var cdbPath = FindCdbExecutable();
                     var processInfo = CreateProcessStartInfo(cdbPath, target);
 
