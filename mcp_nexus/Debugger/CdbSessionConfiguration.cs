@@ -69,7 +69,16 @@ namespace mcp_nexus.Debugger
                 throw new FileNotFoundException($"Custom CDB path not found: {CustomCdbPath}");
             }
 
-            return FindCdbInStandardLocations();
+            var result = FindCdbInStandardLocations();
+            if (result == null)
+            {
+                Console.WriteLine("🔍 CDB DETECTION FAILED - No CDB found in standard locations or PATH");
+            }
+            else
+            {
+                Console.WriteLine($"✅ CDB FOUND: {result}");
+            }
+            return result;
         }
 
         /// <summary>
@@ -103,10 +112,10 @@ namespace mcp_nexus.Debugger
                 case "x64":
                     possiblePaths.AddRange(new[]
                     {
-                        @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
                         @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe",
-                        @"C:\Program Files (x86)\Debugging Tools for Windows (x64)\cdb.exe",
-                        @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe"
+                        @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
+                        @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe",
+                        @"C:\Program Files (x86)\Debugging Tools for Windows (x64)\cdb.exe"
                     });
                     break;
                 case "x86":
@@ -132,10 +141,10 @@ namespace mcp_nexus.Debugger
             {
                 possiblePaths.AddRange(new[]
                 {
-                    @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
                     @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe",
-                    @"C:\Program Files (x86)\Debugging Tools for Windows (x64)\cdb.exe",
-                    @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe"
+                    @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
+                    @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe",
+                    @"C:\Program Files (x86)\Debugging Tools for Windows (x64)\cdb.exe"
                 });
             }
 
@@ -160,20 +169,31 @@ namespace mcp_nexus.Debugger
             }
 
             // Check all possible paths
+            Console.WriteLine($"🔍 Checking {possiblePaths.Count} hardcoded CDB paths for architecture: {currentArch}");
             foreach (var path in possiblePaths)
             {
                 try
                 {
+                    Console.WriteLine($"   Checking: {path}");
                     if (File.Exists(path))
+                    {
+                        Console.WriteLine($"   ✅ FOUND: {path}");
                         return path;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"   ❌ Not found: {path}");
+                    }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Console.WriteLine($"   ⚠️ Error checking {path}: {ex.Message}");
                     // Continue searching if path check fails
                 }
             }
 
             // Try to find in PATH using 'where' command (like original tag 1.0.4)
+            Console.WriteLine("🔍 Searching for CDB in PATH using 'where cdb.exe' command...");
             try
             {
                 using var result = Process.Start(new ProcessStartInfo
@@ -189,18 +209,36 @@ namespace mcp_nexus.Debugger
                 if (result != null && result.WaitForExit(5000)) // 5 second timeout
                 {
                     var output = result.StandardOutput.ReadToEnd();
+                    var errorOutput = result.StandardError.ReadToEnd();
+                    
+                    Console.WriteLine($"   'where cdb.exe' exit code: {result.ExitCode}");
+                    Console.WriteLine($"   'where cdb.exe' output: '{output.Trim()}'");
+                    if (!string.IsNullOrEmpty(errorOutput))
+                        Console.WriteLine($"   'where cdb.exe' error: '{errorOutput.Trim()}'");
+                    
                     if (result.ExitCode == 0 && !string.IsNullOrEmpty(output))
                     {
                         var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
                         if (lines.Length > 0)
                         {
-                            return lines[0].Trim();
+                            var foundPath = lines[0].Trim();
+                            Console.WriteLine($"   ✅ CDB found in PATH: {foundPath}");
+                            return foundPath;
                         }
                     }
+                    else
+                    {
+                        Console.WriteLine("   ❌ CDB not found in PATH");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("   ⚠️ 'where cdb.exe' command timed out or failed to start");
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"   ⚠️ Error running 'where cdb.exe': {ex.Message}");
                 // PATH search failed, return null
             }
 
