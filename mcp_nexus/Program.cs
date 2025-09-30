@@ -27,6 +27,9 @@ namespace mcp_nexus
     {
         private static async Task Main(string[] args)
         {
+            // Set up global exception handlers FIRST
+            SetupGlobalExceptionHandlers();
+            
             try
             {
                 // Set environment based on configuration if not already set
@@ -801,6 +804,125 @@ namespace mcp_nexus
             {
                 // Handle any other exceptions
                 return $"[JSON formatting error - {ex.Message}]: {json.Substring(0, Math.Min(json.Length, 100))}...";
+            }
+        }
+
+        /// <summary>
+        /// Sets up global exception handlers to catch unhandled exceptions from all sources
+        /// </summary>
+        private static void SetupGlobalExceptionHandlers()
+        {
+            // Handle unhandled exceptions in the current AppDomain
+            AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+            {
+                var ex = e.ExceptionObject as Exception;
+                LogFatalException(ex, "AppDomain.UnhandledException", e.IsTerminating);
+            };
+
+            // Handle unhandled exceptions in tasks
+            TaskScheduler.UnobservedTaskException += (sender, e) =>
+            {
+                LogFatalException(e.Exception, "TaskScheduler.UnobservedTaskException", false);
+                e.SetObserved(); // Prevent the process from terminating
+            };
+
+            // Handle unhandled exceptions in the current thread (for console apps)
+            if (!Environment.UserInteractive)
+            {
+                // For service mode, also handle process exit
+                AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
+                {
+                    Console.Error.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss UTC}] Process exiting...");
+                };
+            }
+        }
+
+        /// <summary>
+        /// Logs fatal exceptions with comprehensive details
+        /// </summary>
+        private static void LogFatalException(Exception? ex, string source, bool isTerminating)
+        {
+            try
+            {
+                var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC");
+                
+                Console.Error.WriteLine("################################################################################");
+                Console.Error.WriteLine($"FATAL UNHANDLED EXCEPTION - {source}");
+                Console.Error.WriteLine($"Time: {timestamp}");
+                Console.Error.WriteLine($"Terminating: {isTerminating}");
+                Console.Error.WriteLine("################################################################################");
+                
+                if (ex != null)
+                {
+                    Console.Error.WriteLine($"Exception Type: {ex.GetType().FullName}");
+                    Console.Error.WriteLine($"Message: {ex.Message}");
+                    Console.Error.WriteLine($"Source: {ex.Source}");
+                    Console.Error.WriteLine($"TargetSite: {ex.TargetSite}");
+                    Console.Error.WriteLine("Stack Trace:");
+                    Console.Error.WriteLine(ex.StackTrace ?? "No stack trace available");
+                    
+                    // Handle inner exceptions
+                    var innerEx = ex.InnerException;
+                    int depth = 1;
+                    while (innerEx != null && depth <= 5) // Limit depth to prevent infinite loops
+                    {
+                        Console.Error.WriteLine($"Inner Exception (Level {depth}):");
+                        Console.Error.WriteLine($"  Type: {innerEx.GetType().FullName}");
+                        Console.Error.WriteLine($"  Message: {innerEx.Message}");
+                        Console.Error.WriteLine($"  Stack Trace: {innerEx.StackTrace}");
+                        innerEx = innerEx.InnerException;
+                        depth++;
+                    }
+                    
+                    // Handle AggregateException specially
+                    if (ex is AggregateException aggEx)
+                    {
+                        Console.Error.WriteLine($"AggregateException contains {aggEx.InnerExceptions.Count} inner exceptions:");
+                        for (int i = 0; i < aggEx.InnerExceptions.Count && i < 10; i++) // Limit to first 10
+                        {
+                            var innerException = aggEx.InnerExceptions[i];
+                            Console.Error.WriteLine($"  [{i}] {innerException.GetType().FullName}: {innerException.Message}");
+                        }
+                    }
+                }
+                else
+                {
+                    Console.Error.WriteLine("Exception object is null");
+                }
+                
+                Console.Error.WriteLine("################################################################################");
+                Console.Error.WriteLine($"Environment: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}");
+                Console.Error.WriteLine($"OS Version: {Environment.OSVersion}");
+                Console.Error.WriteLine($".NET Version: {Environment.Version}");
+                Console.Error.WriteLine($"Working Directory: {Environment.CurrentDirectory}");
+                Console.Error.WriteLine($"Process ID: {Environment.ProcessId}");
+                Console.Error.WriteLine($"Thread ID: {Environment.CurrentManagedThreadId}");
+                Console.Error.WriteLine("################################################################################");
+                
+                // Also try to write to a crash log file
+                try
+                {
+                    var logFile = Path.Combine(Environment.CurrentDirectory, "mcp_nexus_crash.log");
+                    var logContent = $"{timestamp} - {source} - Terminating: {isTerminating}\n{ex}\n\n";
+                    File.AppendAllText(logFile, logContent);
+                    Console.Error.WriteLine($"Crash details also written to: {logFile}");
+                }
+                catch
+                {
+                    // Ignore file write errors
+                }
+            }
+            catch
+            {
+                // If even our error logging fails, try one last desperate attempt
+                try
+                {
+                    Console.Error.WriteLine($"CRITICAL: Exception in exception handler! Original: {ex?.Message}");
+                }
+                catch
+                {
+                    // Give up
+                }
             }
         }
     }
