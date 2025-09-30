@@ -14,6 +14,7 @@ namespace mcp_nexus.Session
     {
         private readonly ILogger m_logger;
         private readonly IServiceProvider m_serviceProvider;
+        private readonly ILoggerFactory m_loggerFactory;
         private readonly IMcpNotificationService m_notificationService;
         private readonly SessionManagerConfiguration m_config;
         private readonly ConcurrentDictionary<string, SessionInfo> m_sessions;
@@ -26,12 +27,14 @@ namespace mcp_nexus.Session
         public SessionLifecycleManager(
             ILogger logger,
             IServiceProvider serviceProvider,
+            ILoggerFactory loggerFactory,
             IMcpNotificationService notificationService,
             SessionManagerConfiguration config,
             ConcurrentDictionary<string, SessionInfo> sessions)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            m_loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             m_config = config ?? throw new ArgumentNullException(nameof(config));
             m_sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
@@ -269,7 +272,7 @@ namespace mcp_nexus.Session
         {
             return new IsolatedCommandQueueService(
                 cdbSession,
-                sessionLogger,
+                m_loggerFactory.CreateLogger<IsolatedCommandQueueService>(),
                 m_notificationService,
                 sessionId
             );

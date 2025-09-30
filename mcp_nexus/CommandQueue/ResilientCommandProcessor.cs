@@ -8,7 +8,7 @@ namespace mcp_nexus.CommandQueue
     /// </summary>
     public class ResilientCommandProcessor
     {
-        private readonly ILogger m_logger;
+        private readonly ILogger<ResilientCommandProcessor> m_logger;
         private readonly CommandRecoveryManager m_recoveryManager;
         private readonly ResilientQueueConfiguration m_config;
         private readonly IMcpNotificationService? m_notificationService;
@@ -25,7 +25,7 @@ namespace mcp_nexus.CommandQueue
         private readonly Timer m_cleanupTimer;
 
         public ResilientCommandProcessor(
-            ILogger logger,
+            ILogger<ResilientCommandProcessor> logger,
             CommandRecoveryManager recoveryManager,
             ResilientQueueConfiguration config,
             IMcpNotificationService? notificationService = null)

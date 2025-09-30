@@ -85,17 +85,16 @@ namespace mcp_nexus.Infrastructure
             {
                 using var identity = WindowsIdentity.GetCurrent();
                 var principal = new WindowsPrincipal(identity);
-
+                
                 // If not in admin group at all, it's a standard user token
                 if (!principal.IsInRole(WindowsBuiltInRole.Administrator))
                     return TokenElevationType.Standard;
-
+                
                 // User IS in admin group - now determine elevation level
                 try
                 {
-                    // Test if we can access privileged resources
-                    var scm = Win32ServiceManager.OpenServiceControlManager();
-                    if (scm != IntPtr.Zero)
+                    // Test if we can access privileged resources (with proper cleanup)
+                    if (Win32ServiceManager.CanAccessServiceControlManager())
                     {
                         // Can access SCM - fully elevated
                         return TokenElevationType.Full;
@@ -125,8 +124,7 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                var scm = Win32ServiceManager.OpenServiceControlManager();
-                return scm != IntPtr.Zero;
+                return Win32ServiceManager.CanAccessServiceControlManager();
             }
             catch
             {

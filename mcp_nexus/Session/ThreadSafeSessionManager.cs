@@ -30,6 +30,7 @@ namespace mcp_nexus.Session
         public ThreadSafeSessionManager(
             ILogger<ThreadSafeSessionManager> logger,
             IServiceProvider serviceProvider,
+            ILoggerFactory loggerFactory,
             IMcpNotificationService notificationService,
             IOptions<SessionConfiguration>? config = null,
             IOptions<CdbSessionOptions>? cdbOptions = null)
@@ -39,7 +40,7 @@ namespace mcp_nexus.Session
             // Create focused components
             m_config = new SessionManagerConfiguration(config, cdbOptions);
             m_lifecycleManager = new SessionLifecycleManager(
-                logger, serviceProvider, notificationService, m_config, m_sessions);
+                logger, serviceProvider, loggerFactory, notificationService, m_config, m_sessions);
             m_monitoringService = new SessionMonitoringService(
                 logger, notificationService, m_config, m_sessions, m_lifecycleManager, m_shutdownCts);
             m_statisticsCollector = new SessionStatisticsCollector(

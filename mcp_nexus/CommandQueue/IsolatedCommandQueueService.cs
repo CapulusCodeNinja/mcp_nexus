@@ -26,7 +26,7 @@ namespace mcp_nexus.CommandQueue
     public class IsolatedCommandQueueService : ICommandQueueService, IDisposable
     {
         private readonly ICdbSession m_cdbSession;
-        private readonly ILogger m_logger;
+        private readonly ILogger<IsolatedCommandQueueService> m_logger;
         private readonly IMcpNotificationService m_notificationService;
 
         // Focused components
@@ -43,7 +43,7 @@ namespace mcp_nexus.CommandQueue
 
         public IsolatedCommandQueueService(
             ICdbSession cdbSession,
-            ILogger logger,
+            ILogger<IsolatedCommandQueueService> logger,
             IMcpNotificationService notificationService,
             string sessionId)
         {

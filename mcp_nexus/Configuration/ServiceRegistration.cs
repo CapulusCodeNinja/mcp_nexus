@@ -132,7 +132,7 @@ namespace mcp_nexus.Configuration
             // Command queue services
             services.AddSingleton<ICommandQueueService, CommandQueueService>();
             services.AddSingleton<ResilientCommandQueueService>();
-            services.AddSingleton<IsolatedCommandQueueService>();
+            // Note: IsolatedCommandQueueService is created per session, not registered as singleton
 
             Console.Error.WriteLine("Registered command queue services");
         }

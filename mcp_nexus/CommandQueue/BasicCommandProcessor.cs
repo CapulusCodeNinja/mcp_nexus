@@ -9,7 +9,7 @@ namespace mcp_nexus.CommandQueue
     public class BasicCommandProcessor
     {
         private readonly ICdbSession m_cdbSession;
-        private readonly ILogger m_logger;
+        private readonly ILogger<BasicCommandProcessor> m_logger;
         private readonly BasicQueueConfiguration m_config;
         private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands;
         private volatile QueuedCommand? m_currentCommand;
@@ -25,7 +25,7 @@ namespace mcp_nexus.CommandQueue
 
         public BasicCommandProcessor(
             ICdbSession cdbSession,
-            ILogger logger,
+            ILogger<BasicCommandProcessor> logger,
             BasicQueueConfiguration config,
             ConcurrentDictionary<string, QueuedCommand> activeCommands)
         {

@@ -26,6 +26,28 @@ namespace mcp_nexus.Infrastructure
                 return IntPtr.Zero;
             }
         }
+        
+        /// <summary>
+        /// Tests if we can access the Service Control Manager (with proper handle cleanup)
+        /// </summary>
+        /// <returns>True if we can access SCM, false otherwise</returns>
+        public static bool CanAccessServiceControlManager()
+        {
+            try
+            {
+                var handle = OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
+                if (handle != IntPtr.Zero)
+                {
+                    CloseServiceHandle(handle);
+                    return true;
+                }
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         private static extern IntPtr OpenSCManager(

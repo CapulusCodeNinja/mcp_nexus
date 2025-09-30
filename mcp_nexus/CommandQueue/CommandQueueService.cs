@@ -37,13 +37,13 @@ namespace mcp_nexus.CommandQueue
         private readonly BasicQueueConfiguration m_config;
         private readonly BasicCommandProcessor m_processor;
 
-        public CommandQueueService(ICdbSession cdbSession, ILogger<CommandQueueService> logger)
+        public CommandQueueService(ICdbSession cdbSession, ILogger<CommandQueueService> logger, ILoggerFactory loggerFactory)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Create focused components
             m_config = new BasicQueueConfiguration();
-            m_processor = new BasicCommandProcessor(cdbSession, logger, m_config, m_activeCommands);
+            m_processor = new BasicCommandProcessor(cdbSession, loggerFactory.CreateLogger<BasicCommandProcessor>(), m_config, m_activeCommands);
 
             // Initialize command queue
             m_commandQueue = new BlockingCollection<QueuedCommand>();

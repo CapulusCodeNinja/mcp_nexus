@@ -26,6 +26,7 @@ namespace mcp_nexus.CommandQueue
         public ResilientCommandQueueService(
             ICdbSession cdbSession,
             ILogger<ResilientCommandQueueService> logger,
+            ILoggerFactory loggerFactory,
             ICommandTimeoutService timeoutService,
             ICdbSessionRecoveryService recoveryService,
             IMcpNotificationService? notificationService = null)
@@ -38,7 +39,7 @@ namespace mcp_nexus.CommandQueue
             m_recoveryManager = new CommandRecoveryManager(
                 cdbSession, logger, timeoutService, recoveryService, m_config, notificationService);
             m_processor = new ResilientCommandProcessor(
-                logger, m_recoveryManager, m_config, notificationService);
+                loggerFactory.CreateLogger<ResilientCommandProcessor>(), m_recoveryManager, m_config, notificationService);
 
             // Initialize command queue
             m_commandQueue = new BlockingCollection<QueuedCommand>();
