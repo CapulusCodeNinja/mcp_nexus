@@ -188,6 +188,14 @@ namespace mcp_nexus.Tools
                     };
 
                     logger.LogWarning("Attempted to queue command for non-existent session: {SessionId}", sessionId);
+                    // Extra diagnostics
+                    try
+                    {
+                        var activeCount = sessionManager.GetActiveSessions()?.Count() ?? -1;
+                        var allCount = sessionManager.GetAllSessions()?.Count() ?? -1;
+                        logger.LogTrace("Session not found diagnostics: ActiveSessions={Active}, AllSessions={All}", activeCount, allCount);
+                    }
+                    catch { }
                     return Task.FromResult((object)notFoundResponse);
                 }
                 // Try to get queue without throwing to avoid transient races, log details if missing
@@ -215,6 +223,8 @@ namespace mcp_nexus.Tools
                 }
 
                 var context = sessionManager.GetSessionContext(sessionId);
+                logger.LogTrace("Session context resolved for {SessionId}: Status={Status}, LastActivity={LastActivity}",
+                    sessionId, context.Status, context.LastActivity);
                 var commandId = commandQueue.QueueCommand(command);
 
                 var response = new
