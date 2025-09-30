@@ -27,11 +27,31 @@ namespace mcp_nexus
     {
         private static async Task Main(string[] args)
         {
-            // Set up global exception handlers FIRST
-            SetupGlobalExceptionHandlers();
+            // IMMEDIATE startup logging to track how far we get
+            try
+            {
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] MCP Nexus starting...");
+                Console.Error.Flush();
+                
+                // Set up global exception handlers FIRST
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Setting up global exception handlers...");
+                Console.Error.Flush();
+                SetupGlobalExceptionHandlers();
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Global exception handlers set up.");
+                Console.Error.Flush();
+            }
+            catch (Exception startupEx)
+            {
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] STARTUP EXCEPTION: {startupEx}");
+                Console.Error.Flush();
+                Environment.Exit(1);
+            }
             
             try
             {
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Setting environment variables...");
+                Console.Error.Flush();
+                
                 // Set environment based on configuration if not already set
                 if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")))
                 {
@@ -39,13 +59,16 @@ namespace mcp_nexus
                     if (args.Contains("--service") || args.Contains("--install") || args.Contains("--uninstall") || args.Contains("--update"))
                     {
                         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Service");
+                        Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Environment set to Service mode");
                     }
                     else
                     {
                         // Default to Production for non-development builds
                         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
+                        Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Environment set to Production mode");
                     }
                 }
+                Console.Error.Flush();
 
             // Check if this is a help request first
             if (args.Length > 0 && (args[0] == "--help" || args[0] == "-h" || args[0] == "help"))
@@ -132,8 +155,14 @@ namespace mcp_nexus
 
             if (commandLineArgs.Update)
             {
+                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Update command detected");
+                Console.Error.Flush();
+                
                 if (OperatingSystem.IsWindows())
                 {
+                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Creating logger for update process...");
+                    Console.Error.Flush();
+                    
                     // Create a logger using NLog configuration for the update process
                     using var loggerFactory = LoggerFactory.Create(builder =>
                     {
@@ -143,7 +172,14 @@ namespace mcp_nexus
                     });
                     var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
+                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Starting update service call...");
+                    Console.Error.Flush();
+                    
                     var success = await WindowsServiceInstaller.UpdateServiceAsync(logger);
+                    
+                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Update service call completed with result: {success}");
+                    Console.Error.Flush();
+                    
                     Environment.Exit(success ? 0 : 1);
                 }
                 else
@@ -846,20 +882,32 @@ namespace mcp_nexus
             {
                 var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC");
                 
+                // IMMEDIATE console output with flushing
                 Console.Error.WriteLine("################################################################################");
+                Console.Error.Flush();
                 Console.Error.WriteLine($"FATAL UNHANDLED EXCEPTION - {source}");
+                Console.Error.Flush();
                 Console.Error.WriteLine($"Time: {timestamp}");
+                Console.Error.Flush();
                 Console.Error.WriteLine($"Terminating: {isTerminating}");
+                Console.Error.Flush();
                 Console.Error.WriteLine("################################################################################");
+                Console.Error.Flush();
                 
                 if (ex != null)
                 {
                     Console.Error.WriteLine($"Exception Type: {ex.GetType().FullName}");
+                    Console.Error.Flush();
                     Console.Error.WriteLine($"Message: {ex.Message}");
+                    Console.Error.Flush();
                     Console.Error.WriteLine($"Source: {ex.Source}");
+                    Console.Error.Flush();
                     Console.Error.WriteLine($"TargetSite: {ex.TargetSite}");
+                    Console.Error.Flush();
                     Console.Error.WriteLine("Stack Trace:");
+                    Console.Error.Flush();
                     Console.Error.WriteLine(ex.StackTrace ?? "No stack trace available");
+                    Console.Error.Flush();
                     
                     // Handle inner exceptions
                     var innerEx = ex.InnerException;
@@ -899,17 +947,40 @@ namespace mcp_nexus
                 Console.Error.WriteLine($"Thread ID: {Environment.CurrentManagedThreadId}");
                 Console.Error.WriteLine("################################################################################");
                 
-                // Also try to write to a crash log file
+                // AGGRESSIVELY write to multiple crash log locations
+                var logContent = $"{timestamp} - {source} - Terminating: {isTerminating}\n{ex}\n\n";
+                var logLocations = new[]
+                {
+                    Path.Combine(Environment.CurrentDirectory, "mcp_nexus_crash.log"),
+                    Path.Combine(Path.GetTempPath(), "mcp_nexus_crash.log"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "mcp_nexus_crash.log")
+                };
+                
+                foreach (var logFile in logLocations)
+                {
+                    try
+                    {
+                        File.AppendAllText(logFile, logContent);
+                        Console.Error.WriteLine($"Crash details written to: {logFile}");
+                        Console.Error.Flush();
+                        break; // Stop after first successful write
+                    }
+                    catch
+                    {
+                        // Try next location
+                    }
+                }
+                
+                // Also try Windows Event Log as last resort
                 try
                 {
-                    var logFile = Path.Combine(Environment.CurrentDirectory, "mcp_nexus_crash.log");
-                    var logContent = $"{timestamp} - {source} - Terminating: {isTerminating}\n{ex}\n\n";
-                    File.AppendAllText(logFile, logContent);
-                    Console.Error.WriteLine($"Crash details also written to: {logFile}");
+                    using var eventLog = new System.Diagnostics.EventLog("Application");
+                    eventLog.Source = "MCP Nexus";
+                    eventLog.WriteEntry($"FATAL EXCEPTION - {source}: {ex?.Message}", System.Diagnostics.EventLogEntryType.Error);
                 }
                 catch
                 {
-                    // Ignore file write errors
+                    // Ignore event log errors
                 }
             }
             catch
