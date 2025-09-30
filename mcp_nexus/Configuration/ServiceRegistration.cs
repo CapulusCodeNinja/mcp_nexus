@@ -1,0 +1,140 @@
+using mcp_nexus.Debugger;
+using mcp_nexus.CommandQueue;
+using mcp_nexus.Notifications;
+using mcp_nexus.Recovery;
+using mcp_nexus.Infrastructure;
+using mcp_nexus.Session;
+using mcp_nexus.Session.Models;
+using mcp_nexus.Protocol;
+using mcp_nexus.Tools;
+
+namespace mcp_nexus.Configuration
+{
+    /// <summary>
+    /// Handles registration of core application services
+    /// </summary>
+    public static class ServiceRegistration
+    {
+        /// <summary>
+        /// Registers all application services with the DI container
+        /// </summary>
+        public static void RegisterServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath)
+        {
+            Console.Error.WriteLine("Registering services...");
+
+            RegisterCoreServices(services, configuration, customCdbPath);
+            RegisterAdvancedServices(services);
+            RegisterRecoveryServices(services);
+            RegisterToolsAndProtocol(services);
+
+            Console.Error.WriteLine("All services registered successfully");
+        }
+
+        /// <summary>
+        /// Registers core services (debugger, session management, etc.)
+        /// </summary>
+        private static void RegisterCoreServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath)
+        {
+            // Configure CDB session options
+            services.Configure<CdbSessionOptions>(options =>
+            {
+                options.CommandTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:CommandTimeoutMs");
+                options.SymbolServerTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerTimeoutMs");
+                options.SymbolServerMaxRetries = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries");
+                options.SymbolSearchPath = configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath");
+            });
+
+            // Configure session management options
+            services.Configure<SessionConfiguration>(configuration.GetSection("McpNexus:SessionManagement"));
+
+            // Register core services
+            services.AddSingleton<ICdbSession, CdbSession>();
+            services.AddSingleton<ISessionManager, ThreadSafeSessionManager>();
+            services.AddSingleton<SessionAwareWindbgTool>();
+            services.AddSingleton<IMcpNotificationService, McpNotificationService>();
+            services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
+
+            Console.Error.WriteLine("Registered core services (CDB, Session, Notifications, Protocol)");
+        }
+
+        /// <summary>
+        /// Registers advanced services for performance and reliability
+        /// </summary>
+        private static void RegisterAdvancedServices(IServiceCollection services)
+        {
+            services.AddSingleton<mcp_nexus.Metrics.AdvancedMetricsService>();
+            Console.Error.WriteLine("Registered AdvancedMetricsService for comprehensive performance monitoring");
+
+            services.AddSingleton<mcp_nexus.Resilience.CircuitBreakerService>();
+            Console.Error.WriteLine("Registered CircuitBreakerService for advanced fault tolerance");
+
+            services.AddSingleton<mcp_nexus.Caching.IntelligentCacheService<string, object>>();
+            Console.Error.WriteLine("Registered IntelligentCacheService for memory optimization");
+
+            services.AddSingleton<mcp_nexus.Security.AdvancedSecurityService>();
+            Console.Error.WriteLine("Registered AdvancedSecurityService for input validation and threat detection");
+
+            services.AddSingleton<mcp_nexus.Health.AdvancedHealthService>();
+            Console.Error.WriteLine("Registered AdvancedHealthService for comprehensive system monitoring");
+        }
+
+        /// <summary>
+        /// Registers recovery and timeout services
+        /// </summary>
+        private static void RegisterRecoveryServices(IServiceCollection services)
+        {
+            services.AddSingleton<ICommandTimeoutService, CommandTimeoutService>();
+            Console.Error.WriteLine("Registered CommandTimeoutService for automated timeouts");
+
+            services.AddSingleton<ICdbSessionRecoveryService>(serviceProvider =>
+            {
+                var cdbSession = serviceProvider.GetRequiredService<ICdbSession>();
+                var logger = serviceProvider.GetRequiredService<ILogger<CdbSessionRecoveryService>>();
+                var notificationService = serviceProvider.GetService<IMcpNotificationService>();
+                var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
+
+                // Create a callback that works with the session manager to cancel commands
+                Func<string, int> cancelAllCommandsCallback = reason =>
+                {
+                    var sessions = sessionManager.GetAllSessions();
+                    int totalCancelled = 0;
+
+                    foreach (var session in sessions)
+                    {
+                        try
+                        {
+                            var commandQueue = sessionManager.GetCommandQueue(session.SessionId);
+                            if (commandQueue != null)
+                            {
+                                totalCancelled += commandQueue.CancelAllCommands(reason);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(ex, "Error cancelling commands for session {SessionId}", session.SessionId);
+                        }
+                    }
+
+                    return totalCancelled;
+                };
+
+                return new CdbSessionRecoveryService(cdbSession, logger, cancelAllCommandsCallback, notificationService);
+            });
+
+            Console.Error.WriteLine("Registered recovery services");
+        }
+
+        /// <summary>
+        /// Registers tools and protocol services
+        /// </summary>
+        private static void RegisterToolsAndProtocol(IServiceCollection services)
+        {
+            // Command queue services
+            services.AddSingleton<ICommandQueueService, CommandQueueService>();
+            services.AddSingleton<ResilientCommandQueueService>();
+            services.AddSingleton<IsolatedCommandQueueService>();
+
+            Console.Error.WriteLine("Registered command queue services");
+        }
+    }
+}

@@ -19,6 +19,7 @@ using mcp_nexus.Infrastructure;
 using mcp_nexus.Session;
 using mcp_nexus.Tools;
 using mcp_nexus.Middleware;
+using mcp_nexus.Configuration;
 
 namespace mcp_nexus
 {
@@ -571,9 +572,9 @@ namespace mcp_nexus
                 webBuilder.Host.UseWindowsService();
             }
 
-            ConfigureLogging(webBuilder.Logging, commandLineArgs.ServiceMode, webBuilder.Configuration);
-            RegisterServices(webBuilder.Services, webBuilder.Configuration, commandLineArgs.CustomCdbPath);
-            ConfigureHttpServices(webBuilder.Services, webBuilder.Configuration);
+            LoggingSetup.ConfigureLogging(webBuilder.Logging, commandLineArgs.ServiceMode, webBuilder.Configuration);
+            ServiceRegistration.RegisterServices(webBuilder.Services, webBuilder.Configuration, commandLineArgs.CustomCdbPath);
+            HttpServerSetup.ConfigureHttpServices(webBuilder.Services, webBuilder.Configuration);
 
             var app = webBuilder.Build();
             ConfigureHttpPipeline(app);
@@ -593,7 +594,7 @@ namespace mcp_nexus
             await Console.Error.WriteLineAsync("Configuring for stdio transport...");
             var builder = Host.CreateApplicationBuilder(args);
 
-            ConfigureLogging(builder.Logging, false, builder.Configuration);
+            LoggingSetup.ConfigureLogging(builder.Logging, false, builder.Configuration);
 
             // Log startup banner for stdio mode
             LogStartupBanner(commandLineArgs, "stdio", null);
@@ -601,7 +602,7 @@ namespace mcp_nexus
             // Log detailed configuration settings for stdio mode
             LogConfigurationSettings(builder.Configuration, commandLineArgs);
 
-            RegisterServices(builder.Services, builder.Configuration, commandLineArgs.CustomCdbPath);
+            ServiceRegistration.RegisterServices(builder.Services, builder.Configuration, commandLineArgs.CustomCdbPath);
             ConfigureStdioServices(builder.Services);
 
             await Console.Error.WriteLineAsync("Building application host...");
@@ -628,252 +629,8 @@ namespace mcp_nexus
             await host.RunAsync();
         }
 
-        private static void ConfigureLogging(ILoggingBuilder logging, bool isServiceMode, IConfiguration configuration)
-        {
-            // Note: We use Console.Error for stdio mode compatibility
-            var logMessage = "Configuring logging...";
-            if (isServiceMode)
-            {
-                // For service mode, logging will go to Windows Event Log and files
-                Console.WriteLine(logMessage);
-            }
-            else
-            {
-                Console.Error.WriteLine(logMessage);
-            }
 
-            // Get log level from configuration
-            var logLevelString = configuration["Logging:LogLevel"] ?? "Information";
-            var minLevel = ParseLogLevel(logLevelString);
 
-            if (isServiceMode)
-            {
-                Console.WriteLine($"Setting log level to: {logLevelString} ({minLevel})");
-            }
-            else
-            {
-                Console.Error.WriteLine($"Setting log level to: {logLevelString} ({minLevel})");
-            }
-
-            // Configure NLog with the log level
-            var nlogConfig = NLog.LogManager.Configuration;
-            if (nlogConfig != null)
-            {
-                // Update the minimum level for all loggers
-                foreach (var rule in nlogConfig.LoggingRules)
-                {
-                    rule.SetLoggingLevels(GetNLogLevel(minLevel), NLog.LogLevel.Fatal);
-                }
-
-                // Reload the configuration to apply changes
-                NLog.LogManager.Configuration = nlogConfig;
-            }
-
-            logging.ClearProviders();
-            logging.AddNLogWeb();
-            logging.SetMinimumLevel(minLevel);
-
-            var completeMessage = $"Logging configured with NLog (Level: {minLevel})";
-            if (isServiceMode)
-            {
-                Console.WriteLine(completeMessage);
-            }
-            else
-            {
-                Console.Error.WriteLine(completeMessage);
-            }
-        }
-
-        private static LogLevel ParseLogLevel(string logLevelString)
-        {
-            return logLevelString.ToLowerInvariant() switch
-            {
-                "trace" => LogLevel.Trace,
-                "debug" => LogLevel.Debug,
-                "information" => LogLevel.Information,
-                "warning" => LogLevel.Warning,
-                "error" => LogLevel.Error,
-                "critical" => LogLevel.Critical,
-                _ => throw new ArgumentException($"Invalid log level '{logLevelString}'. Valid values are: Trace, Debug, Information, Warning, Error, Critical", nameof(logLevelString))
-            };
-        }
-
-        private static NLog.LogLevel GetNLogLevel(LogLevel logLevel)
-        {
-            return logLevel switch
-            {
-                LogLevel.Trace => NLog.LogLevel.Trace,
-                LogLevel.Debug => NLog.LogLevel.Debug,
-                LogLevel.Information => NLog.LogLevel.Info,
-                LogLevel.Warning => NLog.LogLevel.Warn,
-                LogLevel.Error => NLog.LogLevel.Error,
-                LogLevel.Critical => NLog.LogLevel.Fatal,
-                _ => throw new ArgumentException($"Invalid log level '{logLevel}'. This should not happen as it's an internal conversion.", nameof(logLevel))
-            };
-        }
-
-        private static void RegisterServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath)
-        {
-            Console.Error.WriteLine("Registering services...");
-
-            // Register automated recovery services for unattended operation
-            services.AddSingleton<ICommandTimeoutService, CommandTimeoutService>();
-            Console.Error.WriteLine("Registered CommandTimeoutService for automated timeouts");
-
-            // A+++++ ADVANCED SERVICES - Register all advanced services for maximum quality
-            services.AddSingleton<mcp_nexus.Metrics.AdvancedMetricsService>();
-            Console.Error.WriteLine("Registered AdvancedMetricsService for comprehensive performance monitoring");
-
-            services.AddSingleton<mcp_nexus.Resilience.CircuitBreakerService>();
-            Console.Error.WriteLine("Registered CircuitBreakerService for advanced fault tolerance");
-
-            services.AddSingleton<mcp_nexus.Caching.IntelligentCacheService<string, object>>();
-            Console.Error.WriteLine("Registered IntelligentCacheService for memory optimization");
-
-            services.AddSingleton<mcp_nexus.Security.AdvancedSecurityService>();
-            Console.Error.WriteLine("Registered AdvancedSecurityService for input validation and threat detection");
-
-            services.AddSingleton<mcp_nexus.Health.AdvancedHealthService>();
-            Console.Error.WriteLine("Registered AdvancedHealthService for comprehensive system monitoring");
-
-            services.AddSingleton<ICdbSessionRecoveryService>(serviceProvider =>
-            {
-                var cdbSession = serviceProvider.GetRequiredService<ICdbSession>();
-                var logger = serviceProvider.GetRequiredService<ILogger<CdbSessionRecoveryService>>();
-                var notificationService = serviceProvider.GetService<IMcpNotificationService>();
-                var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
-
-                // Create a callback that works with the session manager to cancel commands
-                Func<string, int> cancelAllCommandsCallback = reason =>
-                {
-                    // Get all active sessions and cancel their commands
-                    var sessions = sessionManager.GetAllSessions();
-                    int totalCancelled = 0;
-
-                    foreach (var session in sessions)
-                    {
-                        try
-                        {
-                            var commandQueue = sessionManager.GetCommandQueue(session.SessionId);
-                            if (commandQueue != null)
-                            {
-                                totalCancelled += commandQueue.CancelAllCommands(reason);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogWarning(ex, "Failed to cancel commands for session {SessionId}: {Reason}", session.SessionId, reason);
-                        }
-                    }
-
-                    return totalCancelled;
-                };
-
-                return new CdbSessionRecoveryService(cdbSession, logger, cancelAllCommandsCallback, notificationService);
-            });
-            Console.Error.WriteLine("Registered CdbSessionRecoveryService for automated recovery");
-
-            // MIGRATION: Register session management instead of global command queue
-            // Bind from configuration section (appsettings.json: McpNexus:SessionManagement). Model defaults act as fallback.
-            services.AddOptions<mcp_nexus.Session.Models.SessionConfiguration>()
-                .Bind(configuration.GetSection("McpNexus:SessionManagement"))
-                .Validate(cfg => cfg.MaxConcurrentSessions > 0, "MaxConcurrentSessions must be > 0")
-                .Validate(cfg => cfg.SessionTimeout > TimeSpan.Zero, "SessionTimeout must be positive")
-                .Validate(cfg => cfg.CleanupInterval > TimeSpan.Zero, "CleanupInterval must be positive")
-                .Validate(cfg => cfg.DisposalTimeout > TimeSpan.Zero, "DisposalTimeout must be positive")
-                .Validate(cfg => cfg.DefaultCommandTimeout > TimeSpan.Zero, "DefaultCommandTimeout must be positive")
-                .Validate(cfg => cfg.MemoryCleanupThresholdBytes > 0, "MemoryCleanupThresholdBytes must be > 0")
-                .ValidateOnStart();
-            services.AddSingleton<ISessionManager, ThreadSafeSessionManager>();
-            Console.Error.WriteLine("Registered ThreadSafeSessionManager for multi-session support");
-
-            // MIGRATION: CdbSession is now created per-session by SessionManager
-            // Bind debugging/CDB options from configuration; override CustomCdbPath from CLI if provided
-            services.AddOptions<mcp_nexus.Session.Models.CdbSessionOptions>()
-                .Bind(configuration.GetSection("McpNexus:Debugging"))
-                .Validate(o => o.CommandTimeoutMs > 0, "CommandTimeoutMs must be > 0")
-                .Validate(o => o.SymbolServerTimeoutMs >= 0, "SymbolServerTimeoutMs must be >= 0")
-                .Validate(o => o.SymbolServerMaxRetries >= 0, "SymbolServerMaxRetries must be >= 0")
-                .ValidateOnStart();
-            if (!string.IsNullOrWhiteSpace(customCdbPath))
-            {
-                services.PostConfigure<mcp_nexus.Session.Models.CdbSessionOptions>(options =>
-                {
-                    options.CustomCdbPath = customCdbPath;
-                });
-            }
-            Console.Error.WriteLine("Configured CdbSession parameters for per-session creation");
-
-            // MIGRATION: Register session-aware tool instead of legacy WindbgTool
-            services.AddSingleton<SessionAwareWindbgTool>();
-            Console.Error.WriteLine("Registered SessionAwareWindbgTool with multi-session support");
-
-            // Register MCP notification service for both HTTP and stdio modes
-            services.AddSingleton<IMcpNotificationService, McpNotificationService>();
-            Console.Error.WriteLine("Registered McpNotificationService for server-initiated notifications");
-
-            // MCP resources are now handled by the SDK via [McpServerResource] attributes
-            Console.Error.WriteLine("MCP resources will be handled by SDK via [McpServerResource] attributes");
-        }
-
-        private static void ConfigureHttpServices(IServiceCollection services, IConfiguration configuration)
-        {
-            Console.WriteLine("Configuring MCP server for HTTP...");
-
-            // Configure HTTP request timeout to 15 minutes (longer than command timeout)
-            services.Configure<IISServerOptions>(options =>
-            {
-                options.MaxRequestBodySize = 50 * 1024 * 1024; // 50MB limit for crash dumps
-            });
-
-            services.Configure<KestrelServerOptions>(options =>
-            {
-                options.Limits.RequestHeadersTimeout = ApplicationConstants.HttpRequestTimeout;
-                options.Limits.KeepAliveTimeout = ApplicationConstants.HttpKeepAliveTimeout;
-                options.Limits.MaxRequestBodySize = 50 * 1024 * 1024; // 50MB limit for crash dumps
-                options.Limits.MaxRequestLineSize = 8192; // 8KB limit for request line
-                options.Limits.MaxRequestHeadersTotalSize = 32768; // 32KB limit for headers
-            });
-
-            services.AddCors(options =>
-            {
-                options.AddDefaultPolicy(builder =>
-                {
-                    // For local MCP server, allow any origin since it's localhost-only
-                    // MCP clients typically connect from the same machine
-                    builder.AllowAnyOrigin()
-                           .AllowAnyMethod()
-                           .AllowAnyHeader();
-                });
-            });
-
-            // Configure rate limiting
-            services.AddMemoryCache();
-            services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
-            services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
-            services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
-            services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
-            services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
-
-            // Configure JSON options for security and consistency
-            services.Configure<JsonOptions>(options =>
-            {
-                options.SerializerOptions.PropertyNamingPolicy = null; // MCP requires exact field names
-                options.SerializerOptions.AllowTrailingCommas = false; // Strict JSON parsing
-                options.SerializerOptions.ReadCommentHandling = JsonCommentHandling.Disallow; // No comments
-                options.SerializerOptions.MaxDepth = 64; // Prevent deeply nested attacks
-                options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.Never; // Don't ignore properties
-                options.SerializerOptions.PropertyNameCaseInsensitive = false; // Case sensitive
-            });
-
-            // Use official SDK for HTTP mode with proper HTTP transport
-            services.AddMcpServer()
-                .WithHttpTransport()
-                .WithToolsFromAssembly()
-                .WithResourcesFromAssembly();
-
-            Console.WriteLine("MCP server configured for HTTP with official SDK (HTTP transport)");
-        }
 
         private static void ConfigureStdioServices(IServiceCollection services)
         {
