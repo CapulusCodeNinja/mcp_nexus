@@ -220,7 +220,7 @@ namespace mcp_nexus.Notifications
             // PERFORMANCE: Check count first to avoid unnecessary ToArray() allocation
             if (m_notificationHandlers.IsEmpty)
             {
-                m_logger.LogDebug("No notification handlers registered - notification will be dropped: {Method}", method);
+                m_logger.LogTrace("No notification handlers registered - notification will be dropped: {Method}", method);
                 return;
             }
 
