@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace mcp_nexus.Debugger
 {
@@ -87,89 +88,126 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Searches for CDB in standard Windows SDK locations and PATH
+        /// Searches for CDB using the exact same logic as the original working tag 1.0.4
         /// </summary>
         private string? FindCdbInStandardLocations()
         {
-            // First try PATH environment variable (like the original working code)
-            var pathResult = FindCdbInPath();
-            if (pathResult != null)
-                return pathResult;
+            var currentArch = GetCurrentArchitecture();
 
-            // Then try standard SDK locations
-            var architecture = GetCurrentArchitecture();
+            // Create prioritized list based on current architecture (like original tag 1.0.4)
+            var possiblePaths = new List<string>();
 
-            var searchPaths = new[]
+            // Add paths for current architecture first
+            switch (currentArch)
             {
-                // Use environment variables like the original working code
-                Environment.ExpandEnvironmentVariables($@"%ProgramFiles(x86)%\Windows Kits\10\Debuggers\{architecture}\cdb.exe"),
-                Environment.ExpandEnvironmentVariables($@"%ProgramFiles%\Windows Kits\10\Debuggers\{architecture}\cdb.exe"),
-                
-                // Windows 10 SDK paths
-                Environment.ExpandEnvironmentVariables($@"%ProgramFiles(x86)%\Windows Kits\8.1\Debuggers\{architecture}\cdb.exe"),
-                Environment.ExpandEnvironmentVariables($@"%ProgramFiles%\Windows Kits\8.1\Debuggers\{architecture}\cdb.exe"),
-                
-                // Legacy paths
-                Environment.ExpandEnvironmentVariables($@"%ProgramFiles(x86)%\Windows Kits\8.0\Debuggers\{architecture}\cdb.exe"),
-                Environment.ExpandEnvironmentVariables($@"%ProgramFiles%\Windows Kits\8.0\Debuggers\{architecture}\cdb.exe"),
-                
-                // Visual Studio paths
-                Environment.ExpandEnvironmentVariables($@"%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\Microsoft\Windows Kits\10.0\Debuggers\{architecture}\cdb.exe"),
-                Environment.ExpandEnvironmentVariables($@"%ProgramFiles%\Microsoft Visual Studio\2022\Professional\Common7\IDE\Extensions\Microsoft\Windows Kits\10.0\Debuggers\{architecture}\cdb.exe"),
-                Environment.ExpandEnvironmentVariables($@"%ProgramFiles%\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\Microsoft\Windows Kits\10.0\Debuggers\{architecture}\cdb.exe"),
-                
-                // Try x64 as fallback if current architecture not found
-                Environment.ExpandEnvironmentVariables(@"%ProgramFiles(x86)%\Windows Kits\10\Debuggers\x64\cdb.exe"),
-                Environment.ExpandEnvironmentVariables(@"%ProgramFiles%\Windows Kits\10\Debuggers\x64\cdb.exe")
-            };
+                case "x64":
+                    possiblePaths.AddRange(new[]
+                    {
+                        @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
+                        @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe",
+                        @"C:\Program Files (x86)\Debugging Tools for Windows (x64)\cdb.exe",
+                        @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe"
+                    });
+                    break;
+                case "x86":
+                    possiblePaths.AddRange(new[]
+                    {
+                        @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\cdb.exe",
+                        @"C:\Program Files\Windows Kits\10\Debuggers\x86\cdb.exe",
+                        @"C:\Program Files (x86)\Debugging Tools for Windows (x86)\cdb.exe",
+                        @"C:\Program Files\Debugging Tools for Windows (x86)\cdb.exe"
+                    });
+                    break;
+                case "arm64":
+                    possiblePaths.AddRange(new[]
+                    {
+                        @"C:\Program Files (x86)\Windows Kits\10\Debuggers\arm64\cdb.exe",
+                        @"C:\Program Files\Windows Kits\10\Debuggers\arm64\cdb.exe"
+                    });
+                    break;
+            }
 
-            foreach (var path in searchPaths)
+            // Add fallback paths for other architectures (like original code)
+            if (currentArch != "x64")
+            {
+                possiblePaths.AddRange(new[]
+                {
+                    @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
+                    @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe",
+                    @"C:\Program Files (x86)\Debugging Tools for Windows (x64)\cdb.exe",
+                    @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe"
+                });
+            }
+
+            if (currentArch != "x86")
+            {
+                possiblePaths.AddRange(new[]
+                {
+                    @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\cdb.exe",
+                    @"C:\Program Files\Windows Kits\10\Debuggers\x86\cdb.exe",
+                    @"C:\Program Files (x86)\Debugging Tools for Windows (x86)\cdb.exe",
+                    @"C:\Program Files\Debugging Tools for Windows (x86)\cdb.exe"
+                });
+            }
+
+            if (currentArch != "arm64")
+            {
+                possiblePaths.AddRange(new[]
+                {
+                    @"C:\Program Files (x86)\Windows Kits\10\Debuggers\arm64\cdb.exe",
+                    @"C:\Program Files\Windows Kits\10\Debuggers\arm64\cdb.exe"
+                });
+            }
+
+            // Check all possible paths
+            foreach (var path in possiblePaths)
             {
                 try
                 {
-                    if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    if (File.Exists(path))
                         return path;
                 }
                 catch
                 {
-                    // Continue searching if path expansion fails
+                    // Continue searching if path check fails
                 }
             }
 
-            return null;
-        }
-
-        /// <summary>
-        /// Searches for CDB in PATH environment variable (like the original working code)
-        /// </summary>
-        private string? FindCdbInPath()
-        {
+            // Try to find in PATH using 'where' command (like original tag 1.0.4)
             try
             {
-                // Try to find cdb.exe in PATH
-                var pathVar = Environment.GetEnvironmentVariable("PATH") ?? "";
-                var pathDirs = pathVar.Split(';', StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (var dir in pathDirs)
+                using var result = Process.Start(new ProcessStartInfo
                 {
-                    try
+                    FileName = "where",
+                    Arguments = "cdb.exe",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+
+                if (result != null && result.WaitForExit(5000)) // 5 second timeout
+                {
+                    var output = result.StandardOutput.ReadToEnd();
+                    if (result.ExitCode == 0 && !string.IsNullOrEmpty(output))
                     {
-                        var cdbPath = Path.Combine(dir.Trim(), "cdb.exe");
-                        if (File.Exists(cdbPath))
-                            return cdbPath;
-                    }
-                    catch
-                    {
-                        // Continue searching if path is invalid
+                        var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                        if (lines.Length > 0)
+                        {
+                            return lines[0].Trim();
+                        }
                     }
                 }
             }
             catch
             {
-                // PATH search failed, continue with standard locations
+                // PATH search failed, return null
             }
 
             return null;
         }
+
     }
+}
+
 }
