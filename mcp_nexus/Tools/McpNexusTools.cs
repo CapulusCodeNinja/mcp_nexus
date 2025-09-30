@@ -35,7 +35,7 @@ namespace mcp_nexus.Tools
             try
             {
                 var sessionId = await sessionManager.CreateSessionAsync(dumpPath, symbolsPath);
-                var context = sessionManager.GetSessionContext(sessionId);
+                // Do not immediately re-query context to avoid race; trust the returned id
 
                 var response = new
                 {
