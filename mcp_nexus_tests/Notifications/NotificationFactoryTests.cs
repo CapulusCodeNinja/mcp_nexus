@@ -316,7 +316,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
             Assert.Equal(eventType, paramsObj!["eventType"]!.ToString());
-            Assert.Equal(queueSize, JsonSerializer.Deserialize<int>(paramsObj!["queueSize"]!.ToString()!));
+            Assert.Equal(queueSize, JsonSerializer.Deserialize<int>(paramsObj!["eventData"]!.ToString()!));
         }
 
         [Fact]

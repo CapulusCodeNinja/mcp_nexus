@@ -51,6 +51,9 @@ namespace mcp_nexus.Infrastructure
         /// </summary>
         public static string GetCreateServiceCommand(string executablePath)
         {
+            if (executablePath == null)
+                throw new ArgumentNullException(nameof(executablePath));
+
             return $@"create ""{ServiceName}"" binPath= ""{executablePath} {ServiceArguments}"" " +
                    $@"start= auto DisplayName= ""{ServiceDisplayName}""";
         }

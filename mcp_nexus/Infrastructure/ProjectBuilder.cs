@@ -82,6 +82,9 @@ namespace mcp_nexus.Infrastructure
         /// <returns>Path to project directory, or null if not found</returns>
         public static string? FindProjectDirectory(string startDirectory)
         {
+            if (string.IsNullOrWhiteSpace(startDirectory))
+                return null;
+
             var currentDir = new DirectoryInfo(startDirectory);
 
             while (currentDir != null)

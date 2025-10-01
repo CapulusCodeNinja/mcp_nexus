@@ -175,24 +175,29 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Arrange
             var commandQueue = new BlockingCollection<QueuedCommand>();
-            var cancellationTokenSource = new CancellationTokenSource();
+            var serviceCancellationTokenSource = new CancellationTokenSource();
+            var commandCancellationTokenSource = new CancellationTokenSource();
             var completionSource = new TaskCompletionSource<string>();
-            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, cancellationTokenSource);
+            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, commandCancellationTokenSource);
             
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();
 
-            // Cancel the service
-            cancellationTokenSource.Cancel();
-
             _mockCdbSession.Setup(x => x.ExecuteCommand("!analyze -v", It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
 
-            // Act
-            await _processor.ProcessCommandQueueAsync(commandQueue, cancellationTokenSource.Token);
+            // Act - Start processing and then cancel the service
+            var processingTask = _processor.ProcessCommandQueueAsync(commandQueue, serviceCancellationTokenSource.Token);
+            
+            // Cancel the service after a short delay to allow processing to start
+            await Task.Delay(50);
+            serviceCancellationTokenSource.Cancel();
+
+            await processingTask;
 
             // Assert
             var stats = _processor.GetPerformanceStats();
+            // The command should be cancelled due to service shutdown
             Assert.Equal(0, stats.Processed);
             Assert.Equal(0, stats.Failed);
             Assert.Equal(1, stats.Cancelled);

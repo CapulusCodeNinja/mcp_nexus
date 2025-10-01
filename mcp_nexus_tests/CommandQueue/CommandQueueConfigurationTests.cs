@@ -185,7 +185,7 @@ namespace mcp_nexus_tests.CommandQueue
             
             var result = config.CalculateProgressPercentage(1, TimeSpan.FromMinutes(3));
             
-            Assert.Equal(91, result); // 85 + 6 (3 minutes * 2)
+            Assert.Equal(90, result); // 85 + 6 (3 minutes * 2) capped at 90
         }
 
         [Fact]

@@ -59,6 +59,11 @@ namespace mcp_nexus_tests.Session
             _mockServiceProvider.Setup(sp => sp.GetService(typeof(ILoggerFactory)))
                 .Returns(_mockLoggerFactory.Object);
 
+            // Setup the required ConcurrentDictionary service
+            var sessions = new ConcurrentDictionary<string, SessionInfo>();
+            _mockServiceProvider.Setup(sp => sp.GetService(typeof(ConcurrentDictionary<string, SessionInfo>)))
+                .Returns(sessions);
+
             _mockLoggerFactory.Setup(lf => lf.CreateLogger(It.IsAny<string>()))
                 .Returns(_mockSessionLogger.Object);
 
