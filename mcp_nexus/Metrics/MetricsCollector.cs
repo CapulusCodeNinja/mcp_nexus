@@ -82,7 +82,7 @@ namespace mcp_nexus.Metrics
             IncrementCounter("session_events_total", 1, tags);
         }
 
-        public MetricsSnapshot GetSnapshot()
+        public IMetricsSnapshot GetSnapshot()
         {
             var snapshot = new MetricsSnapshot();
             foreach (var counter in m_counters.Values)
@@ -148,20 +148,20 @@ namespace mcp_nexus.Metrics
         void RecordExecutionTime(string operationName, TimeSpan duration, Dictionary<string, string>? tags = null);
         void RecordCommandExecution(string commandType, TimeSpan duration, bool success);
         void RecordSessionEvent(string eventType, Dictionary<string, string>? additionalTags = null);
-        MetricsSnapshot GetSnapshot();
+        IMetricsSnapshot GetSnapshot();
     }
 
     /// <summary>
     /// Represents a metrics snapshot - properly encapsulated
     /// </summary>
-    public class MetricsSnapshot
+    public class MetricsSnapshot : IMetricsSnapshot
     {
         #region Private Fields
 
         private DateTime m_timestamp;
-        private readonly List<CounterSnapshot> m_counters = new();
-        private readonly List<HistogramSnapshot> m_histograms = new();
-        private readonly List<GaugeSnapshot> m_gauges = new();
+        private readonly List<ICounterSnapshot> m_counters = new();
+        private readonly List<IHistogramSnapshot> m_histograms = new();
+        private readonly List<IGaugeSnapshot> m_gauges = new();
 
         #endregion
 
@@ -199,7 +199,7 @@ namespace mcp_nexus.Metrics
         /// Adds a counter snapshot
         /// </summary>
         /// <param name="counter">Counter snapshot to add</param>
-        public void AddCounter(CounterSnapshot counter)
+        public void AddCounter(ICounterSnapshot counter)
         {
             if (counter != null)
                 m_counters.Add(counter);
@@ -209,7 +209,7 @@ namespace mcp_nexus.Metrics
         /// Adds a histogram snapshot
         /// </summary>
         /// <param name="histogram">Histogram snapshot to add</param>
-        public void AddHistogram(HistogramSnapshot histogram)
+        public void AddHistogram(IHistogramSnapshot histogram)
         {
             if (histogram != null)
                 m_histograms.Add(histogram);
@@ -219,7 +219,7 @@ namespace mcp_nexus.Metrics
         /// Adds a gauge snapshot
         /// </summary>
         /// <param name="gauge">Gauge snapshot to add</param>
-        public void AddGauge(GaugeSnapshot gauge)
+        public void AddGauge(IGaugeSnapshot gauge)
         {
             if (gauge != null)
                 m_gauges.Add(gauge);
@@ -265,7 +265,7 @@ namespace mcp_nexus.Metrics
             while (Interlocked.CompareExchange(ref m_valueBits, newBits, initialBits) != initialBits);
         }
 
-        public CounterSnapshot GetSnapshot()
+        public ICounterSnapshot GetSnapshot()
         {
             var valueBits = Interlocked.Read(ref m_valueBits);
             return new CounterSnapshot(
@@ -303,7 +303,7 @@ namespace mcp_nexus.Metrics
             }
         }
 
-        public HistogramSnapshot GetSnapshot()
+        public IHistogramSnapshot GetSnapshot()
         {
             lock (m_lock)
             {
@@ -349,7 +349,7 @@ namespace mcp_nexus.Metrics
             }
         }
 
-        public GaugeSnapshot GetSnapshot()
+        public IGaugeSnapshot GetSnapshot()
         {
             lock (m_lock)
             {
@@ -364,7 +364,7 @@ namespace mcp_nexus.Metrics
     /// <summary>
     /// Represents a counter snapshot - properly encapsulated
     /// </summary>
-    public class CounterSnapshot
+    public class CounterSnapshot : ICounterSnapshot
     {
         #region Private Fields
 
@@ -408,7 +408,7 @@ namespace mcp_nexus.Metrics
     /// <summary>
     /// Represents a histogram snapshot - properly encapsulated
     /// </summary>
-    public class HistogramSnapshot
+    public class HistogramSnapshot : IHistogramSnapshot
     {
         #region Private Fields
 
@@ -477,7 +477,7 @@ namespace mcp_nexus.Metrics
     /// <summary>
     /// Represents a gauge snapshot - properly encapsulated
     /// </summary>
-    public class GaugeSnapshot
+    public class GaugeSnapshot : IGaugeSnapshot
     {
         #region Private Fields
 

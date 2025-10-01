@@ -131,7 +131,7 @@ namespace mcp_nexus.Health
     /// <summary>
     /// Represents the health status of the system - properly encapsulated
     /// </summary>
-    public class HealthStatus
+    public class HealthStatus : IHealthStatus
     {
         #region Private Fields
 
@@ -247,7 +247,7 @@ namespace mcp_nexus.Health
     /// <summary>
     /// Represents command queue health status - properly encapsulated
     /// </summary>
-    public class CommandQueueHealthStatus
+    public class CommandQueueHealthStatus : ICommandQueueHealthStatus
     {
         #region Private Fields
 
