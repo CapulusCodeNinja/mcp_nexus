@@ -3,12 +3,14 @@ using Moq;
 using Xunit;
 using mcp_nexus.Infrastructure;
 using System.Diagnostics;
+using System.Runtime.Versioning;
 
 namespace mcp_nexus_tests.Infrastructure
 {
     /// <summary>
     /// Tests for ProjectBuilder
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class ProjectBuilderTests
     {
         [Fact]

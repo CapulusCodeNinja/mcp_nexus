@@ -2,12 +2,14 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using mcp_nexus.Infrastructure;
+using System.Runtime.Versioning;
 
 namespace mcp_nexus_tests.Infrastructure
 {
     /// <summary>
     /// Tests for ServiceInstallationOrchestrator
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class ServiceInstallationOrchestratorTests
     {
         private readonly Mock<ILogger> _mockLogger;
@@ -146,18 +148,22 @@ namespace mcp_nexus_tests.Infrastructure
             var forceUninstallParams = forceUninstallMethod?.GetParameters();
             var updateParams = updateMethod?.GetParameters();
 
+            Assert.NotNull(installParams);
             Assert.Single(installParams);
             Assert.Equal(typeof(ILogger), installParams[0].ParameterType);
             Assert.True(installParams[0].HasDefaultValue);
 
+            Assert.NotNull(uninstallParams);
             Assert.Single(uninstallParams);
             Assert.Equal(typeof(ILogger), uninstallParams[0].ParameterType);
             Assert.True(uninstallParams[0].HasDefaultValue);
 
+            Assert.NotNull(forceUninstallParams);
             Assert.Single(forceUninstallParams);
             Assert.Equal(typeof(ILogger), forceUninstallParams[0].ParameterType);
             Assert.True(forceUninstallParams[0].HasDefaultValue);
 
+            Assert.NotNull(updateParams);
             Assert.Single(updateParams);
             Assert.Equal(typeof(ILogger), updateParams[0].ParameterType);
             Assert.True(updateParams[0].HasDefaultValue);

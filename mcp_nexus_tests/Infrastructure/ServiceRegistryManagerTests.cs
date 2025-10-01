@@ -2,12 +2,14 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using mcp_nexus.Infrastructure;
+using System.Runtime.Versioning;
 
 namespace mcp_nexus_tests.Infrastructure
 {
     /// <summary>
     /// Tests for ServiceRegistryManager
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class ServiceRegistryManagerTests
     {
         private readonly Mock<ILogger> _mockLogger;
@@ -238,22 +240,27 @@ namespace mcp_nexus_tests.Infrastructure
             var createServiceParams = createServiceMethod?.GetParameters();
             var deleteServiceParams = deleteServiceMethod?.GetParameters();
 
+            Assert.NotNull(runScParams);
             Assert.Equal(3, runScParams.Length);
             Assert.Equal(typeof(ILogger), runScParams[1].ParameterType);
             Assert.True(runScParams[1].HasDefaultValue);
 
+            Assert.NotNull(forceCleanupParams);
             Assert.Single(forceCleanupParams);
             Assert.Equal(typeof(ILogger), forceCleanupParams[0].ParameterType);
             Assert.True(forceCleanupParams[0].HasDefaultValue);
 
+            Assert.NotNull(directCleanupParams);
             Assert.Single(directCleanupParams);
             Assert.Equal(typeof(ILogger), directCleanupParams[0].ParameterType);
             Assert.True(directCleanupParams[0].HasDefaultValue);
 
+            Assert.NotNull(createServiceParams);
             Assert.Single(createServiceParams);
             Assert.Equal(typeof(ILogger), createServiceParams[0].ParameterType);
             Assert.True(createServiceParams[0].HasDefaultValue);
 
+            Assert.NotNull(deleteServiceParams);
             Assert.Single(deleteServiceParams);
             Assert.Equal(typeof(ILogger), deleteServiceParams[0].ParameterType);
             Assert.True(deleteServiceParams[0].HasDefaultValue);

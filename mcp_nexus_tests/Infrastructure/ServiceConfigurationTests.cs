@@ -2,12 +2,14 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using mcp_nexus.Infrastructure;
+using System.Runtime.Versioning;
 
 namespace mcp_nexus_tests.Infrastructure
 {
     /// <summary>
     /// Tests for ServiceConfiguration
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class ServiceConfigurationTests
     {
         [Fact]
@@ -83,7 +85,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Assert
             Assert.NotNull(backupsPath);
             Assert.Contains("MCP-Nexus-Backups", backupsPath);
-            Assert.True(backupsPath.StartsWith(Path.GetTempPath()));
+            Assert.StartsWith(Path.GetTempPath(), backupsPath);
         }
 
         [Fact]
@@ -190,7 +192,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             Assert.NotNull(backupFolder);
-            Assert.True(backupFolder.StartsWith(ServiceConfiguration.BackupsFolder));
+            Assert.StartsWith(ServiceConfiguration.BackupsFolder, backupFolder);
             Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), backupFolder);
         }
 

@@ -35,7 +35,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void SetCurrentCommand_WithNullCommand_SetsNull()
         {
-            _parser.SetCurrentCommand(null);
+            _parser.SetCurrentCommand(null!);
 
             // Verify the command was set (we can't directly access private field, but we can test behavior)
             Assert.True(true); // This test verifies no exception is thrown
