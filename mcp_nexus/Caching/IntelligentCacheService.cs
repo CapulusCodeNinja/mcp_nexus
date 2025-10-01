@@ -3,17 +3,100 @@ using System.Collections.Concurrent;
 namespace mcp_nexus.Caching
 {
     /// <summary>
-    /// Cache entry with metadata for intelligent eviction
+    /// Cache entry with metadata for intelligent eviction - properly encapsulated
     /// </summary>
     /// <typeparam name="TValue">The type of the cached value</typeparam>
     public class CacheEntry<TValue>
     {
-        public TValue Value { get; set; } = default!;
-        public DateTime CreatedAt { get; set; }
-        public DateTime LastAccessed { get; set; }
-        public DateTime ExpiresAt { get; set; }
-        public long AccessCount { get; set; }
-        public long SizeBytes { get; set; }
+        #region Private Fields
+
+        private TValue m_value;
+        private DateTime m_createdAt;
+        private DateTime m_lastAccessed;
+        private DateTime m_expiresAt;
+        private long m_accessCount;
+        private long m_sizeBytes;
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>Gets the cached value</summary>
+        public TValue Value => m_value;
+
+        /// <summary>Gets the creation timestamp</summary>
+        public DateTime CreatedAt => m_createdAt;
+
+        /// <summary>Gets the last accessed timestamp</summary>
+        public DateTime LastAccessed => m_lastAccessed;
+
+        /// <summary>Gets the expiration timestamp</summary>
+        public DateTime ExpiresAt => m_expiresAt;
+
+        /// <summary>Gets the access count</summary>
+        public long AccessCount => m_accessCount;
+
+        /// <summary>Gets the size in bytes</summary>
+        public long SizeBytes => m_sizeBytes;
+
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new cache entry
+        /// </summary>
+        /// <param name="value">The value to cache</param>
+        /// <param name="createdAt">Creation timestamp</param>
+        /// <param name="lastAccessed">Last accessed timestamp</param>
+        /// <param name="expiresAt">Expiration timestamp</param>
+        /// <param name="accessCount">Access count</param>
+        /// <param name="sizeBytes">Size in bytes</param>
+        public CacheEntry(TValue value, DateTime createdAt, DateTime lastAccessed, DateTime expiresAt, 
+            long accessCount, long sizeBytes)
+        {
+            m_value = value;
+            m_createdAt = createdAt;
+            m_lastAccessed = lastAccessed;
+            m_expiresAt = expiresAt;
+            m_accessCount = accessCount;
+            m_sizeBytes = sizeBytes;
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Updates the last accessed time and increments access count
+        /// </summary>
+        public void UpdateAccess()
+        {
+            m_lastAccessed = DateTime.UtcNow;
+            m_accessCount++;
+        }
+
+        /// <summary>
+        /// Updates the value and size
+        /// </summary>
+        /// <param name="value">New value</param>
+        /// <param name="sizeBytes">New size in bytes</param>
+        public void UpdateValue(TValue value, long sizeBytes)
+        {
+            m_value = value;
+            m_sizeBytes = sizeBytes;
+        }
+
+        /// <summary>
+        /// Checks if the entry is expired
+        /// </summary>
+        /// <returns>True if expired</returns>
+        public bool IsExpired()
+        {
+            return DateTime.UtcNow > m_expiresAt;
+        }
+
+        #endregion
     }
 
     /// <summary>
@@ -74,7 +157,7 @@ namespace mcp_nexus.Caching
             if (m_cache.TryGetValue(key, out var entry))
             {
                 // Check if expired
-                if (DateTime.UtcNow > entry.ExpiresAt)
+                if (entry.IsExpired())
                 {
                     m_cache.TryRemove(key, out _);
                     value = default;
@@ -83,8 +166,7 @@ namespace mcp_nexus.Caching
                 }
 
                 // Update access time for LRU
-                entry.LastAccessed = DateTime.UtcNow;
-                entry.AccessCount++;
+                entry.UpdateAccess();
                 value = entry.Value;
 
                 m_logger.LogTrace("💾 Cache HIT for key: {Key}", key);
@@ -108,16 +190,11 @@ namespace mcp_nexus.Caching
         {
             if (m_disposed) return;
 
-            var expiresAt = DateTime.UtcNow.Add(ttl ?? m_config.DefaultTtl);
-            var entry = new CacheEntry<TValue>
-            {
-                Value = value,
-                CreatedAt = DateTime.UtcNow,
-                LastAccessed = DateTime.UtcNow,
-                ExpiresAt = expiresAt,
-                AccessCount = 0,
-                SizeBytes = EstimateSize(value)
-            };
+            var now = DateTime.UtcNow;
+            var expiresAt = now.Add(ttl ?? m_config.DefaultTtl);
+            var sizeBytes = EstimateSize(value);
+            
+            var entry = new CacheEntry<TValue>(value, now, now, expiresAt, 0, sizeBytes);
 
             m_cache.AddOrUpdate(key, entry, (k, existing) => entry);
             m_statisticsCollector.RecordSet();
@@ -198,7 +275,7 @@ namespace mcp_nexus.Caching
             if (m_cache.TryGetValue(key, out var entry))
             {
                 // Check if expired
-                if (DateTime.UtcNow > entry.ExpiresAt)
+                if (entry.IsExpired())
                 {
                     m_cache.TryRemove(key, out _);
                     return false;

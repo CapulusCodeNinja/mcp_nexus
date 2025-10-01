@@ -44,58 +44,51 @@ namespace mcp_nexus.Health
         /// <returns>The current health status</returns>
         public AdvancedHealthStatus GetHealthStatus()
         {
-            if (m_disposed) return new AdvancedHealthStatus { IsHealthy = false, Message = "Service disposed" };
+            if (m_disposed)
+            {
+                var disposedStatus = new AdvancedHealthStatus();
+                disposedStatus.SetHealthStatus(false, "Service disposed");
+                return disposedStatus;
+            }
 
             try
             {
-                var status = new AdvancedHealthStatus
-                {
-                    Timestamp = DateTime.UtcNow,
-                    IsHealthy = true,
-                    Message = "All systems operational"
-                };
+                var status = new AdvancedHealthStatus();
+                status.SetHealthStatus(true, "All systems operational");
 
                 // Check memory usage
                 var memoryStatus = CheckMemoryHealth();
-                status.MemoryUsage = memoryStatus;
-                if (!memoryStatus.IsHealthy) status.IsHealthy = false;
+                status.SetMemoryUsage(memoryStatus);
+                if (!memoryStatus.IsHealthy) status.SetHealthStatus(false, "Health issues detected - check individual components");
 
                 // Check CPU usage
                 var cpuStatus = CheckCpuHealth();
-                status.CpuUsage = cpuStatus;
-                if (!cpuStatus.IsHealthy) status.IsHealthy = false;
+                status.SetCpuUsage(cpuStatus);
+                if (!cpuStatus.IsHealthy) status.SetHealthStatus(false, "Health issues detected - check individual components");
 
                 // Check disk space
                 var diskStatus = CheckDiskHealth();
-                status.DiskUsage = diskStatus;
-                if (!diskStatus.IsHealthy) status.IsHealthy = false;
+                status.SetDiskUsage(diskStatus);
+                if (!diskStatus.IsHealthy) status.SetHealthStatus(false, "Health issues detected - check individual components");
 
                 // Check thread count
                 var threadStatus = CheckThreadHealth();
-                status.ThreadCount = threadStatus;
-                if (!threadStatus.IsHealthy) status.IsHealthy = false;
+                status.SetThreadCount(threadStatus);
+                if (!threadStatus.IsHealthy) status.SetHealthStatus(false, "Health issues detected - check individual components");
 
                 // Check GC health
                 var gcStatus = CheckGcHealth();
-                status.GcStatus = gcStatus;
-                if (!gcStatus.IsHealthy) status.IsHealthy = false;
-
-                if (!status.IsHealthy)
-                {
-                    status.Message = "Health issues detected - check individual components";
-                }
+                status.SetGcStatus(gcStatus);
+                if (!gcStatus.IsHealthy) status.SetHealthStatus(false, "Health issues detected - check individual components");
 
                 return status;
             }
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "Error getting health status");
-                return new AdvancedHealthStatus
-                {
-                    IsHealthy = false,
-                    Message = $"Health check failed: {ex.Message}",
-                    Timestamp = DateTime.UtcNow
-                };
+                var errorStatus = new AdvancedHealthStatus();
+                errorStatus.SetHealthStatus(false, $"Health check failed: {ex.Message}");
+                return errorStatus;
             }
         }
 
@@ -115,20 +108,18 @@ namespace mcp_nexus.Health
 
                 var isHealthy = workingSetMB < 2048 && privateMemoryMB < 1024; // 2GB working set, 1GB private
 
-                return new MemoryHealth
-                {
-                    IsHealthy = isHealthy,
-                    WorkingSetMB = workingSetMB,
-                    PrivateMemoryMB = privateMemoryMB,
-                    VirtualMemoryMB = virtualMemoryMB,
-                    TotalPhysicalMemoryMB = totalPhysicalMemoryMB,
-                    Message = isHealthy ? "Memory usage normal" : "High memory usage detected"
-                };
+                var memoryHealth = new MemoryHealth();
+                memoryHealth.SetMemoryInfo(isHealthy, workingSetMB, privateMemoryMB, 
+                    virtualMemoryMB, totalPhysicalMemoryMB, 
+                    isHealthy ? "Memory usage normal" : "High memory usage detected");
+                return memoryHealth;
             }
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "Error checking memory health");
-                return new MemoryHealth { IsHealthy = false, Message = $"Memory check failed: {ex.Message}" };
+                var errorMemoryHealth = new MemoryHealth();
+                errorMemoryHealth.SetMemoryInfo(false, 0, 0, 0, 0, $"Memory check failed: {ex.Message}");
+                return errorMemoryHealth;
             }
         }
 
@@ -281,85 +272,204 @@ namespace mcp_nexus.Health
     #region Data Classes
 
     /// <summary>
-    /// Represents the health status of the system
+    /// Represents the health status of the system - properly encapsulated
     /// </summary>
     public class AdvancedHealthStatus
     {
-        /// <summary>
-        /// The timestamp when the health status was checked
-        /// </summary>
-        public DateTime Timestamp { get; set; }
+        #region Private Fields
+
+        private DateTime m_timestamp;
+        private bool m_isHealthy;
+        private string m_message = string.Empty;
+        private MemoryHealth? m_memoryUsage;
+        private CpuHealth? m_cpuUsage;
+        private DiskHealth? m_diskUsage;
+        private ThreadHealth? m_threadCount;
+        private GcHealth? m_gcStatus;
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>Gets the timestamp when the health status was checked</summary>
+        public DateTime Timestamp => m_timestamp;
+
+        /// <summary>Gets whether the system is healthy</summary>
+        public bool IsHealthy => m_isHealthy;
+
+        /// <summary>Gets a message describing the health status</summary>
+        public string Message => m_message;
+
+        /// <summary>Gets memory usage health information</summary>
+        public MemoryHealth? MemoryUsage => m_memoryUsage;
+
+        /// <summary>Gets CPU usage health information</summary>
+        public CpuHealth? CpuUsage => m_cpuUsage;
+
+        /// <summary>Gets disk usage health information</summary>
+        public DiskHealth? DiskUsage => m_diskUsage;
+
+        /// <summary>Gets thread count health information</summary>
+        public ThreadHealth? ThreadCount => m_threadCount;
+
+        /// <summary>Gets garbage collection health information</summary>
+        public GcHealth? GcStatus => m_gcStatus;
+
+        #endregion
+
+        #region Constructor
 
         /// <summary>
-        /// Whether the system is healthy
+        /// Initializes a new health status
         /// </summary>
-        public bool IsHealthy { get; set; }
+        public AdvancedHealthStatus()
+        {
+            m_timestamp = DateTime.UtcNow;
+            m_isHealthy = false;
+            m_message = string.Empty;
+        }
+
+        #endregion
+
+        #region Public Methods
 
         /// <summary>
-        /// A message describing the health status
+        /// Sets the health status information
         /// </summary>
-        public string Message { get; set; } = string.Empty;
+        /// <param name="isHealthy">Whether the system is healthy</param>
+        /// <param name="message">Health status message</param>
+        public void SetHealthStatus(bool isHealthy, string message)
+        {
+            m_isHealthy = isHealthy;
+            m_message = message ?? string.Empty;
+        }
 
         /// <summary>
-        /// Memory usage health information
+        /// Sets the memory usage health information
         /// </summary>
-        public MemoryHealth? MemoryUsage { get; set; }
+        /// <param name="memoryHealth">Memory health information</param>
+        public void SetMemoryUsage(MemoryHealth? memoryHealth)
+        {
+            m_memoryUsage = memoryHealth;
+        }
 
         /// <summary>
-        /// CPU usage health information
+        /// Sets the CPU usage health information
         /// </summary>
-        public CpuHealth? CpuUsage { get; set; }
+        /// <param name="cpuHealth">CPU health information</param>
+        public void SetCpuUsage(CpuHealth? cpuHealth)
+        {
+            m_cpuUsage = cpuHealth;
+        }
 
         /// <summary>
-        /// Disk usage health information
+        /// Sets the disk usage health information
         /// </summary>
-        public DiskHealth? DiskUsage { get; set; }
+        /// <param name="diskHealth">Disk health information</param>
+        public void SetDiskUsage(DiskHealth? diskHealth)
+        {
+            m_diskUsage = diskHealth;
+        }
 
         /// <summary>
-        /// Thread count health information
+        /// Sets the thread count health information
         /// </summary>
-        public ThreadHealth? ThreadCount { get; set; }
+        /// <param name="threadHealth">Thread health information</param>
+        public void SetThreadCount(ThreadHealth? threadHealth)
+        {
+            m_threadCount = threadHealth;
+        }
 
         /// <summary>
-        /// Garbage collection health information
+        /// Sets the garbage collection health information
         /// </summary>
-        public GcHealth? GcStatus { get; set; }
+        /// <param name="gcHealth">GC health information</param>
+        public void SetGcStatus(GcHealth? gcHealth)
+        {
+            m_gcStatus = gcHealth;
+        }
+
+        #endregion
     }
 
     /// <summary>
-    /// Represents memory health information
+    /// Represents memory health information - properly encapsulated
     /// </summary>
     public class MemoryHealth
     {
-        /// <summary>
-        /// Whether memory usage is healthy
-        /// </summary>
-        public bool IsHealthy { get; set; }
+        #region Private Fields
+
+        private bool m_isHealthy;
+        private double m_workingSetMB;
+        private double m_privateMemoryMB;
+        private double m_virtualMemoryMB;
+        private double m_totalPhysicalMemoryMB;
+        private string m_message = string.Empty;
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>Gets whether memory usage is healthy</summary>
+        public bool IsHealthy => m_isHealthy;
+
+        /// <summary>Gets working set memory in MB</summary>
+        public double WorkingSetMB => m_workingSetMB;
+
+        /// <summary>Gets private memory in MB</summary>
+        public double PrivateMemoryMB => m_privateMemoryMB;
+
+        /// <summary>Gets virtual memory in MB</summary>
+        public double VirtualMemoryMB => m_virtualMemoryMB;
+
+        /// <summary>Gets total physical memory in MB</summary>
+        public double TotalPhysicalMemoryMB => m_totalPhysicalMemoryMB;
+
+        /// <summary>Gets a message describing the memory health</summary>
+        public string Message => m_message;
+
+        #endregion
+
+        #region Constructor
 
         /// <summary>
-        /// Working set memory in MB
+        /// Initializes a new memory health instance
         /// </summary>
-        public double WorkingSetMB { get; set; }
+        public MemoryHealth()
+        {
+            m_isHealthy = false;
+            m_workingSetMB = 0;
+            m_privateMemoryMB = 0;
+            m_virtualMemoryMB = 0;
+            m_totalPhysicalMemoryMB = 0;
+            m_message = string.Empty;
+        }
+
+        #endregion
+
+        #region Public Methods
 
         /// <summary>
-        /// Private memory in MB
+        /// Sets the memory health information
         /// </summary>
-        public double PrivateMemoryMB { get; set; }
+        /// <param name="isHealthy">Whether memory usage is healthy</param>
+        /// <param name="workingSetMB">Working set memory in MB</param>
+        /// <param name="privateMemoryMB">Private memory in MB</param>
+        /// <param name="virtualMemoryMB">Virtual memory in MB</param>
+        /// <param name="totalPhysicalMemoryMB">Total physical memory in MB</param>
+        /// <param name="message">Health message</param>
+        public void SetMemoryInfo(bool isHealthy, double workingSetMB, double privateMemoryMB, 
+            double virtualMemoryMB, double totalPhysicalMemoryMB, string message)
+        {
+            m_isHealthy = isHealthy;
+            m_workingSetMB = workingSetMB;
+            m_privateMemoryMB = privateMemoryMB;
+            m_virtualMemoryMB = virtualMemoryMB;
+            m_totalPhysicalMemoryMB = totalPhysicalMemoryMB;
+            m_message = message ?? string.Empty;
+        }
 
-        /// <summary>
-        /// Virtual memory in MB
-        /// </summary>
-        public double VirtualMemoryMB { get; set; }
-
-        /// <summary>
-        /// Total physical memory in MB
-        /// </summary>
-        public double TotalPhysicalMemoryMB { get; set; }
-
-        /// <summary>
-        /// A message describing the memory health
-        /// </summary>
-        public string Message { get; set; } = string.Empty;
+        #endregion
     }
 
     /// <summary>

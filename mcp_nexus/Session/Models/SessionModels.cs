@@ -26,30 +26,66 @@ namespace mcp_nexus.Session.Models
     }
 
     /// <summary>
-    /// Thread-safe session information container
+    /// Thread-safe session information container with proper encapsulation
     /// </summary>
     public class SessionInfo : IDisposable
     {
+        #region Private Fields
+
         /// <summary>Unique session identifier</summary>
-        public string SessionId { get; init; } = string.Empty;
+        private readonly string m_sessionId;
 
         /// <summary>CDB session for this debugging session</summary>
-        public ICdbSession CdbSession { get; init; } = null!;
+        private readonly ICdbSession m_cdbSession;
 
         /// <summary>Command queue service for this session</summary>
-        public ICommandQueueService CommandQueue { get; init; } = null!;
+        private readonly ICommandQueueService m_commandQueue;
 
         /// <summary>Session creation time (UTC)</summary>
-        public DateTime CreatedAt { get; init; }
+        private readonly DateTime m_createdAt;
 
         /// <summary>Path to the dump file being debugged</summary>
-        public string DumpPath { get; init; } = string.Empty;
+        private readonly string m_dumpPath;
 
         /// <summary>Optional path to symbol files</summary>
-        public string? SymbolsPath { get; init; }
+        private readonly string? m_symbolsPath;
+
+        /// <summary>Process ID of the CDB debugger process</summary>
+        private readonly int? m_processId;
 
         /// <summary>Current session status - using volatile int for thread-safe atomic operations</summary>
         private volatile int m_status = (int)SessionStatus.Initializing;
+
+        /// <summary>Thread-safe last activity tracking using volatile read/write for lock-free access</summary>
+        private long m_lastActivityTicks;
+
+        /// <summary>Disposal state tracking</summary>
+        private volatile bool m_disposed = false;
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>Unique session identifier</summary>
+        public string SessionId => m_sessionId;
+
+        /// <summary>CDB session for this debugging session</summary>
+        public ICdbSession CdbSession => m_cdbSession;
+
+        /// <summary>Command queue service for this session</summary>
+        public ICommandQueueService CommandQueue => m_commandQueue;
+
+        /// <summary>Session creation time (UTC)</summary>
+        public DateTime CreatedAt => m_createdAt;
+
+        /// <summary>Path to the dump file being debugged</summary>
+        public string DumpPath => m_dumpPath;
+
+        /// <summary>Optional path to symbol files</summary>
+        public string? SymbolsPath => m_symbolsPath;
+
+        /// <summary>Process ID of the CDB debugger process</summary>
+        public int? ProcessId => m_processId;
 
         /// <summary>Thread-safe session status property</summary>
         public SessionStatus Status
@@ -58,12 +94,6 @@ namespace mcp_nexus.Session.Models
             set => m_status = (int)value;
         }
 
-        /// <summary>Process ID of the CDB debugger process</summary>
-        public int? ProcessId { get; init; }
-
-        /// <summary>Thread-safe last activity tracking using volatile read/write for lock-free access</summary>
-        private long m_lastActivityTicks;
-
         /// <summary>Thread-safe way to get/set last activity time using volatile operations</summary>
         public DateTime LastActivity
         {
@@ -71,15 +101,53 @@ namespace mcp_nexus.Session.Models
             set => Volatile.Write(ref m_lastActivityTicks, value.Ticks);
         }
 
-        private volatile bool m_disposed = false;
+        /// <summary>Check if session is disposed</summary>
+        public bool IsDisposed => m_disposed;
+
+        #endregion
+
+        #region Constructor
 
         /// <summary>
         /// Initialize session with current time as last activity
         /// </summary>
         public SessionInfo()
         {
+            m_sessionId = string.Empty;
+            m_cdbSession = null!;
+            m_commandQueue = null!;
+            m_createdAt = DateTime.UtcNow;
+            m_dumpPath = string.Empty;
+            m_symbolsPath = null;
+            m_processId = null;
             LastActivity = DateTime.UtcNow;
         }
+
+        /// <summary>
+        /// Initialize session with provided parameters
+        /// </summary>
+        /// <param name="sessionId">Unique session identifier</param>
+        /// <param name="cdbSession">CDB session for this debugging session</param>
+        /// <param name="commandQueue">Command queue service for this session</param>
+        /// <param name="dumpPath">Path to the dump file being debugged</param>
+        /// <param name="symbolsPath">Optional path to symbol files</param>
+        /// <param name="processId">Process ID of the CDB debugger process</param>
+        public SessionInfo(string sessionId, ICdbSession cdbSession, ICommandQueueService commandQueue, 
+            string dumpPath, string? symbolsPath = null, int? processId = null)
+        {
+            m_sessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
+            m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
+            m_commandQueue = commandQueue ?? throw new ArgumentNullException(nameof(commandQueue));
+            m_createdAt = DateTime.UtcNow;
+            m_dumpPath = dumpPath ?? throw new ArgumentNullException(nameof(dumpPath));
+            m_symbolsPath = symbolsPath;
+            m_processId = processId;
+            LastActivity = DateTime.UtcNow;
+        }
+
+        #endregion
+
+        #region IDisposable Implementation
 
         /// <summary>
         /// Thread-safe disposal of session resources
@@ -94,10 +162,10 @@ namespace mcp_nexus.Session.Models
             try
             {
                 // Dispose command queue first to stop new commands
-                CommandQueue?.Dispose();
+                m_commandQueue?.Dispose();
 
                 // Then dispose CDB session
-                CdbSession?.Dispose();
+                m_cdbSession?.Dispose();
 
                 Status = SessionStatus.Disposed;
             }
@@ -108,10 +176,7 @@ namespace mcp_nexus.Session.Models
             }
         }
 
-        /// <summary>
-        /// Check if session is disposed
-        /// </summary>
-        public bool IsDisposed => m_disposed;
+        #endregion
     }
 
     /// <summary>

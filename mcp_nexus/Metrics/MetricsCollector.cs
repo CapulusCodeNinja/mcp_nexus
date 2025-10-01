@@ -84,13 +84,20 @@ namespace mcp_nexus.Metrics
 
         public MetricsSnapshot GetSnapshot()
         {
-            return new MetricsSnapshot
+            var snapshot = new MetricsSnapshot();
+            foreach (var counter in m_counters.Values)
             {
-                Timestamp = DateTime.UtcNow,
-                Counters = m_counters.Values.Select(c => c.GetSnapshot()).ToList(),
-                Histograms = m_histograms.Values.Select(h => h.GetSnapshot()).ToList(),
-                Gauges = m_gauges.Values.Select(g => g.GetSnapshot()).ToList()
-            };
+                snapshot.AddCounter(counter.GetSnapshot());
+            }
+            foreach (var histogram in m_histograms.Values)
+            {
+                snapshot.AddHistogram(histogram.GetSnapshot());
+            }
+            foreach (var gauge in m_gauges.Values)
+            {
+                snapshot.AddGauge(gauge.GetSnapshot());
+            }
+            return snapshot;
         }
 
         private void ReportMetrics(object? state)
@@ -144,12 +151,91 @@ namespace mcp_nexus.Metrics
         MetricsSnapshot GetSnapshot();
     }
 
+    /// <summary>
+    /// Represents a metrics snapshot - properly encapsulated
+    /// </summary>
     public class MetricsSnapshot
     {
-        public DateTime Timestamp { get; set; }
-        public List<CounterSnapshot> Counters { get; set; } = new();
-        public List<HistogramSnapshot> Histograms { get; set; } = new();
-        public List<GaugeSnapshot> Gauges { get; set; } = new();
+        #region Private Fields
+
+        private DateTime m_timestamp;
+        private readonly List<CounterSnapshot> m_counters = new();
+        private readonly List<HistogramSnapshot> m_histograms = new();
+        private readonly List<GaugeSnapshot> m_gauges = new();
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>Gets the timestamp of the snapshot</summary>
+        public DateTime Timestamp => m_timestamp;
+
+        /// <summary>Gets the counter snapshots</summary>
+        public IReadOnlyList<CounterSnapshot> Counters => m_counters.AsReadOnly();
+
+        /// <summary>Gets the histogram snapshots</summary>
+        public IReadOnlyList<HistogramSnapshot> Histograms => m_histograms.AsReadOnly();
+
+        /// <summary>Gets the gauge snapshots</summary>
+        public IReadOnlyList<GaugeSnapshot> Gauges => m_gauges.AsReadOnly();
+
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new metrics snapshot
+        /// </summary>
+        public MetricsSnapshot()
+        {
+            m_timestamp = DateTime.UtcNow;
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Adds a counter snapshot
+        /// </summary>
+        /// <param name="counter">Counter snapshot to add</param>
+        public void AddCounter(CounterSnapshot counter)
+        {
+            if (counter != null)
+                m_counters.Add(counter);
+        }
+
+        /// <summary>
+        /// Adds a histogram snapshot
+        /// </summary>
+        /// <param name="histogram">Histogram snapshot to add</param>
+        public void AddHistogram(HistogramSnapshot histogram)
+        {
+            if (histogram != null)
+                m_histograms.Add(histogram);
+        }
+
+        /// <summary>
+        /// Adds a gauge snapshot
+        /// </summary>
+        /// <param name="gauge">Gauge snapshot to add</param>
+        public void AddGauge(GaugeSnapshot gauge)
+        {
+            if (gauge != null)
+                m_gauges.Add(gauge);
+        }
+
+        /// <summary>
+        /// Clears all snapshots
+        /// </summary>
+        public void Clear()
+        {
+            m_counters.Clear();
+            m_histograms.Clear();
+            m_gauges.Clear();
+        }
+
+        #endregion
     }
 
     public class Counter
@@ -182,12 +268,10 @@ namespace mcp_nexus.Metrics
         public CounterSnapshot GetSnapshot()
         {
             var valueBits = Interlocked.Read(ref m_valueBits);
-            return new CounterSnapshot
-            {
-                Name = Name,
-                Value = BitConverter.Int64BitsToDouble(valueBits),
-                Tags = new Dictionary<string, string>(Tags)
-            };
+            return new CounterSnapshot(
+                Name,
+                BitConverter.Int64BitsToDouble(valueBits),
+                new Dictionary<string, string>(Tags));
         }
     }
 
@@ -225,29 +309,20 @@ namespace mcp_nexus.Metrics
             {
                 if (m_values.Count == 0)
                 {
-                    return new HistogramSnapshot
-                    {
-                        Name = Name,
-                        Count = 0,
-                        Sum = 0,
-                        Min = 0,
-                        Max = 0,
-                        Average = 0,
-                        Tags = new Dictionary<string, string>(Tags)
-                    };
+                    return new HistogramSnapshot(
+                        Name, 0, 0, 0, 0, 0, 
+                        new Dictionary<string, string>(Tags));
                 }
 
                 var values = m_values.ToList();
-                return new HistogramSnapshot
-                {
-                    Name = Name,
-                    Count = values.Count,
-                    Sum = values.Sum(),
-                    Min = values.Min(),
-                    Max = values.Max(),
-                    Average = values.Average(),
-                    Tags = new Dictionary<string, string>(Tags)
-                };
+                return new HistogramSnapshot(
+                    Name,
+                    values.Count,
+                    values.Sum(),
+                    values.Min(),
+                    values.Max(),
+                    values.Average(),
+                    new Dictionary<string, string>(Tags));
             }
         }
     }
@@ -278,38 +353,168 @@ namespace mcp_nexus.Metrics
         {
             lock (m_lock)
             {
-                return new GaugeSnapshot
-                {
-                    Name = Name,
-                    Value = m_value,
-                    Tags = new Dictionary<string, string>(Tags)
-                };
+                return new GaugeSnapshot(
+                    Name,
+                    m_value,
+                    new Dictionary<string, string>(Tags));
             }
         }
     }
 
+    /// <summary>
+    /// Represents a counter snapshot - properly encapsulated
+    /// </summary>
     public class CounterSnapshot
     {
-        public string Name { get; set; } = string.Empty;
-        public double Value { get; set; }
-        public Dictionary<string, string> Tags { get; set; } = new();
+        #region Private Fields
+
+        private readonly string m_name;
+        private readonly double m_value;
+        private readonly Dictionary<string, string> m_tags;
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>Gets the counter name</summary>
+        public string Name => m_name;
+
+        /// <summary>Gets the counter value</summary>
+        public double Value => m_value;
+
+        /// <summary>Gets the counter tags</summary>
+        public IReadOnlyDictionary<string, string> Tags => m_tags.AsReadOnly();
+
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new counter snapshot
+        /// </summary>
+        /// <param name="name">Counter name</param>
+        /// <param name="value">Counter value</param>
+        /// <param name="tags">Counter tags</param>
+        public CounterSnapshot(string name, double value, Dictionary<string, string>? tags = null)
+        {
+            m_name = name ?? string.Empty;
+            m_value = value;
+            m_tags = tags ?? new Dictionary<string, string>();
+        }
+
+        #endregion
     }
 
+    /// <summary>
+    /// Represents a histogram snapshot - properly encapsulated
+    /// </summary>
     public class HistogramSnapshot
     {
-        public string Name { get; set; } = string.Empty;
-        public int Count { get; set; }
-        public double Sum { get; set; }
-        public double Min { get; set; }
-        public double Max { get; set; }
-        public double Average { get; set; }
-        public Dictionary<string, string> Tags { get; set; } = new();
+        #region Private Fields
+
+        private readonly string m_name;
+        private readonly int m_count;
+        private readonly double m_sum;
+        private readonly double m_min;
+        private readonly double m_max;
+        private readonly double m_average;
+        private readonly Dictionary<string, string> m_tags;
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>Gets the histogram name</summary>
+        public string Name => m_name;
+
+        /// <summary>Gets the count of values</summary>
+        public int Count => m_count;
+
+        /// <summary>Gets the sum of values</summary>
+        public double Sum => m_sum;
+
+        /// <summary>Gets the minimum value</summary>
+        public double Min => m_min;
+
+        /// <summary>Gets the maximum value</summary>
+        public double Max => m_max;
+
+        /// <summary>Gets the average value</summary>
+        public double Average => m_average;
+
+        /// <summary>Gets the histogram tags</summary>
+        public IReadOnlyDictionary<string, string> Tags => m_tags.AsReadOnly();
+
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new histogram snapshot
+        /// </summary>
+        /// <param name="name">Histogram name</param>
+        /// <param name="count">Count of values</param>
+        /// <param name="sum">Sum of values</param>
+        /// <param name="min">Minimum value</param>
+        /// <param name="max">Maximum value</param>
+        /// <param name="average">Average value</param>
+        /// <param name="tags">Histogram tags</param>
+        public HistogramSnapshot(string name, int count, double sum, double min, double max, double average, 
+            Dictionary<string, string>? tags = null)
+        {
+            m_name = name ?? string.Empty;
+            m_count = count;
+            m_sum = sum;
+            m_min = min;
+            m_max = max;
+            m_average = average;
+            m_tags = tags ?? new Dictionary<string, string>();
+        }
+
+        #endregion
     }
 
+    /// <summary>
+    /// Represents a gauge snapshot - properly encapsulated
+    /// </summary>
     public class GaugeSnapshot
     {
-        public string Name { get; set; } = string.Empty;
-        public double Value { get; set; }
-        public Dictionary<string, string> Tags { get; set; } = new();
+        #region Private Fields
+
+        private readonly string m_name;
+        private readonly double m_value;
+        private readonly Dictionary<string, string> m_tags;
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>Gets the gauge name</summary>
+        public string Name => m_name;
+
+        /// <summary>Gets the gauge value</summary>
+        public double Value => m_value;
+
+        /// <summary>Gets the gauge tags</summary>
+        public IReadOnlyDictionary<string, string> Tags => m_tags.AsReadOnly();
+
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new gauge snapshot
+        /// </summary>
+        /// <param name="name">Gauge name</param>
+        /// <param name="value">Gauge value</param>
+        /// <param name="tags">Gauge tags</param>
+        public GaugeSnapshot(string name, double value, Dictionary<string, string>? tags = null)
+        {
+            m_name = name ?? string.Empty;
+            m_value = value;
+            m_tags = tags ?? new Dictionary<string, string>();
+        }
+
+        #endregion
     }
 }
