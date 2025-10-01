@@ -227,10 +227,13 @@ namespace mcp_nexus.Debugger
                         {
                             readCompleted = readTask.Wait(50); // 50ms timeout for read attempt
                         }
-                        catch (AggregateException)
+                        catch (AggregateException agEx)
                         {
-                            // Task faulted (e.g., stream closed) - treat as end of stream
-                            m_logger.LogDebug("Read task faulted, treating as end of stream");
+                            // Task faulted (e.g., stream closed) - but WHY?
+                            var innerEx = agEx.InnerException ?? agEx;
+                            m_logger.LogError(agEx, "⚠️ CRITICAL: Read task faulted! Exception: {ExType}: {ExMsg}", 
+                                innerEx.GetType().Name, innerEx.Message);
+                            m_logger.LogError("⚠️ This should NOT happen - StreamReader should block, not throw!");
                             break;
                         }
                         
