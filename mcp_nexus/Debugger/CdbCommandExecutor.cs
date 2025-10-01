@@ -190,61 +190,94 @@ namespace mcp_nexus.Debugger
 
                 while (true)
                 {
-                    // Check for absolute timeout
-                    var currentElapsed = DateTime.Now - startTime;
-                    if (currentElapsed.TotalMilliseconds >= m_config.CommandTimeoutMs)
+                    try
                     {
-                        m_logger.LogWarning("⏰ Command execution timed out after {ElapsedMs}ms (timeout: {TimeoutMs}ms), forcing completion",
-                            currentElapsed.TotalMilliseconds, m_config.CommandTimeoutMs);
-                        output.AppendLine($"Command execution timed out after {currentElapsed.TotalMilliseconds:F0}ms");
-                        break;
-                    }
-
-                    // Check for idle timeout
-                    if ((DateTime.Now - lastOutputTime).TotalMilliseconds >= idleTimeoutMs)
-                    {
-                        m_logger.LogWarning("⏳ Command idle timed out after {IdleElapsedMs}ms (idle timeout: {IdleTimeoutMs}ms), forcing completion",
-                            (DateTime.Now - lastOutputTime).TotalMilliseconds, idleTimeoutMs);
-                        output.AppendLine($"Command idle timed out after {(DateTime.Now - lastOutputTime).TotalMilliseconds:F0}ms");
-                        break;
-                    }
-
-                    // Check for cancellation
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    // CRITICAL FIX: Use async read with timeout to avoid blocking forever
-                    // Peek() can block indefinitely if stream has partial data
-                    string? line = null;
-                    var readTask = Task.Run(() => debuggerOutput.ReadLine(), cancellationToken);
-                    
-                    if (readTask.Wait(50, cancellationToken)) // 50ms timeout for read attempt
-                    {
-                        line = readTask.Result;
-                    }
-                    else
-                    {
-                        // No complete line available within timeout, wait and retry
-                        Task.Delay(10, cancellationToken).GetAwaiter().GetResult();
-                        continue;
-                    }
-
-                    if (line != null)
-                    {
-                        output.AppendLine(line);
-                        linesRead++;
-                        lastOutputTime = DateTime.Now;
-
-                        if (m_outputParser.IsCommandComplete(line))
+                        // Check for absolute timeout
+                        var currentElapsed = DateTime.Now - startTime;
+                        if (currentElapsed.TotalMilliseconds >= m_config.CommandTimeoutMs)
                         {
-                            m_logger.LogTrace("Command completion detected on line: '{Line}'", line);
+                            m_logger.LogWarning("⏰ Command execution timed out after {ElapsedMs}ms (timeout: {TimeoutMs}ms), forcing completion",
+                                currentElapsed.TotalMilliseconds, m_config.CommandTimeoutMs);
+                            output.AppendLine($"Command execution timed out after {currentElapsed.TotalMilliseconds:F0}ms");
+                            break;
+                        }
+
+                        // Check for idle timeout
+                        if ((DateTime.Now - lastOutputTime).TotalMilliseconds >= idleTimeoutMs)
+                        {
+                            m_logger.LogWarning("⏳ Command idle timed out after {IdleElapsedMs}ms (idle timeout: {IdleTimeoutMs}ms), forcing completion",
+                                (DateTime.Now - lastOutputTime).TotalMilliseconds, idleTimeoutMs);
+                            output.AppendLine($"Command idle timed out after {(DateTime.Now - lastOutputTime).TotalMilliseconds:F0}ms");
+                            break;
+                        }
+
+                        // Check for cancellation
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        // CRITICAL FIX: Use async read with timeout to avoid blocking forever
+                        // ReadLine() can block if stream has no complete line yet
+                        string? line = null;
+                        var readTask = Task.Run(() => debuggerOutput.ReadLine());
+
+                        // Wait with timeout but don't pass cancellation token to Wait() - it can throw ArgumentOutOfRangeException
+                        if (readTask.Wait(50)) // 50ms timeout for read attempt
+                        {
+                            line = readTask.Result;
+                        }
+                        else
+                        {
+                            // Check for cancellation manually
+                            cancellationToken.ThrowIfCancellationRequested();
+
+                            // No complete line available within timeout, wait and retry
+                            Task.Delay(10, cancellationToken).GetAwaiter().GetResult();
+                            continue;
+                        }
+
+                        if (line != null)
+                        {
+                            output.AppendLine(line);
+                            linesRead++;
+                            lastOutputTime = DateTime.Now;
+
+                            if (m_outputParser.IsCommandComplete(line))
+                            {
+                                m_logger.LogTrace("Command completion detected on line: '{Line}'", line);
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            // End of stream
+                            m_logger.LogDebug("Debugger output stream ended or process exited.");
                             break;
                         }
                     }
-                    else
+                    catch (OperationCanceledException)
                     {
-                        // End of stream
-                        m_logger.LogDebug("Debugger output stream ended or process exited.");
-                        break;
+                        // Re-throw cancellation to preserve cancellation semantics
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogError(ex, "Error reading debugger output.");
+                        output.AppendLine($"Error reading debugger output: {ex.Message}");
+                        
+                        // Break on critical errors to avoid infinite loop
+                        if (ex is OutOfMemoryException or StackOverflowException)
+                        {
+                            throw;
+                        }
+                        
+                        // For other errors, wait a bit before retrying to avoid tight loop
+                        try
+                        {
+                            Task.Delay(100, cancellationToken).GetAwaiter().GetResult();
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw;
+                        }
                     }
                 }
             }
