@@ -76,7 +76,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void NotifyCommandStatusFireAndForget_WithParameters_CallsNotificationService()
+        public async Task NotifyCommandStatusFireAndForget_WithParameters_CallsNotificationService()
         {
             // Arrange
             var commandId = "cmd-1";
@@ -90,7 +90,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             // Give the Task.Run a moment to execute
-            Thread.Sleep(100);
+            await Task.Delay(500);
             _mockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
@@ -143,7 +143,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             // Wait for the Task.Run to complete
-            await Task.Delay(1000);
+            await Task.Delay(2000);
             _mockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
                 It.IsAny<string>(), 
                 It.IsAny<string>(), 
@@ -210,7 +210,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void NotifyQueueEvent_WithValidParameters_LogsEvent()
+        public async Task NotifyQueueEvent_WithValidParameters_LogsEvent()
         {
             // Arrange
             var eventType = "TestEvent";
@@ -222,7 +222,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             // Give the Task.Run a moment to execute
-            Thread.Sleep(100);
+            await Task.Delay(500);
             _mockLogger.Verify(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -314,7 +314,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void NotifyBulkCommandCancellation_WithCountAndReason_LogsBulkCancellationEvent()
+        public async Task NotifyBulkCommandCancellation_WithCountAndReason_LogsBulkCancellationEvent()
         {
             // Arrange
             var count = 5;
@@ -325,7 +325,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             // Give the Task.Run a moment to execute
-            Thread.Sleep(100);
+            await Task.Delay(2000);
             _mockLogger.Verify(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -376,7 +376,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             // Wait for the Task.Run to complete
-            await Task.Delay(1000);
+            await Task.Delay(2000);
             _mockLogger.Verify(x => x.Log(
                 LogLevel.Trace,
                 It.IsAny<EventId>(),

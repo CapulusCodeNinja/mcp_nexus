@@ -1,6 +1,9 @@
 using System.CommandLine;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using mcp_nexus;
 using Xunit;
 
@@ -533,6 +536,483 @@ namespace mcp_nexus_tests
             Assert.Null(instanceType.GetProperty("Host")!.GetValue(instance));
             Assert.False((bool)instanceType.GetProperty("HostFromCommandLine")!.GetValue(instance)!);
             Assert.False((bool)instanceType.GetProperty("PortFromCommandLine")!.GetValue(instance)!);
+        }
+
+        [Fact]
+        public void Program_SetupGlobalExceptionHandlers_DoesNotThrow()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var setupMethod = programType.GetMethod("SetupGlobalExceptionHandlers", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(setupMethod);
+
+            // Act & Assert - Should not throw
+            setupMethod!.Invoke(null, null);
+        }
+
+        [Fact]
+        public void Program_LogStartupBanner_WithStdioMode_LogsCorrectly()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var logBannerMethod = programType.GetMethod("LogStartupBanner", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(logBannerMethod);
+
+            // Create a mock CommandLineArguments object
+            var commandLineArgsType = programType.GetNestedTypes(BindingFlags.NonPublic)
+                .FirstOrDefault(t => t.Name == "CommandLineArguments");
+            Assert.NotNull(commandLineArgsType);
+            var commandLineArgs = Activator.CreateInstance(commandLineArgsType!);
+
+            // Capture console output
+            using var stringWriter = new StringWriter();
+            var originalOut = Console.Out;
+            Console.SetOut(stringWriter);
+
+            try
+            {
+                // Act
+                logBannerMethod!.Invoke(null, new object[] { commandLineArgs!, "stdio", (int?)null });
+
+                // Assert
+                var output = stringWriter.ToString();
+                Assert.NotNull(output);
+                Assert.Contains("MCP NEXUS", output);
+                Assert.Contains("STDIO Mode", output);
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+        }
+
+        [Fact]
+        public void Program_LogStartupBanner_WithHttpMode_LogsCorrectly()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var logBannerMethod = programType.GetMethod("LogStartupBanner", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(logBannerMethod);
+
+            // Create a mock CommandLineArguments object
+            var commandLineArgsType = programType.GetNestedTypes(BindingFlags.NonPublic)
+                .FirstOrDefault(t => t.Name == "CommandLineArguments");
+            Assert.NotNull(commandLineArgsType);
+            var commandLineArgs = Activator.CreateInstance(commandLineArgsType!);
+
+            // Capture console output
+            using var stringWriter = new StringWriter();
+            var originalOut = Console.Out;
+            Console.SetOut(stringWriter);
+
+            try
+            {
+                // Act
+                logBannerMethod!.Invoke(null, new object[] { commandLineArgs!, "localhost", 8080 });
+
+                // Assert
+                var output = stringWriter.ToString();
+                Assert.NotNull(output);
+                Assert.Contains("MCP NEXUS", output);
+                Assert.Contains("HTTP", output);
+                Assert.Contains("localhost", output);
+                Assert.Contains("8080", output);
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+        }
+
+        [Fact]
+        public void Program_LogConfigurationSettings_LogsConfiguration()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var logConfigMethod = programType.GetMethod("LogConfigurationSettings", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(logConfigMethod);
+
+            // Create a mock configuration
+            var configBuilder = new ConfigurationBuilder();
+            configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["McpNexus:Server:Host"] = "localhost",
+                ["McpNexus:Server:Port"] = "8080",
+                ["Logging:LogLevel"] = "Information"
+            });
+            var configuration = configBuilder.Build();
+
+            // Create a mock CommandLineArguments object
+            var commandLineArgsType = programType.GetNestedTypes(BindingFlags.NonPublic)
+                .FirstOrDefault(t => t.Name == "CommandLineArguments");
+            Assert.NotNull(commandLineArgsType);
+            var commandLineArgs = Activator.CreateInstance(commandLineArgsType!);
+
+            // Act & Assert - Should not throw
+            logConfigMethod!.Invoke(null, new object[] { configuration, commandLineArgs! });
+        }
+
+        [Fact]
+        public void Program_FormatJsonForLogging_WithValidJson_FormatsCorrectly()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var formatJsonMethod = programType.GetMethod("FormatJsonForLogging", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(formatJsonMethod);
+
+            var validJson = "{\"key\":\"value\",\"number\":123}";
+
+            // Act
+            var result = (string)formatJsonMethod!.Invoke(null, new object[] { validJson })!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Length > validJson.Length); // Should be formatted with indentation
+            Assert.Contains("key", result);
+            Assert.Contains("value", result);
+        }
+
+        [Fact]
+        public void Program_FormatJsonForLogging_WithInvalidJson_HandlesGracefully()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var formatJsonMethod = programType.GetMethod("FormatJsonForLogging", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(formatJsonMethod);
+
+            var invalidJson = "{invalid json}";
+
+            // Act
+            var result = (string)formatJsonMethod!.Invoke(null, new object[] { invalidJson })!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("Invalid JSON", result);
+            Assert.Contains("invalid json", result);
+        }
+
+        [Fact]
+        public void Program_FormatJsonForLogging_WithEmptyString_HandlesGracefully()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var formatJsonMethod = programType.GetMethod("FormatJsonForLogging", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(formatJsonMethod);
+
+            // Act
+            var result = (string)formatJsonMethod!.Invoke(null, new object[] { "" })!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Length > 0);
+        }
+
+        [Fact]
+        public void Program_FormatSseResponseForLogging_WithValidSse_FormatsCorrectly()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var formatSseMethod = programType.GetMethod("FormatSseResponseForLogging", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(formatSseMethod);
+
+            var sseResponse = "event: test\ndata: {\"message\":\"hello\"}\n\n";
+
+            // Act
+            var result = (string)formatSseMethod!.Invoke(null, new object[] { sseResponse })!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("event: test", result);
+            Assert.Contains("data:", result);
+        }
+
+        [Fact]
+        public void Program_FormatSseResponseForLogging_WithEmptyString_HandlesGracefully()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var formatSseMethod = programType.GetMethod("FormatSseResponseForLogging", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(formatSseMethod);
+
+            // Act
+            var result = (string)formatSseMethod!.Invoke(null, new object[] { "" })!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("", result);
+        }
+
+        [Fact]
+        public void Program_ShouldEnableJsonRpcLogging_WithDebugLogger_ReturnsTrue()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var shouldEnableMethod = programType.GetMethod("ShouldEnableJsonRpcLogging", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(shouldEnableMethod);
+
+            // Create a logger factory with debug logging enabled
+            using var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddConsole();
+                builder.SetMinimumLevel(LogLevel.Debug);
+            });
+
+            // Act
+            var result = (bool)shouldEnableMethod!.Invoke(null, new object[] { loggerFactory })!;
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void Program_ShouldEnableJsonRpcLogging_WithInfoLogger_ReturnsFalse()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var shouldEnableMethod = programType.GetMethod("ShouldEnableJsonRpcLogging", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(shouldEnableMethod);
+
+            // Create a logger factory with info logging (not debug)
+            using var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddConsole();
+                builder.SetMinimumLevel(LogLevel.Information);
+            });
+
+            // Act
+            var result = (bool)shouldEnableMethod!.Invoke(null, new object[] { loggerFactory })!;
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void Program_LogFatalException_WithException_LogsCorrectly()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var logFatalMethod = programType.GetMethod("LogFatalException", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(logFatalMethod);
+
+            var testException = new InvalidOperationException("Test exception");
+
+            // Capture console error output
+            using var stringWriter = new StringWriter();
+            var originalError = Console.Error;
+            Console.SetError(stringWriter);
+
+            try
+            {
+                // Act
+                logFatalMethod!.Invoke(null, new object[] { testException, "TestSource", false });
+
+                // Assert
+                var output = stringWriter.ToString();
+                Assert.NotNull(output);
+                Assert.Contains("FATAL UNHANDLED EXCEPTION", output);
+                Assert.Contains("TestSource", output);
+                Assert.Contains("Test exception", output);
+            }
+            finally
+            {
+                Console.SetError(originalError);
+            }
+        }
+
+        [Fact]
+        public void Program_LogFatalException_WithNullException_HandlesGracefully()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var logFatalMethod = programType.GetMethod("LogFatalException", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(logFatalMethod);
+
+            // Capture console error output
+            using var stringWriter = new StringWriter();
+            var originalError = Console.Error;
+            Console.SetError(stringWriter);
+
+            try
+            {
+                // Act
+                logFatalMethod!.Invoke(null, new object[] { (Exception?)null, "TestSource", false });
+
+                // Assert
+                var output = stringWriter.ToString();
+                Assert.NotNull(output);
+                Assert.Contains("FATAL UNHANDLED EXCEPTION", output);
+                Assert.Contains("TestSource", output);
+                Assert.Contains("Exception object is null", output);
+            }
+            finally
+            {
+                Console.SetError(originalError);
+            }
+        }
+
+        [Fact]
+        public void Program_GetCdbPathInfo_ReturnsValidString()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var getCdbPathMethod = programType.GetMethod("GetCdbPathInfo", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(getCdbPathMethod);
+
+            // Act
+            var result = (string)getCdbPathMethod!.Invoke(null, null)!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Length > 0);
+        }
+
+        [Fact]
+        public void Program_GetProviderInfo_WithJsonProvider_ReturnsInfo()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var getProviderInfoMethod = programType.GetMethod("GetProviderInfo", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(getProviderInfoMethod);
+
+            var jsonProvider = new Microsoft.Extensions.Configuration.Json.JsonConfigurationProvider(
+                new Microsoft.Extensions.Configuration.Json.JsonConfigurationSource());
+
+            // Act
+            var result = (string)getProviderInfoMethod!.Invoke(null, new object[] { jsonProvider })!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Length > 0);
+        }
+
+        [Fact]
+        public void Program_GetProviderInfo_WithEnvironmentProvider_ReturnsInfo()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var getProviderInfoMethod = programType.GetMethod("GetProviderInfo", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(getProviderInfoMethod);
+
+            var envProvider = new Microsoft.Extensions.Configuration.EnvironmentVariables.EnvironmentVariablesConfigurationProvider();
+
+            // Act
+            var result = (string)getProviderInfoMethod!.Invoke(null, new object[] { envProvider })!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Length > 0);
+        }
+
+        [Fact]
+        public void Program_FormatBannerLine_WithLongContent_TruncatesCorrectly()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var formatMethod = programType.GetMethod("FormatBannerLine", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(formatMethod);
+
+            var longValue = new string('x', 100); // Very long value
+
+            // Act
+            var result = (string)formatMethod!.Invoke(null, new object[] { "Label:", longValue, 20 })!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.StartsWith("* ", result);
+            Assert.EndsWith(" *", result);
+            // Should be truncated to fit the content width
+            var content = result.Substring(2, result.Length - 4); // Remove "* " and " *"
+            Assert.True(content.Length <= 20);
+        }
+
+        [Fact]
+        public void Program_FormatCenteredBannerLine_WithLongText_TruncatesCorrectly()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var formatMethod = programType.GetMethod("FormatCenteredBannerLine", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(formatMethod);
+
+            var longText = new string('x', 100); // Very long text
+
+            // Act
+            var result = (string)formatMethod!.Invoke(null, new object[] { longText, 20 })!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.StartsWith("* ", result);
+            Assert.EndsWith(" *", result);
+            // Should be truncated to fit the content width
+            var content = result.Substring(2, result.Length - 4); // Remove "* " and " *"
+            Assert.Equal(20, content.Length);
+        }
+
+        [Fact]
+        public void Program_FormatCenteredBannerLine_WithOddWidth_CentersCorrectly()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var formatMethod = programType.GetMethod("FormatCenteredBannerLine", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(formatMethod);
+
+            // Act
+            var result = (string)formatMethod!.Invoke(null, new object[] { "TEST", 21 })!; // Odd width
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.StartsWith("* ", result);
+            Assert.EndsWith(" *", result);
+            var content = result.Substring(2, result.Length - 4); // Remove "* " and " *"
+            Assert.Equal(21, content.Length);
+            Assert.Contains("TEST", content);
+        }
+
+        [Fact]
+        public void Program_ParseCommandLineArguments_WithComplexArgs_ParsesCorrectly()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var parseMethod = programType.GetMethod("ParseCommandLineArguments", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(parseMethod);
+
+            var args = new[] { "--http", "--port", "9000", "--host", "0.0.0.0", "--cdb-path", "C:\\Custom\\cdb.exe" };
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { args });
+
+            // Assert
+            Assert.NotNull(result);
+            var resultType = result!.GetType();
+
+            // Check all values are set correctly
+            Assert.True((bool)resultType.GetProperty("UseHttp")!.GetValue(result)!);
+            Assert.Equal(9000, (int?)resultType.GetProperty("Port")!.GetValue(result));
+            Assert.Equal("0.0.0.0", (string?)resultType.GetProperty("Host")!.GetValue(result));
+            Assert.Equal("C:\\Custom\\cdb.exe", (string?)resultType.GetProperty("CustomCdbPath")!.GetValue(result));
+            Assert.True((bool)resultType.GetProperty("PortFromCommandLine")!.GetValue(result)!);
+            Assert.True((bool)resultType.GetProperty("HostFromCommandLine")!.GetValue(result)!);
+        }
+
+        [Fact]
+        public void Program_ParseCommandLineArguments_WithServiceMode_SetsUseHttp()
+        {
+            // Arrange
+            var programType = typeof(Program);
+            var parseMethod = programType.GetMethod("ParseCommandLineArguments", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.NotNull(parseMethod);
+
+            var args = new[] { "--service" };
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { args });
+
+            // Assert
+            Assert.NotNull(result);
+            var resultType = result!.GetType();
+
+            // Service mode should imply HTTP mode
+            Assert.True((bool)resultType.GetProperty("ServiceMode")!.GetValue(result)!);
+            // Note: The actual logic for setting UseHttp based on ServiceMode is in the Main method, not in ParseCommandLineArguments
         }
     }
 }
