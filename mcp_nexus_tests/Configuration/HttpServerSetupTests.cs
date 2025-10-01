@@ -108,7 +108,7 @@ namespace mcp_nexus_tests.Configuration
 
             // Assert
             var serviceProvider = services.BuildServiceProvider();
-            
+
             // Verify Kestrel server options are configured
             var kestrelOptions = serviceProvider.GetService<Microsoft.Extensions.Options.IOptions<KestrelServerOptions>>();
             Assert.NotNull(kestrelOptions);
@@ -136,11 +136,11 @@ namespace mcp_nexus_tests.Configuration
 
             // Assert
             var serviceProvider = services.BuildServiceProvider();
-            
+
             // Verify CORS services are registered
             var corsService = serviceProvider.GetService<ICorsService>();
             Assert.NotNull(corsService);
-            
+
             var corsPolicyProvider = serviceProvider.GetService<ICorsPolicyProvider>();
             Assert.NotNull(corsPolicyProvider);
         }
@@ -164,17 +164,17 @@ namespace mcp_nexus_tests.Configuration
 
             // Assert
             var serviceProvider = services.BuildServiceProvider();
-            
+
             // Verify rate limiting services are registered
             var ipPolicyStore = serviceProvider.GetService<IIpPolicyStore>();
             Assert.NotNull(ipPolicyStore);
-            
+
             var rateLimitCounterStore = serviceProvider.GetService<IRateLimitCounterStore>();
             Assert.NotNull(rateLimitCounterStore);
-            
+
             var rateLimitConfiguration = serviceProvider.GetService<IRateLimitConfiguration>();
             Assert.NotNull(rateLimitConfiguration);
-            
+
             var processingStrategy = serviceProvider.GetService<IProcessingStrategy>();
             Assert.NotNull(processingStrategy);
         }
@@ -198,7 +198,7 @@ namespace mcp_nexus_tests.Configuration
 
             // Assert
             var serviceProvider = services.BuildServiceProvider();
-            
+
             // Verify JSON options are configured
             var jsonOptions = serviceProvider.GetService<Microsoft.Extensions.Options.IOptions<JsonOptions>>();
             Assert.NotNull(jsonOptions);
@@ -223,7 +223,7 @@ namespace mcp_nexus_tests.Configuration
 
             // Assert
             var serviceProvider = services.BuildServiceProvider();
-            
+
             // Verify MCP server services are registered
             // Note: The exact services depend on the MCP SDK implementation
             // We can verify that the service collection has been populated
@@ -282,7 +282,7 @@ namespace mcp_nexus_tests.Configuration
 
             // Assert
             var serviceProvider = services.BuildServiceProvider();
-            
+
             // Verify rate limiting services are registered
             var ipPolicyStore = serviceProvider.GetService<IIpPolicyStore>();
             Assert.NotNull(ipPolicyStore);

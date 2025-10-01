@@ -28,7 +28,7 @@ namespace mcp_nexus_tests.Tools
 
             // Add logging services
             services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-            
+
             // Use NullLogger to avoid the internal Program class issue
             services.AddSingleton<ILogger<mcp_nexus.Program>>(NullLogger<mcp_nexus.Program>.Instance);
 

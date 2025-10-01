@@ -52,7 +52,7 @@ namespace mcp_nexus_tests.Infrastructure
             var testFile1 = Path.Combine(_testInstallDir, "test1.txt");
             var testFile2 = Path.Combine(_testInstallDir, "subdir", "test2.txt");
             Directory.CreateDirectory(Path.Combine(_testInstallDir, "subdir"));
-            
+
             await File.WriteAllTextAsync(testFile1, "Test content 1");
             await File.WriteAllTextAsync(testFile2, "Test content 2");
 

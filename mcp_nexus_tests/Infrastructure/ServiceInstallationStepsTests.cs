@@ -144,7 +144,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods are static as expected
             var type = typeof(ServiceInstallationSteps);
-            
+
             var performInstallationMethod = type.GetMethod("PerformInstallationStepsAsync");
             var registerServiceMethod = type.GetMethod("RegisterServiceAsync");
             var unregisterServiceMethod = type.GetMethod("UnregisterServiceAsync");
@@ -161,7 +161,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods return Task<bool>
             var type = typeof(ServiceInstallationSteps);
-            
+
             var performInstallationMethod = type.GetMethod("PerformInstallationStepsAsync");
             var registerServiceMethod = type.GetMethod("RegisterServiceAsync");
             var unregisterServiceMethod = type.GetMethod("UnregisterServiceAsync");
@@ -178,7 +178,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods accept an optional ILogger parameter
             var type = typeof(ServiceInstallationSteps);
-            
+
             var performInstallationMethod = type.GetMethod("PerformInstallationStepsAsync");
             var registerServiceMethod = type.GetMethod("RegisterServiceAsync");
             var unregisterServiceMethod = type.GetMethod("UnregisterServiceAsync");
@@ -216,7 +216,7 @@ namespace mcp_nexus_tests.Infrastructure
             // This test verifies that the method handles exceptions gracefully
             // Since we can't easily mock static dependencies, we test that it doesn't throw
             var result = await ServiceInstallationSteps.PerformInstallationStepsAsync(_mockLogger.Object);
-            
+
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
         }
@@ -226,7 +226,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that the method handles exceptions gracefully
             var result = await ServiceInstallationSteps.RegisterServiceAsync(_mockLogger.Object);
-            
+
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
         }
@@ -236,7 +236,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that the method handles exceptions gracefully
             var result = await ServiceInstallationSteps.UnregisterServiceAsync(_mockLogger.Object);
-            
+
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
         }
@@ -246,7 +246,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that the method handles exceptions gracefully
             var result = await ServiceInstallationSteps.CleanupInstallationAsync(_mockLogger.Object);
-            
+
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
         }

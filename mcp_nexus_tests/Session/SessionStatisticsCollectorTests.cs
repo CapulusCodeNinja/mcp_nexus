@@ -148,10 +148,10 @@ namespace mcp_nexus_tests.Session
             // Arrange
             var sessionId1 = "session-1";
             var sessionId2 = "session-2";
-            
+
             var sessionInfo1 = CreateMockSessionInfo(sessionId1, "dump1.dmp", SessionStatus.Active);
             var sessionInfo2 = CreateMockSessionInfo(sessionId2, "dump2.dmp", SessionStatus.Active);
-            
+
             _sessions[sessionId1] = sessionInfo1;
             _sessions[sessionId2] = sessionInfo2;
 
@@ -191,10 +191,10 @@ namespace mcp_nexus_tests.Session
             // Arrange
             var sessionId1 = "active-session";
             var sessionId2 = "inactive-session";
-            
+
             var activeSession = CreateMockSessionInfo(sessionId1, "dump1.dmp", SessionStatus.Active);
             var inactiveSession = CreateMockSessionInfo(sessionId2, "dump2.dmp", SessionStatus.Disposed);
-            
+
             _sessions[sessionId1] = activeSession;
             _sessions[sessionId2] = inactiveSession;
 
@@ -215,10 +215,10 @@ namespace mcp_nexus_tests.Session
             // Arrange
             var sessionId1 = "active-session";
             var sessionId2 = "disposed-session";
-            
+
             var activeSession = CreateMockSessionInfo(sessionId1, "dump1.dmp", SessionStatus.Active);
             var disposedSession = CreateMockSessionInfo(sessionId2, "dump2.dmp", SessionStatus.Disposed);
-            
+
             _sessions[sessionId1] = activeSession;
             _sessions[sessionId2] = disposedSession;
 
@@ -239,10 +239,10 @@ namespace mcp_nexus_tests.Session
             // Arrange
             var sessionId1 = "valid-session";
             var sessionId2 = "problematic-session";
-            
+
             var validSession = CreateMockSessionInfo(sessionId1, "dump1.dmp", SessionStatus.Active);
             var problematicSession = CreateMockSessionInfo(sessionId2, "dump2.dmp", SessionStatus.Active);
-            
+
             _sessions[sessionId1] = validSession;
             _sessions[sessionId2] = problematicSession;
 
@@ -265,10 +265,10 @@ namespace mcp_nexus_tests.Session
             // Arrange
             var sessionId1 = "session-1";
             var sessionId2 = "session-2";
-            
+
             var session1 = CreateMockSessionInfo(sessionId1, "dump1.dmp", SessionStatus.Active);
             var session2 = CreateMockSessionInfo(sessionId2, "dump2.dmp", SessionStatus.Active);
-            
+
             _sessions[sessionId1] = session1;
             _sessions[sessionId2] = session2;
 
@@ -335,7 +335,7 @@ namespace mcp_nexus_tests.Session
         {
             var mockCdbSession = new Mock<ICdbSession>();
             var mockCommandQueue = new Mock<ICommandQueueService>();
-            
+
             // Setup command queue to return some test data
             var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>
             {

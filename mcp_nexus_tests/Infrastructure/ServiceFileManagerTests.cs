@@ -127,7 +127,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CopyDirectoryAsync_WithNullSourceDir_ThrowsArgumentNullException()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 ServiceFileManager.CopyDirectoryAsync(null!, _testTargetDir, _mockLogger.Object));
         }
 
@@ -135,7 +135,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CopyDirectoryAsync_WithNullTargetDir_ThrowsArgumentNullException()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 ServiceFileManager.CopyDirectoryAsync(_testSourceDir, null!, _mockLogger.Object));
         }
 
@@ -143,7 +143,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CopyDirectoryAsync_WithEmptySourceDir_ThrowsArgumentException()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 ServiceFileManager.CopyDirectoryAsync("", _testTargetDir, _mockLogger.Object));
         }
 
@@ -151,7 +151,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CopyDirectoryAsync_WithEmptyTargetDir_ThrowsArgumentException()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 ServiceFileManager.CopyDirectoryAsync(_testSourceDir, "", _mockLogger.Object));
         }
 
@@ -264,7 +264,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods are static as expected
             var type = typeof(ServiceFileManager);
-            
+
             var buildMethod = type.GetMethod("BuildProjectForDeploymentAsync");
             var findProjectMethod = type.GetMethod("FindProjectDirectory");
             var copyFilesMethod = type.GetMethod("CopyApplicationFilesAsync");
@@ -289,7 +289,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all async methods return Task or Task<T>
             var type = typeof(ServiceFileManager);
-            
+
             var buildMethod = type.GetMethod("BuildProjectForDeploymentAsync");
             var copyFilesMethod = type.GetMethod("CopyApplicationFilesAsync");
             var copyDirMethod = type.GetMethod("CopyDirectoryAsync");
@@ -308,7 +308,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods accept an optional ILogger parameter
             var type = typeof(ServiceFileManager);
-            
+
             var buildMethod = type.GetMethod("BuildProjectForDeploymentAsync");
             var copyFilesMethod = type.GetMethod("CopyApplicationFilesAsync");
             var copyDirMethod = type.GetMethod("CopyDirectoryAsync");
@@ -370,7 +370,7 @@ namespace mcp_nexus_tests.Infrastructure
             await ServiceFileManager.CopyApplicationFilesAsync(_mockLogger.Object);
             await ServiceFileManager.CreateBackupAsync(_mockLogger.Object);
             await ServiceFileManager.CleanupOldBackupsAsync(5, _mockLogger.Object);
-            
+
             // Should not throw exceptions
             Assert.True(true);
         }
@@ -382,7 +382,7 @@ namespace mcp_nexus_tests.Infrastructure
             ServiceFileManager.FindProjectDirectory(Environment.CurrentDirectory);
             ServiceFileManager.ValidateInstallationFiles(_mockLogger.Object);
             ServiceFileManager.GetBackupInfo(_mockLogger.Object);
-            
+
             // Should not throw exceptions
             Assert.True(true);
         }

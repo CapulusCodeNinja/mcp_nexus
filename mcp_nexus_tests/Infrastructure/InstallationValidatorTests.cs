@@ -32,7 +32,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             var result = await InstallationValidator.ValidateInstallationPrerequisitesAsync(null);
-            
+
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
         }
@@ -42,7 +42,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             var result = await InstallationValidator.ValidateInstallationPrerequisitesAsync(_mockLogger.Object);
-            
+
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
         }
@@ -52,7 +52,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             var result = await InstallationValidator.ValidateUninstallationPrerequisitesAsync(null);
-            
+
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
         }
@@ -62,7 +62,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             var result = await InstallationValidator.ValidateUninstallationPrerequisitesAsync(_mockLogger.Object);
-            
+
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
         }
@@ -72,7 +72,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             var result = await InstallationValidator.ValidateUpdatePrerequisitesAsync(null);
-            
+
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
         }
@@ -82,7 +82,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             var result = await InstallationValidator.ValidateUpdatePrerequisitesAsync(_mockLogger.Object);
-            
+
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
         }
@@ -92,7 +92,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             var result = InstallationValidator.ValidateInstallationSuccess(null);
-            
+
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
         }
@@ -102,7 +102,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             var result = InstallationValidator.ValidateInstallationSuccess(_mockLogger.Object);
-            
+
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
         }
@@ -125,7 +125,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Assert
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
-            
+
             // Verify that logging was attempted (the exact log level depends on the result)
             loggerMock.Verify(
                 x => x.Log(
@@ -155,7 +155,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Assert
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
-            
+
             // Verify that logging was attempted (the exact log level depends on the result)
             loggerMock.Verify(
                 x => x.Log(
@@ -185,7 +185,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Assert
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
-            
+
             // Verify that logging was attempted (the exact log level depends on the result)
             loggerMock.Verify(
                 x => x.Log(
@@ -215,7 +215,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Assert
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
-            
+
             // Verify that logging was attempted (the exact log level depends on the result)
             loggerMock.Verify(
                 x => x.Log(

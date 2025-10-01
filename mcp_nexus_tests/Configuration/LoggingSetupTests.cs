@@ -48,9 +48,9 @@ namespace mcp_nexus_tests.Configuration
             {
                 // Act - Note: We can't easily test the full ConfigureLogging method due to ILoggingBuilder complexity
                 // Instead, we'll test the console output behavior by calling the private methods via reflection
-                var logStartMethod = typeof(LoggingSetup).GetMethod("LogConfigurationStart", 
+                var logStartMethod = typeof(LoggingSetup).GetMethod("LogConfigurationStart",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-                var logCompleteMethod = typeof(LoggingSetup).GetMethod("LogConfigurationComplete", 
+                var logCompleteMethod = typeof(LoggingSetup).GetMethod("LogConfigurationComplete",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
                 logStartMethod!.Invoke(null, new object[] { true });
@@ -78,9 +78,9 @@ namespace mcp_nexus_tests.Configuration
             try
             {
                 // Act - Test the console error output behavior
-                var logStartMethod = typeof(LoggingSetup).GetMethod("LogConfigurationStart", 
+                var logStartMethod = typeof(LoggingSetup).GetMethod("LogConfigurationStart",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-                var logCompleteMethod = typeof(LoggingSetup).GetMethod("LogConfigurationComplete", 
+                var logCompleteMethod = typeof(LoggingSetup).GetMethod("LogConfigurationComplete",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
                 logStartMethod!.Invoke(null, new object[] { false });
@@ -112,7 +112,7 @@ namespace mcp_nexus_tests.Configuration
         public void ParseLogLevel_WithDifferentInputs_ReturnsCorrectLogLevel(string logLevelString, Microsoft.Extensions.Logging.LogLevel expectedLogLevel)
         {
             // Arrange
-            var parseMethod = typeof(LoggingSetup).GetMethod("ParseLogLevel", 
+            var parseMethod = typeof(LoggingSetup).GetMethod("ParseLogLevel",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
@@ -133,7 +133,7 @@ namespace mcp_nexus_tests.Configuration
                 })
                 .Build();
 
-            var getLogLevelMethod = typeof(LoggingSetup).GetMethod("GetLogLevelFromConfiguration", 
+            var getLogLevelMethod = typeof(LoggingSetup).GetMethod("GetLogLevelFromConfiguration",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
@@ -149,7 +149,7 @@ namespace mcp_nexus_tests.Configuration
             // Arrange
             var configuration = new ConfigurationBuilder().Build();
 
-            var getLogLevelMethod = typeof(LoggingSetup).GetMethod("GetLogLevelFromConfiguration", 
+            var getLogLevelMethod = typeof(LoggingSetup).GetMethod("GetLogLevelFromConfiguration",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
@@ -165,8 +165,8 @@ namespace mcp_nexus_tests.Configuration
             // Arrange
             var microsoftLevel = Microsoft.Extensions.Logging.LogLevel.Trace;
             var expectedNLogLevel = NLog.LogLevel.Trace;
-            
-            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel", 
+
+            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
@@ -182,8 +182,8 @@ namespace mcp_nexus_tests.Configuration
             // Arrange
             var microsoftLevel = Microsoft.Extensions.Logging.LogLevel.Information;
             var expectedNLogLevel = NLog.LogLevel.Info;
-            
-            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel", 
+
+            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
@@ -199,8 +199,8 @@ namespace mcp_nexus_tests.Configuration
             // Arrange
             var microsoftLevel = Microsoft.Extensions.Logging.LogLevel.Critical;
             var expectedNLogLevel = NLog.LogLevel.Fatal;
-            
-            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel", 
+
+            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
@@ -227,11 +227,11 @@ namespace mcp_nexus_tests.Configuration
 
             try
             {
-                var configureNLogMethod = typeof(LoggingSetup).GetMethod("ConfigureNLogDynamically", 
+                var configureNLogMethod = typeof(LoggingSetup).GetMethod("ConfigureNLogDynamically",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
                 // Act & Assert
-                var exception = Record.Exception(() => 
+                var exception = Record.Exception(() =>
                     configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Debug }));
                 Assert.Null(exception);
             }
@@ -251,11 +251,11 @@ namespace mcp_nexus_tests.Configuration
 
             try
             {
-                var configureNLogMethod = typeof(LoggingSetup).GetMethod("ConfigureNLogDynamically", 
+                var configureNLogMethod = typeof(LoggingSetup).GetMethod("ConfigureNLogDynamically",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
                 // Act & Assert
-                var exception = Record.Exception(() => 
+                var exception = Record.Exception(() =>
                     configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Information }));
                 Assert.Null(exception);
             }

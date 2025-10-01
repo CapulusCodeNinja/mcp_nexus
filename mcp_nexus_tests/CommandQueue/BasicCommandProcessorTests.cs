@@ -32,7 +32,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Constructor_WithNullCdbSession_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new BasicCommandProcessor(null!, _mockLogger.Object, _config, _activeCommands));
         }
 
@@ -40,7 +40,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new BasicCommandProcessor(_mockCdbSession.Object, null!, _config, _activeCommands));
         }
 
@@ -48,7 +48,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Constructor_WithNullConfig_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new BasicCommandProcessor(_mockCdbSession.Object, _mockLogger.Object, null!, _activeCommands));
         }
 
@@ -56,7 +56,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Constructor_WithNullActiveCommands_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new BasicCommandProcessor(_mockCdbSession.Object, _mockLogger.Object, _config, null!));
         }
 
@@ -95,7 +95,7 @@ namespace mcp_nexus_tests.CommandQueue
             var cancellationTokenSource = new CancellationTokenSource();
             var completionSource = new TaskCompletionSource<string>();
             var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, cancellationTokenSource);
-            
+
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();
 
@@ -122,7 +122,7 @@ namespace mcp_nexus_tests.CommandQueue
             var cancellationTokenSource = new CancellationTokenSource();
             var completionSource = new TaskCompletionSource<string>();
             var queuedCommand = new QueuedCommand("cmd-1", "!invalid", DateTime.UtcNow, completionSource, cancellationTokenSource);
-            
+
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();
 
@@ -150,7 +150,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandCancellationTokenSource = new CancellationTokenSource();
             var completionSource = new TaskCompletionSource<string>();
             var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, commandCancellationTokenSource);
-            
+
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();
 
@@ -179,7 +179,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandCancellationTokenSource = new CancellationTokenSource();
             var completionSource = new TaskCompletionSource<string>();
             var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, commandCancellationTokenSource);
-            
+
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();
 
@@ -194,7 +194,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Act - Start processing and then cancel the service
             var processingTask = _processor.ProcessCommandQueueAsync(commandQueue, serviceCancellationTokenSource.Token);
-            
+
             // Cancel the service after a short delay to allow processing to start
             await Task.Delay(100);
             serviceCancellationTokenSource.Cancel();
@@ -239,7 +239,7 @@ namespace mcp_nexus_tests.CommandQueue
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
             var oldCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow.AddHours(-2), completionSource, cancellationTokenSource, CommandState.Completed);
-            
+
             _activeCommands["cmd-1"] = oldCommand;
 
             // Act
@@ -256,7 +256,7 @@ namespace mcp_nexus_tests.CommandQueue
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
             var recentCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, cancellationTokenSource, CommandState.Completed);
-            
+
             _activeCommands["cmd-1"] = recentCommand;
 
             // Act
@@ -273,7 +273,7 @@ namespace mcp_nexus_tests.CommandQueue
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
             var executingCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow.AddHours(-2), completionSource, cancellationTokenSource, CommandState.Executing);
-            
+
             _activeCommands["cmd-1"] = executingCommand;
 
             // Act

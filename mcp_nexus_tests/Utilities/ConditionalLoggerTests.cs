@@ -142,7 +142,7 @@ namespace mcp_nexus_tests.Utilities
                 // This is expected behavior when preprocessor directives are not active
                 // The methods still call the underlying logger which validates null parameters
             }
-            
+
             // These should return false with null logger, but may throw NullReferenceException
             try
             {
@@ -190,7 +190,7 @@ namespace mcp_nexus_tests.Utilities
             // Assert
             var type = typeof(ConditionalLogger);
             var methods = type.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-            
+
             Assert.True(methods.Length >= 6); // Should have at least 6 static methods
             Assert.All(methods, method => Assert.True(method.IsStatic));
         }
@@ -201,7 +201,7 @@ namespace mcp_nexus_tests.Utilities
             // Assert
             var type = typeof(ConditionalLogger);
             var methods = type.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-            
+
             Assert.True(methods.Length >= 6); // Should have at least 6 public methods
             Assert.All(methods, method => Assert.True(method.IsPublic));
         }

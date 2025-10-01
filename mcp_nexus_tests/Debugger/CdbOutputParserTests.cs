@@ -345,7 +345,7 @@ namespace mcp_nexus_tests.Debugger
         public void CaptureAvailableOutput_WithNullReaders_HandlesGracefully()
         {
             var mockLogger = new Mock<ILogger>();
-            
+
             _parser.CaptureAvailableOutput(null, null, "test", mockLogger.Object);
 
             // Should not throw exception

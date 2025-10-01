@@ -50,7 +50,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act
             var result = await ServiceRegistryManager.RunScCommandAsync(null!);
-            
+
             // Assert
             // Should not throw, result should be boolean (likely false due to invalid arguments)
             Assert.True(result == true || result == false);
@@ -187,7 +187,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods are static as expected
             var type = typeof(ServiceRegistryManager);
-            
+
             var isServiceInstalledMethod = type.GetMethod("IsServiceInstalled");
             var runScCommandMethod = type.GetMethod("RunScCommandAsync");
             var forceCleanupMethod = type.GetMethod("ForceCleanupServiceAsync");
@@ -208,7 +208,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all async methods return Task<bool>
             var type = typeof(ServiceRegistryManager);
-            
+
             var runScCommandMethod = type.GetMethod("RunScCommandAsync");
             var forceCleanupMethod = type.GetMethod("ForceCleanupServiceAsync");
             var directCleanupMethod = type.GetMethod("DirectRegistryCleanupAsync");
@@ -227,7 +227,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods accept an optional ILogger parameter
             var type = typeof(ServiceRegistryManager);
-            
+
             var runScCommandMethod = type.GetMethod("RunScCommandAsync");
             var forceCleanupMethod = type.GetMethod("ForceCleanupServiceAsync");
             var directCleanupMethod = type.GetMethod("DirectRegistryCleanupAsync");
@@ -272,10 +272,10 @@ namespace mcp_nexus_tests.Infrastructure
             // This test verifies that the class has the SupportedOSPlatform attribute
             var type = typeof(ServiceRegistryManager);
             var attributes = type.GetCustomAttributes(typeof(System.Runtime.Versioning.SupportedOSPlatformAttribute), false);
-            
+
             Assert.NotEmpty(attributes);
             Assert.Single(attributes);
-            
+
             var attribute = (System.Runtime.Versioning.SupportedOSPlatformAttribute)attributes[0];
             Assert.Equal("windows", attribute.PlatformName);
         }
@@ -289,7 +289,7 @@ namespace mcp_nexus_tests.Infrastructure
             await ServiceRegistryManager.DirectRegistryCleanupAsync(_mockLogger.Object);
             await ServiceRegistryManager.CreateServiceAsync(_mockLogger.Object);
             await ServiceRegistryManager.DeleteServiceAsync(_mockLogger.Object);
-            
+
             // Should not throw exceptions
             Assert.True(true);
         }
@@ -299,7 +299,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all sync methods handle exceptions gracefully
             ServiceRegistryManager.IsServiceInstalled();
-            
+
             // Should not throw exceptions
             Assert.True(true);
         }
@@ -327,7 +327,7 @@ namespace mcp_nexus_tests.Infrastructure
             // This test verifies that IsServiceInstalled returns a boolean
             var type = typeof(ServiceRegistryManager);
             var method = type.GetMethod("IsServiceInstalled");
-            
+
             Assert.Equal(typeof(bool), method?.ReturnType);
         }
 
@@ -338,7 +338,7 @@ namespace mcp_nexus_tests.Infrastructure
             var type = typeof(ServiceRegistryManager);
             var method = type.GetMethod("IsServiceInstalled");
             var parameters = method?.GetParameters();
-            
+
             Assert.NotNull(parameters);
             Assert.Empty(parameters);
         }

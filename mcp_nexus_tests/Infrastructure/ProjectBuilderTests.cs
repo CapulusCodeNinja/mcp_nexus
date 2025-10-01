@@ -19,7 +19,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Arrange
             var testDir = Path.Combine(Path.GetTempPath(), "ProjectBuilderTest");
             Directory.CreateDirectory(testDir);
-            
+
             try
             {
                 var projectFile = Path.Combine(testDir, ServiceConfiguration.ProjectFileName);
@@ -46,7 +46,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Arrange
             var testDir = Path.Combine(Path.GetTempPath(), "ProjectBuilderTest_NoProject");
             Directory.CreateDirectory(testDir);
-            
+
             try
             {
                 // Act
@@ -103,7 +103,7 @@ namespace mcp_nexus_tests.Infrastructure
             var parentDir = Path.Combine(Path.GetTempPath(), "ProjectBuilderTest_Parent");
             var childDir = Path.Combine(parentDir, "Child");
             Directory.CreateDirectory(childDir);
-            
+
             try
             {
                 var projectFile = Path.Combine(parentDir, ServiceConfiguration.ProjectFileName);
@@ -132,9 +132,9 @@ namespace mcp_nexus_tests.Infrastructure
             var level1Dir = Path.Combine(rootDir, "Level1");
             var level2Dir = Path.Combine(level1Dir, "Level2");
             var level3Dir = Path.Combine(level2Dir, "Level3");
-            
+
             Directory.CreateDirectory(level3Dir);
-            
+
             try
             {
                 var projectFile = Path.Combine(rootDir, ServiceConfiguration.ProjectFileName);
@@ -161,7 +161,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Arrange
             var testDir = Path.Combine(Path.GetTempPath(), "ProjectBuilderTest_Current");
             Directory.CreateDirectory(testDir);
-            
+
             try
             {
                 var projectFile = Path.Combine(testDir, ServiceConfiguration.ProjectFileName);
@@ -233,7 +233,7 @@ namespace mcp_nexus_tests.Infrastructure
             var testDir = Path.Combine(Path.GetTempPath(), "ProjectBuilderTest_Subdir");
             var subDir = Path.Combine(testDir, "Subdir");
             Directory.CreateDirectory(subDir);
-            
+
             try
             {
                 var projectFile = Path.Combine(subDir, ServiceConfiguration.ProjectFileName);
@@ -272,7 +272,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Arrange
             var testDir = Path.Combine(Path.GetTempPath(), "ProjectBuilderTest_RootProject");
             Directory.CreateDirectory(testDir);
-            
+
             try
             {
                 var projectFile = Path.Combine(testDir, ServiceConfiguration.ProjectFileName);
@@ -300,12 +300,12 @@ namespace mcp_nexus_tests.Infrastructure
             var rootDir = Path.Combine(Path.GetTempPath(), "ProjectBuilderTest_Multiple");
             var childDir = Path.Combine(rootDir, "Child");
             Directory.CreateDirectory(childDir);
-            
+
             try
             {
                 var rootProjectFile = Path.Combine(rootDir, ServiceConfiguration.ProjectFileName);
                 var childProjectFile = Path.Combine(childDir, ServiceConfiguration.ProjectFileName);
-                
+
                 File.WriteAllText(rootProjectFile, "root project file");
                 File.WriteAllText(childProjectFile, "child project file");
 

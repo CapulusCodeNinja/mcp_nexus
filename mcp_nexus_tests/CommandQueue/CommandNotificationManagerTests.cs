@@ -28,7 +28,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Constructor_WithNullNotificationService_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CommandNotificationManager(null!, _mockLogger.Object, _config));
         }
 
@@ -36,7 +36,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CommandNotificationManager(_mockNotificationService.Object, null!, _config));
         }
 
@@ -44,7 +44,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Constructor_WithNullConfig_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CommandNotificationManager(_mockNotificationService.Object, _mockLogger.Object, null!));
         }
 
@@ -145,9 +145,9 @@ namespace mcp_nexus_tests.CommandQueue
             // Wait for the Task.Run to complete
             await Task.Delay(2000);
             _mockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
-                It.IsAny<string>(), 
-                It.IsAny<string>(), 
-                It.Is<string>(s => s.Contains("Executing for 5") && s.Contains("minutes")), 
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<string>(s => s.Contains("Executing for 5") && s.Contains("minutes")),
                 It.IsAny<int?>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
@@ -170,9 +170,9 @@ namespace mcp_nexus_tests.CommandQueue
             // Wait for the Task.Run to complete
             await Task.Delay(1000);
             _mockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
-                It.IsAny<string>(), 
-                It.IsAny<string>(), 
-                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
                 It.Is<int?>(p => p <= 95),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
@@ -341,7 +341,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "cmd-1";
             var command = "!analyze -v";
             var status = "executing";
-            
+
             _mockNotificationService.Setup(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ThrowsAsync(new Exception("Notification failed"));
 
@@ -367,7 +367,7 @@ namespace mcp_nexus_tests.CommandQueue
             var cancellationTokenSource = new CancellationTokenSource();
             var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, cancellationTokenSource);
             var elapsed = TimeSpan.FromMinutes(5);
-            
+
             _mockNotificationService.Setup(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ThrowsAsync(new Exception("Notification failed"));
 

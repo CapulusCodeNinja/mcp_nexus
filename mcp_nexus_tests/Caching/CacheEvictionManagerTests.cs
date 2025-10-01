@@ -39,21 +39,21 @@ namespace mcp_nexus_tests.Caching
         [Fact]
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CacheEvictionManager<string, object>(null!, _config, _cache));
         }
 
         [Fact]
         public void Constructor_WithNullConfig_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CacheEvictionManager<string, object>(_mockLogger.Object, null!, _cache));
         }
 
         [Fact]
         public void Constructor_WithNullCache_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CacheEvictionManager<string, object>(_mockLogger.Object, _config, null!));
         }
 

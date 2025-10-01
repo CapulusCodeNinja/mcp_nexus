@@ -103,7 +103,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods are static as expected
             var type = typeof(ServiceInstallationOrchestrator);
-            
+
             var installMethod = type.GetMethod("InstallServiceAsync");
             var uninstallMethod = type.GetMethod("UninstallServiceAsync");
             var forceUninstallMethod = type.GetMethod("ForceUninstallServiceAsync");
@@ -120,7 +120,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods return Task<bool>
             var type = typeof(ServiceInstallationOrchestrator);
-            
+
             var installMethod = type.GetMethod("InstallServiceAsync");
             var uninstallMethod = type.GetMethod("UninstallServiceAsync");
             var forceUninstallMethod = type.GetMethod("ForceUninstallServiceAsync");
@@ -137,7 +137,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods accept an optional ILogger parameter
             var type = typeof(ServiceInstallationOrchestrator);
-            
+
             var installMethod = type.GetMethod("InstallServiceAsync");
             var uninstallMethod = type.GetMethod("UninstallServiceAsync");
             var forceUninstallMethod = type.GetMethod("ForceUninstallServiceAsync");
@@ -178,7 +178,7 @@ namespace mcp_nexus_tests.Infrastructure
             var uninstallResult = await ServiceInstallationOrchestrator.UninstallServiceAsync(_mockLogger.Object);
             var forceUninstallResult = await ServiceInstallationOrchestrator.ForceUninstallServiceAsync(_mockLogger.Object);
             var updateResult = await ServiceInstallationOrchestrator.UpdateServiceAsync(_mockLogger.Object);
-            
+
             // All should return boolean results without throwing
             Assert.True(installResult == true || installResult == false);
             Assert.True(uninstallResult == true || uninstallResult == false);
@@ -191,7 +191,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that the method handles prerequisite validation failures
             var result = await ServiceInstallationOrchestrator.InstallServiceAsync(_mockLogger.Object);
-            
+
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
         }
@@ -201,7 +201,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that the method handles the case when service is not installed
             var result = await ServiceInstallationOrchestrator.UninstallServiceAsync(_mockLogger.Object);
-            
+
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
         }
@@ -211,7 +211,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that the method handles prerequisite validation failures
             var result = await ServiceInstallationOrchestrator.ForceUninstallServiceAsync(_mockLogger.Object);
-            
+
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
         }
@@ -221,7 +221,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that the method handles prerequisite validation failures
             var result = await ServiceInstallationOrchestrator.UpdateServiceAsync(_mockLogger.Object);
-            
+
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
         }
@@ -231,7 +231,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that the method handles the case when no update is needed
             var result = await ServiceInstallationOrchestrator.UpdateServiceAsync(_mockLogger.Object);
-            
+
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
         }
@@ -242,10 +242,10 @@ namespace mcp_nexus_tests.Infrastructure
             // This test verifies that the class has the SupportedOSPlatform attribute
             var type = typeof(ServiceInstallationOrchestrator);
             var attributes = type.GetCustomAttributes(typeof(System.Runtime.Versioning.SupportedOSPlatformAttribute), false);
-            
+
             Assert.NotEmpty(attributes);
             Assert.Single(attributes);
-            
+
             var attribute = (System.Runtime.Versioning.SupportedOSPlatformAttribute)attributes[0];
             Assert.Equal("windows", attribute.PlatformName);
         }
@@ -255,7 +255,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods are async
             var type = typeof(ServiceInstallationOrchestrator);
-            
+
             var installMethod = type.GetMethod("InstallServiceAsync");
             var uninstallMethod = type.GetMethod("UninstallServiceAsync");
             var forceUninstallMethod = type.GetMethod("ForceUninstallServiceAsync");
@@ -272,7 +272,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods are public
             var type = typeof(ServiceInstallationOrchestrator);
-            
+
             var installMethod = type.GetMethod("InstallServiceAsync");
             var uninstallMethod = type.GetMethod("UninstallServiceAsync");
             var forceUninstallMethod = type.GetMethod("ForceUninstallServiceAsync");

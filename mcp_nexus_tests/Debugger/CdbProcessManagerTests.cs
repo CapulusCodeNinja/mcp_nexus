@@ -29,14 +29,14 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CdbProcessManager(null!, _config));
         }
 
         [Fact]
         public void Constructor_WithNullConfig_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CdbProcessManager(_mockLogger.Object, null!));
         }
 
@@ -290,12 +290,12 @@ namespace mcp_nexus_tests.Debugger
             // Create a temporary CDB executable for testing
             var tempDir = Path.GetTempPath();
             var tempCdbPath = Path.Combine(tempDir, "cdb.exe");
-            
+
             try
             {
                 // Create a dummy CDB executable
                 File.WriteAllText(tempCdbPath, "dummy cdb content");
-                
+
                 var configWithValidPath = new CdbSessionConfiguration(customCdbPath: tempCdbPath);
                 var processManager = new CdbProcessManager(_mockLogger.Object, configWithValidPath);
 
@@ -319,12 +319,12 @@ namespace mcp_nexus_tests.Debugger
         {
             var tempDir = Path.GetTempPath();
             var tempCdbPath = Path.Combine(tempDir, "cdb_override.exe");
-            
+
             try
             {
                 // Create a dummy CDB executable
                 File.WriteAllText(tempCdbPath, "dummy cdb content");
-                
+
                 var configWithValidPath = new CdbSessionConfiguration(customCdbPath: "original.exe");
                 var processManager = new CdbProcessManager(_mockLogger.Object, configWithValidPath);
 
@@ -348,12 +348,12 @@ namespace mcp_nexus_tests.Debugger
         {
             var tempDir = Path.GetTempPath();
             var tempCdbPath = Path.Combine(tempDir, "cdb.exe");
-            
+
             try
             {
                 // Create a dummy CDB executable
                 File.WriteAllText(tempCdbPath, "dummy cdb content");
-                
+
                 var configWithValidPath = new CdbSessionConfiguration(customCdbPath: tempCdbPath);
                 var processManager = new CdbProcessManager(_mockLogger.Object, configWithValidPath);
 
@@ -377,12 +377,12 @@ namespace mcp_nexus_tests.Debugger
         {
             var tempDir = Path.GetTempPath();
             var tempCdbPath = Path.Combine(tempDir, "cdb.exe");
-            
+
             try
             {
                 // Create a dummy CDB executable
                 File.WriteAllText(tempCdbPath, "dummy cdb content");
-                
+
                 var configWithSymbolPath = new CdbSessionConfiguration(
                     customCdbPath: tempCdbPath,
                     symbolSearchPath: "srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols");
@@ -438,28 +438,28 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void CdbSessionConfiguration_ValidateParameters_WithInvalidCommandTimeout_ThrowsArgumentOutOfRangeException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => 
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
                 CdbSessionConfiguration.ValidateParameters(0, 30000, 1, 2000));
         }
 
         [Fact]
         public void CdbSessionConfiguration_ValidateParameters_WithNegativeSymbolServerTimeout_ThrowsArgumentOutOfRangeException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => 
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
                 CdbSessionConfiguration.ValidateParameters(30000, -1, 1, 2000));
         }
 
         [Fact]
         public void CdbSessionConfiguration_ValidateParameters_WithNegativeSymbolServerMaxRetries_ThrowsArgumentOutOfRangeException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => 
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
                 CdbSessionConfiguration.ValidateParameters(30000, 30000, -1, 2000));
         }
 
         [Fact]
         public void CdbSessionConfiguration_ValidateParameters_WithNegativeStartupDelay_ThrowsArgumentOutOfRangeException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => 
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
                 CdbSessionConfiguration.ValidateParameters(30000, 30000, 1, -1));
         }
 
@@ -493,12 +493,12 @@ namespace mcp_nexus_tests.Debugger
         {
             var tempDir = Path.GetTempPath();
             var tempCdbPath = Path.Combine(tempDir, "cdb.exe");
-            
+
             try
             {
                 // Create a dummy CDB executable
                 File.WriteAllText(tempCdbPath, "dummy cdb content");
-                
+
                 var config = new CdbSessionConfiguration(customCdbPath: tempCdbPath);
                 var result = config.FindCdbPath();
 

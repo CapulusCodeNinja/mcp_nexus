@@ -60,14 +60,14 @@ namespace mcp_nexus_tests.Session
             // Create a mock service provider
             var mockServiceProvider = new Mock<IServiceProvider>();
             var mockLoggerFactory = new Mock<ILoggerFactory>();
-            
+
             // Create the lifecycle manager with proper mocks
             _mockLifecycleManager = new Mock<SessionLifecycleManager>(
-                _mockLogger.Object, 
-                mockServiceProvider.Object, 
-                mockLoggerFactory.Object, 
-                _mockNotificationService.Object, 
-                _config, 
+                _mockLogger.Object,
+                mockServiceProvider.Object,
+                mockLoggerFactory.Object,
+                _mockNotificationService.Object,
+                _config,
                 _sessions);
         }
 
@@ -414,7 +414,7 @@ namespace mcp_nexus_tests.Session
             // Arrange
             var sessionId1 = "test-session-1";
             var sessionId2 = "test-session-2";
-            
+
             var sessionInfo1 = new SessionInfo
             {
                 SessionId = sessionId1,

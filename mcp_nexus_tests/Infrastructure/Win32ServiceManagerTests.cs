@@ -159,7 +159,7 @@ namespace mcp_nexus_tests.Infrastructure
             // that the class has the expected structure
             var type = typeof(Win32ServiceManager);
             var fields = type.GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            
+
             // Should have at least one private constant field
             Assert.True(fields.Length > 0);
         }
@@ -170,7 +170,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Verify that Win32ServiceManager has the expected public methods
             var type = typeof(Win32ServiceManager);
             var methods = type.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-            
+
             var methodNames = methods.Select(m => m.Name).ToArray();
             Assert.Contains("OpenServiceControlManager", methodNames);
             Assert.Contains("CanAccessServiceControlManager", methodNames);
@@ -182,7 +182,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Verify that Win32ServiceManager has the expected DllImport methods
             var type = typeof(Win32ServiceManager);
             var methods = type.GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            
+
             var methodNames = methods.Select(m => m.Name).ToArray();
             Assert.Contains("OpenSCManager", methodNames);
             Assert.Contains("CloseServiceHandle", methodNames);
@@ -194,7 +194,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Verify that ServiceControlManagerHandle has the expected constructor
             var type = typeof(Win32ServiceManager.ServiceControlManagerHandle);
             var constructors = type.GetConstructors(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
+
             Assert.Single(constructors);
             var constructor = constructors[0];
             var parameters = constructor.GetParameters();
@@ -208,7 +208,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Verify that ServiceControlManagerHandle has the expected structure
             var type = typeof(Win32ServiceManager.ServiceControlManagerHandle);
             var fields = type.GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
+
             // Should have private fields for handle and disposed state
             Assert.True(fields.Length >= 2);
         }

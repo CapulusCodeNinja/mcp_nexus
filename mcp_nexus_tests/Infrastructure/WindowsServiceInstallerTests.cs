@@ -520,7 +520,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Assert
             Assert.NotNull(result);
             Assert.IsType<Task<bool>>(result);
-            
+
             // Wait for completion (but don't assert the result since we can't control the environment)
             var completed = await Task.WhenAny(result, Task.Delay(5000));
             Assert.Equal(result, completed);
@@ -535,7 +535,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Assert
             Assert.NotNull(result);
             Assert.IsType<Task<bool>>(result);
-            
+
             // Wait for completion (but don't assert the result since we can't control the environment)
             var completed = await Task.WhenAny(result, Task.Delay(5000));
             Assert.Equal(result, completed);
@@ -550,7 +550,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Assert
             Assert.NotNull(result);
             Assert.IsType<Task<bool>>(result);
-            
+
             // Wait for completion (but don't assert the result since we can't control the environment)
             var completed = await Task.WhenAny(result, Task.Delay(5000));
             Assert.Equal(result, completed);
@@ -565,7 +565,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Assert
             Assert.NotNull(result);
             Assert.IsType<Task<bool>>(result);
-            
+
             // Wait for completion (but don't assert the result since we can't control the environment)
             var completed = await Task.WhenAny(result, Task.Delay(5000));
             Assert.Equal(result, completed);

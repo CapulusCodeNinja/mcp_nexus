@@ -29,7 +29,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -56,7 +56,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -83,7 +83,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -109,7 +109,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -134,7 +134,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -160,7 +160,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -186,7 +186,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -213,7 +213,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -238,7 +238,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -262,7 +262,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -286,7 +286,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -311,7 +311,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -336,7 +336,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -362,7 +362,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
@@ -387,7 +387,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal("data", paramsObj["key"]!.ToString());
@@ -409,7 +409,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.NotNull(notification.Params);
 
             var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ? 
+            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
                 JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
             Assert.NotNull(paramsObj);
             Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());

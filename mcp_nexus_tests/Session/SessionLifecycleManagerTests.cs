@@ -40,7 +40,7 @@ namespace mcp_nexus_tests.Session
             _mockCdbSession = new Mock<ICdbSession>();
             _mockCommandQueue = new Mock<ICommandQueueService>();
             _sessions = new ConcurrentDictionary<string, SessionInfo>();
-            
+
             var sessionConfig = new SessionConfiguration
             {
                 MaxConcurrentSessions = 1000,

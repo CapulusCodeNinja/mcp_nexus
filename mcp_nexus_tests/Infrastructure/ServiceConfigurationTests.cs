@@ -283,7 +283,7 @@ namespace mcp_nexus_tests.Infrastructure
             Assert.NotNull(backupsBaseFolder);
             Assert.NotNull(executablePath);
             Assert.NotNull(backupsFolder);
-            
+
             // These should be valid path characters
             Assert.DoesNotContain(Path.GetInvalidPathChars(), backupsBaseFolder);
             Assert.DoesNotContain(Path.GetInvalidPathChars(), executablePath);

@@ -34,21 +34,21 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CdbCommandExecutor(null!, _config, _outputParser));
         }
 
         [Fact]
         public void Constructor_WithNullConfig_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CdbCommandExecutor(_mockLogger.Object, null!, _outputParser));
         }
 
         [Fact]
         public void Constructor_WithNullOutputParser_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CdbCommandExecutor(_mockLogger.Object, _config, null!));
         }
 
@@ -80,7 +80,7 @@ namespace mcp_nexus_tests.Debugger
             // This test verifies the method can be called without throwing
             // The actual cancellation logic is complex and requires a real process manager
             _executor.CancelCurrentOperation();
-            
+
             // Verify the method completes without throwing
             Assert.True(true);
         }
@@ -89,7 +89,7 @@ namespace mcp_nexus_tests.Debugger
         public void ExecuteCommand_WithNullCommand_ThrowsArgumentException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => 
+            Assert.Throws<ArgumentException>(() =>
                 _executor.ExecuteCommand(null!, null!));
         }
 
@@ -97,7 +97,7 @@ namespace mcp_nexus_tests.Debugger
         public void ExecuteCommand_WithEmptyCommand_ThrowsArgumentException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => 
+            Assert.Throws<ArgumentException>(() =>
                 _executor.ExecuteCommand("", null!));
         }
 
@@ -105,7 +105,7 @@ namespace mcp_nexus_tests.Debugger
         public void ExecuteCommand_WithWhitespaceCommand_ThrowsArgumentException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => 
+            Assert.Throws<ArgumentException>(() =>
                 _executor.ExecuteCommand("   ", null!));
         }
 
@@ -115,7 +115,7 @@ namespace mcp_nexus_tests.Debugger
             // This test verifies the method can be called without throwing
             // The actual cancellation logic is complex and requires a real process manager
             _executor.CancelCurrentOperation();
-            
+
             // Verify the method completes without throwing
             Assert.True(true);
         }
