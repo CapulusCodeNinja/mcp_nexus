@@ -187,10 +187,6 @@ namespace mcp_nexus.Debugger
                 m_logger.LogDebug("Using symbol search path: {SymbolSearchPath}", m_config.SymbolSearchPath);
             }
 
-            // CRITICAL: Load debugging extensions automatically to ensure !analyze and other extension commands work
-            // This prevents "No export analyze found" errors with mini dumps
-            arguments += " -c \".load ext\"";
-
             // Run from CDB directory to avoid path issues
             var workingDirectory = Path.GetDirectoryName(cdbPath) ?? Environment.CurrentDirectory;
 

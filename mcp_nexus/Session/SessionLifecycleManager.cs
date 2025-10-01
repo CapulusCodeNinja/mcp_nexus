@@ -102,6 +102,23 @@ namespace mcp_nexus.Session
                 m_sessions[sessionId] = sessionInfo;
                 Interlocked.Increment(ref m_totalSessionsCreated);
 
+                // CRITICAL: Load debugging extensions automatically as first command
+                // This ensures !analyze and other extension commands work without user needing to manually load them
+                // Execute as fire-and-forget - don't wait for result as this can take time with symbol loading
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(500, cancellationToken); // Brief delay to ensure CDB is ready
+                        var extCommandId = commandQueue.QueueCommand(".load ext");
+                        m_logger.LogDebug("✅ Auto-queued extension loading for session {SessionId} (command: {CommandId})", sessionId, extCommandId);
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogWarning(ex, "Failed to auto-load extensions for session {SessionId} - user may need to run .load ext manually", sessionId);
+                    }
+                }, cancellationToken);
+
                 stopwatch.Stop();
                 m_logger.LogInformation("✅ Session {SessionId} created successfully in {Elapsed}ms",
                     sessionId, stopwatch.ElapsedMilliseconds);
