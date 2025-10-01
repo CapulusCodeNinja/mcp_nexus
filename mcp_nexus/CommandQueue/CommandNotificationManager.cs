@@ -74,7 +74,10 @@ namespace mcp_nexus.CommandQueue
                             command.Id,
                             command.Command,
                             status,
-                            progress);
+                            progress,
+                            null,
+                            null,
+                            null);
                     }
                     catch (Exception ex)
                     {

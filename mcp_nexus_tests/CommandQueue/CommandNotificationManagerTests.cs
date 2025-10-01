@@ -130,7 +130,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void NotifyCommandHeartbeatFireAndForget_WithQueuedCommand_CallsNotificationService()
+        public async Task NotifyCommandHeartbeatFireAndForget_WithQueuedCommand_CallsNotificationService()
         {
             // Arrange
             var completionSource = new TaskCompletionSource<string>();
@@ -142,8 +142,8 @@ namespace mcp_nexus_tests.CommandQueue
             _manager.NotifyCommandHeartbeatFireAndForget(queuedCommand, elapsed);
 
             // Assert
-            // Give the Task.Run a moment to execute
-            Thread.Sleep(100);
+            // Wait for the Task.Run to complete
+            await Task.Delay(200);
             _mockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
                 It.IsAny<string>(), 
                 It.IsAny<string>(), 
@@ -155,7 +155,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void NotifyCommandHeartbeatFireAndForget_WithLongElapsedTime_CapsProgressAt95()
+        public async Task NotifyCommandHeartbeatFireAndForget_WithLongElapsedTime_CapsProgressAt95()
         {
             // Arrange
             var completionSource = new TaskCompletionSource<string>();
@@ -167,8 +167,8 @@ namespace mcp_nexus_tests.CommandQueue
             _manager.NotifyCommandHeartbeatFireAndForget(queuedCommand, elapsed);
 
             // Assert
-            // Give the Task.Run a moment to execute
-            Thread.Sleep(100);
+            // Wait for the Task.Run to complete
+            await Task.Delay(200);
             _mockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
                 It.IsAny<string>(), 
                 It.IsAny<string>(), 
@@ -232,7 +232,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void NotifyQueueEvent_WithNullData_LogsEvent()
+        public async Task NotifyQueueEvent_WithNullData_LogsEvent()
         {
             // Arrange
             var eventType = "TestEvent";
@@ -242,8 +242,8 @@ namespace mcp_nexus_tests.CommandQueue
             _manager.NotifyQueueEvent(eventType, message, null);
 
             // Assert
-            // Give the Task.Run a moment to execute
-            Thread.Sleep(100);
+            // Wait for the Task.Run to complete
+            await Task.Delay(200);
             _mockLogger.Verify(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -273,7 +273,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void NotifyServiceStartup_LogsStartupEvent()
+        public async Task NotifyServiceStartup_LogsStartupEvent()
         {
             // Arrange
             var sessionId = _config.SessionId;
@@ -282,8 +282,8 @@ namespace mcp_nexus_tests.CommandQueue
             _manager.NotifyServiceStartup();
 
             // Assert
-            // Give the Task.Run a moment to execute
-            Thread.Sleep(100);
+            // Wait for the Task.Run to complete
+            await Task.Delay(200);
             _mockLogger.Verify(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -335,7 +335,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void NotifyCommandStatusFireAndForget_WithExceptionInNotificationService_LogsWarning()
+        public async Task NotifyCommandStatusFireAndForget_WithExceptionInNotificationService_LogsWarning()
         {
             // Arrange
             var commandId = "cmd-1";
@@ -349,8 +349,8 @@ namespace mcp_nexus_tests.CommandQueue
             _manager.NotifyCommandStatusFireAndForget(commandId, command, status);
 
             // Assert
-            // Give the Task.Run a moment to execute
-            Thread.Sleep(100);
+            // Wait for the Task.Run to complete
+            await Task.Delay(200);
             _mockLogger.Verify(x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
@@ -360,7 +360,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void NotifyCommandHeartbeatFireAndForget_WithExceptionInNotificationService_LogsTrace()
+        public async Task NotifyCommandHeartbeatFireAndForget_WithExceptionInNotificationService_LogsTrace()
         {
             // Arrange
             var completionSource = new TaskCompletionSource<string>();
@@ -375,8 +375,8 @@ namespace mcp_nexus_tests.CommandQueue
             _manager.NotifyCommandHeartbeatFireAndForget(queuedCommand, elapsed);
 
             // Assert
-            // Give the Task.Run a moment to execute
-            Thread.Sleep(100);
+            // Wait for the Task.Run to complete
+            await Task.Delay(200);
             _mockLogger.Verify(x => x.Log(
                 LogLevel.Trace,
                 It.IsAny<EventId>(),

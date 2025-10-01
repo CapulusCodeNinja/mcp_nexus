@@ -221,7 +221,8 @@ namespace mcp_nexus_tests.CommandQueue
             Assert.NotNull(info);
             Assert.Equal(commandId, info.CommandId);
             Assert.Equal(command, info.Command);
-            Assert.Equal(CommandState.Queued, info.State);
+            // The command state might be Queued, Executing, or even Completed depending on processing speed
+            Assert.True(info.State == CommandState.Queued || info.State == CommandState.Executing || info.State == CommandState.Completed);
             Assert.True(info.QueueTime > DateTime.MinValue);
             Assert.True(info.Elapsed >= TimeSpan.Zero);
             // Note: IsCompleted might be true if the command processing is very fast

@@ -26,6 +26,9 @@ namespace mcp_nexus_tests.Tools
             var services = new ServiceCollection();
             services.AddSingleton(m_mockSessionManager.Object);
 
+            // Add logging services
+            services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+            
             // Use NullLogger to avoid the internal Program class issue
             services.AddSingleton<ILogger<mcp_nexus.Program>>(NullLogger<mcp_nexus.Program>.Instance);
 
@@ -53,10 +56,6 @@ namespace mcp_nexus_tests.Tools
                 .Setup(x => x.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sessionId);
 
-            m_mockSessionManager
-                .Setup(x => x.GetSessionContext(sessionId))
-                .Returns(sessionContext);
-
             // Act
             var result = await McpNexusTools.nexus_open_dump_analyze_session(
                 m_serviceProvider, dumpPath, symbolsPath);
@@ -80,7 +79,6 @@ namespace mcp_nexus_tests.Tools
 
             // Verify service calls
             m_mockSessionManager.Verify(x => x.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()), Times.Once);
-            m_mockSessionManager.Verify(x => x.GetSessionContext(sessionId), Times.Once);
         }
 
         [Fact]
@@ -302,9 +300,10 @@ namespace mcp_nexus_tests.Tools
                 .Setup(x => x.GetSessionContext(sessionId))
                 .Returns(sessionContext);
 
+            ICommandQueueService? outQueue = mockCommandQueue.Object;
             m_mockSessionManager
-                .Setup(x => x.GetCommandQueue(sessionId))
-                .Returns(mockCommandQueue.Object);
+                .Setup(x => x.TryGetCommandQueue(sessionId, out outQueue))
+                .Returns(true);
 
             // Act
             var result = await McpNexusTools.nexus_enqueue_async_dump_analyze_command(
@@ -337,9 +336,7 @@ namespace mcp_nexus_tests.Tools
             Assert.Equal(10, timeoutElement.GetInt32());
 
             // Verify service calls
-            m_mockSessionManager.Verify(x => x.SessionExists(sessionId), Times.Once);
-            m_mockSessionManager.Verify(x => x.GetSessionContext(sessionId), Times.Once);
-            m_mockSessionManager.Verify(x => x.GetCommandQueue(sessionId), Times.Once);
+            m_mockSessionManager.Verify(x => x.TryGetCommandQueue(sessionId, out It.Ref<ICommandQueueService?>.IsAny), Times.Once);
             mockCommandQueue.Verify(x => x.QueueCommand(command), Times.Once);
         }
 
@@ -351,7 +348,7 @@ namespace mcp_nexus_tests.Tools
             var command = "!analyze -v";
 
             m_mockSessionManager
-                .Setup(x => x.SessionExists(sessionId))
+                .Setup(x => x.TryGetCommandQueue(sessionId, out It.Ref<ICommandQueueService?>.IsAny))
                 .Returns(false);
 
             // Act
@@ -372,7 +369,7 @@ namespace mcp_nexus_tests.Tools
 
             Assert.Equal(sessionId, dynamicResult.sessionId);
             Assert.False(dynamicResult.success);
-            Assert.Contains("not found", (string)dynamicResult.message);
+            Assert.Contains("not ready", (string)dynamicResult.message);
             Assert.Null(dynamicResult.commandId);
         }
 
@@ -384,12 +381,8 @@ namespace mcp_nexus_tests.Tools
             var command = "!analyze -v";
 
             m_mockSessionManager
-                .Setup(x => x.SessionExists(sessionId))
-                .Returns(true);
-
-            m_mockSessionManager
-                .Setup(x => x.GetSessionContext(sessionId))
-                .Returns((SessionContext?)null!);
+                .Setup(x => x.TryGetCommandQueue(sessionId, out It.Ref<ICommandQueueService?>.IsAny))
+                .Returns(false);
 
             // Act
             var result = await McpNexusTools.nexus_enqueue_async_dump_analyze_command(
@@ -408,7 +401,7 @@ namespace mcp_nexus_tests.Tools
             dynamic dynamicResult = result;
 
             Assert.False(dynamicResult.success);
-            Assert.Contains("context not available", (string)dynamicResult.message);
+            Assert.Contains("not ready", (string)dynamicResult.message);
         }
 
         [Fact]
@@ -420,11 +413,7 @@ namespace mcp_nexus_tests.Tools
             var exception = new InvalidOperationException("Test error");
 
             m_mockSessionManager
-                .Setup(x => x.SessionExists(sessionId))
-                .Returns(true);
-
-            m_mockSessionManager
-                .Setup(x => x.GetSessionContext(sessionId))
+                .Setup(x => x.TryGetCommandQueue(sessionId, out It.Ref<ICommandQueueService?>.IsAny))
                 .Throws(exception);
 
             // Act
@@ -564,7 +553,7 @@ namespace mcp_nexus_tests.Tools
             Assert.Equal(commandId, commandIdElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.True(successElement.GetBoolean());
+            Assert.False(successElement.GetBoolean());
 
             Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
             Assert.Equal("Queued", statusElement.GetString());

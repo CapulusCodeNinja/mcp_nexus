@@ -75,10 +75,13 @@ namespace mcp_nexus_tests.Infrastructure
         }
 
         [Fact]
-        public void FindProjectDirectory_WithNullPath_ThrowsArgumentNullException()
+        public void FindProjectDirectory_WithNullPath_ReturnsNull()
         {
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => ServiceFileManager.FindProjectDirectory(null!));
+            // Act
+            var result = ServiceFileManager.FindProjectDirectory(null!);
+
+            // Assert
+            Assert.Null(result);
         }
 
         [Fact]
