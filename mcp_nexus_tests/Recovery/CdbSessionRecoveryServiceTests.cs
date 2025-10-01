@@ -350,7 +350,7 @@ namespace mcp_nexus_tests.Services
             await m_service.ForceRestartSession("test reason");
 
             // Wait for notification to be sent
-            await Task.Delay(100);
+            await Task.Delay(200);
 
             // Assert - Check for the notification that was actually sent
             m_mockNotificationService.Verify(

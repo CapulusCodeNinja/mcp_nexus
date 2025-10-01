@@ -388,15 +388,31 @@ namespace mcp_nexus_tests.Debugger
         public void CaptureAvailableOutput_WithExceptionInStream_HandlesGracefully()
         {
             var mockLogger = new Mock<ILogger>();
-            var mockOutputReader = new Mock<StreamReader>(Mock.Of<Stream>());
-            mockOutputReader.Setup(r => r.EndOfStream).Throws(new Exception("Test exception"));
+            // Create a real StreamReader that will throw an exception when accessed
+            var exceptionStream = new ExceptionThrowingStream();
+            var outputReader = new StreamReader(exceptionStream);
             var errorStream = new MemoryStream();
             var errorReader = new StreamReader(errorStream);
 
-            _parser.CaptureAvailableOutput(mockOutputReader.Object, errorReader, "test", mockLogger.Object);
+            _parser.CaptureAvailableOutput(outputReader, errorReader, "test", mockLogger.Object);
 
             // Should not throw exception
             Assert.True(true);
+        }
+
+        private class ExceptionThrowingStream : Stream
+        {
+            public override bool CanRead => true;
+            public override bool CanSeek => false;
+            public override bool CanWrite => false;
+            public override long Length => 0;
+            public override long Position { get; set; }
+
+            public override void Flush() { }
+            public override int Read(byte[] buffer, int offset, int count) => throw new Exception("Test exception");
+            public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+            public override void SetLength(long value) => throw new NotSupportedException();
+            public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
         }
     }
 }
