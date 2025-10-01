@@ -11,9 +11,10 @@ namespace mcp_nexus.Debugger
         /// <summary>
         /// Primary CDB prompt pattern - this format has been stable for 20+ years
         /// Matches patterns like "0:000>", "1:001>", etc.
+        /// IMPORTANT: Also matches prompts with output on the same line (e.g., "0:030> command output")
         /// </summary>
         public static readonly Regex CdbPromptPattern = new Regex(
-            @"^(\s*)?(\d+):(\d{3})(:[A-Za-z0-9_\-]+)?>\s*$",
+            @"^(\s*)?(\d+):(\d{3})(:[A-Za-z0-9_\-]+)?>",
             RegexOptions.Compiled | RegexOptions.Multiline);
 
         /// <summary>
