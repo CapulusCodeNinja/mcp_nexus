@@ -252,7 +252,7 @@ namespace mcp_nexus.Debugger
                         {
                             output.AppendLine(line);
                             linesRead++;
-                            lastOutputTime = DateTime.Now;
+                            lastOutputTime = DateTime.Now; // Reset idle timer when we get data
 
                             if (m_outputParser.IsCommandComplete(line))
                             {
@@ -262,9 +262,14 @@ namespace mcp_nexus.Debugger
                         }
                         else
                         {
-                            // End of stream
-                            m_logger.LogDebug("Debugger output stream ended or process exited.");
-                            break;
+                            // CRITICAL: null from ReadLine() means no data YET, not end of stream!
+                            // StreamReader.ReadLine() returns null when:
+                            // 1. Stream is closed/disposed (this is bad - should throw)
+                            // 2. No complete line is available yet (this is normal - wait for more data)
+                            // We rely on idle timeout to detect when CDB has actually stopped outputting
+                            m_logger.LogTrace("ReadLine() returned null - no data available, waiting for more...");
+                            Task.Delay(10).Wait(); // Brief delay before next attempt
+                            continue; // Don't break - let idle timeout handle it
                         }
                     }
                     catch (OperationCanceledException)
