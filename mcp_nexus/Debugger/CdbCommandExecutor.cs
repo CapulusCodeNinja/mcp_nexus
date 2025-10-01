@@ -219,7 +219,7 @@ namespace mcp_nexus.Debugger
                         // Reduced from 50ms to 10ms for better responsiveness
                         try
                         {
-                            Task.Delay(10, cancellationToken).Wait();
+                            Task.Delay(10, cancellationToken).GetAwaiter().GetResult();
                         }
                         catch (OperationCanceledException)
                         {
