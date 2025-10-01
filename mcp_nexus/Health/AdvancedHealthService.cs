@@ -274,7 +274,7 @@ namespace mcp_nexus.Health
     /// <summary>
     /// Represents the health status of the system - properly encapsulated
     /// </summary>
-    public class AdvancedHealthStatus : IAdvancedHealthStatus
+    public class AdvancedHealthStatus
     {
         #region Private Fields
 
@@ -395,7 +395,7 @@ namespace mcp_nexus.Health
     /// <summary>
     /// Represents memory health information - properly encapsulated
     /// </summary>
-    public class MemoryHealth : IMemoryHealth
+    public class MemoryHealth
     {
         #region Private Fields
 
@@ -475,7 +475,7 @@ namespace mcp_nexus.Health
     /// <summary>
     /// Represents CPU health information - properly encapsulated
     /// </summary>
-    public class CpuHealth : ICpuHealth
+    public class CpuHealth
     {
         /// <summary>
         /// Whether CPU usage is healthy
@@ -501,7 +501,7 @@ namespace mcp_nexus.Health
     /// <summary>
     /// Represents disk health information - properly encapsulated
     /// </summary>
-    public class DiskHealth : IDiskHealth
+    public class DiskHealth
     {
         /// <summary>
         /// Whether disk usage is healthy
@@ -522,7 +522,7 @@ namespace mcp_nexus.Health
     /// <summary>
     /// Represents thread health information - properly encapsulated
     /// </summary>
-    public class ThreadHealth : IThreadHealth
+    public class ThreadHealth
     {
         /// <summary>
         /// Whether thread count is healthy
@@ -543,7 +543,7 @@ namespace mcp_nexus.Health
     /// <summary>
     /// Represents garbage collection health information - properly encapsulated
     /// </summary>
-    public class GcHealth : IGcHealth
+    public class GcHealth
     {
         /// <summary>
         /// Whether garbage collection is healthy

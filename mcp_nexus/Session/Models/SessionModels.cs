@@ -28,7 +28,7 @@ namespace mcp_nexus.Session.Models
     /// <summary>
     /// Thread-safe session information container with proper encapsulation
     /// </summary>
-    public class SessionInfo : ISessionInfo, IDisposable
+    public class SessionInfo : IDisposable
     {
         #region Private Fields
 

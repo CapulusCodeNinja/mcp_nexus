@@ -1,4 +1,5 @@
 using mcp_nexus.Core.Domain;
+using DomainSession = mcp_nexus.Core.Domain.ISession;
 
 namespace mcp_nexus.Core.Application
 {
@@ -34,7 +35,7 @@ namespace mcp_nexus.Core.Application
         /// <param name="dumpPath">Path to dump file</param>
         /// <param name="symbolsPath">Optional symbols path</param>
         /// <returns>Created session</returns>
-        public async Task<ISession> CreateSessionAsync(string dumpPath, string? symbolsPath = null)
+        public async Task<DomainSession> CreateSessionAsync(string dumpPath, string? symbolsPath = null)
         {
             if (string.IsNullOrEmpty(dumpPath))
                 throw new ArgumentException("Dump path cannot be null or empty", nameof(dumpPath));
@@ -65,7 +66,7 @@ namespace mcp_nexus.Core.Application
         /// </summary>
         /// <param name="sessionId">Session identifier</param>
         /// <returns>Session or null if not found</returns>
-        public async Task<ISession?> GetSessionAsync(string sessionId)
+        public async Task<DomainSession?> GetSessionAsync(string sessionId)
         {
             if (string.IsNullOrEmpty(sessionId))
                 throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
@@ -117,7 +118,7 @@ namespace mcp_nexus.Core.Application
         /// Gets all active sessions
         /// </summary>
         /// <returns>Collection of active sessions</returns>
-        public async Task<IEnumerable<ISession>> GetActiveSessionsAsync()
+        public async Task<IEnumerable<DomainSession>> GetActiveSessionsAsync()
         {
             var sessionRepository = m_serviceLocator.GetService<ISessionRepository>();
             return await sessionRepository.GetActiveSessionsAsync();

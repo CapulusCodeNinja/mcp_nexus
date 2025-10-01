@@ -3,7 +3,7 @@ namespace mcp_nexus.CommandQueue
     /// <summary>
     /// Represents a queued command with proper encapsulation
     /// </summary>
-    public class QueuedCommand : IQueuedCommand, IDisposable
+    public class QueuedCommand : IDisposable
     {
         #region Private Fields
 

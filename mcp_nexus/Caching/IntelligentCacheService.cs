@@ -6,7 +6,7 @@ namespace mcp_nexus.Caching
     /// Cache entry with metadata for intelligent eviction - properly encapsulated
     /// </summary>
     /// <typeparam name="TValue">The type of the cached value</typeparam>
-    public class CacheEntry<TValue> : ICacheEntry<TValue>
+    public class CacheEntry<TValue>
     {
         #region Private Fields
 

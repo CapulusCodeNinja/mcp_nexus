@@ -3,7 +3,7 @@ namespace mcp_nexus.CommandQueue
     /// <summary>
     /// Detailed command information for type-safe status checking - properly encapsulated
     /// </summary>
-    public class CommandInfo : ICommandInfo
+    public class CommandInfo
     {
         #region Private Fields
 

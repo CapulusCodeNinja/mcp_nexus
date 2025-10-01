@@ -30,7 +30,7 @@ namespace mcp_nexus.Session
         int? ProcessId { get; }
 
         /// <summary>Gets or sets the current session status</summary>
-        SessionStatus Status { get; set; }
+        string Status { get; set; }
 
         /// <summary>Gets or sets the last activity time</summary>
         DateTime LastActivity { get; set; }
