@@ -2,12 +2,14 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using mcp_nexus.Infrastructure;
+using System.Runtime.Versioning;
 
 namespace mcp_nexus_tests.Infrastructure
 {
     /// <summary>
     /// Tests for ServiceInstallationSteps
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class ServiceInstallationStepsTests : IDisposable
     {
         private readonly Mock<ILogger> _mockLogger;
@@ -138,7 +140,7 @@ namespace mcp_nexus_tests.Infrastructure
         }
 
         [Fact]
-        public async Task AllMethods_AreStatic()
+        public void AllMethods_AreStatic()
         {
             // This test verifies that all methods are static as expected
             var type = typeof(ServiceInstallationSteps);
@@ -155,7 +157,7 @@ namespace mcp_nexus_tests.Infrastructure
         }
 
         [Fact]
-        public async Task AllMethods_ReturnTaskOfBool()
+        public void AllMethods_ReturnTaskOfBool()
         {
             // This test verifies that all methods return Task<bool>
             var type = typeof(ServiceInstallationSteps);
@@ -172,7 +174,7 @@ namespace mcp_nexus_tests.Infrastructure
         }
 
         [Fact]
-        public async Task AllMethods_AcceptOptionalLogger()
+        public void AllMethods_AcceptOptionalLogger()
         {
             // This test verifies that all methods accept an optional ILogger parameter
             var type = typeof(ServiceInstallationSteps);
@@ -187,18 +189,22 @@ namespace mcp_nexus_tests.Infrastructure
             var unregisterParams = unregisterServiceMethod?.GetParameters();
             var cleanupParams = cleanupMethod?.GetParameters();
 
+            Assert.NotNull(performParams);
             Assert.Single(performParams);
             Assert.Equal(typeof(ILogger), performParams[0].ParameterType);
             Assert.True(performParams[0].HasDefaultValue);
 
+            Assert.NotNull(registerParams);
             Assert.Single(registerParams);
             Assert.Equal(typeof(ILogger), registerParams[0].ParameterType);
             Assert.True(registerParams[0].HasDefaultValue);
 
+            Assert.NotNull(unregisterParams);
             Assert.Single(unregisterParams);
             Assert.Equal(typeof(ILogger), unregisterParams[0].ParameterType);
             Assert.True(unregisterParams[0].HasDefaultValue);
 
+            Assert.NotNull(cleanupParams);
             Assert.Single(cleanupParams);
             Assert.Equal(typeof(ILogger), cleanupParams[0].ParameterType);
             Assert.True(cleanupParams[0].HasDefaultValue);

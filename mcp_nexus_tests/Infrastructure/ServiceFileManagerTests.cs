@@ -2,12 +2,14 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using mcp_nexus.Infrastructure;
+using System.Runtime.Versioning;
 
 namespace mcp_nexus_tests.Infrastructure
 {
     /// <summary>
     /// Tests for ServiceFileManager
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class ServiceFileManagerTests : IDisposable
     {
         private readonly Mock<ILogger> _mockLogger;
@@ -324,30 +326,37 @@ namespace mcp_nexus_tests.Infrastructure
             var validateParams = validateMethod?.GetParameters();
             var getBackupInfoParams = getBackupInfoMethod?.GetParameters();
 
+            Assert.NotNull(buildParams);
             Assert.Single(buildParams);
             Assert.Equal(typeof(ILogger), buildParams[0].ParameterType);
             Assert.True(buildParams[0].HasDefaultValue);
 
+            Assert.NotNull(copyFilesParams);
             Assert.Single(copyFilesParams);
             Assert.Equal(typeof(ILogger), copyFilesParams[0].ParameterType);
             Assert.True(copyFilesParams[0].HasDefaultValue);
 
+            Assert.NotNull(copyDirParams);
             Assert.Equal(3, copyDirParams.Length);
             Assert.Equal(typeof(ILogger), copyDirParams[2].ParameterType);
             Assert.True(copyDirParams[2].HasDefaultValue);
 
+            Assert.NotNull(createBackupParams);
             Assert.Single(createBackupParams);
             Assert.Equal(typeof(ILogger), createBackupParams[0].ParameterType);
             Assert.True(createBackupParams[0].HasDefaultValue);
 
+            Assert.NotNull(cleanupParams);
             Assert.Equal(2, cleanupParams.Length);
             Assert.Equal(typeof(ILogger), cleanupParams[1].ParameterType);
             Assert.True(cleanupParams[1].HasDefaultValue);
 
+            Assert.NotNull(validateParams);
             Assert.Single(validateParams);
             Assert.Equal(typeof(ILogger), validateParams[0].ParameterType);
             Assert.True(validateParams[0].HasDefaultValue);
 
+            Assert.NotNull(getBackupInfoParams);
             Assert.Single(getBackupInfoParams);
             Assert.Equal(typeof(ILogger), getBackupInfoParams[0].ParameterType);
             Assert.True(getBackupInfoParams[0].HasDefaultValue);
