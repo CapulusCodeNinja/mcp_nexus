@@ -216,24 +216,30 @@ namespace mcp_nexus.Debugger
                         // Check for cancellation
                         cancellationToken.ThrowIfCancellationRequested();
 
-                        // CRITICAL FIX: Just call ReadLine() directly - no Task.Run!
-                        // Previous approach caused CONCURRENT StreamReader access when reads timed out
-                        // StreamReader is NOT thread-safe, and concurrent ReadLine() corrupts its internal buffer
-                        // We're already protected by SemaphoreSlim in CdbSession, so blocking here is safe
+                        // CRITICAL: Use ReadLineAsync() with a timeout to avoid blocking forever
+                        // This allows idle timeout to work while waiting for data
                         string? line = null;
                         
                         try
                         {
-                            // Check if data is available without blocking
-                            if (debuggerOutput.BaseStream.CanRead && debuggerOutput.Peek() == -1)
+                            using var idleCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, idleCts.Token);
+                            
+                            var readTask = debuggerOutput.ReadLineAsync();
+                            if (readTask.Wait(100, linkedCts.Token))
                             {
-                                // No data available - wait briefly and retry
-                                Task.Delay(10, cancellationToken).GetAwaiter().GetResult();
+                                line = readTask.Result;
+                            }
+                            else
+                            {
+                                // No data within 100ms - loop will check timeouts
                                 continue;
                             }
-                            
-                            // Data is available - read it
-                            line = debuggerOutput.ReadLine();
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // Timeout or external cancellation - loop will check which
+                            continue;
                         }
                         catch (Exception ex)
                         {
