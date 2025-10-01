@@ -102,8 +102,10 @@ namespace mcp_nexus.Session
                 m_sessions[sessionId] = sessionInfo;
                 Interlocked.Increment(ref m_totalSessionsCreated);
 
-                // NOTE: Automatic .load ext removed - it was interfering with output capture
-                // Extensions are usually auto-loaded by CDB anyway, or users can manually run .load ext if needed
+                // NOTE: Extension loading issue - !analyze requires ext.dll to be loaded
+                // However, auto-loading .load ext has historically caused output capture issues
+                // Modern CDB should auto-load extensions, but some systems may not
+                // TODO: Investigate alternative solutions (CDB startup flags, pre-warm extension loading, etc.)
 
                 stopwatch.Stop();
                 m_logger.LogInformation("✅ Session {SessionId} created successfully in {Elapsed}ms",
