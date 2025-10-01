@@ -216,37 +216,36 @@ namespace mcp_nexus.Debugger
                         // Check for cancellation
                         cancellationToken.ThrowIfCancellationRequested();
 
-                        // CRITICAL: Use ReadLineAsync() with a timeout to avoid blocking forever
-                        // This allows idle timeout to work while waiting for data
-                        string? line = null;
-                        
-                        try
+                    // CRITICAL: Check if data is available before attempting to read
+                    // This prevents blocking and allows timeouts to function correctly
+                    string? line = null;
+                    
+                    try
+                    {
+                        // Peek() returns -1 if no data is available (stream is open but empty)
+                        // This is a non-blocking check
+                        var peekResult = debuggerOutput.Peek();
+                        if (peekResult == -1)
                         {
-                            using var idleCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, idleCts.Token);
-                            
-                            var readTask = debuggerOutput.ReadLineAsync();
-                            if (readTask.Wait(100, linkedCts.Token))
-                            {
-                                line = readTask.Result;
-                            }
-                            else
-                            {
-                                // No data within 100ms - loop will check timeouts
-                                continue;
-                            }
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            // Timeout or external cancellation - loop will check which
+                            // No data available right now - wait a bit and check timeouts
+                            Task.Delay(10, cancellationToken).GetAwaiter().GetResult();
                             continue;
                         }
-                        catch (Exception ex)
-                        {
-                            m_logger.LogError(ex, "⚠️ Error reading from StreamReader: {ExType}: {ExMsg}", 
-                                ex.GetType().Name, ex.Message);
-                            break;
-                        }
+                        
+                        // Data is available - read it synchronously
+                        line = debuggerOutput.ReadLine();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // External cancellation - re-throw to preserve cancellation semantics
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogError(ex, "⚠️ Error reading from StreamReader: {ExType}: {ExMsg}", 
+                            ex.GetType().Name, ex.Message);
+                        break;
+                    }
 
                         if (line != null)
                         {
