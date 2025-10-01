@@ -42,7 +42,7 @@ namespace mcp_nexus.Health
         /// <param name="activeSessions">Active sessions count</param>
         /// <param name="processId">Process ID</param>
         /// <param name="machineName">Machine name</param>
-        void SetHealthInfo(string status, DateTime timestamp, TimeSpan uptime, 
+        void SetHealthInfo(string status, DateTime timestamp, TimeSpan uptime,
             long memoryUsage, int activeSessions, int processId, string machineName);
 
         /// <summary>

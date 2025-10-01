@@ -18,7 +18,7 @@ namespace mcp_nexus.Session
         /// <param name="symbolsPath">Symbols path (optional)</param>
         /// <param name="processId">Process ID (optional)</param>
         /// <returns>New session info instance</returns>
-        ISessionInfo CreateSessionInfo(string sessionId, ICdbSession cdbSession, ICommandQueueService commandQueue, 
+        ISessionInfo CreateSessionInfo(string sessionId, ICdbSession cdbSession, ICommandQueueService commandQueue,
             string dumpPath, string? symbolsPath = null, int? processId = null);
 
         /// <summary>

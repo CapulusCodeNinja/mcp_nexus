@@ -35,28 +35,28 @@ namespace mcp_nexus.Health
                 var commandQueueStatus = GetCommandQueueStatus();
 
                 var status = new HealthStatus();
-                status.SetHealthInfo("healthy", DateTime.UtcNow, uptime, memoryUsage, 
+                status.SetHealthInfo("healthy", DateTime.UtcNow, uptime, memoryUsage,
                     sessionCount, Environment.ProcessId, Environment.MachineName);
                 status.SetCommandQueue(commandQueueStatus);
 
                 // Determine overall health status
                 if (memoryUsage > 1024 * 1024 * 1024) // 1GB
                 {
-                    status.SetHealthInfo("degraded", DateTime.UtcNow, uptime, memoryUsage, 
+                    status.SetHealthInfo("degraded", DateTime.UtcNow, uptime, memoryUsage,
                         sessionCount, Environment.ProcessId, Environment.MachineName);
                     status.AddIssue("High memory usage detected");
                 }
 
                 if (sessionCount > 10) // Configurable threshold
                 {
-                    status.SetHealthInfo("degraded", DateTime.UtcNow, uptime, memoryUsage, 
+                    status.SetHealthInfo("degraded", DateTime.UtcNow, uptime, memoryUsage,
                         sessionCount, Environment.ProcessId, Environment.MachineName);
                     status.AddIssue("High session count detected");
                 }
 
                 if (commandQueueStatus?.QueueSize > 100) // Configurable threshold
                 {
-                    status.SetHealthInfo("degraded", DateTime.UtcNow, uptime, memoryUsage, 
+                    status.SetHealthInfo("degraded", DateTime.UtcNow, uptime, memoryUsage,
                         sessionCount, Environment.ProcessId, Environment.MachineName);
                     status.AddIssue("High command queue size detected");
                 }
@@ -202,7 +202,7 @@ namespace mcp_nexus.Health
         /// <param name="activeSessions">Active sessions count</param>
         /// <param name="processId">Process ID</param>
         /// <param name="machineName">Machine name</param>
-        public void SetHealthInfo(string status, DateTime timestamp, TimeSpan uptime, 
+        public void SetHealthInfo(string status, DateTime timestamp, TimeSpan uptime,
             long memoryUsage, int activeSessions, int processId, string machineName)
         {
             m_status = status ?? "unknown";

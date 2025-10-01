@@ -34,11 +34,11 @@ namespace mcp_nexus.Health
             try
             {
                 await Task.Yield(); // Allow async operation
-                
+
                 m_currentProcess.Refresh();
                 var workingSet = m_currentProcess.WorkingSet64;
                 var isHealthy = workingSet < m_memoryThresholdBytes;
-                
+
                 var data = new Dictionary<string, object>
                 {
                     ["WorkingSetBytes"] = workingSet,
@@ -47,7 +47,7 @@ namespace mcp_nexus.Health
                     ["ThresholdMB"] = m_memoryThresholdBytes / (1024.0 * 1024.0)
                 };
 
-                var message = isHealthy 
+                var message = isHealthy
                     ? $"Memory usage is healthy ({workingSet / (1024.0 * 1024.0):F1} MB)"
                     : $"High memory usage detected ({workingSet / (1024.0 * 1024.0):F1} MB)";
 

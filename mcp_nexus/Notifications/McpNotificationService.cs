@@ -25,14 +25,14 @@ namespace mcp_nexus.Notifications
             if (string.IsNullOrEmpty(eventType))
                 return;
 
-            List<Func<object, Task>> handlers;
+            List<Func<object, Task>>? handlers;
             lock (m_lock)
             {
-                if (!m_handlers.TryGetValue(eventType, out handlers) || handlers == null || handlers.Count == 0)
+                if (!m_handlers.TryGetValue(eventType, out handlers) || handlers?.Count == 0)
                     return;
-                
+
                 // Create a copy to avoid issues with handlers being modified during iteration
-                handlers = new List<Func<object, Task>>(handlers);
+                handlers = new List<Func<object, Task>>(handlers!);
             }
 
             var tasks = handlers.Select(handler => SafeInvokeHandler(handler, data));
@@ -51,12 +51,12 @@ namespace mcp_nexus.Notifications
                 throw new ArgumentException("Event type and handler cannot be null or empty");
 
             var subscriptionId = Guid.NewGuid().ToString();
-            
+
             lock (m_lock)
             {
                 if (!m_handlers.ContainsKey(eventType))
                     m_handlers[eventType] = new List<Func<object, Task>>();
-                
+
                 m_handlers[eventType].Add(handler);
             }
 
@@ -207,20 +207,13 @@ namespace mcp_nexus.Notifications
         }
 
         /// <summary>
-        /// Notifies about command status change with progress
+        /// Notifies about command status change with int progress
         /// </summary>
-        public async Task NotifyCommandStatusAsync(string sessionId, string commandId, string command, string status, string result, string progress)
+        public async Task NotifyCommandStatusAsync(string commandId, string command, string status, int progress, string result, string error)
         {
-            await PublishNotificationAsync("CommandStatus", new { SessionId = sessionId, CommandId = commandId, Command = command, Status = status, Result = result, Progress = progress });
+            await PublishNotificationAsync("CommandStatus", new { CommandId = commandId, Command = command, Status = status, Progress = progress, Result = result, Error = error });
         }
 
-        /// <summary>
-        /// Notifies about command status change with progress, message, result, and error
-        /// </summary>
-        public async Task NotifyCommandStatusAsync(string commandId, string command, string status, string progress, string message, string result, string error)
-        {
-            await PublishNotificationAsync("CommandStatus", new { CommandId = commandId, Command = command, Status = status, Progress = progress, Message = message, Result = result, Error = error });
-        }
 
         /// <summary>
         /// Notifies about command heartbeat with details

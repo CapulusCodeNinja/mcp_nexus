@@ -109,7 +109,7 @@ namespace mcp_nexus.CommandQueue
                 if (m_notificationService != null)
                 {
                     await m_notificationService.NotifyCommandStatusAsync(queuedCommand.Id, queuedCommand.Command, "completed",
-                        result: result, message: $"Completed in {elapsed.TotalMilliseconds:F0}ms");
+                        result: result, error: string.Empty, queuePosition: 0, message: $"Completed in {elapsed.TotalMilliseconds:F0}ms");
                 }
             }
             catch (OperationCanceledException) when (queuedCommand.CancellationTokenSource.Token.IsCancellationRequested)
@@ -143,7 +143,7 @@ namespace mcp_nexus.CommandQueue
                 if (m_notificationService != null)
                 {
                     await m_notificationService.NotifyCommandStatusAsync(queuedCommand.Id, queuedCommand.Command, "failed",
-                        error: ex.Message, message: $"Failed after {elapsed.TotalMilliseconds:F0}ms");
+                        result: string.Empty, error: ex.Message, queuePosition: 0, message: $"Failed after {elapsed.TotalMilliseconds:F0}ms");
                 }
             }
             finally

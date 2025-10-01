@@ -109,8 +109,8 @@ namespace mcp_nexus.Health
                 var isHealthy = workingSetMB < 2048 && privateMemoryMB < 1024; // 2GB working set, 1GB private
 
                 var memoryHealth = new MemoryHealth();
-                memoryHealth.SetMemoryInfo(isHealthy, workingSetMB, privateMemoryMB, 
-                    virtualMemoryMB, totalPhysicalMemoryMB, 
+                memoryHealth.SetMemoryInfo(isHealthy, workingSetMB, privateMemoryMB,
+                    virtualMemoryMB, totalPhysicalMemoryMB,
                     isHealthy ? "Memory usage normal" : "High memory usage detected");
                 return memoryHealth;
             }
@@ -458,7 +458,7 @@ namespace mcp_nexus.Health
         /// <param name="virtualMemoryMB">Virtual memory in MB</param>
         /// <param name="totalPhysicalMemoryMB">Total physical memory in MB</param>
         /// <param name="message">Health message</param>
-        public void SetMemoryInfo(bool isHealthy, double workingSetMB, double privateMemoryMB, 
+        public void SetMemoryInfo(bool isHealthy, double workingSetMB, double privateMemoryMB,
             double virtualMemoryMB, double totalPhysicalMemoryMB, string message)
         {
             m_isHealthy = isHealthy;

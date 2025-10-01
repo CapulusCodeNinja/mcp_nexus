@@ -32,7 +32,7 @@ namespace mcp_nexus.Health
         /// <param name="gen2Collections">Number of Gen2 collections</param>
         /// <param name="totalCollections">Total number of collections</param>
         /// <param name="message">Health message</param>
-        void SetGcInfo(bool isHealthy, int gen0Collections, int gen1Collections, 
+        void SetGcInfo(bool isHealthy, int gen0Collections, int gen1Collections,
             int gen2Collections, int totalCollections, string message);
     }
 }

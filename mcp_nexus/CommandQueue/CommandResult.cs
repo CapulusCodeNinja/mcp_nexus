@@ -44,7 +44,7 @@ namespace mcp_nexus.CommandQueue
         /// <param name="errorMessage">Error message if execution failed</param>
         /// <param name="duration">Execution duration</param>
         /// <param name="data">Additional result data</param>
-        public CommandResult(bool isSuccess, string output, string? errorMessage = null, 
+        public CommandResult(bool isSuccess, string output, string? errorMessage = null,
             TimeSpan duration = default, Dictionary<string, object>? data = null)
         {
             m_isSuccess = isSuccess;
@@ -65,7 +65,7 @@ namespace mcp_nexus.CommandQueue
         /// <param name="duration">Execution duration</param>
         /// <param name="data">Additional result data</param>
         /// <returns>Successful command result</returns>
-        public static ICommandResult Success(string output, TimeSpan duration = default, 
+        public static ICommandResult Success(string output, TimeSpan duration = default,
             Dictionary<string, object>? data = null)
         {
             return new CommandResult(true, output, null, duration, data);
@@ -78,7 +78,7 @@ namespace mcp_nexus.CommandQueue
         /// <param name="duration">Execution duration</param>
         /// <param name="data">Additional result data</param>
         /// <returns>Failed command result</returns>
-        public static ICommandResult Failure(string errorMessage, TimeSpan duration = default, 
+        public static ICommandResult Failure(string errorMessage, TimeSpan duration = default,
             Dictionary<string, object>? data = null)
         {
             return new CommandResult(false, string.Empty, errorMessage, duration, data);

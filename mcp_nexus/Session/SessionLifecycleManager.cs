@@ -226,7 +226,7 @@ namespace mcp_nexus.Session
 
                         // Send expiry notification
                         await m_notificationService.NotifySessionEventAsync(sessionId, "expired",
-                            "Session expired due to inactivity", null);
+                            "Session expired due to inactivity", string.Empty);
                     }
                 }
                 catch (Exception ex)

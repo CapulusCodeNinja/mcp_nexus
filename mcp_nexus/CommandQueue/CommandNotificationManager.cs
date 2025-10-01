@@ -41,7 +41,7 @@ namespace mcp_nexus.CommandQueue
                 {
                     try
                     {
-                        await m_notificationService.NotifyCommandStatusAsync(commandId, command, status, progress, null, result);
+                        await m_notificationService.NotifyCommandStatusAsync(commandId, command, status, progress, result ?? string.Empty, string.Empty);
                     }
                     catch (Exception ex)
                     {
@@ -75,9 +75,9 @@ namespace mcp_nexus.CommandQueue
                             command.Command,
                             status,
                             progress,
-                            null,
-                            null,
-                            null);
+                            string.Empty,
+                            string.Empty,
+                            string.Empty);
                     }
                     catch (Exception ex)
                     {

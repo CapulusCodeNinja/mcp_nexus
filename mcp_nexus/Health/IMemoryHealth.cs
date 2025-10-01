@@ -32,7 +32,7 @@ namespace mcp_nexus.Health
         /// <param name="virtualMemoryMB">Virtual memory in MB</param>
         /// <param name="totalPhysicalMemoryMB">Total physical memory in MB</param>
         /// <param name="message">Health message</param>
-        void SetMemoryInfo(bool isHealthy, double workingSetMB, double privateMemoryMB, 
+        void SetMemoryInfo(bool isHealthy, double workingSetMB, double privateMemoryMB,
             double virtualMemoryMB, double totalPhysicalMemoryMB, string message);
     }
 }

@@ -57,7 +57,7 @@ namespace mcp_nexus.CommandQueue
         /// <param name="completionSource">Completion source</param>
         /// <param name="cancellationTokenSource">Cancellation token source</param>
         /// <param name="state">Initial command state</param>
-        public QueuedCommand(string id, string command, DateTime queueTime, 
+        public QueuedCommand(string id, string command, DateTime queueTime,
             TaskCompletionSource<string> completionSource, CancellationTokenSource cancellationTokenSource,
             CommandState state = CommandState.Queued)
         {

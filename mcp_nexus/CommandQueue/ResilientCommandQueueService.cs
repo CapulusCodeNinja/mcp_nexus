@@ -96,7 +96,7 @@ namespace mcp_nexus.CommandQueue
                 {
                     try
                     {
-                        await m_notificationService.NotifyCommandStatusAsync(commandId, command, "queued", 0, "Command queued for execution", null, null);
+                        await m_notificationService.NotifyCommandStatusAsync(commandId, command, "queued", 0, "Command queued for execution", string.Empty, string.Empty);
                     }
                     catch (Exception ex)
                     {

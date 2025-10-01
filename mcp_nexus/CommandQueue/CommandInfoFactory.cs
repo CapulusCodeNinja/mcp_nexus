@@ -14,7 +14,7 @@ namespace mcp_nexus.CommandQueue
         /// <param name="queueTime">Queue time</param>
         /// <param name="queuePosition">Queue position (optional)</param>
         /// <returns>New command info instance</returns>
-        public CommandInfo CreateCommandInfo(string commandId, string command, CommandState state, 
+        public CommandInfo CreateCommandInfo(string commandId, string command, CommandState state,
             DateTime queueTime, int queuePosition = 0)
         {
             return new CommandInfo(commandId, command, state, queueTime, queuePosition);
@@ -28,7 +28,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>New command info instance</returns>
         public CommandInfo CreateCommandInfoFromQueuedCommand(QueuedCommand queuedCommand, int queuePosition = 0)
         {
-            return new CommandInfo(queuedCommand.Id, queuedCommand.Command, queuedCommand.State, 
+            return new CommandInfo(queuedCommand.Id, queuedCommand.Command, queuedCommand.State,
                 queuedCommand.QueueTime, queuePosition);
         }
     }

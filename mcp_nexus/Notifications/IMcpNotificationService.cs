@@ -36,8 +36,7 @@ namespace mcp_nexus.Notifications
         Task NotifyCommandStatusAsync(string sessionId, string commandId, string status, string result, string error, int queuePosition);
         Task NotifyCommandStatusAsync(string sessionId, string commandId, string status, string result, string error, int queuePosition, string message);
         Task NotifyCommandStatusAsync(string commandId, string command, string status, int queuePosition, string result, string error, object context);
-        Task NotifyCommandStatusAsync(string sessionId, string commandId, string command, string status, string result, string progress);
-        Task NotifyCommandStatusAsync(string commandId, string command, string status, string progress, string message, string result, string error);
+        Task NotifyCommandStatusAsync(string commandId, string command, string status, int progress, string result, string error);
         Task NotifyCommandHeartbeatAsync(string sessionId, string commandId);
         Task NotifyCommandHeartbeatAsync(string sessionId, string commandId, string status, string elapsed);
         Task NotifyCommandHeartbeatAsync(string sessionId, string commandId, string status, TimeSpan elapsed);

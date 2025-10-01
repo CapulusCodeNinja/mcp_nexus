@@ -131,7 +131,7 @@ namespace mcp_nexus.Session.Models
         /// <param name="dumpPath">Path to the dump file being debugged</param>
         /// <param name="symbolsPath">Optional path to symbol files</param>
         /// <param name="processId">Process ID of the CDB debugger process</param>
-        public SessionInfo(string sessionId, ICdbSession cdbSession, ICommandQueueService commandQueue, 
+        public SessionInfo(string sessionId, ICdbSession cdbSession, ICommandQueueService commandQueue,
             string dumpPath, string? symbolsPath = null, int? processId = null)
         {
             m_sessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));

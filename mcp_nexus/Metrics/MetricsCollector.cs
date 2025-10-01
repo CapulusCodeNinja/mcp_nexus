@@ -310,7 +310,7 @@ namespace mcp_nexus.Metrics
                 if (m_values.Count == 0)
                 {
                     return new HistogramSnapshot(
-                        Name, 0, 0, 0, 0, 0, 
+                        Name, 0, 0, 0, 0, 0,
                         new Dictionary<string, string>(Tags));
                 }
 
@@ -459,7 +459,7 @@ namespace mcp_nexus.Metrics
         /// <param name="max">Maximum value</param>
         /// <param name="average">Average value</param>
         /// <param name="tags">Histogram tags</param>
-        public HistogramSnapshot(string name, int count, double sum, double min, double max, double average, 
+        public HistogramSnapshot(string name, int count, double sum, double min, double max, double average,
             Dictionary<string, string>? tags = null)
         {
             m_name = name ?? string.Empty;

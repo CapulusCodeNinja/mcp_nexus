@@ -52,7 +52,7 @@ namespace mcp_nexus.Caching
         /// <param name="expiresAt">Expiration timestamp</param>
         /// <param name="accessCount">Access count</param>
         /// <param name="sizeBytes">Size in bytes</param>
-        public CacheEntry(TValue value, DateTime createdAt, DateTime lastAccessed, DateTime expiresAt, 
+        public CacheEntry(TValue value, DateTime createdAt, DateTime lastAccessed, DateTime expiresAt,
             long accessCount, long sizeBytes)
         {
             m_value = value;
@@ -193,7 +193,7 @@ namespace mcp_nexus.Caching
             var now = DateTime.UtcNow;
             var expiresAt = now.Add(ttl ?? m_config.DefaultTtl);
             var sizeBytes = EstimateSize(value);
-            
+
             var entry = new CacheEntry<TValue>(value, now, now, expiresAt, 0, sizeBytes);
 
             m_cache.AddOrUpdate(key, entry, (k, existing) => entry);

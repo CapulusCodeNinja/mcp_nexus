@@ -34,12 +34,12 @@ namespace mcp_nexus.Health
             try
             {
                 await Task.Yield(); // Allow async operation
-                
+
                 var totalProcessorTime = m_currentProcess.TotalProcessorTime;
                 var cpuUsage = totalProcessorTime.TotalMilliseconds / Environment.TickCount;
                 var cpuUsagePercent = Math.Min(100, cpuUsage * 100);
                 var isHealthy = cpuUsagePercent < m_cpuThresholdPercent;
-                
+
                 var data = new Dictionary<string, object>
                 {
                     ["CpuUsagePercent"] = cpuUsagePercent,
@@ -47,7 +47,7 @@ namespace mcp_nexus.Health
                     ["ThresholdPercent"] = m_cpuThresholdPercent
                 };
 
-                var message = isHealthy 
+                var message = isHealthy
                     ? $"CPU usage is healthy ({cpuUsagePercent:F1}%)"
                     : $"High CPU usage detected ({cpuUsagePercent:F1}%)";
 
