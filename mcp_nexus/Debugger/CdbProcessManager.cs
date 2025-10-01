@@ -259,13 +259,18 @@ namespace mcp_nexus.Debugger
                             // DIAGNOSTIC: Log every line to understand CDB output format
                             m_logger.LogTrace("Init consumer read line: '{Line}'", line);
                             
-                            // Check if this line is the initial CDB prompt (but DON'T consume it yet)
-                            // We want to stop BEFORE the prompt so user commands can read it normally
-                            if (System.Text.RegularExpressions.Regex.IsMatch(line, @"^\d+:\d+[>:]"))
+                            // CRITICAL FIX: CDB doesn't output a prompt until the first command is sent!
+                            // Instead of waiting for a prompt, detect the END of init output:
+                            // - Disassembly line (hex address followed by instruction)
+                            // - OR the "For analysis" suggestion line
+                            var isDisassembly = System.Text.RegularExpressions.Regex.IsMatch(line, @"^[0-9a-f`]+\s+[0-9a-f]+\s+");
+                            var isAnalysisSuggestion = line.Contains("For analysis of this file, run !analyze");
+                            
+                            if (isDisassembly || isAnalysisSuggestion)
                             {
-                                m_logger.LogDebug("✅ CDB initialization complete, found prompt: {Prompt}", line);
+                                m_logger.LogDebug("✅ CDB initialization complete, detected end marker: '{Line}'", line);
                                 foundPromptStart = true;
-                                // CRITICAL: Do NOT append the prompt line - leave it for the first command
+                                initOutput.AppendLine(line); // Include this line in init output
                                 break;
                             }
                             
