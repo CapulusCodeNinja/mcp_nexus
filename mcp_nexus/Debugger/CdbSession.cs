@@ -122,19 +122,16 @@ namespace mcp_nexus.Debugger
                 throw new ArgumentException("Command cannot be null or empty", nameof(command));
 
             if (!IsActive)
+            {
+                m_logger.LogError("Cannot execute command '{Command}' - CDB session is not active (IsActive={IsActive})", command, IsActive);
                 throw new InvalidOperationException("No active debugging session");
+            }
 
             return Task.Run(() =>
             {
-                try
-                {
-                    return m_commandExecutor.ExecuteCommand(command, m_processManager, externalCancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    m_logger.LogError(ex, "Error executing command: {Command}", command);
-                    return $"Error executing command: {ex.Message}";
-                }
+                // Let exceptions propagate - don't swallow them
+                // The CommandProcessor will handle them appropriately
+                return m_commandExecutor.ExecuteCommand(command, m_processManager, externalCancellationToken);
             }, externalCancellationToken);
         }
 

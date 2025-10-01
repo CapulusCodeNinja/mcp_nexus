@@ -217,6 +217,18 @@ namespace mcp_nexus.Debugger
 
             // Configure streams
             m_debuggerInput.AutoFlush = true;
+            
+            // Monitor process exit to detect crashes
+            m_debuggerProcess.EnableRaisingEvents = true;
+            m_debuggerProcess.Exited += (sender, e) =>
+            {
+                if (m_isActive)
+                {
+                    m_logger.LogError("🔥 CDB process exited unexpectedly! Exit code: {ExitCode}, Was active: {WasActive}", 
+                        m_debuggerProcess?.ExitCode ?? -1, m_isActive);
+                    CleanupResources();
+                }
+            };
 
             m_isActive = true;
             m_logger.LogInformation("Successfully started CDB process with target: {Target}", target);
@@ -276,7 +288,13 @@ namespace mcp_nexus.Debugger
 
         private void CleanupResources()
         {
+            var wasActive = m_isActive;
             m_isActive = false;
+            
+            if (wasActive)
+            {
+                m_logger.LogWarning("⚠️ CDB session became inactive - CleanupResources called while session was active");
+            }
 
             try
             {
