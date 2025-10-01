@@ -219,8 +219,20 @@ namespace mcp_nexus.Debugger
                         string? line = null;
                         var readTask = Task.Run(() => debuggerOutput.ReadLine());
 
-                        // Wait with timeout but don't pass cancellation token to Wait() - it can throw ArgumentOutOfRangeException
-                        if (readTask.Wait(50)) // 50ms timeout for read attempt
+                        // Wait with timeout - wrap in try-catch because Wait() can throw if task is faulted
+                        bool readCompleted = false;
+                        try
+                        {
+                            readCompleted = readTask.Wait(50); // 50ms timeout for read attempt
+                        }
+                        catch (AggregateException)
+                        {
+                            // Task faulted (e.g., stream closed) - treat as end of stream
+                            m_logger.LogDebug("Read task faulted, treating as end of stream");
+                            break;
+                        }
+                        
+                        if (readCompleted)
                         {
                             line = readTask.Result;
                         }
