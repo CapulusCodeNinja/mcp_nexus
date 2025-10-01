@@ -109,7 +109,8 @@ namespace mcp_nexus.Session
                 {
                     try
                     {
-                        await Task.Delay(500, cancellationToken); // Brief delay to ensure CDB is ready
+                        // Wait briefly to ensure CDB init output consumer has started
+                        await Task.Delay(1000, cancellationToken);
                         var extCommandId = commandQueue.QueueCommand(".load ext");
                         m_logger.LogDebug("✅ Auto-queued extension loading for session {SessionId} (command: {CommandId})", sessionId, extCommandId);
                     }
