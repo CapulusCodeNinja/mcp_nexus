@@ -188,122 +188,38 @@ namespace mcp_nexus.Debugger
                 // CRITICAL: Use 30s idle timeout to allow symbol loading to complete
                 // Symbol servers can be slow, and CDB goes silent while downloading symbols
                 // If we timeout too early, we get truncated results (especially for !analyze -v)
-                var idleTimeoutMs = Math.Min(30000, m_config.CommandTimeoutMs / 2); // 30s or 1/2 of total, whichever smaller
+                var idleTimeoutMs = CalculateIdleTimeout();
 
                 while (true)
                 {
-                    try
-                    {
-                        // Check for absolute timeout
-                        var currentElapsed = DateTime.Now - startTime;
-                        if (currentElapsed.TotalMilliseconds >= m_config.CommandTimeoutMs)
-                        {
-                            m_logger.LogWarning("⏰ Command execution timed out after {ElapsedMs}ms (timeout: {TimeoutMs}ms), forcing completion",
-                                currentElapsed.TotalMilliseconds, m_config.CommandTimeoutMs);
-                            output.AppendLine($"Command execution timed out after {currentElapsed.TotalMilliseconds:F0}ms");
-                            break;
-                        }
-
-                        // Check for idle timeout
-                        if ((DateTime.Now - lastOutputTime).TotalMilliseconds >= idleTimeoutMs)
-                        {
-                            m_logger.LogWarning("⏳ Command idle timed out after {IdleElapsedMs}ms (idle timeout: {IdleTimeoutMs}ms), forcing completion",
-                                (DateTime.Now - lastOutputTime).TotalMilliseconds, idleTimeoutMs);
-                            output.AppendLine($"Command idle timed out after {(DateTime.Now - lastOutputTime).TotalMilliseconds:F0}ms");
-                            break;
-                        }
-
-                        // Check for cancellation
-                        cancellationToken.ThrowIfCancellationRequested();
-
-                    // CRITICAL: Use ReadLineAsync() with a timeout to avoid blocking forever
-                    // This allows idle timeout to work while waiting for data
-                    // NOTE: This may occasionally throw InvalidOperationException when timeout occurs
-                    // while a previous ReadLineAsync is still pending, but this is non-fatal
-                    string? line = null;
-                    
-                    try
-                    {
-                        using var idleCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-                        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, idleCts.Token);
-                        
-                        var readTask = debuggerOutput.ReadLineAsync();
-                        if (readTask.Wait(100, linkedCts.Token))
-                        {
-                            line = readTask.Result;
-                        }
-                        else
-                        {
-                            // No data within 100ms - loop will check timeouts
-                            continue;
-                        }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Timeout or external cancellation - loop will check which
-                        continue;
-                    }
-                    catch (InvalidOperationException ex) when (ex.Message.Contains("currently in use"))
-                    {
-                        // Concurrent access to stream - this is expected when timeout occurs
-                        // Just wait a bit and continue - the idle timeout will eventually trigger
-                        m_logger.LogTrace("Stream concurrent access (expected during timeout) - continuing");
-                        Task.Delay(50).GetAwaiter().GetResult();
-                        continue;
-                    }
-                    catch (Exception ex)
-                    {
-                        m_logger.LogError(ex, "⚠️ Error reading from StreamReader: {ExType}: {ExMsg}", 
-                            ex.GetType().Name, ex.Message);
+                    // Check timeouts and cancellation FIRST - before any read attempts
+                    if (CheckAbsoluteTimeout(startTime, output))
                         break;
+                    
+                    if (CheckIdleTimeout(lastOutputTime, idleTimeoutMs, output))
+                        break;
+                    
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    // Try to read a line from CDB output
+                    var readResult = TryReadLineWithTimeout(debuggerOutput, cancellationToken);
+                    
+                    if (!readResult.ShouldContinue)
+                        break;
+                    
+                    if (readResult.Line == null)
+                    {
+                        HandleNullLine();
+                        continue;
                     }
 
-                        if (line != null)
-                        {
-                            output.AppendLine(line);
-                            linesRead++;
-                            lastOutputTime = DateTime.Now; // Reset idle timer when we get data
+                    // Process the line
+                    output.AppendLine(readResult.Line);
+                    linesRead++;
+                    lastOutputTime = DateTime.Now; // Reset idle timer when we get data
 
-                            if (m_outputParser.IsCommandComplete(line))
-                            {
-                                m_logger.LogTrace("Command completion detected on line: '{Line}'", line);
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            // CRITICAL: null from ReadLine() means no data YET, not end of stream!
-                            // StreamReader.ReadLine() returns null when:
-                            // 1. Stream is closed/disposed (this is bad - should throw)
-                            // 2. No complete line is available yet (this is normal - wait for more data)
-                            // We rely on idle timeout to detect when CDB has actually stopped outputting
-                            m_logger.LogTrace("ReadLine() returned null - no data available, waiting for more...");
-                            Task.Delay(10).Wait(); // Brief delay before next attempt
-                            continue; // Don't break - let idle timeout handle it
-                        }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Re-throw cancellation to preserve cancellation semantics
-                        throw;
-                    }
-                    catch (Exception ex)
-                    {
-                        m_logger.LogError(ex, "Error reading debugger output: {Message}", ex.Message);
-                        output.AppendLine($"Error reading debugger output: {ex.Message}");
-                        
-                        // Break on critical errors to avoid infinite loop
-                        if (ex is OutOfMemoryException or StackOverflowException)
-                        {
-                            throw;
-                        }
-                        
-                        // Check for cancellation first - fail fast if already cancelled
-                        cancellationToken.ThrowIfCancellationRequested();
-                        
-                        // Wait before retrying to avoid tight loop
-                        Task.Delay(100).Wait();
-                    }
+                    if (IsCommandComplete(readResult.Line))
+                        break;
                 }
             }
             catch (OperationCanceledException)
@@ -321,6 +237,98 @@ namespace mcp_nexus.Debugger
                 linesRead, (DateTime.Now - startTime).TotalMilliseconds);
 
             return output.ToString();
+        }
+
+        private int CalculateIdleTimeout()
+        {
+            // Use 30s idle timeout or half of total timeout, whichever is smaller
+            return Math.Min(30000, m_config.CommandTimeoutMs / 2);
+        }
+
+        private bool CheckAbsoluteTimeout(DateTime startTime, StringBuilder output)
+        {
+            var currentElapsed = DateTime.Now - startTime;
+            if (currentElapsed.TotalMilliseconds >= m_config.CommandTimeoutMs)
+            {
+                m_logger.LogWarning("⏰ Command execution timed out after {ElapsedMs}ms (timeout: {TimeoutMs}ms), forcing completion",
+                    currentElapsed.TotalMilliseconds, m_config.CommandTimeoutMs);
+                output.AppendLine($"Command execution timed out after {currentElapsed.TotalMilliseconds:F0}ms");
+                return true;
+            }
+            return false;
+        }
+
+        private bool CheckIdleTimeout(DateTime lastOutputTime, int idleTimeoutMs, StringBuilder output)
+        {
+            var idleElapsed = (DateTime.Now - lastOutputTime).TotalMilliseconds;
+            if (idleElapsed >= idleTimeoutMs)
+            {
+                m_logger.LogWarning("⏳ Command idle timed out after {IdleElapsedMs}ms (idle timeout: {IdleTimeoutMs}ms), forcing completion",
+                    idleElapsed, idleTimeoutMs);
+                output.AppendLine($"Command idle timed out after {idleElapsed:F0}ms");
+                return true;
+            }
+            return false;
+        }
+
+        private (string? Line, bool ShouldContinue) TryReadLineWithTimeout(StreamReader debuggerOutput, CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var idleCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, idleCts.Token);
+                
+                var readTask = debuggerOutput.ReadLineAsync();
+                if (readTask.Wait(100, linkedCts.Token))
+                {
+                    return (readTask.Result, true);
+                }
+                else
+                {
+                    // No data within 100ms - return null but continue looping
+                    return (null, true);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Timeout or external cancellation - continue looping to check which
+                return (null, true);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("currently in use"))
+            {
+                // Concurrent access to stream - this is expected when timeout occurs
+                // Just wait a bit and continue - the idle timeout will eventually trigger
+                m_logger.LogDebug("Stream concurrent access (expected during timeout) - continuing");
+                Task.Delay(50).GetAwaiter().GetResult();
+                return (null, true);
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogError(ex, "⚠️ Error reading from StreamReader: {ExType}: {ExMsg}", 
+                    ex.GetType().Name, ex.Message);
+                return (null, false); // Stop reading on unexpected errors
+            }
+        }
+
+        private void HandleNullLine()
+        {
+            // CRITICAL: null from ReadLine() means no data YET, not end of stream!
+            // StreamReader.ReadLine() returns null when:
+            // 1. Stream is closed/disposed (this is bad - should throw)
+            // 2. No complete line is available yet (this is normal - wait for more data)
+            // We rely on idle timeout to detect when CDB has actually stopped outputting
+            m_logger.LogTrace("ReadLine() returned null - no data available, waiting for more...");
+            Task.Delay(10).Wait(); // Brief delay before next attempt
+        }
+
+        private bool IsCommandComplete(string line)
+        {
+            if (m_outputParser.IsCommandComplete(line))
+            {
+                m_logger.LogTrace("Command completion detected on line: '{Line}'", line);
+                return true;
+            }
+            return false;
         }
     }
 }
