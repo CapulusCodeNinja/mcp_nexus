@@ -188,7 +188,7 @@ namespace mcp_nexus_tests.CommandQueue
                 .Returns<string, CancellationToken>(async (cmd, token) =>
                 {
                     // Simulate a long-running command that checks for cancellation
-                    await Task.Delay(100, token); // This will throw OperationCanceledException when token is cancelled
+                    await Task.Delay(200, token); // This will throw OperationCanceledException when token is cancelled
                     return "Command completed";
                 });
 
@@ -196,7 +196,7 @@ namespace mcp_nexus_tests.CommandQueue
             var processingTask = _processor.ProcessCommandQueueAsync(commandQueue, serviceCancellationTokenSource.Token);
             
             // Cancel the service after a short delay to allow processing to start
-            await Task.Delay(50);
+            await Task.Delay(100);
             serviceCancellationTokenSource.Cancel();
 
             await processingTask;
