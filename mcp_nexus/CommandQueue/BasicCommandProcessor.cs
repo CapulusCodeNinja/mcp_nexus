@@ -171,7 +171,7 @@ namespace mcp_nexus.CommandQueue
             {
                 if (m_activeCommands.TryGetValue(commandId, out var command))
                 {
-                    var updatedCommand = command with { State = newState };
+                    var updatedCommand = command.WithState(newState);
                     m_activeCommands[commandId] = updatedCommand;
 
                     m_logger.LogTrace("🔄 Command {CommandId} state changed to {State}", commandId, newState);

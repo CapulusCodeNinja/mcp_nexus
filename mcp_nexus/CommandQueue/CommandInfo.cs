@@ -20,11 +20,11 @@ namespace mcp_nexus.CommandQueue
 
         #region Public Properties
 
-        /// <summary>Gets the command identifier</summary>
-        public string CommandId => m_commandId;
+        /// <summary>Gets or sets the command identifier</summary>
+        public string CommandId { get => m_commandId; set { } } // Read-only from external perspective
 
-        /// <summary>Gets the command text</summary>
-        public string Command => m_command;
+        /// <summary>Gets or sets the command text</summary>
+        public string Command { get => m_command; set { } } // Read-only from external perspective
 
         /// <summary>Gets or sets the command state</summary>
         public CommandState State
@@ -33,8 +33,8 @@ namespace mcp_nexus.CommandQueue
             set => m_state = value;
         }
 
-        /// <summary>Gets the queue time</summary>
-        public DateTime QueueTime => m_queueTime;
+        /// <summary>Gets or sets the queue time</summary>
+        public DateTime QueueTime { get => m_queueTime; set { } } // Read-only from external perspective
 
         /// <summary>Gets or sets the elapsed time</summary>
         public TimeSpan Elapsed

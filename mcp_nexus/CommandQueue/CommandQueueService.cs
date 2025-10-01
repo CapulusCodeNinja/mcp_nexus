@@ -246,15 +246,16 @@ namespace mcp_nexus.CommandQueue
 
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
-                return new CommandInfo
+                return new CommandInfo(
+                    command.Id,
+                    command.Command,
+                    command.State,
+                    command.QueueTime,
+                    0
+                )
                 {
-                    CommandId = command.Id,
-                    Command = command.Command,
-                    State = command.State,
-                    QueueTime = command.QueueTime,
                     Elapsed = DateTime.UtcNow - command.QueueTime,
                     Remaining = TimeSpan.Zero, // Not applicable for basic queue
-                    QueuePosition = 0, // Not applicable for basic queue
                     IsCompleted = command.State is CommandState.Completed or CommandState.Failed or CommandState.Cancelled
                 };
             }

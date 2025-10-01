@@ -137,6 +137,37 @@ namespace mcp_nexus.CommandQueue
             }
         }
 
+        /// <summary>
+        /// Creates a copy of this command with updated values (for record-like behavior)
+        /// </summary>
+        public QueuedCommand With(string? id = null, string? command = null, DateTime? queueTime = null, TaskCompletionSource<string>? completionSource = null, CancellationTokenSource? cancellationTokenSource = null, CommandState? state = null)
+        {
+            return new QueuedCommand(
+                id ?? m_id,
+                command ?? m_command,
+                queueTime ?? m_queueTime,
+                completionSource ?? m_completionSource,
+                cancellationTokenSource ?? m_cancellationTokenSource,
+                state ?? m_state
+            );
+        }
+
+        /// <summary>
+        /// Creates a copy of this command with updated state (for record-like behavior)
+        /// </summary>
+        public QueuedCommand WithState(CommandState newState)
+        {
+            return new QueuedCommand(m_id, m_command, m_queueTime, m_completionSource, m_cancellationTokenSource, newState);
+        }
+
+        /// <summary>
+        /// Creates a copy of this command with updated completion source (for record-like behavior)
+        /// </summary>
+        public QueuedCommand WithCompletionSource(TaskCompletionSource<string> newCompletionSource)
+        {
+            return new QueuedCommand(m_id, m_command, m_queueTime, newCompletionSource, m_cancellationTokenSource, m_state);
+        }
+
         #endregion
     }
 }

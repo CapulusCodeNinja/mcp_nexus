@@ -64,7 +64,7 @@ namespace mcp_nexus.CommandQueue
 
             if (m_activeCommands.TryGetValue(commandId, out var existing))
             {
-                var updated = existing with { State = newState };
+                var updated = existing.WithState(newState);
                 m_activeCommands[commandId] = updated;
                 m_logger.LogTrace("Command {CommandId} state updated to {State}", commandId, newState);
             }
@@ -115,15 +115,16 @@ namespace mcp_nexus.CommandQueue
             var queuePosition = GetQueuePosition(commandId);
             var remaining = CalculateRemainingTime(queuePosition);
 
-            return new CommandInfo
+            return new CommandInfo(
+                command.Id,
+                command.Command,
+                command.State,
+                command.QueueTime,
+                queuePosition
+            )
             {
-                CommandId = command.Id,
-                Command = command.Command,
-                State = command.State,
-                QueueTime = command.QueueTime,
                 Elapsed = elapsed,
                 Remaining = remaining,
-                QueuePosition = queuePosition,
                 IsCompleted = IsCommandCompleted(command.State)
             };
         }

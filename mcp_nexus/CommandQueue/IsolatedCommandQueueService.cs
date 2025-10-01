@@ -75,12 +75,12 @@ namespace mcp_nexus.CommandQueue
 
             // Create command object
             var queuedCommand = new QueuedCommand(
-                Id: commandId,
-                Command: command,
-                QueueTime: DateTime.UtcNow,
-                CompletionSource: new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously),
-                CancellationTokenSource: new CancellationTokenSource(),
-                State: CommandState.Queued
+                commandId,
+                command,
+                DateTime.UtcNow,
+                new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously),
+                new CancellationTokenSource(),
+                CommandState.Queued
             );
 
             // Add to tracking dictionary first

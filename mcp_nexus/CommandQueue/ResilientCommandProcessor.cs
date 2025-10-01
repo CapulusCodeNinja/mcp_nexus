@@ -190,7 +190,7 @@ namespace mcp_nexus.CommandQueue
             try
             {
                 // Update the command record (assuming QueuedCommand is mutable or we track state separately)
-                var updatedCommand = command with { State = newState };
+                var updatedCommand = command.WithState(newState);
                 m_activeCommands[command.Id] = updatedCommand;
 
                 m_logger.LogTrace("🔄 Command {CommandId} state changed to {State}", command.Id, newState);
@@ -335,15 +335,16 @@ namespace mcp_nexus.CommandQueue
             var elapsed = DateTime.UtcNow - queuedCommand.QueueTime;
             var isCompleted = queuedCommand.CompletionSource.Task.IsCompleted;
 
-            return new CommandInfo
+            return new CommandInfo(
+                queuedCommand.Id,
+                queuedCommand.Command,
+                queuedCommand.State,
+                queuedCommand.QueueTime,
+                0
+            )
             {
-                CommandId = queuedCommand.Id,
-                Command = queuedCommand.Command,
-                State = queuedCommand.State,
-                QueueTime = queuedCommand.QueueTime,
                 Elapsed = elapsed,
                 Remaining = TimeSpan.Zero, // Not applicable for resilient queue
-                QueuePosition = 0, // Not applicable for resilient queue
                 IsCompleted = isCompleted
             };
         }

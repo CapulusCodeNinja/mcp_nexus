@@ -4,7 +4,6 @@ using mcp_nexus.Notifications;
 using mcp_nexus.Protocol;
 using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure;
-using mcp_nexus.Session;
 
 namespace mcp_nexus.Session.Models
 {
@@ -67,25 +66,25 @@ namespace mcp_nexus.Session.Models
         #region Public Properties
 
         /// <summary>Unique session identifier</summary>
-        public string SessionId => m_sessionId;
+        public string SessionId { get => m_sessionId; set { } } // Read-only from external perspective
 
         /// <summary>CDB session for this debugging session</summary>
-        public ICdbSession CdbSession => m_cdbSession;
+        public ICdbSession CdbSession { get => m_cdbSession; set { } } // Read-only from external perspective
 
         /// <summary>Command queue service for this session</summary>
-        public ICommandQueueService CommandQueue => m_commandQueue;
+        public ICommandQueueService CommandQueue { get => m_commandQueue; set { } } // Read-only from external perspective
 
         /// <summary>Session creation time (UTC)</summary>
-        public DateTime CreatedAt => m_createdAt;
+        public DateTime CreatedAt { get => m_createdAt; set { } } // Read-only from external perspective
 
         /// <summary>Path to the dump file being debugged</summary>
-        public string DumpPath => m_dumpPath;
+        public string DumpPath { get => m_dumpPath; set { } } // Read-only from external perspective
 
         /// <summary>Optional path to symbol files</summary>
-        public string? SymbolsPath => m_symbolsPath;
+        public string? SymbolsPath { get => m_symbolsPath; set { } } // Read-only from external perspective
 
         /// <summary>Process ID of the CDB debugger process</summary>
-        public int? ProcessId => m_processId;
+        public int? ProcessId { get => m_processId; set { } } // Read-only from external perspective
 
         /// <summary>Thread-safe session status property</summary>
         public SessionStatus Status

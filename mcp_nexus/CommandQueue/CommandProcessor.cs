@@ -106,7 +106,7 @@ namespace mcp_nexus.CommandQueue
                 m_logger.LogTrace("Debugger session IsActive={IsActive} for {SessionId}", m_cdbSession.IsActive, m_config.SessionId);
 
                 // Update command state to executing
-                var updatedCommand = command with { State = CommandState.Executing };
+                var updatedCommand = command.WithState(CommandState.Executing);
                 m_tracker.UpdateState(command.Id, CommandState.Executing);
 
                 // Start heartbeat for long-running commands
@@ -292,7 +292,7 @@ namespace mcp_nexus.CommandQueue
             try
             {
                 // Update the command state (this is a record, so we create a new instance)
-                var completedCommand = command with { State = state };
+                var completedCommand = command.WithState(state);
 
                 // Set the result
                 command.CompletionSource.TrySetResult(result);

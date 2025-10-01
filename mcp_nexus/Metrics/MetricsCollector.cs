@@ -148,7 +148,7 @@ namespace mcp_nexus.Metrics
         void RecordExecutionTime(string operationName, TimeSpan duration, Dictionary<string, string>? tags = null);
         void RecordCommandExecution(string commandType, TimeSpan duration, bool success);
         void RecordSessionEvent(string eventType, Dictionary<string, string>? additionalTags = null);
-        IMetricsSnapshot GetSnapshot();
+        MetricsSnapshot GetSnapshot();
     }
 
     /// <summary>
