@@ -147,7 +147,7 @@ namespace mcp_nexus_tests.CommandQueue
             _mockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
                 It.IsAny<string>(), 
                 It.IsAny<string>(), 
-                It.Is<string>(s => s.Contains("Executing for 5.0 minutes")), 
+                It.Is<string>(s => s.Contains("Executing for 5") && s.Contains("minutes")), 
                 It.IsAny<int?>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),

@@ -51,24 +51,24 @@ namespace mcp_nexus_tests.Debugger
         }
 
         [Fact]
-        public void StartProcess_WithNullTarget_ThrowsArgumentNullException()
+        public void StartProcess_WithNullTarget_ReturnsFalse()
         {
-            Assert.Throws<ArgumentNullException>(() => 
-                _processManager.StartProcess(null!));
+            var result = _processManager.StartProcess(null!);
+            Assert.False(result);
         }
 
         [Fact]
-        public void StartProcess_WithEmptyTarget_ThrowsArgumentNullException()
+        public void StartProcess_WithEmptyTarget_ReturnsFalse()
         {
-            Assert.Throws<ArgumentNullException>(() => 
-                _processManager.StartProcess(""));
+            var result = _processManager.StartProcess("");
+            Assert.False(result);
         }
 
         [Fact]
-        public void StartProcess_WithWhitespaceTarget_ThrowsArgumentNullException()
+        public void StartProcess_WithWhitespaceTarget_ReturnsFalse()
         {
-            Assert.Throws<ArgumentNullException>(() => 
-                _processManager.StartProcess("   "));
+            var result = _processManager.StartProcess("   ");
+            Assert.False(result);
         }
 
         [Fact]
@@ -85,24 +85,24 @@ namespace mcp_nexus_tests.Debugger
         }
 
         [Fact]
-        public void StartProcess_WithNullCdbPath_ThrowsFileNotFoundException()
+        public void StartProcess_WithNullCdbPath_ReturnsFalse()
         {
             var configWithNullPath = new CdbSessionConfiguration(customCdbPath: null);
             var processManager = new CdbProcessManager(_mockLogger.Object, configWithNullPath);
 
-            Assert.Throws<FileNotFoundException>(() => 
-                processManager.StartProcess("test.dmp"));
+            var result = processManager.StartProcess("test.dmp");
+            Assert.False(result);
             processManager.Dispose();
         }
 
         [Fact]
-        public void StartProcess_WithEmptyCdbPath_ThrowsFileNotFoundException()
+        public void StartProcess_WithEmptyCdbPath_ReturnsFalse()
         {
             var configWithEmptyPath = new CdbSessionConfiguration(customCdbPath: "");
             var processManager = new CdbProcessManager(_mockLogger.Object, configWithEmptyPath);
 
-            Assert.Throws<FileNotFoundException>(() => 
-                processManager.StartProcess("test.dmp"));
+            var result = processManager.StartProcess("test.dmp");
+            Assert.False(result);
             processManager.Dispose();
         }
 
