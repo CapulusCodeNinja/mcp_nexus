@@ -572,7 +572,7 @@ namespace mcp_nexus_tests
             try
             {
                 // Act
-                logBannerMethod!.Invoke(null, new object[] { commandLineArgs!, "stdio", (int?)null });
+                logBannerMethod!.Invoke(null, new object[] { commandLineArgs!, "stdio", (int?)null! });
 
                 // Assert
                 var output = stringWriter.ToString();
@@ -835,7 +835,7 @@ namespace mcp_nexus_tests
             try
             {
                 // Act
-                logFatalMethod!.Invoke(null, new object[] { (Exception?)null, "TestSource", false });
+                logFatalMethod!.Invoke(null, new object[] { (Exception?)null!, "TestSource", false });
 
                 // Assert
                 var output = stringWriter.ToString();

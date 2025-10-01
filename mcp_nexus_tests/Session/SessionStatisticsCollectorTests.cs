@@ -26,7 +26,6 @@ namespace mcp_nexus_tests.Session
         private readonly SessionLifecycleManager _lifecycleManager;
         private readonly SessionMonitoringService _monitoringService;
         private readonly ConcurrentDictionary<string, SessionInfo> _sessions;
-        private SessionStatisticsCollector? _collector;
 
         public SessionStatisticsCollectorTests()
         {
@@ -360,7 +359,6 @@ namespace mcp_nexus_tests.Session
 
         public void Dispose()
         {
-            _collector = null;
         }
     }
 

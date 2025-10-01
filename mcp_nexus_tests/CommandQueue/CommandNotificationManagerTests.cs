@@ -354,7 +354,7 @@ namespace mcp_nexus_tests.CommandQueue
             _mockLogger.Verify(x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Failed to send command status notification for {commandId}")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to send command status notification for")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
         }

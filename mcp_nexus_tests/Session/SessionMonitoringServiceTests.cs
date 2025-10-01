@@ -24,7 +24,6 @@ namespace mcp_nexus_tests.Session
         private readonly SessionManagerConfiguration _config;
         private readonly ConcurrentDictionary<string, SessionInfo> _sessions;
         private readonly CancellationTokenSource _shutdownCts;
-        private SessionMonitoringService? _service;
 
         public SessionMonitoringServiceTests()
         {
@@ -406,7 +405,7 @@ namespace mcp_nexus_tests.Session
             Assert.NotNull(hints);
             Assert.True(hints.Count > 0);
             // Check if any hint contains "crash" (case insensitive)
-            Assert.True(hints.Any(h => h.Contains("crash", StringComparison.OrdinalIgnoreCase)));
+            Assert.Contains(hints, h => h.Contains("crash", StringComparison.OrdinalIgnoreCase));
         }
 
         [Fact]
@@ -521,7 +520,6 @@ namespace mcp_nexus_tests.Session
 
         public void Dispose()
         {
-            _service?.Dispose();
             _shutdownCts?.Dispose();
         }
     }
