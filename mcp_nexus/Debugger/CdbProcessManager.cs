@@ -17,8 +17,8 @@ namespace mcp_nexus.Debugger
         private StreamWriter? m_debuggerInput;
         private StreamReader? m_debuggerOutput;
         private StreamReader? m_debuggerError;
-        private bool m_isActive;
-        private bool m_disposed;
+        private volatile bool m_isActive;  // CRITICAL: volatile ensures visibility across threads
+        private volatile bool m_disposed;  // CRITICAL: volatile ensures visibility across threads
 
         public Process? DebuggerProcess => m_debuggerProcess;
         public StreamWriter? DebuggerInput => m_debuggerInput;
