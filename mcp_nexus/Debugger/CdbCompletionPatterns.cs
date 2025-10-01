@@ -27,13 +27,14 @@ namespace mcp_nexus.Debugger
         /// <summary>
         /// Ultra-safe completion patterns that are based on binary/structural formats
         /// These are unlikely to change across CDB versions or localizations
+        /// NOTE: These should ONLY match command completion, NOT dump file loading output!
         /// </summary>
         public static readonly string[] UltraSafeCompletionPatterns = {
             "^ Syntax error in",    // CDB syntax error format - always starts with ^
             "ModLoad:",             // Module load notification - binary format
             "ModUnload:",           // Module unload notification - binary format
-            "Source search path is:", // .srcpath confirmation
-            "Symbol search path is:", // .symfix/.sympath confirmation
+            // REMOVED: "Symbol search path is:" - this appears during dump loading, not just command completion!
+            // REMOVED: "Source search path is:" - this appears during dump loading, not just command completion!
         };
 
         /// <summary>
