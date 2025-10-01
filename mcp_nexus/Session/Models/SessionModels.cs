@@ -50,7 +50,7 @@ namespace mcp_nexus.Session.Models
 
         /// <summary>Current session status - using volatile int for thread-safe atomic operations</summary>
         private volatile int m_status = (int)SessionStatus.Initializing;
-        
+
         /// <summary>Thread-safe session status property</summary>
         public SessionStatus Status
         {

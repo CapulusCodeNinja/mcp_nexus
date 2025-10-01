@@ -12,11 +12,11 @@ namespace mcp_nexus.Debugger
         private readonly CdbProcessManager m_processManager;
         private readonly CdbCommandExecutor m_commandExecutor;
         private readonly CdbOutputParser m_outputParser;
-        
+
         // CRITICAL: Semaphore to ensure only ONE command executes at a time in CDB
         // CDB is single-threaded and cannot handle concurrent commands
         private readonly SemaphoreSlim m_commandSemaphore = new SemaphoreSlim(1, 1);
-        
+
         private bool m_disposed;
 
         // Maintain backward compatibility with original constructor signature
@@ -46,7 +46,7 @@ namespace mcp_nexus.Debugger
             var processLogger = new LoggerWrapper<CdbProcessManager>(logger);
             var parserLogger = new LoggerWrapper<CdbOutputParser>(logger);
             var executorLogger = new LoggerWrapper<CdbCommandExecutor>(logger);
-            
+
             m_processManager = new CdbProcessManager(processLogger, m_config);
             m_outputParser = new CdbOutputParser(parserLogger);
             m_commandExecutor = new CdbCommandExecutor(executorLogger, m_config, m_outputParser);
@@ -61,18 +61,18 @@ namespace mcp_nexus.Debugger
         private class LoggerWrapper<T> : ILogger<T>
         {
             private readonly ILogger _innerLogger;
-            
+
             public LoggerWrapper(ILogger logger)
             {
                 _innerLogger = logger ?? throw new ArgumentNullException(nameof(logger));
             }
-            
+
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull
                 => _innerLogger.BeginScope(state);
-            
+
             public bool IsEnabled(LogLevel logLevel)
                 => _innerLogger.IsEnabled(logLevel);
-            
+
             public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
                 => _innerLogger.Log(logLevel, eventId, state, exception, formatter);
         }
@@ -155,7 +155,7 @@ namespace mcp_nexus.Debugger
             // CRITICAL: Use semaphore to ensure ONLY ONE command executes at a time
             // CDB is single-threaded and crashes/hangs if multiple commands run concurrently
             await m_commandSemaphore.WaitAsync(externalCancellationToken);
-            
+
             try
             {
                 if (!IsActive)
@@ -165,14 +165,14 @@ namespace mcp_nexus.Debugger
                 }
 
                 m_logger.LogInformation("🔒 SEMAPHORE: About to execute command '{Command}' on thread pool", command);
-                
+
                 // Execute on thread pool to avoid blocking, but semaphore ensures serialization
-                var result = await Task.Run(() => 
+                var result = await Task.Run(() =>
                     m_commandExecutor.ExecuteCommand(command, m_processManager, externalCancellationToken),
                     externalCancellationToken);
-                
+
                 m_logger.LogInformation("🔒 SEMAPHORE: Command '{Command}' completed, result length: {Length}", command, result?.Length ?? 0);
-                
+
                 return result ?? string.Empty;
             }
             finally

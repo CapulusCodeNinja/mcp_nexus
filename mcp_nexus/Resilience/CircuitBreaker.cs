@@ -34,7 +34,7 @@ namespace mcp_nexus.Resilience
             ThrowIfDisposed();
 
             var currentState = (CircuitState)Interlocked.CompareExchange(ref m_state, m_state, m_state);
-            
+
             if (currentState == CircuitState.Open)
             {
                 var lastFailureTime = new DateTime(Interlocked.Read(ref m_lastFailureTimeTicks));
@@ -78,7 +78,7 @@ namespace mcp_nexus.Resilience
         {
             // Use Interlocked for lock-free state updates
             var currentState = (CircuitState)Interlocked.CompareExchange(ref m_state, m_state, m_state);
-            
+
             if (currentState == CircuitState.HalfOpen)
             {
                 m_logger.LogInformation("Circuit breaker closed for {OperationName}", operationName);

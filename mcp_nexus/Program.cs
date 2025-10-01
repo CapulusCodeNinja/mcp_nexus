@@ -688,7 +688,7 @@ namespace mcp_nexus
         {
             // Configure UTF-8 encoding for all console streams (stdin, stdout, stderr)
             EncodingConfiguration.ConfigureConsoleEncoding();
-            
+
             // CRITICAL: In stdio mode, stdout is reserved for MCP protocol
             // All console output must go to stderr
             await Console.Error.WriteLineAsync("Configuring for stdio transport...");

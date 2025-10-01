@@ -195,18 +195,18 @@ namespace mcp_nexus.Debugger
                     // Check timeouts and cancellation FIRST - before any read attempts
                     if (CheckAbsoluteTimeout(startTime, output))
                         break;
-                    
+
                     if (CheckIdleTimeout(lastOutputTime, idleTimeoutMs, output))
                         break;
-                    
+
                     cancellationToken.ThrowIfCancellationRequested();
 
                     // Try to read a line from CDB output
                     var readResult = TryReadLineWithTimeout(debuggerOutput, cancellationToken);
-                    
+
                     if (!readResult.ShouldContinue)
                         break;
-                    
+
                     if (readResult.Line == null)
                     {
                         HandleNullLine();
@@ -277,7 +277,7 @@ namespace mcp_nexus.Debugger
             {
                 using var idleCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, idleCts.Token);
-                
+
                 var readTask = debuggerOutput.ReadLineAsync();
                 if (readTask.Wait(100, linkedCts.Token))
                 {
@@ -304,7 +304,7 @@ namespace mcp_nexus.Debugger
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "⚠️ Error reading from StreamReader: {ExType}: {ExMsg}", 
+                m_logger.LogError(ex, "⚠️ Error reading from StreamReader: {ExType}: {ExMsg}",
                     ex.GetType().Name, ex.Message);
                 return (null, false); // Stop reading on unexpected errors
             }

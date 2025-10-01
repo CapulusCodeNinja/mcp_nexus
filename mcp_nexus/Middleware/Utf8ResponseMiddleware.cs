@@ -21,7 +21,7 @@ namespace mcp_nexus.Middleware
             context.Response.OnStarting(() =>
             {
                 var contentType = context.Response.ContentType;
-                
+
                 if (!string.IsNullOrEmpty(contentType) && !contentType.Contains("charset", StringComparison.OrdinalIgnoreCase))
                 {
                     // Add UTF-8 charset to Content-Type
@@ -43,7 +43,7 @@ namespace mcp_nexus.Middleware
                         context.Response.ContentType = $"{contentType}; {EncodingConfiguration.HttpCharset}";
                     }
                 }
-                
+
                 return Task.CompletedTask;
             });
 

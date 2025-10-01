@@ -39,7 +39,7 @@ namespace mcp_nexus.Configuration
         {
             // Get NLog logger for service registration
             var logger = LogManager.GetCurrentClassLogger();
-            
+
             // Configure CDB session options with simple auto-detection
             services.Configure<CdbSessionOptions>(options =>
             {
@@ -47,10 +47,10 @@ namespace mcp_nexus.Configuration
                 options.SymbolServerTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerTimeoutMs");
                 options.SymbolServerMaxRetries = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries");
                 options.SymbolSearchPath = configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath");
-                
+
                 // Simple logic: Use configured path if file exists, otherwise auto-detect
                 var configuredPath = customCdbPath ?? configuration.GetValue<string>("McpNexus:Debugging:CdbPath");
-                
+
                 if (!string.IsNullOrWhiteSpace(configuredPath) && File.Exists(configuredPath))
                 {
                     // Valid configured path - use it
@@ -68,7 +68,7 @@ namespace mcp_nexus.Configuration
                     {
                         logger.Info("🔍 No CDB path configured - use autodetect");
                     }
-                    
+
                     // Auto-detect CDB path
                     var cdbConfig = new mcp_nexus.Debugger.CdbSessionConfiguration(
                         commandTimeoutMs: options.CommandTimeoutMs,
@@ -79,7 +79,7 @@ namespace mcp_nexus.Configuration
                         startupDelayMs: configuration.GetValue<int>("McpNexus:Debugging:StartupDelayMs")
                     );
                     options.CustomCdbPath = cdbConfig.FindCdbPath();
-                    
+
                     if (options.CustomCdbPath != null)
                     {
                         logger.Info("✅ CDB used from auto-detect: {CdbPath}", options.CustomCdbPath);

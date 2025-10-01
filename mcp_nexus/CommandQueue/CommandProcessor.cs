@@ -139,12 +139,12 @@ namespace mcp_nexus.CommandQueue
 
                     CompleteCommandSafely(command, result ?? string.Empty, CommandState.Completed);
                     m_tracker.UpdateState(command.Id, CommandState.Completed);
-                    
+
                     m_tracker.IncrementCompleted();
 
                     m_logger.LogInformation("✅ Command {CommandId} completed successfully in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
-                    
+
                     // CRITICAL FIX: Remove completed command from tracker after short retention to prevent memory leak
                     _ = Task.Run(async () =>
                     {
@@ -168,7 +168,7 @@ namespace mcp_nexus.CommandQueue
                     m_tracker.IncrementCancelled();
                     m_logger.LogWarning("⚠️ Command {CommandId} was cancelled by user in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
-                    
+
                     // Clean up cancelled command
                     _ = Task.Run(async () =>
                     {
@@ -195,7 +195,7 @@ namespace mcp_nexus.CommandQueue
                     m_tracker.IncrementFailed();
                     m_logger.LogWarning("⏰ Command {CommandId} timed out or was cancelled in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
-                    
+
                     // Clean up failed/timed out command
                     _ = Task.Run(async () =>
                     {
@@ -225,7 +225,7 @@ namespace mcp_nexus.CommandQueue
                 m_tracker.IncrementFailed();
                 m_logger.LogError(ex, "❌ Command {CommandId} failed with exception in {Elapsed}ms",
                     command.Id, stopwatch.ElapsedMilliseconds);
-                
+
                 // Clean up failed command
                 _ = Task.Run(async () =>
                 {

@@ -186,7 +186,7 @@ namespace mcp_nexus.Tools
                         await Task.Delay(50); // Reduced from 100ms to 50ms for faster response
                         if (sessionManager.TryGetCommandQueue(sessionId, out commandQueue) && commandQueue != null)
                         {
-                            logger.LogTrace("Command queue became available for {SessionId} after {Attempt} attempts ({Ms}ms)", 
+                            logger.LogTrace("Command queue became available for {SessionId} after {Attempt} attempts ({Ms}ms)",
                                 sessionId, attempt, attempt * 50);
                             break;
                         }

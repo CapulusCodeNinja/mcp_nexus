@@ -363,7 +363,7 @@ namespace mcp_nexus.Session
                     var allTasksCompleted = Task.WaitAll(closeTasks, TimeSpan.FromSeconds(30));
                     if (!allTasksCompleted)
                     {
-                        m_logger.LogWarning("Session closure timed out after 30 seconds, {Count} sessions may not have closed cleanly", 
+                        m_logger.LogWarning("Session closure timed out after 30 seconds, {Count} sessions may not have closed cleanly",
                             closeTasks.Count(t => !t.IsCompleted));
                     }
                 }

@@ -196,7 +196,7 @@ namespace mcp_nexus.Debugger
             // Use centralized UTF-8 encoding configuration for all CDB streams
             var startInfo = EncodingConfiguration.CreateUtf8ProcessStartInfo(cdbPath, arguments);
             startInfo.WorkingDirectory = workingDirectory;
-            
+
             return startInfo;
         }
 
@@ -218,14 +218,14 @@ namespace mcp_nexus.Debugger
 
             // Configure streams
             m_debuggerInput.AutoFlush = true;
-            
+
             // Monitor process exit to detect crashes
             m_debuggerProcess.EnableRaisingEvents = true;
             m_debuggerProcess.Exited += (sender, e) =>
             {
                 if (m_isActive)
                 {
-                    m_logger.LogError("🔥 CDB process exited unexpectedly! Exit code: {ExitCode}, Was active: {WasActive}", 
+                    m_logger.LogError("🔥 CDB process exited unexpectedly! Exit code: {ExitCode}, Was active: {WasActive}",
                         m_debuggerProcess?.ExitCode ?? -1, m_isActive);
                     CleanupResources();
                 }
@@ -239,7 +239,7 @@ namespace mcp_nexus.Debugger
             // StreamReader buffering makes it impossible to reliably consume partial output
             // Instead, the FIRST command will see the init output + its own output
             // The command executor's completion detection will handle this correctly
-            
+
             m_logger.LogDebug("⚡ CDB process started - skipping init consumer (first command will see init output)");
             m_initOutputConsumed = true; // Mark as ready immediately
 
@@ -299,7 +299,7 @@ namespace mcp_nexus.Debugger
         {
             var wasActive = m_isActive;
             m_isActive = false;
-            
+
             if (wasActive)
             {
                 m_logger.LogWarning("⚠️ CDB session became inactive - CleanupResources called while session was active");
