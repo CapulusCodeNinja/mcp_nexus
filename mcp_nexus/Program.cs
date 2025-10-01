@@ -628,6 +628,18 @@ namespace mcp_nexus
             Console.WriteLine(logMessage);
 
             var webBuilder = WebApplication.CreateBuilder(args);
+            
+            // CRITICAL: When running as a Windows service, set ContentRootPath to the assembly directory
+            // This ensures appsettings.json is loaded from the installation directory, not C:\Windows\System32
+            if (commandLineArgs.ServiceMode)
+            {
+                var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                if (!string.IsNullOrEmpty(assemblyDir))
+                {
+                    webBuilder.Environment.ContentRootPath = assemblyDir;
+                    Console.WriteLine($"Service mode: Loading configuration from {assemblyDir}");
+                }
+            }
 
             // Read configuration from appsettings files first, then apply command line overrides
             var configHost = webBuilder.Configuration["McpNexus:Server:Host"];

@@ -182,11 +182,6 @@ namespace mcp_nexus.Debugger
             // If target already contains flags, use as-is; otherwise treat as dump path
             var arguments = target.StartsWith("-") ? target : $"-z \"{target}\"";
 
-            // CRITICAL: Add -a flag to enable automatic extension DLL loading
-            // This ensures !analyze, !threads, and other extension commands work automatically
-            // Without this, extension commands fail with "No export [command] found"
-            arguments += " -a";
-
             if (!string.IsNullOrWhiteSpace(m_config.SymbolSearchPath))
             {
                 arguments += $" -y \"{m_config.SymbolSearchPath}\"";
