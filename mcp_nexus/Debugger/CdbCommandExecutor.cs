@@ -216,39 +216,30 @@ namespace mcp_nexus.Debugger
                         // Check for cancellation
                         cancellationToken.ThrowIfCancellationRequested();
 
-                        // CRITICAL FIX: Use async read with timeout to avoid blocking forever
-                        // ReadLine() can block if stream has no complete line yet
+                        // CRITICAL FIX: Just call ReadLine() directly - no Task.Run!
+                        // Previous approach caused CONCURRENT StreamReader access when reads timed out
+                        // StreamReader is NOT thread-safe, and concurrent ReadLine() corrupts its internal buffer
+                        // We're already protected by SemaphoreSlim in CdbSession, so blocking here is safe
                         string? line = null;
-                        var readTask = Task.Run(() => debuggerOutput.ReadLine());
-
-                        // Wait with timeout - wrap in try-catch because Wait() can throw if task is faulted
-                        bool readCompleted = false;
+                        
                         try
                         {
-                            readCompleted = readTask.Wait(50); // 50ms timeout for read attempt
+                            // Check if data is available without blocking
+                            if (debuggerOutput.BaseStream.CanRead && debuggerOutput.Peek() == -1)
+                            {
+                                // No data available - wait briefly and retry
+                                Task.Delay(10, cancellationToken).GetAwaiter().GetResult();
+                                continue;
+                            }
+                            
+                            // Data is available - read it
+                            line = debuggerOutput.ReadLine();
                         }
-                        catch (AggregateException agEx)
+                        catch (Exception ex)
                         {
-                            // Task faulted (e.g., stream closed) - but WHY?
-                            var innerEx = agEx.InnerException ?? agEx;
-                            m_logger.LogError(agEx, "⚠️ CRITICAL: Read task faulted! Exception: {ExType}: {ExMsg}", 
-                                innerEx.GetType().Name, innerEx.Message);
-                            m_logger.LogError("⚠️ This should NOT happen - StreamReader should block, not throw!");
+                            m_logger.LogError(ex, "⚠️ Error reading from StreamReader: {ExType}: {ExMsg}", 
+                                ex.GetType().Name, ex.Message);
                             break;
-                        }
-                        
-                        if (readCompleted)
-                        {
-                            line = readTask.Result;
-                        }
-                        else
-                        {
-                            // Check for cancellation manually
-                            cancellationToken.ThrowIfCancellationRequested();
-
-                            // No complete line available within timeout, wait and retry
-                            Task.Delay(10, cancellationToken).GetAwaiter().GetResult();
-                            continue;
                         }
 
                         if (line != null)
