@@ -235,67 +235,13 @@ namespace mcp_nexus.Debugger
             m_logger.LogInformation("Successfully started CDB process with target: {Target}", target);
             m_logger.LogInformation("Process ID: {ProcessId}, Active: {IsActive}", m_debuggerProcess.Id, m_isActive);
 
-            // CRITICAL: Consume CDB's initialization output SYNCHRONOUSLY to prevent race conditions
-            // CDB outputs dump loading info, symbol paths, and initial prompt immediately on startup
-            // We MUST finish consuming this before ANY commands execute, or they'll steal each other's output
-            try
-            {
-                var initOutput = new System.Text.StringBuilder();
-                var startTime = DateTime.Now;
-                var timeout = TimeSpan.FromSeconds(5);
-                
-                m_logger.LogDebug("🔧 Consuming CDB initialization output...");
-                
-                bool foundPromptStart = false;
-                while ((DateTime.Now - startTime) < timeout && m_debuggerOutput != null)
-                {
-                    // Try to read a line with a short timeout
-                    var readTask = Task.Run(() => m_debuggerOutput.ReadLine());
-                    if (readTask.Wait(100))
-                    {
-                        var line = readTask.Result;
-                        if (line != null)
-                        {
-                            // DIAGNOSTIC: Log every line to understand CDB output format
-                            m_logger.LogTrace("Init consumer read line: '{Line}'", line);
-                            
-                            // CRITICAL FIX: CDB doesn't output a prompt until the first command is sent!
-                            // Instead of waiting for a prompt, detect the END of init output:
-                            // - Disassembly line (hex address followed by instruction)
-                            // - OR the "For analysis" suggestion line
-                            var isDisassembly = System.Text.RegularExpressions.Regex.IsMatch(line, @"^[0-9a-f`]+\s+[0-9a-f]+\s+");
-                            var isAnalysisSuggestion = line.Contains("For analysis of this file, run !analyze");
-                            
-                            if (isDisassembly || isAnalysisSuggestion)
-                            {
-                                m_logger.LogDebug("✅ CDB initialization complete, detected end marker: '{Line}'", line);
-                                foundPromptStart = true;
-                                initOutput.AppendLine(line); // Include this line in init output
-                                break;
-                            }
-                            
-                            initOutput.AppendLine(line);
-                        }
-                        else
-                        {
-                            break; // Stream ended
-                        }
-                    }
-                }
-                
-                if (!foundPromptStart && initOutput.Length > 0)
-                {
-                    m_logger.LogWarning("CDB init output consumed but no prompt found - may cause issues");
-                }
-                
-                m_logger.LogInformation("✅ Consumed {Bytes} bytes of CDB initialization output", initOutput.Length);
-                m_initOutputConsumed = true; // Mark as ready for commands
-            }
-            catch (Exception ex)
-            {
-                m_logger.LogWarning(ex, "Failed to consume CDB initialization output - first command may include startup text");
-                m_initOutputConsumed = true; // Allow commands anyway to avoid deadlock
-            }
+            // CRITICAL DECISION: DO NOT consume init output!
+            // StreamReader buffering makes it impossible to reliably consume partial output
+            // Instead, the FIRST command will see the init output + its own output
+            // The command executor's completion detection will handle this correctly
+            
+            m_logger.LogDebug("⚡ CDB process started - skipping init consumer (first command will see init output)");
+            m_initOutputConsumed = true; // Mark as ready immediately
 
             return true;
         }
