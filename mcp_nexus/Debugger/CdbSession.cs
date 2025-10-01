@@ -173,7 +173,7 @@ namespace mcp_nexus.Debugger
                 
                 m_logger.LogInformation("🔒 SEMAPHORE: Command '{Command}' completed, result length: {Length}", command, result?.Length ?? 0);
                 
-                return result;
+                return result ?? string.Empty;
             }
             finally
             {
