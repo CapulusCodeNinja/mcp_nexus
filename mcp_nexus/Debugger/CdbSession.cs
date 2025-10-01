@@ -138,10 +138,16 @@ namespace mcp_nexus.Debugger
                     throw new InvalidOperationException("No active debugging session");
                 }
 
+                m_logger.LogInformation("🔒 SEMAPHORE: About to execute command '{Command}' on thread pool", command);
+                
                 // Execute on thread pool to avoid blocking, but semaphore ensures serialization
-                return await Task.Run(() => 
+                var result = await Task.Run(() => 
                     m_commandExecutor.ExecuteCommand(command, m_processManager, externalCancellationToken),
                     externalCancellationToken);
+                
+                m_logger.LogInformation("🔒 SEMAPHORE: Command '{Command}' completed, result length: {Length}", command, result?.Length ?? 0);
+                
+                return result;
             }
             finally
             {
