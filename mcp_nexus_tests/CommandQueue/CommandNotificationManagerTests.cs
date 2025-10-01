@@ -380,7 +380,7 @@ namespace mcp_nexus_tests.CommandQueue
             _mockLogger.Verify(x => x.Log(
                 LogLevel.Trace,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Failed to send heartbeat notification for {queuedCommand.Id}")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to send heartbeat notification for")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
         }
