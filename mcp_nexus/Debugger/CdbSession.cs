@@ -12,6 +12,11 @@ namespace mcp_nexus.Debugger
         private readonly CdbProcessManager m_processManager;
         private readonly CdbCommandExecutor m_commandExecutor;
         private readonly CdbOutputParser m_outputParser;
+        
+        // CRITICAL: Semaphore to ensure only ONE command executes at a time in CDB
+        // CDB is single-threaded and cannot handle concurrent commands
+        private readonly SemaphoreSlim m_commandSemaphore = new SemaphoreSlim(1, 1);
+        
         private bool m_disposed;
 
         // Maintain backward compatibility with original constructor signature
@@ -114,16 +119,18 @@ namespace mcp_nexus.Debugger
         /// <summary>
         /// Executes a command in the debugging session with cancellation support
         /// </summary>
-        public Task<string> ExecuteCommand(string command, CancellationToken externalCancellationToken)
+        public async Task<string> ExecuteCommand(string command, CancellationToken externalCancellationToken)
         {
             ThrowIfDisposed();
 
             if (string.IsNullOrWhiteSpace(command))
                 throw new ArgumentException("Command cannot be null or empty", nameof(command));
 
-            // CRITICAL: Check IsActive INSIDE Task.Run to ensure the exception is async
-            // Otherwise, sync exceptions allow multiple commands to process concurrently!
-            return Task.Run(() =>
+            // CRITICAL: Use semaphore to ensure ONLY ONE command executes at a time
+            // CDB is single-threaded and crashes/hangs if multiple commands run concurrently
+            await m_commandSemaphore.WaitAsync(externalCancellationToken);
+            
+            try
             {
                 if (!IsActive)
                 {
@@ -131,10 +138,15 @@ namespace mcp_nexus.Debugger
                     throw new InvalidOperationException("No active debugging session");
                 }
 
-                // Let exceptions propagate - don't swallow them
-                // The CommandProcessor will handle them appropriately
-                return m_commandExecutor.ExecuteCommand(command, m_processManager, externalCancellationToken);
-            }, externalCancellationToken);
+                // Execute on thread pool to avoid blocking, but semaphore ensures serialization
+                return await Task.Run(() => 
+                    m_commandExecutor.ExecuteCommand(command, m_processManager, externalCancellationToken),
+                    externalCancellationToken);
+            }
+            finally
+            {
+                m_commandSemaphore.Release();
+            }
         }
 
         /// <summary>
@@ -200,6 +212,13 @@ namespace mcp_nexus.Debugger
                 return;
 
             m_logger.LogDebug("Disposing CdbSession");
+
+            // Dispose semaphore first
+            try
+            {
+                m_commandSemaphore?.Dispose();
+            }
+            catch { }
 
             try
             {
