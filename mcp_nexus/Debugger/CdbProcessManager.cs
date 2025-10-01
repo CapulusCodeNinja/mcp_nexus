@@ -40,15 +40,23 @@ namespace mcp_nexus.Debugger
 
             try
             {
+                // Check if we need to stop existing process OUTSIDE the lock
+                bool needsStop = false;
+                lock (m_lifecycleLock)
+                {
+                    needsStop = m_isActive;
+                }
+
+                // Stop process WITHOUT holding lock to avoid blocking other threads for 5-7 seconds
+                if (needsStop)
+                {
+                    m_logger.LogWarning("Process is already active - stopping current process before starting new one");
+                    StopProcess(); // This calls StopProcessInternal with its own lock
+                }
+
                 lock (m_lifecycleLock)
                 {
                     m_logger.LogDebug("Acquired lifecycle lock for StartProcess");
-
-                    if (m_isActive)
-                    {
-                        m_logger.LogWarning("Process is already active - stopping current process before starting new one");
-                        StopProcessInternal();
-                    }
 
                     var cdbPath = !string.IsNullOrWhiteSpace(cdbPathOverride) ? cdbPathOverride : FindCdbExecutable();
                     if (!File.Exists(cdbPath))

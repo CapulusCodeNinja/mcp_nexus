@@ -215,11 +215,11 @@ namespace mcp_nexus.Debugger
                     // Check if data is available before reading to avoid blocking
                     if (debuggerOutput.BaseStream.CanRead && debuggerOutput.Peek() == -1)
                     {
-                        // No data available, wait a bit before checking again
-                        // Use Task.Delay with cancellation token instead of blocking Thread.Sleep
+                        // No data available, wait a minimal time before checking again
+                        // Reduced from 50ms to 10ms for better responsiveness
                         try
                         {
-                            Task.Delay(50, cancellationToken).Wait();
+                            Task.Delay(10, cancellationToken).Wait();
                         }
                         catch (OperationCanceledException)
                         {

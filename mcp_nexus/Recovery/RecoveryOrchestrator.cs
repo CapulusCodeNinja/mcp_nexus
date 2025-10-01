@@ -87,7 +87,8 @@ namespace mcp_nexus.Recovery
                 try
                 {
                     m_cdbSession.CancelCurrentOperation();
-                    await Task.Delay(m_config.CancellationTimeout);
+                    // Reduced delay - cancellation is immediate, just give process time to respond
+                    await Task.Delay(TimeSpan.FromSeconds(1)); // Reduced from config.CancellationTimeout (5s)
                 }
                 catch (Exception ex)
                 {

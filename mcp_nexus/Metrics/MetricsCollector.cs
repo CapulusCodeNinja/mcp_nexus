@@ -154,8 +154,7 @@ namespace mcp_nexus.Metrics
 
     public class Counter
     {
-        private double m_value = 0;
-        private readonly object m_lock = new();
+        private long m_valueBits = 0; // Store double as long for Interlocked operations
 
         public string Name { get; }
         public Dictionary<string, string> Tags { get; }
@@ -168,23 +167,27 @@ namespace mcp_nexus.Metrics
 
         public void Increment(double value = 1.0)
         {
-            lock (m_lock)
+            // Lock-free increment using Interlocked and double-to-long conversion
+            long initialBits, newBits;
+            do
             {
-                m_value += value;
+                initialBits = Interlocked.Read(ref m_valueBits);
+                var currentValue = BitConverter.Int64BitsToDouble(initialBits);
+                var newValue = currentValue + value;
+                newBits = BitConverter.DoubleToInt64Bits(newValue);
             }
+            while (Interlocked.CompareExchange(ref m_valueBits, newBits, initialBits) != initialBits);
         }
 
         public CounterSnapshot GetSnapshot()
         {
-            lock (m_lock)
+            var valueBits = Interlocked.Read(ref m_valueBits);
+            return new CounterSnapshot
             {
-                return new CounterSnapshot
-                {
-                    Name = Name,
-                    Value = m_value,
-                    Tags = new Dictionary<string, string>(Tags)
-                };
-            }
+                Name = Name,
+                Value = BitConverter.Int64BitsToDouble(valueBits),
+                Tags = new Dictionary<string, string>(Tags)
+            };
         }
     }
 

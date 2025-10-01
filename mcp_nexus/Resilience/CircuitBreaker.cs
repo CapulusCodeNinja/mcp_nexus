@@ -13,9 +13,8 @@ namespace mcp_nexus.Resilience
         private readonly TimeSpan m_retryTimeout;
 
         private int m_failureCount = 0;
-        private DateTime m_lastFailureTime = DateTime.MinValue;
-        private CircuitState m_state = CircuitState.Closed;
-        private readonly object m_lock = new();
+        private long m_lastFailureTimeTicks = DateTime.MinValue.Ticks;
+        private int m_state = (int)CircuitState.Closed; // Use int for Interlocked operations
         private bool m_disposed = false;
 
         public CircuitBreaker(
@@ -34,9 +33,12 @@ namespace mcp_nexus.Resilience
         {
             ThrowIfDisposed();
 
-            if (m_state == CircuitState.Open)
+            var currentState = (CircuitState)Interlocked.CompareExchange(ref m_state, m_state, m_state);
+            
+            if (currentState == CircuitState.Open)
             {
-                if (DateTime.UtcNow - m_lastFailureTime < m_retryTimeout)
+                var lastFailureTime = new DateTime(Interlocked.Read(ref m_lastFailureTimeTicks));
+                if (DateTime.UtcNow - lastFailureTime < m_retryTimeout)
                 {
                     m_logger.LogWarning("Circuit breaker is OPEN - operation {OperationName} blocked", operationName);
                     throw new CircuitBreakerOpenException($"Circuit breaker is open for {operationName}");
@@ -44,7 +46,7 @@ namespace mcp_nexus.Resilience
                 else
                 {
                     m_logger.LogInformation("Circuit breaker attempting to close for {OperationName}", operationName);
-                    m_state = CircuitState.HalfOpen;
+                    Interlocked.Exchange(ref m_state, (int)CircuitState.HalfOpen);
                 }
             }
 
@@ -74,53 +76,45 @@ namespace mcp_nexus.Resilience
 
         private void OnSuccess(string operationName)
         {
-            lock (m_lock)
+            // Use Interlocked for lock-free state updates
+            var currentState = (CircuitState)Interlocked.CompareExchange(ref m_state, m_state, m_state);
+            
+            if (currentState == CircuitState.HalfOpen)
             {
-                if (m_state == CircuitState.HalfOpen)
-                {
-                    m_logger.LogInformation("Circuit breaker closed for {OperationName}", operationName);
-                    m_state = CircuitState.Closed;
-                }
-
-                m_failureCount = 0;
+                m_logger.LogInformation("Circuit breaker closed for {OperationName}", operationName);
+                Interlocked.Exchange(ref m_state, (int)CircuitState.Closed);
             }
+
+            Interlocked.Exchange(ref m_failureCount, 0);
         }
 
         private void OnFailure(string operationName, Exception exception)
         {
-            lock (m_lock)
+            // Use Interlocked for lock-free updates
+            var newCount = Interlocked.Increment(ref m_failureCount);
+            Interlocked.Exchange(ref m_lastFailureTimeTicks, DateTime.UtcNow.Ticks);
+
+            m_logger.LogWarning(exception, "Circuit breaker failure #{FailureCount} for {OperationName}",
+                newCount, operationName);
+
+            if (newCount >= m_failureThreshold)
             {
-                m_failureCount++;
-                m_lastFailureTime = DateTime.UtcNow;
-
-                m_logger.LogWarning(exception, "Circuit breaker failure #{FailureCount} for {OperationName}",
-                    m_failureCount, operationName);
-
-                if (m_failureCount >= m_failureThreshold)
-                {
-                    m_state = CircuitState.Open;
-                    m_logger.LogError("Circuit breaker opened for {OperationName} after {FailureCount} failures",
-                        operationName, m_failureCount);
-                }
+                Interlocked.Exchange(ref m_state, (int)CircuitState.Open);
+                m_logger.LogError("Circuit breaker opened for {OperationName} after {FailureCount} failures",
+                    operationName, newCount);
             }
         }
 
         public CircuitState GetState()
         {
-            lock (m_lock)
-            {
-                return m_state;
-            }
+            return (CircuitState)Interlocked.CompareExchange(ref m_state, m_state, m_state);
         }
 
         public void Reset()
         {
-            lock (m_lock)
-            {
-                m_failureCount = 0;
-                m_state = CircuitState.Closed;
-                m_logger.LogInformation("Circuit breaker manually reset");
-            }
+            Interlocked.Exchange(ref m_failureCount, 0);
+            Interlocked.Exchange(ref m_state, (int)CircuitState.Closed);
+            m_logger.LogInformation("Circuit breaker manually reset");
         }
 
         private void ThrowIfDisposed()
