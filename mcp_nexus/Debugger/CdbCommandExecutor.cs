@@ -185,8 +185,10 @@ namespace mcp_nexus.Debugger
             {
                 m_logger.LogDebug("Starting to read debugger output with cancellation support...");
 
-                // Use a shorter idle timeout to detect hangs faster
-                var idleTimeoutMs = Math.Min(10000, m_config.CommandTimeoutMs / 3); // 10s or 1/3 of total, whichever smaller
+                // CRITICAL: Use 30s idle timeout to allow symbol loading to complete
+                // Symbol servers can be slow, and CDB goes silent while downloading symbols
+                // If we timeout too early, we get truncated results (especially for !analyze -v)
+                var idleTimeoutMs = Math.Min(30000, m_config.CommandTimeoutMs / 2); // 30s or 1/2 of total, whichever smaller
 
                 while (true)
                 {
