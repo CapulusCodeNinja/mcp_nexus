@@ -260,7 +260,7 @@ namespace mcp_nexus.Debugger
                     }
                     catch (Exception ex)
                     {
-                        m_logger.LogError(ex, "Error reading debugger output.");
+                        m_logger.LogError(ex, "Error reading debugger output: {Message}", ex.Message);
                         output.AppendLine($"Error reading debugger output: {ex.Message}");
                         
                         // Break on critical errors to avoid infinite loop
@@ -269,15 +269,11 @@ namespace mcp_nexus.Debugger
                             throw;
                         }
                         
-                        // For other errors, wait a bit before retrying to avoid tight loop
-                        try
-                        {
-                            Task.Delay(100, cancellationToken).GetAwaiter().GetResult();
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            throw;
-                        }
+                        // Check for cancellation first - fail fast if already cancelled
+                        cancellationToken.ThrowIfCancellationRequested();
+                        
+                        // Wait before retrying to avoid tight loop
+                        Task.Delay(100).Wait();
                     }
                 }
             }
