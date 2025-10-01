@@ -256,6 +256,9 @@ namespace mcp_nexus.Debugger
                         var line = readTask.Result;
                         if (line != null)
                         {
+                            // DIAGNOSTIC: Log every line to understand CDB output format
+                            m_logger.LogTrace("Init consumer read line: '{Line}'", line);
+                            
                             // Check if this line is the initial CDB prompt (but DON'T consume it yet)
                             // We want to stop BEFORE the prompt so user commands can read it normally
                             if (System.Text.RegularExpressions.Regex.IsMatch(line, @"^\d+:\d+[>:]"))
