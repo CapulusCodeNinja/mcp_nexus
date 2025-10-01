@@ -44,12 +44,22 @@ namespace mcp_nexus.Debugger
 
             // Set up cancellation
             CancellationTokenSource operationCts;
+            CancellationTokenSource? timeoutCts = null;
             lock (m_cancellationLock)
             {
-                operationCts = CancellationTokenSource.CreateLinkedTokenSource(
-                    externalCancellationToken,
-                    new CancellationTokenSource(TimeSpan.FromMilliseconds(m_config.CommandTimeoutMs)).Token);
-                m_currentOperationCts = operationCts;
+                try
+                {
+                    timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(m_config.CommandTimeoutMs));
+                    operationCts = CancellationTokenSource.CreateLinkedTokenSource(
+                        externalCancellationToken,
+                        timeoutCts.Token);
+                    m_currentOperationCts = operationCts;
+                }
+                catch
+                {
+                    timeoutCts?.Dispose();
+                    throw;
+                }
             }
 
             try
@@ -64,6 +74,7 @@ namespace mcp_nexus.Debugger
                         m_currentOperationCts = null;
                 }
                 operationCts.Dispose();
+                timeoutCts?.Dispose();
             }
         }
 
@@ -201,14 +212,24 @@ namespace mcp_nexus.Debugger
                     // Check for cancellation
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    // Read a line with a short timeout
-                    var readTask = debuggerOutput.ReadLineAsync();
-                    if (!readTask.Wait(TimeSpan.FromMilliseconds(100), cancellationToken))
+                    // Check if data is available before reading to avoid blocking
+                    if (debuggerOutput.BaseStream.CanRead && debuggerOutput.Peek() == -1)
                     {
-                        continue; // Timeout or cancellation, re-evaluate loop conditions
+                        // No data available, wait a bit before checking again
+                        // Use Task.Delay with cancellation token instead of blocking Thread.Sleep
+                        try
+                        {
+                            Task.Delay(50, cancellationToken).Wait();
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw; // Re-throw to be caught by outer handler
+                        }
+                        continue;
                     }
 
-                    var line = readTask.Result;
+                    // Read a line - only one ReadLineAsync at a time
+                    var line = debuggerOutput.ReadLine();
 
                     if (line != null)
                     {

@@ -359,7 +359,13 @@ namespace mcp_nexus.Session
 
                 try
                 {
-                    Task.WaitAll(closeTasks, TimeSpan.FromSeconds(30));
+                    // Use Task.WhenAll with timeout to avoid blocking indefinitely
+                    var allTasksCompleted = Task.WaitAll(closeTasks, TimeSpan.FromSeconds(30));
+                    if (!allTasksCompleted)
+                    {
+                        m_logger.LogWarning("Session closure timed out after 30 seconds, {Count} sessions may not have closed cleanly", 
+                            closeTasks.Count(t => !t.IsCompleted));
+                    }
                 }
                 catch (AggregateException ex)
                 {

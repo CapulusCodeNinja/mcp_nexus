@@ -48,8 +48,15 @@ namespace mcp_nexus.Session.Models
         /// <summary>Optional path to symbol files</summary>
         public string? SymbolsPath { get; init; }
 
-        /// <summary>Current session status</summary>
-        public SessionStatus Status { get; set; } = SessionStatus.Initializing;
+        /// <summary>Current session status - using volatile int for thread-safe atomic operations</summary>
+        private volatile int m_status = (int)SessionStatus.Initializing;
+        
+        /// <summary>Thread-safe session status property</summary>
+        public SessionStatus Status
+        {
+            get => (SessionStatus)m_status;
+            set => m_status = (int)value;
+        }
 
         /// <summary>Process ID of the CDB debugger process</summary>
         public int? ProcessId { get; init; }

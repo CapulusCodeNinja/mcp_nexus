@@ -144,6 +144,21 @@ namespace mcp_nexus.CommandQueue
 
                     m_logger.LogInformation("✅ Command {CommandId} completed successfully in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
+                    
+                    // CRITICAL FIX: Remove completed command from tracker after short retention to prevent memory leak
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await Task.Delay(TimeSpan.FromMinutes(5)); // Keep for 5 minutes for result retrieval
+                            m_tracker.TryRemoveCommand(command.Id, out _);
+                            m_logger.LogTrace("Removed completed command {CommandId} from tracker", command.Id);
+                        }
+                        catch (Exception ex)
+                        {
+                            m_logger.LogWarning(ex, "Error during delayed cleanup of command {CommandId}", command.Id);
+                        }
+                    });
                 }
                 catch (OperationCanceledException) when (command.CancellationTokenSource.Token.IsCancellationRequested)
                 {
@@ -153,6 +168,20 @@ namespace mcp_nexus.CommandQueue
                     m_tracker.IncrementCancelled();
                     m_logger.LogWarning("⚠️ Command {CommandId} was cancelled by user in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
+                    
+                    // Clean up cancelled command
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await Task.Delay(TimeSpan.FromMinutes(5));
+                            m_tracker.TryRemoveCommand(command.Id, out _);
+                        }
+                        catch (Exception ex)
+                        {
+                            m_logger.LogWarning(ex, "Error during delayed cleanup of cancelled command {CommandId}", command.Id);
+                        }
+                    });
                 }
                 catch (OperationCanceledException)
                 {
@@ -166,6 +195,20 @@ namespace mcp_nexus.CommandQueue
                     m_tracker.IncrementFailed();
                     m_logger.LogWarning("⏰ Command {CommandId} timed out or was cancelled in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
+                    
+                    // Clean up failed/timed out command
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await Task.Delay(TimeSpan.FromMinutes(5));
+                            m_tracker.TryRemoveCommand(command.Id, out _);
+                        }
+                        catch (Exception ex)
+                        {
+                            m_logger.LogWarning(ex, "Error during delayed cleanup of failed command {CommandId}", command.Id);
+                        }
+                    });
                 }
                 finally
                 {
@@ -182,6 +225,20 @@ namespace mcp_nexus.CommandQueue
                 m_tracker.IncrementFailed();
                 m_logger.LogError(ex, "❌ Command {CommandId} failed with exception in {Elapsed}ms",
                     command.Id, stopwatch.ElapsedMilliseconds);
+                
+                // Clean up failed command
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromMinutes(5));
+                        m_tracker.TryRemoveCommand(command.Id, out _);
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogWarning(ex, "Error during delayed cleanup of failed command {CommandId}", command.Id);
+                    }
+                });
             }
             finally
             {
