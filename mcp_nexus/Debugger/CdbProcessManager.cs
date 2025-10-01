@@ -19,12 +19,13 @@ namespace mcp_nexus.Debugger
         private StreamReader? m_debuggerError;
         private volatile bool m_isActive;  // CRITICAL: volatile ensures visibility across threads
         private volatile bool m_disposed;  // CRITICAL: volatile ensures visibility across threads
+        private volatile bool m_initOutputConsumed;  // CRITICAL: ensures init output is consumed before commands execute
 
         public Process? DebuggerProcess => m_debuggerProcess;
         public StreamWriter? DebuggerInput => m_debuggerInput;
         public StreamReader? DebuggerOutput => m_debuggerOutput;
         public StreamReader? DebuggerError => m_debuggerError;
-        public bool IsActive => m_isActive && !m_disposed;
+        public bool IsActive => m_isActive && !m_disposed && m_initOutputConsumed;
 
         public CdbProcessManager(ILogger<CdbProcessManager> logger, CdbSessionConfiguration config)
         {
@@ -234,51 +235,50 @@ namespace mcp_nexus.Debugger
             m_logger.LogInformation("Successfully started CDB process with target: {Target}", target);
             m_logger.LogInformation("Process ID: {ProcessId}, Active: {IsActive}", m_debuggerProcess.Id, m_isActive);
 
-            // CRITICAL: Consume CDB's initialization output to prevent it from being captured by the first command
+            // CRITICAL: Consume CDB's initialization output SYNCHRONOUSLY to prevent race conditions
             // CDB outputs dump loading info, symbol paths, and initial prompt immediately on startup
-            // If we don't read this, the first user command will capture ALL of it, leaving nothing for subsequent commands
-            _ = Task.Run(() =>
+            // We MUST finish consuming this before ANY commands execute, or they'll steal each other's output
+            try
             {
-                try
+                var initOutput = new System.Text.StringBuilder();
+                var startTime = DateTime.Now;
+                var timeout = TimeSpan.FromSeconds(5);
+                
+                m_logger.LogDebug("🔧 Consuming CDB initialization output...");
+                
+                while ((DateTime.Now - startTime) < timeout && m_debuggerOutput != null)
                 {
-                    var initOutput = new System.Text.StringBuilder();
-                    var startTime = DateTime.Now;
-                    var timeout = TimeSpan.FromSeconds(5);
-                    
-                    m_logger.LogDebug("🔧 Consuming CDB initialization output...");
-                    
-                    while ((DateTime.Now - startTime) < timeout && m_debuggerOutput != null && m_isActive)
+                    // Try to read a line with a short timeout
+                    var readTask = Task.Run(() => m_debuggerOutput.ReadLine());
+                    if (readTask.Wait(100))
                     {
-                        // Try to read a line with a short timeout
-                        var readTask = Task.Run(() => m_debuggerOutput.ReadLine());
-                        if (readTask.Wait(100))
+                        var line = readTask.Result;
+                        if (line != null)
                         {
-                            var line = readTask.Result;
-                            if (line != null)
+                            initOutput.AppendLine(line);
+                            
+                            // Stop when we see the CDB prompt (e.g., "0:000>")
+                            if (System.Text.RegularExpressions.Regex.IsMatch(line, @"^\d+:\d+[>:]"))
                             {
-                                initOutput.AppendLine(line);
-                                
-                                // Stop when we see the CDB prompt (e.g., "0:000>")
-                                if (System.Text.RegularExpressions.Regex.IsMatch(line, @"^\d+:\d+[>:]"))
-                                {
-                                    m_logger.LogDebug("✅ CDB initialization complete, found prompt");
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                break; // Stream ended
+                                m_logger.LogDebug("✅ CDB initialization complete, found prompt: {Prompt}", line);
+                                break;
                             }
                         }
+                        else
+                        {
+                            break; // Stream ended
+                        }
                     }
-                    
-                    m_logger.LogInformation("✅ Consumed {Bytes} bytes of CDB initialization output", initOutput.Length);
                 }
-                catch (Exception ex)
-                {
-                    m_logger.LogWarning(ex, "Failed to consume CDB initialization output - first command may include startup text");
-                }
-            });
+                
+                m_logger.LogInformation("✅ Consumed {Bytes} bytes of CDB initialization output", initOutput.Length);
+                m_initOutputConsumed = true; // Mark as ready for commands
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogWarning(ex, "Failed to consume CDB initialization output - first command may include startup text");
+                m_initOutputConsumed = true; // Allow commands anyway to avoid deadlock
+            }
 
             return true;
         }
