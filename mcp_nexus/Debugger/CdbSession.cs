@@ -40,15 +40,41 @@ namespace mcp_nexus.Debugger
                 symbolSearchPath,
                 startupDelayMs);
 
-            // Create focused components - use the same logger for now to maintain compatibility
-            m_processManager = new CdbProcessManager(logger as ILogger<CdbProcessManager> ??
-                Microsoft.Extensions.Logging.Abstractions.NullLogger<CdbProcessManager>.Instance, m_config);
-            m_outputParser = new CdbOutputParser(logger as ILogger<CdbOutputParser> ??
-                Microsoft.Extensions.Logging.Abstractions.NullLogger<CdbOutputParser>.Instance);
-            m_commandExecutor = new CdbCommandExecutor(logger as ILogger<CdbCommandExecutor> ??
-                Microsoft.Extensions.Logging.Abstractions.NullLogger<CdbCommandExecutor>.Instance, m_config, m_outputParser);
+            // CRITICAL FIX: Logger casting was failing, causing NullLogger to be used!
+            // This resulted in zero visibility into CdbProcessManager init consumer
+            // Instead of casting (which fails), create simple wrapper loggers
+            var processLogger = new LoggerWrapper<CdbProcessManager>(logger);
+            var parserLogger = new LoggerWrapper<CdbOutputParser>(logger);
+            var executorLogger = new LoggerWrapper<CdbCommandExecutor>(logger);
+            
+            m_processManager = new CdbProcessManager(processLogger, m_config);
+            m_outputParser = new CdbOutputParser(parserLogger);
+            m_commandExecutor = new CdbCommandExecutor(executorLogger, m_config, m_outputParser);
 
             m_logger.LogDebug("CdbSession initialized with focused components");
+        }
+
+        /// <summary>
+        /// Simple logger wrapper that implements ILogger&lt;T&gt; by forwarding to an untyped logger
+        /// This fixes the NullLogger issue when logger casting fails
+        /// </summary>
+        private class LoggerWrapper<T> : ILogger<T>
+        {
+            private readonly ILogger _innerLogger;
+            
+            public LoggerWrapper(ILogger logger)
+            {
+                _innerLogger = logger ?? throw new ArgumentNullException(nameof(logger));
+            }
+            
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+                => _innerLogger.BeginScope(state);
+            
+            public bool IsEnabled(LogLevel logLevel)
+                => _innerLogger.IsEnabled(logLevel);
+            
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+                => _innerLogger.Log(logLevel, eventId, state, exception, formatter);
         }
 
         /// <summary>
