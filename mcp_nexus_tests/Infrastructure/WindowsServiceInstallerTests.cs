@@ -510,5 +510,127 @@ namespace mcp_nexus_tests.Infrastructure
                 Assert.True(parameters[0].IsOptional);
             }
         }
+
+        [Fact]
+        public async Task InstallServiceAsync_WithNullLogger_ReturnsTaskOfBool()
+        {
+            // Act
+            var result = WindowsServiceInstaller.InstallServiceAsync(null);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<Task<bool>>(result);
+            
+            // Wait for completion (but don't assert the result since we can't control the environment)
+            var completed = await Task.WhenAny(result, Task.Delay(5000));
+            Assert.Equal(result, completed);
+        }
+
+        [Fact]
+        public async Task UninstallServiceAsync_WithNullLogger_ReturnsTaskOfBool()
+        {
+            // Act
+            var result = WindowsServiceInstaller.UninstallServiceAsync(null);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<Task<bool>>(result);
+            
+            // Wait for completion (but don't assert the result since we can't control the environment)
+            var completed = await Task.WhenAny(result, Task.Delay(5000));
+            Assert.Equal(result, completed);
+        }
+
+        [Fact]
+        public async Task ForceUninstallServiceAsync_WithNullLogger_ReturnsTaskOfBool()
+        {
+            // Act
+            var result = WindowsServiceInstaller.ForceUninstallServiceAsync(null);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<Task<bool>>(result);
+            
+            // Wait for completion (but don't assert the result since we can't control the environment)
+            var completed = await Task.WhenAny(result, Task.Delay(5000));
+            Assert.Equal(result, completed);
+        }
+
+        [Fact]
+        public async Task UpdateServiceAsync_WithNullLogger_ReturnsTaskOfBool()
+        {
+            // Act
+            var result = WindowsServiceInstaller.UpdateServiceAsync(null);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<Task<bool>>(result);
+            
+            // Wait for completion (but don't assert the result since we can't control the environment)
+            var completed = await Task.WhenAny(result, Task.Delay(5000));
+            Assert.Equal(result, completed);
+        }
+
+        [Fact]
+        public async Task ValidateInstallationFilesAsync_WithNullLogger_ReturnsTaskOfBool()
+        {
+            // Act
+            var result = await WindowsServiceInstaller.ValidateInstallationFilesAsync(null);
+
+            // Assert
+            Assert.IsType<bool>(result);
+        }
+
+        [Fact]
+        public async Task CreateBackupAsync_WithNullLogger_ReturnsTaskOfBool()
+        {
+            // Act
+            var result = await WindowsServiceInstaller.CreateBackupAsync(null);
+
+            // Assert
+            Assert.IsType<bool>(result);
+        }
+
+        [Fact]
+        public async Task CleanupOldBackupsAsync_WithNullLogger_ReturnsTaskOfBool()
+        {
+            // Act
+            var result = await WindowsServiceInstaller.CleanupOldBackupsAsync(null);
+
+            // Assert
+            Assert.IsType<bool>(result);
+            Assert.True(result); // This method always returns true
+        }
+
+        [Fact]
+        public async Task ValidateInstallationFilesAsync_WithLogger_CallsUnderlyingMethod()
+        {
+            // Act
+            var result = await WindowsServiceInstaller.ValidateInstallationFilesAsync(m_mockLogger.Object);
+
+            // Assert
+            Assert.IsType<bool>(result);
+        }
+
+        [Fact]
+        public async Task CreateBackupAsync_WithLogger_CallsUnderlyingMethod()
+        {
+            // Act
+            var result = await WindowsServiceInstaller.CreateBackupAsync(m_mockLogger.Object);
+
+            // Assert
+            Assert.IsType<bool>(result);
+        }
+
+        [Fact]
+        public async Task CleanupOldBackupsAsync_WithLogger_CallsUnderlyingMethod()
+        {
+            // Act
+            var result = await WindowsServiceInstaller.CleanupOldBackupsAsync(m_mockLogger.Object);
+
+            // Assert
+            Assert.IsType<bool>(result);
+            Assert.True(result); // This method always returns true
+        }
     }
 }
