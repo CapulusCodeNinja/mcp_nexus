@@ -246,6 +246,7 @@ namespace mcp_nexus.Debugger
                 
                 m_logger.LogDebug("🔧 Consuming CDB initialization output...");
                 
+                bool foundPromptStart = false;
                 while ((DateTime.Now - startTime) < timeout && m_debuggerOutput != null)
                 {
                     // Try to read a line with a short timeout
@@ -255,20 +256,28 @@ namespace mcp_nexus.Debugger
                         var line = readTask.Result;
                         if (line != null)
                         {
-                            initOutput.AppendLine(line);
-                            
-                            // Stop when we see the CDB prompt (e.g., "0:000>")
+                            // Check if this line is the initial CDB prompt (but DON'T consume it yet)
+                            // We want to stop BEFORE the prompt so user commands can read it normally
                             if (System.Text.RegularExpressions.Regex.IsMatch(line, @"^\d+:\d+[>:]"))
                             {
                                 m_logger.LogDebug("✅ CDB initialization complete, found prompt: {Prompt}", line);
+                                foundPromptStart = true;
+                                // CRITICAL: Do NOT append the prompt line - leave it for the first command
                                 break;
                             }
+                            
+                            initOutput.AppendLine(line);
                         }
                         else
                         {
                             break; // Stream ended
                         }
                     }
+                }
+                
+                if (!foundPromptStart && initOutput.Length > 0)
+                {
+                    m_logger.LogWarning("CDB init output consumed but no prompt found - may cause issues");
                 }
                 
                 m_logger.LogInformation("✅ Consumed {Bytes} bytes of CDB initialization output", initOutput.Length);
