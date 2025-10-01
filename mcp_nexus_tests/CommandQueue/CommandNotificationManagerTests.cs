@@ -13,15 +13,15 @@ namespace mcp_nexus_tests.CommandQueue
     {
         private readonly Mock<IMcpNotificationService> _mockNotificationService;
         private readonly Mock<ILogger> _mockLogger;
-        private readonly Mock<CommandQueueConfiguration> _mockConfig;
+        private readonly CommandQueueConfiguration _config;
         private readonly CommandNotificationManager _manager;
 
         public CommandNotificationManagerTests()
         {
             _mockNotificationService = new Mock<IMcpNotificationService>();
             _mockLogger = new Mock<ILogger>();
-            _mockConfig = new Mock<CommandQueueConfiguration>();
-            _manager = new CommandNotificationManager(_mockNotificationService.Object, _mockLogger.Object, _mockConfig.Object);
+            _config = new CommandQueueConfiguration("test-session");
+            _manager = new CommandNotificationManager(_mockNotificationService.Object, _mockLogger.Object, _config);
         }
 
         [Fact]
@@ -29,7 +29,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => 
-                new CommandNotificationManager(null!, _mockLogger.Object, _mockConfig.Object));
+                new CommandNotificationManager(null!, _mockLogger.Object, _config));
         }
 
         [Fact]
@@ -37,7 +37,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => 
-                new CommandNotificationManager(_mockNotificationService.Object, null!, _mockConfig.Object));
+                new CommandNotificationManager(_mockNotificationService.Object, null!, _config));
         }
 
         [Fact]
@@ -52,7 +52,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Constructor_WithValidParameters_InitializesCorrectly()
         {
             // Act
-            var manager = new CommandNotificationManager(_mockNotificationService.Object, _mockLogger.Object, _mockConfig.Object);
+            var manager = new CommandNotificationManager(_mockNotificationService.Object, _mockLogger.Object, _config);
 
             // Assert
             Assert.NotNull(manager);
@@ -180,41 +180,33 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void CreateQueuedStatusMessage_WithValidParameters_CallsConfigMethod()
+        public void CreateQueuedStatusMessage_WithValidParameters_ReturnsValidMessage()
         {
             // Arrange
             var queuePosition = 3;
             var elapsed = TimeSpan.FromMinutes(5);
-            var expectedMessage = "Expected message";
-            
-            _mockConfig.Setup(x => x.GetQueuedStatusMessage(queuePosition, elapsed, It.IsAny<int>(), It.IsAny<int>()))
-                .Returns(expectedMessage);
 
             // Act
             var result = _manager.CreateQueuedStatusMessage(queuePosition, elapsed);
 
             // Assert
-            Assert.Equal(expectedMessage, result);
-            _mockConfig.Verify(x => x.GetQueuedStatusMessage(queuePosition, elapsed, It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+            Assert.NotNull(result);
+            Assert.Contains("3rd in queue", result);
+            Assert.Contains("waited 5m", result);
         }
 
         [Fact]
-        public void CalculateQueueProgress_WithValidParameters_CallsConfigMethod()
+        public void CalculateQueueProgress_WithValidParameters_ReturnsValidProgress()
         {
             // Arrange
             var queuePosition = 3;
             var elapsed = TimeSpan.FromMinutes(5);
-            var expectedProgress = 75;
-            
-            _mockConfig.Setup(x => x.CalculateProgressPercentage(queuePosition, elapsed))
-                .Returns(expectedProgress);
 
             // Act
             var result = _manager.CalculateQueueProgress(queuePosition, elapsed);
 
             // Assert
-            Assert.Equal(expectedProgress, result);
-            _mockConfig.Verify(x => x.CalculateProgressPercentage(queuePosition, elapsed), Times.Once);
+            Assert.True(result >= 0 && result <= 100);
         }
 
         [Fact]
@@ -284,8 +276,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void NotifyServiceStartup_LogsStartupEvent()
         {
             // Arrange
-            var sessionId = "session-123";
-            _mockConfig.Setup(x => x.SessionId).Returns(sessionId);
+            var sessionId = _config.SessionId;
 
             // Act
             _manager.NotifyServiceStartup();

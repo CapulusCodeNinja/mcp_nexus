@@ -12,16 +12,18 @@ namespace mcp_nexus_tests.Debugger
     {
         private readonly Mock<ILogger<CdbCommandExecutor>> _mockLogger;
         private readonly CdbSessionConfiguration _config;
-        private readonly Mock<CdbOutputParser> _mockOutputParser;
+        private readonly Mock<ILogger<CdbOutputParser>> _mockOutputParserLogger;
+        private readonly CdbOutputParser _outputParser;
         private readonly CdbCommandExecutor _executor;
 
         public CdbCommandExecutorTests()
         {
             _mockLogger = new Mock<ILogger<CdbCommandExecutor>>();
             _config = new CdbSessionConfiguration();
-            _mockOutputParser = new Mock<CdbOutputParser>();
+            _mockOutputParserLogger = new Mock<ILogger<CdbOutputParser>>();
+            _outputParser = new CdbOutputParser(_mockOutputParserLogger.Object);
 
-            _executor = new CdbCommandExecutor(_mockLogger.Object, _config, _mockOutputParser.Object);
+            _executor = new CdbCommandExecutor(_mockLogger.Object, _config, _outputParser);
         }
 
         public void Dispose()
@@ -33,14 +35,14 @@ namespace mcp_nexus_tests.Debugger
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => 
-                new CdbCommandExecutor(null!, _config, _mockOutputParser.Object));
+                new CdbCommandExecutor(null!, _config, _outputParser));
         }
 
         [Fact]
         public void Constructor_WithNullConfig_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => 
-                new CdbCommandExecutor(_mockLogger.Object, null!, _mockOutputParser.Object));
+                new CdbCommandExecutor(_mockLogger.Object, null!, _outputParser));
         }
 
         [Fact]
@@ -53,7 +55,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void Constructor_WithValidParameters_InitializesCorrectly()
         {
-            var executor = new CdbCommandExecutor(_mockLogger.Object, _config, _mockOutputParser.Object);
+            var executor = new CdbCommandExecutor(_mockLogger.Object, _config, _outputParser);
             Assert.NotNull(executor);
         }
 

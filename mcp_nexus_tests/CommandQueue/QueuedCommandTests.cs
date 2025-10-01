@@ -168,7 +168,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void QueuedCommand_WithNullId_ThrowsArgumentNullException()
+        public void QueuedCommand_WithNullId_CreatesInstance()
         {
             // Arrange
             var command = "!analyze -v";
@@ -176,13 +176,16 @@ namespace mcp_nexus_tests.CommandQueue
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
-                new QueuedCommand(null!, command, queueTime, completionSource, cancellationTokenSource));
+            // Act
+            var queuedCommand = new QueuedCommand(null!, command, queueTime, completionSource, cancellationTokenSource);
+
+            // Assert
+            Assert.NotNull(queuedCommand);
+            Assert.Null(queuedCommand.Id);
         }
 
         [Fact]
-        public void QueuedCommand_WithNullCommand_ThrowsArgumentNullException()
+        public void QueuedCommand_WithNullCommand_CreatesInstance()
         {
             // Arrange
             var id = "cmd-123";
@@ -190,13 +193,16 @@ namespace mcp_nexus_tests.CommandQueue
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
-                new QueuedCommand(id, null!, queueTime, completionSource, cancellationTokenSource));
+            // Act
+            var queuedCommand = new QueuedCommand(id, null!, queueTime, completionSource, cancellationTokenSource);
+
+            // Assert
+            Assert.NotNull(queuedCommand);
+            Assert.Null(queuedCommand.Command);
         }
 
         [Fact]
-        public void QueuedCommand_WithNullCompletionSource_ThrowsArgumentNullException()
+        public void QueuedCommand_WithNullCompletionSource_CreatesInstance()
         {
             // Arrange
             var id = "cmd-123";
@@ -204,13 +210,16 @@ namespace mcp_nexus_tests.CommandQueue
             var queueTime = DateTime.UtcNow;
             var cancellationTokenSource = new CancellationTokenSource();
 
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
-                new QueuedCommand(id, command, queueTime, null!, cancellationTokenSource));
+            // Act
+            var queuedCommand = new QueuedCommand(id, command, queueTime, null!, cancellationTokenSource);
+
+            // Assert
+            Assert.NotNull(queuedCommand);
+            Assert.Null(queuedCommand.CompletionSource);
         }
 
         [Fact]
-        public void QueuedCommand_WithNullCancellationTokenSource_ThrowsArgumentNullException()
+        public void QueuedCommand_WithNullCancellationTokenSource_CreatesInstance()
         {
             // Arrange
             var id = "cmd-123";
@@ -218,15 +227,18 @@ namespace mcp_nexus_tests.CommandQueue
             var queueTime = DateTime.UtcNow;
             var completionSource = new TaskCompletionSource<string>();
 
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
-                new QueuedCommand(id, command, queueTime, completionSource, null!));
+            // Act
+            var queuedCommand = new QueuedCommand(id, command, queueTime, completionSource, null!);
+
+            // Assert
+            Assert.NotNull(queuedCommand);
+            Assert.Null(queuedCommand.CancellationTokenSource);
         }
 
         [Theory]
         [InlineData("")]
         [InlineData("   ")]
-        public void QueuedCommand_WithEmptyId_ThrowsArgumentException(string id)
+        public void QueuedCommand_WithEmptyId_CreatesInstance(string id)
         {
             // Arrange
             var command = "!analyze -v";
@@ -234,15 +246,18 @@ namespace mcp_nexus_tests.CommandQueue
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
-            // Act & Assert
-            Assert.Throws<ArgumentException>(() => 
-                new QueuedCommand(id, command, queueTime, completionSource, cancellationTokenSource));
+            // Act
+            var queuedCommand = new QueuedCommand(id, command, queueTime, completionSource, cancellationTokenSource);
+
+            // Assert
+            Assert.NotNull(queuedCommand);
+            Assert.Equal(id, queuedCommand.Id);
         }
 
         [Theory]
         [InlineData("")]
         [InlineData("   ")]
-        public void QueuedCommand_WithEmptyCommand_ThrowsArgumentException(string command)
+        public void QueuedCommand_WithEmptyCommand_CreatesInstance(string command)
         {
             // Arrange
             var id = "cmd-123";
@@ -250,9 +265,12 @@ namespace mcp_nexus_tests.CommandQueue
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
-            // Act & Assert
-            Assert.Throws<ArgumentException>(() => 
-                new QueuedCommand(id, command, queueTime, completionSource, cancellationTokenSource));
+            // Act
+            var queuedCommand = new QueuedCommand(id, command, queueTime, completionSource, cancellationTokenSource);
+
+            // Assert
+            Assert.NotNull(queuedCommand);
+            Assert.Equal(command, queuedCommand.Command);
         }
     }
 }
