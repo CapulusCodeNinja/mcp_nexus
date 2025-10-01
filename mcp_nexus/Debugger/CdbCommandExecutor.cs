@@ -298,7 +298,6 @@ namespace mcp_nexus.Debugger
             {
                 // Concurrent access to stream - this is expected when timeout occurs
                 // Just wait a bit and continue - the idle timeout will eventually trigger
-                m_logger.LogDebug("Stream concurrent access (expected during timeout) - continuing");
                 Task.Delay(50).GetAwaiter().GetResult();
                 return (null, true);
             }
