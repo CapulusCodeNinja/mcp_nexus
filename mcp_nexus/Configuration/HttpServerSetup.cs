@@ -86,6 +86,8 @@ namespace mcp_nexus.Configuration
         {
             services.Configure<JsonOptions>(options =>
             {
+                // Set UTF-8 encoding for JSON responses
+                options.SerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
                 options.SerializerOptions.PropertyNamingPolicy = null; // MCP requires exact field names
                 options.SerializerOptions.AllowTrailingCommas = false; // Strict JSON parsing
                 options.SerializerOptions.ReadCommentHandling = JsonCommentHandling.Disallow; // No comments

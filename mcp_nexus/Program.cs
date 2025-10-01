@@ -686,6 +686,9 @@ namespace mcp_nexus
 
         private static async Task RunStdioServer(string[] args, CommandLineArguments commandLineArgs)
         {
+            // Configure UTF-8 encoding for all console streams (stdin, stdout, stderr)
+            EncodingConfiguration.ConfigureConsoleEncoding();
+            
             // CRITICAL: In stdio mode, stdout is reserved for MCP protocol
             // All console output must go to stderr
             await Console.Error.WriteLineAsync("Configuring for stdio transport...");
@@ -748,6 +751,9 @@ namespace mcp_nexus
         private static void ConfigureHttpPipeline(WebApplication app)
         {
             Console.WriteLine("Configuring HTTP request pipeline...");
+
+            // Add UTF-8 encoding middleware first to ensure all responses use UTF-8
+            app.UseMiddleware<Utf8ResponseMiddleware>();
 
             // Add security middleware (GlobalExceptionHandlerMiddleware removed - was causing crashes)
             app.UseMiddleware<ContentTypeValidationMiddleware>();

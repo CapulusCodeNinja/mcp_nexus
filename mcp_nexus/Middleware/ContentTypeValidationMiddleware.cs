@@ -1,4 +1,5 @@
 using System.Text.Json;
+using mcp_nexus.Configuration;
 
 namespace mcp_nexus.Middleware
 {
@@ -45,7 +46,7 @@ namespace mcp_nexus.Middleware
             m_logger.LogWarning("Invalid Content-Type received: {ContentType}", context.Request.ContentType);
 
             context.Response.StatusCode = 400;
-            context.Response.ContentType = "application/json";
+            context.Response.ContentType = EncodingConfiguration.JsonContentType;
 
             var errorResponse = new
             {

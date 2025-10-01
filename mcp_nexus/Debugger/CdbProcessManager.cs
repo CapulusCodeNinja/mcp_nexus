@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using mcp_nexus.Configuration;
 
 namespace mcp_nexus.Debugger
 {
@@ -191,17 +192,11 @@ namespace mcp_nexus.Debugger
 
             m_logger.LogDebug("CDB call: {CdbPath} {Arguments}", cdbPath, arguments);
 
-            return new ProcessStartInfo
-            {
-                FileName = cdbPath,
-                Arguments = arguments,
-                UseShellExecute = false,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-                WorkingDirectory = workingDirectory
-            };
+            // Use centralized UTF-8 encoding configuration for all CDB streams
+            var startInfo = EncodingConfiguration.CreateUtf8ProcessStartInfo(cdbPath, arguments);
+            startInfo.WorkingDirectory = workingDirectory;
+            
+            return startInfo;
         }
 
         private bool StartProcessInternal(ProcessStartInfo processInfo, string target)
