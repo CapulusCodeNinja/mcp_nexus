@@ -212,24 +212,21 @@ namespace mcp_nexus.Debugger
                     // Check for cancellation
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    // Check if data is available before reading to avoid blocking
-                    if (debuggerOutput.BaseStream.CanRead && debuggerOutput.Peek() == -1)
+                    // CRITICAL FIX: Use async read with timeout to avoid blocking forever
+                    // Peek() can block indefinitely if stream has partial data
+                    string? line = null;
+                    var readTask = Task.Run(() => debuggerOutput.ReadLine(), cancellationToken);
+                    
+                    if (readTask.Wait(50, cancellationToken)) // 50ms timeout for read attempt
                     {
-                        // No data available, wait a minimal time before checking again
-                        // Reduced from 50ms to 10ms for better responsiveness
-                        try
-                        {
-                            Task.Delay(10, cancellationToken).GetAwaiter().GetResult();
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            throw; // Re-throw to be caught by outer handler
-                        }
+                        line = readTask.Result;
+                    }
+                    else
+                    {
+                        // No complete line available within timeout, wait and retry
+                        Task.Delay(10, cancellationToken).GetAwaiter().GetResult();
                         continue;
                     }
-
-                    // Read a line - only one ReadLineAsync at a time
-                    var line = debuggerOutput.ReadLine();
 
                     if (line != null)
                     {
