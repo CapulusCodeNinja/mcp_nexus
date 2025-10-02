@@ -2,6 +2,7 @@ namespace mcp_nexus.Notifications
 {
     /// <summary>
     /// MCP notification service implementation - maintains compatibility with existing code
+    /// Automatically detects transport mode and disables notifications in HTTP mode
     /// </summary>
     public class McpNotificationService : IMcpNotificationService
     {
@@ -10,6 +11,7 @@ namespace mcp_nexus.Notifications
         private readonly Dictionary<string, List<Func<object, Task>>> m_handlers = new();
         private readonly Dictionary<string, string> m_subscriptionIds = new(); // Maps subscription ID to event type
         private readonly object m_lock = new();
+        private bool m_notificationsEnabled = false; // Only enabled when stdio bridge subscribes
 
         #endregion
 
@@ -23,6 +25,10 @@ namespace mcp_nexus.Notifications
         /// <returns>Task representing the operation</returns>
         public async Task PublishNotificationAsync(string eventType, object data)
         {
+            // Skip notifications entirely if not enabled (HTTP mode)
+            if (!m_notificationsEnabled)
+                return;
+
             if (string.IsNullOrEmpty(eventType))
                 return;
 
@@ -62,6 +68,9 @@ namespace mcp_nexus.Notifications
                 {
                     m_handlers[eventType].Add(handler);
                     m_subscriptionIds[subscriptionId] = eventType;
+                    
+                    // Enable notifications when first subscriber registers (stdio mode)
+                    m_notificationsEnabled = true;
                 }
             }
 
@@ -83,6 +92,13 @@ namespace mcp_nexus.Notifications
                 if (m_subscriptionIds.TryGetValue(subscriptionId, out var eventType))
                 {
                     m_subscriptionIds.Remove(subscriptionId);
+                    
+                    // Disable notifications when last subscriber unsubscribes
+                    if (m_subscriptionIds.Count == 0)
+                    {
+                        m_notificationsEnabled = false;
+                    }
+                    
                     // Note: We don't remove the handler from the list as we don't track which handler belongs to which subscription
                     // In a real implementation, you'd need to track handler-to-subscription mapping
                     return true;

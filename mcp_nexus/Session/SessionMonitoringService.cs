@@ -20,6 +20,7 @@ namespace mcp_nexus.Session
         private readonly CancellationTokenSource m_shutdownCts;
         private readonly Task m_monitoringTask;
         private volatile bool m_disposed = false;
+        private DateTime m_lastHealthLogTime = DateTime.UtcNow;
 
         public SessionMonitoringService(
             ILogger logger,
@@ -177,11 +178,31 @@ namespace mcp_nexus.Session
                     }
                 }
 
-                // Log health summary
-                m_logger.LogInformation("💊 Health check: {Total} sessions ({Active} active, {Inactive} inactive, {Unhealthy} unhealthy)",
-                    sessionCount, activeCount, inactiveCount, unhealthyCount);
+                // Determine if we should log this health check
+                bool needsLog = false;
+                if (unhealthyCount > 0 || inactiveCount > 0)
+                {
+                    needsLog = true;
+                }
+                else if ((DateTime.UtcNow - m_lastHealthLogTime) > TimeSpan.FromMinutes(15))
+                {
+                    needsLog = true;
+                }
 
-                // Send health notification
+                // Log health summary based on session count and need
+                if (needsLog && sessionCount > 0)
+                {
+                    m_logger.LogInformation("💊 Health check: {Total} sessions ({Active} active, {Inactive} inactive, {Unhealthy} unhealthy)",
+                        sessionCount, activeCount, inactiveCount, unhealthyCount);
+                    m_lastHealthLogTime = DateTime.UtcNow;
+                }
+                else if (needsLog && sessionCount <= 0)
+                {
+                    m_logger.LogInformation("💊 Health check: Server idle (0 sessions)");
+                    m_lastHealthLogTime = DateTime.UtcNow;
+                }
+
+                // Send health notification (automatically skipped in HTTP mode by notification service)
                 await m_notificationService.NotifyServerHealthAsync(
                     status: unhealthyCount > 0 ? "Warning" : "Healthy",
                     cdbSessionActive: activeCount > 0,
