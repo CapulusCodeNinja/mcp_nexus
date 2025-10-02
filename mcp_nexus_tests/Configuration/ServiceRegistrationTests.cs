@@ -92,7 +92,7 @@ namespace mcp_nexus_tests.Configuration
             var services = new ServiceCollection();
 
             // Act & Assert
-            Assert.Throws<NullReferenceException>(() => ServiceRegistration.RegisterServices(services, null!, null));
+            Assert.Throws<ArgumentNullException>(() => ServiceRegistration.RegisterServices(services, null!, null));
         }
 
         [Fact]

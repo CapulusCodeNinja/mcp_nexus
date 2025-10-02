@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -7,31 +8,30 @@ namespace mcp_nexus.Infrastructure
     /// <summary>
     /// Manages service updates and maintenance
     /// </summary>
-    public class ServiceUpdateManager
+    [SupportedOSPlatform("windows")]
+    public static class ServiceUpdateManager
     {
-        private readonly ILogger<ServiceUpdateManager> _logger;
-
-        public ServiceUpdateManager(ILogger<ServiceUpdateManager> logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
 
         /// <summary>
         /// Performs service update (static version for test compatibility)
         /// </summary>
         /// <param name="serviceName">Name of the service to update</param>
         /// <param name="newVersion">New version to update to</param>
+        /// <param name="logger">Optional logger for logging</param>
         /// <returns>True if update was successful</returns>
-        public static async Task<bool> PerformUpdateAsync(string serviceName, string newVersion)
+        public static async Task<bool> PerformUpdateAsync(string serviceName, string newVersion, ILogger? logger = null)
         {
             try
             {
+                logger?.LogInformation("Starting service update for {ServiceName} to version {NewVersion}", serviceName, newVersion);
                 // Placeholder implementation for tests
                 await Task.Delay(100);
+                logger?.LogInformation("Service update completed successfully for {ServiceName}", serviceName);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                logger?.LogError(ex, "Service update failed for {ServiceName} to version {NewVersion}", serviceName, newVersion);
                 return false;
             }
         }

@@ -206,16 +206,15 @@ namespace mcp_nexus_tests.Services
             await m_service.RecoverStuckSession("test reason");
 
             // Wait for notification to be sent
-            await Task.Delay(100);
+            await Task.Delay(500);
 
-            // Assert
+            // Assert - Expect the 4-parameter version (without affectedCommands array)
             m_mockNotificationService.Verify(
                 x => x.NotifySessionRecoveryAsync(
                     "test reason",
                     "Recovery Started",
                     false,
-                    It.IsAny<string>(),
-                    It.IsAny<string[]>()),
+                    It.IsAny<string>()),
                 Times.Once);
         }
 
@@ -350,16 +349,15 @@ namespace mcp_nexus_tests.Services
             await m_service.ForceRestartSession("test reason");
 
             // Wait for notification to be sent
-            await Task.Delay(200);
+            await Task.Delay(500);
 
-            // Assert - Check for the notification that was actually sent
+            // Assert - Check for the notification that was actually sent (4-parameter version)
             m_mockNotificationService.Verify(
                 x => x.NotifySessionRecoveryAsync(
                     "test reason",
                     "Force Restart Started",
                     false,
-                    "Force restarting CDB session",
-                    It.IsAny<string[]>()),
+                    "Force restarting CDB session"),
                 Times.Once);
         }
 

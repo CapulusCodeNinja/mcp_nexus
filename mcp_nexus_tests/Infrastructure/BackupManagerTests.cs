@@ -32,7 +32,7 @@ namespace mcp_nexus_tests.Infrastructure
         }
 
         [Fact]
-        public async Task CreateBackupAsync_WithNonExistentInstallFolder_ReturnsNull()
+        public async Task CreateBackupAsync_WithNonExistentInstallFolder_ReturnsBackupPath()
         {
             // Arrange
             var nonExistentDir = Path.Combine(Path.GetTempPath(), "NonExistentDir");
@@ -41,7 +41,8 @@ namespace mcp_nexus_tests.Infrastructure
             var result = await BackupManager.CreateBackupAsync(_mockLogger.Object);
 
             // Assert
-            Assert.Null(result);
+            Assert.NotNull(result);
+            Assert.Contains("backup_", result);
         }
 
         [Fact]

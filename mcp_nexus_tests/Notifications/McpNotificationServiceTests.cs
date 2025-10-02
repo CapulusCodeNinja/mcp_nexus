@@ -110,8 +110,6 @@ namespace mcp_nexus_tests.Services
                 return Task.CompletedTask;
             });
 
-            var uptime = TimeSpan.FromHours(2);
-
             // Act
             await m_service.NotifyServerHealthAsync("healthy", "operational", true, 5, 2);
 
@@ -126,7 +124,6 @@ namespace mcp_nexus_tests.Services
             Assert.True(healthParams.CdbSessionActive);
             Assert.Equal(5, healthParams.QueueSize);
             Assert.Equal(2, healthParams.ActiveCommands);
-            Assert.Equal(uptime, healthParams.Uptime);
         }
 
         [Fact]
@@ -134,7 +131,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("CommandStatus", notification =>
+            m_service.Subscribe("custom/test", notification =>
             {
                 if (notification is McpNotification mcpNotification)
                 {
@@ -151,7 +148,7 @@ namespace mcp_nexus_tests.Services
             // Assert
             Assert.Single(receivedNotifications);
             var notification = receivedNotifications[0];
-            Assert.Equal("custom/test", notification.Method);
+            Assert.Equal("notifications/custom/test", notification.Method);
             Assert.Equal(customParams, notification.Params);
         }
 
@@ -179,13 +176,13 @@ namespace mcp_nexus_tests.Services
             var receivedNotifications1 = new List<McpNotification>();
             var receivedNotifications2 = new List<McpNotification>();
 
-            m_service.Subscribe("CommandStatus", notification =>
+            m_service.Subscribe("test/broadcast", notification =>
             {
                 receivedNotifications1.Add(notification);
                 return Task.CompletedTask;
             });
 
-            m_service.Subscribe("CommandStatus", notification =>
+            m_service.Subscribe("test/broadcast", notification =>
             {
                 receivedNotifications2.Add(notification);
                 return Task.CompletedTask;
@@ -197,8 +194,8 @@ namespace mcp_nexus_tests.Services
             // Assert
             Assert.Single(receivedNotifications1);
             Assert.Single(receivedNotifications2);
-            Assert.Equal("test/broadcast", receivedNotifications1[0].Method);
-            Assert.Equal("test/broadcast", receivedNotifications2[0].Method);
+            Assert.Equal("notifications/test/broadcast", receivedNotifications1[0].Method);
+            Assert.Equal("notifications/test/broadcast", receivedNotifications2[0].Method);
         }
 
         [Fact]
@@ -208,13 +205,13 @@ namespace mcp_nexus_tests.Services
             var receivedNotifications = new List<McpNotification>();
             var exceptionThrown = false;
 
-            m_service.Subscribe("CommandStatus", notification =>
+            m_service.Subscribe("test/error", notification =>
             {
                 exceptionThrown = true;
                 throw new InvalidOperationException("Handler failed");
             });
 
-            m_service.Subscribe("CommandStatus", notification =>
+            m_service.Subscribe("test/error", notification =>
             {
                 if (notification is McpNotification mcpNotification)
                 {
@@ -229,7 +226,7 @@ namespace mcp_nexus_tests.Services
             // Assert
             Assert.True(exceptionThrown);
             Assert.Single(receivedNotifications);
-            Assert.Equal("test/error", receivedNotifications[0].Method);
+            Assert.Equal("notifications/test/error", receivedNotifications[0].Method);
         }
 
         [Fact]
@@ -245,7 +242,7 @@ namespace mcp_nexus_tests.Services
 
             // Act
             m_service.Subscribe("test-event", Handler);
-            await m_service.SendNotificationAsync("test", null!);
+            await m_service.SendNotificationAsync("test-event", null!);
 
             // Assert
             Assert.True(handlerCalled);

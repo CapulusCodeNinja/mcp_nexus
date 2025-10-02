@@ -125,7 +125,7 @@ namespace mcp_nexus_tests.Services
                     return Task.CompletedTask;
                 });
                 handlers.Add(handler);
-                m_notificationService.Subscribe("test-event", handler);
+                m_notificationService.Subscribe("CommandStatus", handler);
             }
 
             var iterations = 100;

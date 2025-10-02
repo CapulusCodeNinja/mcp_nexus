@@ -55,8 +55,8 @@ namespace mcp_nexus.Notifications
         Task NotifyCommandHeartbeatAsync(string sessionId, string commandId);
         Task NotifyCommandHeartbeatAsync(string sessionId, string commandId, string status, string elapsed);
         Task NotifyCommandHeartbeatAsync(string sessionId, string commandId, string status, TimeSpan elapsed);
-        Task NotifyCommandHeartbeatAsync(string sessionId, string commandId, TimeSpan elapsed);
         Task NotifyCommandHeartbeatAsync(string commandId, string command, TimeSpan elapsed, string details);
+        Task NotifyCommandHeartbeatAsync(string commandId, string command, TimeSpan elapsed);
         Task NotifySessionEventAsync(string sessionId, string eventType, object data);
         Task NotifySessionEventAsync(string sessionId, string eventType, object data, string additionalInfo);
         Task NotifySessionEventAsync(string sessionId, string eventType, object data, object context);

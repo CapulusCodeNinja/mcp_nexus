@@ -22,7 +22,7 @@ namespace mcp_nexus_tests.Infrastructure
             _mockLogger = new Mock<ILogger<ServiceInstallationOrchestrator>>();
             _mockFileManager = new Mock<ServiceFileManager>(Mock.Of<ILogger<ServiceFileManager>>());
             _mockRegistryManager = new Mock<ServiceRegistryManager>(Mock.Of<ILogger<ServiceRegistryManager>>());
-            _mockOperationLogger = new Mock<OperationLogger>();
+            _mockOperationLogger = new Mock<OperationLogger>(Mock.Of<ILogger<OperationLogger>>());
         }
 
         [Fact]
@@ -36,7 +36,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task InstallServiceAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceInstallationOrchestrator.InstallServiceAsync(null);
+            var result = await ServiceInstallationOrchestrator.InstallServiceStaticAsync(null);
             // Should not throw, but may return false if installation fails
             Assert.True(result == true || result == false);
         }
@@ -45,7 +45,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task InstallServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceInstallationOrchestrator.InstallServiceAsync(_mockLogger.Object);
+            var result = await ServiceInstallationOrchestrator.InstallServiceStaticAsync(_mockLogger.Object);
             // Should not throw, but may return false if installation fails
             Assert.True(result == true || result == false);
         }
@@ -113,18 +113,12 @@ namespace mcp_nexus_tests.Infrastructure
         [Fact]
         public void AllMethods_AreStatic()
         {
-            // This test verifies that all methods are static as expected
+            // This test verifies that the static method is static as expected
             var type = typeof(ServiceInstallationOrchestrator);
 
-            var installMethod = type.GetMethod("InstallServiceAsync");
-            var uninstallMethod = type.GetMethod("UninstallServiceAsync");
-            var forceUninstallMethod = type.GetMethod("ForceUninstallServiceAsync");
-            var updateMethod = type.GetMethod("UpdateServiceAsync");
+            var installStaticMethod = type.GetMethod("InstallServiceStaticAsync");
 
-            Assert.True(installMethod?.IsStatic == true);
-            Assert.True(uninstallMethod?.IsStatic == true);
-            Assert.True(forceUninstallMethod?.IsStatic == true);
-            Assert.True(updateMethod?.IsStatic == true);
+            Assert.True(installStaticMethod?.IsStatic == true);
         }
 
         [Fact]
@@ -133,52 +127,33 @@ namespace mcp_nexus_tests.Infrastructure
             // This test verifies that all methods return Task<bool>
             var type = typeof(ServiceInstallationOrchestrator);
 
-            var installMethod = type.GetMethod("InstallServiceAsync");
-            var uninstallMethod = type.GetMethod("UninstallServiceAsync");
-            var forceUninstallMethod = type.GetMethod("ForceUninstallServiceAsync");
-            var updateMethod = type.GetMethod("UpdateServiceAsync");
+            var installMethod = type.GetMethod("InstallServiceAsync", new[] { typeof(string), typeof(string), typeof(string), typeof(string) });
+            var uninstallMethod = type.GetMethod("UninstallServiceAsync", new[] { typeof(string), typeof(string) });
+            var updateMethod = type.GetMethod("UpdateServiceAsync", new[] { typeof(string), typeof(string), typeof(string), typeof(string) });
+            var validateMethod = type.GetMethod("ValidateInstallationAsync", new[] { typeof(string), typeof(string) });
+            var installStaticMethod = type.GetMethod("InstallServiceStaticAsync", new[] { typeof(ILogger) });
 
             Assert.Equal(typeof(Task<bool>), installMethod?.ReturnType);
             Assert.Equal(typeof(Task<bool>), uninstallMethod?.ReturnType);
-            Assert.Equal(typeof(Task<bool>), forceUninstallMethod?.ReturnType);
             Assert.Equal(typeof(Task<bool>), updateMethod?.ReturnType);
+            Assert.Equal(typeof(Task<bool>), validateMethod?.ReturnType);
+            Assert.Equal(typeof(Task<bool>), installStaticMethod?.ReturnType);
         }
 
         [Fact]
         public void AllMethods_AcceptOptionalLogger()
         {
-            // This test verifies that all methods accept an optional ILogger parameter
+            // This test verifies that the static method accepts an optional ILogger parameter
             var type = typeof(ServiceInstallationOrchestrator);
 
-            var installMethod = type.GetMethod("InstallServiceAsync");
-            var uninstallMethod = type.GetMethod("UninstallServiceAsync");
-            var forceUninstallMethod = type.GetMethod("ForceUninstallServiceAsync");
-            var updateMethod = type.GetMethod("UpdateServiceAsync");
+            var installStaticMethod = type.GetMethod("InstallServiceStaticAsync");
 
-            var installParams = installMethod?.GetParameters();
-            var uninstallParams = uninstallMethod?.GetParameters();
-            var forceUninstallParams = forceUninstallMethod?.GetParameters();
-            var updateParams = updateMethod?.GetParameters();
+            var installStaticParams = installStaticMethod?.GetParameters();
 
-            Assert.NotNull(installParams);
-            Assert.Single(installParams);
-            Assert.Equal(typeof(ILogger), installParams[0].ParameterType);
-            Assert.True(installParams[0].HasDefaultValue);
-
-            Assert.NotNull(uninstallParams);
-            Assert.Single(uninstallParams);
-            Assert.Equal(typeof(ILogger), uninstallParams[0].ParameterType);
-            Assert.True(uninstallParams[0].HasDefaultValue);
-
-            Assert.NotNull(forceUninstallParams);
-            Assert.Single(forceUninstallParams);
-            Assert.Equal(typeof(ILogger), forceUninstallParams[0].ParameterType);
-            Assert.True(forceUninstallParams[0].HasDefaultValue);
-
-            Assert.NotNull(updateParams);
-            Assert.Single(updateParams);
-            Assert.Equal(typeof(ILogger), updateParams[0].ParameterType);
-            Assert.True(updateParams[0].HasDefaultValue);
+            Assert.NotNull(installStaticParams);
+            Assert.Single(installStaticParams);
+            Assert.Equal(typeof(ILogger), installStaticParams[0].ParameterType);
+            Assert.True(installStaticParams[0].HasDefaultValue);
         }
 
         [Fact]
@@ -186,7 +161,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all methods handle exceptions gracefully
             // Since we can't easily mock static dependencies, we test that they don't throw
-            var installResult = await ServiceInstallationOrchestrator.InstallServiceAsync(_mockLogger.Object);
+            var installResult = await ServiceInstallationOrchestrator.InstallServiceStaticAsync(_mockLogger.Object);
             var orchestrator = new ServiceInstallationOrchestrator(_mockLogger.Object, _mockFileManager.Object, _mockRegistryManager.Object, _mockOperationLogger.Object);
             var uninstallResult = await orchestrator.UninstallServiceAsync("TestService", "C:\\Test\\test.exe");
             var validateResult = await orchestrator.ValidateInstallationAsync("TestService", "C:\\Test\\test.exe");
@@ -203,7 +178,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task InstallServiceAsync_HandlesPrerequisitesFailure()
         {
             // This test verifies that the method handles prerequisite validation failures
-            var result = await ServiceInstallationOrchestrator.InstallServiceAsync(_mockLogger.Object);
+            var result = await ServiceInstallationOrchestrator.InstallServiceStaticAsync(_mockLogger.Object);
 
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
@@ -273,15 +248,17 @@ namespace mcp_nexus_tests.Infrastructure
             // This test verifies that all methods are async
             var type = typeof(ServiceInstallationOrchestrator);
 
-            var installMethod = type.GetMethod("InstallServiceAsync");
-            var uninstallMethod = type.GetMethod("UninstallServiceAsync");
-            var forceUninstallMethod = type.GetMethod("ForceUninstallServiceAsync");
-            var updateMethod = type.GetMethod("UpdateServiceAsync");
+            var installMethod = type.GetMethod("InstallServiceAsync", new[] { typeof(string), typeof(string), typeof(string), typeof(string) });
+            var uninstallMethod = type.GetMethod("UninstallServiceAsync", new[] { typeof(string), typeof(string) });
+            var updateMethod = type.GetMethod("UpdateServiceAsync", new[] { typeof(string), typeof(string), typeof(string), typeof(string) });
+            var validateMethod = type.GetMethod("ValidateInstallationAsync", new[] { typeof(string), typeof(string) });
+            var installStaticMethod = type.GetMethod("InstallServiceStaticAsync", new[] { typeof(ILogger) });
 
             Assert.True(installMethod?.ReturnType == typeof(Task<bool>));
             Assert.True(uninstallMethod?.ReturnType == typeof(Task<bool>));
-            Assert.True(forceUninstallMethod?.ReturnType == typeof(Task<bool>));
             Assert.True(updateMethod?.ReturnType == typeof(Task<bool>));
+            Assert.True(validateMethod?.ReturnType == typeof(Task<bool>));
+            Assert.True(installStaticMethod?.ReturnType == typeof(Task<bool>));
         }
 
         [Fact]
@@ -290,15 +267,17 @@ namespace mcp_nexus_tests.Infrastructure
             // This test verifies that all methods are public
             var type = typeof(ServiceInstallationOrchestrator);
 
-            var installMethod = type.GetMethod("InstallServiceAsync");
-            var uninstallMethod = type.GetMethod("UninstallServiceAsync");
-            var forceUninstallMethod = type.GetMethod("ForceUninstallServiceAsync");
-            var updateMethod = type.GetMethod("UpdateServiceAsync");
+            var installMethod = type.GetMethod("InstallServiceAsync", new[] { typeof(string), typeof(string), typeof(string), typeof(string) });
+            var uninstallMethod = type.GetMethod("UninstallServiceAsync", new[] { typeof(string), typeof(string) });
+            var updateMethod = type.GetMethod("UpdateServiceAsync", new[] { typeof(string), typeof(string), typeof(string), typeof(string) });
+            var validateMethod = type.GetMethod("ValidateInstallationAsync", new[] { typeof(string), typeof(string) });
+            var installStaticMethod = type.GetMethod("InstallServiceStaticAsync", new[] { typeof(ILogger) });
 
             Assert.True(installMethod?.IsPublic == true);
             Assert.True(uninstallMethod?.IsPublic == true);
-            Assert.True(forceUninstallMethod?.IsPublic == true);
             Assert.True(updateMethod?.IsPublic == true);
+            Assert.True(validateMethod?.IsPublic == true);
+            Assert.True(installStaticMethod?.IsPublic == true);
         }
     }
 }

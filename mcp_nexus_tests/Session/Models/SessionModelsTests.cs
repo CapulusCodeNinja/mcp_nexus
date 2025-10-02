@@ -38,7 +38,7 @@ namespace mcp_nexus_tests.Session.Models
             Assert.Equal(string.Empty, sessionInfo.SessionId);
             Assert.Null(sessionInfo.CdbSession);
             Assert.Null(sessionInfo.CommandQueue);
-            Assert.Equal(DateTime.MinValue, sessionInfo.CreatedAt);
+            Assert.True(sessionInfo.CreatedAt > DateTime.MinValue);
             Assert.Equal(string.Empty, sessionInfo.DumpPath);
             Assert.Null(sessionInfo.SymbolsPath);
         }
@@ -55,21 +55,13 @@ namespace mcp_nexus_tests.Session.Models
             const string symbolsPath = "C:\\symbols";
 
             // Act
-            var sessionInfo = new SessionInfo
-            {
-                SessionId = sessionId,
-                CdbSession = mockCdbSession.Object,
-                CommandQueue = mockCommandQueue.Object,
-                CreatedAt = createdAt,
-                DumpPath = dumpPath,
-                SymbolsPath = symbolsPath
-            };
+            var sessionInfo = new SessionInfo(sessionId, mockCdbSession.Object, mockCommandQueue.Object, dumpPath, symbolsPath);
 
             // Assert
             Assert.Equal(sessionId, sessionInfo.SessionId);
             Assert.Equal(mockCdbSession.Object, sessionInfo.CdbSession);
             Assert.Equal(mockCommandQueue.Object, sessionInfo.CommandQueue);
-            Assert.Equal(createdAt, sessionInfo.CreatedAt);
+            Assert.True(sessionInfo.CreatedAt > DateTime.MinValue);
             Assert.Equal(dumpPath, sessionInfo.DumpPath);
             Assert.Equal(symbolsPath, sessionInfo.SymbolsPath);
         }

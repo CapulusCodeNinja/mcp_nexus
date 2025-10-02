@@ -134,7 +134,7 @@ namespace mcp_nexus.Infrastructure
                 Console.WriteLine("Stopping MCP-Nexus service...");
                 logger?.LogInformation("Stopping MCP-Nexus service");
 
-                var stopResult = await RunScCommandAsync("stop \"MCP-Nexus\"", logger);
+                var stopResult = await RunScCommandWithForceAsync("stop \"MCP-Nexus\"", logger, false);
                 if (stopResult)
                 {
                     Console.WriteLine("✓ Service stopped successfully");
@@ -175,7 +175,7 @@ namespace mcp_nexus.Infrastructure
                 Console.WriteLine("Starting updated service...");
                 logger?.LogInformation("Starting updated MCP-Nexus service");
 
-                var startResult = await RunScCommandAsync("start \"MCP-Nexus\"", logger);
+                var startResult = await RunScCommandWithForceAsync("start \"MCP-Nexus\"", logger, false);
                 if (startResult)
                 {
                     Console.WriteLine("✓ Service started successfully");
@@ -289,7 +289,7 @@ namespace mcp_nexus.Infrastructure
             });
         }
 
-        private static Task<bool> RunScCommandAsync(string command, ILogger logger, bool force)
+        private static Task<bool> RunScCommandWithForceAsync(string command, ILogger logger, bool force)
         {
             return Task.Run(() =>
             {

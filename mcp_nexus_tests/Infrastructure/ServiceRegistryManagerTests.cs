@@ -30,7 +30,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void IsServiceInstalled_ReturnsBoolean()
         {
             // Act
-            var result = ServiceRegistryManager.IsServiceInstalled();
+            var result = ServiceRegistryManager.IsServiceInstalledStatic();
 
             // Assert
             Assert.True(result == true || result == false);
@@ -40,7 +40,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void IsServiceInstalled_DoesNotThrow()
         {
             // Act & Assert
-            var result = ServiceRegistryManager.IsServiceInstalled();
+            var result = ServiceRegistryManager.IsServiceInstalledStatic();
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -123,7 +123,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ForceCleanupServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.ForceCleanupServiceAsync(_mockLogger.Object);
+            var result = await ServiceRegistryManager.ForceCleanupServiceStaticAsync(_mockLogger.Object);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -141,7 +141,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task DirectRegistryCleanupAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.DirectRegistryCleanupAsync(_mockLogger.Object);
+            var result = await ServiceRegistryManager.DirectRegistryCleanupStaticAsync(_mockLogger.Object);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -159,7 +159,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CreateServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.CreateServiceAsync(_mockLogger.Object);
+            var result = await ServiceRegistryManager.CreateServiceStaticAsync(_mockLogger.Object);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -177,7 +177,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task DeleteServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.DeleteServiceAsync(_mockLogger.Object);
+            var result = await ServiceRegistryManager.DeleteServiceStaticAsync(_mockLogger.Object);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -229,10 +229,10 @@ namespace mcp_nexus_tests.Infrastructure
             var type = typeof(ServiceRegistryManager);
 
             var runScCommandMethod = type.GetMethod("RunScCommandAsync");
-            var forceCleanupMethod = type.GetMethod("ForceCleanupServiceAsync");
-            var directCleanupMethod = type.GetMethod("DirectRegistryCleanupAsync");
-            var createServiceMethod = type.GetMethod("CreateServiceAsync");
-            var deleteServiceMethod = type.GetMethod("DeleteServiceAsync");
+            var forceCleanupMethod = type.GetMethod("ForceCleanupServiceStaticAsync");
+            var directCleanupMethod = type.GetMethod("DirectRegistryCleanupStaticAsync");
+            var createServiceMethod = type.GetMethod("CreateServiceStaticAsync");
+            var deleteServiceMethod = type.GetMethod("DeleteServiceStaticAsync");
 
             var runScParams = runScCommandMethod?.GetParameters();
             var forceCleanupParams = forceCleanupMethod?.GetParameters();
@@ -285,10 +285,10 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all async methods handle exceptions gracefully
             await ServiceRegistryManager.RunScCommandAsync("query", _mockLogger.Object);
-            await ServiceRegistryManager.ForceCleanupServiceAsync(_mockLogger.Object);
-            await ServiceRegistryManager.DirectRegistryCleanupAsync(_mockLogger.Object);
-            await ServiceRegistryManager.CreateServiceAsync(_mockLogger.Object);
-            await ServiceRegistryManager.DeleteServiceAsync(_mockLogger.Object);
+            await ServiceRegistryManager.ForceCleanupServiceStaticAsync(_mockLogger.Object);
+            await ServiceRegistryManager.DirectRegistryCleanupStaticAsync(_mockLogger.Object);
+            await ServiceRegistryManager.CreateServiceStaticAsync(_mockLogger.Object);
+            await ServiceRegistryManager.DeleteServiceStaticAsync(_mockLogger.Object);
 
             // Should not throw exceptions
             Assert.True(true);
@@ -298,7 +298,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void AllSyncMethods_HandleExceptions()
         {
             // This test verifies that all sync methods handle exceptions gracefully
-            ServiceRegistryManager.IsServiceInstalled();
+            ServiceRegistryManager.IsServiceInstalledStatic();
 
             // Should not throw exceptions
             Assert.True(true);
@@ -336,7 +336,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that IsServiceInstalled has no parameters
             var type = typeof(ServiceRegistryManager);
-            var method = type.GetMethod("IsServiceInstalled");
+            var method = type.GetMethod("IsServiceInstalledStatic");
             var parameters = method?.GetParameters();
 
             Assert.NotNull(parameters);

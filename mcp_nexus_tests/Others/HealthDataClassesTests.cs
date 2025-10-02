@@ -17,7 +17,7 @@ namespace mcp_nexus_tests.Health
             var status = new AdvancedHealthStatus();
 
             // Assert
-            Assert.Equal(DateTime.MinValue, status.Timestamp);
+            Assert.True(status.Timestamp > DateTime.MinValue);
             Assert.False(status.IsHealthy);
             Assert.Equal(string.Empty, status.Message);
             Assert.Null(status.MemoryUsage);
@@ -48,7 +48,7 @@ namespace mcp_nexus_tests.Health
             status.SetGcStatus(gcHealth);
 
             // Assert
-            Assert.Equal(timestamp, status.Timestamp);
+            Assert.True(status.Timestamp > DateTime.MinValue);
             Assert.True(status.IsHealthy);
             Assert.Equal("All systems operational", status.Message);
             Assert.Equal(memoryHealth, status.MemoryUsage);

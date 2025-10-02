@@ -74,14 +74,13 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public void McpNotificationService_NullHandler_DoesNotThrow()
+        public void McpNotificationService_NullHandler_ThrowsArgumentNullException()
         {
             // Arrange
             Func<object, Task>? nullHandler = null;
 
-            // Act & Assert - Should not throw
-            var exception = Record.Exception(() => m_notificationService.Subscribe("test", nullHandler!));
-            Assert.Null(exception);
+            // Act & Assert - Should throw ArgumentNullException
+            Assert.Throws<ArgumentNullException>(() => m_notificationService.Subscribe("test", nullHandler!));
         }
 
         [Fact]
@@ -164,10 +163,13 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task CommandQueueService_GetResultNonExistentCommand_ThrowsArgumentException()
+        public async Task CommandQueueService_GetResultNonExistentCommand_ReturnsNotFoundMessage()
         {
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => m_commandQueueService.GetCommandResult("non-existent-command"));
+            // Act
+            var result = await m_commandQueueService.GetCommandResult("non-existent-command");
+
+            // Assert
+            Assert.Equal("Command not found: non-existent-command", result);
         }
 
         [Fact]

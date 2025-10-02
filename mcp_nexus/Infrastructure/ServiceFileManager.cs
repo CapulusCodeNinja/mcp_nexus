@@ -227,34 +227,34 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
-        public static async Task<bool> BuildProjectForDeploymentAsync(ILogger logger)
+        public static async Task<bool> BuildProjectForDeploymentAsync(ILogger logger = null!)
         {
             try
             {
-                logger.LogInformation("Building project for deployment");
+                logger?.LogInformation("Building project for deployment");
                 // Placeholder implementation
                 await Task.Delay(100);
                 return true;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to build project for deployment");
+                logger?.LogError(ex, "Failed to build project for deployment");
                 return false;
             }
         }
 
-        public static async Task<bool> CopyApplicationFilesAsync(ILogger logger)
+        public static async Task<bool> CopyApplicationFilesAsync(ILogger logger = null!)
         {
             try
             {
-                logger.LogInformation("Copying application files");
+                logger?.LogInformation("Copying application files");
                 // Placeholder implementation
                 await Task.Delay(100);
                 return true;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to copy application files");
+                logger?.LogError(ex, "Failed to copy application files");
                 return false;
             }
         }
@@ -280,8 +280,10 @@ namespace mcp_nexus.Infrastructure
             return Environment.CurrentDirectory; // Placeholder implementation
         }
 
-        public static string? FindProjectDirectory(string serviceName)
+        public static string? FindProjectDirectoryStatic(string serviceName)
         {
+            if (string.IsNullOrEmpty(serviceName))
+                return null;
             return Environment.CurrentDirectory; // Placeholder implementation
         }
 
@@ -300,14 +302,18 @@ namespace mcp_nexus.Infrastructure
             return new { Path = backupPath, Created = DateTime.UtcNow, Size = 0 }; // Placeholder implementation
         }
 
-        public static async Task CopyDirectoryAsync(string sourcePath, string targetPath, ILogger logger)
+        public static async Task CopyDirectoryAsync(string sourcePath, string targetPath, ILogger logger = null!)
         {
             try
             {
-                if (string.IsNullOrEmpty(sourcePath))
+                if (sourcePath == null)
                     throw new ArgumentNullException(nameof(sourcePath));
-                if (string.IsNullOrEmpty(targetPath))
+                if (targetPath == null)
                     throw new ArgumentNullException(nameof(targetPath));
+                if (string.IsNullOrEmpty(sourcePath))
+                    throw new ArgumentException("Source path cannot be empty", nameof(sourcePath));
+                if (string.IsNullOrEmpty(targetPath))
+                    throw new ArgumentException("Target path cannot be empty", nameof(targetPath));
 
                 var sourceDir = new DirectoryInfo(sourcePath);
                 var targetDir = new DirectoryInfo(targetPath);
@@ -318,7 +324,7 @@ namespace mcp_nexus.Infrastructure
                 if (!targetDir.Exists)
                 {
                     targetDir.Create();
-                    logger.LogInformation("Created target directory: {TargetPath}", targetPath);
+                    logger?.LogInformation("Created target directory: {TargetPath}", targetPath);
                 }
 
                 foreach (var file in sourceDir.GetFiles())
@@ -333,38 +339,38 @@ namespace mcp_nexus.Infrastructure
                     await CopyDirectoryAsync(subDir.FullName, targetSubDir, logger);
                 }
 
-                logger.LogInformation("Successfully copied directory from {SourcePath} to {TargetPath}", sourcePath, targetPath);
+                logger?.LogInformation("Successfully copied directory from {SourcePath} to {TargetPath}", sourcePath, targetPath);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to copy directory from {SourcePath} to {TargetPath}", sourcePath, targetPath);
+                logger?.LogError(ex, "Failed to copy directory from {SourcePath} to {TargetPath}", sourcePath, targetPath);
                 throw;
             }
         }
 
-        public static async Task<bool> CreateBackupAsync(ILogger logger)
+        public static async Task<bool> CreateBackupAsync(ILogger logger = null!)
         {
             try
             {
-                logger.LogInformation("Creating backup");
+                logger?.LogInformation("Creating backup");
                 // Placeholder implementation
                 await Task.Delay(100);
                 return true;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to create backup");
+                logger?.LogError(ex, "Failed to create backup");
                 return false;
             }
         }
 
-        public static async Task<bool> CleanupOldBackupsAsync(string backupPath, int retentionDays, ILogger logger)
+        public static async Task<bool> CleanupOldBackupsStaticAsync(string backupPath, int retentionDays, ILogger logger = null!)
         {
             try
             {
                 if (!Directory.Exists(backupPath))
                 {
-                    logger.LogWarning("Backup path does not exist: {BackupPath}", backupPath);
+                    logger?.LogWarning("Backup path does not exist: {BackupPath}", backupPath);
                     return true;
                 }
 
@@ -378,17 +384,17 @@ namespace mcp_nexus.Infrastructure
                     {
                         Directory.Delete(directory, true);
                         deletedCount++;
-                        logger.LogInformation("Deleted old backup: {BackupDirectory}", directory);
+                        logger?.LogInformation("Deleted old backup: {BackupDirectory}", directory);
                     }
                 }
 
-                logger.LogInformation("Cleaned up {DeletedCount} old backup directories", deletedCount);
+                logger?.LogInformation("Cleaned up {DeletedCount} old backup directories", deletedCount);
                 await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to cleanup old backups in {BackupPath}", backupPath);
+                logger?.LogError(ex, "Failed to cleanup old backups in {BackupPath}", backupPath);
                 return false;
             }
         }
@@ -398,9 +404,9 @@ namespace mcp_nexus.Infrastructure
             return Directory.Exists(servicePath); // Placeholder implementation
         }
 
-        public static object GetBackupInfoStatic(string backupPath)
+        public static List<object> GetBackupInfoStatic(string backupPath)
         {
-            return new { Path = backupPath, Created = DateTime.UtcNow, Size = 0 }; // Placeholder implementation
+            return new List<object> { new { Path = backupPath, Created = DateTime.UtcNow, Size = 0 } }; // Placeholder implementation
         }
 
         private async Task CopyDirectoryAsync(string sourcePath, string targetPath)

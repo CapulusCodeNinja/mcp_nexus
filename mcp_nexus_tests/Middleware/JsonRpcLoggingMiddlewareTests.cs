@@ -102,8 +102,8 @@ namespace mcp_nexus_tests.Middleware
 
             // Assert
             _mockNext.Verify(x => x(context), Times.Once);
-            VerifyLogCalled(LogLevel.Information, "📨 JSON-RPC Request:");
-            VerifyLogCalled(LogLevel.Information, "📤 JSON-RPC Response:");
+            VerifyLogCalled(LogLevel.Debug, "📨 JSON-RPC Request:");
+            VerifyLogCalled(LogLevel.Debug, "📤 JSON-RPC Response:");
         }
 
         [Fact]
@@ -126,8 +126,8 @@ namespace mcp_nexus_tests.Middleware
 
             // Assert
             _mockNext.Verify(x => x(context), Times.Once);
-            VerifyLogCalled(LogLevel.Information, "📨 JSON-RPC Request:");
-            VerifyLogCalled(LogLevel.Information, "📤 JSON-RPC Response:");
+            VerifyLogCalled(LogLevel.Debug, "📨 JSON-RPC Request:");
+            VerifyLogCalled(LogLevel.Trace, "📤 JSON-RPC Response:");
         }
 
         [Fact]
@@ -151,8 +151,8 @@ namespace mcp_nexus_tests.Middleware
 
             // Assert
             _mockNext.Verify(x => x(context), Times.Once);
-            VerifyLogCalled(LogLevel.Information, "📨 JSON-RPC Request:");
-            VerifyLogCalled(LogLevel.Information, "📤 JSON-RPC Response:");
+            VerifyLogCalled(LogLevel.Debug, "📨 JSON-RPC Request:");
+            VerifyLogCalled(LogLevel.Debug, "📤 JSON-RPC Response:");
         }
 
         [Fact]
@@ -174,8 +174,8 @@ namespace mcp_nexus_tests.Middleware
 
             // Assert
             _mockNext.Verify(x => x(context), Times.Once);
-            VerifyLogCalled(LogLevel.Information, "📨 JSON-RPC Request:");
-            VerifyLogCalled(LogLevel.Information, "📤 JSON-RPC Response:");
+            VerifyLogCalled(LogLevel.Debug, "📨 JSON-RPC Request:");
+            VerifyLogCalled(LogLevel.Debug, "📤 JSON-RPC Response:");
         }
 
         [Fact]
@@ -198,8 +198,8 @@ namespace mcp_nexus_tests.Middleware
 
             // Assert
             _mockNext.Verify(x => x(context), Times.Once);
-            VerifyLogCalled(LogLevel.Information, "📨 JSON-RPC Request:");
-            VerifyLogCalled(LogLevel.Information, "📤 JSON-RPC Response:");
+            VerifyLogCalled(LogLevel.Debug, "📨 JSON-RPC Request:");
+            VerifyLogCalled(LogLevel.Debug, "📤 JSON-RPC Response:");
         }
 
         [Fact]

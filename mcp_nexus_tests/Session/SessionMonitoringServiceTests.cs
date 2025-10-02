@@ -270,13 +270,14 @@ namespace mcp_nexus_tests.Session
         public void GenerateUsageHints_WithIdleSession_ReturnsIdleHints()
         {
             // Arrange
-            var sessionInfo = new SessionInfo
+            var sessionInfo = new SessionInfo(
+                "test-session-1",
+                _mockCdbSession.Object,
+                _mockCommandQueue.Object,
+                "C:\\Test\\dump.dmp",
+                null,
+                null)
             {
-                SessionId = "test-session-1",
-                DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = _mockCdbSession.Object,
-                CommandQueue = _mockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow.AddHours(-1),
                 LastActivity = DateTime.UtcNow.AddMinutes(-45), // Idle session
                 Status = SessionStatus.Active
             };
@@ -296,7 +297,7 @@ namespace mcp_nexus_tests.Session
             // Assert
             Assert.NotNull(hints);
             Assert.True(hints.Count > 0);
-            Assert.Contains("idle", hints.First());
+            Assert.Contains("idle", hints);
         }
 
         [Fact]
@@ -329,7 +330,7 @@ namespace mcp_nexus_tests.Session
             // Assert
             Assert.NotNull(hints);
             Assert.True(hints.Count > 0);
-            Assert.Contains("Queue is empty", hints.First());
+            Assert.Contains("Queue is empty", hints);
         }
 
         [Fact]
@@ -371,20 +372,21 @@ namespace mcp_nexus_tests.Session
             // Assert
             Assert.NotNull(hints);
             Assert.True(hints.Count > 0);
-            Assert.Contains("Queue is busy", hints.First());
+            Assert.Contains("Queue is busy", hints);
         }
 
         [Fact]
         public void GenerateUsageHints_WithCrashDump_ReturnsCrashHints()
         {
             // Arrange
-            var sessionInfo = new SessionInfo
+            var sessionInfo = new SessionInfo(
+                "test-session-1",
+                _mockCdbSession.Object,
+                _mockCommandQueue.Object,
+                "C:\\Test\\crash.dmp", // Crash dump
+                null,
+                null)
             {
-                SessionId = "test-session-1",
-                DumpPath = "C:\\Test\\crash.dmp", // Crash dump
-                CdbSession = _mockCdbSession.Object,
-                CommandQueue = _mockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-10),
                 LastActivity = DateTime.UtcNow.AddMinutes(-1),
                 Status = SessionStatus.Active
             };

@@ -432,7 +432,7 @@ namespace mcp_nexus_tests.Debugger
             Assert.Equal(30000, config.SymbolServerTimeoutMs);
             Assert.Equal(1, config.SymbolServerMaxRetries);
             Assert.Null(config.SymbolSearchPath);
-            Assert.Equal(2000, config.StartupDelayMs);
+            Assert.Equal(1000, config.StartupDelayMs);
         }
 
         [Fact]

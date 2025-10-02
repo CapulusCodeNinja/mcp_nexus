@@ -178,7 +178,7 @@ namespace mcp_nexus.Metrics
         /// </summary>
         public MetricsSnapshot()
         {
-            m_timestamp = DateTime.MinValue;
+            m_timestamp = DateTime.UtcNow;
         }
 
         public MetricsSnapshot(DateTime timestamp, List<CounterSnapshot> counters, List<HistogramSnapshot> histograms, List<GaugeSnapshot> gauges)

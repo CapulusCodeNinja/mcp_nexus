@@ -12,6 +12,11 @@ namespace mcp_nexus_tests.Notifications
     /// </summary>
     public class NotificationFactoryTests
     {
+        private static Dictionary<string, object> GetParamsAsDictionary(object? @params)
+        {
+            var json = JsonSerializer.Serialize(@params!);
+            return JsonSerializer.Deserialize<Dictionary<string, object>>(json)!;
+        }
         [Fact]
         public void CreateCommandStatusNotification_WithRequiredParameters_CreatesValidNotification()
         {
@@ -21,20 +26,17 @@ namespace mcp_nexus_tests.Notifications
             var status = "running";
 
             // Act
-            var notification = NotificationFactory.CreateCommandStatusNotification(sessionId, commandId, status);
+            var notification = NotificationFactory.CreateCommandStatusNotification(sessionId, commandId, status, 0, "");
 
             // Assert
             Assert.NotNull(notification);
             Assert.Equal("notifications/command_status", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(commandId, paramsObj!["commandId"]!.ToString());
-            Assert.Equal(status, paramsObj!["status"]!.ToString());
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(sessionId, paramsObj!["SessionId"]!.ToString());
+            Assert.Equal(commandId, paramsObj!["CommandId"]!.ToString());
+            Assert.Equal(status, paramsObj!["Status"]!.ToString());
         }
 
         [Fact]
@@ -55,15 +57,12 @@ namespace mcp_nexus_tests.Notifications
             Assert.Equal("notifications/command_status", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(commandId, paramsObj!["commandId"]!.ToString());
-            Assert.Equal(status, paramsObj!["status"]!.ToString());
-            Assert.Equal(progress, JsonSerializer.Deserialize<int>(paramsObj!["progress"]!.ToString()!));
-            Assert.Equal(message, paramsObj["message"]!.ToString());
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(sessionId, paramsObj!["SessionId"]!.ToString());
+            Assert.Equal(commandId, paramsObj!["CommandId"]!.ToString());
+            Assert.Equal(status, paramsObj!["Status"]!.ToString());
+            Assert.Equal(progress, JsonSerializer.Deserialize<int>(paramsObj!["Progress"]!.ToString()!));
+            Assert.Equal(message, paramsObj["Message"]!.ToString());
         }
 
         [Fact]
@@ -82,21 +81,17 @@ namespace mcp_nexus_tests.Notifications
             Assert.Equal("notifications/command_status", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(commandId, paramsObj!["commandId"]!.ToString());
-            Assert.Equal(status, paramsObj!["status"]!.ToString());
-            Assert.False(paramsObj.ContainsKey("message"));
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(sessionId, paramsObj["SessionId"]!.ToString());
+            Assert.Equal(commandId, paramsObj["CommandId"]!.ToString());
+            Assert.Equal(status, paramsObj["Status"]!.ToString());
+            Assert.Null(paramsObj["Message"]);
         }
 
         [Fact]
         public void CreateCommandCompletionNotification_WithValidParameters_CreatesValidNotification()
         {
             // Arrange
-            var sessionId = "session-123";
             var commandId = "cmd-456";
             var result = new { output = "Command completed successfully" };
 
@@ -108,20 +103,16 @@ namespace mcp_nexus_tests.Notifications
             Assert.Equal("notifications/command_completion", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(commandId, paramsObj!["commandId"]!.ToString());
-            Assert.NotNull(paramsObj["result"]);
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(commandId, paramsObj!["CommandId"]!.ToString());
+            Assert.Equal(result.output, paramsObj!["Result"]!.ToString());
+            Assert.Equal("", paramsObj!["Error"]!.ToString());
         }
 
         [Fact]
         public void CreateCommandFailureNotification_WithRequiredParameters_CreatesValidNotification()
         {
             // Arrange
-            var sessionId = "session-123";
             var commandId = "cmd-456";
             var error = "Command failed";
 
@@ -133,23 +124,17 @@ namespace mcp_nexus_tests.Notifications
             Assert.Equal("notifications/command_failure", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(commandId, paramsObj!["commandId"]!.ToString());
-            Assert.Equal(error, paramsObj!["error"]!.ToString());
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(commandId, paramsObj!["CommandId"]!.ToString());
+            Assert.Equal(error, paramsObj!["Error"]!.ToString());
         }
 
         [Fact]
         public void CreateCommandFailureNotification_WithDetails_CreatesValidNotification()
         {
             // Arrange
-            var sessionId = "session-123";
             var commandId = "cmd-456";
             var error = "Command failed";
-            var details = "Stack trace here";
 
             // Act
             var notification = NotificationFactory.CreateCommandFailureNotification(commandId, error);
@@ -159,21 +144,15 @@ namespace mcp_nexus_tests.Notifications
             Assert.Equal("notifications/command_failure", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(commandId, paramsObj!["commandId"]!.ToString());
-            Assert.Equal(error, paramsObj!["error"]!.ToString());
-            Assert.Equal(details, paramsObj["details"]!.ToString());
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(commandId, paramsObj!["CommandId"]!.ToString());
+            Assert.Equal(error, paramsObj!["Error"]!.ToString());
         }
 
         [Fact]
         public void CreateCommandFailureNotification_WithNullDetails_ExcludesDetailsFromParams()
         {
             // Arrange
-            var sessionId = "session-123";
             var commandId = "cmd-456";
             var error = "Command failed";
 
@@ -185,41 +164,30 @@ namespace mcp_nexus_tests.Notifications
             Assert.Equal("notifications/command_failure", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(commandId, paramsObj!["commandId"]!.ToString());
-            Assert.Equal(error, paramsObj!["error"]!.ToString());
-            Assert.False(paramsObj!.ContainsKey("details"));
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(commandId, paramsObj!["CommandId"]!.ToString());
+            Assert.Equal(error, paramsObj!["Error"]!.ToString());
+            Assert.False(paramsObj!.ContainsKey("Details"));
         }
 
         [Fact]
         public void CreateCommandHeartbeatNotification_WithValidParameters_CreatesValidNotification()
         {
             // Arrange
-            var sessionId = "session-123";
             var commandId = "cmd-456";
-            var status = "running";
-            var progress = 75;
+            var elapsed = TimeSpan.FromSeconds(75);
 
             // Act
-            var notification = NotificationFactory.CreateCommandHeartbeatNotification(commandId, TimeSpan.FromSeconds(progress));
+            var notification = NotificationFactory.CreateCommandHeartbeatNotification(commandId, elapsed);
 
             // Assert
             Assert.NotNull(notification);
             Assert.Equal("notifications/command_heartbeat", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(commandId, paramsObj!["commandId"]!.ToString());
-            Assert.Equal(status, paramsObj!["status"]!.ToString());
-            Assert.Equal(progress, JsonSerializer.Deserialize<int>(paramsObj!["progress"]!.ToString()!));
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(commandId, paramsObj!["CommandId"]!.ToString());
+            Assert.Equal(elapsed.TotalMilliseconds, JsonSerializer.Deserialize<double>(paramsObj!["Elapsed"]!.ToString()!));
         }
 
         [Fact]
@@ -237,12 +205,9 @@ namespace mcp_nexus_tests.Notifications
             Assert.Equal("notifications/session_event", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(eventType, paramsObj!["eventType"]!.ToString());
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(sessionId, paramsObj!["SessionId"]!.ToString());
+            Assert.Equal(eventType, paramsObj!["EventType"]!.ToString());
         }
 
         [Fact]
@@ -261,13 +226,10 @@ namespace mcp_nexus_tests.Notifications
             Assert.Equal("notifications/session_event", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(eventType, paramsObj!["eventType"]!.ToString());
-            Assert.NotNull(paramsObj["eventData"]);
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(sessionId, paramsObj!["SessionId"]!.ToString());
+            Assert.Equal(eventType, paramsObj!["EventType"]!.ToString());
+            Assert.NotNull(paramsObj["Data"]);
         }
 
         [Fact]
@@ -285,20 +247,16 @@ namespace mcp_nexus_tests.Notifications
             Assert.Equal("notifications/session_event", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(eventType, paramsObj!["eventType"]!.ToString());
-            Assert.False(paramsObj.ContainsKey("eventData"));
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(sessionId, paramsObj!["SessionId"]!.ToString());
+            Assert.Equal(eventType, paramsObj!["EventType"]!.ToString());
+            Assert.Null(paramsObj["Data"]);
         }
 
         [Fact]
         public void CreateQueueEventNotification_WithValidParameters_CreatesValidNotification()
         {
             // Arrange
-            var sessionId = "session-123";
             var eventType = "queue_updated";
             var queueSize = 5;
 
@@ -310,65 +268,49 @@ namespace mcp_nexus_tests.Notifications
             Assert.Equal("notifications/queue_event", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(eventType, paramsObj!["eventType"]!.ToString());
-            Assert.Equal(queueSize, JsonSerializer.Deserialize<int>(paramsObj!["eventData"]!.ToString()!));
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(eventType, paramsObj!["EventType"]!.ToString());
+            Assert.NotNull(paramsObj["Data"]);
         }
 
         [Fact]
         public void CreateRecoveryNotification_WithRequiredParameters_CreatesValidNotification()
         {
             // Arrange
-            var sessionId = "session-123";
             var recoveryType = "session_timeout";
-            var status = "attempting";
+            var success = false;
 
             // Act
-            var notification = NotificationFactory.CreateRecoveryNotification(recoveryType, status == "success");
+            var notification = NotificationFactory.CreateRecoveryNotification(recoveryType, success);
 
             // Assert
             Assert.NotNull(notification);
             Assert.Equal("notifications/recovery", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(recoveryType, paramsObj!["recoveryType"]!.ToString());
-            Assert.Equal(status, paramsObj!["status"]!.ToString());
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(recoveryType, paramsObj!["Reason"]!.ToString());
+            Assert.Equal(success.ToString().ToLower(), paramsObj!["Success"]?.ToString()?.ToLower());
         }
 
         [Fact]
         public void CreateRecoveryNotification_WithDetails_CreatesValidNotification()
         {
             // Arrange
-            var sessionId = "session-123";
             var recoveryType = "session_timeout";
-            var status = "attempting";
-            var details = new { retryCount = 3, lastError = "Connection lost" };
+            var success = false;
 
             // Act
-            var notification = NotificationFactory.CreateRecoveryNotification(recoveryType, status == "success");
+            var notification = NotificationFactory.CreateRecoveryNotification(recoveryType, success);
 
             // Assert
             Assert.NotNull(notification);
             Assert.Equal("notifications/recovery", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(recoveryType, paramsObj!["recoveryType"]!.ToString());
-            Assert.Equal(status, paramsObj!["status"]!.ToString());
-            Assert.NotNull(paramsObj!["details"]);
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(recoveryType, paramsObj!["Reason"]!.ToString());
+            Assert.Equal(success.ToString().ToLower(), paramsObj!["Success"]?.ToString()?.ToLower());
         }
 
         [Fact]
@@ -386,10 +328,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.Equal(method, notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
+            var paramsObj = GetParamsAsDictionary(notification.Params);
             Assert.Equal("data", paramsObj["key"]!.ToString());
             Assert.Equal(123, JsonSerializer.Deserialize<int>(paramsObj["value"]!.ToString()!));
         }
@@ -401,20 +340,17 @@ namespace mcp_nexus_tests.Notifications
         public void CreateCommandStatusNotification_WithEmptyStrings_CreatesNotificationWithEmptyValues(string sessionId, string commandId, string status)
         {
             // Act
-            var notification = NotificationFactory.CreateCommandStatusNotification(sessionId, commandId, status);
+            var notification = NotificationFactory.CreateCommandStatusNotification(sessionId, commandId, status, 0, "");
 
             // Assert
             Assert.NotNull(notification);
             Assert.Equal("notifications/command_status", notification.Method);
             Assert.NotNull(notification.Params);
 
-            var paramsElement = (JsonElement)notification.Params!;
-            var paramsObj = paramsElement.ValueKind == JsonValueKind.Object ?
-                JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText()) : null;
-            Assert.NotNull(paramsObj);
-            Assert.Equal(sessionId, paramsObj!["sessionId"]!.ToString());
-            Assert.Equal(commandId, paramsObj!["commandId"]!.ToString());
-            Assert.Equal(status, paramsObj!["status"]!.ToString());
+            var paramsObj = GetParamsAsDictionary(notification.Params);
+            Assert.Equal(sessionId, paramsObj!["SessionId"]!.ToString());
+            Assert.Equal(commandId, paramsObj!["CommandId"]!.ToString());
+            Assert.Equal(status, paramsObj!["Status"]!.ToString());
         }
     }
 }

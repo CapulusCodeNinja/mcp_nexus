@@ -126,7 +126,9 @@ namespace mcp_nexus_tests.Notifications
 
             // Assert
             Assert.Single(receivedData);
-            Assert.Equal("TestData", receivedData[0]);
+            var notification = Assert.IsType<McpNotification>(receivedData[0]);
+            Assert.Equal("notifications/testEvent", notification.Method);
+            Assert.Equal("TestData", notification.Params);
         }
 
         [Fact]
@@ -181,8 +183,12 @@ namespace mcp_nexus_tests.Notifications
             // Assert
             Assert.Single(receivedData1);
             Assert.Single(receivedData2);
-            Assert.Equal("TestData", receivedData1[0]);
-            Assert.Equal("TestData", receivedData2[0]);
+            var notification1 = Assert.IsType<McpNotification>(receivedData1[0]);
+            var notification2 = Assert.IsType<McpNotification>(receivedData2[0]);
+            Assert.Equal("notifications/testEvent", notification1.Method);
+            Assert.Equal("TestData", notification1.Params);
+            Assert.Equal("notifications/testEvent", notification2.Method);
+            Assert.Equal("TestData", notification2.Params);
         }
 
         [Fact]
@@ -205,7 +211,9 @@ namespace mcp_nexus_tests.Notifications
 
             // Assert
             Assert.Single(receivedData);
-            Assert.Equal("TestData", receivedData[0]);
+            var notification = Assert.IsType<McpNotification>(receivedData[0]);
+            Assert.Equal("notifications/testEvent", notification.Method);
+            Assert.Equal("TestData", notification.Params);
         }
 
         [Fact]

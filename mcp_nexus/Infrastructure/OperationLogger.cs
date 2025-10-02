@@ -155,37 +155,37 @@ namespace mcp_nexus.Infrastructure
         // Static methods for compatibility with existing code
         public static void LogInfo(ILogger logger, string operation, string message)
         {
-            logger.LogInformation("[{Operation}] {Message}", operation, message);
+            logger?.LogInformation("[{Operation}] {Message}", operation, message);
         }
 
         public static void LogInfo(ILogger logger, string operation, string messageTemplate, params object[] args)
         {
-            logger.LogInformation($"[{operation}] {messageTemplate}", args);
+            logger?.LogInformation($"[{operation}] {messageTemplate}", args);
         }
 
         public static void LogWarning(ILogger logger, string operation, string message)
         {
-            logger.LogWarning("[{Operation}] {Message}", operation, message);
+            logger?.LogWarning("[{Operation}] {Message}", operation, message);
         }
 
         public static void LogError(ILogger logger, string operation, string message)
         {
-            logger.LogError("[{Operation}] {Message}", operation, message);
+            logger?.LogError("[{Operation}] {Message}", operation, message);
         }
 
         public static void LogError(ILogger logger, string operation, Exception exception, string message)
         {
-            logger.LogError(exception, "[{Operation}] {Message}", operation, message);
+            logger?.LogError(exception, "[{Operation}] {Message}", operation, message);
         }
 
         public static void LogDebug(ILogger logger, string operation, string message)
         {
-            logger.LogDebug("[{Operation}] {Message}", operation, message);
+            logger?.LogDebug("[{Operation}] {Message}", operation, message);
         }
 
         public static void LogTrace(ILogger logger, string operation, string message)
         {
-            logger.LogTrace("[{Operation}] {Message}", operation, message);
+            logger?.LogTrace("[{Operation}] {Message}", operation, message);
         }
 
         public static IReadOnlyList<OperationLogEntry> GetOperations()

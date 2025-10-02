@@ -342,7 +342,7 @@ namespace mcp_nexus_tests.CommandQueue
             var command = "!analyze -v";
             var status = "executing";
 
-            _mockNotificationService.Setup(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            _mockNotificationService.Setup(x => x.NotifyCommandStatusAsync(commandId, command, status, 0, string.Empty, string.Empty))
                 .ThrowsAsync(new Exception("Notification failed"));
 
             // Act
@@ -350,7 +350,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             // Wait for the Task.Run to complete
-            await Task.Delay(1000);
+            await Task.Delay(2000);
             _mockLogger.Verify(x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),

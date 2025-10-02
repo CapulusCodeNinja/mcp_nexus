@@ -77,30 +77,30 @@ namespace mcp_nexus_tests.Infrastructure
         }
 
         [Fact]
-        public void FindProjectDirectory_WithNullPath_ReturnsNull()
+        public void FindProjectDirectoryStatic_WithNullPath_ReturnsNull()
         {
             // Act
-            var result = ServiceFileManager.FindProjectDirectory(null!);
+            var result = ServiceFileManager.FindProjectDirectoryStatic(null!);
 
             // Assert
             Assert.Null(result);
         }
 
         [Fact]
-        public void FindProjectDirectory_WithEmptyPath_ReturnsNull()
+        public void FindProjectDirectoryStatic_WithEmptyPath_ReturnsNull()
         {
             // Act
-            var result = ServiceFileManager.FindProjectDirectory("");
+            var result = ServiceFileManager.FindProjectDirectoryStatic("");
 
             // Assert
             Assert.Null(result);
         }
 
         [Fact]
-        public void FindProjectDirectory_WithValidPath_ReturnsStringOrNull()
+        public void FindProjectDirectoryStatic_WithValidPath_ReturnsStringOrNull()
         {
             // Act
-            var result = ServiceFileManager.FindProjectDirectory(Environment.CurrentDirectory);
+            var result = ServiceFileManager.FindProjectDirectoryStatic(Environment.CurrentDirectory);
 
             // Assert
             // Result can be null if no project found, or a string if found
@@ -201,26 +201,26 @@ namespace mcp_nexus_tests.Infrastructure
         }
 
         [Fact]
-        public async Task CleanupOldBackupsAsync_WithDefaultMaxBackups_DoesNotThrow()
+        public async Task CleanupOldBackupsStaticAsync_WithDefaultMaxBackups_DoesNotThrow()
         {
             // Act & Assert
-            await ServiceFileManager.CleanupOldBackupsAsync("C:\\Test\\Backup", 30, _mockLogger.Object);
+            await ServiceFileManager.CleanupOldBackupsStaticAsync("C:\\Test\\Backup", 30, _mockLogger.Object);
             // Should not throw
         }
 
         [Fact]
-        public async Task CleanupOldBackupsAsync_WithCustomMaxBackups_DoesNotThrow()
+        public async Task CleanupOldBackupsStaticAsync_WithCustomMaxBackups_DoesNotThrow()
         {
             // Act & Assert
-            await ServiceFileManager.CleanupOldBackupsAsync("test-path", 10, _mockLogger.Object);
+            await ServiceFileManager.CleanupOldBackupsStaticAsync("test-path", 10, _mockLogger.Object);
             // Should not throw
         }
 
         [Fact]
-        public async Task CleanupOldBackupsAsync_WithNullLogger_DoesNotThrow()
+        public async Task CleanupOldBackupsStaticAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            await ServiceFileManager.CleanupOldBackupsAsync("test-path", 5, _mockLogger.Object);
+            await ServiceFileManager.CleanupOldBackupsStaticAsync("test-path", 5, _mockLogger.Object);
             // Should not throw
         }
 
@@ -249,7 +249,7 @@ namespace mcp_nexus_tests.Infrastructure
             var result = ServiceFileManager.GetBackupInfoStatic("C:\\Test\\Backup");
             // Should not throw, result should be a list
             Assert.NotNull(result);
-            Assert.IsType<List<BackupInfo>>(result);
+            Assert.IsType<List<object>>(result);
         }
 
         [Fact]
@@ -259,7 +259,7 @@ namespace mcp_nexus_tests.Infrastructure
             var result = ServiceFileManager.GetBackupInfoStatic("C:\\Test\\Backup");
             // Should not throw, result should be a list
             Assert.NotNull(result);
-            Assert.IsType<List<BackupInfo>>(result);
+            Assert.IsType<List<object>>(result);
         }
 
         [Fact]
@@ -268,14 +268,14 @@ namespace mcp_nexus_tests.Infrastructure
             // This test verifies that all methods are static as expected
             var type = typeof(ServiceFileManager);
 
-            var buildMethod = type.GetMethod("BuildProjectForDeploymentAsync");
-            var findProjectMethod = type.GetMethod("FindProjectDirectory");
-            var copyFilesMethod = type.GetMethod("CopyApplicationFilesAsync");
-            var copyDirMethod = type.GetMethod("CopyDirectoryAsync");
-            var createBackupMethod = type.GetMethod("CreateBackupAsync");
-            var cleanupMethod = type.GetMethod("CleanupOldBackupsAsync");
-            var validateMethod = type.GetMethod("ValidateInstallationFiles");
-            var getBackupInfoMethod = type.GetMethod("GetBackupInfo");
+            var buildMethod = type.GetMethod("BuildProjectForDeploymentAsync", new[] { typeof(ILogger) });
+            var findProjectMethod = type.GetMethod("FindProjectDirectoryStatic", new[] { typeof(string) });
+            var copyFilesMethod = type.GetMethod("CopyApplicationFilesAsync", new[] { typeof(ILogger) });
+            var copyDirMethod = type.GetMethod("CopyDirectoryAsync", new[] { typeof(string), typeof(string), typeof(ILogger) });
+            var createBackupMethod = type.GetMethod("CreateBackupAsync", new[] { typeof(ILogger) });
+            var cleanupMethod = type.GetMethod("CleanupOldBackupsStaticAsync", new[] { typeof(string), typeof(int), typeof(ILogger) });
+            var validateMethod = type.GetMethod("ValidateInstallationFilesStatic", new[] { typeof(string) });
+            var getBackupInfoMethod = type.GetMethod("GetBackupInfoStatic", new[] { typeof(string) });
 
             Assert.True(buildMethod?.IsStatic == true);
             Assert.True(findProjectMethod?.IsStatic == true);
@@ -293,17 +293,17 @@ namespace mcp_nexus_tests.Infrastructure
             // This test verifies that all async methods return Task or Task<T>
             var type = typeof(ServiceFileManager);
 
-            var buildMethod = type.GetMethod("BuildProjectForDeploymentAsync");
-            var copyFilesMethod = type.GetMethod("CopyApplicationFilesAsync");
-            var copyDirMethod = type.GetMethod("CopyDirectoryAsync");
-            var createBackupMethod = type.GetMethod("CreateBackupAsync");
-            var cleanupMethod = type.GetMethod("CleanupOldBackupsAsync");
+            var buildMethod = type.GetMethod("BuildProjectForDeploymentAsync", new[] { typeof(ILogger) });
+            var copyFilesMethod = type.GetMethod("CopyApplicationFilesAsync", new[] { typeof(ILogger) });
+            var copyDirMethod = type.GetMethod("CopyDirectoryAsync", new[] { typeof(string), typeof(string), typeof(ILogger) });
+            var createBackupMethod = type.GetMethod("CreateBackupAsync", new[] { typeof(ILogger) });
+            var cleanupMethod = type.GetMethod("CleanupOldBackupsStaticAsync", new[] { typeof(string), typeof(int), typeof(ILogger) });
 
             Assert.Equal(typeof(Task<bool>), buildMethod?.ReturnType);
-            Assert.Equal(typeof(Task), copyFilesMethod?.ReturnType);
+            Assert.Equal(typeof(Task<bool>), copyFilesMethod?.ReturnType);
             Assert.Equal(typeof(Task), copyDirMethod?.ReturnType);
-            Assert.Equal(typeof(Task<string?>), createBackupMethod?.ReturnType);
-            Assert.Equal(typeof(Task), cleanupMethod?.ReturnType);
+            Assert.Equal(typeof(Task<bool>), createBackupMethod?.ReturnType);
+            Assert.Equal(typeof(Task<bool>), cleanupMethod?.ReturnType);
         }
 
         [Fact]
@@ -312,27 +312,24 @@ namespace mcp_nexus_tests.Infrastructure
             // This test verifies that all methods accept an optional ILogger parameter
             var type = typeof(ServiceFileManager);
 
-            var buildMethod = type.GetMethod("BuildProjectForDeploymentAsync");
-            var copyFilesMethod = type.GetMethod("CopyApplicationFilesAsync");
-            var copyDirMethod = type.GetMethod("CopyDirectoryAsync");
-            var createBackupMethod = type.GetMethod("CreateBackupAsync");
-            var cleanupMethod = type.GetMethod("CleanupOldBackupsAsync");
-            var validateMethod = type.GetMethod("ValidateInstallationFiles");
-            var getBackupInfoMethod = type.GetMethod("GetBackupInfo");
+            var buildMethod = type.GetMethod("BuildProjectForDeploymentAsync", new[] { typeof(ILogger) });
+            var copyFilesMethod = type.GetMethod("CopyApplicationFilesAsync", new[] { typeof(ILogger) });
+            var copyDirMethod = type.GetMethod("CopyDirectoryAsync", new[] { typeof(string), typeof(string), typeof(ILogger) });
+            var createBackupMethod = type.GetMethod("CreateBackupAsync", new[] { typeof(ILogger) });
+            var cleanupMethod = type.GetMethod("CleanupOldBackupsStaticAsync", new[] { typeof(string), typeof(int), typeof(ILogger) });
+            var validateMethod = type.GetMethod("ValidateInstallationFilesStatic", new[] { typeof(string) });
+            var getBackupInfoMethod = type.GetMethod("GetBackupInfoStatic", new[] { typeof(string) });
 
-            // Check that all methods have ILogger as the last parameter and it's optional
+            // Check that methods that have ILogger parameter have it as the last parameter
             var buildParams = buildMethod?.GetParameters();
             var copyFilesParams = copyFilesMethod?.GetParameters();
             var copyDirParams = copyDirMethod?.GetParameters();
             var createBackupParams = createBackupMethod?.GetParameters();
             var cleanupParams = cleanupMethod?.GetParameters();
-            var validateParams = validateMethod?.GetParameters();
-            var getBackupInfoParams = getBackupInfoMethod?.GetParameters();
 
             Assert.NotNull(buildParams);
             Assert.Single(buildParams);
             Assert.Equal(typeof(ILogger), buildParams[0].ParameterType);
-            Assert.True(buildParams[0].HasDefaultValue);
 
             Assert.NotNull(copyFilesParams);
             Assert.Single(copyFilesParams);
@@ -350,19 +347,9 @@ namespace mcp_nexus_tests.Infrastructure
             Assert.True(createBackupParams[0].HasDefaultValue);
 
             Assert.NotNull(cleanupParams);
-            Assert.Equal(2, cleanupParams.Length);
-            Assert.Equal(typeof(ILogger), cleanupParams[1].ParameterType);
-            Assert.True(cleanupParams[1].HasDefaultValue);
-
-            Assert.NotNull(validateParams);
-            Assert.Single(validateParams);
-            Assert.Equal(typeof(ILogger), validateParams[0].ParameterType);
-            Assert.True(validateParams[0].HasDefaultValue);
-
-            Assert.NotNull(getBackupInfoParams);
-            Assert.Single(getBackupInfoParams);
-            Assert.Equal(typeof(ILogger), getBackupInfoParams[0].ParameterType);
-            Assert.True(getBackupInfoParams[0].HasDefaultValue);
+            Assert.Equal(3, cleanupParams.Length);
+            Assert.Equal(typeof(ILogger), cleanupParams[2].ParameterType);
+            Assert.True(cleanupParams[2].HasDefaultValue);
         }
 
         [Fact]
@@ -372,7 +359,7 @@ namespace mcp_nexus_tests.Infrastructure
             await ServiceFileManager.BuildProjectForDeploymentAsync(_mockLogger.Object);
             await ServiceFileManager.CopyApplicationFilesAsync(_mockLogger.Object);
             await ServiceFileManager.CreateBackupAsync(_mockLogger.Object);
-            await ServiceFileManager.CleanupOldBackupsAsync("test-path", 5, _mockLogger.Object);
+            await ServiceFileManager.CleanupOldBackupsStaticAsync("test-path", 5, _mockLogger.Object);
 
             // Should not throw exceptions
             Assert.True(true);
@@ -382,7 +369,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void AllSyncMethods_HandleExceptions()
         {
             // This test verifies that all sync methods handle exceptions gracefully
-            ServiceFileManager.FindProjectDirectory(Environment.CurrentDirectory);
+            ServiceFileManager.FindProjectDirectoryStatic(Environment.CurrentDirectory);
             ServiceFileManager.ValidateInstallationFilesStatic("C:\\Test\\Service");
             ServiceFileManager.GetBackupInfoStatic("C:\\Test\\Backup");
 

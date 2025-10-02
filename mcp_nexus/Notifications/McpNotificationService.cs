@@ -269,7 +269,15 @@ namespace mcp_nexus.Notifications
 
         public async Task NotifyServerHealthAsync(string healthStatus, string status, bool cdbSessionActive, int queueSize, int activeCommands)
         {
-            await PublishNotificationAsync("ServerHealth", new { HealthStatus = healthStatus, Status = status, CdbSessionActive = cdbSessionActive, QueueSize = queueSize, ActiveCommands = activeCommands });
+            var notification = new McpServerHealthNotification
+            {
+                Status = healthStatus,
+                CdbSessionActive = cdbSessionActive,
+                QueueSize = queueSize,
+                ActiveCommands = activeCommands,
+                Timestamp = DateTimeOffset.UtcNow
+            };
+            await PublishNotificationAsync("ServerHealth", notification);
         }
 
         public async Task NotifyServerHealthAsync(string status, bool cdbSessionActive, int queueSize, int activeCommands)
@@ -308,10 +316,6 @@ namespace mcp_nexus.Notifications
             await PublishNotificationAsync("SessionEvent", new { SessionId = sessionId, EventType = eventType, Data = data, Context = context });
         }
 
-        public async Task NotifyCommandHeartbeatAsync(string sessionId, string commandId, TimeSpan elapsed)
-        {
-            await PublishNotificationAsync("CommandHeartbeat", new { SessionId = sessionId, CommandId = commandId, Elapsed = elapsed.TotalMilliseconds });
-        }
 
         public async Task NotifySessionRecoveryAsync(string sessionId, string recoveryType, string status, string details, bool success)
         {
@@ -323,7 +327,18 @@ namespace mcp_nexus.Notifications
         /// </summary>
         public async Task NotifyCommandStatusAsync(string commandId, string command, string status, int queuePosition, string result, string error, object context)
         {
-            await PublishNotificationAsync("CommandStatus", new { CommandId = commandId, Command = command, Status = status, QueuePosition = queuePosition, Result = result, Error = error, Context = context });
+            var notification = new McpCommandStatusNotification
+            {
+                CommandId = commandId,
+                Command = command,
+                Status = status,
+                Progress = queuePosition,
+                Message = result,
+                Result = error,
+                Error = context?.ToString(),
+                Timestamp = DateTimeOffset.UtcNow
+            };
+            await PublishNotificationAsync("CommandStatus", notification);
         }
 
         /// <summary>
@@ -331,7 +346,17 @@ namespace mcp_nexus.Notifications
         /// </summary>
         public async Task NotifyCommandStatusAsync(string commandId, string command, string status, int progress, string result, string error)
         {
-            await PublishNotificationAsync("CommandStatus", new { CommandId = commandId, Command = command, Status = status, Progress = progress, Result = result, Error = error });
+            var notification = new McpCommandStatusNotification
+            {
+                CommandId = commandId,
+                Command = command,
+                Status = status,
+                Progress = progress,
+                Message = result,
+                Result = error,
+                Timestamp = DateTimeOffset.UtcNow
+            };
+            await PublishNotificationAsync("CommandStatus", notification);
         }
 
         /// <summary>
@@ -339,7 +364,16 @@ namespace mcp_nexus.Notifications
         /// </summary>
         public async Task NotifyCommandStatusAsync(string commandId, string command, string status, int progress, string result)
         {
-            await PublishNotificationAsync("CommandStatus", new { CommandId = commandId, Command = command, Status = status, Progress = progress, Result = result });
+            var notification = new McpCommandStatusNotification
+            {
+                CommandId = commandId,
+                Command = command,
+                Status = status,
+                Progress = progress,
+                Message = result,
+                Timestamp = DateTimeOffset.UtcNow
+            };
+            await PublishNotificationAsync("CommandStatus", notification);
         }
 
         /// <summary>
@@ -356,8 +390,35 @@ namespace mcp_nexus.Notifications
         /// </summary>
         public async Task NotifyCommandHeartbeatAsync(string commandId, string command, TimeSpan elapsed, string details)
         {
-            await PublishNotificationAsync("CommandHeartbeat", new { CommandId = commandId, Command = command, Elapsed = elapsed, Details = details });
+            var heartbeatNotification = new McpCommandHeartbeatNotification
+            {
+                CommandId = commandId,
+                Command = command,
+                ElapsedSeconds = elapsed.TotalSeconds,
+                ElapsedDisplay = FormatElapsedTime(elapsed),
+                Details = details,
+                Timestamp = DateTimeOffset.UtcNow
+            };
+            await PublishNotificationAsync("CommandHeartbeat", heartbeatNotification);
         }
+
+        /// <summary>
+        /// Notifies about command heartbeat without details
+        /// </summary>
+        public async Task NotifyCommandHeartbeatAsync(string commandId, string command, TimeSpan elapsed)
+        {
+            var heartbeatNotification = new McpCommandHeartbeatNotification
+            {
+                CommandId = commandId,
+                Command = command,
+                ElapsedSeconds = elapsed.TotalSeconds,
+                ElapsedDisplay = FormatElapsedTime(elapsed),
+                Details = null,
+                Timestamp = DateTimeOffset.UtcNow
+            };
+            await PublishNotificationAsync("CommandHeartbeat", heartbeatNotification);
+        }
+
 
         /// <summary>
         /// Notifies about session recovery with reason, step, success, and message
@@ -372,7 +433,16 @@ namespace mcp_nexus.Notifications
         /// </summary>
         public async Task NotifySessionRecoveryAsync(string reason, string step, bool success, string message, string[] affectedCommands)
         {
-            await PublishNotificationAsync("SessionRecovery", new { Reason = reason, Step = step, Success = success, Message = message, AffectedCommands = affectedCommands });
+            var notification = new McpSessionRecoveryNotification
+            {
+                Reason = reason,
+                RecoveryStep = step,
+                Success = success,
+                Message = message,
+                AffectedCommands = affectedCommands,
+                Timestamp = DateTimeOffset.UtcNow
+            };
+            await PublishNotificationAsync("SessionRecovery", notification);
         }
 
         #endregion
@@ -412,6 +482,25 @@ namespace mcp_nexus.Notifications
                 return input.ToLowerInvariant();
 
             return char.ToLowerInvariant(input[0]) + input.Substring(1);
+        }
+
+        /// <summary>
+        /// Formats elapsed time as a human-readable string
+        /// </summary>
+        /// <param name="elapsed">Elapsed time</param>
+        /// <returns>Formatted time string</returns>
+        private static string FormatElapsedTime(TimeSpan elapsed)
+        {
+            if (elapsed.TotalDays >= 1)
+                return $"{(int)elapsed.TotalDays}d {elapsed.Hours}h {elapsed.Minutes}m";
+            else if (elapsed.TotalHours >= 1)
+                return $"{elapsed.Hours}h {elapsed.Minutes}m {elapsed.Seconds}s";
+            else if (elapsed.TotalMinutes >= 1)
+                return elapsed.TotalMinutes.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + "m";
+            else if (elapsed.TotalSeconds == (int)elapsed.TotalSeconds)
+                return $"{(int)elapsed.TotalSeconds}s";
+            else
+                return elapsed.TotalSeconds.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + "s";
         }
 
         #endregion

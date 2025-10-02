@@ -122,7 +122,7 @@ namespace mcp_nexus_tests.Integration
             Assert.Equal("notifications/commandStatus", commandStatus.RootElement.GetProperty("method").GetString());
 
             var toolsChanged = JsonDocument.Parse(lines[1]);
-            Assert.Equal("notifications/tools/list_changed", toolsChanged.RootElement.GetProperty("method").GetString());
+            Assert.Equal("notifications/toolsListChanged", toolsChanged.RootElement.GetProperty("method").GetString());
 
             var serverHealth = JsonDocument.Parse(lines[2]);
             Assert.Equal("notifications/serverHealth", serverHealth.RootElement.GetProperty("method").GetString());
@@ -140,7 +140,7 @@ namespace mcp_nexus_tests.Integration
             // var stdioHandlerCalled = false; // Not used in this test
 
             // Register HTTP-style handler
-            m_notificationService.Subscribe("test-event", notification =>
+            m_notificationService.Subscribe("CommandStatus", notification =>
             {
                 httpHandlerCalled = true;
                 return Task.CompletedTask;

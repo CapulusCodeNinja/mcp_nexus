@@ -147,7 +147,7 @@ namespace mcp_nexus_tests.Services
                     return Task.CompletedTask;
                 });
                 handlers.Add(handler);
-                m_notificationService.Subscribe("test-event", handler);
+                m_notificationService.Subscribe("CommandStatus", handler);
             }
 
             // Act - Send notifications concurrently
@@ -178,7 +178,7 @@ namespace mcp_nexus_tests.Services
                 var handlerId = i;
                 tasks.Add(Task.Run(() =>
                 {
-                    m_notificationService.Subscribe("test-event", notification =>
+                    m_notificationService.Subscribe("CommandStatus", notification =>
                     {
                         receivedNotifications.Add(notification);
                         return Task.CompletedTask;
@@ -242,7 +242,7 @@ namespace mcp_nexus_tests.Services
                     return Task.CompletedTask;
                 });
                 handlers.Add(handler);
-                var subscriptionId = m_notificationService.Subscribe("test-event", handler);
+                var subscriptionId = m_notificationService.Subscribe("CommandStatus", handler);
                 subscriptionIds.Add(subscriptionId);
             }
 

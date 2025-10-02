@@ -57,7 +57,7 @@ namespace mcp_nexus.Notifications
         {
             return new McpNotification
             {
-                Method = "notifications/commandStatus",
+                Method = "notifications/command_status",
                 Params = new { CommandId = commandId, Status = status, Result = result, Error = error }
             };
         }
@@ -75,7 +75,7 @@ namespace mcp_nexus.Notifications
         {
             return new McpNotification
             {
-                Method = "notifications/commandCompletion",
+                Method = "notifications/command_completion",
                 Params = new { CommandId = commandId, Result = result, Error = error }
             };
         }
@@ -91,7 +91,7 @@ namespace mcp_nexus.Notifications
         {
             return new McpNotification
             {
-                Method = "notifications/sessionEvent",
+                Method = "notifications/session_event",
                 Params = new { SessionId = sessionId, EventType = eventType, Data = data }
             };
         }
@@ -106,7 +106,7 @@ namespace mcp_nexus.Notifications
         {
             return new McpNotification
             {
-                Method = "notifications/serverHealth",
+                Method = "notifications/server_health",
                 Params = new { Status = status, Details = details }
             };
         }
@@ -171,7 +171,7 @@ namespace mcp_nexus.Notifications
         {
             return new McpNotification
             {
-                Method = "notifications/commandFailure",
+                Method = "notifications/command_failure",
                 Params = new { CommandId = commandId, Error = error }
             };
         }
@@ -186,7 +186,7 @@ namespace mcp_nexus.Notifications
         {
             return new McpNotification
             {
-                Method = "notifications/commandHeartbeat",
+                Method = "notifications/command_heartbeat",
                 Params = new { CommandId = commandId, Elapsed = elapsed.TotalMilliseconds }
             };
         }
@@ -201,7 +201,7 @@ namespace mcp_nexus.Notifications
         {
             return new McpNotification
             {
-                Method = "notifications/queueEvent",
+                Method = "notifications/queue_event",
                 Params = new { EventType = eventType, Data = data }
             };
         }

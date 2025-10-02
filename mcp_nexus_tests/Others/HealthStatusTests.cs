@@ -112,7 +112,7 @@ namespace mcp_nexus_tests.Health
             // The test will need to be updated to check default values
 
             // Assert
-            Assert.Equal(string.Empty, healthStatus.Status);
+            Assert.Equal("unknown", healthStatus.Status);
             Assert.Equal(string.Empty, healthStatus.MachineName);
             Assert.NotNull(healthStatus.Issues); // Issues is a read-only list, not null
         }
@@ -163,7 +163,7 @@ namespace mcp_nexus_tests.Health
         {
             // Act
             var commandQueueHealth = new CommandQueueHealthStatus();
-            commandQueueHealth.SetStatus(int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue);
+            commandQueueHealth.SetStatus(int.MaxValue, int.MaxValue, long.MaxValue, long.MaxValue);
 
             // Assert
             Assert.Equal(int.MaxValue, commandQueueHealth.QueueSize);

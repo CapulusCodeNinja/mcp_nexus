@@ -52,8 +52,8 @@ namespace mcp_nexus_tests.Services
 
             // Assert
             m_mockNotificationService.Verify(
-                x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<McpNotification, Task>>()),
-                Times.Once);
+                x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<object, Task>>()),
+                Times.AtLeast(6)); // Now subscribing to 6 different event types
         }
 
         [Fact]
@@ -65,8 +65,8 @@ namespace mcp_nexus_tests.Services
 
             // Assert
             m_mockNotificationService.Verify(
-                x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<McpNotification, Task>>()),
-                Times.Once);
+                x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<object, Task>>()),
+                Times.AtLeast(6)); // Now subscribing to 6 different event types, but only once per type
         }
 
         [Fact]
@@ -86,10 +86,10 @@ namespace mcp_nexus_tests.Services
                 }
             };
 
-            // Get the registered handler
-            Func<McpNotification, Task>? registeredHandler = null;
-            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<McpNotification, Task>>()))
-                .Callback<Func<McpNotification, Task>>(handler => registeredHandler = handler);
+            // Get the registered handler for CommandStatus specifically
+            Func<object, Task>? registeredHandler = null;
+            m_mockNotificationService.Setup(x => x.Subscribe("CommandStatus", It.IsAny<Func<object, Task>>()))
+                .Callback<string, Func<object, Task>>((eventType, handler) => registeredHandler = handler);
 
             await m_bridge.InitializeAsync();
 
@@ -98,7 +98,7 @@ namespace mcp_nexus_tests.Services
             await Task.Delay(50);
 
             // Act
-            await registeredHandler!(notification);
+            await registeredHandler!((object)notification);
             await Task.Delay(50);
 
             // Assert
@@ -136,25 +136,25 @@ namespace mcp_nexus_tests.Services
             // Arrange
             var notification = new McpNotification
             {
-                Method = "notifications/tools/list_changed",
+                Method = "notifications/toolsListChanged",
                 Params = null
             };
 
-            Func<McpNotification, Task>? registeredHandler = null;
-            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<McpNotification, Task>>()))
-                .Callback<Func<McpNotification, Task>>(handler => registeredHandler = handler);
+            Func<object, Task>? registeredHandler = null;
+            m_mockNotificationService.Setup(x => x.Subscribe("ToolsListChanged", It.IsAny<Func<object, Task>>()))
+                .Callback<string, Func<object, Task>>((eventType, handler) => registeredHandler = handler);
 
             await m_bridge.InitializeAsync();
 
             // Act
-            await registeredHandler!(notification);
+            await registeredHandler!((object)notification);
 
             // Assert
             var output = m_stringWriter.ToString();
             var parsed = JsonDocument.Parse(output.Trim());
             var root = parsed.RootElement;
 
-            Assert.Equal("notifications/tools/list_changed", root.GetProperty("method").GetString());
+            Assert.Equal("notifications/toolsListChanged", root.GetProperty("method").GetString());
             // params should be null for standard tools notification
             Assert.True(root.GetProperty("params").ValueKind == JsonValueKind.Null);
         }
@@ -163,9 +163,9 @@ namespace mcp_nexus_tests.Services
         public async Task HandleNotification_AfterDispose_DoesNotSendToStdout()
         {
             // Arrange
-            Func<McpNotification, Task>? registeredHandler = null;
-            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<McpNotification, Task>>()))
-                .Callback<Func<McpNotification, Task>>(handler => registeredHandler = handler);
+            Func<object, Task>? registeredHandler = null;
+            m_mockNotificationService.Setup(x => x.Subscribe("CommandStatus", It.IsAny<Func<object, Task>>()))
+                .Callback<string, Func<object, Task>>((eventType, handler) => registeredHandler = handler);
 
             await m_bridge.InitializeAsync();
 
@@ -177,7 +177,7 @@ namespace mcp_nexus_tests.Services
 
             // Act
             m_bridge.Dispose();
-            await registeredHandler!(notification);
+            await registeredHandler!((object)notification);
 
             // Assert
             var output = m_stringWriter.ToString();
@@ -188,9 +188,9 @@ namespace mcp_nexus_tests.Services
         public async Task HandleNotification_WithInvalidData_HandlesGracefully()
         {
             // Arrange
-            Func<McpNotification, Task>? registeredHandler = null;
-            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<McpNotification, Task>>()))
-                .Callback<Func<McpNotification, Task>>(handler => registeredHandler = handler);
+            Func<object, Task>? registeredHandler = null;
+            m_mockNotificationService.Setup(x => x.Subscribe("CommandStatus", It.IsAny<Func<object, Task>>()))
+                .Callback<string, Func<object, Task>>((eventType, handler) => registeredHandler = handler);
 
             await m_bridge.InitializeAsync();
 

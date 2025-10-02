@@ -19,7 +19,7 @@ namespace mcp_nexus_tests.CommandQueue
             Assert.Equal(string.Empty, commandInfo.CommandId);
             Assert.Equal(string.Empty, commandInfo.Command);
             Assert.Equal(CommandState.Queued, commandInfo.State);
-            Assert.Equal(DateTime.MinValue, commandInfo.QueueTime);
+            Assert.True(commandInfo.QueueTime > DateTime.MinValue);
             Assert.Equal(TimeSpan.Zero, commandInfo.Elapsed);
             Assert.Equal(TimeSpan.Zero, commandInfo.Remaining);
             Assert.Equal(0, commandInfo.QueuePosition);
@@ -35,15 +35,10 @@ namespace mcp_nexus_tests.CommandQueue
             var remaining = TimeSpan.FromSeconds(10);
 
             // Act
-            var commandInfo = new CommandInfo
+            var commandInfo = new CommandInfo("cmd-123", "!analyze -v", CommandState.Executing, queueTime, 3)
             {
-                CommandId = "cmd-123",
-                Command = "!analyze -v",
-                State = CommandState.Executing,
-                QueueTime = queueTime,
                 Elapsed = elapsed,
                 Remaining = remaining,
-                QueuePosition = 3,
                 IsCompleted = true
             };
 
@@ -76,16 +71,9 @@ namespace mcp_nexus_tests.CommandQueue
         [Fact]
         public void CommandInfo_WithNullValues_HandlesGracefully()
         {
-            // Act
-            var commandInfo = new CommandInfo
-            {
-                CommandId = null!,
-                Command = null!
-            };
-
-            // Assert
-            Assert.Null(commandInfo.CommandId);
-            Assert.Null(commandInfo.Command);
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => new CommandInfo(null!, "test", CommandState.Queued, DateTime.UtcNow));
+            Assert.Throws<ArgumentNullException>(() => new CommandInfo("test", null!, CommandState.Queued, DateTime.UtcNow));
         }
 
         [Fact]
@@ -113,12 +101,10 @@ namespace mcp_nexus_tests.CommandQueue
             var maxTimeSpan = TimeSpan.MaxValue;
 
             // Act
-            var commandInfo = new CommandInfo
+            var commandInfo = new CommandInfo("test", "test", CommandState.Queued, maxDateTime, int.MaxValue)
             {
-                QueueTime = maxDateTime,
                 Elapsed = maxTimeSpan,
-                Remaining = maxTimeSpan,
-                QueuePosition = int.MaxValue
+                Remaining = maxTimeSpan
             };
 
             // Assert

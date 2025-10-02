@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Runtime.Versioning;
 using Xunit;
 using mcp_nexus.Infrastructure;
 using System;
@@ -11,6 +12,7 @@ namespace mcp_nexus_tests.Infrastructure
     /// <summary>
     /// Tests for ServiceUpdateManager
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class ServiceUpdateManagerTests
     {
         private readonly Mock<ILogger> _mockLogger;
@@ -60,7 +62,7 @@ namespace mcp_nexus_tests.Infrastructure
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()));
 
             // Act
-            var result = await ServiceUpdateManager.PerformUpdateAsync("test-service", "1.0.0");
+            var result = await ServiceUpdateManager.PerformUpdateAsync("test-service", "1.0.0", loggerMock.Object);
 
             // Assert
             // The result depends on the actual system state, but the method should not throw
@@ -159,7 +161,7 @@ namespace mcp_nexus_tests.Infrastructure
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()));
 
             // Act
-            var result = await ServiceUpdateManager.PerformUpdateAsync("test-service", "1.0.0");
+            var result = await ServiceUpdateManager.PerformUpdateAsync("test-service", "1.0.0", loggerMock.Object);
 
             // Assert
             // The method should handle exceptions gracefully and return a boolean result

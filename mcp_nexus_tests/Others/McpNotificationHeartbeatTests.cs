@@ -35,7 +35,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandHeartbeat", notification =>
             {
                 receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;
@@ -67,7 +67,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandHeartbeat", notification =>
             {
                 receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;
@@ -91,7 +91,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandHeartbeat", notification =>
             {
                 receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;
@@ -115,7 +115,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandHeartbeat", notification =>
             {
                 receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;
@@ -134,7 +134,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandHeartbeat", notification =>
             {
                 receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;
@@ -157,7 +157,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandHeartbeat", notification =>
             {
                 receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;
@@ -180,7 +180,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandHeartbeat", notification =>
             {
                 receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;

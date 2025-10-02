@@ -83,7 +83,7 @@ namespace mcp_nexus.Infrastructure
         /// </summary>
         /// <param name="logger">Logger instance</param>
         /// <returns>True if installation was successful</returns>
-        public static async Task<bool> InstallServiceAsync(ILogger? logger = null)
+        public static async Task<bool> InstallServiceStaticAsync(ILogger? logger = null)
         {
             try
             {

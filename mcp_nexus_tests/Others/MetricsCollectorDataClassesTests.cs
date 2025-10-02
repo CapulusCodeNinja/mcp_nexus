@@ -17,7 +17,7 @@ namespace mcp_nexus_tests.Metrics
             var snapshot = new MetricsSnapshot();
 
             // Assert
-            Assert.Equal(DateTime.MinValue, snapshot.Timestamp);
+            Assert.True(snapshot.Timestamp > DateTime.MinValue);
             Assert.NotNull(snapshot.Counters);
             Assert.Empty(snapshot.Counters);
             Assert.NotNull(snapshot.Histograms);

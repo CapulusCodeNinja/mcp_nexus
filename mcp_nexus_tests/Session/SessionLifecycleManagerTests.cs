@@ -150,29 +150,41 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var sessionId = "test-session-4";
-            var sessionInfo = new SessionInfo
+            var sessionInfo = new SessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, "C:\\Test\\dump.dmp")
             {
-                SessionId = sessionId,
-                DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = _mockCdbSession.Object,
-                CommandQueue = _mockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow,
                 LastActivity = DateTime.UtcNow,
                 Status = SessionStatus.Active
             };
             _sessions[sessionId] = sessionInfo;
+            
+            // Debug: Verify the session info was created correctly
+            Assert.NotNull(sessionInfo);
+            Assert.NotNull(sessionInfo.CdbSession);
+            Assert.NotNull(sessionInfo.CommandQueue);
+            Assert.Equal(sessionId, sessionInfo.SessionId);
 
+            _mockCdbSession.Setup(x => x.IsActive).Returns(true);
             _mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
             _mockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(5);
+
+            // Debug: Check session info before closing
+            Assert.NotNull(sessionInfo.CdbSession);
+            Assert.NotNull(sessionInfo.CommandQueue);
 
             // Act
             var result = await _manager.CloseSessionAsync(sessionId);
 
+            // Wait a bit for async operations to complete
+            await Task.Delay(100);
+
             // Assert
             Assert.True(result);
             Assert.False(_sessions.ContainsKey(sessionId));
-            _mockCdbSession.Verify(x => x.StopSession(), Times.Once);
+            
+            // Debug: Check if the mocks were called
+            _mockCdbSession.Verify(x => x.IsActive, Times.AtLeastOnce);
             _mockCommandQueue.Verify(x => x.CancelAllCommands("Session closing"), Times.Once);
+            _mockCdbSession.Verify(x => x.StopSession(), Times.Once);
         }
 
         [Fact]

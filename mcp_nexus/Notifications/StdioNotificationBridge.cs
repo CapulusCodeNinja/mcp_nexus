@@ -9,7 +9,7 @@ namespace mcp_nexus.Notifications
     {
         private bool m_isRunning = false;
         private readonly IMcpNotificationService m_notificationService;
-        private string? m_subscriptionId;
+        private readonly List<string> m_subscriptionIds = new();
         private bool m_isInitialized = false;
 
         /// <summary>
@@ -81,10 +81,38 @@ namespace mcp_nexus.Notifications
         {
             if (!m_isInitialized)
             {
-                m_subscriptionId = m_notificationService.Subscribe("notification", async (mcp_nexus.Models.McpNotification notification) =>
+                // Subscribe to all notification types
+                m_subscriptionIds.Add(m_notificationService.Subscribe("CommandStatus", async (object notification) =>
                 {
                     await SendNotificationAsync(notification);
-                });
+                }));
+                
+                // Subscribe to other notification types
+                m_subscriptionIds.Add(m_notificationService.Subscribe("CommandHeartbeat", async (object notification) =>
+                {
+                    await SendNotificationAsync(notification);
+                }));
+                
+                m_subscriptionIds.Add(m_notificationService.Subscribe("SessionEvent", async (object notification) =>
+                {
+                    await SendNotificationAsync(notification);
+                }));
+                
+                m_subscriptionIds.Add(m_notificationService.Subscribe("SessionRecovery", async (object notification) =>
+                {
+                    await SendNotificationAsync(notification);
+                }));
+                
+                m_subscriptionIds.Add(m_notificationService.Subscribe("ServerHealth", async (object notification) =>
+                {
+                    await SendNotificationAsync(notification);
+                }));
+                
+                m_subscriptionIds.Add(m_notificationService.Subscribe("ToolsListChanged", async (object notification) =>
+                {
+                    await SendNotificationAsync(notification);
+                }));
+                
                 m_isRunning = true; // Start the bridge when initialized
                 m_isInitialized = true;
             }
@@ -96,11 +124,11 @@ namespace mcp_nexus.Notifications
         /// </summary>
         public void Dispose()
         {
-            if (m_subscriptionId != null)
+            foreach (var subscriptionId in m_subscriptionIds)
             {
-                m_notificationService.Unsubscribe(m_subscriptionId);
-                m_subscriptionId = null;
+                m_notificationService.Unsubscribe(subscriptionId);
             }
+            m_subscriptionIds.Clear();
             m_isRunning = false;
         }
     }

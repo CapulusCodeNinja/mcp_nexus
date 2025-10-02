@@ -236,27 +236,27 @@ namespace mcp_nexus.Infrastructure
             };
         }
 
-        public static async Task<bool> RunScCommandAsync(string command, ILogger logger, bool force = false)
+        public static async Task<bool> RunScCommandAsync(string command, ILogger? logger = null, bool force = false)
         {
             try
             {
-                logger.LogInformation("Running sc command: {Command} with force={Force}", command, force);
+                logger?.LogInformation("Running sc command: {Command} with force={Force}", command, force);
 
                 // This would typically execute sc.exe command
                 // For now, we'll simulate the command execution
                 await Task.Delay(100);
 
-                logger.LogInformation("Sc command executed successfully");
+                logger?.LogInformation("Sc command executed successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to execute sc command: {Command}", command);
+                logger?.LogError(ex, "Failed to execute sc command: {Command}", command);
                 return false;
             }
         }
 
-        public static async Task<bool> RunScCommandAsync(string command)
+        public static async Task<bool> RunScCommandStaticAsync(string command)
         {
             try
             {
@@ -284,7 +284,7 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
-        public static bool IsServiceInstalled()
+        public static bool IsServiceInstalledStatic()
         {
             try
             {
@@ -356,58 +356,66 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
-        public static async Task<bool> ForceCleanupServiceAsync(ILogger logger)
+        public static async Task<bool> ForceCleanupServiceStaticAsync(ILogger? logger = null)
         {
             try
             {
                 // Placeholder implementation for test compatibility
+                logger?.LogInformation("Force cleanup service");
                 await Task.Delay(100);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                logger?.LogError(ex, "Force cleanup service failed");
                 return false;
             }
         }
 
-        public static async Task<bool> DirectRegistryCleanupAsync(ILogger logger)
+        public static async Task<bool> DirectRegistryCleanupStaticAsync(ILogger? logger = null)
         {
             try
             {
                 // Placeholder implementation for test compatibility
+                logger?.LogInformation("Direct registry cleanup");
                 await Task.Delay(100);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                logger?.LogError(ex, "Direct registry cleanup failed");
                 return false;
             }
         }
 
-        public static async Task<bool> CreateServiceAsync(ILogger logger)
+        public static async Task<bool> CreateServiceStaticAsync(ILogger? logger = null)
         {
             try
             {
                 // Placeholder implementation for test compatibility
+                logger?.LogInformation("Create service");
                 await Task.Delay(100);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                logger?.LogError(ex, "Create service failed");
                 return false;
             }
         }
 
-        public static async Task<bool> DeleteServiceAsync(ILogger logger)
+        public static async Task<bool> DeleteServiceStaticAsync(ILogger? logger = null)
         {
             try
             {
                 // Placeholder implementation for test compatibility
+                logger?.LogInformation("Delete service");
                 await Task.Delay(100);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                logger?.LogError(ex, "Delete service failed");
                 return false;
             }
         }
