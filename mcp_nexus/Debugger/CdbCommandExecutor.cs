@@ -203,7 +203,8 @@ namespace mcp_nexus.Debugger
             var stderrLines = new List<string>();
             var stdoutOutput = new StringBuilder();
 
-            // Start readers - both write to channel
+            // Start readers concurrently but with proper stream synchronization
+            // The semaphore in each reader method will prevent concurrent access to the same stream
             var stdoutTask = ReadStdoutToChannelAsync(debuggerOutput, channel.Writer, cancellationToken);
             var stderrTask = debuggerError != null
                 ? ReadStderrToChannelAsync(debuggerError, channel.Writer, cancellationToken)
@@ -233,23 +234,9 @@ namespace mcp_nexus.Debugger
 
             try
             {
-                // Wait for stdout to complete (it signals when it finds completion marker)
-                await stdoutTask.ConfigureAwait(false);
-
-                // Give stderr a brief grace period (500ms) to finish writing any pending output
-                // This prevents blocking if stderr has no data or is slow
-                using var gracePeriodCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
-                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, gracePeriodCts.Token);
-                
-                try
-                {
-                    await stderrTask.WaitAsync(linkedCts.Token).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    // Grace period expired or cancelled - continue anyway
-                    m_logger.LogTrace("Stderr reading stopped after grace period");
-                }
+                // Wait for both readers to complete concurrently
+                // The semaphore in each reader method prevents stream concurrency issues
+                await Task.WhenAll(stdoutTask, stderrTask).ConfigureAwait(false);
             }
             finally
             {
