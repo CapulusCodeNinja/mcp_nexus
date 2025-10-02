@@ -64,7 +64,7 @@ namespace mcp_nexus.Middleware
             context.Request.Body.Position = 0;
 
             var formattedRequest = FormatJsonForLogging(requestBody);
-            m_logger.LogInformation("📨 JSON-RPC Request:\n{RequestBody}", formattedRequest);
+            m_logger.LogDebug("📨 JSON-RPC Request:\n{RequestBody}", formattedRequest);
 
             return requestBody;
         }
@@ -81,13 +81,19 @@ namespace mcp_nexus.Middleware
             responseBody.Seek(0, SeekOrigin.Begin);
 
             var formattedResponse = FormatSseResponseForLogging(responseBodyText);
-            m_logger.LogInformation("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
             
-            // Also log the decoded text for easier debugging
-            var decodedText = DecodeJsonText(responseBodyText);
-            if (!string.IsNullOrEmpty(decodedText))
+            // Try to decode the text for easier debugging
+            var (decodedText, decodeSuccess) = DecodeJsonText(responseBodyText);
+            if (decodeSuccess)
             {
-                m_logger.LogInformation("📤 JSON-RPC Response Text:\n{DecodedText}", decodedText);
+                // DecodeJsonText succeeded - use Trace for main response, Debug for decoded text
+                m_logger.LogTrace("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
+                m_logger.LogDebug("📤 JSON-RPC Response Text:\n{DecodedText}", decodedText);
+            }
+            else
+            {
+                // DecodeJsonText failed - use Debug for main response only
+                m_logger.LogDebug("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
             }
         }
 
@@ -137,8 +143,14 @@ namespace mcp_nexus.Middleware
             }
         }
 
-        private static string DecodeJsonText(string responseText)
+        private static (string result, bool success) DecodeJsonText(string responseText)
         {
+            // Handle empty or whitespace-only responses
+            if (string.IsNullOrWhiteSpace(responseText))
+            {
+                return ("[Empty response body]", false);
+            }
+
             try
             {
                 // Handle Server-Sent Events format - extract only the JSON data part
@@ -154,7 +166,7 @@ namespace mcp_nexus.Middleware
                     }
                 }
 
-                // Parse JSON and extract the "text" field content
+                // Extract and decode the "text" field content
                 using var document = JsonDocument.Parse(jsonContent);
                 if (document.RootElement.TryGetProperty("result", out var result) &&
                     result.TryGetProperty("content", out var content) &&
@@ -167,7 +179,7 @@ namespace mcp_nexus.Middleware
                         // Decode the text field content
                         var decodedText = System.Text.RegularExpressions.Regex.Unescape(textField.GetString() ?? "");
                         
-                        // Try to format the decoded JSON content for better readability
+                        // Format the decoded JSON content
                         try
                         {
                             using var textDocument = JsonDocument.Parse(decodedText);
@@ -175,24 +187,25 @@ namespace mcp_nexus.Middleware
                             using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
                             textDocument.WriteTo(writer);
                             writer.Flush();
-                            return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+                            return (System.Text.Encoding.UTF8.GetString(stream.ToArray()), true);
                         }
                         catch
                         {
                             // If it's not valid JSON, return the decoded text as-is
-                            return decodedText;
+                            return (decodedText, true);
                         }
                     }
                 }
 
-                // Fallback: return the original response if no text field found
-                return responseText;
+                // If no "text" field found, format the entire JSON content directly
+                return (FormatJsonForLogging(jsonContent), true);
             }
             catch
             {
-                return responseText;
+                return (responseText, false);
             }
         }
+
 
     }
 }

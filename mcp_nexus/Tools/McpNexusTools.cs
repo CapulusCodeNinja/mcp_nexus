@@ -32,6 +32,12 @@ namespace mcp_nexus.Tools
 
             logger.LogInformation("🔓 Opening new debugging session for dump: {DumpPath}", dumpPath);
 
+            // Handle case where MCP framework passes "null" as string instead of actual null
+            if (symbolsPath == "null" || string.IsNullOrWhiteSpace(symbolsPath))
+            {
+                symbolsPath = null;
+            }
+
             try
             {
                 var sessionId = await sessionManager.CreateSessionAsync(dumpPath, symbolsPath);

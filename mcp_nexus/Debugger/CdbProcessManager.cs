@@ -21,6 +21,7 @@ namespace mcp_nexus.Debugger
         private volatile bool m_isActive;  // CRITICAL: volatile ensures visibility across threads
         private volatile bool m_disposed;  // CRITICAL: volatile ensures visibility across threads
         private volatile bool m_initOutputConsumed;  // CRITICAL: ensures init output is consumed before commands execute
+        private volatile bool m_isStopping;  // Track when we're intentionally stopping the process
 
         public Process? DebuggerProcess => m_debuggerProcess;
         public StreamWriter? DebuggerInput => m_debuggerInput;
@@ -204,6 +205,7 @@ namespace mcp_nexus.Debugger
         private bool StartProcessInternal(ProcessStartInfo processInfo, string target)
         {
             m_logger.LogDebug("Starting CDB process...");
+            m_isStopping = false; // Reset stopping flag when starting new process
 
             m_debuggerProcess = Process.Start(processInfo);
             if (m_debuggerProcess == null)
@@ -242,11 +244,16 @@ namespace mcp_nexus.Debugger
             m_debuggerProcess.EnableRaisingEvents = true;
             m_debuggerProcess.Exited += (sender, e) =>
             {
-                if (m_isActive)
+                if (m_isActive && !m_isStopping)
                 {
                     m_logger.LogError("🔥 CDB process exited unexpectedly! Exit code: {ExitCode}, Was active: {WasActive}",
                         m_debuggerProcess?.ExitCode ?? -1, m_isActive);
                     CleanupResources();
+                }
+                else if (m_isStopping)
+                {
+                    m_logger.LogInformation("✅ CDB process stopped as expected during session closure. Exit code: {ExitCode}",
+                        m_debuggerProcess?.ExitCode ?? -1);
                 }
             };
 
@@ -274,6 +281,7 @@ namespace mcp_nexus.Debugger
             }
 
             m_logger.LogDebug("Stopping CDB process...");
+            m_isStopping = true; // Mark that we're intentionally stopping the process
 
             try
             {

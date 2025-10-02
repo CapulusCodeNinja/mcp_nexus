@@ -59,7 +59,21 @@ namespace mcp_nexus.Session
                 // Create session components
                 var sessionLogger = CreateSessionLogger(sessionId);
                 var cdbSession = CreateCdbSession(sessionLogger, sessionId);
-                var commandQueue = CreateCommandQueue(cdbSession, sessionLogger, sessionId);
+                
+                m_logger.LogInformation("🔧 Creating command queue for session {SessionId}", sessionId);
+                ICommandQueueService? commandQueue = null;
+                try
+                {
+                    commandQueue = CreateCommandQueue(cdbSession, sessionLogger, sessionId);
+                    m_logger.LogInformation("✅ Command queue created successfully for session {SessionId}", sessionId);
+                    m_logger.LogInformation("🔍 Command queue object: {CommandQueueType}, IsNull: {IsNull}", 
+                        commandQueue?.GetType().Name ?? "null", commandQueue == null);
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogError(ex, "❌ Failed to create command queue for session {SessionId}", sessionId);
+                    throw;
+                }
 
                 // Start CDB session asynchronously
                 var cdbTarget = m_config.ConstructCdbTarget(dumpPath, symbolsPath);
@@ -77,30 +91,58 @@ namespace mcp_nexus.Session
                     m_logger.LogError("   https://developer.microsoft.com/windows/downloads/windows-sdk/");
 
                     // Cleanup on failure
-                    await CleanupSessionComponents(cdbSession, commandQueue);
+                    if (cdbSession != null && commandQueue != null)
+                    {
+                        await CleanupSessionComponents(cdbSession, commandQueue);
+                    }
                     throw new InvalidOperationException($"Failed to start CDB session for {dumpPath}. CDB.exe not found - please install Windows SDK with Debugging Tools.");
                 }
 
-                // Create session info
-                var sessionInfo = new SessionInfo
+                // Create session info using constructor (CommandQueue is read-only)
+                var sessionInfo = new SessionInfo(
+                    sessionId, 
+                    cdbSession, 
+                    commandQueue, 
+                    dumpPath, 
+                    symbolsPath, 
+                    GetCdbProcessId(cdbSession)
+                );
+
+                // Verify command queue was properly stored
+                m_logger.LogInformation("🔍 Before null check - commandQueue: {CommandQueueType}, sessionInfo.CommandQueue: {SessionCommandQueueType}", 
+                    commandQueue?.GetType().Name ?? "null", sessionInfo.CommandQueue?.GetType().Name ?? "null");
+                
+                if (sessionInfo.CommandQueue == null)
                 {
-                    SessionId = sessionId,
-                    DumpPath = dumpPath,
-                    SymbolsPath = symbolsPath,
-                    CdbSession = cdbSession,
-                    CommandQueue = commandQueue,
-                    CreatedAt = DateTime.UtcNow,
-                    LastActivity = DateTime.UtcNow,
-                    ProcessId = GetCdbProcessId(cdbSession)
-                };
+                    m_logger.LogError("❌ Command queue is null in session info for {SessionId}", sessionId);
+                    throw new InvalidOperationException($"Command queue is null in session info for {sessionId}");
+                }
+
+                m_logger.LogInformation("✅ Session info created with command queue for {SessionId}", sessionId);
 
                 // Add to sessions dictionary first
                 m_sessions[sessionId] = sessionInfo;
                 Interlocked.Increment(ref m_totalSessionsCreated);
 
+                // Wait for command queue to be ready before marking session as Active
+                m_logger.LogInformation("⏳ Waiting for command queue to be ready for session {SessionId}", sessionId);
+                var maxWaitTime = TimeSpan.FromSeconds(5);
+                var waitStart = DateTime.UtcNow;
+                
+                while (DateTime.UtcNow - waitStart < maxWaitTime)
+                {
+                    if (commandQueue is IsolatedCommandQueueService isolatedQueue && isolatedQueue.IsReady())
+                    {
+                        m_logger.LogInformation("✅ Command queue is ready for session {SessionId}", sessionId);
+                        break;
+                    }
+                    
+                    await Task.Delay(100); // Wait 100ms before checking again
+                }
+
                 // Session is ready for use now
                 sessionInfo.Status = SessionStatus.Active;
-                m_logger.LogInformation("✅ Session {SessionId} created and marked as Active (command queue may still be initializing)", sessionId);
+                m_logger.LogInformation("✅ Session {SessionId} created and marked as Active", sessionId);
 
                 // NOTE: Extension loading issue - !analyze requires ext.dll to be loaded
                 // However, auto-loading .load ext has historically caused output capture issues

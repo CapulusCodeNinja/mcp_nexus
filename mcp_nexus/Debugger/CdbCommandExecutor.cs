@@ -6,12 +6,13 @@ namespace mcp_nexus.Debugger
     /// <summary>
     /// Handles command execution and output reading for CDB debugger sessions
     /// </summary>
-    public class CdbCommandExecutor
+    public class CdbCommandExecutor : IDisposable
     {
         private readonly ILogger<CdbCommandExecutor> m_logger;
         private readonly CdbSessionConfiguration m_config;
         private readonly CdbOutputParser m_outputParser;
         private readonly object m_cancellationLock = new();
+        private readonly SemaphoreSlim m_streamAccessSemaphore = new(1, 1); // Add stream access synchronization for async operations
         private CancellationTokenSource? m_currentOperationCts;
 
         public CdbCommandExecutor(
@@ -369,9 +370,19 @@ namespace mcp_nexus.Debugger
                         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
                             cancellationToken, timeoutCts.Token);
 
-                        var line = await debuggerError.ReadLineAsync()
-                            .WaitAsync(TimeSpan.FromMilliseconds(100), linkedCts.Token)
-                            .ConfigureAwait(false);
+                        // Synchronize stream access to prevent concurrent read operations
+                        string? line;
+                        await m_streamAccessSemaphore.WaitAsync(linkedCts.Token).ConfigureAwait(false);
+                        try
+                        {
+                            line = await debuggerError.ReadLineAsync()
+                                .WaitAsync(TimeSpan.FromMilliseconds(100), linkedCts.Token)
+                                .ConfigureAwait(false);
+                        }
+                        finally
+                        {
+                            m_streamAccessSemaphore.Release();
+                        }
                         
                         if (line == null)
                             break; // End of stream
@@ -458,7 +469,17 @@ namespace mcp_nexus.Debugger
                 using var idleCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, idleCts.Token);
 
-                var readTask = debuggerOutput.ReadLineAsync();
+                // Synchronize stream access to prevent concurrent read operations
+                Task<string?> readTask;
+                await m_streamAccessSemaphore.WaitAsync(linkedCts.Token).ConfigureAwait(false);
+                try
+                {
+                    readTask = debuggerOutput.ReadLineAsync();
+                }
+                finally
+                {
+                    m_streamAccessSemaphore.Release();
+                }
                 
                 try
                 {
@@ -512,6 +533,14 @@ namespace mcp_nexus.Debugger
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Disposes of resources
+        /// </summary>
+        public void Dispose()
+        {
+            m_streamAccessSemaphore?.Dispose();
         }
     }
 }
