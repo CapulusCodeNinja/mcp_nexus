@@ -288,6 +288,9 @@ namespace mcp_nexus.Session.Models
         /// <summary>Command timeout in milliseconds</summary>
         public int CommandTimeoutMs { get; set; } = 30000;
 
+        /// <summary>Idle timeout in milliseconds (how long CDB can be silent before timing out)</summary>
+        public int IdleTimeoutMs { get; set; } = 180000;
+
         /// <summary>Symbol server timeout in milliseconds</summary>
         public int SymbolServerTimeoutMs { get; set; } = 30000;
 

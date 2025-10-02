@@ -9,6 +9,7 @@ namespace mcp_nexus.Debugger
     public class CdbSessionConfiguration
     {
         public int CommandTimeoutMs { get; }
+        public int IdleTimeoutMs { get; }
         public string? CustomCdbPath { get; }
         public int SymbolServerTimeoutMs { get; }
         public int SymbolServerMaxRetries { get; }
@@ -17,15 +18,17 @@ namespace mcp_nexus.Debugger
 
         public CdbSessionConfiguration(
             int commandTimeoutMs = 30000,
+            int idleTimeoutMs = 180000,
             string? customCdbPath = null,
             int symbolServerTimeoutMs = 30000,
             int symbolServerMaxRetries = 1,
             string? symbolSearchPath = null,
             int startupDelayMs = 2000)
         {
-            ValidateParameters(commandTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
+            ValidateParameters(commandTimeoutMs, idleTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
 
             CommandTimeoutMs = commandTimeoutMs;
+            IdleTimeoutMs = idleTimeoutMs;
             CustomCdbPath = customCdbPath;
             SymbolServerTimeoutMs = symbolServerTimeoutMs;
             SymbolServerMaxRetries = symbolServerMaxRetries;
@@ -38,12 +41,16 @@ namespace mcp_nexus.Debugger
         /// </summary>
         public static void ValidateParameters(
             int commandTimeoutMs,
+            int idleTimeoutMs,
             int symbolServerTimeoutMs,
             int symbolServerMaxRetries,
             int startupDelayMs)
         {
             if (commandTimeoutMs <= 0)
                 throw new ArgumentOutOfRangeException(nameof(commandTimeoutMs), "Command timeout must be positive");
+
+            if (idleTimeoutMs <= 0)
+                throw new ArgumentOutOfRangeException(nameof(idleTimeoutMs), "Idle timeout must be positive");
 
             if (symbolServerTimeoutMs < 0)
                 throw new ArgumentOutOfRangeException(nameof(symbolServerTimeoutMs), "Symbol server timeout cannot be negative");

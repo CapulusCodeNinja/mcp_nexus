@@ -241,8 +241,10 @@ namespace mcp_nexus.Debugger
 
         private int CalculateIdleTimeout()
         {
-            // Use 30s idle timeout or half of total timeout, whichever is smaller
-            return Math.Min(30000, m_config.CommandTimeoutMs / 2);
+            // Use configured idle timeout to allow symbol server downloads to complete
+            // Symbol servers can be slow, especially on first download or with proxies
+            // Default: 180000ms (3 minutes)
+            return m_config.IdleTimeoutMs;
         }
 
         private bool CheckAbsoluteTimeout(DateTime startTime, StringBuilder output)

@@ -44,6 +44,7 @@ namespace mcp_nexus.Configuration
             services.Configure<CdbSessionOptions>(options =>
             {
                 options.CommandTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:CommandTimeoutMs");
+                options.IdleTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:IdleTimeoutMs", 180000); // Default: 3 minutes
                 options.SymbolServerTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerTimeoutMs");
                 options.SymbolServerMaxRetries = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries");
                 options.SymbolSearchPath = configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath");
@@ -72,6 +73,7 @@ namespace mcp_nexus.Configuration
                     // Auto-detect CDB path
                     var cdbConfig = new mcp_nexus.Debugger.CdbSessionConfiguration(
                         commandTimeoutMs: options.CommandTimeoutMs,
+                        idleTimeoutMs: options.IdleTimeoutMs,
                         customCdbPath: null, // Force auto-detection
                         symbolServerTimeoutMs: options.SymbolServerTimeoutMs,
                         symbolServerMaxRetries: options.SymbolServerMaxRetries,
