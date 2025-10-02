@@ -23,7 +23,7 @@ namespace mcp_nexus.Debugger
             int symbolServerTimeoutMs = 30000,
             int symbolServerMaxRetries = 1,
             string? symbolSearchPath = null,
-            int startupDelayMs = 2000)
+            int startupDelayMs = 1000)
         {
             ValidateParameters(commandTimeoutMs, idleTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
 

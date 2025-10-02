@@ -277,17 +277,19 @@ namespace mcp_nexus.Debugger
         {
             try
             {
-                using var idleCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+                // Use 500ms polling to reduce CPU usage (was 100ms)
+                // This is still responsive but much more efficient during idle waits
+                using var idleCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, idleCts.Token);
 
                 var readTask = debuggerOutput.ReadLineAsync();
-                if (readTask.Wait(100, linkedCts.Token))
+                if (readTask.Wait(500, linkedCts.Token))
                 {
                     return (readTask.Result, true);
                 }
                 else
                 {
-                    // No data within 100ms - return null but continue looping
+                    // No data within 500ms - return null but continue looping
                     return (null, true);
                 }
             }
