@@ -23,6 +23,7 @@ namespace mcp_nexus.Debugger
         public CdbSession(
             ILogger<CdbSession> logger,
             int commandTimeoutMs = 30000,
+            int idleTimeoutMs = 180000,
             string? customCdbPath = null,
             int symbolServerTimeoutMs = 30000,
             int symbolServerMaxRetries = 1,
@@ -33,12 +34,13 @@ namespace mcp_nexus.Debugger
 
             // Create configuration with validation
             m_config = new CdbSessionConfiguration(
-                commandTimeoutMs,
-                customCdbPath,
-                symbolServerTimeoutMs,
-                symbolServerMaxRetries,
-                symbolSearchPath,
-                startupDelayMs);
+                commandTimeoutMs: commandTimeoutMs,
+                idleTimeoutMs: idleTimeoutMs,
+                customCdbPath: customCdbPath,
+                symbolServerTimeoutMs: symbolServerTimeoutMs,
+                symbolServerMaxRetries: symbolServerMaxRetries,
+                symbolSearchPath: symbolSearchPath,
+                startupDelayMs: startupDelayMs);
 
             // CRITICAL FIX: Logger casting was failing, causing NullLogger to be used!
             // This resulted in zero visibility into CdbProcessManager init consumer
