@@ -105,12 +105,12 @@ namespace mcp_nexus_tests.Services
             m_notificationService.Subscribe("test", notification =>
             {
                 // This should not be called for empty event type
-                Assert.True(false, "Handler should not be called for empty event type");
+                Assert.Fail("Handler should not be called for empty event type");
                 return Task.CompletedTask;
             });
 
             // Act & Assert - Should not throw
-            await m_notificationService.PublishNotificationAsync("", null);
+            await m_notificationService.PublishNotificationAsync("", null!);
         }
 
         [Fact]
@@ -125,7 +125,7 @@ namespace mcp_nexus_tests.Services
             });
 
             // Act
-            await m_notificationService.PublishNotificationAsync("test/method", null);
+            await m_notificationService.PublishNotificationAsync("test/method", null!);
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -157,7 +157,7 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task CommandQueueService_CancelNonExistentCommand_DoesNotThrow()
+        public void CommandQueueService_CancelNonExistentCommand_DoesNotThrow()
         {
             // Act & Assert - Should not throw
             m_commandQueueService.CancelCommand("non-existent-command");
@@ -171,7 +171,7 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task CommandQueueService_QueueCommandAfterDisposal_ThrowsObjectDisposedException()
+        public void CommandQueueService_QueueCommandAfterDisposal_ThrowsObjectDisposedException()
         {
             // Arrange
             m_commandQueueService.Dispose();
@@ -181,7 +181,7 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task CommandQueueService_CancelCommandAfterDisposal_ThrowsObjectDisposedException()
+        public void CommandQueueService_CancelCommandAfterDisposal_ThrowsObjectDisposedException()
         {
             // Arrange
             m_commandQueueService.Dispose();
@@ -250,7 +250,7 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task McpNotificationService_UnsubscribeInvalidId_ReturnsFalse()
+        public void McpNotificationService_UnsubscribeInvalidId_ReturnsFalse()
         {
             // Act
             var result = m_notificationService.Unsubscribe("invalid-id");

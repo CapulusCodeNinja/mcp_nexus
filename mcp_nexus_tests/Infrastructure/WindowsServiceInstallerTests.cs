@@ -519,7 +519,10 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             Assert.NotNull(result);
+#pragma warning disable CS4014 // Intentionally not awaiting the task for testing purposes
             Assert.IsType<Task<bool>>(result);
+#pragma warning restore CS4014
+            _ = result; // Suppress CS4014 warning
 
             // Wait for completion (but don't assert the result since we can't control the environment)
             var completed = await Task.WhenAny(result, Task.Delay(5000));
@@ -534,7 +537,10 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             Assert.NotNull(result);
+#pragma warning disable CS4014 // Intentionally not awaiting the task for testing purposes
             Assert.IsType<Task<bool>>(result);
+#pragma warning restore CS4014
+            _ = result; // Suppress CS4014 warning
 
             // Wait for completion (but don't assert the result since we can't control the environment)
             var completed = await Task.WhenAny(result, Task.Delay(5000));
@@ -549,7 +555,10 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             Assert.NotNull(result);
+#pragma warning disable CS4014 // Intentionally not awaiting the task for testing purposes
             Assert.IsType<Task<bool>>(result);
+#pragma warning restore CS4014
+            _ = result; // Suppress CS4014 warning
 
             // Wait for completion (but don't assert the result since we can't control the environment)
             var completed = await Task.WhenAny(result, Task.Delay(5000));
@@ -564,7 +573,10 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             Assert.NotNull(result);
+#pragma warning disable CS4014 // Intentionally not awaiting the task for testing purposes
             Assert.IsType<Task<bool>>(result);
+#pragma warning restore CS4014
+            _ = result; // Suppress CS4014 warning
 
             // Wait for completion (but don't assert the result since we can't control the environment)
             var completed = await Task.WhenAny(result, Task.Delay(5000));

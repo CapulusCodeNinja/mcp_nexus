@@ -19,7 +19,7 @@ namespace mcp_nexus.Caching
         public long MemoryPressureBytes { get; set; }
         public double MemoryUtilizationPercent { get; set; }
         public double MemoryUsagePercent { get; set; }
-        
+
         // Additional properties for test compatibility
         public long HitCount { get; set; }
         public long MissCount { get; set; }

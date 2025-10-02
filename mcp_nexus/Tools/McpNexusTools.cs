@@ -200,7 +200,7 @@ namespace mcp_nexus.Tools
                                 commandQueue = null; // Reset to continue retry loop
                                 continue;
                             }
-                            
+
                             logger.LogTrace("Command queue became available for {SessionId} after {Attempt} attempts ({Ms}ms)",
                                 sessionId, attempt, attempt * 100);
                             break;

@@ -187,7 +187,7 @@ namespace mcp_nexus_tests.Services
             });
 
             // Act
-            await m_service.NotifyCommandHeartbeatAsync("cmd999", "test", TimeSpan.FromMinutes(1), null);
+            await m_service.NotifyCommandHeartbeatAsync("cmd999", "test", TimeSpan.FromMinutes(1), null!);
 
             // Assert
             var heartbeatParams = receivedNotifications[0].Params as McpCommandHeartbeatNotification;

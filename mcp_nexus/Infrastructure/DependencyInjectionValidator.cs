@@ -39,7 +39,7 @@ namespace mcp_nexus.Infrastructure
         public ValidationResult ValidateServiceRegistration(Type serviceType, Type implementationType)
         {
             _validationResults.Clear();
-            
+
             // Check if service type is valid
             if (serviceType == null)
             {

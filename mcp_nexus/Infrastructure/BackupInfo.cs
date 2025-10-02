@@ -14,7 +14,7 @@ namespace mcp_nexus.Infrastructure
         public bool IsValid { get; set; }
         public string[] Files { get; set; } = Array.Empty<string>();
         public string ErrorMessage { get; set; } = string.Empty;
-        
+
         // Additional properties expected by tests
         public DateTime CreationTime { get; set; }
         public long SizeBytes { get; set; }

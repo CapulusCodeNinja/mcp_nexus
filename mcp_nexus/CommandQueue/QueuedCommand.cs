@@ -233,11 +233,11 @@ namespace mcp_nexus.CommandQueue
         public QueuedCommand WithState(CommandState newState)
         {
             return new QueuedCommand(
-                m_id ?? string.Empty, 
-                m_command ?? string.Empty, 
-                m_queueTime, 
-                m_completionSource ?? new TaskCompletionSource<string>(), 
-                m_cancellationTokenSource ?? new CancellationTokenSource(), 
+                m_id ?? string.Empty,
+                m_command ?? string.Empty,
+                m_queueTime,
+                m_completionSource ?? new TaskCompletionSource<string>(),
+                m_cancellationTokenSource ?? new CancellationTokenSource(),
                 newState);
         }
 
@@ -247,11 +247,11 @@ namespace mcp_nexus.CommandQueue
         public QueuedCommand WithCompletionSource(TaskCompletionSource<string> newCompletionSource)
         {
             return new QueuedCommand(
-                m_id ?? string.Empty, 
-                m_command ?? string.Empty, 
-                m_queueTime, 
-                newCompletionSource, 
-                m_cancellationTokenSource ?? new CancellationTokenSource(), 
+                m_id ?? string.Empty,
+                m_command ?? string.Empty,
+                m_queueTime,
+                newCompletionSource,
+                m_cancellationTokenSource ?? new CancellationTokenSource(),
                 m_state);
         }
 

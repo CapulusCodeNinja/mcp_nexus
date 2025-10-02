@@ -245,7 +245,7 @@ namespace mcp_nexus_tests.Services
 
             // Act
             m_service.Subscribe("test-event", Handler);
-            await m_service.SendNotificationAsync("test", null);
+            await m_service.SendNotificationAsync("test", null!);
 
             // Assert
             Assert.True(handlerCalled);
@@ -308,7 +308,7 @@ namespace mcp_nexus_tests.Services
                 100,
                 "Analysis complete",
                 "Process analysis results...",
-                null);
+                null!);
 
             // Assert
             var statusParams = receivedNotifications[0].Params as McpCommandStatusNotification;

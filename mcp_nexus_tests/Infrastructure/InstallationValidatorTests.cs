@@ -5,12 +5,14 @@ using mcp_nexus.Infrastructure;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Runtime.Versioning;
 
 namespace mcp_nexus_tests.Infrastructure
 {
     /// <summary>
     /// Tests for InstallationValidator
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class InstallationValidatorTests
     {
         private readonly Mock<ILogger> _mockLogger;

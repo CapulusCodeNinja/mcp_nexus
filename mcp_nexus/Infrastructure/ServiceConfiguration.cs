@@ -69,7 +69,7 @@ namespace mcp_nexus.Infrastructure
         {
             if (executablePath == null)
                 throw new ArgumentNullException(nameof(executablePath));
-                
+
             var config = new ServiceConfiguration();
             return $"sc create \"{serviceName}\" binPath=\"{executablePath} {config.ServiceArguments}\" DisplayName=\"{config.ServiceDisplayName}\" start= auto";
         }

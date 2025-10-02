@@ -80,7 +80,7 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                _logger.LogInformation("Publishing project {ProjectPath} with configuration {Configuration} and runtime {Runtime}", 
+                _logger.LogInformation("Publishing project {ProjectPath} with configuration {Configuration} and runtime {Runtime}",
                     projectPath, configuration, runtime);
 
                 var publishResult = await RunDotNetPublishAsync(projectPath, outputPath, configuration, runtime);
@@ -291,9 +291,9 @@ namespace mcp_nexus.Infrastructure
                     if (Directory.Exists(dir))
                     {
                         var projectFiles = Directory.GetFiles(dir, "*.csproj", SearchOption.AllDirectories);
-                        var projectFile = projectFiles.FirstOrDefault(f => 
+                        var projectFile = projectFiles.FirstOrDefault(f =>
                             Path.GetFileNameWithoutExtension(f).Equals(projectName, StringComparison.OrdinalIgnoreCase));
-                        
+
                         if (projectFile != null)
                         {
                             return Path.GetDirectoryName(projectFile);

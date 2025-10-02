@@ -159,13 +159,13 @@ namespace mcp_nexus_tests.Notifications
             // Arrange
             var receivedData1 = new List<object>();
             var receivedData2 = new List<object>();
-            
+
             var handler1 = new Func<object, Task>(data =>
             {
                 receivedData1.Add(data);
                 return Task.CompletedTask;
             });
-            
+
             var handler2 = new Func<object, Task>(data =>
             {
                 receivedData2.Add(data);

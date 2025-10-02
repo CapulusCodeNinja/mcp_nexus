@@ -59,14 +59,14 @@ namespace mcp_nexus.Session
                 // Create session components
                 var sessionLogger = CreateSessionLogger(sessionId);
                 var cdbSession = CreateCdbSession(sessionLogger, sessionId);
-                
+
                 m_logger.LogInformation("🔧 Creating command queue for session {SessionId}", sessionId);
                 ICommandQueueService? commandQueue = null;
                 try
                 {
                     commandQueue = CreateCommandQueue(cdbSession, sessionLogger, sessionId);
                     m_logger.LogInformation("✅ Command queue created successfully for session {SessionId}", sessionId);
-                    m_logger.LogInformation("🔍 Command queue object: {CommandQueueType}, IsNull: {IsNull}", 
+                    m_logger.LogInformation("🔍 Command queue object: {CommandQueueType}, IsNull: {IsNull}",
                         commandQueue?.GetType().Name ?? "null", commandQueue == null);
                 }
                 catch (Exception ex)
@@ -103,20 +103,20 @@ namespace mcp_nexus.Session
                 {
                     throw new InvalidOperationException($"Command queue is null for session {sessionId}");
                 }
-                
+
                 var sessionInfo = new SessionInfo(
-                    sessionId, 
-                    cdbSession, 
-                    commandQueue, 
-                    dumpPath, 
-                    symbolsPath, 
+                    sessionId,
+                    cdbSession,
+                    commandQueue,
+                    dumpPath,
+                    symbolsPath,
                     GetCdbProcessId(cdbSession)
                 );
 
                 // Verify command queue was properly stored
-                m_logger.LogInformation("🔍 Before null check - commandQueue: {CommandQueueType}, sessionInfo.CommandQueue: {SessionCommandQueueType}", 
+                m_logger.LogInformation("🔍 Before null check - commandQueue: {CommandQueueType}, sessionInfo.CommandQueue: {SessionCommandQueueType}",
                     commandQueue?.GetType().Name ?? "null", sessionInfo.CommandQueue?.GetType().Name ?? "null");
-                
+
                 if (sessionInfo.CommandQueue == null)
                 {
                     m_logger.LogError("❌ Command queue is null in session info for {SessionId}", sessionId);
@@ -133,7 +133,7 @@ namespace mcp_nexus.Session
                 m_logger.LogInformation("⏳ Waiting for command queue to be ready for session {SessionId}", sessionId);
                 var maxWaitTime = TimeSpan.FromSeconds(5);
                 var waitStart = DateTime.UtcNow;
-                
+
                 while (DateTime.UtcNow - waitStart < maxWaitTime)
                 {
                     if (commandQueue is IsolatedCommandQueueService isolatedQueue && isolatedQueue.IsReady())
@@ -141,7 +141,7 @@ namespace mcp_nexus.Session
                         m_logger.LogInformation("✅ Command queue is ready for session {SessionId}", sessionId);
                         break;
                     }
-                    
+
                     await Task.Delay(100); // Wait 100ms before checking again
                 }
 

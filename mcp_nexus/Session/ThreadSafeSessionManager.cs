@@ -227,8 +227,8 @@ namespace mcp_nexus.Session
             {
                 var isActive = (session.Status == SessionStatus.Active || session.Status == SessionStatus.Initializing) && !session.IsDisposed;
                 var queueExists = session.CommandQueue != null;
-                
-                m_logger.LogTrace("TryGetCommandQueue: {SessionId} found - Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}, QueueExists={QueueExists}", 
+
+                m_logger.LogTrace("TryGetCommandQueue: {SessionId} found - Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}, QueueExists={QueueExists}",
                     sessionId, session.Status, session.IsDisposed, isActive, queueExists);
 
                 if (isActive)

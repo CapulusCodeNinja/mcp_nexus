@@ -183,7 +183,7 @@ namespace mcp_nexus.Debugger
         {
             var debuggerOutput = processManager.DebuggerOutput;
             var debuggerError = processManager.DebuggerError;
-            
+
             if (debuggerOutput == null)
             {
                 m_logger.LogError("No output stream available for reading");
@@ -266,7 +266,7 @@ namespace mcp_nexus.Debugger
         /// Reads stdout and writes lines to channel until command completion marker found
         /// </summary>
         private async Task ReadStdoutToChannelAsync(
-            StreamReader debuggerOutput, 
+            StreamReader debuggerOutput,
             ChannelWriter<(string Line, bool IsStderr)> writer,
             CancellationToken cancellationToken)
         {
@@ -352,8 +352,8 @@ namespace mcp_nexus.Debugger
         /// Uses short timeout to detect when no more data is available
         /// </summary>
         private async Task ReadStderrToChannelAsync(
-            StreamReader debuggerError, 
-            ChannelWriter<(string Line, bool IsStderr)> writer, 
+            StreamReader debuggerError,
+            ChannelWriter<(string Line, bool IsStderr)> writer,
             CancellationToken cancellationToken)
         {
             try
@@ -383,10 +383,10 @@ namespace mcp_nexus.Debugger
                         {
                             m_streamAccessSemaphore.Release();
                         }
-                        
+
                         if (line == null)
                             break; // End of stream
-                        
+
                         emptySpins = 0;
 
                         // Drop markers if they appear on stderr for any reason
@@ -480,7 +480,7 @@ namespace mcp_nexus.Debugger
                 {
                     m_streamAccessSemaphore.Release();
                 }
-                
+
                 try
                 {
                     // TRUE ASYNC: Use WaitAsync instead of blocking Wait()

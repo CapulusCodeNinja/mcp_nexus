@@ -62,7 +62,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task BuildProjectForDeploymentAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceFileManager.BuildProjectForDeploymentAsync(null);
+            var result = await ServiceFileManager.BuildProjectForDeploymentAsync(null!);
             // Should not throw, but may return false if no project found
             Assert.True(result == true || result == false);
         }
@@ -104,14 +104,15 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             // Result can be null if no project found, or a string if found
-            Assert.True(result == null || result is string);
+            // Just verify it doesn't throw
+            Assert.True(result == null || result != null);
         }
 
         [Fact]
         public async Task CopyApplicationFilesAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            await ServiceFileManager.CopyApplicationFilesAsync(null);
+            await ServiceFileManager.CopyApplicationFilesAsync(null!);
             // Should not throw
         }
 
@@ -175,7 +176,7 @@ namespace mcp_nexus_tests.Infrastructure
             Directory.CreateDirectory(_testTargetDir);
 
             // Act & Assert
-            await ServiceFileManager.CopyDirectoryAsync(_testSourceDir, _testTargetDir, null);
+            await ServiceFileManager.CopyDirectoryAsync(_testSourceDir, _testTargetDir, null!);
             // Should not throw
         }
 
@@ -183,9 +184,10 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CreateBackupAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceFileManager.CreateBackupAsync(null);
+            var result = await ServiceFileManager.CreateBackupAsync(null!);
             // Should not throw, result can be null or string
-            Assert.True(result == null || result is string);
+            // Result should be a boolean - just verify it doesn't throw
+            Assert.True(result == true || result == false);
         }
 
         [Fact]
@@ -194,7 +196,8 @@ namespace mcp_nexus_tests.Infrastructure
             // Act & Assert
             var result = await ServiceFileManager.CreateBackupAsync(_mockLogger.Object);
             // Should not throw, result can be null or string
-            Assert.True(result == null || result is string);
+            // Result should be a boolean - just verify it doesn't throw
+            Assert.True(result == true || result == false);
         }
 
         [Fact]

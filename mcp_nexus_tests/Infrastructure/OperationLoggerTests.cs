@@ -43,7 +43,7 @@ namespace mcp_nexus_tests.Services
         public void LogInfo_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var exception = Record.Exception(() => OperationLogger.LogInfo(null, "Test", "Message"));
+            var exception = Record.Exception(() => OperationLogger.LogInfo(null!, "Test", "Message"));
             Assert.Null(exception);
         }
 

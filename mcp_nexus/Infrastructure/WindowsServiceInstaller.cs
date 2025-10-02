@@ -133,7 +133,7 @@ namespace mcp_nexus.Infrastructure
                 // Step 1: Stop the service if it's running
                 Console.WriteLine("Stopping MCP-Nexus service...");
                 logger?.LogInformation("Stopping MCP-Nexus service");
-                
+
                 var stopResult = await RunScCommandAsync("stop \"MCP-Nexus\"", logger);
                 if (stopResult)
                 {
@@ -148,7 +148,7 @@ namespace mcp_nexus.Infrastructure
                 // Step 2: Build the project
                 Console.WriteLine("Building project...");
                 logger?.LogInformation("Building project for deployment");
-                
+
                 var buildResult = await BuildProjectForDeploymentAsync(logger);
                 if (!buildResult)
                 {
@@ -161,7 +161,7 @@ namespace mcp_nexus.Infrastructure
                 // Step 3: Copy new files to installation directory
                 Console.WriteLine("Deploying new files...");
                 logger?.LogInformation("Deploying new files to installation directory");
-                
+
                 var deployResult = await CopyApplicationFilesAsync(logger);
                 if (!deployResult)
                 {
@@ -174,7 +174,7 @@ namespace mcp_nexus.Infrastructure
                 // Step 4: Start the service
                 Console.WriteLine("Starting updated service...");
                 logger?.LogInformation("Starting updated MCP-Nexus service");
-                
+
                 var startResult = await RunScCommandAsync("start \"MCP-Nexus\"", logger);
                 if (startResult)
                 {
@@ -313,7 +313,7 @@ namespace mcp_nexus.Infrastructure
         private const string ServiceName = "MCP-Nexus";
         public const string DisplayName = "MCP Nexus Service";
         public const string Description = "MCP Nexus Debugging Service";
-        
+
         // Additional constants expected by tests
         private const string ServiceDisplayName = "MCP Nexus Server";
         private const string ServiceDescription = "Model Context Protocol server providing AI tool integration";
@@ -376,7 +376,7 @@ namespace mcp_nexus.Infrastructure
             try
             {
                 logger?.LogInformation("Building project for deployment");
-                
+
                 var processStartInfo = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "dotnet",

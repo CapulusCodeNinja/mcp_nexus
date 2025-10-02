@@ -5,6 +5,7 @@
 [![Tests](https://img.shields.io/badge/tests-1,936%20passing-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Coverage](https://img.shields.io/badge/coverage-89.71%25-excellent?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Build](https://img.shields.io/badge/build-0%20warnings-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Version](https://img.shields.io/badge/version-1.0.6.8-blue?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
 
 MCP Nexus is a comprehensive Model Context Protocol (MCP) server that provides AI systems with advanced Windows crash dump analysis capabilities. It combines the power of Microsoft's debugging tools (WinDBG/CDB) with intelligent analysis workflows to help identify root causes of system crashes, memory corruption, and application failures.

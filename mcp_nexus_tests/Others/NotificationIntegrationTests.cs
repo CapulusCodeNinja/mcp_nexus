@@ -64,8 +64,8 @@ namespace mcp_nexus_tests.Integration
                 "executing",
                 75,
                 "Integration test in progress",
-                null,
-                null);
+                null!,
+                null!);
 
             // Assert
             var output = m_stringWriter.ToString();

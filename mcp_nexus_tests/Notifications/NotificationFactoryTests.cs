@@ -75,7 +75,7 @@ namespace mcp_nexus_tests.Notifications
             var status = "running";
 
             // Act
-            var notification = NotificationFactory.CreateCommandStatusNotification(sessionId, commandId, status, 0, null);
+            var notification = NotificationFactory.CreateCommandStatusNotification(sessionId, commandId, status, 0, null!);
 
             // Assert
             Assert.NotNull(notification);
@@ -278,7 +278,7 @@ namespace mcp_nexus_tests.Notifications
             var eventType = "session_started";
 
             // Act
-            var notification = NotificationFactory.CreateSessionEventNotification(sessionId, eventType, null);
+            var notification = NotificationFactory.CreateSessionEventNotification(sessionId, eventType, null!);
 
             // Assert
             Assert.NotNull(notification);

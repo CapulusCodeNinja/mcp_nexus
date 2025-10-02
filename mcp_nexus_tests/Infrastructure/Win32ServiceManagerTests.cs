@@ -5,12 +5,14 @@ using mcp_nexus.Infrastructure;
 using System;
 using System.Runtime.InteropServices;
 using System.Linq;
+using System.Runtime.Versioning;
 
 namespace mcp_nexus_tests.Infrastructure
 {
     /// <summary>
     /// Tests for Win32ServiceManager
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class Win32ServiceManagerTests
     {
         [Fact]

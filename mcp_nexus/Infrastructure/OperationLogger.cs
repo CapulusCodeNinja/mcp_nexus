@@ -43,7 +43,7 @@ namespace mcp_nexus.Infrastructure
                 entry.Result = result;
                 // Duration is calculated property, no assignment needed
 
-                _logger.LogInformation("Operation {Status}: {Operation} - Duration: {Duration}ms - {Result}", 
+                _logger.LogInformation("Operation {Status}: {Operation} - Duration: {Duration}ms - {Result}",
                     success ? "completed" : "failed", operation, entry.Duration?.TotalMilliseconds ?? 0, result);
             }
         }
@@ -58,7 +58,7 @@ namespace mcp_nexus.Infrastructure
                 entry.Error = exception.Message;
                 // Duration is calculated property, no assignment needed
 
-                _logger.LogError(exception, "Operation failed: {Operation} - Duration: {Duration}ms", 
+                _logger.LogError(exception, "Operation failed: {Operation} - Duration: {Duration}ms",
                     operation, entry.Duration?.TotalMilliseconds ?? 0);
             }
         }

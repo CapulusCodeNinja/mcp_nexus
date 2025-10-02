@@ -78,7 +78,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task RunScCommandAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.RunScCommandAsync("query", null);
+            var result = await ServiceRegistryManager.RunScCommandAsync("query", null!);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -114,7 +114,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ForceCleanupServiceAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.ForceCleanupServiceAsync((string)null);
+            var result = await ServiceRegistryManager.ForceCleanupServiceAsync((string)null!);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -132,7 +132,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task DirectRegistryCleanupAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.DirectRegistryCleanupAsync((string)null);
+            var result = await ServiceRegistryManager.DirectRegistryCleanupAsync((string)null!);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -150,7 +150,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CreateServiceAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.CreateServiceAsync((string)null);
+            var result = await ServiceRegistryManager.CreateServiceAsync((string)null!);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -168,7 +168,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task DeleteServiceAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.DeleteServiceAsync((string)null);
+            var result = await ServiceRegistryManager.DeleteServiceAsync((string)null!);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }

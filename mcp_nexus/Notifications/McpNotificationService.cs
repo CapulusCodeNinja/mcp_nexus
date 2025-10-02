@@ -118,7 +118,7 @@ namespace mcp_nexus.Notifications
 
                 m_handlers[eventType].Add(handler);
                 m_subscriptionIds[subscriptionId] = eventType;
-                
+
                 // Enable notifications when first subscriber registers (stdio mode)
                 m_notificationsEnabled = true;
             }
@@ -157,7 +157,7 @@ namespace mcp_nexus.Notifications
                 };
                 m_handlers[eventType].Add(objectHandler);
                 m_subscriptionIds[subscriptionId] = eventType;
-                
+
                 // Enable notifications when first subscriber registers (stdio mode)
                 m_notificationsEnabled = true;
             }
@@ -179,13 +179,13 @@ namespace mcp_nexus.Notifications
                 if (m_subscriptionIds.TryGetValue(subscriptionId, out var eventType))
                 {
                     m_subscriptionIds.Remove(subscriptionId);
-                    
+
                     // Disable notifications when last subscriber unsubscribes
                     if (m_subscriptionIds.Count == 0)
                     {
                         m_notificationsEnabled = false;
                     }
-                    
+
                     // Note: We don't remove the handler from the list as we don't track which handler belongs to which subscription
                     // In a real implementation, you'd need to track handler-to-subscription mapping
                     return true;

@@ -241,11 +241,11 @@ namespace mcp_nexus.Infrastructure
             try
             {
                 logger.LogInformation("Running sc command: {Command} with force={Force}", command, force);
-                
+
                 // This would typically execute sc.exe command
                 // For now, we'll simulate the command execution
                 await Task.Delay(100);
-                
+
                 logger.LogInformation("Sc command executed successfully");
                 return true;
             }

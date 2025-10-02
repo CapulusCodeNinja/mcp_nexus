@@ -215,7 +215,7 @@ namespace mcp_nexus.Infrastructure
 
                 var directory = new DirectoryInfo(servicePath);
                 var files = directory.GetFiles("*", SearchOption.AllDirectories);
-                
+
                 _logger.LogInformation("Found {FileCount} files in service directory", files.Length);
                 await Task.CompletedTask;
                 return files;

@@ -81,7 +81,7 @@ namespace mcp_nexus.Middleware
             responseBody.Seek(0, SeekOrigin.Begin);
 
             var formattedResponse = FormatSseResponseForLogging(responseBodyText);
-            
+
             // Try to decode the text for easier debugging
             // For Trace level, don't truncate; for Debug and higher, truncate large fields
             var (decodedText, decodeSuccess) = DecodeJsonText(responseBodyText, shouldTruncate: false); // Trace level - no truncation
@@ -89,7 +89,7 @@ namespace mcp_nexus.Middleware
             {
                 // DecodeJsonText succeeded - use Trace for main response, Debug for decoded text
                 m_logger.LogTrace("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
-                
+
                 // For Debug level, truncate large fields
                 var (truncatedDecodedText, _) = DecodeJsonText(responseBodyText, shouldTruncate: true);
                 m_logger.LogDebug("📤 JSON-RPC Response Text:\n{DecodedText}", truncatedDecodedText);
@@ -214,7 +214,7 @@ namespace mcp_nexus.Middleware
                 // Handle Server-Sent Events format - extract only the JSON data part
                 var lines = responseText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
                 string jsonContent = responseText;
-                
+
                 foreach (var line in lines)
                 {
                     if (line.StartsWith("data: "))
@@ -236,10 +236,10 @@ namespace mcp_nexus.Middleware
                     {
                         // Decode the text field content
                         var decodedText = System.Text.RegularExpressions.Regex.Unescape(textField.GetString() ?? "");
-                        
+
                         using var textDocument = JsonDocument.Parse(decodedText);
                         var truncatedJson = TruncateLargeFields(textDocument.RootElement, 1000, shouldTruncate);
-                        
+
                         using var stream = new MemoryStream();
                         using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
                         truncatedJson.WriteTo(writer);

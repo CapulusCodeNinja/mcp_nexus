@@ -50,12 +50,12 @@ namespace mcp_nexus.Infrastructure
         public static async Task<InstallationValidationResult> ValidateInstallationPrerequisitesAsync(ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
-            
+
             try
             {
                 logger?.LogInformation("Validating installation prerequisites");
                 await Task.Delay(100); // Placeholder implementation
-                
+
                 result.AddInfo("Installation prerequisites validated successfully");
             }
             catch (Exception ex)
@@ -63,7 +63,7 @@ namespace mcp_nexus.Infrastructure
                 logger?.LogError(ex, "Failed to validate installation prerequisites");
                 result.AddError($"Installation prerequisites validation failed: {ex.Message}");
             }
-            
+
             return result;
         }
 
@@ -75,12 +75,12 @@ namespace mcp_nexus.Infrastructure
         public static async Task<InstallationValidationResult> ValidateUninstallationPrerequisitesAsync(ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
-            
+
             try
             {
                 logger?.LogInformation("Validating uninstallation prerequisites");
                 await Task.Delay(100); // Placeholder implementation
-                
+
                 result.AddInfo("Uninstallation prerequisites validated successfully");
             }
             catch (Exception ex)
@@ -88,7 +88,7 @@ namespace mcp_nexus.Infrastructure
                 logger?.LogError(ex, "Failed to validate uninstallation prerequisites");
                 result.AddError($"Uninstallation prerequisites validation failed: {ex.Message}");
             }
-            
+
             return result;
         }
 
@@ -100,12 +100,12 @@ namespace mcp_nexus.Infrastructure
         public static async Task<InstallationValidationResult> ValidateUpdatePrerequisitesAsync(ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
-            
+
             try
             {
                 logger?.LogInformation("Validating update prerequisites");
                 await Task.Delay(100); // Placeholder implementation
-                
+
                 result.AddInfo("Update prerequisites validated successfully");
             }
             catch (Exception ex)
@@ -113,7 +113,7 @@ namespace mcp_nexus.Infrastructure
                 logger?.LogError(ex, "Failed to validate update prerequisites");
                 result.AddError($"Update prerequisites validation failed: {ex.Message}");
             }
-            
+
             return result;
         }
 
@@ -125,12 +125,12 @@ namespace mcp_nexus.Infrastructure
         public static async Task<InstallationValidationResult> ValidateInstallationEnvironmentAsync(ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
-            
+
             try
             {
                 logger?.LogInformation("Validating installation environment");
                 await Task.Delay(100); // Placeholder implementation
-                
+
                 result.AddInfo("Installation environment validated successfully");
             }
             catch (Exception ex)
@@ -138,7 +138,7 @@ namespace mcp_nexus.Infrastructure
                 logger?.LogError(ex, "Failed to validate installation environment");
                 result.AddError($"Installation environment validation failed: {ex.Message}");
             }
-            
+
             return result;
         }
 
@@ -151,12 +151,12 @@ namespace mcp_nexus.Infrastructure
         public static async Task<InstallationValidationResult> ValidateServiceConfigurationAsync(ServiceConfiguration configuration, ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
-            
+
             try
             {
                 logger?.LogInformation("Validating service configuration");
                 await Task.Delay(100); // Placeholder implementation
-                
+
                 result.AddInfo("Service configuration validated successfully");
             }
             catch (Exception ex)
@@ -164,7 +164,7 @@ namespace mcp_nexus.Infrastructure
                 logger?.LogError(ex, "Failed to validate service configuration");
                 result.AddError($"Service configuration validation failed: {ex.Message}");
             }
-            
+
             return result;
         }
 
@@ -178,12 +178,12 @@ namespace mcp_nexus.Infrastructure
         public static async Task<InstallationValidationResult> ValidateInstallationFilesAsync(string sourcePath, string[] requiredFiles, ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
-            
+
             try
             {
                 logger?.LogInformation("Validating installation files");
                 await Task.Delay(100); // Placeholder implementation
-                
+
                 result.AddInfo("Installation files validated successfully");
             }
             catch (Exception ex)
@@ -191,7 +191,7 @@ namespace mcp_nexus.Infrastructure
                 logger?.LogError(ex, "Failed to validate installation files");
                 result.AddError($"Installation files validation failed: {ex.Message}");
             }
-            
+
             return result;
         }
 
@@ -203,11 +203,11 @@ namespace mcp_nexus.Infrastructure
         public static InstallationValidationResult ValidateInstallationSuccess(ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
-            
+
             try
             {
                 logger?.LogInformation("Validating installation success");
-                
+
                 result.AddInfo("Installation success validated");
             }
             catch (Exception ex)
@@ -215,7 +215,7 @@ namespace mcp_nexus.Infrastructure
                 logger?.LogError(ex, "Failed to validate installation success");
                 result.AddError($"Installation success validation failed: {ex.Message}");
             }
-            
+
             return result;
         }
     }

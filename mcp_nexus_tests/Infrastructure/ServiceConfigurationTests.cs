@@ -18,7 +18,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var config = new ServiceConfiguration();
-            
+
             // Act & Assert
             Assert.Equal("MCP-Nexus", _config.ServiceName);
         }

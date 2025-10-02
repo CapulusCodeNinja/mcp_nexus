@@ -103,7 +103,7 @@ namespace mcp_nexus.CommandQueue
 
                 var completionTime = DateTime.UtcNow;
                 var elapsed = completionTime - startTime;
-                
+
                 // Log detailed command statistics
                 LogCommandStatistics(queuedCommand, startTime, completionTime, CommandState.Completed);
 
@@ -125,7 +125,7 @@ namespace mcp_nexus.CommandQueue
 
                 var completionTime = DateTime.UtcNow;
                 var elapsed = completionTime - startTime;
-                
+
                 // Log detailed command statistics
                 LogCommandStatistics(queuedCommand, startTime, completionTime, CommandState.Cancelled);
 
@@ -136,7 +136,7 @@ namespace mcp_nexus.CommandQueue
             {
                 // Service shutdown
                 CompleteCommand(queuedCommand, "Service is shutting down", CommandState.Cancelled);
-                
+
                 var completionTime = DateTime.UtcNow;
                 LogCommandStatistics(queuedCommand, startTime, completionTime, CommandState.Cancelled);
 
@@ -151,7 +151,7 @@ namespace mcp_nexus.CommandQueue
 
                 var completionTime = DateTime.UtcNow;
                 var elapsed = completionTime - startTime;
-                
+
                 // Log detailed command statistics
                 LogCommandStatistics(queuedCommand, startTime, completionTime, CommandState.Failed);
 

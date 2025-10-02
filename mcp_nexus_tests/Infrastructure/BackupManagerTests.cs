@@ -79,7 +79,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CreateBackupAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await BackupManager.CreateBackupAsync(null);
+            var result = await BackupManager.CreateBackupAsync(null!);
             // Should not throw
         }
 
@@ -95,7 +95,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupOldBackupsAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            await BackupManager.CleanupOldBackupsAsync(5, null);
+            await BackupManager.CleanupOldBackupsAsync(5, null!);
             // Should not throw
         }
 
@@ -126,7 +126,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void GetBackupInfo_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = BackupManager.GetBackupInfo(null);
+            var result = BackupManager.GetBackupInfo(null!);
             Assert.NotNull(result);
         }
 
