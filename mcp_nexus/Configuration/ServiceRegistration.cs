@@ -62,25 +62,33 @@ namespace mcp_nexus.Configuration
                     logger.Info("🔍 No CDB path configured - starting auto-detect");
                 }
 
-                // Auto-detect CDB path SYNCHRONOUSLY during service registration
-                var cdbConfig = new mcp_nexus.Debugger.CdbSessionConfiguration(
-                    commandTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:CommandTimeoutMs"),
-                    idleTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:IdleTimeoutMs", 180000),
-                    customCdbPath: null, // Force auto-detection
-                    symbolServerTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:SymbolServerTimeoutMs"),
-                    symbolServerMaxRetries: configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries"),
-                    symbolSearchPath: configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath") ?? "",
-                    startupDelayMs: configuration.GetValue<int>("McpNexus:Debugging:StartupDelayMs", 1000)
-                );
-                resolvedCdbPath = cdbConfig.FindCdbPath();
+                try
+                {
+                    // Auto-detect CDB path SYNCHRONOUSLY during service registration
+                    var cdbConfig = new mcp_nexus.Debugger.CdbSessionConfiguration(
+                        commandTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:CommandTimeoutMs"),
+                        idleTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:IdleTimeoutMs", 180000),
+                        customCdbPath: null, // Force auto-detection
+                        symbolServerTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:SymbolServerTimeoutMs"),
+                        symbolServerMaxRetries: configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries"),
+                        symbolSearchPath: configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath") ?? "",
+                        startupDelayMs: configuration.GetValue<int>("McpNexus:Debugging:StartupDelayMs", 1000)
+                    );
+                    resolvedCdbPath = cdbConfig.FindCdbPath();
 
-                if (resolvedCdbPath != null)
-                {
-                    logger.Info("✅ CDB auto-detect succeeded: {CdbPath}", resolvedCdbPath);
+                    if (resolvedCdbPath != null)
+                    {
+                        logger.Info("✅ CDB auto-detect succeeded: {CdbPath}", resolvedCdbPath);
+                    }
+                    else
+                    {
+                        logger.Error("❌ CDB auto-detect failed - no CDB found in standard locations or PATH");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    logger.Error("❌ CDB auto-detect failed - no CDB found in standard locations or PATH");
+                    logger.Error(ex, "💥 Exception during CDB auto-detection: {Message}", ex.Message);
+                    resolvedCdbPath = null;
                 }
             }
 
@@ -92,6 +100,7 @@ namespace mcp_nexus.Configuration
                 options.SymbolServerTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerTimeoutMs");
                 options.SymbolServerMaxRetries = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries");
                 options.SymbolSearchPath = configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath");
+                options.StartupDelayMs = configuration.GetValue<int>("McpNexus:Debugging:StartupDelayMs", 1000);
                 options.CustomCdbPath = resolvedCdbPath; // Use pre-resolved path
             });
 

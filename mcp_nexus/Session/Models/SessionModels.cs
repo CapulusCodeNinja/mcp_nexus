@@ -300,6 +300,9 @@ namespace mcp_nexus.Session.Models
         /// <summary>Symbol search path</summary>
         public string? SymbolSearchPath { get; set; }
 
+        /// <summary>Startup delay in milliseconds (how long to wait after CDB starts before reading output)</summary>
+        public int StartupDelayMs { get; set; } = 1000;
+
         /// <summary>Custom CDB executable path</summary>
         public string? CustomCdbPath { get; set; }
     }
