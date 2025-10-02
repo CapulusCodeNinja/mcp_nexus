@@ -214,8 +214,7 @@ namespace mcp_nexus_tests.Services
                     "test reason",
                     "Recovery Started",
                     false,
-                    It.IsAny<string>(),
-                    It.IsAny<string[]>()),
+                    It.IsAny<string>()),
                 Times.Once);
         }
 
@@ -358,8 +357,7 @@ namespace mcp_nexus_tests.Services
                     "test reason",
                     "Force Restart Started",
                     false,
-                    "Force restarting CDB session",
-                    It.IsAny<string[]>()),
+                    "Force restarting CDB session"),
                 Times.Once);
         }
 
@@ -481,7 +479,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_mockNotificationService.Setup(x => x.NotifySessionRecoveryAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<string[]>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>()))
                 .ThrowsAsync(new InvalidOperationException("Notification failed"));
 
             m_service = new CdbSessionRecoveryService(
@@ -507,7 +505,7 @@ namespace mcp_nexus_tests.Services
                 .Returns(false); // Inactive after stop
 
             m_mockNotificationService.Setup(x => x.NotifySessionRecoveryAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<string[]>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>()))
                 .ThrowsAsync(new InvalidOperationException("Notification failed"));
 
             m_service = new CdbSessionRecoveryService(

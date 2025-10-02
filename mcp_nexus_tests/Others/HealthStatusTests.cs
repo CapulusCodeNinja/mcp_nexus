@@ -35,28 +35,18 @@ namespace mcp_nexus_tests.Health
             // Arrange
             var timestamp = DateTime.UtcNow;
             var uptime = TimeSpan.FromHours(5);
-            var commandQueue = new CommandQueueHealthStatus
-            {
-                QueueSize = 10,
-                ActiveCommands = 3,
-                ProcessedCommands = 100,
-                FailedCommands = 5
-            };
+            var commandQueue = new CommandQueueHealthStatus();
+            commandQueue.SetStatus(10, 3, 100, 5);
             var issues = new List<string> { "High memory usage", "Slow response time" };
 
             // Act
-            var healthStatus = new HealthStatus
+            var healthStatus = new HealthStatus();
+            healthStatus.SetHealthInfo("healthy", timestamp, uptime, 1024 * 1024 * 500, 5, 12345, "TEST-MACHINE");
+            healthStatus.SetCommandQueue(commandQueue);
+            foreach (var issue in issues)
             {
-                Status = "healthy",
-                Timestamp = timestamp,
-                Uptime = uptime,
-                MemoryUsage = 1024 * 1024 * 500, // 500 MB
-                ActiveSessions = 5,
-                CommandQueue = commandQueue,
-                ProcessId = 12345,
-                MachineName = "TEST-MACHINE",
-                Issues = issues
-            };
+                healthStatus.AddIssue(issue);
+            }
 
             // Assert
             Assert.Equal("healthy", healthStatus.Status);
@@ -80,7 +70,8 @@ namespace mcp_nexus_tests.Health
         public void HealthStatus_Status_CanBeSet(string status)
         {
             // Act
-            var healthStatus = new HealthStatus { Status = status };
+            var healthStatus = new HealthStatus();
+            healthStatus.SetHealthInfo(status, DateTime.UtcNow, TimeSpan.Zero, 0, 0, 0, string.Empty);
 
             // Assert
             Assert.Equal(status, healthStatus.Status);
@@ -90,12 +81,8 @@ namespace mcp_nexus_tests.Health
         public void HealthStatus_WithNegativeValues_HandlesCorrectly()
         {
             // Act
-            var healthStatus = new HealthStatus
-            {
-                MemoryUsage = -1024,
-                ActiveSessions = -1,
-                ProcessId = -1
-            };
+            var healthStatus = new HealthStatus();
+            healthStatus.SetHealthInfo("unknown", DateTime.UtcNow, TimeSpan.Zero, -1024, -1, -1, string.Empty);
 
             // Assert
             Assert.Equal(-1024, healthStatus.MemoryUsage);
@@ -107,12 +94,8 @@ namespace mcp_nexus_tests.Health
         public void HealthStatus_WithMaxValues_HandlesCorrectly()
         {
             // Act
-            var healthStatus = new HealthStatus
-            {
-                MemoryUsage = long.MaxValue,
-                ActiveSessions = int.MaxValue,
-                ProcessId = int.MaxValue
-            };
+            var healthStatus = new HealthStatus();
+            healthStatus.SetHealthInfo("unknown", DateTime.UtcNow, TimeSpan.Zero, long.MaxValue, int.MaxValue, int.MaxValue, string.Empty);
 
             // Assert
             Assert.Equal(long.MaxValue, healthStatus.MemoryUsage);
@@ -124,17 +107,14 @@ namespace mcp_nexus_tests.Health
         public void HealthStatus_WithNullValues_HandlesGracefully()
         {
             // Act
-            var healthStatus = new HealthStatus
-            {
-                Status = null!,
-                MachineName = null!,
-                Issues = null!
-            };
+            var healthStatus = new HealthStatus();
+            healthStatus.SetHealthInfo(null!, DateTime.UtcNow, TimeSpan.Zero, 0, 0, 0, null!);
 
             // Assert
             Assert.Null(healthStatus.Status);
-            Assert.Null(healthStatus.MachineName);
-            Assert.Null(healthStatus.Issues);
+            Assert.Equal(string.Empty, healthStatus.MachineName);
+            Assert.NotNull(healthStatus.Issues);
+            Assert.Empty(healthStatus.Issues);
         }
 
         [Fact]
@@ -154,13 +134,8 @@ namespace mcp_nexus_tests.Health
         public void CommandQueueHealthStatus_WithValues_SetsProperties()
         {
             // Act
-            var commandQueueHealth = new CommandQueueHealthStatus
-            {
-                QueueSize = 15,
-                ActiveCommands = 5,
-                ProcessedCommands = 1000,
-                FailedCommands = 25
-            };
+            var commandQueueHealth = new CommandQueueHealthStatus();
+            commandQueueHealth.SetStatus(15, 5, 1000, 25);
 
             // Assert
             Assert.Equal(15, commandQueueHealth.QueueSize);
@@ -173,13 +148,8 @@ namespace mcp_nexus_tests.Health
         public void CommandQueueHealthStatus_WithNegativeValues_HandlesCorrectly()
         {
             // Act
-            var commandQueueHealth = new CommandQueueHealthStatus
-            {
-                QueueSize = -5,
-                ActiveCommands = -2,
-                ProcessedCommands = -100,
-                FailedCommands = -10
-            };
+            var commandQueueHealth = new CommandQueueHealthStatus();
+            commandQueueHealth.SetStatus(-5, -2, -100, -10);
 
             // Assert
             Assert.Equal(-5, commandQueueHealth.QueueSize);
@@ -192,13 +162,8 @@ namespace mcp_nexus_tests.Health
         public void CommandQueueHealthStatus_WithMaxValues_HandlesCorrectly()
         {
             // Act
-            var commandQueueHealth = new CommandQueueHealthStatus
-            {
-                QueueSize = int.MaxValue,
-                ActiveCommands = int.MaxValue,
-                ProcessedCommands = long.MaxValue,
-                FailedCommands = long.MaxValue
-            };
+            var commandQueueHealth = new CommandQueueHealthStatus();
+            commandQueueHealth.SetStatus(int.MaxValue, int.MaxValue, long.MaxValue, long.MaxValue);
 
             // Assert
             Assert.Equal(int.MaxValue, commandQueueHealth.QueueSize);
@@ -211,13 +176,8 @@ namespace mcp_nexus_tests.Health
         public void CommandQueueHealthStatus_WithZeroValues_HandlesCorrectly()
         {
             // Act
-            var commandQueueHealth = new CommandQueueHealthStatus
-            {
-                QueueSize = 0,
-                ActiveCommands = 0,
-                ProcessedCommands = 0,
-                FailedCommands = 0
-            };
+            var commandQueueHealth = new CommandQueueHealthStatus();
+            commandQueueHealth.SetStatus(0, 0, 0, 0);
 
             // Assert
             Assert.Equal(0, commandQueueHealth.QueueSize);

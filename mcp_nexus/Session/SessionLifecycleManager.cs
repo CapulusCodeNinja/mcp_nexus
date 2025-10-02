@@ -157,14 +157,7 @@ namespace mcp_nexus.Session
                         cancelledCount, sessionId);
                 }
 
-                // Stop CDB session
-                var stopSuccess = await sessionInfo.CdbSession.StopSession();
-                if (!stopSuccess)
-                {
-                    m_logger.LogWarning("CDB session stop returned false for session {SessionId}", sessionId);
-                }
-
-                // Cleanup components
+                // Cleanup components (includes stopping CDB session)
                 await CleanupSessionComponents(sessionInfo.CdbSession, sessionInfo.CommandQueue);
 
                 Interlocked.Increment(ref m_totalSessionsClosed);

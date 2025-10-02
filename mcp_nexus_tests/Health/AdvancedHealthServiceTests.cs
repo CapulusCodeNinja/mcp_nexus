@@ -323,17 +323,13 @@ namespace mcp_nexus_tests.Health
         public void AdvancedHealthStatus_Properties_WorkCorrectly()
         {
             // Arrange
-            var status = new AdvancedHealthStatus
-            {
-                Timestamp = DateTime.UtcNow,
-                IsHealthy = true,
-                Message = "Test message",
-                MemoryUsage = new MemoryHealth(),
-                CpuUsage = new CpuHealth(),
-                DiskUsage = new DiskHealth(),
-                ThreadCount = new ThreadHealth(),
-                GcStatus = new GcHealth()
-            };
+            var status = new AdvancedHealthStatus();
+            status.SetHealthStatus(true, "Test message");
+            status.SetMemoryUsage(new MemoryHealth());
+            status.SetCpuUsage(new CpuHealth());
+            status.SetDiskUsage(new DiskHealth());
+            status.SetThreadCount(new ThreadHealth());
+            status.SetGcStatus(new GcHealth());
 
             // Assert
             Assert.True(status.Timestamp > DateTime.MinValue);
@@ -350,15 +346,8 @@ namespace mcp_nexus_tests.Health
         public void MemoryHealth_Properties_WorkCorrectly()
         {
             // Arrange
-            var memory = new MemoryHealth
-            {
-                IsHealthy = true,
-                WorkingSetMB = 100.5,
-                PrivateMemoryMB = 50.25,
-                VirtualMemoryMB = 200.75,
-                TotalPhysicalMemoryMB = 1000.0,
-                Message = "Memory is healthy"
-            };
+            var memory = new MemoryHealth();
+            memory.SetMemoryInfo(true, 100.5, 50.25, 200.75, 1000.0, "Memory is healthy");
 
             // Assert
             Assert.True(memory.IsHealthy);

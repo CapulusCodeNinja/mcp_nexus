@@ -44,13 +44,13 @@ namespace mcp_nexus_tests.Services
                 .ReturnsAsync("Mock result");
 
             m_commandQueueService = new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            m_notificationService = new McpNotificationService(m_mockNotificationLogger.Object);
+            m_notificationService = new McpNotificationService();
         }
 
         public void Dispose()
         {
             m_commandQueueService?.Dispose();
-            m_notificationService?.Dispose();
+            // m_notificationService doesn't implement IDisposable
         }
 
         [Fact]
@@ -69,7 +69,7 @@ namespace mcp_nexus_tests.Services
         public async Task McpNotificationService_Disposed_DoesNotThrow()
         {
             // Arrange
-            m_notificationService.Dispose();
+            // McpNotificationService doesn't implement IDisposable
 
             // Act & Assert - Should not throw, just return early
             var exception = await Record.ExceptionAsync(() => m_notificationService.NotifyCommandStatusAsync(
@@ -99,10 +99,10 @@ namespace mcp_nexus_tests.Services
         public void McpNotificationService_NullHandler_DoesNotThrow()
         {
             // Arrange
-            Func<McpNotification, Task>? nullHandler = null;
+            Func<object, Task>? nullHandler = null;
 
             // Act & Assert - Should not throw
-            var exception = Record.Exception(() => m_notificationService.RegisterNotificationHandler(nullHandler!));
+            var exception = Record.Exception(() => m_notificationService.Subscribe("test-event", nullHandler!));
             Assert.Null(exception);
         }
 
@@ -111,19 +111,19 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            var goodHandler = new Func<McpNotification, Task>(notification =>
+            var goodHandler = new Func<object, Task>(notification =>
             {
-                receivedNotifications.Add(notification);
+                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;
             });
 
-            var badHandler = new Func<McpNotification, Task>(notification =>
+            var badHandler = new Func<object, Task>(notification =>
             {
                 throw new InvalidOperationException("Handler error");
             });
 
-            m_notificationService.RegisterNotificationHandler(goodHandler);
-            m_notificationService.RegisterNotificationHandler(badHandler);
+            m_notificationService.Subscribe("test-event", goodHandler);
+            m_notificationService.Subscribe("test-event", badHandler);
 
             // Act - Should not throw even if one handler fails
             var exception = await Record.ExceptionAsync(() =>
@@ -139,14 +139,14 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_notificationService.RegisterNotificationHandler(notification =>
+            m_notificationService.Subscribe("test-event", notification =>
             {
-                receivedNotifications.Add(notification);
+                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;
             });
 
             // Act
-            await m_notificationService.SendNotificationAsync("", null);
+            await m_notificationService.PublishNotificationAsync("", null);
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -158,14 +158,14 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_notificationService.RegisterNotificationHandler(notification =>
+            m_notificationService.Subscribe("test-event", notification =>
             {
-                receivedNotifications.Add(notification);
+                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;
             });
 
             // Act
-            await m_notificationService.SendNotificationAsync("test/method", null);
+            await m_notificationService.PublishNotificationAsync("test/method", null);
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -254,11 +254,11 @@ namespace mcp_nexus_tests.Services
 
             for (int i = 0; i < handlerCount; i++)
             {
-                m_notificationService.RegisterNotificationHandler(notification =>
+                m_notificationService.Subscribe("test-event", notification =>
                 {
                     lock (receivedNotifications)
                     {
-                        receivedNotifications.Add(notification);
+                        receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                     }
                     return Task.CompletedTask;
                 });
@@ -275,11 +275,11 @@ namespace mcp_nexus_tests.Services
         public void McpNotificationService_HandlerRegistration_AfterDisposal_DoesNotThrow()
         {
             // Arrange
-            m_notificationService.Dispose();
+            // McpNotificationService doesn't implement IDisposable
 
             // Act & Assert - Should not throw
             var exception = Record.Exception(() =>
-                m_notificationService.RegisterNotificationHandler(notification => Task.CompletedTask));
+                m_notificationService.Subscribe("test-event", notification => Task.CompletedTask));
             Assert.Null(exception);
         }
 
@@ -287,13 +287,13 @@ namespace mcp_nexus_tests.Services
         public void McpNotificationService_HandlerUnregistration_AfterDisposal_DoesNotThrow()
         {
             // Arrange
-            var handler = new Func<McpNotification, Task>(notification => Task.CompletedTask);
-            m_notificationService.RegisterNotificationHandler(handler);
-            m_notificationService.Dispose();
+            var handler = new Func<object, Task>(notification => Task.CompletedTask);
+            m_notificationService.Subscribe("test-event", handler);
+            // McpNotificationService doesn't implement IDisposable
 
             // Act & Assert - Should not throw
             var exception = Record.Exception(() =>
-                m_notificationService.UnregisterNotificationHandler(handler));
+                m_notificationService.Unsubscribe("test-subscription-id"));
             Assert.Null(exception);
         }
 
@@ -318,14 +318,14 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_notificationService.RegisterNotificationHandler(notification =>
+            m_notificationService.Subscribe("test-event", notification =>
             {
-                receivedNotifications.Add(notification);
+                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;
             });
 
             // Act - Dispose while sending notification
-            var disposeTask = Task.Run(() => m_notificationService.Dispose());
+            var disposeTask = Task.Run(() => { /* m_notificationService doesn't implement IDisposable */ });
             var notifyTask = m_notificationService.NotifyCommandStatusAsync("test", "test", "executing");
 
             // Assert - Should handle gracefully

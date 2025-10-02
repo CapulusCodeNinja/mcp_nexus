@@ -95,7 +95,7 @@ namespace mcp_nexus
                         });
                         var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
-                        await WindowsServiceInstaller.InstallServiceAsync("MCP.Nexus", "MCP Nexus Service", "MCP Nexus Debugging Service");
+                        await WindowsServiceInstaller.InstallServiceAsync(logger);
                         Environment.Exit(0);
                     }
                     else
@@ -119,7 +119,7 @@ namespace mcp_nexus
                         });
                         var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
-                        await WindowsServiceInstaller.UninstallServiceAsync("MCP.Nexus");
+                        await WindowsServiceInstaller.UninstallServiceAsync(logger);
                         Environment.Exit(0);
                     }
                     else
@@ -143,7 +143,7 @@ namespace mcp_nexus
                         });
                         var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
-                        await WindowsServiceInstaller.ForceUninstallServiceAsync("MCP.Nexus");
+                        await WindowsServiceInstaller.ForceUninstallServiceAsync(logger);
                         Environment.Exit(0);
                     }
                     else
@@ -176,7 +176,7 @@ namespace mcp_nexus
                         Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Starting update service call...");
                         Console.Error.Flush();
 
-                        await WindowsServiceInstaller.UpdateServiceAsync("MCP.Nexus", "MCP Nexus Service", "MCP Nexus Debugging Service");
+                        await WindowsServiceInstaller.UpdateServiceAsync(logger);
 
                         Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Update service call completed");
                         Console.Error.Flush();

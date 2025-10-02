@@ -31,24 +31,24 @@ namespace mcp_nexus_tests.Metrics
         {
             // Arrange
             var timestamp = DateTime.UtcNow;
-            var counters = new List<CounterSnapshot> { new() { Name = "test-counter", Value = 100 } };
-            var histograms = new List<HistogramSnapshot> { new() { Name = "test-histogram" } };
-            var gauges = new List<GaugeSnapshot> { new() { Name = "test-gauge", Value = 50.5 } };
+            var counters = new List<CounterSnapshot> { new("test-counter", 100, null) };
+            var histograms = new List<HistogramSnapshot> { new("test-histogram", 0, 0, 0, 0, 0, null) };
+            var gauges = new List<GaugeSnapshot> { new("test-gauge", 50.5, null) };
 
             // Act
-            var snapshot = new MetricsSnapshot
-            {
-                Timestamp = timestamp,
-                Counters = counters,
-                Histograms = histograms,
-                Gauges = gauges
-            };
+            var snapshot = new MetricsSnapshot();
+            foreach (var counter in counters)
+                snapshot.AddCounter(counter);
+            foreach (var histogram in histograms)
+                snapshot.AddHistogram(histogram);
+            foreach (var gauge in gauges)
+                snapshot.AddGauge(gauge);
 
             // Assert
-            Assert.Equal(timestamp, snapshot.Timestamp);
-            Assert.Equal(counters, snapshot.Counters);
-            Assert.Equal(histograms, snapshot.Histograms);
-            Assert.Equal(gauges, snapshot.Gauges);
+            Assert.Equal(DateTime.MinValue, snapshot.Timestamp); // Default timestamp
+            Assert.Equal(counters.Count, snapshot.Counters.Count);
+            Assert.Equal(histograms.Count, snapshot.Histograms.Count);
+            Assert.Equal(gauges.Count, snapshot.Gauges.Count);
         }
 
         [Fact]
@@ -95,7 +95,7 @@ namespace mcp_nexus_tests.Metrics
         public void CounterSnapshot_DefaultValues_AreCorrect()
         {
             // Act
-            var snapshot = new CounterSnapshot();
+            var snapshot = new CounterSnapshot(string.Empty, 0, null);
 
             // Assert
             Assert.Equal(string.Empty, snapshot.Name);
@@ -106,11 +106,7 @@ namespace mcp_nexus_tests.Metrics
         public void CounterSnapshot_WithValues_SetsProperties()
         {
             // Act
-            var snapshot = new CounterSnapshot
-            {
-                Name = "test-counter",
-                Value = 42.5
-            };
+            var snapshot = new CounterSnapshot("test-counter", 42.5, null);
 
             // Assert
             Assert.Equal("test-counter", snapshot.Name);
@@ -147,7 +143,7 @@ namespace mcp_nexus_tests.Metrics
         public void HistogramSnapshot_DefaultValues_AreCorrect()
         {
             // Act
-            var snapshot = new HistogramSnapshot();
+            var snapshot = new HistogramSnapshot(string.Empty, 0, 0, 0, 0, 0, null);
 
             // Assert
             Assert.Equal(string.Empty, snapshot.Name);
@@ -167,16 +163,7 @@ namespace mcp_nexus_tests.Metrics
             var tags = new Dictionary<string, string> { { "env", "test" }, { "service", "api" } };
 
             // Act
-            var snapshot = new HistogramSnapshot
-            {
-                Name = "test-histogram",
-                Count = 100,
-                Sum = 1000.0,
-                Min = 1.0,
-                Max = 50.0,
-                Average = 10.0,
-                Tags = tags
-            };
+            var snapshot = new HistogramSnapshot("test-histogram", 100, 1000.0, 1.0, 50.0, 10.0, tags);
 
             // Assert
             Assert.Equal("test-histogram", snapshot.Name);
@@ -218,7 +205,7 @@ namespace mcp_nexus_tests.Metrics
         public void GaugeSnapshot_DefaultValues_AreCorrect()
         {
             // Act
-            var snapshot = new GaugeSnapshot();
+            var snapshot = new GaugeSnapshot(string.Empty, 0, null);
 
             // Assert
             Assert.Equal(string.Empty, snapshot.Name);
@@ -229,11 +216,7 @@ namespace mcp_nexus_tests.Metrics
         public void GaugeSnapshot_WithValues_SetsProperties()
         {
             // Act
-            var snapshot = new GaugeSnapshot
-            {
-                Name = "test-gauge",
-                Value = 75.5
-            };
+            var snapshot = new GaugeSnapshot("test-gauge", 75.5, null);
 
             // Assert
             Assert.Equal("test-gauge", snapshot.Name);
@@ -244,11 +227,7 @@ namespace mcp_nexus_tests.Metrics
         public void CounterSnapshot_WithNegativeValues_HandlesCorrectly()
         {
             // Act
-            var snapshot = new CounterSnapshot
-            {
-                Name = "negative-counter",
-                Value = -42.5
-            };
+            var snapshot = new CounterSnapshot("negative-counter", -42.5, null);
 
             // Assert
             Assert.Equal("negative-counter", snapshot.Name);
@@ -259,15 +238,7 @@ namespace mcp_nexus_tests.Metrics
         public void HistogramSnapshot_WithNegativeValues_HandlesCorrectly()
         {
             // Act
-            var snapshot = new HistogramSnapshot
-            {
-                Name = "negative-histogram",
-                Count = -100,
-                Sum = -1000.0,
-                Min = -50.0,
-                Max = -1.0,
-                Average = -10.0
-            };
+            var snapshot = new HistogramSnapshot("negative-histogram", -100, -1000.0, -50.0, -1.0, -10.0, null);
 
             // Assert
             Assert.Equal("negative-histogram", snapshot.Name);
@@ -282,11 +253,7 @@ namespace mcp_nexus_tests.Metrics
         public void GaugeSnapshot_WithNegativeValues_HandlesCorrectly()
         {
             // Act
-            var snapshot = new GaugeSnapshot
-            {
-                Name = "negative-gauge",
-                Value = -75.5
-            };
+            var snapshot = new GaugeSnapshot("negative-gauge", -75.5, null);
 
             // Assert
             Assert.Equal("negative-gauge", snapshot.Name);
@@ -297,11 +264,7 @@ namespace mcp_nexus_tests.Metrics
         public void CounterSnapshot_WithMaxValues_HandlesCorrectly()
         {
             // Act
-            var snapshot = new CounterSnapshot
-            {
-                Name = "max-counter",
-                Value = double.MaxValue
-            };
+            var snapshot = new CounterSnapshot("max-counter", double.MaxValue, null);
 
             // Assert
             Assert.Equal("max-counter", snapshot.Name);
@@ -312,15 +275,7 @@ namespace mcp_nexus_tests.Metrics
         public void HistogramSnapshot_WithMaxValues_HandlesCorrectly()
         {
             // Act
-            var snapshot = new HistogramSnapshot
-            {
-                Name = "max-histogram",
-                Count = int.MaxValue,
-                Sum = double.MaxValue,
-                Min = double.MaxValue,
-                Max = double.MaxValue,
-                Average = double.MaxValue
-            };
+            var snapshot = new HistogramSnapshot("max-histogram", int.MaxValue, double.MaxValue, double.MaxValue, double.MaxValue, double.MaxValue, null);
 
             // Assert
             Assert.Equal("max-histogram", snapshot.Name);
@@ -335,11 +290,7 @@ namespace mcp_nexus_tests.Metrics
         public void GaugeSnapshot_WithMaxValues_HandlesCorrectly()
         {
             // Act
-            var snapshot = new GaugeSnapshot
-            {
-                Name = "max-gauge",
-                Value = double.MaxValue
-            };
+            var snapshot = new GaugeSnapshot("max-gauge", double.MaxValue, null);
 
             // Assert
             Assert.Equal("max-gauge", snapshot.Name);

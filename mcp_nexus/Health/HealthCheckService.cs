@@ -135,14 +135,14 @@ namespace mcp_nexus.Health
     {
         #region Private Fields
 
-        private string m_status = "unknown";
+        private string? m_status = "unknown";
         private DateTime m_timestamp;
         private TimeSpan m_uptime;
         private long m_memoryUsage;
         private int m_activeSessions;
         private CommandQueueHealthStatus? m_commandQueue;
         private int m_processId;
-        private string m_machineName = string.Empty;
+        private string? m_machineName;
         private readonly List<string> m_issues = new();
 
         #endregion
@@ -150,7 +150,7 @@ namespace mcp_nexus.Health
         #region Public Properties
 
         /// <summary>Gets the health status</summary>
-        public string Status => m_status;
+        public string? Status => m_status;
 
         /// <summary>Gets the timestamp</summary>
         public DateTime Timestamp => m_timestamp;
@@ -171,7 +171,7 @@ namespace mcp_nexus.Health
         public int ProcessId => m_processId;
 
         /// <summary>Gets the machine name</summary>
-        public string MachineName => m_machineName;
+        public string MachineName => m_machineName ?? string.Empty;
 
         /// <summary>Gets the issues list</summary>
         public IReadOnlyList<string> Issues => m_issues.AsReadOnly();
@@ -185,7 +185,7 @@ namespace mcp_nexus.Health
         /// </summary>
         public HealthStatus()
         {
-            m_timestamp = DateTime.UtcNow;
+            m_timestamp = DateTime.MinValue;
         }
 
         #endregion
@@ -202,16 +202,16 @@ namespace mcp_nexus.Health
         /// <param name="activeSessions">Active sessions count</param>
         /// <param name="processId">Process ID</param>
         /// <param name="machineName">Machine name</param>
-        public void SetHealthInfo(string status, DateTime timestamp, TimeSpan uptime,
-            long memoryUsage, int activeSessions, int processId, string machineName)
+        public void SetHealthInfo(string? status, DateTime timestamp, TimeSpan uptime,
+            long memoryUsage, int activeSessions, int processId, string? machineName)
         {
-            m_status = status ?? "unknown";
+            m_status = status;
             m_timestamp = timestamp;
             m_uptime = uptime;
             m_memoryUsage = memoryUsage;
             m_activeSessions = activeSessions;
             m_processId = processId;
-            m_machineName = machineName ?? string.Empty;
+            m_machineName = machineName;
         }
 
         /// <summary>

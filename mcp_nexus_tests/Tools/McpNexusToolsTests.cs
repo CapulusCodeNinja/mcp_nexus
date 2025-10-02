@@ -447,17 +447,10 @@ namespace mcp_nexus_tests.Tools
 
             var mockCommandQueue = new Mock<ICommandQueueService>();
 
-            var commandInfo = new CommandInfo
-            {
-                CommandId = commandId,
-                Command = "!analyze -v",
-                State = CommandState.Completed,
-                QueueTime = DateTime.UtcNow.AddMinutes(-5),
-                Elapsed = TimeSpan.FromMinutes(3),
-                Remaining = TimeSpan.Zero,
-                QueuePosition = 0,
-                IsCompleted = true
-            };
+            var commandInfo = new CommandInfo(commandId, "!analyze -v", CommandState.Completed, DateTime.UtcNow.AddMinutes(-5), 0);
+            commandInfo.Elapsed = TimeSpan.FromMinutes(3);
+            commandInfo.Remaining = TimeSpan.Zero;
+            commandInfo.IsCompleted = true;
 
             mockCommandQueue
                 .Setup(x => x.GetCommandInfo(commandId))
@@ -513,17 +506,10 @@ namespace mcp_nexus_tests.Tools
 
             var mockCommandQueue = new Mock<ICommandQueueService>();
 
-            var commandInfo = new CommandInfo
-            {
-                CommandId = commandId,
-                Command = "!analyze -v",
-                State = CommandState.Queued,
-                QueueTime = DateTime.UtcNow.AddMinutes(-1),
-                Elapsed = TimeSpan.FromMinutes(1),
-                Remaining = TimeSpan.FromMinutes(9),
-                QueuePosition = 2,
-                IsCompleted = false
-            };
+            var commandInfo = new CommandInfo(commandId, "!analyze -v", CommandState.Queued, DateTime.UtcNow.AddMinutes(-1), 2);
+            commandInfo.Elapsed = TimeSpan.FromMinutes(1);
+            commandInfo.Remaining = TimeSpan.FromMinutes(9);
+            commandInfo.IsCompleted = false;
 
             mockCommandQueue
                 .Setup(x => x.GetCommandInfo(commandId))

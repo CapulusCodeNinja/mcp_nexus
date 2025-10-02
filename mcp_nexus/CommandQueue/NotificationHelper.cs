@@ -25,7 +25,7 @@ namespace mcp_nexus.CommandQueue
                 try
                 {
                     await notificationService.NotifyCommandStatusAsync(
-                        sessionId, commandId, command, status, result ?? string.Empty, progress);
+                        sessionId, commandId, status, result ?? string.Empty, string.Empty, progress);
                 }
                 catch (Exception ex)
                 {
@@ -50,7 +50,7 @@ namespace mcp_nexus.CommandQueue
                 try
                 {
                     await notificationService.NotifyCommandHeartbeatAsync(
-                        sessionId, commandId, command, elapsed);
+                        sessionId, commandId, elapsed);
                 }
                 catch (Exception ex)
                 {

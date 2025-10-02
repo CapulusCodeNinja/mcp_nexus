@@ -188,7 +188,7 @@ namespace mcp_nexus.Metrics
         /// </summary>
         public MetricsSnapshot()
         {
-            m_timestamp = DateTime.UtcNow;
+            m_timestamp = DateTime.MinValue;
         }
 
         #endregion

@@ -8,154 +8,125 @@ using System.Text.Json;
 namespace mcp_nexus_tests.Notifications
 {
     /// <summary>
-    /// Tests for NotificationHandlerManager
+    /// Tests for McpNotificationService
     /// </summary>
     public class NotificationHandlerManagerTests
     {
         private readonly Mock<ILogger> _mockLogger;
-        private readonly NotificationHandlerManager _manager;
+        private readonly McpNotificationService _manager;
 
         public NotificationHandlerManagerTests()
         {
             _mockLogger = new Mock<ILogger>();
-            _manager = new NotificationHandlerManager(_mockLogger.Object);
+            _manager = new McpNotificationService();
         }
 
         [Fact]
-        public void Constructor_WithNullLogger_ThrowsArgumentNullException()
-        {
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new NotificationHandlerManager(null!));
-        }
-
-        [Fact]
-        public void Constructor_WithValidLogger_InitializesCorrectly()
+        public void Constructor_InitializesCorrectly()
         {
             // Act
-            var manager = new NotificationHandlerManager(_mockLogger.Object);
+            var manager = new McpNotificationService();
 
             // Assert
             Assert.NotNull(manager);
-            Assert.Equal(0, manager.GetHandlerCount());
         }
 
         [Fact]
-        public void RegisterHandler_WithValidHandler_ReturnsGuid()
+        public async Task Subscribe_WithValidHandler_ReturnsSubscriptionId()
         {
             // Arrange
-            var handler = new Func<McpNotification, Task>(_ => Task.CompletedTask);
+            var handler = new Func<object, Task>(data => Task.CompletedTask);
 
             // Act
-            var handlerId = _manager.RegisterHandler(handler);
+            var subscriptionId = _manager.Subscribe("test-event", handler);
 
             // Assert
-            Assert.NotEqual(Guid.Empty, handlerId);
-            Assert.Equal(1, _manager.GetHandlerCount());
+            Assert.NotNull(subscriptionId);
+            Assert.NotEmpty(subscriptionId);
         }
 
         [Fact]
-        public void RegisterHandler_WithNullHandler_ReturnsEmptyGuid()
+        public async Task Subscribe_WithNullHandler_ReturnsSubscriptionId()
         {
             // Act
-            var handlerId = _manager.RegisterHandler(null!);
+            var subscriptionId = _manager.Subscribe("test-event", null!);
 
             // Assert
-            Assert.Equal(Guid.Empty, handlerId);
-            Assert.Equal(0, _manager.GetHandlerCount());
+            Assert.NotNull(subscriptionId);
+            Assert.NotEmpty(subscriptionId);
         }
 
         [Fact]
-        public void RegisterHandler_MultipleHandlers_ReturnsUniqueIds()
+        public async Task Subscribe_MultipleHandlers_ReturnsUniqueIds()
         {
             // Arrange
-            var handler1 = new Func<McpNotification, Task>(_ => Task.CompletedTask);
-            var handler2 = new Func<McpNotification, Task>(_ => Task.CompletedTask);
+            var handler1 = new Func<object, Task>(data => Task.CompletedTask);
+            var handler2 = new Func<object, Task>(data => Task.CompletedTask);
 
             // Act
-            var id1 = _manager.RegisterHandler(handler1);
-            var id2 = _manager.RegisterHandler(handler2);
+            var id1 = _manager.Subscribe("test-event", handler1);
+            var id2 = _manager.Subscribe("test-event", handler2);
 
             // Assert
             Assert.NotEqual(id1, id2);
-            Assert.Equal(2, _manager.GetHandlerCount());
         }
 
         [Fact]
-        public void UnregisterHandler_WithValidId_RemovesHandler()
+        public async Task Unsubscribe_WithValidId_ReturnsTrue()
         {
             // Arrange
-            var handler = new Func<McpNotification, Task>(_ => Task.CompletedTask);
-            var handlerId = _manager.RegisterHandler(handler);
+            var handler = new Func<object, Task>(data => Task.CompletedTask);
+            var subscriptionId = _manager.Subscribe("test-event", handler);
 
             // Act
-            _manager.UnregisterHandler(handlerId);
+            var result = _manager.Unsubscribe(subscriptionId);
 
             // Assert
-            Assert.Equal(0, _manager.GetHandlerCount());
+            Assert.True(result);
         }
 
         [Fact]
-        public void UnregisterHandler_WithInvalidId_DoesNothing()
+        public async Task Unsubscribe_WithInvalidId_ReturnsFalse()
         {
             // Arrange
-            var handler = new Func<McpNotification, Task>(_ => Task.CompletedTask);
-            _manager.RegisterHandler(handler);
+            var handler = new Func<object, Task>(data => Task.CompletedTask);
+            _manager.Subscribe("test-event", handler);
 
             // Act
-            _manager.UnregisterHandler(Guid.NewGuid());
+            var result = _manager.Unsubscribe("invalid-id");
 
             // Assert
-            Assert.Equal(1, _manager.GetHandlerCount());
+            Assert.False(result);
         }
 
         [Fact]
-        public void UnregisterHandler_WithHandlerReference_RemovesHandler()
+        public async Task Unsubscribe_WithNullId_ReturnsFalse()
         {
             // Arrange
-            var handler = new Func<McpNotification, Task>(_ => Task.CompletedTask);
-            _manager.RegisterHandler(handler);
+            var handler = new Func<object, Task>(data => Task.CompletedTask);
+            _manager.Subscribe("test-event", handler);
 
             // Act
-            _manager.UnregisterHandler(handler);
+            var result = _manager.Unsubscribe(null!);
 
             // Assert
-            Assert.Equal(0, _manager.GetHandlerCount());
+            Assert.False(result);
         }
 
         [Fact]
-        public void UnregisterHandler_WithNullHandler_DoesNothing()
-        {
-            // Arrange
-            var handler = new Func<McpNotification, Task>(_ => Task.CompletedTask);
-            _manager.RegisterHandler(handler);
-
-            // Act
-            _manager.UnregisterHandler(null!);
-
-            // Assert
-            Assert.Equal(1, _manager.GetHandlerCount());
-        }
-
-        [Fact]
-        public async Task SendNotificationAsync_WithValidNotification_CallsAllHandlers()
+        public async Task PublishNotificationAsync_WithValidData_CallsHandlers()
         {
             // Arrange
             var handler1Called = false;
             var handler2Called = false;
-            var handler1 = new Func<McpNotification, Task>(_ => { handler1Called = true; return Task.CompletedTask; });
-            var handler2 = new Func<McpNotification, Task>(_ => { handler2Called = true; return Task.CompletedTask; });
+            var handler1 = new Func<object, Task>(data => { handler1Called = true; return Task.CompletedTask; });
+            var handler2 = new Func<object, Task>(data => { handler2Called = true; return Task.CompletedTask; });
 
-            _manager.RegisterHandler(handler1);
-            _manager.RegisterHandler(handler2);
-
-            var notification = new McpNotification
-            {
-                Method = "test/method",
-                Params = JsonSerializer.SerializeToElement(new { test = "data" })
-            };
+            _manager.Subscribe("test-event", handler1);
+            _manager.Subscribe("test-event", handler2);
 
             // Act
-            await _manager.SendNotificationAsync(notification);
+            await _manager.PublishNotificationAsync("test-event", new { Test = "data" });
 
             // Assert
             Assert.True(handler1Called);
@@ -163,95 +134,78 @@ namespace mcp_nexus_tests.Notifications
         }
 
         [Fact]
-        public async Task SendNotificationAsync_WithNullNotification_ThrowsArgumentNullException()
+        public async Task PublishNotificationAsync_WithNoHandlers_DoesNotThrow()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _manager.SendNotificationAsync(null!));
+            await _manager.PublishNotificationAsync("non-existent-event", new { Test = "data" });
         }
 
         [Fact]
-        public async Task SendNotificationAsync_WithNoHandlers_DoesNotThrow()
+        public async Task PublishNotificationAsync_WithNullEventType_DoesNotThrow()
+        {
+            // Act & Assert
+            await _manager.PublishNotificationAsync(null!, new { Test = "data" });
+        }
+
+        [Fact]
+        public async Task PublishNotificationAsync_WithEmptyEventType_DoesNotThrow()
+        {
+            // Act & Assert
+            await _manager.PublishNotificationAsync(string.Empty, new { Test = "data" });
+        }
+
+        [Fact]
+        public async Task PublishNotificationAsync_WithNullData_DoesNotThrow()
         {
             // Arrange
-            var notification = new McpNotification
-            {
-                Method = "test/method",
-                Params = JsonSerializer.SerializeToElement(new { test = "data" })
-            };
+            var handlerCalled = false;
+            var handler = new Func<object, Task>(data => { handlerCalled = true; return Task.CompletedTask; });
+            _manager.Subscribe("test-event", handler);
 
-            // Act & Assert
-            await _manager.SendNotificationAsync(notification);
-            // Should not throw
+            // Act
+            await _manager.PublishNotificationAsync("test-event", null!);
+
+            // Assert
+            Assert.True(handlerCalled);
         }
 
         [Fact]
-        public async Task SendNotificationAsync_WithHandlerThrowingException_ContinuesWithOtherHandlers()
+        public async Task PublishNotificationAsync_WithHandlerException_ContinuesWithOtherHandlers()
         {
             // Arrange
             var handler1Called = false;
             var handler2Called = false;
-            var handler1 = new Func<McpNotification, Task>(_ => { handler1Called = true; throw new Exception("Handler 1 error"); });
-            var handler2 = new Func<McpNotification, Task>(_ => { handler2Called = true; return Task.CompletedTask; });
+            var handler1 = new Func<object, Task>(data => { throw new Exception("Handler 1 error"); });
+            var handler2 = new Func<object, Task>(data => { handler2Called = true; return Task.CompletedTask; });
 
-            _manager.RegisterHandler(handler1);
-            _manager.RegisterHandler(handler2);
-
-            var notification = new McpNotification
-            {
-                Method = "test/method",
-                Params = JsonSerializer.SerializeToElement(new { test = "data" })
-            };
+            _manager.Subscribe("test-event", handler1);
+            _manager.Subscribe("test-event", handler2);
 
             // Act
-            await _manager.SendNotificationAsync(notification);
+            await _manager.PublishNotificationAsync("test-event", new { Test = "data" });
 
             // Assert
-            Assert.True(handler1Called);
             Assert.True(handler2Called);
         }
 
         [Fact]
-        public void GetRegisteredHandlerIds_ReturnsAllHandlerIds()
+        public async Task PublishNotificationAsync_WithDifferentEventTypes_OnlyCallsMatchingHandlers()
         {
             // Arrange
-            var handler1 = new Func<McpNotification, Task>(_ => Task.CompletedTask);
-            var handler2 = new Func<McpNotification, Task>(_ => Task.CompletedTask);
-            var id1 = _manager.RegisterHandler(handler1);
-            var id2 = _manager.RegisterHandler(handler2);
+            var handler1Called = false;
+            var handler2Called = false;
+            var handler1 = new Func<object, Task>(data => { handler1Called = true; return Task.CompletedTask; });
+            var handler2 = new Func<object, Task>(data => { handler2Called = true; return Task.CompletedTask; });
+
+            _manager.Subscribe("event1", handler1);
+            _manager.Subscribe("event2", handler2);
 
             // Act
-            var handlerIds = _manager.GetRegisteredHandlerIds();
+            await _manager.PublishNotificationAsync("event1", new { Test = "data" });
 
             // Assert
-            Assert.Equal(2, handlerIds.Count);
-            Assert.Contains(id1, handlerIds);
-            Assert.Contains(id2, handlerIds);
-        }
-
-        [Fact]
-        public void GetHandlerCount_Initially_ReturnsZero()
-        {
-            // Act
-            var count = _manager.GetHandlerCount();
-
-            // Assert
-            Assert.Equal(0, count);
-        }
-
-        [Fact]
-        public void ClearAllHandlers_RemovesAllHandlers()
-        {
-            // Arrange
-            var handler1 = new Func<McpNotification, Task>(_ => Task.CompletedTask);
-            var handler2 = new Func<McpNotification, Task>(_ => Task.CompletedTask);
-            _manager.RegisterHandler(handler1);
-            _manager.RegisterHandler(handler2);
-
-            // Act
-            _manager.ClearAllHandlers();
-
-            // Assert
-            Assert.Equal(0, _manager.GetHandlerCount());
+            Assert.True(handler1Called);
+            Assert.False(handler2Called);
         }
     }
 }

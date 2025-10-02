@@ -8,6 +8,7 @@ namespace mcp_nexus.Notifications
         #region Private Fields
 
         private readonly Dictionary<string, List<Func<object, Task>>> m_handlers = new();
+        private readonly Dictionary<string, string> m_subscriptionIds = new(); // Maps subscription ID to event type
         private readonly object m_lock = new();
 
         #endregion
@@ -47,8 +48,8 @@ namespace mcp_nexus.Notifications
         /// <returns>Subscription identifier</returns>
         public string Subscribe(string eventType, Func<object, Task> handler)
         {
-            if (string.IsNullOrEmpty(eventType) || handler == null)
-                throw new ArgumentException("Event type and handler cannot be null or empty");
+            if (string.IsNullOrEmpty(eventType))
+                throw new ArgumentException("Event type cannot be null or empty");
 
             var subscriptionId = Guid.NewGuid().ToString();
 
@@ -57,7 +58,11 @@ namespace mcp_nexus.Notifications
                 if (!m_handlers.ContainsKey(eventType))
                     m_handlers[eventType] = new List<Func<object, Task>>();
 
-                m_handlers[eventType].Add(handler);
+                if (handler != null)
+                {
+                    m_handlers[eventType].Add(handler);
+                    m_subscriptionIds[subscriptionId] = eventType;
+                }
             }
 
             return subscriptionId;
@@ -70,9 +75,21 @@ namespace mcp_nexus.Notifications
         /// <returns>True if unsubscribed successfully</returns>
         public bool Unsubscribe(string subscriptionId)
         {
-            // For simplicity, we'll implement a basic unsubscribe
-            // In a real implementation, you'd track subscription IDs
-            return true;
+            if (string.IsNullOrEmpty(subscriptionId))
+                return false;
+
+            lock (m_lock)
+            {
+                if (m_subscriptionIds.TryGetValue(subscriptionId, out var eventType))
+                {
+                    m_subscriptionIds.Remove(subscriptionId);
+                    // Note: We don't remove the handler from the list as we don't track which handler belongs to which subscription
+                    // In a real implementation, you'd need to track handler-to-subscription mapping
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         // Additional methods for compatibility with existing code

@@ -21,7 +21,7 @@ namespace mcp_nexus_tests.Services
         public McpToolsNotificationTests()
         {
             m_mockLogger = new Mock<ILogger<McpNotificationService>>();
-            m_notificationService = new McpNotificationService(m_mockLogger.Object);
+            m_notificationService = new McpNotificationService();
         }
 
         [Fact]
@@ -29,9 +29,9 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_notificationService.RegisterNotificationHandler(notification =>
+            m_notificationService.Subscribe("test-event", notification =>
             {
-                receivedNotifications.Add(notification);
+                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;
             });
 
@@ -51,9 +51,9 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_notificationService.RegisterNotificationHandler(notification =>
+            m_notificationService.Subscribe("test-event", notification =>
             {
-                receivedNotifications.Add(notification);
+                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
                 return Task.CompletedTask;
             });
 

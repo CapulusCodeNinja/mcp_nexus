@@ -69,12 +69,7 @@ namespace mcp_nexus_tests.Caching
         public void CheckMemoryPressure_WithLowMemoryUsage_DoesNotTriggerEviction()
         {
             // Add a small entry that won't trigger memory pressure
-            var entry = new CacheEntry<object>
-            {
-                Value = "test",
-                SizeBytes = 100,
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
-            };
+            var entry = new CacheEntry<object>("test", DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow.AddHours(1), 0, 100);
             _cache.TryAdd("key1", entry);
 
             _evictionManager.CheckMemoryPressure();
@@ -87,18 +82,8 @@ namespace mcp_nexus_tests.Caching
         public void CheckMemoryPressure_WithHighMemoryUsage_TriggersEviction()
         {
             // Add entries that will trigger memory pressure (over 80% of 100MB)
-            var entry1 = new CacheEntry<object>
-            {
-                Value = new byte[50 * 1024 * 1024], // 50MB
-                SizeBytes = 50 * 1024 * 1024,
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
-            };
-            var entry2 = new CacheEntry<object>
-            {
-                Value = new byte[40 * 1024 * 1024], // 40MB
-                SizeBytes = 40 * 1024 * 1024,
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
-            };
+            var entry1 = new CacheEntry<object>(new byte[50 * 1024 * 1024], DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow.AddHours(1), 0, 50 * 1024 * 1024);
+            var entry2 = new CacheEntry<object>(new byte[40 * 1024 * 1024], DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow.AddHours(1), 0, 40 * 1024 * 1024);
             _cache.TryAdd("key1", entry1);
             _cache.TryAdd("key2", entry2);
 
@@ -112,14 +97,7 @@ namespace mcp_nexus_tests.Caching
         public void RemoveExpiredEntries_WithNoExpiredEntries_ReturnsZero()
         {
             var now = DateTime.UtcNow;
-            var entry = new CacheEntry<object>
-            {
-                Value = new object(),
-                ExpiresAt = now.AddMinutes(5),
-                LastAccessed = now,
-                AccessCount = 1,
-                SizeBytes = 1024
-            };
+            var entry = new CacheEntry<object>(new object(), now, now, now.AddMinutes(5), 1, 1024);
             _cache.TryAdd("key1", entry);
 
             var result = _evictionManager.RemoveExpiredEntries();
@@ -130,14 +108,7 @@ namespace mcp_nexus_tests.Caching
         public void RemoveExpiredEntries_WithExpiredEntries_RemovesThem()
         {
             var now = DateTime.UtcNow;
-            var expiredEntry = new CacheEntry<object>
-            {
-                Value = new object(),
-                ExpiresAt = now.AddMinutes(-5),
-                LastAccessed = now.AddMinutes(-10),
-                AccessCount = 1,
-                SizeBytes = 1024
-            };
+            var expiredEntry = new CacheEntry<object>(new object(), now.AddMinutes(-10), now.AddMinutes(-10), now.AddMinutes(-5), 1, 1024);
             _cache.TryAdd("expired", expiredEntry);
 
             var result = _evictionManager.RemoveExpiredEntries();
@@ -156,14 +127,7 @@ namespace mcp_nexus_tests.Caching
         public void EvictLeastRecentlyUsed_WithHighMemoryUsage_EvictsEntries()
         {
             var now = DateTime.UtcNow;
-            var oldEntry = new CacheEntry<object>
-            {
-                Value = new object(),
-                ExpiresAt = now.AddMinutes(5),
-                LastAccessed = now.AddMinutes(-10),
-                AccessCount = 1,
-                SizeBytes = 30 * 1024 * 1024
-            };
+            var oldEntry = new CacheEntry<object>(new object(), now.AddMinutes(-10), now.AddMinutes(-10), now.AddMinutes(5), 1, 30 * 1024 * 1024);
             _cache.TryAdd("old", oldEntry);
 
             var result = _evictionManager.EvictLeastRecentlyUsed(10 * 1024 * 1024);

@@ -3,9 +3,20 @@ namespace mcp_nexus.Notifications
     /// <summary>
     /// Stdio notification bridge implementation - maintains compatibility with existing code
     /// </summary>
-    public class StdioNotificationBridge : IStdioNotificationBridge
+    public class StdioNotificationBridge : IStdioNotificationBridge, IDisposable
     {
         private bool m_isRunning = false;
+        private readonly IMcpNotificationService m_notificationService;
+        private string? m_subscriptionId;
+
+        /// <summary>
+        /// Initializes a new instance of the StdioNotificationBridge
+        /// </summary>
+        /// <param name="notificationService">Notification service to subscribe to</param>
+        public StdioNotificationBridge(IMcpNotificationService notificationService)
+        {
+            m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+        }
 
         /// <summary>
         /// Sends a notification via stdio
@@ -54,8 +65,28 @@ namespace mcp_nexus.Notifications
         /// <returns>Task representing the operation</returns>
         public Task InitializeAsync()
         {
-            // Initialize any required resources
+            if (m_subscriptionId == null)
+            {
+                m_subscriptionId = m_notificationService.Subscribe("notification", async (notification) =>
+                {
+                    await SendNotificationAsync(notification);
+                });
+                m_isRunning = true; // Start the bridge when initialized
+            }
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Disposes the bridge
+        /// </summary>
+        public void Dispose()
+        {
+            if (m_subscriptionId != null)
+            {
+                m_notificationService.Unsubscribe(m_subscriptionId);
+                m_subscriptionId = null;
+            }
+            m_isRunning = false;
         }
     }
 }

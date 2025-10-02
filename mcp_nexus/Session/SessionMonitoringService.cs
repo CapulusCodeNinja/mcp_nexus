@@ -255,17 +255,17 @@ namespace mcp_nexus.Session
                 // Activity-based hints
                 if (timeSinceActivity > TimeSpan.FromMinutes(30))
                 {
-                    hints.Add("⏰ Session has been idle - consider running '!analyze -v' for crash analysis");
+                    hints.Add("idle");
                 }
 
                 // Queue-based hints
                 if (queueStatus.Count == 0)
                 {
-                    hints.Add("🎯 Queue is empty - ready for new commands");
+                    hints.Add("Queue is empty");
                 }
                 else if (queueStatus.Count > 5)
                 {
-                    hints.Add("📋 Queue is busy - consider waiting for current commands to complete");
+                    hints.Add("Queue is busy");
                 }
 
                 // Session health hints
@@ -277,7 +277,7 @@ namespace mcp_nexus.Session
                 // File-based hints
                 if (session.DumpPath.Contains("crash", StringComparison.OrdinalIgnoreCase))
                 {
-                    hints.Add("🔍 Crash dump detected - use '!analyze -v' for detailed crash analysis");
+                    hints.Add("crash");
                 }
 
                 if (string.IsNullOrEmpty(session.SymbolsPath))

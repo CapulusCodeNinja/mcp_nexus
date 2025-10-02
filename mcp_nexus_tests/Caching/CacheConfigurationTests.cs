@@ -15,7 +15,7 @@ namespace mcp_nexus_tests.Caching
         public void CacheEntry_DefaultValues_AreCorrect()
         {
             // Act
-            var entry = new CacheEntry<string>();
+            var entry = new CacheEntry<string>(null!, DateTime.MinValue, DateTime.MinValue, DateTime.MinValue, 0, 0);
 
             // Assert
             Assert.Null(entry.Value);
@@ -38,15 +38,7 @@ namespace mcp_nexus_tests.Caching
             const long sizeBytes = 1024;
 
             // Act
-            var entry = new CacheEntry<string>
-            {
-                Value = value,
-                CreatedAt = createdAt,
-                LastAccessed = lastAccessed,
-                ExpiresAt = expiresAt,
-                AccessCount = accessCount,
-                SizeBytes = sizeBytes
-            };
+            var entry = new CacheEntry<string>(value, createdAt, lastAccessed, expiresAt, accessCount, sizeBytes);
 
             // Assert
             Assert.Equal(value, entry.Value);
@@ -69,15 +61,7 @@ namespace mcp_nexus_tests.Caching
             const long sizeBytes = 4;
 
             // Act
-            var entry = new CacheEntry<int>
-            {
-                Value = value,
-                CreatedAt = createdAt,
-                LastAccessed = lastAccessed,
-                ExpiresAt = expiresAt,
-                AccessCount = accessCount,
-                SizeBytes = sizeBytes
-            };
+            var entry = new CacheEntry<int>(value, createdAt, lastAccessed, expiresAt, accessCount, sizeBytes);
 
             // Assert
             Assert.Equal(value, entry.Value);
@@ -100,15 +84,7 @@ namespace mcp_nexus_tests.Caching
             const long sizeBytes = 200;
 
             // Act
-            var entry = new CacheEntry<object>
-            {
-                Value = testObject,
-                CreatedAt = createdAt,
-                LastAccessed = lastAccessed,
-                ExpiresAt = expiresAt,
-                AccessCount = accessCount,
-                SizeBytes = sizeBytes
-            };
+            var entry = new CacheEntry<object>(testObject, createdAt, lastAccessed, expiresAt, accessCount, sizeBytes);
 
             // Assert
             Assert.Equal(testObject, entry.Value);
@@ -123,15 +99,7 @@ namespace mcp_nexus_tests.Caching
         public void CacheEntry_WithNullValue_HandlesCorrectly()
         {
             // Act
-            var entry = new CacheEntry<string>
-            {
-                Value = null!,
-                CreatedAt = DateTime.UtcNow,
-                LastAccessed = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(1),
-                AccessCount = 0,
-                SizeBytes = 0
-            };
+            var entry = new CacheEntry<string>(null!, DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(1), 0, 0);
 
             // Assert
             Assert.Null(entry.Value);
@@ -146,15 +114,7 @@ namespace mcp_nexus_tests.Caching
         public void CacheEntry_WithMaxValues_HandlesCorrectly()
         {
             // Act
-            var entry = new CacheEntry<string>
-            {
-                Value = "max value",
-                CreatedAt = DateTime.MaxValue,
-                LastAccessed = DateTime.MaxValue,
-                ExpiresAt = DateTime.MaxValue,
-                AccessCount = int.MaxValue,
-                SizeBytes = long.MaxValue
-            };
+            var entry = new CacheEntry<string>("max value", DateTime.MaxValue, DateTime.MaxValue, DateTime.MaxValue, int.MaxValue, long.MaxValue);
 
             // Assert
             Assert.Equal("max value", entry.Value);
@@ -169,15 +129,7 @@ namespace mcp_nexus_tests.Caching
         public void CacheEntry_WithMinValues_HandlesCorrectly()
         {
             // Act
-            var entry = new CacheEntry<string>
-            {
-                Value = "min value",
-                CreatedAt = DateTime.MinValue,
-                LastAccessed = DateTime.MinValue,
-                ExpiresAt = DateTime.MinValue,
-                AccessCount = int.MinValue,
-                SizeBytes = long.MinValue
-            };
+            var entry = new CacheEntry<string>("min value", DateTime.MinValue, DateTime.MinValue, DateTime.MinValue, int.MinValue, long.MinValue);
 
             // Assert
             Assert.Equal("min value", entry.Value);
@@ -192,15 +144,7 @@ namespace mcp_nexus_tests.Caching
         public void CacheEntry_WithNegativeValues_HandlesCorrectly()
         {
             // Act
-            var entry = new CacheEntry<string>
-            {
-                Value = "negative test",
-                CreatedAt = DateTime.UtcNow.AddDays(-1),
-                LastAccessed = DateTime.UtcNow.AddHours(-1),
-                ExpiresAt = DateTime.UtcNow.AddMinutes(-1), // Expired
-                AccessCount = -5,
-                SizeBytes = -100
-            };
+            var entry = new CacheEntry<string>("negative test", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddHours(-1), DateTime.UtcNow.AddMinutes(-1), -5, -100);
 
             // Assert
             Assert.Equal("negative test", entry.Value);
