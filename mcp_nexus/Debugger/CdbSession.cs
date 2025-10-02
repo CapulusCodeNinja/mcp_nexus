@@ -154,7 +154,7 @@ namespace mcp_nexus.Debugger
 
             // CRITICAL: Use semaphore to ensure ONLY ONE command executes at a time
             // CDB is single-threaded and crashes/hangs if multiple commands run concurrently
-            await m_commandSemaphore.WaitAsync(externalCancellationToken);
+            await m_commandSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
 
             try
             {
@@ -164,12 +164,11 @@ namespace mcp_nexus.Debugger
                     throw new InvalidOperationException("No active debugging session");
                 }
 
-                m_logger.LogInformation("🔒 SEMAPHORE: About to execute command '{Command}' on thread pool", command);
+                m_logger.LogInformation("🔒 SEMAPHORE: About to execute command '{Command}' (TRUE ASYNC)", command);
 
-                // Execute on thread pool to avoid blocking, but semaphore ensures serialization
-                var result = await Task.Run(() =>
-                    m_commandExecutor.ExecuteCommand(command, m_processManager, externalCancellationToken),
-                    externalCancellationToken);
+                // TRUE ASYNC: Direct call without Task.Run - proper async all the way through
+                // Semaphore ensures serialization, no need for thread pool wrapper
+                var result = await m_commandExecutor.ExecuteCommandAsync(command, m_processManager, externalCancellationToken).ConfigureAwait(false);
 
                 m_logger.LogInformation("🔒 SEMAPHORE: Command '{Command}' completed, result length: {Length}", command, result?.Length ?? 0);
 
