@@ -273,6 +273,7 @@ namespace mcp_nexus.Session
             return new CdbSession(
                 typedCdbLogger,
                 m_config.CdbOptions.CommandTimeoutMs,
+                m_config.CdbOptions.IdleTimeoutMs,
                 m_config.CdbOptions.CustomCdbPath,
                 m_config.CdbOptions.SymbolServerTimeoutMs,
                 m_config.CdbOptions.SymbolServerMaxRetries,
