@@ -53,6 +53,9 @@ namespace mcp_nexus
                 Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Setting environment variables...");
                 Console.Error.Flush();
 
+                // Pre-warm ThreadPool to reduce cold-start thread acquisition under bursty load
+                mcp_nexus.Infrastructure.ThreadPoolTuning.Apply();
+
                 // Set environment based on configuration if not already set
                 if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")))
                 {
