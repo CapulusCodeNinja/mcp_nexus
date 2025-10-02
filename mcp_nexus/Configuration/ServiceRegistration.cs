@@ -40,57 +40,59 @@ namespace mcp_nexus.Configuration
             // Get NLog logger for service registration
             var logger = LogManager.GetCurrentClassLogger();
 
-            // Configure CDB session options with simple auto-detection
-            services.Configure<CdbSessionOptions>(options =>
+            // CRITICAL: Detect CDB path BEFORE Configure block so logging works
+            string? resolvedCdbPath = null;
+            var configuredPath = customCdbPath ?? configuration.GetValue<string>("McpNexus:Debugging:CdbPath");
+
+            if (!string.IsNullOrWhiteSpace(configuredPath) && File.Exists(configuredPath))
             {
-                options.CommandTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:CommandTimeoutMs");
-                options.IdleTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:IdleTimeoutMs", 180000); // Default: 3 minutes
-                options.SymbolServerTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerTimeoutMs");
-                options.SymbolServerMaxRetries = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries");
-                options.SymbolSearchPath = configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath");
-
-                // Simple logic: Use configured path if file exists, otherwise auto-detect
-                var configuredPath = customCdbPath ?? configuration.GetValue<string>("McpNexus:Debugging:CdbPath");
-
-                if (!string.IsNullOrWhiteSpace(configuredPath) && File.Exists(configuredPath))
+                // Valid configured path - use it
+                resolvedCdbPath = configuredPath;
+                logger.Info("✅ CDB used from config: {CdbPath}", configuredPath);
+            }
+            else
+            {
+                // Log why we're auto-detecting
+                if (!string.IsNullOrWhiteSpace(configuredPath))
                 {
-                    // Valid configured path - use it
-                    options.CustomCdbPath = configuredPath;
-                    logger.Info("✅ CDB used from config: {CdbPath}", configuredPath);
+                    logger.Warn("⚠️ Configured CDB '{ConfiguredPath}' not found - will auto-detect", configuredPath);
                 }
                 else
                 {
-                    // Log why we're auto-detecting
-                    if (!string.IsNullOrWhiteSpace(configuredPath))
-                    {
-                        logger.Warn("⚠️ Configured CDB '{ConfiguredPath}' not found - use autodetect", configuredPath);
-                    }
-                    else
-                    {
-                        logger.Info("🔍 No CDB path configured - use autodetect");
-                    }
-
-                    // Auto-detect CDB path
-                    var cdbConfig = new mcp_nexus.Debugger.CdbSessionConfiguration(
-                        commandTimeoutMs: options.CommandTimeoutMs,
-                        idleTimeoutMs: options.IdleTimeoutMs,
-                        customCdbPath: null, // Force auto-detection
-                        symbolServerTimeoutMs: options.SymbolServerTimeoutMs,
-                        symbolServerMaxRetries: options.SymbolServerMaxRetries,
-                        symbolSearchPath: options.SymbolSearchPath ?? "",
-                        startupDelayMs: configuration.GetValue<int>("McpNexus:Debugging:StartupDelayMs")
-                    );
-                    options.CustomCdbPath = cdbConfig.FindCdbPath();
-
-                    if (options.CustomCdbPath != null)
-                    {
-                        logger.Info("✅ CDB used from auto-detect: {CdbPath}", options.CustomCdbPath);
-                    }
-                    else
-                    {
-                        logger.Error("❌ CDB auto-detect failed - no CDB found");
-                    }
+                    logger.Info("🔍 No CDB path configured - starting auto-detect");
                 }
+
+                // Auto-detect CDB path SYNCHRONOUSLY during service registration
+                var cdbConfig = new mcp_nexus.Debugger.CdbSessionConfiguration(
+                    commandTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:CommandTimeoutMs"),
+                    idleTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:IdleTimeoutMs", 180000),
+                    customCdbPath: null, // Force auto-detection
+                    symbolServerTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:SymbolServerTimeoutMs"),
+                    symbolServerMaxRetries: configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries"),
+                    symbolSearchPath: configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath") ?? "",
+                    startupDelayMs: configuration.GetValue<int>("McpNexus:Debugging:StartupDelayMs", 1000)
+                );
+                resolvedCdbPath = cdbConfig.FindCdbPath();
+
+                if (resolvedCdbPath != null)
+                {
+                    logger.Info("✅ CDB auto-detect succeeded: {CdbPath}", resolvedCdbPath);
+                }
+                else
+                {
+                    logger.Error("❌ CDB auto-detect failed - no CDB found in standard locations or PATH");
+                }
+            }
+
+            // Now configure options with the resolved path
+            services.Configure<CdbSessionOptions>(options =>
+            {
+                options.CommandTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:CommandTimeoutMs");
+                options.IdleTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:IdleTimeoutMs", 180000);
+                options.SymbolServerTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerTimeoutMs");
+                options.SymbolServerMaxRetries = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries");
+                options.SymbolSearchPath = configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath");
+                options.CustomCdbPath = resolvedCdbPath; // Use pre-resolved path
             });
 
             // Configure session management options
