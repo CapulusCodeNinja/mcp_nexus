@@ -410,20 +410,20 @@ namespace mcp_nexus.Health
 
         #region Public Properties
 
-        /// <summary>Gets whether memory usage is healthy</summary>
-        public bool IsHealthy => m_isHealthy;
+        /// <summary>Gets or sets whether memory usage is healthy</summary>
+        public bool IsHealthy { get => m_isHealthy; set => m_isHealthy = value; }
 
-        /// <summary>Gets working set memory in MB</summary>
-        public double WorkingSetMB => m_workingSetMB;
+        /// <summary>Gets or sets working set memory in MB</summary>
+        public double WorkingSetMB { get => m_workingSetMB; set => m_workingSetMB = value; }
 
-        /// <summary>Gets private memory in MB</summary>
-        public double PrivateMemoryMB => m_privateMemoryMB;
+        /// <summary>Gets or sets private memory in MB</summary>
+        public double PrivateMemoryMB { get => m_privateMemoryMB; set => m_privateMemoryMB = value; }
 
-        /// <summary>Gets virtual memory in MB</summary>
-        public double VirtualMemoryMB => m_virtualMemoryMB;
+        /// <summary>Gets or sets virtual memory in MB</summary>
+        public double VirtualMemoryMB { get => m_virtualMemoryMB; set => m_virtualMemoryMB = value; }
 
-        /// <summary>Gets total physical memory in MB</summary>
-        public double TotalPhysicalMemoryMB => m_totalPhysicalMemoryMB;
+        /// <summary>Gets or sets total physical memory in MB</summary>
+        public double TotalPhysicalMemoryMB { get => m_totalPhysicalMemoryMB; set => m_totalPhysicalMemoryMB = value; }
 
         /// <summary>Gets a message describing the memory health</summary>
         public string Message => m_message;

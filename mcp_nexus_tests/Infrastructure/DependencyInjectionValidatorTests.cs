@@ -80,7 +80,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object, true);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
 
             // Assert
             Assert.True(result);
@@ -96,7 +96,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object, false);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
 
             // Assert
             Assert.True(result);
@@ -179,7 +179,7 @@ namespace mcp_nexus_tests.Infrastructure
             var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_mockLogger.Object);
 
             // Assert
-            Assert.True(result);
+            Assert.True(result.IsValid);
         }
 
         [Fact]
@@ -194,7 +194,7 @@ namespace mcp_nexus_tests.Infrastructure
             var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_mockLogger.Object);
 
             // Assert
-            Assert.True(result); // Will return true because GetServiceCollection returns null in tests
+            Assert.True(result.IsValid); // Will return true because GetServiceCollection returns null in tests
         }
 
 
@@ -241,7 +241,7 @@ namespace mcp_nexus_tests.Infrastructure
             var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_mockLogger.Object);
 
             // Assert
-            Assert.True(result);
+            Assert.True(result.IsValid);
         }
 
         [Fact]
@@ -257,7 +257,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
-            Assert.True(result);
+            Assert.True(result.IsValid);
         }
 
         [Fact]
@@ -273,7 +273,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
-            Assert.True(result);
+            Assert.True(result.IsValid);
         }
 
         [Fact]
@@ -289,7 +289,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
-            Assert.True(result);
+            Assert.True(result.IsValid);
         }
 
         [Fact]
@@ -365,7 +365,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
-            Assert.True(result);
+            Assert.True(result.IsValid);
         }
 
         [Fact]
@@ -461,7 +461,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
-            Assert.True(result);
+            Assert.True(result.IsValid);
         }
 
         [Fact]

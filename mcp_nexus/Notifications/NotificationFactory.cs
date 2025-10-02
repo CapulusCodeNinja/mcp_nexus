@@ -160,6 +160,81 @@ namespace mcp_nexus.Notifications
                 return Task.CompletedTask;
             };
         }
+
+        /// <summary>
+        /// Creates a command failure notification
+        /// </summary>
+        /// <param name="commandId">Command identifier</param>
+        /// <param name="error">Error message</param>
+        /// <returns>New command failure notification</returns>
+        public static McpNotification CreateCommandFailureNotification(string commandId, string error)
+        {
+            return new McpNotification
+            {
+                Method = "notifications/commandFailure",
+                Params = new { CommandId = commandId, Error = error }
+            };
+        }
+
+        /// <summary>
+        /// Creates a command heartbeat notification
+        /// </summary>
+        /// <param name="commandId">Command identifier</param>
+        /// <param name="elapsed">Elapsed time</param>
+        /// <returns>New command heartbeat notification</returns>
+        public static McpNotification CreateCommandHeartbeatNotification(string commandId, TimeSpan elapsed)
+        {
+            return new McpNotification
+            {
+                Method = "notifications/commandHeartbeat",
+                Params = new { CommandId = commandId, Elapsed = elapsed.TotalMilliseconds }
+            };
+        }
+
+        /// <summary>
+        /// Creates a queue event notification
+        /// </summary>
+        /// <param name="eventType">Event type</param>
+        /// <param name="data">Event data</param>
+        /// <returns>New queue event notification</returns>
+        public static McpNotification CreateQueueEventNotification(string eventType, object data)
+        {
+            return new McpNotification
+            {
+                Method = "notifications/queueEvent",
+                Params = new { EventType = eventType, Data = data }
+            };
+        }
+
+        /// <summary>
+        /// Creates a recovery notification
+        /// </summary>
+        /// <param name="reason">Recovery reason</param>
+        /// <param name="success">Whether recovery was successful</param>
+        /// <returns>New recovery notification</returns>
+        public static McpNotification CreateRecoveryNotification(string reason, bool success)
+        {
+            return new McpNotification
+            {
+                Method = "notifications/recovery",
+                Params = new { Reason = reason, Success = success }
+            };
+        }
+
+        /// <summary>
+        /// Creates a custom notification
+        /// </summary>
+        /// <param name="method">Notification method</param>
+        /// <param name="data">Notification data</param>
+        /// <returns>New custom notification</returns>
+        public static McpNotification CreateCustomNotification(string method, object data)
+        {
+            return new McpNotification
+            {
+                Method = method,
+                Params = data
+            };
+        }
     }
 
 }

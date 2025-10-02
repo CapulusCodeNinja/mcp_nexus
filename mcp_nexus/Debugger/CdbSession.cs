@@ -34,6 +34,7 @@ namespace mcp_nexus.Debugger
             // Create configuration with validation
             m_config = new CdbSessionConfiguration(
                 commandTimeoutMs,
+                180000, // Default idle timeout
                 customCdbPath,
                 symbolServerTimeoutMs,
                 symbolServerMaxRetries,

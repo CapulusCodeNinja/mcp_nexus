@@ -376,22 +376,22 @@ namespace mcp_nexus.Metrics
     {
         #region Private Fields
 
-        private readonly string m_name;
-        private readonly double m_value;
-        private readonly Dictionary<string, string> m_tags;
+        private string m_name;
+        private double m_value;
+        private Dictionary<string, string> m_tags;
 
         #endregion
 
         #region Public Properties
 
-        /// <summary>Gets the counter name</summary>
-        public string Name => m_name;
+        /// <summary>Gets or sets the counter name</summary>
+        public string Name { get => m_name; set => m_name = value; }
 
-        /// <summary>Gets the counter value</summary>
-        public double Value => m_value;
+        /// <summary>Gets or sets the counter value</summary>
+        public double Value { get => m_value; set => m_value = value; }
 
-        /// <summary>Gets the counter tags</summary>
-        public IReadOnlyDictionary<string, string> Tags => m_tags.AsReadOnly();
+        /// <summary>Gets or sets the counter tags</summary>
+        public IReadOnlyDictionary<string, string> Tags { get => m_tags.AsReadOnly(); set => m_tags = new Dictionary<string, string>(value); }
 
         #endregion
 
@@ -427,38 +427,38 @@ namespace mcp_nexus.Metrics
     {
         #region Private Fields
 
-        private readonly string m_name;
-        private readonly int m_count;
-        private readonly double m_sum;
-        private readonly double m_min;
-        private readonly double m_max;
-        private readonly double m_average;
-        private readonly Dictionary<string, string> m_tags;
+        private string m_name;
+        private int m_count;
+        private double m_sum;
+        private double m_min;
+        private double m_max;
+        private double m_average;
+        private Dictionary<string, string> m_tags;
 
         #endregion
 
         #region Public Properties
 
-        /// <summary>Gets the histogram name</summary>
-        public string Name => m_name;
+        /// <summary>Gets or sets the histogram name</summary>
+        public string Name { get => m_name; set => m_name = value; }
 
-        /// <summary>Gets the count of values</summary>
-        public int Count => m_count;
+        /// <summary>Gets or sets the count of values</summary>
+        public int Count { get => m_count; set => m_count = value; }
 
-        /// <summary>Gets the sum of values</summary>
-        public double Sum => m_sum;
+        /// <summary>Gets or sets the sum of values</summary>
+        public double Sum { get => m_sum; set => m_sum = value; }
 
-        /// <summary>Gets the minimum value</summary>
-        public double Min => m_min;
+        /// <summary>Gets or sets the minimum value</summary>
+        public double Min { get => m_min; set => m_min = value; }
 
-        /// <summary>Gets the maximum value</summary>
-        public double Max => m_max;
+        /// <summary>Gets or sets the maximum value</summary>
+        public double Max { get => m_max; set => m_max = value; }
 
-        /// <summary>Gets the average value</summary>
-        public double Average => m_average;
+        /// <summary>Gets or sets the average value</summary>
+        public double Average { get => m_average; set => m_average = value; }
 
-        /// <summary>Gets the histogram tags</summary>
-        public IReadOnlyDictionary<string, string> Tags => m_tags.AsReadOnly();
+        /// <summary>Gets or sets the histogram tags</summary>
+        public IReadOnlyDictionary<string, string> Tags { get => m_tags.AsReadOnly(); set => m_tags = new Dictionary<string, string>(value); }
 
         #endregion
 
@@ -496,22 +496,22 @@ namespace mcp_nexus.Metrics
     {
         #region Private Fields
 
-        private readonly string m_name;
-        private readonly double m_value;
-        private readonly Dictionary<string, string> m_tags;
+        private string m_name;
+        private double m_value;
+        private Dictionary<string, string> m_tags;
 
         #endregion
 
         #region Public Properties
 
-        /// <summary>Gets the gauge name</summary>
-        public string Name => m_name;
+        /// <summary>Gets or sets the gauge name</summary>
+        public string Name { get => m_name; set => m_name = value; }
 
-        /// <summary>Gets the gauge value</summary>
-        public double Value => m_value;
+        /// <summary>Gets or sets the gauge value</summary>
+        public double Value { get => m_value; set => m_value = value; }
 
-        /// <summary>Gets the gauge tags</summary>
-        public IReadOnlyDictionary<string, string> Tags => m_tags.AsReadOnly();
+        /// <summary>Gets or sets the gauge tags</summary>
+        public IReadOnlyDictionary<string, string> Tags { get => m_tags.AsReadOnly(); set => m_tags = new Dictionary<string, string>(value); }
 
         #endregion
 

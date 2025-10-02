@@ -12,75 +12,79 @@ namespace mcp_nexus_tests.Infrastructure
     [SupportedOSPlatform("windows")]
     public class ServiceConfigurationTests
     {
+        private readonly ServiceConfiguration _config = new ServiceConfiguration();
         [Fact]
         public void ServiceName_ReturnsExpectedValue()
         {
+            // Arrange
+            var config = new ServiceConfiguration();
+            
             // Act & Assert
-            Assert.Equal("MCP-Nexus", ServiceConfiguration.ServiceName);
+            Assert.Equal("MCP-Nexus", _config.ServiceName);
         }
 
         [Fact]
         public void ServiceDisplayName_ReturnsExpectedValue()
         {
             // Act & Assert
-            Assert.Equal("MCP Nexus Server", ServiceConfiguration.ServiceDisplayName);
+            Assert.Equal("MCP Nexus Server", _config.ServiceDisplayName);
         }
 
         [Fact]
         public void ServiceDescription_ReturnsExpectedValue()
         {
             // Act & Assert
-            Assert.Equal("Model Context Protocol server providing AI tool integration", ServiceConfiguration.ServiceDescription);
+            Assert.Equal("Model Context Protocol server providing AI tool integration", _config.ServiceDescription);
         }
 
         [Fact]
         public void InstallFolder_ReturnsExpectedValue()
         {
             // Act & Assert
-            Assert.Equal(@"C:\Program Files\MCP-Nexus", ServiceConfiguration.InstallFolder);
+            Assert.Equal(@"C:\Program Files\MCP-Nexus", _config.InstallFolder);
         }
 
         [Fact]
         public void ServiceArguments_ReturnsExpectedValue()
         {
             // Act & Assert
-            Assert.Equal("--service", ServiceConfiguration.ServiceArguments);
+            Assert.Equal("--service", _config.ServiceArguments);
         }
 
         [Fact]
         public void TimingConstants_ReturnExpectedValues()
         {
             // Act & Assert
-            Assert.Equal(2000, ServiceConfiguration.ServiceStopDelayMs);
-            Assert.Equal(3000, ServiceConfiguration.ServiceStartDelayMs);
-            Assert.Equal(3000, ServiceConfiguration.ServiceDeleteDelayMs);
-            Assert.Equal(5000, ServiceConfiguration.ServiceCleanupDelayMs);
+            Assert.Equal(2000, _config.ServiceStopDelayMs);
+            Assert.Equal(3000, _config.ServiceStartDelayMs);
+            Assert.Equal(3000, _config.ServiceDeleteDelayMs);
+            Assert.Equal(5000, _config.ServiceCleanupDelayMs);
         }
 
         [Fact]
         public void RetryConstants_ReturnExpectedValues()
         {
             // Act & Assert
-            Assert.Equal(3, ServiceConfiguration.MaxRetryAttempts);
-            Assert.Equal(2000, ServiceConfiguration.RetryDelayMs);
+            Assert.Equal(3, _config.MaxRetryAttempts);
+            Assert.Equal(2000, _config.RetryDelayMs);
         }
 
         [Fact]
         public void FileOperationConstants_ReturnExpectedValues()
         {
             // Act & Assert
-            Assert.Equal("mcp_nexus.exe", ServiceConfiguration.ExecutableName);
-            Assert.Equal("backups", ServiceConfiguration.BackupsFolderName);
-            Assert.Equal("mcp_nexus.csproj", ServiceConfiguration.ProjectFileName);
-            Assert.Equal("Release", ServiceConfiguration.BuildConfiguration);
-            Assert.Equal(5, ServiceConfiguration.MaxBackupsToKeep);
+            Assert.Equal("mcp_nexus.exe", _config.ExecutableName);
+            Assert.Equal("backups", _config.BackupsFolderName);
+            Assert.Equal("mcp_nexus.csproj", _config.ProjectFileName);
+            Assert.Equal("Release", _config.BuildConfiguration);
+            Assert.Equal(5, _config.MaxBackupsToKeep);
         }
 
         [Fact]
         public void BackupsBaseFolder_ReturnsExpectedPath()
         {
             // Act
-            var backupsPath = ServiceConfiguration.BackupsBaseFolder;
+            var backupsPath = _config.BackupsBaseFolder;
 
             // Assert
             Assert.NotNull(backupsPath);
@@ -92,22 +96,22 @@ namespace mcp_nexus_tests.Infrastructure
         public void ExecutablePath_ReturnsExpectedPath()
         {
             // Act
-            var executablePath = ServiceConfiguration.ExecutablePath;
+            var executablePath = _config.ExecutablePath;
 
             // Assert
             Assert.NotNull(executablePath);
-            Assert.Equal(Path.Combine(ServiceConfiguration.InstallFolder, ServiceConfiguration.ExecutableName), executablePath);
+            Assert.Equal(Path.Combine(_config.InstallFolder, _config.ExecutableName), executablePath);
         }
 
         [Fact]
         public void BackupsFolder_ReturnsExpectedPath()
         {
             // Act
-            var backupsFolder = ServiceConfiguration.BackupsFolder;
+            var backupsFolder = _config.BackupsFolder;
 
             // Assert
             Assert.NotNull(backupsFolder);
-            Assert.Equal(Path.Combine(ServiceConfiguration.InstallFolder, ServiceConfiguration.BackupsFolderName), backupsFolder);
+            Assert.Equal(Path.Combine(_config.InstallFolder, _config.BackupsFolderName), backupsFolder);
         }
 
         [Fact]
@@ -117,23 +121,23 @@ namespace mcp_nexus_tests.Infrastructure
             var executablePath = @"C:\Test\mcp_nexus.exe";
 
             // Act
-            var command = ServiceConfiguration.GetCreateServiceCommand(executablePath);
+            var command = ServiceConfiguration.GetCreateServiceCommand(_config.ServiceName, _config.DisplayName, _config.Description, executablePath);
 
             // Assert
             Assert.NotNull(command);
             Assert.Contains("create", command);
-            Assert.Contains(ServiceConfiguration.ServiceName, command);
+            Assert.Contains(_config.ServiceName, command);
             Assert.Contains(executablePath, command);
-            Assert.Contains(ServiceConfiguration.ServiceArguments, command);
+            Assert.Contains(_config.ServiceArguments, command);
             Assert.Contains("start= auto", command);
-            Assert.Contains(ServiceConfiguration.ServiceDisplayName, command);
+            Assert.Contains(_config.ServiceDisplayName, command);
         }
 
         [Fact]
         public void GetCreateServiceCommand_WithNullPath_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => ServiceConfiguration.GetCreateServiceCommand(null!));
+            Assert.Throws<ArgumentNullException>(() => ServiceConfiguration.GetCreateServiceCommand(_config.ServiceName, _config.DisplayName, _config.Description, null!));
         }
 
         [Fact]
@@ -143,56 +147,56 @@ namespace mcp_nexus_tests.Infrastructure
             var executablePath = "";
 
             // Act
-            var command = ServiceConfiguration.GetCreateServiceCommand(executablePath);
+            var command = ServiceConfiguration.GetCreateServiceCommand(_config.ServiceName, _config.DisplayName, _config.Description, executablePath);
 
             // Assert
             Assert.NotNull(command);
             Assert.Contains("create", command);
-            Assert.Contains(ServiceConfiguration.ServiceName, command);
+            Assert.Contains(_config.ServiceName, command);
         }
 
         [Fact]
         public void GetDeleteServiceCommand_ReturnsExpectedCommand()
         {
             // Act
-            var command = ServiceConfiguration.GetDeleteServiceCommand();
+            var command = ServiceConfiguration.GetDeleteServiceCommand(_config.ServiceName);
 
             // Assert
             Assert.NotNull(command);
-            Assert.Equal($"delete \"{ServiceConfiguration.ServiceName}\"", command);
+            Assert.Equal($"delete \"{_config.ServiceName}\"", command);
         }
 
         [Fact]
         public void GetServiceStartCommand_ReturnsExpectedCommand()
         {
             // Act
-            var command = ServiceConfiguration.GetServiceStartCommand();
+            var command = ServiceConfiguration.GetServiceStartCommand(_config.ServiceName);
 
             // Assert
             Assert.NotNull(command);
-            Assert.Equal($"start \"{ServiceConfiguration.ServiceName}\"", command);
+            Assert.Equal($"start \"{_config.ServiceName}\"", command);
         }
 
         [Fact]
         public void GetServiceStopCommand_ReturnsExpectedCommand()
         {
             // Act
-            var command = ServiceConfiguration.GetServiceStopCommand();
+            var command = ServiceConfiguration.GetServiceStopCommand(_config.ServiceName);
 
             // Assert
             Assert.NotNull(command);
-            Assert.Equal($"stop \"{ServiceConfiguration.ServiceName}\"", command);
+            Assert.Equal($"stop \"{_config.ServiceName}\"", command);
         }
 
         [Fact]
         public void GetTimestampedBackupFolder_ReturnsExpectedPath()
         {
             // Act
-            var backupFolder = ServiceConfiguration.GetTimestampedBackupFolder();
+            var backupFolder = ServiceConfiguration.GetTimestampedBackupFolder(_config.BackupsBaseFolder);
 
             // Assert
             Assert.NotNull(backupFolder);
-            Assert.StartsWith(ServiceConfiguration.BackupsFolder, backupFolder);
+            Assert.StartsWith(_config.BackupsFolder, backupFolder);
             Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), backupFolder);
         }
 
@@ -200,13 +204,13 @@ namespace mcp_nexus_tests.Infrastructure
         public void GetServiceDescriptionCommand_ReturnsExpectedCommand()
         {
             // Act
-            var command = ServiceConfiguration.GetServiceDescriptionCommand();
+            var command = ServiceConfiguration.GetServiceDescriptionCommand(_config.ServiceName, _config.Description);
 
             // Assert
             Assert.NotNull(command);
             Assert.Contains("description", command);
-            Assert.Contains(ServiceConfiguration.ServiceName, command);
-            Assert.Contains(ServiceConfiguration.ServiceDescription, command);
+            Assert.Contains(_config.ServiceName, command);
+            Assert.Contains(_config.ServiceDescription, command);
         }
 
         [Theory]
@@ -216,12 +220,12 @@ namespace mcp_nexus_tests.Infrastructure
         public void GetCreateServiceCommand_WithVariousPaths_ReturnsValidCommand(string executablePath)
         {
             // Act
-            var command = ServiceConfiguration.GetCreateServiceCommand(executablePath);
+            var command = ServiceConfiguration.GetCreateServiceCommand(_config.ServiceName, _config.DisplayName, _config.Description, executablePath);
 
             // Assert
             Assert.NotNull(command);
             Assert.Contains(executablePath, command);
-            Assert.Contains(ServiceConfiguration.ServiceName, command);
+            Assert.Contains(_config.ServiceName, command);
         }
 
         [Fact]
@@ -231,7 +235,7 @@ namespace mcp_nexus_tests.Infrastructure
             var before = DateTime.Now;
 
             // Act
-            var backupFolder = ServiceConfiguration.GetTimestampedBackupFolder();
+            var backupFolder = ServiceConfiguration.GetTimestampedBackupFolder(_config.BackupsBaseFolder);
 
             // Arrange
             var after = DateTime.Now;
@@ -247,37 +251,37 @@ namespace mcp_nexus_tests.Infrastructure
         public void AllConstants_AreNotNullOrEmpty()
         {
             // Act & Assert
-            Assert.False(string.IsNullOrEmpty(ServiceConfiguration.ServiceName));
-            Assert.False(string.IsNullOrEmpty(ServiceConfiguration.ServiceDisplayName));
-            Assert.False(string.IsNullOrEmpty(ServiceConfiguration.ServiceDescription));
-            Assert.False(string.IsNullOrEmpty(ServiceConfiguration.InstallFolder));
-            Assert.False(string.IsNullOrEmpty(ServiceConfiguration.ServiceArguments));
-            Assert.False(string.IsNullOrEmpty(ServiceConfiguration.ExecutableName));
-            Assert.False(string.IsNullOrEmpty(ServiceConfiguration.BackupsFolderName));
-            Assert.False(string.IsNullOrEmpty(ServiceConfiguration.ProjectFileName));
-            Assert.False(string.IsNullOrEmpty(ServiceConfiguration.BuildConfiguration));
+            Assert.False(string.IsNullOrEmpty(_config.ServiceName));
+            Assert.False(string.IsNullOrEmpty(_config.ServiceDisplayName));
+            Assert.False(string.IsNullOrEmpty(_config.ServiceDescription));
+            Assert.False(string.IsNullOrEmpty(_config.InstallFolder));
+            Assert.False(string.IsNullOrEmpty(_config.ServiceArguments));
+            Assert.False(string.IsNullOrEmpty(_config.ExecutableName));
+            Assert.False(string.IsNullOrEmpty(_config.BackupsFolderName));
+            Assert.False(string.IsNullOrEmpty(_config.ProjectFileName));
+            Assert.False(string.IsNullOrEmpty(_config.BuildConfiguration));
         }
 
         [Fact]
         public void AllNumericConstants_ArePositive()
         {
             // Act & Assert
-            Assert.True(ServiceConfiguration.ServiceStopDelayMs > 0);
-            Assert.True(ServiceConfiguration.ServiceStartDelayMs > 0);
-            Assert.True(ServiceConfiguration.ServiceDeleteDelayMs > 0);
-            Assert.True(ServiceConfiguration.ServiceCleanupDelayMs > 0);
-            Assert.True(ServiceConfiguration.MaxRetryAttempts > 0);
-            Assert.True(ServiceConfiguration.RetryDelayMs > 0);
-            Assert.True(ServiceConfiguration.MaxBackupsToKeep > 0);
+            Assert.True(_config.ServiceStopDelayMs > 0);
+            Assert.True(_config.ServiceStartDelayMs > 0);
+            Assert.True(_config.ServiceDeleteDelayMs > 0);
+            Assert.True(_config.ServiceCleanupDelayMs > 0);
+            Assert.True(_config.MaxRetryAttempts > 0);
+            Assert.True(_config.RetryDelayMs > 0);
+            Assert.True(_config.MaxBackupsToKeep > 0);
         }
 
         [Fact]
         public void PathProperties_ReturnValidPaths()
         {
             // Act
-            var backupsBaseFolder = ServiceConfiguration.BackupsBaseFolder;
-            var executablePath = ServiceConfiguration.ExecutablePath;
-            var backupsFolder = ServiceConfiguration.BackupsFolder;
+            var backupsBaseFolder = _config.BackupsBaseFolder;
+            var executablePath = _config.ExecutablePath;
+            var backupsFolder = _config.BackupsFolder;
 
             // Assert
             Assert.NotNull(backupsBaseFolder);

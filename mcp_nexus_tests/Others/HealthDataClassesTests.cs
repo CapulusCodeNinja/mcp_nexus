@@ -84,15 +84,8 @@ namespace mcp_nexus_tests.Health
             const string message = "Memory usage normal";
 
             // Act
-            var memory = new MemoryHealth
-            {
-                IsHealthy = true,
-                WorkingSetMB = workingSet,
-                PrivateMemoryMB = privateMemory,
-                VirtualMemoryMB = virtualMemory,
-                TotalPhysicalMemoryMB = totalPhysical,
-                Message = message
-            };
+            var memory = new MemoryHealth();
+            memory.SetMemoryInfo(true, workingSet, privateMemory, virtualMemory, totalPhysical, message);
 
             // Assert
             Assert.True(memory.IsHealthy);
@@ -317,18 +310,12 @@ namespace mcp_nexus_tests.Health
         public void HealthStatus_WithNullValues_HandlesGracefully()
         {
             // Act
-            var status = new AdvancedHealthStatus
-            {
-                Message = null!,
-                MemoryUsage = null,
-                CpuUsage = null,
-                DiskUsage = null,
-                ThreadCount = null,
-                GcStatus = null
-            };
+            var status = new AdvancedHealthStatus();
+            // Note: Properties are read-only, so we can't set them directly
+            // The test should verify default values instead
 
             // Assert
-            Assert.Null(status.Message);
+            Assert.Equal(string.Empty, status.Message); // Default is empty string, not null
             Assert.Null(status.MemoryUsage);
             Assert.Null(status.CpuUsage);
             Assert.Null(status.DiskUsage);
@@ -340,10 +327,8 @@ namespace mcp_nexus_tests.Health
         public void HealthStatus_WithEmptyMessage_HandlesCorrectly()
         {
             // Act
-            var status = new AdvancedHealthStatus
-            {
-                Message = string.Empty
-            };
+            var status = new AdvancedHealthStatus();
+            // Note: Message is read-only, default value is already string.Empty
 
             // Assert
             Assert.Equal(string.Empty, status.Message);

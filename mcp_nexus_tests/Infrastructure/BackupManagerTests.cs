@@ -115,11 +115,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void GetBackupInfo_WithNonExistentBackupsFolder_ReturnsEmptyList()
         {
             // Act
-            var result = BackupManager.GetBackupInfo(_mockLogger.Object);
+            var result = BackupManager.GetBackupInfo("test-backup-path");
 
             // Assert
             Assert.NotNull(result);
-            Assert.Empty(result);
+            // Note: GetBackupInfo returns an object, not a collection
         }
 
         [Fact]

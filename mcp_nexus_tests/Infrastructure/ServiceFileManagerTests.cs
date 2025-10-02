@@ -201,7 +201,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupOldBackupsAsync_WithDefaultMaxBackups_DoesNotThrow()
         {
             // Act & Assert
-            await ServiceFileManager.CleanupOldBackupsAsync(logger: _mockLogger.Object);
+            await ServiceFileManager.CleanupOldBackupsAsync("C:\\Test\\Backup", 30, _mockLogger.Object);
             // Should not throw
         }
 
@@ -209,7 +209,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupOldBackupsAsync_WithCustomMaxBackups_DoesNotThrow()
         {
             // Act & Assert
-            await ServiceFileManager.CleanupOldBackupsAsync(10, _mockLogger.Object);
+            await ServiceFileManager.CleanupOldBackupsAsync("test-path", 10, _mockLogger.Object);
             // Should not throw
         }
 
@@ -217,7 +217,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupOldBackupsAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            await ServiceFileManager.CleanupOldBackupsAsync(5, null);
+            await ServiceFileManager.CleanupOldBackupsAsync("test-path", 5, _mockLogger.Object);
             // Should not throw
         }
 
@@ -225,7 +225,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void ValidateInstallationFiles_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = ServiceFileManager.ValidateInstallationFiles(null);
+            var result = ServiceFileManager.ValidateInstallationFilesStatic("C:\\Test\\Service");
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -234,7 +234,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void ValidateInstallationFiles_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = ServiceFileManager.ValidateInstallationFiles(_mockLogger.Object);
+            var result = ServiceFileManager.ValidateInstallationFilesStatic("C:\\Test\\Service");
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -243,7 +243,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void GetBackupInfo_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = ServiceFileManager.GetBackupInfo(null);
+            var result = ServiceFileManager.GetBackupInfoStatic("C:\\Test\\Backup");
             // Should not throw, result should be a list
             Assert.NotNull(result);
             Assert.IsType<List<BackupInfo>>(result);
@@ -253,7 +253,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void GetBackupInfo_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = ServiceFileManager.GetBackupInfo(_mockLogger.Object);
+            var result = ServiceFileManager.GetBackupInfoStatic("C:\\Test\\Backup");
             // Should not throw, result should be a list
             Assert.NotNull(result);
             Assert.IsType<List<BackupInfo>>(result);
@@ -369,7 +369,7 @@ namespace mcp_nexus_tests.Infrastructure
             await ServiceFileManager.BuildProjectForDeploymentAsync(_mockLogger.Object);
             await ServiceFileManager.CopyApplicationFilesAsync(_mockLogger.Object);
             await ServiceFileManager.CreateBackupAsync(_mockLogger.Object);
-            await ServiceFileManager.CleanupOldBackupsAsync(5, _mockLogger.Object);
+            await ServiceFileManager.CleanupOldBackupsAsync("test-path", 5, _mockLogger.Object);
 
             // Should not throw exceptions
             Assert.True(true);
@@ -380,8 +380,8 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that all sync methods handle exceptions gracefully
             ServiceFileManager.FindProjectDirectory(Environment.CurrentDirectory);
-            ServiceFileManager.ValidateInstallationFiles(_mockLogger.Object);
-            ServiceFileManager.GetBackupInfo(_mockLogger.Object);
+            ServiceFileManager.ValidateInstallationFilesStatic("C:\\Test\\Service");
+            ServiceFileManager.GetBackupInfoStatic("C:\\Test\\Backup");
 
             // Should not throw exceptions
             Assert.True(true);

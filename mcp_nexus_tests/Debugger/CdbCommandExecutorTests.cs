@@ -86,27 +86,27 @@ namespace mcp_nexus_tests.Debugger
         }
 
         [Fact]
-        public void ExecuteCommand_WithNullCommand_ThrowsArgumentException()
+        public async Task ExecuteCommandAsync_WithNullCommand_ThrowsArgumentException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() =>
-                _executor.ExecuteCommand(null!, null!));
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _executor.ExecuteCommandAsync(null!, null!, CancellationToken.None));
         }
 
         [Fact]
-        public void ExecuteCommand_WithEmptyCommand_ThrowsArgumentException()
+        public async Task ExecuteCommandAsync_WithEmptyCommand_ThrowsArgumentException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() =>
-                _executor.ExecuteCommand("", null!));
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _executor.ExecuteCommandAsync("", null!, CancellationToken.None));
         }
 
         [Fact]
-        public void ExecuteCommand_WithWhitespaceCommand_ThrowsArgumentException()
+        public async Task ExecuteCommandAsync_WithWhitespaceCommand_ThrowsArgumentException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() =>
-                _executor.ExecuteCommand("   ", null!));
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _executor.ExecuteCommandAsync("   ", null!, CancellationToken.None));
         }
 
         [Fact]

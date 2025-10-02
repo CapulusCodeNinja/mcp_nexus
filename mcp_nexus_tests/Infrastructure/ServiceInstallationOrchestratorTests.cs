@@ -12,11 +12,17 @@ namespace mcp_nexus_tests.Infrastructure
     [SupportedOSPlatform("windows")]
     public class ServiceInstallationOrchestratorTests
     {
-        private readonly Mock<ILogger> _mockLogger;
+        private readonly Mock<ILogger<ServiceInstallationOrchestrator>> _mockLogger;
+        private readonly Mock<ServiceFileManager> _mockFileManager;
+        private readonly Mock<ServiceRegistryManager> _mockRegistryManager;
+        private readonly Mock<OperationLogger> _mockOperationLogger;
 
         public ServiceInstallationOrchestratorTests()
         {
-            _mockLogger = new Mock<ILogger>();
+            _mockLogger = new Mock<ILogger<ServiceInstallationOrchestrator>>();
+            _mockFileManager = new Mock<ServiceFileManager>(Mock.Of<ILogger<ServiceFileManager>>());
+            _mockRegistryManager = new Mock<ServiceRegistryManager>(Mock.Of<ILogger<ServiceRegistryManager>>());
+            _mockOperationLogger = new Mock<OperationLogger>();
         }
 
         [Fact]
@@ -48,7 +54,8 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UninstallServiceAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceInstallationOrchestrator.UninstallServiceAsync(null);
+            var orchestrator = new ServiceInstallationOrchestrator(_mockLogger.Object, _mockFileManager.Object, _mockRegistryManager.Object, _mockOperationLogger.Object);
+            var result = await orchestrator.UninstallServiceAsync("TestService", "C:\\Test\\test.exe");
             // Should not throw, but may return false if uninstallation fails
             Assert.True(result == true || result == false);
         }
@@ -57,26 +64,29 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UninstallServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceInstallationOrchestrator.UninstallServiceAsync(_mockLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(_mockLogger.Object, _mockFileManager.Object, _mockRegistryManager.Object, _mockOperationLogger.Object);
+            var result = await orchestrator.UninstallServiceAsync("TestService", "C:\\Test\\test.exe");
             // Should not throw, but may return false if uninstallation fails
             Assert.True(result == true || result == false);
         }
 
         [Fact]
-        public async Task ForceUninstallServiceAsync_WithNullLogger_DoesNotThrow()
+        public async Task ValidateInstallationAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceInstallationOrchestrator.ForceUninstallServiceAsync(null);
-            // Should not throw, but may return false if force uninstallation fails
+            var orchestrator = new ServiceInstallationOrchestrator(_mockLogger.Object, _mockFileManager.Object, _mockRegistryManager.Object, _mockOperationLogger.Object);
+            var result = await orchestrator.ValidateInstallationAsync("TestService", "C:\\Test\\test.exe");
+            // Should not throw, but may return false if validation fails
             Assert.True(result == true || result == false);
         }
 
         [Fact]
-        public async Task ForceUninstallServiceAsync_WithValidLogger_DoesNotThrow()
+        public async Task ValidateInstallationAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceInstallationOrchestrator.ForceUninstallServiceAsync(_mockLogger.Object);
-            // Should not throw, but may return false if force uninstallation fails
+            var orchestrator = new ServiceInstallationOrchestrator(_mockLogger.Object, _mockFileManager.Object, _mockRegistryManager.Object, _mockOperationLogger.Object);
+            var result = await orchestrator.ValidateInstallationAsync("TestService", "C:\\Test\\test.exe");
+            // Should not throw, but may return false if validation fails
             Assert.True(result == true || result == false);
         }
 
@@ -84,7 +94,8 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UpdateServiceAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceInstallationOrchestrator.UpdateServiceAsync(null);
+            var orchestrator = new ServiceInstallationOrchestrator(_mockLogger.Object, _mockFileManager.Object, _mockRegistryManager.Object, _mockOperationLogger.Object);
+            var result = await orchestrator.UpdateServiceAsync("TestService", "C:\\Test\\test.exe", "Test Service", "Test Description");
             // Should not throw, but may return false if update fails
             Assert.True(result == true || result == false);
         }
@@ -93,7 +104,8 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UpdateServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceInstallationOrchestrator.UpdateServiceAsync(_mockLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(_mockLogger.Object, _mockFileManager.Object, _mockRegistryManager.Object, _mockOperationLogger.Object);
+            var result = await orchestrator.UpdateServiceAsync("TestService", "C:\\Test\\test.exe", "Test Service", "Test Description");
             // Should not throw, but may return false if update fails
             Assert.True(result == true || result == false);
         }
@@ -175,14 +187,15 @@ namespace mcp_nexus_tests.Infrastructure
             // This test verifies that all methods handle exceptions gracefully
             // Since we can't easily mock static dependencies, we test that they don't throw
             var installResult = await ServiceInstallationOrchestrator.InstallServiceAsync(_mockLogger.Object);
-            var uninstallResult = await ServiceInstallationOrchestrator.UninstallServiceAsync(_mockLogger.Object);
-            var forceUninstallResult = await ServiceInstallationOrchestrator.ForceUninstallServiceAsync(_mockLogger.Object);
-            var updateResult = await ServiceInstallationOrchestrator.UpdateServiceAsync(_mockLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(_mockLogger.Object, _mockFileManager.Object, _mockRegistryManager.Object, _mockOperationLogger.Object);
+            var uninstallResult = await orchestrator.UninstallServiceAsync("TestService", "C:\\Test\\test.exe");
+            var validateResult = await orchestrator.ValidateInstallationAsync("TestService", "C:\\Test\\test.exe");
+            var updateResult = await orchestrator.UpdateServiceAsync("TestService", "C:\\Test\\test.exe", "Test Service", "Test Description");
 
             // All should return boolean results without throwing
             Assert.True(installResult == true || installResult == false);
             Assert.True(uninstallResult == true || uninstallResult == false);
-            Assert.True(forceUninstallResult == true || forceUninstallResult == false);
+            Assert.True(validateResult == true || validateResult == false);
             Assert.True(updateResult == true || updateResult == false);
         }
 
@@ -200,7 +213,8 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UninstallServiceAsync_HandlesServiceNotInstalled()
         {
             // This test verifies that the method handles the case when service is not installed
-            var result = await ServiceInstallationOrchestrator.UninstallServiceAsync(_mockLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(_mockLogger.Object, _mockFileManager.Object, _mockRegistryManager.Object, _mockOperationLogger.Object);
+            var result = await orchestrator.UninstallServiceAsync("TestService", "C:\\Test\\test.exe");
 
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
@@ -210,7 +224,8 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ForceUninstallServiceAsync_HandlesPrerequisitesFailure()
         {
             // This test verifies that the method handles prerequisite validation failures
-            var result = await ServiceInstallationOrchestrator.ForceUninstallServiceAsync(_mockLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(_mockLogger.Object, _mockFileManager.Object, _mockRegistryManager.Object, _mockOperationLogger.Object);
+            var result = await orchestrator.ValidateInstallationAsync("TestService", "C:\\Test\\test.exe");
 
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
@@ -220,7 +235,8 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UpdateServiceAsync_HandlesPrerequisitesFailure()
         {
             // This test verifies that the method handles prerequisite validation failures
-            var result = await ServiceInstallationOrchestrator.UpdateServiceAsync(_mockLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(_mockLogger.Object, _mockFileManager.Object, _mockRegistryManager.Object, _mockOperationLogger.Object);
+            var result = await orchestrator.UpdateServiceAsync("TestService", "C:\\Test\\test.exe", "Test Service", "Test Description");
 
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
@@ -230,7 +246,8 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UpdateServiceAsync_HandlesNoUpdateNeeded()
         {
             // This test verifies that the method handles the case when no update is needed
-            var result = await ServiceInstallationOrchestrator.UpdateServiceAsync(_mockLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(_mockLogger.Object, _mockFileManager.Object, _mockRegistryManager.Object, _mockOperationLogger.Object);
+            var result = await orchestrator.UpdateServiceAsync("TestService", "C:\\Test\\test.exe", "Test Service", "Test Description");
 
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);

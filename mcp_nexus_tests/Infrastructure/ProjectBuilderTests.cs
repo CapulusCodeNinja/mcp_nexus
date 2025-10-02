@@ -22,7 +22,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             try
             {
-                var projectFile = Path.Combine(testDir, ServiceConfiguration.ProjectFileName);
+                var projectFile = Path.Combine(testDir, new ServiceConfiguration().ProjectFileName);
                 File.WriteAllText(projectFile, "test project file");
 
                 // Act
@@ -106,7 +106,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             try
             {
-                var projectFile = Path.Combine(parentDir, ServiceConfiguration.ProjectFileName);
+                var projectFile = Path.Combine(parentDir, new ServiceConfiguration().ProjectFileName);
                 File.WriteAllText(projectFile, "test project file");
 
                 // Act
@@ -137,7 +137,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             try
             {
-                var projectFile = Path.Combine(rootDir, ServiceConfiguration.ProjectFileName);
+                var projectFile = Path.Combine(rootDir, new ServiceConfiguration().ProjectFileName);
                 File.WriteAllText(projectFile, "test project file");
 
                 // Act
@@ -164,7 +164,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             try
             {
-                var projectFile = Path.Combine(testDir, ServiceConfiguration.ProjectFileName);
+                var projectFile = Path.Combine(testDir, new ServiceConfiguration().ProjectFileName);
                 File.WriteAllText(projectFile, "test project file");
 
                 // Act
@@ -236,7 +236,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             try
             {
-                var projectFile = Path.Combine(subDir, ServiceConfiguration.ProjectFileName);
+                var projectFile = Path.Combine(subDir, new ServiceConfiguration().ProjectFileName);
                 File.WriteAllText(projectFile, "test project file");
 
                 // Act
@@ -275,7 +275,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             try
             {
-                var projectFile = Path.Combine(testDir, ServiceConfiguration.ProjectFileName);
+                var projectFile = Path.Combine(testDir, new ServiceConfiguration().ProjectFileName);
                 File.WriteAllText(projectFile, "test project file");
 
                 // Act
@@ -303,8 +303,8 @@ namespace mcp_nexus_tests.Infrastructure
 
             try
             {
-                var rootProjectFile = Path.Combine(rootDir, ServiceConfiguration.ProjectFileName);
-                var childProjectFile = Path.Combine(childDir, ServiceConfiguration.ProjectFileName);
+                var rootProjectFile = Path.Combine(rootDir, new ServiceConfiguration().ProjectFileName);
+                var childProjectFile = Path.Combine(childDir, new ServiceConfiguration().ProjectFileName);
 
                 File.WriteAllText(rootProjectFile, "root project file");
                 File.WriteAllText(childProjectFile, "child project file");

@@ -31,7 +31,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task PerformUpdateAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceUpdateManager.PerformUpdateAsync(null);
+            var result = await ServiceUpdateManager.PerformUpdateAsync("test-service", "1.0.0");
 
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
@@ -41,7 +41,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task PerformUpdateAsync_WithLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceUpdateManager.PerformUpdateAsync(_mockLogger.Object);
+            var result = await ServiceUpdateManager.PerformUpdateAsync("test-service", "1.0.0");
 
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
@@ -60,7 +60,7 @@ namespace mcp_nexus_tests.Infrastructure
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()));
 
             // Act
-            var result = await ServiceUpdateManager.PerformUpdateAsync(loggerMock.Object);
+            var result = await ServiceUpdateManager.PerformUpdateAsync("test-service", "1.0.0");
 
             // Assert
             // The result depends on the actual system state, but the method should not throw
@@ -81,7 +81,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void IsUpdateNeeded_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = ServiceUpdateManager.IsUpdateNeeded(null);
+            var result = ServiceUpdateManager.IsUpdateNeeded("1.0.0", "2.0.0");
 
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
@@ -91,7 +91,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void IsUpdateNeeded_WithLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = ServiceUpdateManager.IsUpdateNeeded(_mockLogger.Object);
+            var result = ServiceUpdateManager.IsUpdateNeeded("1.0.0", "2.0.0");
 
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result == true || result == false);
@@ -159,7 +159,7 @@ namespace mcp_nexus_tests.Infrastructure
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()));
 
             // Act
-            var result = await ServiceUpdateManager.PerformUpdateAsync(loggerMock.Object);
+            var result = await ServiceUpdateManager.PerformUpdateAsync("test-service", "1.0.0");
 
             // Assert
             // The method should handle exceptions gracefully and return a boolean result
@@ -220,7 +220,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task PerformUpdateAsync_WithLogger_ReturnsBoolean()
         {
             // Act
-            var result = await ServiceUpdateManager.PerformUpdateAsync(_mockLogger.Object);
+            var result = await ServiceUpdateManager.PerformUpdateAsync("test-service", "1.0.0");
 
             // Assert
             Assert.IsType<bool>(result);
@@ -230,7 +230,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void IsUpdateNeeded_WithNullLogger_ReturnsBoolean()
         {
             // Act
-            var result = ServiceUpdateManager.IsUpdateNeeded(null);
+            var result = ServiceUpdateManager.IsUpdateNeeded("1.0.0", "2.0.0");
 
             // Assert
             Assert.IsType<bool>(result);
@@ -240,7 +240,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void IsUpdateNeeded_WithLogger_ReturnsBoolean()
         {
             // Act
-            var result = ServiceUpdateManager.IsUpdateNeeded(_mockLogger.Object);
+            var result = ServiceUpdateManager.IsUpdateNeeded("1.0.0", "2.0.0");
 
             // Assert
             Assert.IsType<bool>(result);

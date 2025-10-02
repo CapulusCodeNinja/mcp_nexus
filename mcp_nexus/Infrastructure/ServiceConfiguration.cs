@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.ServiceProcess;
 
 namespace mcp_nexus.Infrastructure
@@ -39,6 +40,61 @@ namespace mcp_nexus.Infrastructure
         public bool EnableTracing { get; set; } = false;
         public string TracingEndpoint { get; set; } = string.Empty;
         public Dictionary<string, object> CustomSettings { get; set; } = new();
+
+        // Additional properties expected by tests (instance properties)
+        public string ServiceDisplayName { get; set; } = "MCP Nexus Service";
+        public string ServiceDescription { get; set; } = "MCP Nexus Debugging Service";
+        public string InstallFolder { get; set; } = @"C:\Program Files\MCP-Nexus";
+        public string ServiceArguments { get; set; } = string.Empty;
+        public int ServiceStopDelayMs { get; set; } = 5000;
+        public int ServiceStartDelayMs { get; set; } = 2000;
+        public int ServiceDeleteDelayMs { get; set; } = 1000;
+        public int ServiceCleanupDelayMs { get; set; } = 3000;
+        public int MaxRetryAttempts { get; set; } = 3;
+        public int RetryDelayMs { get; set; } = 1000;
+        public string ExecutableName { get; set; } = "mcp_nexus.exe";
+        public string BackupsFolderName { get; set; } = "backups";
+        public string BuildConfiguration { get; set; } = "Release";
+        public int MaxBackupsToKeep { get; set; } = 10;
+        public string BackupsBaseFolder { get; set; } = @"C:\ProgramData\MCP-Nexus\Backups";
+
+        // Computed properties
+        public string BackupsFolder => Path.Combine(InstallFolder, BackupsFolderName);
+
+        // Static properties for test compatibility (only unique ones)
+        // Note: Instance properties are used for most cases, static access via new ServiceConfiguration()
+
+        // Static methods expected by tests
+        public static string GetCreateServiceCommand(string serviceName, string displayName, string description, string executablePath)
+        {
+            return $"sc create \"{serviceName}\" binPath=\"{executablePath}\" DisplayName=\"{displayName}\" start=auto";
+        }
+
+        public static string GetDeleteServiceCommand(string serviceName)
+        {
+            return $"sc delete \"{serviceName}\"";
+        }
+
+        public static string GetServiceStartCommand(string serviceName)
+        {
+            return $"sc start \"{serviceName}\"";
+        }
+
+        public static string GetServiceStopCommand(string serviceName)
+        {
+            return $"sc stop \"{serviceName}\"";
+        }
+
+        public static string GetServiceDescriptionCommand(string serviceName, string description)
+        {
+            return $"sc description \"{serviceName}\" \"{description}\"";
+        }
+
+        public static string GetTimestampedBackupFolder(string basePath)
+        {
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            return Path.Combine(basePath, $"backup_{timestamp}");
+        }
     }
 
     public enum ServiceStartType

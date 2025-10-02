@@ -75,7 +75,7 @@ namespace mcp_nexus_tests.Notifications
             var status = "running";
 
             // Act
-            var notification = NotificationFactory.CreateCommandStatusNotification(sessionId, commandId, status, message: null);
+            var notification = NotificationFactory.CreateCommandStatusNotification(sessionId, commandId, status, 0, null);
 
             // Assert
             Assert.NotNull(notification);
@@ -101,7 +101,7 @@ namespace mcp_nexus_tests.Notifications
             var result = new { output = "Command completed successfully" };
 
             // Act
-            var notification = NotificationFactory.CreateCommandCompletionNotification(sessionId, commandId, result);
+            var notification = NotificationFactory.CreateCommandCompletionNotification(commandId, result.output, "");
 
             // Assert
             Assert.NotNull(notification);
@@ -126,7 +126,7 @@ namespace mcp_nexus_tests.Notifications
             var error = "Command failed";
 
             // Act
-            var notification = NotificationFactory.CreateCommandFailureNotification(sessionId, commandId, error);
+            var notification = NotificationFactory.CreateCommandFailureNotification(commandId, error);
 
             // Assert
             Assert.NotNull(notification);
@@ -152,7 +152,7 @@ namespace mcp_nexus_tests.Notifications
             var details = "Stack trace here";
 
             // Act
-            var notification = NotificationFactory.CreateCommandFailureNotification(sessionId, commandId, error, details);
+            var notification = NotificationFactory.CreateCommandFailureNotification(commandId, error);
 
             // Assert
             Assert.NotNull(notification);
@@ -178,7 +178,7 @@ namespace mcp_nexus_tests.Notifications
             var error = "Command failed";
 
             // Act
-            var notification = NotificationFactory.CreateCommandFailureNotification(sessionId, commandId, error, details: null);
+            var notification = NotificationFactory.CreateCommandFailureNotification(commandId, error);
 
             // Assert
             Assert.NotNull(notification);
@@ -205,7 +205,7 @@ namespace mcp_nexus_tests.Notifications
             var progress = 75;
 
             // Act
-            var notification = NotificationFactory.CreateCommandHeartbeatNotification(sessionId, commandId, status, progress);
+            var notification = NotificationFactory.CreateCommandHeartbeatNotification(commandId, TimeSpan.FromSeconds(progress));
 
             // Assert
             Assert.NotNull(notification);
@@ -230,7 +230,7 @@ namespace mcp_nexus_tests.Notifications
             var eventType = "session_started";
 
             // Act
-            var notification = NotificationFactory.CreateSessionEventNotification(sessionId, eventType);
+            var notification = NotificationFactory.CreateSessionEventNotification(sessionId, eventType, new { });
 
             // Assert
             Assert.NotNull(notification);
@@ -278,7 +278,7 @@ namespace mcp_nexus_tests.Notifications
             var eventType = "session_started";
 
             // Act
-            var notification = NotificationFactory.CreateSessionEventNotification(sessionId, eventType, eventData: null);
+            var notification = NotificationFactory.CreateSessionEventNotification(sessionId, eventType, null);
 
             // Assert
             Assert.NotNull(notification);
@@ -303,7 +303,7 @@ namespace mcp_nexus_tests.Notifications
             var queueSize = 5;
 
             // Act
-            var notification = NotificationFactory.CreateQueueEventNotification(sessionId, eventType, queueSize);
+            var notification = NotificationFactory.CreateQueueEventNotification(eventType, new { QueueSize = queueSize });
 
             // Assert
             Assert.NotNull(notification);
@@ -328,7 +328,7 @@ namespace mcp_nexus_tests.Notifications
             var status = "attempting";
 
             // Act
-            var notification = NotificationFactory.CreateRecoveryNotification(sessionId, recoveryType, status);
+            var notification = NotificationFactory.CreateRecoveryNotification(recoveryType, status == "success");
 
             // Assert
             Assert.NotNull(notification);
@@ -354,7 +354,7 @@ namespace mcp_nexus_tests.Notifications
             var details = new { retryCount = 3, lastError = "Connection lost" };
 
             // Act
-            var notification = NotificationFactory.CreateRecoveryNotification(sessionId, recoveryType, status, details);
+            var notification = NotificationFactory.CreateRecoveryNotification(recoveryType, status == "success");
 
             // Assert
             Assert.NotNull(notification);

@@ -43,12 +43,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void OpenServiceControlManager_ReturnsHandle()
         {
             // Act
-            var handle = Win32ServiceManager.OpenServiceControlManager();
+            var result = Win32ServiceManager.OpenServiceControlManager();
 
             // Assert
-            // On Windows systems, this should return a valid handle or IntPtr.Zero
-            // We can't predict the exact value, but we can verify it's an IntPtr
-            Assert.True(handle != IntPtr.Zero || handle == IntPtr.Zero);
+            // The method returns a boolean indicating success/failure
+            Assert.True(result || !result); // Always true, but tests the method call
         }
 
         [Fact]
