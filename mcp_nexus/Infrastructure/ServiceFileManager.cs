@@ -336,7 +336,7 @@ namespace mcp_nexus.Infrastructure
                 foreach (var subDir in sourceDir.GetDirectories())
                 {
                     var targetSubDir = Path.Combine(targetPath, subDir.Name);
-                    await CopyDirectoryAsync(subDir.FullName, targetSubDir, logger);
+                    await CopyDirectoryAsync(subDir.FullName, targetSubDir, logger!);
                 }
 
                 logger?.LogInformation("Successfully copied directory from {SourcePath} to {TargetPath}", sourcePath, targetPath);

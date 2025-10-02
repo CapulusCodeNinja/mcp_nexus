@@ -156,7 +156,7 @@ namespace mcp_nexus_tests.Session
                 Status = SessionStatus.Active
             };
             _sessions[sessionId] = sessionInfo;
-            
+
             // Debug: Verify the session info was created correctly
             Assert.NotNull(sessionInfo);
             Assert.NotNull(sessionInfo.CdbSession);
@@ -180,7 +180,7 @@ namespace mcp_nexus_tests.Session
             // Assert
             Assert.True(result);
             Assert.False(_sessions.ContainsKey(sessionId));
-            
+
             // Debug: Check if the mocks were called
             _mockCdbSession.Verify(x => x.IsActive, Times.AtLeastOnce);
             _mockCommandQueue.Verify(x => x.CancelAllCommands("Session closing"), Times.Once);
