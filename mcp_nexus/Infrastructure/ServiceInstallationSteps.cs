@@ -7,104 +7,64 @@ namespace mcp_nexus.Infrastructure
     /// <summary>
     /// Manages the steps for service installation
     /// </summary>
-    public class ServiceInstallationSteps
+    public static class ServiceInstallationSteps
     {
-        private readonly ILogger<ServiceInstallationSteps> _logger;
-
-        public ServiceInstallationSteps(ILogger<ServiceInstallationSteps> logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
-
-        public async Task<bool> PerformInstallationStepsAsync(string serviceName, string displayName, string description, string executablePath)
+        public static async Task<bool> PerformInstallationStepsAsync(string serviceName, string displayName, string description, string executablePath, ILogger? logger = null)
         {
             try
             {
-                _logger.LogInformation("Performing installation steps for service {ServiceName}", serviceName);
+                logger?.LogInformation("Performing installation steps for service {ServiceName}", serviceName);
                 await Task.Delay(100); // Placeholder implementation
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to perform installation steps for service {ServiceName}", serviceName);
+                logger?.LogError(ex, "Failed to perform installation steps for service {ServiceName}", serviceName);
                 return false;
             }
         }
 
-        public static async Task<bool> PerformInstallationStepsAsync(ILogger? logger = null)
+        public static async Task<bool> RegisterServiceAsync(ILogger? logger = null)
         {
             try
             {
-                logger?.LogInformation("Performing installation steps");
+                logger?.LogInformation("Registering service");
                 await Task.Delay(100); // Placeholder implementation
                 return true;
             }
             catch (Exception ex)
             {
-                logger?.LogError(ex, "Failed to perform installation steps");
+                logger?.LogError(ex, "Failed to register service");
                 return false;
             }
         }
 
-        public static async Task<bool> RegisterServiceAsync(ILogger logger)
+        public static async Task<bool> UnregisterServiceAsync(ILogger? logger = null)
         {
             try
             {
-                logger.LogInformation("Registering service");
+                logger?.LogInformation("Unregistering service");
                 await Task.Delay(100); // Placeholder implementation
                 return true;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to register service");
+                logger?.LogError(ex, "Failed to unregister service");
                 return false;
             }
         }
 
-
-
-
-        public async Task<bool> RegisterServiceAsync(string serviceName, string displayName, string description, string executablePath, ILogger logger)
+        public static async Task<bool> CleanupInstallationAsync(ILogger? logger = null)
         {
             try
             {
-                logger.LogInformation("Registering service {ServiceName}", serviceName);
+                logger?.LogInformation("Cleaning up installation");
                 await Task.Delay(100); // Placeholder implementation
                 return true;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to register service {ServiceName}", serviceName);
-                return false;
-            }
-        }
-
-        public async Task<bool> UnregisterServiceAsync(string serviceName)
-        {
-            try
-            {
-                _logger.LogInformation("Unregistering service {ServiceName}", serviceName);
-                await Task.Delay(100); // Placeholder implementation
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to unregister service {ServiceName}", serviceName);
-                return false;
-            }
-        }
-
-        public async Task<bool> CleanupInstallationAsync(string serviceName)
-        {
-            try
-            {
-                _logger.LogInformation("Cleaning up installation for service {ServiceName}", serviceName);
-                await Task.Delay(100); // Placeholder implementation
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to cleanup installation for service {ServiceName}", serviceName);
+                logger?.LogError(ex, "Failed to cleanup installation");
                 return false;
             }
         }

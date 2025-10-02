@@ -32,7 +32,7 @@ namespace mcp_nexus_tests.Helper
         public void CdbSession_Constructor_WithValidParameters_Succeeds()
         {
             // Act
-            var session = new CdbSession(m_mockLogger.Object, 5000, null, 10000, 2, "/test/path", 1000);
+            var session = new CdbSession(m_mockLogger.Object, 5000, 180000, null, 10000, 2, "/test/path", 1000);
 
             // Assert
             Assert.NotNull(session);
@@ -58,7 +58,7 @@ namespace mcp_nexus_tests.Helper
         {
             // Act & Assert
             var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-                new CdbSession(m_mockLogger.Object, 5000, null, timeout));
+                new CdbSession(m_mockLogger.Object, 5000, 180000, null, timeout));
 
             Assert.Equal("symbolServerTimeoutMs", ex.ParamName);
             Assert.Contains(expectedMessage, ex.Message);
@@ -70,7 +70,7 @@ namespace mcp_nexus_tests.Helper
         {
             // Act & Assert
             var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-                new CdbSession(m_mockLogger.Object, 5000, null, 10000, retries));
+                new CdbSession(m_mockLogger.Object, 5000, 180000, null, 10000, retries));
 
             Assert.Equal("symbolServerMaxRetries", ex.ParamName);
             Assert.Contains(expectedMessage, ex.Message);
@@ -82,7 +82,7 @@ namespace mcp_nexus_tests.Helper
         {
             // Act & Assert
             var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-                new CdbSession(m_mockLogger.Object, 5000, null, 10000, 1, null, delay));
+                new CdbSession(m_mockLogger.Object, 5000, 180000, null, 10000, 1, null, delay));
 
             Assert.Equal("startupDelayMs", ex.ParamName);
             Assert.Contains(expectedMessage, ex.Message);
@@ -113,7 +113,7 @@ namespace mcp_nexus_tests.Helper
         public async Task CdbSession_StartSession_WithInvalidTarget_ReturnsFalse()
         {
             // Arrange
-            m_cdbSession = new CdbSession(m_mockLogger.Object, 1000); // Short timeout for test
+            m_cdbSession = new CdbSession(m_mockLogger.Object, 1000, 180000); // Short timeout for test
 
             // Act
             var result = await m_cdbSession.StartSession("nonexistent_target_12345", null);
@@ -334,7 +334,7 @@ namespace mcp_nexus_tests.Helper
         public async Task CdbSession_StartSession_WithValidTargetButInvalidCdbPath_ReturnsFalse()
         {
             // Arrange
-            m_cdbSession = new CdbSession(m_mockLogger.Object, 1000, "nonexistent_cdb.exe");
+            m_cdbSession = new CdbSession(m_mockLogger.Object, 1000, 180000, "nonexistent_cdb.exe");
 
             // Act
             var result = await m_cdbSession.StartSession("notepad.exe", null);
@@ -351,7 +351,7 @@ namespace mcp_nexus_tests.Helper
             var customPath = "C:\\Custom\\cdb.exe";
 
             // Act
-            m_cdbSession = new CdbSession(m_mockLogger.Object, 5000, customPath);
+            m_cdbSession = new CdbSession(m_mockLogger.Object, 5000, 180000, customPath);
 
             // Assert
             Assert.NotNull(m_cdbSession);
@@ -365,7 +365,7 @@ namespace mcp_nexus_tests.Helper
             var symbolPath = "C:\\Symbols;C:\\MoreSymbols";
 
             // Act
-            m_cdbSession = new CdbSession(m_mockLogger.Object, 5000, null, 10000, 1, symbolPath);
+            m_cdbSession = new CdbSession(m_mockLogger.Object, 5000, 180000, null, 10000, 1, symbolPath);
 
             // Assert
             Assert.NotNull(m_cdbSession);
@@ -376,7 +376,7 @@ namespace mcp_nexus_tests.Helper
         public async Task CdbSession_StartSession_WithArguments_SetsCorrectArguments()
         {
             // Arrange
-            m_cdbSession = new CdbSession(m_mockLogger.Object, 1000, "nonexistent_cdb.exe");
+            m_cdbSession = new CdbSession(m_mockLogger.Object, 1000, 180000, "nonexistent_cdb.exe");
             var target = "notepad.exe";
             var arguments = "-test -args";
 
@@ -393,7 +393,7 @@ namespace mcp_nexus_tests.Helper
         public async Task CdbSession_ExecuteCommand_WithCancellationToken_CancellationWorks()
         {
             // Arrange
-            m_cdbSession = new CdbSession(m_mockLogger.Object, 1000);
+            m_cdbSession = new CdbSession(m_mockLogger.Object, 1000, 180000);
             var cts = new CancellationTokenSource();
 
             // Act & Assert
@@ -418,7 +418,7 @@ namespace mcp_nexus_tests.Helper
         public void CdbSession_Constructor_WithMinimalParameters_UsesDefaults()
         {
             // Act
-            m_cdbSession = new CdbSession(m_mockLogger.Object, 1000);
+            m_cdbSession = new CdbSession(m_mockLogger.Object, 1000, 180000);
 
             // Assert
             Assert.NotNull(m_cdbSession);
@@ -433,7 +433,7 @@ namespace mcp_nexus_tests.Helper
         public void CdbSession_Constructor_WithValidTimeouts_Succeeds(int timeoutMs)
         {
             // Act
-            m_cdbSession = new CdbSession(m_mockLogger.Object, timeoutMs);
+            m_cdbSession = new CdbSession(m_mockLogger.Object, timeoutMs, 180000);
 
             // Assert
             Assert.NotNull(m_cdbSession);
@@ -446,7 +446,7 @@ namespace mcp_nexus_tests.Helper
         public void CdbSession_Constructor_WithValidRetries_Succeeds(int retries)
         {
             // Act
-            m_cdbSession = new CdbSession(m_mockLogger.Object, 5000, null, 10000, retries);
+            m_cdbSession = new CdbSession(m_mockLogger.Object, 5000, 180000, null, 10000, retries);
 
             // Assert
             Assert.NotNull(m_cdbSession);
@@ -459,7 +459,7 @@ namespace mcp_nexus_tests.Helper
         public void CdbSession_Constructor_WithValidStartupDelay_Succeeds(int delayMs)
         {
             // Act
-            m_cdbSession = new CdbSession(m_mockLogger.Object, 5000, null, 10000, 1, null, delayMs);
+            m_cdbSession = new CdbSession(m_mockLogger.Object, 5000, 180000, null, 10000, 1, null, delayMs);
 
             // Assert
             Assert.NotNull(m_cdbSession);
@@ -486,7 +486,7 @@ namespace mcp_nexus_tests.Helper
         {
             // Arrange
             var customPath = "C:\\CustomCdb\\cdb.exe";
-            var session = new CdbSession(m_mockLogger.Object, 5000, customPath);
+            var session = new CdbSession(m_mockLogger.Object, 5000, 180000, customPath);
             var method = typeof(CdbSession).GetMethod("FindCdbPath",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
@@ -502,7 +502,7 @@ namespace mcp_nexus_tests.Helper
         {
             // Arrange
             var customPath = "C:\\NonExistent\\cdb.exe";
-            var session = new CdbSession(m_mockLogger.Object, 5000, customPath);
+            var session = new CdbSession(m_mockLogger.Object, 5000, 180000, customPath);
             var method = typeof(CdbSession).GetMethod("FindCdbPath",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
@@ -557,7 +557,7 @@ namespace mcp_nexus_tests.Helper
         public async Task CdbSession_StartSession_WithCrashDumpTarget_AddsZFlag()
         {
             // Arrange
-            var session = new CdbSession(m_mockLogger.Object, 1000, "nonexistent_cdb.exe");
+            var session = new CdbSession(m_mockLogger.Object, 1000, 180000, "nonexistent_cdb.exe");
             var target = "test.dmp";
 
             // Act
@@ -571,7 +571,7 @@ namespace mcp_nexus_tests.Helper
         public async Task CdbSession_StartSession_WithCrashDumpTargetAlreadyWithZFlag_DoesNotAddZFlag()
         {
             // Arrange
-            var session = new CdbSession(m_mockLogger.Object, 1000, "nonexistent_cdb.exe");
+            var session = new CdbSession(m_mockLogger.Object, 1000, 180000, "nonexistent_cdb.exe");
             var target = "-z test.dmp";
 
             // Act
@@ -585,7 +585,7 @@ namespace mcp_nexus_tests.Helper
         public async Task CdbSession_StartSession_WithNonCrashDumpTarget_DoesNotAddZFlag()
         {
             // Arrange
-            var session = new CdbSession(m_mockLogger.Object, 1000, "nonexistent_cdb.exe");
+            var session = new CdbSession(m_mockLogger.Object, 1000, 180000, "nonexistent_cdb.exe");
             var target = "notepad.exe";
 
             // Act
@@ -599,7 +599,7 @@ namespace mcp_nexus_tests.Helper
         public async Task CdbSession_StartSession_WithArguments_IncludesArguments()
         {
             // Arrange
-            var session = new CdbSession(m_mockLogger.Object, 1000, "nonexistent_cdb.exe");
+            var session = new CdbSession(m_mockLogger.Object, 1000, 180000, "nonexistent_cdb.exe");
             var target = "notepad.exe";
             var arguments = "-p 1234";
 
@@ -614,7 +614,7 @@ namespace mcp_nexus_tests.Helper
         public async Task CdbSession_StartSession_WithSymbolSearchPath_IncludesSymbolPath()
         {
             // Arrange
-            var session = new CdbSession(m_mockLogger.Object, 100, "nonexistent_cdb.exe", 10000, 1, "C:\\Symbols");
+            var session = new CdbSession(m_mockLogger.Object, 100, 180000, "nonexistent_cdb.exe", 10000, 1, "C:\\Symbols");
             var target = "notepad.exe";
 
             // Act
@@ -628,7 +628,7 @@ namespace mcp_nexus_tests.Helper
         public async Task CdbSession_StartSession_WhenAlreadyActive_LogsWarning()
         {
             // Arrange
-            var session = new CdbSession(m_mockLogger.Object, 1000, "nonexistent_cdb.exe");
+            var session = new CdbSession(m_mockLogger.Object, 1000, 180000, "nonexistent_cdb.exe");
             var target = "notepad.exe";
 
             // Act
@@ -644,7 +644,7 @@ namespace mcp_nexus_tests.Helper
         public async Task CdbSession_StartSession_WithTimeout_HandlesTimeout()
         {
             // Arrange
-            var session = new CdbSession(m_mockLogger.Object, 100, "nonexistent_cdb.exe"); // Very short timeout
+            var session = new CdbSession(m_mockLogger.Object, 100, 180000, "nonexistent_cdb.exe"); // Very short timeout
             var target = "notepad.exe";
 
             // Act
@@ -658,7 +658,7 @@ namespace mcp_nexus_tests.Helper
         public async Task CdbSession_StartSession_WithException_HandlesGracefully()
         {
             // Arrange
-            var session = new CdbSession(m_mockLogger.Object, 1000, "nonexistent_cdb.exe");
+            var session = new CdbSession(m_mockLogger.Object, 1000, 180000, "nonexistent_cdb.exe");
             var target = "notepad.exe";
 
             // Act

@@ -57,7 +57,8 @@ namespace mcp_nexus.Infrastructure
                     ServiceName = serviceName,
                     DisplayName = displayName,
                     Description = description,
-                    ExecutablePath = executablePath
+                    InstallFolder = Path.GetDirectoryName(executablePath) ?? string.Empty,
+                    ExecutableName = Path.GetFileName(executablePath)
                 };
 
                 var registryResult = await _registryManager.CreateServiceRegistryAsync(configuration);

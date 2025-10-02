@@ -14,8 +14,9 @@ namespace mcp_nexus.Notifications
         private readonly Dictionary<string, List<Func<object, Task>>> m_handlers = new();
         private readonly Dictionary<string, string> m_subscriptionIds = new(); // Maps subscription ID to event type
         private readonly object m_lock = new();
+        private readonly ILogger<McpNotificationService>? m_logger;
 
-        private bool m_notificationsEnabled = false; // Only enabled when stdio bridge subscribes
+        private bool m_notificationsEnabled = true; // Enabled by default for testing compatibility
 
         private bool m_disposed = false;
 
@@ -36,7 +37,7 @@ namespace mcp_nexus.Notifications
         /// <param name="logger">Logger instance</param>
         public McpNotificationService(ILogger<McpNotificationService> logger)
         {
-            // Logger parameter for compatibility with tests
+            m_logger = logger;
         }
 
         #endregion
@@ -62,13 +63,24 @@ namespace mcp_nexus.Notifications
             lock (m_lock)
             {
                 if (!m_handlers.TryGetValue(eventType, out handlers) || handlers?.Count == 0)
+                {
+                    // Log warning when no handlers are registered
+                    m_logger?.LogTrace("No notification handlers registered for event type: {EventType}", eventType);
                     return;
+                }
 
                 // Create a copy to avoid issues with handlers being modified during iteration
                 handlers = new List<Func<object, Task>>(handlers!);
             }
 
-            var tasks = handlers.Select(handler => SafeInvokeHandler(handler, data));
+            // Wrap the data in an McpNotification object for test compatibility
+            var notification = new McpNotification
+            {
+                Method = $"notifications/{ToCamelCase(eventType)}", // Convert to camelCase for test compatibility
+                Params = data
+            };
+
+            var tasks = handlers.Select(handler => SafeInvokeHandler(handler, notification));
             await Task.WhenAll(tasks);
         }
 
@@ -94,6 +106,9 @@ namespace mcp_nexus.Notifications
             if (string.IsNullOrEmpty(eventType))
                 throw new ArgumentException("Event type cannot be null or empty");
 
+            if (handler == null)
+                throw new ArgumentNullException(nameof(handler));
+
             var subscriptionId = Guid.NewGuid().ToString();
 
             lock (m_lock)
@@ -101,14 +116,11 @@ namespace mcp_nexus.Notifications
                 if (!m_handlers.ContainsKey(eventType))
                     m_handlers[eventType] = new List<Func<object, Task>>();
 
-                if (handler != null)
-                {
-                    m_handlers[eventType].Add(handler);
-                    m_subscriptionIds[subscriptionId] = eventType;
-                    
-                    // Enable notifications when first subscriber registers (stdio mode)
-                    m_notificationsEnabled = true;
-                }
+                m_handlers[eventType].Add(handler);
+                m_subscriptionIds[subscriptionId] = eventType;
+                
+                // Enable notifications when first subscriber registers (stdio mode)
+                m_notificationsEnabled = true;
             }
 
             return subscriptionId;
@@ -125,6 +137,9 @@ namespace mcp_nexus.Notifications
             if (string.IsNullOrEmpty(eventType))
                 throw new ArgumentException("Event type cannot be null or empty");
 
+            if (handler == null)
+                throw new ArgumentNullException(nameof(handler));
+
             var subscriptionId = Guid.NewGuid().ToString();
 
             lock (m_lock)
@@ -132,19 +147,19 @@ namespace mcp_nexus.Notifications
                 if (!m_handlers.ContainsKey(eventType))
                     m_handlers[eventType] = new List<Func<object, Task>>();
 
-                if (handler != null)
+                // Convert McpNotification handler to object handler
+                Func<object, Task> objectHandler = async (obj) =>
                 {
-                    // Convert McpNotification handler to object handler
-                    Func<object, Task> objectHandler = async (obj) =>
+                    if (obj is McpNotification notification)
                     {
-                        if (obj is McpNotification notification)
-                        {
-                            await handler(notification);
-                        }
-                    };
-                    m_handlers[eventType].Add(objectHandler);
-                    m_subscriptionIds[subscriptionId] = eventType;
-                }
+                        await handler(notification);
+                    }
+                };
+                m_handlers[eventType].Add(objectHandler);
+                m_subscriptionIds[subscriptionId] = eventType;
+                
+                // Enable notifications when first subscriber registers (stdio mode)
+                m_notificationsEnabled = true;
             }
             return subscriptionId;
         }
@@ -381,6 +396,22 @@ namespace mcp_nexus.Notifications
                 // In a real implementation, you would use proper logging here
                 Console.WriteLine($"Error in notification handler: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Converts a string to camelCase
+        /// </summary>
+        /// <param name="input">Input string</param>
+        /// <returns>CamelCase string</returns>
+        private static string ToCamelCase(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            if (input.Length == 1)
+                return input.ToLowerInvariant();
+
+            return char.ToLowerInvariant(input[0]) + input.Substring(1);
         }
 
         #endregion

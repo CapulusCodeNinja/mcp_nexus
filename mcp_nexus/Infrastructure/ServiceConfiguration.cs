@@ -13,7 +13,6 @@ namespace mcp_nexus.Infrastructure
         public string ServiceName { get; set; } = "MCP-Nexus";
         public string DisplayName { get; set; } = "MCP Nexus Service";
         public string Description { get; set; } = "MCP Nexus Debugging Service";
-        public string ExecutablePath { get; set; } = string.Empty;
         public string WorkingDirectory { get; set; } = string.Empty;
         public string ProjectFileName { get; set; } = "mcp_nexus.csproj";
         public string[] Dependencies { get; set; } = Array.Empty<string>();
@@ -42,23 +41,24 @@ namespace mcp_nexus.Infrastructure
         public Dictionary<string, object> CustomSettings { get; set; } = new();
 
         // Additional properties expected by tests (instance properties)
-        public string ServiceDisplayName { get; set; } = "MCP Nexus Service";
-        public string ServiceDescription { get; set; } = "MCP Nexus Debugging Service";
+        public string ServiceDisplayName { get; set; } = "MCP Nexus Server";
+        public string ServiceDescription { get; set; } = "Model Context Protocol server providing AI tool integration";
         public string InstallFolder { get; set; } = @"C:\Program Files\MCP-Nexus";
-        public string ServiceArguments { get; set; } = string.Empty;
-        public int ServiceStopDelayMs { get; set; } = 5000;
-        public int ServiceStartDelayMs { get; set; } = 2000;
-        public int ServiceDeleteDelayMs { get; set; } = 1000;
-        public int ServiceCleanupDelayMs { get; set; } = 3000;
+        public string ServiceArguments { get; set; } = "--service";
+        public int ServiceStopDelayMs { get; set; } = 2000;
+        public int ServiceStartDelayMs { get; set; } = 3000;
+        public int ServiceDeleteDelayMs { get; set; } = 3000;
+        public int ServiceCleanupDelayMs { get; set; } = 5000;
         public int MaxRetryAttempts { get; set; } = 3;
-        public int RetryDelayMs { get; set; } = 1000;
+        public int RetryDelayMs { get; set; } = 2000;
         public string ExecutableName { get; set; } = "mcp_nexus.exe";
         public string BackupsFolderName { get; set; } = "backups";
         public string BuildConfiguration { get; set; } = "Release";
-        public int MaxBackupsToKeep { get; set; } = 10;
-        public string BackupsBaseFolder { get; set; } = @"C:\ProgramData\MCP-Nexus\Backups";
+        public int MaxBackupsToKeep { get; set; } = 5;
+        public string BackupsBaseFolder { get; set; } = Path.Combine(Path.GetTempPath(), "MCP-Nexus-Backups");
 
         // Computed properties
+        public string ExecutablePath => Path.Combine(InstallFolder, ExecutableName);
         public string BackupsFolder => Path.Combine(InstallFolder, BackupsFolderName);
 
         // Static properties for test compatibility (only unique ones)
@@ -67,33 +67,39 @@ namespace mcp_nexus.Infrastructure
         // Static methods expected by tests
         public static string GetCreateServiceCommand(string serviceName, string displayName, string description, string executablePath)
         {
-            return $"sc create \"{serviceName}\" binPath=\"{executablePath}\" DisplayName=\"{displayName}\" start=auto";
+            if (executablePath == null)
+                throw new ArgumentNullException(nameof(executablePath));
+                
+            var config = new ServiceConfiguration();
+            return $"sc create \"{serviceName}\" binPath=\"{executablePath} {config.ServiceArguments}\" DisplayName=\"{config.ServiceDisplayName}\" start= auto";
         }
 
         public static string GetDeleteServiceCommand(string serviceName)
         {
-            return $"sc delete \"{serviceName}\"";
+            return $"delete \"{serviceName}\"";
         }
 
         public static string GetServiceStartCommand(string serviceName)
         {
-            return $"sc start \"{serviceName}\"";
+            return $"start \"{serviceName}\"";
         }
 
         public static string GetServiceStopCommand(string serviceName)
         {
-            return $"sc stop \"{serviceName}\"";
+            return $"stop \"{serviceName}\"";
         }
 
         public static string GetServiceDescriptionCommand(string serviceName, string description)
         {
-            return $"sc description \"{serviceName}\" \"{description}\"";
+            var config = new ServiceConfiguration();
+            return $"sc description \"{serviceName}\" \"{config.ServiceDescription}\"";
         }
 
         public static string GetTimestampedBackupFolder(string basePath)
         {
-            var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-            return Path.Combine(basePath, $"backup_{timestamp}");
+            var config = new ServiceConfiguration();
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            return Path.Combine(config.BackupsFolder, $"{timestamp}");
         }
     }
 

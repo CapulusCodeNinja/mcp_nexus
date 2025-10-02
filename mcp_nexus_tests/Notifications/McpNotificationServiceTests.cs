@@ -36,9 +36,12 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandStatus", notification =>
             {
-                receivedNotifications.Add(notification);
+                if (notification is McpNotification mcpNotification)
+                {
+                    receivedNotifications.Add(mcpNotification);
+                }
                 return Task.CompletedTask;
             });
 
@@ -65,9 +68,12 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("SessionRecovery", notification =>
             {
-                receivedNotifications.Add(notification);
+                if (notification is McpNotification mcpNotification)
+                {
+                    receivedNotifications.Add(mcpNotification);
+                }
                 return Task.CompletedTask;
             });
 
@@ -95,9 +101,12 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("ServerHealth", notification =>
             {
-                receivedNotifications.Add(notification);
+                if (notification is McpNotification mcpNotification)
+                {
+                    receivedNotifications.Add(mcpNotification);
+                }
                 return Task.CompletedTask;
             });
 
@@ -125,9 +134,12 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandStatus", notification =>
             {
-                receivedNotifications.Add(notification);
+                if (notification is McpNotification mcpNotification)
+                {
+                    receivedNotifications.Add(mcpNotification);
+                }
                 return Task.CompletedTask;
             });
 
@@ -167,13 +179,13 @@ namespace mcp_nexus_tests.Services
             var receivedNotifications1 = new List<McpNotification>();
             var receivedNotifications2 = new List<McpNotification>();
 
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandStatus", notification =>
             {
                 receivedNotifications1.Add(notification);
                 return Task.CompletedTask;
             });
 
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandStatus", notification =>
             {
                 receivedNotifications2.Add(notification);
                 return Task.CompletedTask;
@@ -196,15 +208,18 @@ namespace mcp_nexus_tests.Services
             var receivedNotifications = new List<McpNotification>();
             var exceptionThrown = false;
 
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandStatus", notification =>
             {
                 exceptionThrown = true;
                 throw new InvalidOperationException("Handler failed");
             });
 
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandStatus", notification =>
             {
-                receivedNotifications.Add(notification);
+                if (notification is McpNotification mcpNotification)
+                {
+                    receivedNotifications.Add(mcpNotification);
+                }
                 return Task.CompletedTask;
             });
 
@@ -241,9 +256,12 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandStatus", notification =>
             {
-                receivedNotifications.Add(notification);
+                if (notification is McpNotification mcpNotification)
+                {
+                    receivedNotifications.Add(mcpNotification);
+                }
                 return Task.CompletedTask;
             });
 
@@ -273,9 +291,12 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
-            m_service.Subscribe("test-event", notification =>
+            m_service.Subscribe("CommandStatus", notification =>
             {
-                receivedNotifications.Add(notification);
+                if (notification is McpNotification mcpNotification)
+                {
+                    receivedNotifications.Add(mcpNotification);
+                }
                 return Task.CompletedTask;
             });
 

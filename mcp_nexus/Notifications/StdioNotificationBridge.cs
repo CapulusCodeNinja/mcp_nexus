@@ -10,6 +10,7 @@ namespace mcp_nexus.Notifications
         private bool m_isRunning = false;
         private readonly IMcpNotificationService m_notificationService;
         private string? m_subscriptionId;
+        private bool m_isInitialized = false;
 
         /// <summary>
         /// Initializes a new instance of the StdioNotificationBridge
@@ -78,13 +79,14 @@ namespace mcp_nexus.Notifications
         /// <returns>Task representing the operation</returns>
         public Task InitializeAsync()
         {
-            if (m_subscriptionId == null)
+            if (!m_isInitialized)
             {
-                m_subscriptionId = m_notificationService.Subscribe("notification", async (notification) =>
+                m_subscriptionId = m_notificationService.Subscribe("notification", async (mcp_nexus.Models.McpNotification notification) =>
                 {
                     await SendNotificationAsync(notification);
                 });
                 m_isRunning = true; // Start the bridge when initialized
+                m_isInitialized = true;
             }
             return Task.CompletedTask;
         }
