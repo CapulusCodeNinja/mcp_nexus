@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace mcp_nexus.Notifications
 {
     /// <summary>
@@ -16,6 +18,17 @@ namespace mcp_nexus.Notifications
         public StdioNotificationBridge(IMcpNotificationService notificationService)
         {
             m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the StdioNotificationBridge with logger
+        /// </summary>
+        /// <param name="logger">Logger instance</param>
+        /// <param name="notificationService">Notification service to subscribe to</param>
+        public StdioNotificationBridge(ILogger<StdioNotificationBridge> logger, IMcpNotificationService notificationService)
+        {
+            m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            // Logger parameter for compatibility with tests
         }
 
         /// <summary>

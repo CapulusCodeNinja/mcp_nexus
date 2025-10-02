@@ -140,7 +140,7 @@ namespace mcp_nexus_tests.Integration
             // var stdioHandlerCalled = false; // Not used in this test
 
             // Register HTTP-style handler
-            m_notificationService.Subscribe("test-event", notification =>
+            m_notificationService.Subscribe(notification =>
             {
                 httpHandlerCalled = true;
                 return Task.CompletedTask;

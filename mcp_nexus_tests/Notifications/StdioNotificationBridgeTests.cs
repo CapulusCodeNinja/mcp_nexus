@@ -20,7 +20,7 @@ namespace mcp_nexus_tests.Services
     {
         private readonly Mock<ILogger<StdioNotificationBridge>> m_mockLogger;
         private readonly Mock<IMcpNotificationService> m_mockNotificationService;
-        private StdioNotificationBridge m_bridge;
+        private readonly StdioNotificationBridge m_bridge;
         private readonly StringWriter m_stringWriter;
         private readonly TextWriter m_originalOut;
 
@@ -34,15 +34,7 @@ namespace mcp_nexus_tests.Services
             m_stringWriter = new StringWriter();
             Console.SetOut(m_stringWriter);
 
-            m_bridge = new StdioNotificationBridge(m_mockNotificationService.Object);
-        }
-
-        private void ResetBridge()
-        {
-            m_bridge?.Dispose();
-            m_mockNotificationService.Reset();
-            m_bridge = new StdioNotificationBridge(m_mockNotificationService.Object);
-            m_stringWriter.GetStringBuilder().Clear();
+            m_bridge = new StdioNotificationBridge(m_mockLogger.Object, m_mockNotificationService.Object);
         }
 
         public void Dispose()
@@ -60,26 +52,20 @@ namespace mcp_nexus_tests.Services
 
             // Assert
             m_mockNotificationService.Verify(
-                x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<object, Task>>()),
+                x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<McpNotification, Task>>()),
                 Times.Once);
         }
 
         [Fact]
         public async Task InitializeAsync_CalledTwice_RegistersOnlyOnce()
         {
-            // Arrange
-            ResetBridge();
-            var callCount = 0;
-            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<object, Task>>()))
-                .Returns(() => $"subscription-{++callCount}");
-
             // Act
             await m_bridge.InitializeAsync();
             await m_bridge.InitializeAsync();
 
             // Assert
             m_mockNotificationService.Verify(
-                x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<object, Task>>()),
+                x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<McpNotification, Task>>()),
                 Times.Once);
         }
 
@@ -101,9 +87,9 @@ namespace mcp_nexus_tests.Services
             };
 
             // Get the registered handler
-            Func<object, Task>? registeredHandler = null;
-            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<object, Task>>()))
-                .Callback<string, Func<object, Task>>((eventType, handler) => registeredHandler = handler);
+            Func<McpNotification, Task>? registeredHandler = null;
+            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<McpNotification, Task>>()))
+                .Callback<Func<McpNotification, Task>>(handler => registeredHandler = handler);
 
             await m_bridge.InitializeAsync();
 
@@ -154,9 +140,9 @@ namespace mcp_nexus_tests.Services
                 Params = null
             };
 
-            Func<object, Task>? registeredHandler = null;
-            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<object, Task>>()))
-                .Callback<string, Func<object, Task>>((eventType, handler) => registeredHandler = handler);
+            Func<McpNotification, Task>? registeredHandler = null;
+            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<McpNotification, Task>>()))
+                .Callback<Func<McpNotification, Task>>(handler => registeredHandler = handler);
 
             await m_bridge.InitializeAsync();
 
@@ -177,10 +163,9 @@ namespace mcp_nexus_tests.Services
         public async Task HandleNotification_AfterDispose_DoesNotSendToStdout()
         {
             // Arrange
-            ResetBridge();
-            Func<object, Task>? registeredHandler = null;
-            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<object, Task>>()))
-                .Callback<string, Func<object, Task>>((eventType, handler) => registeredHandler = handler);
+            Func<McpNotification, Task>? registeredHandler = null;
+            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<McpNotification, Task>>()))
+                .Callback<Func<McpNotification, Task>>(handler => registeredHandler = handler);
 
             await m_bridge.InitializeAsync();
 
@@ -191,7 +176,7 @@ namespace mcp_nexus_tests.Services
             };
 
             // Act
-            m_bridge.Dispose(); // Now it implements IDisposable
+            m_bridge.Dispose();
             await registeredHandler!(notification);
 
             // Assert
@@ -203,9 +188,9 @@ namespace mcp_nexus_tests.Services
         public async Task HandleNotification_WithInvalidData_HandlesGracefully()
         {
             // Arrange
-            Func<object, Task>? registeredHandler = null;
-            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<object, Task>>()))
-                .Callback<string, Func<object, Task>>((eventType, handler) => registeredHandler = handler);
+            Func<McpNotification, Task>? registeredHandler = null;
+            m_mockNotificationService.Setup(x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<McpNotification, Task>>()))
+                .Callback<Func<McpNotification, Task>>(handler => registeredHandler = handler);
 
             await m_bridge.InitializeAsync();
 
@@ -225,8 +210,8 @@ namespace mcp_nexus_tests.Services
             // Act & Assert
             var exception = Record.Exception(() =>
             {
-                // StdioNotificationBridge doesn't implement IDisposable
-                // StdioNotificationBridge doesn't implement IDisposable
+                m_bridge.Dispose();
+                m_bridge.Dispose();
             });
 
             Assert.Null(exception);

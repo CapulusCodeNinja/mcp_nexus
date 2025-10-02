@@ -46,13 +46,13 @@ namespace mcp_nexus_tests.Services
                 .ReturnsAsync("Mock result");
 
             m_commandQueueService = new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            m_notificationService = new McpNotificationService();
+            m_notificationService = new McpNotificationService(m_mockNotificationLogger.Object);
         }
 
         public void Dispose()
         {
             m_commandQueueService?.Dispose();
-            // McpNotificationService doesn't implement IDisposable
+            m_notificationService?.Dispose();
         }
 
         [Fact]
@@ -141,9 +141,9 @@ namespace mcp_nexus_tests.Services
             // Register multiple handlers
             for (int i = 0; i < handlerCount; i++)
             {
-                var handler = new Func<object, Task>(notification =>
+                var handler = new Func<McpNotification, Task>(notification =>
                 {
-                    receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                    receivedNotifications.Add(notification);
                     return Task.CompletedTask;
                 });
                 handlers.Add(handler);
@@ -155,7 +155,7 @@ namespace mcp_nexus_tests.Services
             for (int i = 0; i < notificationCount; i++)
             {
                 tasks.Add(m_notificationService.NotifyCommandStatusAsync(
-                    $"cmd{i}", "test command", "executing", 50, "Processing", ""));
+                    $"cmd{i}", "test command", "executing", 50, "Processing"));
             }
 
             await Task.WhenAll(tasks);
@@ -180,7 +180,7 @@ namespace mcp_nexus_tests.Services
                 {
                     m_notificationService.Subscribe("test-event", notification =>
                     {
-                        receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                        receivedNotifications.Add(notification);
                         return Task.CompletedTask;
                     });
                 }));
@@ -231,17 +231,19 @@ namespace mcp_nexus_tests.Services
             var handlerCount = 20;
             var receivedNotifications = new ConcurrentBag<McpNotification>();
             var handlers = new List<Func<McpNotification, Task>>();
+            var subscriptionIds = new List<string>();
 
             // Register handlers
             for (int i = 0; i < handlerCount; i++)
             {
-                var handler = new Func<object, Task>(notification =>
+                var handler = new Func<McpNotification, Task>(notification =>
                 {
-                    receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                    receivedNotifications.Add(notification);
                     return Task.CompletedTask;
                 });
                 handlers.Add(handler);
-                m_notificationService.Subscribe("test-event", handler);
+                var subscriptionId = m_notificationService.Subscribe("test-event", handler);
+                subscriptionIds.Add(subscriptionId);
             }
 
             // Act - Remove handlers concurrently while sending notifications
@@ -259,7 +261,7 @@ namespace mcp_nexus_tests.Services
             {
                 tasks.Add(Task.Run(() =>
                 {
-                    m_notificationService.Unsubscribe($"subscription-{i}");
+                    m_notificationService.Unsubscribe(subscriptionIds[i]);
                 }));
             }
 

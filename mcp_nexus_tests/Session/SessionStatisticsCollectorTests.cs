@@ -345,13 +345,12 @@ namespace mcp_nexus_tests.Session
             };
             mockCommandQueue.Setup(x => x.GetQueueStatus()).Returns(queueStatus);
 
-            return new SessionInfo(
-                sessionId,
-                mockCdbSession.Object,
-                mockCommandQueue.Object,
-                dumpPath
-            )
+            return new SessionInfo
             {
+                SessionId = sessionId,
+                DumpPath = dumpPath,
+                CdbSession = mockCdbSession.Object,
+                CommandQueue = mockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-30),
                 LastActivity = DateTime.UtcNow.AddMinutes(-5),
                 Status = status

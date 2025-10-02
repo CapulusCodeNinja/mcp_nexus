@@ -122,7 +122,7 @@ namespace mcp_nexus_tests.Services
             });
 
             // Act
-            // McpNotificationService doesn't implement IDisposable
+            m_service.Dispose();
             await m_service.NotifyCommandHeartbeatAsync("cmd123", "test", TimeSpan.FromMinutes(1));
 
             // Assert

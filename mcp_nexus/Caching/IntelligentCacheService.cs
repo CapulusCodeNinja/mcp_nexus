@@ -21,27 +21,40 @@ namespace mcp_nexus.Caching
 
         #region Public Properties
 
-        /// <summary>Gets the cached value</summary>
-        public TValue Value => m_value;
+        /// <summary>Gets or sets the cached value</summary>
+        public TValue Value { get => m_value; set => m_value = value; }
 
-        /// <summary>Gets the creation timestamp</summary>
-        public DateTime CreatedAt => m_createdAt;
+        /// <summary>Gets or sets the creation timestamp</summary>
+        public DateTime CreatedAt { get => m_createdAt; set => m_createdAt = value; }
 
-        /// <summary>Gets the last accessed timestamp</summary>
-        public DateTime LastAccessed => m_lastAccessed;
+        /// <summary>Gets or sets the last accessed timestamp</summary>
+        public DateTime LastAccessed { get => m_lastAccessed; set => m_lastAccessed = value; }
 
-        /// <summary>Gets the expiration timestamp</summary>
-        public DateTime ExpiresAt => m_expiresAt;
+        /// <summary>Gets or sets the expiration timestamp</summary>
+        public DateTime ExpiresAt { get => m_expiresAt; set => m_expiresAt = value; }
 
-        /// <summary>Gets the access count</summary>
-        public long AccessCount => m_accessCount;
+        /// <summary>Gets or sets the access count</summary>
+        public long AccessCount { get => m_accessCount; set => m_accessCount = value; }
 
-        /// <summary>Gets the size in bytes</summary>
-        public long SizeBytes => m_sizeBytes;
+        /// <summary>Gets or sets the size in bytes</summary>
+        public long SizeBytes { get => m_sizeBytes; set => m_sizeBytes = value; }
 
         #endregion
 
         #region Constructor
+
+        /// <summary>
+        /// Initializes a new cache entry with default values
+        /// </summary>
+        public CacheEntry()
+        {
+            m_value = default(TValue)!;
+            m_createdAt = DateTime.UtcNow;
+            m_lastAccessed = DateTime.UtcNow;
+            m_expiresAt = DateTime.UtcNow.AddHours(1);
+            m_accessCount = 0;
+            m_sizeBytes = 0;
+        }
 
         /// <summary>
         /// Initializes a new cache entry

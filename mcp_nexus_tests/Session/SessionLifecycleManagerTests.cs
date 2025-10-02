@@ -150,22 +150,20 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var sessionId = "test-session-4";
-            var sessionInfo = new SessionInfo(
-                sessionId,
-                _mockCdbSession.Object,
-                _mockCommandQueue.Object,
-                "C:\\Test\\dump.dmp"
-            );
-            sessionInfo.Status = SessionStatus.Active;
+            var sessionInfo = new SessionInfo
+            {
+                SessionId = sessionId,
+                DumpPath = "C:\\Test\\dump.dmp",
+                CdbSession = _mockCdbSession.Object,
+                CommandQueue = _mockCommandQueue.Object,
+                CreatedAt = DateTime.UtcNow,
+                LastActivity = DateTime.UtcNow,
+                Status = SessionStatus.Active
+            };
             _sessions[sessionId] = sessionInfo;
 
             _mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
-            _mockCdbSession.Setup(x => x.IsActive).Returns(true);
-            _mockCdbSession.Setup(x => x.Dispose()).Verifiable();
             _mockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(5);
-            _mockCommandQueue.Setup(x => x.Dispose()).Verifiable();
-            _mockNotificationService.Setup(x => x.NotifySessionEventAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
 
             // Act
             var result = await _manager.CloseSessionAsync(sessionId);
@@ -239,23 +237,20 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange - Add an expired session
             var sessionId = "test-session-7";
-            var sessionInfo = new SessionInfo(
-                sessionId,
-                _mockCdbSession.Object,
-                _mockCommandQueue.Object,
-                "C:\\Test\\dump.dmp"
-            );
-            sessionInfo.Status = SessionStatus.Active;
-            sessionInfo.LastActivity = DateTime.UtcNow.AddHours(-2); // Old activity
+            var sessionInfo = new SessionInfo
+            {
+                SessionId = sessionId,
+                DumpPath = "C:\\Test\\dump.dmp",
+                CdbSession = _mockCdbSession.Object,
+                CommandQueue = _mockCommandQueue.Object,
+                CreatedAt = DateTime.UtcNow.AddHours(-2),
+                LastActivity = DateTime.UtcNow.AddHours(-2), // Old activity
+                Status = SessionStatus.Active
+            };
             _sessions[sessionId] = sessionInfo;
 
             _mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
-            _mockCdbSession.Setup(x => x.IsActive).Returns(true);
-            _mockCdbSession.Setup(x => x.Dispose()).Verifiable();
             _mockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(0);
-            _mockCommandQueue.Setup(x => x.Dispose()).Verifiable();
-            _mockNotificationService.Setup(x => x.NotifySessionEventAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
 
             // Act
             var result = await _manager.CleanupExpiredSessionsAsync();

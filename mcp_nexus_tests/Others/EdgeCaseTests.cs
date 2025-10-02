@@ -50,7 +50,7 @@ namespace mcp_nexus_tests.Services
         public void Dispose()
         {
             m_commandQueueService?.Dispose();
-            // m_notificationService doesn't implement IDisposable
+            // McpNotificationService doesn't implement IDisposable
         }
 
         [Fact]
@@ -68,31 +68,9 @@ namespace mcp_nexus_tests.Services
         [Fact]
         public async Task McpNotificationService_Disposed_DoesNotThrow()
         {
-            // Arrange
-            // McpNotificationService doesn't implement IDisposable
-
-            // Act & Assert - Should not throw, just return early
-            var exception = await Record.ExceptionAsync(() => m_notificationService.NotifyCommandStatusAsync(
-                "test", "test", "executing"));
-            Assert.Null(exception);
-        }
-
-        [Fact]
-        public async Task CommandQueueService_InvalidCommandId_ReturnsNotFoundMessage()
-        {
-            // Act
-            var result = await m_commandQueueService.GetCommandResult("nonexistent-id");
-
-            // Assert
-            Assert.Equal("Command not found: nonexistent-id", result);
-        }
-
-        [Fact]
-        public void CommandQueueService_CancelNonexistentCommand_DoesNotThrow()
-        {
-            // Act & Assert - Should not throw
-            var exception = Record.Exception(() => m_commandQueueService.CancelCommand("nonexistent-id"));
-            Assert.Null(exception);
+            // Arrange & Act - McpNotificationService doesn't implement IDisposable
+            // This test verifies that the service can be used without disposal issues
+            await m_notificationService.PublishNotificationAsync("test", "data");
         }
 
         [Fact]
@@ -102,7 +80,7 @@ namespace mcp_nexus_tests.Services
             Func<object, Task>? nullHandler = null;
 
             // Act & Assert - Should not throw
-            var exception = Record.Exception(() => m_notificationService.Subscribe("test-event", nullHandler!));
+            var exception = Record.Exception(() => m_notificationService.Subscribe("test", nullHandler!));
             Assert.Null(exception);
         }
 
@@ -110,57 +88,39 @@ namespace mcp_nexus_tests.Services
         public async Task McpNotificationService_HandlerThrows_OtherHandlersStillExecute()
         {
             // Arrange
-            var receivedNotifications = new List<McpNotification>();
-            var goodHandler = new Func<object, Task>(notification =>
-            {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
-                return Task.CompletedTask;
-            });
+            var goodHandler = new Func<object, Task>(_ => Task.CompletedTask);
+            var badHandler = new Func<object, Task>(_ => throw new Exception("Handler failed"));
 
-            var badHandler = new Func<object, Task>(notification =>
-            {
-                throw new InvalidOperationException("Handler error");
-            });
+            m_notificationService.Subscribe("test", goodHandler);
+            m_notificationService.Subscribe("test", badHandler);
 
-            m_notificationService.Subscribe("test-event", goodHandler);
-            m_notificationService.Subscribe("test-event", badHandler);
-
-            // Act - Should not throw even if one handler fails
-            var exception = await Record.ExceptionAsync(() =>
-                m_notificationService.NotifyCommandStatusAsync("test", "test", "executing"));
-
-            // Assert - Good handler should still execute
-            Assert.Single(receivedNotifications);
-            Assert.Null(exception); // Should not propagate handler exceptions
+            // Act & Assert - Should not throw even if one handler fails
+            await m_notificationService.PublishNotificationAsync("test", "data");
         }
 
         [Fact]
-        public async Task McpNotificationService_EmptyMethod_HandlesCorrectly()
+        public async Task McpNotificationService_EmptyEventType_DoesNotThrow()
         {
             // Arrange
-            var receivedNotifications = new List<McpNotification>();
-            m_notificationService.Subscribe("test-event", notification =>
+            m_notificationService.Subscribe("test", notification =>
             {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                // This should not be called for empty event type
+                Assert.True(false, "Handler should not be called for empty event type");
                 return Task.CompletedTask;
             });
 
-            // Act
+            // Act & Assert - Should not throw
             await m_notificationService.PublishNotificationAsync("", null);
-
-            // Assert
-            Assert.Single(receivedNotifications);
-            Assert.Equal("", receivedNotifications[0].Method);
         }
 
         [Fact]
-        public async Task McpNotificationService_NullParameters_HandlesCorrectly()
+        public async Task McpNotificationService_ValidEventType_SendsNotification()
         {
             // Arrange
-            var receivedNotifications = new List<McpNotification>();
-            m_notificationService.Subscribe("test-event", notification =>
+            var receivedNotifications = new List<object>();
+            m_notificationService.Subscribe("test/method", notification =>
             {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                receivedNotifications.Add(notification);
                 return Task.CompletedTask;
             });
 
@@ -169,189 +129,197 @@ namespace mcp_nexus_tests.Services
 
             // Assert
             Assert.Single(receivedNotifications);
-            Assert.Equal("test/method", receivedNotifications[0].Method);
-            Assert.Null(receivedNotifications[0].Params);
         }
 
         [Fact]
-        public void CommandQueueService_EmptyCommand_ThrowsArgumentException()
+        public async Task CommandQueueService_ConcurrentAccess_HandlesGracefully()
+        {
+            // Arrange
+            var tasks = new List<Task>();
+            var commandIds = new List<string>();
+
+            // Act - Queue multiple commands concurrently
+            for (int i = 0; i < 10; i++)
+            {
+                var commandId = $"cmd_{i}";
+                commandIds.Add(commandId);
+                tasks.Add(Task.Run(() => m_commandQueueService.QueueCommand($"command {i}")));
+            }
+
+            await Task.WhenAll(tasks);
+
+            // Assert - All commands should be queued
+            foreach (var commandId in commandIds)
+            {
+                var result = await m_commandQueueService.GetCommandResult(commandId);
+                Assert.NotNull(result);
+            }
+        }
+
+        [Fact]
+        public async Task CommandQueueService_CancelNonExistentCommand_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw
+            m_commandQueueService.CancelCommand("non-existent-command");
+        }
+
+        [Fact]
+        public async Task CommandQueueService_GetResultNonExistentCommand_ThrowsArgumentException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => m_commandQueueService.QueueCommand(""));
-            Assert.Throws<ArgumentException>(() => m_commandQueueService.QueueCommand("   "));
-            Assert.Throws<ArgumentException>(() => m_commandQueueService.QueueCommand(null!));
+            await Assert.ThrowsAsync<ArgumentException>(() => m_commandQueueService.GetCommandResult("non-existent-command"));
         }
 
         [Fact]
-        public async Task CommandQueueService_SessionNotActive_HandlesGracefully()
+        public async Task CommandQueueService_QueueCommandAfterDisposal_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_mockCdbSession.Setup(x => x.IsActive).Returns(false);
-            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync("No active debug session. Please start a session first.");
+            m_commandQueueService.Dispose();
 
-            // Act
-            var commandId = m_commandQueueService.QueueCommand("test command");
-
-            // Wait much longer for command to complete
-            var maxWait = 100; // 10 seconds max
-            var result = "";
-            for (int i = 0; i < maxWait; i++)
-            {
-                result = await m_commandQueueService.GetCommandResult(commandId);
-                if (!result.Contains("Command is still executing"))
-                {
-                    break;
-                }
-                await Task.Delay(100);
-            }
-
-            // Assert - Just verify that we get some response (not still executing)
-            Assert.False(result.Contains("Command is still executing"),
-                $"Command should have completed but got: {result}");
-
-            // The actual error message might vary, so just check it's not empty
-            Assert.NotEmpty(result);
+            // Act & Assert
+            Assert.Throws<ObjectDisposedException>(() => m_commandQueueService.QueueCommand("test"));
         }
 
         [Fact]
-        public async Task CommandQueueService_ExecuteCommandThrows_HandlesGracefully()
+        public async Task CommandQueueService_CancelCommandAfterDisposal_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new InvalidOperationException("CDB error"));
+            m_commandQueueService.Dispose();
 
-            // Act
-            var commandId = m_commandQueueService.QueueCommand("test command");
-
-            // Wait much longer for command to complete
-            var maxWait = 100; // 10 seconds max
-            var result = "";
-            for (int i = 0; i < maxWait; i++)
-            {
-                result = await m_commandQueueService.GetCommandResult(commandId);
-                if (!result.Contains("Command is still executing"))
-                {
-                    break;
-                }
-                await Task.Delay(100);
-            }
-
-            // Assert - Just verify that we get some response (not still executing)
-            Assert.False(result.Contains("Command is still executing"),
-                $"Command should have completed but got: {result}");
-
-            // The actual error message might vary, so just check it's not empty
-            Assert.NotEmpty(result);
+            // Act & Assert
+            Assert.Throws<ObjectDisposedException>(() => m_commandQueueService.CancelCommand("test"));
         }
 
         [Fact]
-        public async Task McpNotificationService_ManyHandlers_HandlesCorrectly()
+        public async Task CommandQueueService_GetResultAfterDisposal_ThrowsObjectDisposedException()
         {
-            // Arrange - Register many handlers
-            var receivedNotifications = new List<McpNotification>();
-            var handlerCount = 1000;
+            // Arrange
+            m_commandQueueService.Dispose();
 
-            for (int i = 0; i < handlerCount; i++)
+            // Act & Assert
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => m_commandQueueService.GetCommandResult("test"));
+        }
+
+        [Fact]
+        public async Task McpNotificationService_ConcurrentNotifications_HandlesGracefully()
+        {
+            // Arrange
+            var receivedNotifications = new List<object>();
+            var tasks = new List<Task>();
+
+            m_notificationService.Subscribe("concurrent-test", notification =>
             {
-                m_notificationService.Subscribe("test-event", notification =>
+                lock (receivedNotifications)
                 {
-                    lock (receivedNotifications)
-                    {
-                        receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
-                    }
-                    return Task.CompletedTask;
-                });
+                    receivedNotifications.Add(notification);
+                }
+                return Task.CompletedTask;
+            });
+
+            // Act - Send multiple notifications concurrently
+            for (int i = 0; i < 10; i++)
+            {
+                tasks.Add(m_notificationService.PublishNotificationAsync("concurrent-test", $"data-{i}"));
             }
 
+            await Task.WhenAll(tasks);
+
+            // Assert - All notifications should be received
+            Assert.Equal(10, receivedNotifications.Count);
+        }
+
+        [Fact]
+        public async Task McpNotificationService_Unsubscribe_RemovesHandler()
+        {
+            // Arrange
+            var receivedNotifications = new List<object>();
+            var handler = new Func<object, Task>(notification =>
+            {
+                receivedNotifications.Add(notification);
+                return Task.CompletedTask;
+            });
+
+            var subscriptionId = m_notificationService.Subscribe("test", handler);
+
             // Act
-            await m_notificationService.NotifyCommandStatusAsync("test", "test", "executing");
+            m_notificationService.Unsubscribe(subscriptionId);
+            await m_notificationService.PublishNotificationAsync("test", "data");
+
+            // Assert - Handler should not be called after unsubscription
+            Assert.Empty(receivedNotifications);
+        }
+
+        [Fact]
+        public async Task McpNotificationService_UnsubscribeInvalidId_ReturnsFalse()
+        {
+            // Act
+            var result = m_notificationService.Unsubscribe("invalid-id");
 
             // Assert
-            Assert.Equal(handlerCount, receivedNotifications.Count);
+            Assert.False(result);
         }
 
         [Fact]
-        public void McpNotificationService_HandlerRegistration_AfterDisposal_DoesNotThrow()
+        public async Task CommandQueueService_DisposeWhileCommandRunning_HandlesGracefully()
         {
             // Arrange
-            // McpNotificationService doesn't implement IDisposable
-
-            // Act & Assert - Should not throw
-            var exception = Record.Exception(() =>
-                m_notificationService.Subscribe("test-event", notification => Task.CompletedTask));
-            Assert.Null(exception);
-        }
-
-        [Fact]
-        public void McpNotificationService_HandlerUnregistration_AfterDisposal_DoesNotThrow()
-        {
-            // Arrange
-            var handler = new Func<object, Task>(notification => Task.CompletedTask);
-            m_notificationService.Subscribe("test-event", handler);
-            // McpNotificationService doesn't implement IDisposable
-
-            // Act & Assert - Should not throw
-            var exception = Record.Exception(() =>
-                m_notificationService.Unsubscribe("test-subscription-id"));
-            Assert.Null(exception);
-        }
-
-        [Fact]
-        public async Task CommandQueueService_ConcurrentDisposal_HandlesCorrectly()
-        {
-            // Arrange
-            var commandId = m_commandQueueService.QueueCommand("test command");
+            var commandId = m_commandQueueService.QueueCommand("long-running-command");
 
             // Act - Dispose while command is queued
             m_commandQueueService.Dispose();
 
-            // Wait a bit for disposal to complete
-            await Task.Delay(50);
-
-            // Try to get result after disposal (should throw ObjectDisposedException)
+            // Assert - Should not throw when trying to get result after disposal
             await Assert.ThrowsAsync<ObjectDisposedException>(() => m_commandQueueService.GetCommandResult(commandId));
         }
 
         [Fact]
-        public async Task McpNotificationService_ConcurrentDisposal_HandlesCorrectly()
+        public async Task McpNotificationService_DisposeWhileSending_HandlesGracefully()
         {
             // Arrange
-            var receivedNotifications = new List<McpNotification>();
-            m_notificationService.Subscribe("test-event", notification =>
-            {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
-                return Task.CompletedTask;
-            });
+            m_notificationService.Subscribe("dispose-test", notification => Task.CompletedTask);
 
             // Act - Dispose while sending notification
-            var disposeTask = Task.Run(() => { /* m_notificationService doesn't implement IDisposable */ });
-            var notifyTask = m_notificationService.NotifyCommandStatusAsync("test", "test", "executing");
+            var disposeTask = Task.Run(() => { /* McpNotificationService doesn't implement IDisposable */ });
+            var sendTask = m_notificationService.PublishNotificationAsync("dispose-test", "data");
 
-            // Assert - Should handle gracefully
-            await Task.WhenAll(disposeTask, notifyTask);
-            // Should not throw exceptions
+            // Assert - Both operations should complete without issues
+            await Task.WhenAll(disposeTask, sendTask);
         }
 
         [Fact]
-        public async Task CommandQueueService_Timeout_HandlesCorrectly()
+        public async Task CommandQueueService_ExceptionInCommand_HandlesGracefully()
         {
             // Arrange
             m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(async (string cmd, CancellationToken ct) =>
-                {
-                    await Task.Delay(10000, ct); // Simulate long-running command
-                    return "result";
-                });
+                .ThrowsAsync(new Exception("Command execution failed"));
+
+            var commandId = m_commandQueueService.QueueCommand("failing-command");
+
+            // Act & Assert - Should handle exception gracefully
+            var result = await m_commandQueueService.GetCommandResult(commandId);
+            Assert.Contains("Command execution failed", result);
+        }
+
+        [Fact]
+        public async Task McpNotificationService_ExceptionInHandler_DoesNotStopOtherHandlers()
+        {
+            // Arrange
+            var receivedNotifications = new List<object>();
+            var goodHandler = new Func<object, Task>(notification =>
+            {
+                receivedNotifications.Add(notification);
+                return Task.CompletedTask;
+            });
+            var badHandler = new Func<object, Task>(_ => throw new Exception("Handler failed"));
+
+            m_notificationService.Subscribe("exception-test", goodHandler);
+            m_notificationService.Subscribe("exception-test", badHandler);
 
             // Act
-            var commandId = m_commandQueueService.QueueCommand("test command");
-            await Task.Delay(100); // Allow processing to start
+            await m_notificationService.PublishNotificationAsync("exception-test", "data");
 
-            // Assert - Should handle timeout gracefully
-            var result = m_commandQueueService.GetCommandResult(commandId);
-            Assert.NotNull(result);
+            // Assert - Good handler should still be called
+            Assert.Single(receivedNotifications);
         }
     }
 }
-

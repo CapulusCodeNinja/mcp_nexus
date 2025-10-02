@@ -191,6 +191,14 @@ namespace mcp_nexus.Metrics
             m_timestamp = DateTime.MinValue;
         }
 
+        public MetricsSnapshot(DateTime timestamp, List<CounterSnapshot> counters, List<HistogramSnapshot> histograms, List<GaugeSnapshot> gauges)
+        {
+            m_timestamp = timestamp;
+            m_counters = counters ?? new List<CounterSnapshot>();
+            m_histograms = histograms ?? new List<HistogramSnapshot>();
+            m_gauges = gauges ?? new List<GaugeSnapshot>();
+        }
+
         #endregion
 
         #region Public Methods
@@ -395,6 +403,13 @@ namespace mcp_nexus.Metrics
         /// <param name="name">Counter name</param>
         /// <param name="value">Counter value</param>
         /// <param name="tags">Counter tags</param>
+        public CounterSnapshot()
+        {
+            m_name = string.Empty;
+            m_value = 0;
+            m_tags = new Dictionary<string, string>();
+        }
+
         public CounterSnapshot(string name, double value, Dictionary<string, string>? tags = null)
         {
             m_name = name ?? string.Empty;

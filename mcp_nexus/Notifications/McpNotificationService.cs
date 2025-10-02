@@ -1,17 +1,43 @@
+using Microsoft.Extensions.Logging;
+using mcp_nexus.Models;
+
 namespace mcp_nexus.Notifications
 {
     /// <summary>
     /// MCP notification service implementation - maintains compatibility with existing code
     /// Automatically detects transport mode and disables notifications in HTTP mode
     /// </summary>
-    public class McpNotificationService : IMcpNotificationService
+    public class McpNotificationService : IMcpNotificationService, IDisposable
     {
         #region Private Fields
 
         private readonly Dictionary<string, List<Func<object, Task>>> m_handlers = new();
         private readonly Dictionary<string, string> m_subscriptionIds = new(); // Maps subscription ID to event type
         private readonly object m_lock = new();
+
         private bool m_notificationsEnabled = false; // Only enabled when stdio bridge subscribes
+
+        private bool m_disposed = false;
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Initializes a new instance of the McpNotificationService
+        /// </summary>
+        public McpNotificationService()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the McpNotificationService with a logger
+        /// </summary>
+        /// <param name="logger">Logger instance</param>
+        public McpNotificationService(ILogger<McpNotificationService> logger)
+        {
+            // Logger parameter for compatibility with tests
+        }
 
         #endregion
 
@@ -47,6 +73,17 @@ namespace mcp_nexus.Notifications
         }
 
         /// <summary>
+        /// Sends a notification (alias for PublishNotificationAsync)
+        /// </summary>
+        /// <param name="eventType">Event type</param>
+        /// <param name="data">Event data</param>
+        /// <returns>Task representing the operation</returns>
+        public async Task SendNotificationAsync(string eventType, object data)
+        {
+            await PublishNotificationAsync(eventType, data);
+        }
+
+        /// <summary>
         /// Subscribes to notifications
         /// </summary>
         /// <param name="eventType">Event type to subscribe to</param>
@@ -74,6 +111,41 @@ namespace mcp_nexus.Notifications
                 }
             }
 
+            return subscriptionId;
+        }
+
+        /// <summary>
+        /// Subscribes to notifications with McpNotification handler
+        /// </summary>
+        /// <param name="eventType">Event type to subscribe to</param>
+        /// <param name="handler">Event handler</param>
+        /// <returns>Subscription identifier</returns>
+        public string Subscribe(string eventType, Func<McpNotification, Task> handler)
+        {
+            if (string.IsNullOrEmpty(eventType))
+                throw new ArgumentException("Event type cannot be null or empty");
+
+            var subscriptionId = Guid.NewGuid().ToString();
+
+            lock (m_lock)
+            {
+                if (!m_handlers.ContainsKey(eventType))
+                    m_handlers[eventType] = new List<Func<object, Task>>();
+
+                if (handler != null)
+                {
+                    // Convert McpNotification handler to object handler
+                    Func<object, Task> objectHandler = async (obj) =>
+                    {
+                        if (obj is McpNotification notification)
+                        {
+                            await handler(notification);
+                        }
+                    };
+                    m_handlers[eventType].Add(objectHandler);
+                    m_subscriptionIds[subscriptionId] = eventType;
+                }
+            }
             return subscriptionId;
         }
 
@@ -247,6 +319,22 @@ namespace mcp_nexus.Notifications
             await PublishNotificationAsync("CommandStatus", new { CommandId = commandId, Command = command, Status = status, Progress = progress, Result = result, Error = error });
         }
 
+        /// <summary>
+        /// Notifies about command status change with int progress and result
+        /// </summary>
+        public async Task NotifyCommandStatusAsync(string commandId, string command, string status, int progress, string result)
+        {
+            await PublishNotificationAsync("CommandStatus", new { CommandId = commandId, Command = command, Status = status, Progress = progress, Result = result });
+        }
+
+        /// <summary>
+        /// Notifies about command status change with 8 parameters
+        /// </summary>
+        public async Task NotifyCommandStatusAsync(string sessionId, string commandId, string command, string status, string? result, int progress, string? message, string? error)
+        {
+            await PublishNotificationAsync("CommandStatus", new { SessionId = sessionId, CommandId = commandId, Command = command, Status = status, Result = result, Progress = progress, Message = message, Error = error });
+        }
+
 
         /// <summary>
         /// Notifies about command heartbeat with details
@@ -262,6 +350,14 @@ namespace mcp_nexus.Notifications
         public async Task NotifySessionRecoveryAsync(string reason, string step, bool success, string message)
         {
             await PublishNotificationAsync("SessionRecovery", new { Reason = reason, Step = step, Success = success, Message = message });
+        }
+
+        /// <summary>
+        /// Notifies about session recovery with reason, step, success, message, and affected commands
+        /// </summary>
+        public async Task NotifySessionRecoveryAsync(string reason, string step, bool success, string message, string[] affectedCommands)
+        {
+            await PublishNotificationAsync("SessionRecovery", new { Reason = reason, Step = step, Success = success, Message = message, AffectedCommands = affectedCommands });
         }
 
         #endregion
@@ -284,6 +380,25 @@ namespace mcp_nexus.Notifications
                 // Log the exception but don't let it propagate
                 // In a real implementation, you would use proper logging here
                 Console.WriteLine($"Error in notification handler: {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region IDisposable Implementation
+
+        /// <summary>
+        /// Disposes the notification service
+        /// </summary>
+        public void Dispose()
+        {
+            if (m_disposed) return;
+            m_disposed = true;
+
+            lock (m_lock)
+            {
+                m_handlers.Clear();
+                m_subscriptionIds.Clear();
             }
         }
 

@@ -296,7 +296,7 @@ namespace mcp_nexus_tests.Session
             // Assert
             Assert.NotNull(hints);
             Assert.True(hints.Count > 0);
-            Assert.Contains(hints, h => h.Contains("idle"));
+            Assert.Contains("idle", hints.First());
         }
 
         [Fact]
@@ -329,7 +329,7 @@ namespace mcp_nexus_tests.Session
             // Assert
             Assert.NotNull(hints);
             Assert.True(hints.Count > 0);
-            Assert.Contains(hints, h => h.Contains("Queue is empty"));
+            Assert.Contains("Queue is empty", hints.First());
         }
 
         [Fact]
@@ -371,20 +371,19 @@ namespace mcp_nexus_tests.Session
             // Assert
             Assert.NotNull(hints);
             Assert.True(hints.Count > 0);
-            Assert.Contains(hints, h => h.Contains("Queue is busy"));
+            Assert.Contains("Queue is busy", hints.First());
         }
 
         [Fact]
         public void GenerateUsageHints_WithCrashDump_ReturnsCrashHints()
         {
             // Arrange
-            var sessionInfo = new SessionInfo(
-                "test-session-1",
-                _mockCdbSession.Object,
-                _mockCommandQueue.Object,
-                "C:\\Test\\crash.dmp" // Crash dump
-            )
+            var sessionInfo = new SessionInfo
             {
+                SessionId = "test-session-1",
+                DumpPath = "C:\\Test\\crash.dmp", // Crash dump
+                CdbSession = _mockCdbSession.Object,
+                CommandQueue = _mockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-10),
                 LastActivity = DateTime.UtcNow.AddMinutes(-1),
                 Status = SessionStatus.Active

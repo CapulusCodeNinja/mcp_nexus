@@ -46,13 +46,13 @@ namespace mcp_nexus_tests.Services
                 .ReturnsAsync("Mock result");
 
             m_commandQueueService = new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            m_notificationService = new McpNotificationService();
+            m_notificationService = new McpNotificationService(m_mockNotificationLogger.Object);
         }
 
         public void Dispose()
         {
             m_commandQueueService?.Dispose();
-            // m_notificationService doesn't implement IDisposable
+            m_notificationService?.Dispose();
         }
 
         [Fact]
@@ -95,7 +95,7 @@ namespace mcp_nexus_tests.Services
             for (int i = 0; i < iterations; i++)
             {
                 notifications.Add(m_notificationService.NotifyCommandStatusAsync(
-                    $"cmd{i}", "test command", "executing", 50, "Processing", ""));
+                    $"cmd{i}", "test command", "executing", 50, "Processing"));
             }
 
             await Task.WhenAll(notifications);
@@ -112,15 +112,15 @@ namespace mcp_nexus_tests.Services
             // Arrange - Register many handlers
             var handlerCount = 10;
             var receivedNotifications = new List<McpNotification>();
-            var handlers = new List<Func<object, Task>>();
+            var handlers = new List<Func<McpNotification, Task>>();
 
             for (int i = 0; i < handlerCount; i++)
             {
-                var handler = new Func<object, Task>(notification =>
+                var handler = new Func<McpNotification, Task>(notification =>
                 {
                     lock (receivedNotifications)
                     {
-                        receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                        receivedNotifications.Add(notification);
                     }
                     return Task.CompletedTask;
                 });
@@ -137,7 +137,7 @@ namespace mcp_nexus_tests.Services
             for (int i = 0; i < iterations; i++)
             {
                 notifications.Add(m_notificationService.NotifyCommandStatusAsync(
-                    $"cmd{i}", "test command", "executing", 50, "Processing", ""));
+                    $"cmd{i}", "test command", "executing", 50, "Processing"));
             }
 
             await Task.WhenAll(notifications);

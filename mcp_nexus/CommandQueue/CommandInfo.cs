@@ -69,6 +69,21 @@ namespace mcp_nexus.CommandQueue
         #region Constructor
 
         /// <summary>
+        /// Initializes a new command info instance with default values
+        /// </summary>
+        public CommandInfo()
+        {
+            m_commandId = string.Empty;
+            m_command = string.Empty;
+            m_state = CommandState.Queued;
+            m_queueTime = DateTime.UtcNow;
+            m_queuePosition = 0;
+            m_elapsed = TimeSpan.Zero;
+            m_remaining = TimeSpan.Zero;
+            m_isCompleted = false;
+        }
+
+        /// <summary>
         /// Initializes a new command info instance
         /// </summary>
         /// <param name="commandId">Command identifier</param>

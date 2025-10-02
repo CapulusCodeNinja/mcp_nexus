@@ -23,12 +23,12 @@ namespace mcp_nexus_tests.Services
         public McpNotificationServiceTests()
         {
             m_mockLogger = new Mock<ILogger<McpNotificationService>>();
-            m_service = new McpNotificationService();
+            m_service = new McpNotificationService(m_mockLogger.Object);
         }
 
         public void Dispose()
         {
-            // McpNotificationService doesn't implement IDisposable
+            m_service?.Dispose();
         }
 
         [Fact]
@@ -38,12 +38,12 @@ namespace mcp_nexus_tests.Services
             var receivedNotifications = new List<McpNotification>();
             m_service.Subscribe("test-event", notification =>
             {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                receivedNotifications.Add(notification);
                 return Task.CompletedTask;
             });
 
             // Act
-            await m_service.NotifyCommandStatusAsync("cmd123", "!analyze -v", "executing", 50, "Processing", "");
+            await m_service.NotifyCommandStatusAsync("cmd123", "!analyze -v", "executing", 50, "Processing");
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -67,14 +67,14 @@ namespace mcp_nexus_tests.Services
             var receivedNotifications = new List<McpNotification>();
             m_service.Subscribe("test-event", notification =>
             {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                receivedNotifications.Add(notification);
                 return Task.CompletedTask;
             });
 
             var affectedCommands = new[] { "cmd1", "cmd2" };
 
             // Act
-            await m_service.NotifySessionRecoveryAsync("timeout", "restart", true, "Recovery successful");
+            await m_service.NotifySessionRecoveryAsync("timeout", "restart", true, "Recovery successful", affectedCommands);
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -97,14 +97,14 @@ namespace mcp_nexus_tests.Services
             var receivedNotifications = new List<McpNotification>();
             m_service.Subscribe("test-event", notification =>
             {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                receivedNotifications.Add(notification);
                 return Task.CompletedTask;
             });
 
             var uptime = TimeSpan.FromHours(2);
 
             // Act
-            await m_service.NotifyServerHealthAsync("healthy", true, 5, 2);
+            await m_service.NotifyServerHealthAsync("healthy", "operational", true, 5, 2);
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -121,20 +121,20 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task PublishNotificationAsync_WithCustomMethod_SendsNotification()
+        public async Task SendNotificationAsync_WithCustomMethod_SendsNotification()
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
             m_service.Subscribe("test-event", notification =>
             {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                receivedNotifications.Add(notification);
                 return Task.CompletedTask;
             });
 
             var customParams = new { message = "test", value = 42 };
 
             // Act
-            await m_service.PublishNotificationAsync("custom/test", customParams);
+            await m_service.SendNotificationAsync("custom/test", customParams);
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -144,10 +144,10 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task PublishNotificationAsync_WithNoHandlers_LogsWarning()
+        public async Task SendNotificationAsync_WithNoHandlers_LogsWarning()
         {
             // Act
-            await m_service.PublishNotificationAsync("test/method", new { });
+            await m_service.SendNotificationAsync("test/method", new { });
 
             // Assert
             m_mockLogger.Verify(
@@ -161,7 +161,7 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task PublishNotificationAsync_WithMultipleHandlers_SendsToAllHandlers()
+        public async Task SendNotificationAsync_WithMultipleHandlers_SendsToAllHandlers()
         {
             // Arrange
             var receivedNotifications1 = new List<McpNotification>();
@@ -169,18 +169,18 @@ namespace mcp_nexus_tests.Services
 
             m_service.Subscribe("test-event", notification =>
             {
-                receivedNotifications1.Add(notification as McpNotification ?? new McpNotification());
+                receivedNotifications1.Add(notification);
                 return Task.CompletedTask;
             });
 
             m_service.Subscribe("test-event", notification =>
             {
-                receivedNotifications2.Add(notification as McpNotification ?? new McpNotification());
+                receivedNotifications2.Add(notification);
                 return Task.CompletedTask;
             });
 
             // Act
-            await m_service.PublishNotificationAsync("test/broadcast", new { data = "shared" });
+            await m_service.SendNotificationAsync("test/broadcast", new { data = "shared" });
 
             // Assert
             Assert.Single(receivedNotifications1);
@@ -190,7 +190,7 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task PublishNotificationAsync_HandlerThrowsException_ContinuesWithOtherHandlers()
+        public async Task SendNotificationAsync_HandlerThrowsException_ContinuesWithOtherHandlers()
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
@@ -204,12 +204,12 @@ namespace mcp_nexus_tests.Services
 
             m_service.Subscribe("test-event", notification =>
             {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                receivedNotifications.Add(notification);
                 return Task.CompletedTask;
             });
 
             // Act
-            await m_service.PublishNotificationAsync("test/error", new { });
+            await m_service.SendNotificationAsync("test/error", new { });
 
             // Assert
             Assert.True(exceptionThrown);
@@ -229,8 +229,8 @@ namespace mcp_nexus_tests.Services
             }
 
             // Act
-            m_service.Subscribe("test-event", (object notification) => Handler(notification as McpNotification ?? new McpNotification()));
-            await m_service.PublishNotificationAsync("test", null);
+            m_service.Subscribe("test-event", Handler);
+            await m_service.SendNotificationAsync("test", null);
 
             // Assert
             Assert.True(handlerCalled);
@@ -243,12 +243,12 @@ namespace mcp_nexus_tests.Services
             var receivedNotifications = new List<McpNotification>();
             m_service.Subscribe("test-event", notification =>
             {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                receivedNotifications.Add(notification);
                 return Task.CompletedTask;
             });
 
             // Act
-            // McpNotificationService doesn't implement IDisposable
+            m_service.Dispose();
             await m_service.NotifyCommandStatusAsync("cmd123", "test", "queued");
 
             // Assert
@@ -259,7 +259,7 @@ namespace mcp_nexus_tests.Services
         public void Subscribe_AfterDispose_DoesNothing()
         {
             // Arrange
-            // McpNotificationService doesn't implement IDisposable
+            m_service.Dispose();
 
             // Act & Assert (should not throw)
             var exception = Record.Exception(() =>
@@ -275,7 +275,7 @@ namespace mcp_nexus_tests.Services
             var receivedNotifications = new List<McpNotification>();
             m_service.Subscribe("test-event", notification =>
             {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                receivedNotifications.Add(notification);
                 return Task.CompletedTask;
             });
 

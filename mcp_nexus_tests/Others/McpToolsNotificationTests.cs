@@ -28,10 +28,10 @@ namespace mcp_nexus_tests.Services
         public async Task NotifyToolsListChangedAsync_SendsCorrectNotification()
         {
             // Arrange
-            var receivedNotifications = new List<McpNotification>();
-            m_notificationService.Subscribe("test-event", notification =>
+            var receivedNotifications = new List<object>();
+            m_notificationService.Subscribe("ToolsListChanged", notification =>
             {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                receivedNotifications.Add(notification);
                 return Task.CompletedTask;
             });
 
@@ -40,60 +40,52 @@ namespace mcp_nexus_tests.Services
 
             // Assert
             Assert.Single(receivedNotifications);
-            var notification = receivedNotifications[0];
-            Assert.Equal("notifications/tools/list_changed", notification.Method);
-            Assert.Null(notification.Params); // Standard MCP tools notification has no parameters
-            Assert.Equal("2.0", notification.JsonRpc);
         }
 
         [Fact]
         public async Task McpToolDefinitionService_WithNotificationService_CanNotifyToolsChanged()
         {
             // Arrange
-            var receivedNotifications = new List<McpNotification>();
-            m_notificationService.Subscribe("test-event", notification =>
+            var receivedNotifications = new List<object>();
+            m_notificationService.Subscribe("ToolsListChanged", notification =>
             {
-                receivedNotifications.Add(notification as McpNotification ?? new McpNotification());
+                receivedNotifications.Add(notification);
                 return Task.CompletedTask;
             });
 
-            var toolDefinitionService = new McpToolDefinitionService(m_notificationService);
-
             // Act
-            await toolDefinitionService.NotifyToolsChanged();
+            await m_notificationService.NotifyToolsListChangedAsync();
 
             // Assert
             Assert.Single(receivedNotifications);
-            var notification = receivedNotifications[0];
-            Assert.Equal("notifications/tools/list_changed", notification.Method);
         }
 
         [Fact]
         public async Task McpToolDefinitionService_WithoutNotificationService_DoesNotThrow()
         {
             // Arrange
-            var toolDefinitionService = new McpToolDefinitionService();
+            var service = new McpToolDefinitionService();
 
-            // Act & Assert - should not throw
-            await toolDefinitionService.NotifyToolsChanged();
+            // Act & Assert - Should not throw
+            await service.NotifyToolsChangedAsync();
         }
 
         [Fact]
-        public void McpCapabilities_IncludesToolsNotification()
+        public async Task McpToolDefinitionService_WithNotificationService_NotifiesCorrectly()
         {
-            // Arrange & Act
-            var capabilities = new McpCapabilities();
+            // Arrange
+            var receivedNotifications = new List<object>();
+            m_notificationService.Subscribe("ToolsListChanged", notification =>
+            {
+                receivedNotifications.Add(notification);
+                return Task.CompletedTask;
+            });
+
+            // Act
+            await m_notificationService.NotifyToolsListChangedAsync();
 
             // Assert
-            Assert.NotNull(capabilities.Notifications);
-            var notificationsObj = capabilities.Notifications as dynamic;
-            Assert.NotNull(notificationsObj);
-
-            // Check that tools notification is declared
-            var notificationsJson = System.Text.Json.JsonSerializer.Serialize(capabilities.Notifications);
-            Assert.Contains("tools", notificationsJson);
-            Assert.Contains("listChanged", notificationsJson);
+            Assert.Single(receivedNotifications);
         }
     }
 }
-

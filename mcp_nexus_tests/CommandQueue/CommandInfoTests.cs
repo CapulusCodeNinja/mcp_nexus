@@ -13,7 +13,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void CommandInfo_DefaultValues_AreCorrect()
         {
             // Act
-            var commandInfo = new CommandInfo("", "", CommandState.Queued, DateTime.MinValue, 0);
+            var commandInfo = new CommandInfo();
 
             // Assert
             Assert.Equal(string.Empty, commandInfo.CommandId);
@@ -35,10 +35,17 @@ namespace mcp_nexus_tests.CommandQueue
             var remaining = TimeSpan.FromSeconds(10);
 
             // Act
-            var commandInfo = new CommandInfo("cmd-123", "!analyze -v", CommandState.Executing, queueTime, 3);
-            commandInfo.Elapsed = elapsed;
-            commandInfo.Remaining = remaining;
-            commandInfo.IsCompleted = true;
+            var commandInfo = new CommandInfo
+            {
+                CommandId = "cmd-123",
+                Command = "!analyze -v",
+                State = CommandState.Executing,
+                QueueTime = queueTime,
+                Elapsed = elapsed,
+                Remaining = remaining,
+                QueuePosition = 3,
+                IsCompleted = true
+            };
 
             // Assert
             Assert.Equal("cmd-123", commandInfo.CommandId);
@@ -60,7 +67,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void CommandInfo_State_CanBeSet(CommandState state)
         {
             // Act
-            var commandInfo = new CommandInfo("", "", state, DateTime.MinValue, 0);
+            var commandInfo = new CommandInfo { State = state };
 
             // Assert
             Assert.Equal(state, commandInfo.State);
@@ -70,7 +77,11 @@ namespace mcp_nexus_tests.CommandQueue
         public void CommandInfo_WithNullValues_HandlesGracefully()
         {
             // Act
-            var commandInfo = new CommandInfo(null!, null!, CommandState.Queued, DateTime.MinValue, 0);
+            var commandInfo = new CommandInfo
+            {
+                CommandId = null!,
+                Command = null!
+            };
 
             // Assert
             Assert.Null(commandInfo.CommandId);
@@ -81,9 +92,12 @@ namespace mcp_nexus_tests.CommandQueue
         public void CommandInfo_WithNegativeValues_HandlesCorrectly()
         {
             // Act
-            var commandInfo = new CommandInfo("", "", CommandState.Queued, DateTime.MinValue, -1);
-            commandInfo.Elapsed = TimeSpan.FromSeconds(-5);
-            commandInfo.Remaining = TimeSpan.FromSeconds(-10);
+            var commandInfo = new CommandInfo
+            {
+                QueuePosition = -1,
+                Elapsed = TimeSpan.FromSeconds(-5),
+                Remaining = TimeSpan.FromSeconds(-10)
+            };
 
             // Assert
             Assert.Equal(-1, commandInfo.QueuePosition);
@@ -99,9 +113,13 @@ namespace mcp_nexus_tests.CommandQueue
             var maxTimeSpan = TimeSpan.MaxValue;
 
             // Act
-            var commandInfo = new CommandInfo("", "", CommandState.Queued, maxDateTime, int.MaxValue);
-            commandInfo.Elapsed = maxTimeSpan;
-            commandInfo.Remaining = maxTimeSpan;
+            var commandInfo = new CommandInfo
+            {
+                QueueTime = maxDateTime,
+                Elapsed = maxTimeSpan,
+                Remaining = maxTimeSpan,
+                QueuePosition = int.MaxValue
+            };
 
             // Assert
             Assert.Equal(maxDateTime, commandInfo.QueueTime);

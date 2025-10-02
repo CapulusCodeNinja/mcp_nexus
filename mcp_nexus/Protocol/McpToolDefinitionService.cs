@@ -36,6 +36,14 @@ namespace mcp_nexus.Protocol
             }
         }
 
+        /// <summary>
+        /// Notify clients that the tools list has changed (async version for compatibility)
+        /// </summary>
+        public async Task NotifyToolsChangedAsync()
+        {
+            await NotifyToolsChanged();
+        }
+
         private static McpToolSchema CreateNexusOpenDumpAnalyzeSessionTool()
         {
             return new McpToolSchema

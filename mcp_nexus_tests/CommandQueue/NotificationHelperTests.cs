@@ -62,7 +62,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Wait for the Task.Run to complete
             await Task.Delay(500);
             _mockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
-                sessionId, commandId, status, result, string.Empty, progress), Times.Once);
+                sessionId, commandId, status, result ?? string.Empty, string.Empty, progress), Times.Once);
         }
 
         [Fact]
@@ -185,7 +185,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Wait for the Task.Run to complete
             await Task.Delay(500);
             _mockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
-                commandId, command, status, progress, message, result, error), Times.Once);
+                commandId, command, status, It.IsAny<int>(), message, result, error), Times.Once);
         }
 
         [Fact]
@@ -243,7 +243,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Wait for the Task.Run to complete
             await Task.Delay(500);
             _mockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
-                sessionId, commandId, status, string.Empty, string.Empty, 0), Times.Once);
+                sessionId, commandId, command, status, null, 0, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
@@ -266,7 +266,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Wait for the Task.Run to complete
             await Task.Delay(500);
             _mockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
-                commandId, command, status, 0, string.Empty, string.Empty, string.Empty), Times.Once);
+                commandId, command, status, It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
     }
 }

@@ -73,21 +73,20 @@ namespace mcp_nexus_tests.Caching
         }
 
         [Fact]
-        public void CacheEntry_WithObjectValue_SetsProperties()
+        public void CacheEntry_WithNullValue_HandlesCorrectly()
         {
             // Arrange
-            var testObject = new { Name = "Test", Id = 123 };
-            var createdAt = DateTime.UtcNow.AddSeconds(-30);
-            var lastAccessed = DateTime.UtcNow.AddSeconds(-10);
-            var expiresAt = DateTime.UtcNow.AddMinutes(5);
-            const int accessCount = 3;
-            const long sizeBytes = 200;
+            var createdAt = DateTime.UtcNow;
+            var lastAccessed = DateTime.UtcNow;
+            var expiresAt = DateTime.UtcNow.AddHours(1);
+            const int accessCount = 0;
+            const long sizeBytes = 0;
 
             // Act
-            var entry = new CacheEntry<object>(testObject, createdAt, lastAccessed, expiresAt, accessCount, sizeBytes);
+            var entry = new CacheEntry<string>(null!, createdAt, lastAccessed, expiresAt, accessCount, sizeBytes);
 
             // Assert
-            Assert.Equal(testObject, entry.Value);
+            Assert.Null(entry.Value);
             Assert.Equal(createdAt, entry.CreatedAt);
             Assert.Equal(lastAccessed, entry.LastAccessed);
             Assert.Equal(expiresAt, entry.ExpiresAt);
@@ -96,63 +95,72 @@ namespace mcp_nexus_tests.Caching
         }
 
         [Fact]
-        public void CacheEntry_WithNullValue_HandlesCorrectly()
-        {
-            // Act
-            var entry = new CacheEntry<string>(null!, DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(1), 0, 0);
-
-            // Assert
-            Assert.Null(entry.Value);
-            Assert.True(entry.CreatedAt > DateTime.MinValue);
-            Assert.True(entry.LastAccessed > DateTime.MinValue);
-            Assert.True(entry.ExpiresAt > DateTime.MinValue);
-            Assert.Equal(0, entry.AccessCount);
-            Assert.Equal(0, entry.SizeBytes);
-        }
-
-        [Fact]
         public void CacheEntry_WithMaxValues_HandlesCorrectly()
         {
+            // Arrange
+            var createdAt = DateTime.MaxValue;
+            var lastAccessed = DateTime.MaxValue;
+            var expiresAt = DateTime.MaxValue;
+            const string value = "max value";
+            const int accessCount = int.MaxValue;
+            const long sizeBytes = long.MaxValue;
+
             // Act
-            var entry = new CacheEntry<string>("max value", DateTime.MaxValue, DateTime.MaxValue, DateTime.MaxValue, int.MaxValue, long.MaxValue);
+            var entry = new CacheEntry<string>(value, createdAt, lastAccessed, expiresAt, accessCount, sizeBytes);
 
             // Assert
-            Assert.Equal("max value", entry.Value);
-            Assert.Equal(DateTime.MaxValue, entry.CreatedAt);
-            Assert.Equal(DateTime.MaxValue, entry.LastAccessed);
-            Assert.Equal(DateTime.MaxValue, entry.ExpiresAt);
-            Assert.Equal(int.MaxValue, entry.AccessCount);
-            Assert.Equal(long.MaxValue, entry.SizeBytes);
+            Assert.Equal(value, entry.Value);
+            Assert.Equal(createdAt, entry.CreatedAt);
+            Assert.Equal(lastAccessed, entry.LastAccessed);
+            Assert.Equal(expiresAt, entry.ExpiresAt);
+            Assert.Equal(accessCount, entry.AccessCount);
+            Assert.Equal(sizeBytes, entry.SizeBytes);
         }
 
         [Fact]
         public void CacheEntry_WithMinValues_HandlesCorrectly()
         {
+            // Arrange
+            var createdAt = DateTime.MinValue;
+            var lastAccessed = DateTime.MinValue;
+            var expiresAt = DateTime.MinValue;
+            const string value = "min value";
+            const int accessCount = 0;
+            const long sizeBytes = 0;
+
             // Act
-            var entry = new CacheEntry<string>("min value", DateTime.MinValue, DateTime.MinValue, DateTime.MinValue, int.MinValue, long.MinValue);
+            var entry = new CacheEntry<string>(value, createdAt, lastAccessed, expiresAt, accessCount, sizeBytes);
 
             // Assert
-            Assert.Equal("min value", entry.Value);
-            Assert.Equal(DateTime.MinValue, entry.CreatedAt);
-            Assert.Equal(DateTime.MinValue, entry.LastAccessed);
-            Assert.Equal(DateTime.MinValue, entry.ExpiresAt);
-            Assert.Equal(int.MinValue, entry.AccessCount);
-            Assert.Equal(long.MinValue, entry.SizeBytes);
+            Assert.Equal(value, entry.Value);
+            Assert.Equal(createdAt, entry.CreatedAt);
+            Assert.Equal(lastAccessed, entry.LastAccessed);
+            Assert.Equal(expiresAt, entry.ExpiresAt);
+            Assert.Equal(accessCount, entry.AccessCount);
+            Assert.Equal(sizeBytes, entry.SizeBytes);
         }
 
         [Fact]
         public void CacheEntry_WithNegativeValues_HandlesCorrectly()
         {
+            // Arrange
+            var createdAt = DateTime.UtcNow;
+            var lastAccessed = DateTime.UtcNow;
+            var expiresAt = DateTime.UtcNow.AddHours(-1); // Negative expiration
+            const string value = "negative value";
+            const int accessCount = -1;
+            const long sizeBytes = -1;
+
             // Act
-            var entry = new CacheEntry<string>("negative test", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddHours(-1), DateTime.UtcNow.AddMinutes(-1), -5, -100);
+            var entry = new CacheEntry<string>(value, createdAt, lastAccessed, expiresAt, accessCount, sizeBytes);
 
             // Assert
-            Assert.Equal("negative test", entry.Value);
-            Assert.True(entry.CreatedAt < DateTime.UtcNow);
-            Assert.True(entry.LastAccessed < DateTime.UtcNow);
-            Assert.True(entry.ExpiresAt < DateTime.UtcNow); // Expired
-            Assert.Equal(-5, entry.AccessCount);
-            Assert.Equal(-100, entry.SizeBytes);
+            Assert.Equal(value, entry.Value);
+            Assert.Equal(createdAt, entry.CreatedAt);
+            Assert.Equal(lastAccessed, entry.LastAccessed);
+            Assert.Equal(expiresAt, entry.ExpiresAt);
+            Assert.Equal(accessCount, entry.AccessCount);
+            Assert.Equal(sizeBytes, entry.SizeBytes);
         }
 
         #endregion
@@ -163,15 +171,16 @@ namespace mcp_nexus_tests.Caching
         public void CacheStatistics_DefaultValues_AreCorrect()
         {
             // Act
-            var stats = new CacheStatistics();
+            var statistics = new CacheStatistics();
 
             // Assert
-            Assert.Equal(0, stats.TotalEntries);
-            Assert.Equal(0, stats.ExpiredEntries);
-            Assert.Equal(0, stats.TotalSizeBytes);
-            Assert.Equal(0, stats.TotalAccesses);
-            Assert.Equal(0.0, stats.AverageAccessCount);
-            Assert.Equal(0.0, stats.MemoryUsagePercent);
+            Assert.Equal(0, statistics.TotalEntries);
+            Assert.Equal(0, statistics.HitCount);
+            Assert.Equal(0, statistics.MissCount);
+            Assert.Equal(0.0, statistics.HitRate);
+            Assert.Equal(0, statistics.TotalSizeBytes);
+            Assert.Equal(0, statistics.EvictionCount);
+            Assert.Equal(0, statistics.ExpirationCount);
         }
 
         [Fact]
@@ -179,168 +188,135 @@ namespace mcp_nexus_tests.Caching
         {
             // Arrange
             const int totalEntries = 100;
-            const int expiredEntries = 10;
-            const long totalSizeBytes = 1024 * 1024; // 1MB
-            const int totalAccesses = 500;
-            const double averageAccessCount = 5.0;
-            const double memoryUsagePercent = 75.5;
+            const long hitCount = 80;
+            const long missCount = 20;
+            const double hitRate = 0.8;
+            const long totalSizeBytes = 1024000;
+            const long evictionCount = 5;
+            const long expirationCount = 3;
 
             // Act
-            var stats = new CacheStatistics
+            var statistics = new CacheStatistics
             {
                 TotalEntries = totalEntries,
-                ExpiredEntries = expiredEntries,
+                HitCount = hitCount,
+                MissCount = missCount,
+                HitRate = hitRate,
                 TotalSizeBytes = totalSizeBytes,
-                TotalAccesses = totalAccesses,
-                AverageAccessCount = averageAccessCount,
-                MemoryUsagePercent = memoryUsagePercent
+                EvictionCount = evictionCount,
+                ExpirationCount = expirationCount
             };
 
             // Assert
-            Assert.Equal(totalEntries, stats.TotalEntries);
-            Assert.Equal(expiredEntries, stats.ExpiredEntries);
-            Assert.Equal(totalSizeBytes, stats.TotalSizeBytes);
-            Assert.Equal(totalAccesses, stats.TotalAccesses);
-            Assert.Equal(averageAccessCount, stats.AverageAccessCount);
-            Assert.Equal(memoryUsagePercent, stats.MemoryUsagePercent);
+            Assert.Equal(totalEntries, statistics.TotalEntries);
+            Assert.Equal(hitCount, statistics.HitCount);
+            Assert.Equal(missCount, statistics.MissCount);
+            Assert.Equal(hitRate, statistics.HitRate);
+            Assert.Equal(totalSizeBytes, statistics.TotalSizeBytes);
+            Assert.Equal(evictionCount, statistics.EvictionCount);
+            Assert.Equal(expirationCount, statistics.ExpirationCount);
         }
 
         [Fact]
         public void CacheStatistics_WithMaxValues_HandlesCorrectly()
         {
+            // Arrange
+            const int totalEntries = int.MaxValue;
+            const long hitCount = long.MaxValue;
+            const long missCount = long.MaxValue;
+            const double hitRate = double.MaxValue;
+            const long totalSizeBytes = long.MaxValue;
+            const long evictionCount = long.MaxValue;
+            const long expirationCount = long.MaxValue;
+
             // Act
-            var stats = new CacheStatistics
+            var statistics = new CacheStatistics
             {
-                TotalEntries = int.MaxValue,
-                ExpiredEntries = int.MaxValue,
-                TotalSizeBytes = long.MaxValue,
-                TotalAccesses = int.MaxValue,
-                AverageAccessCount = double.MaxValue,
-                MemoryUsagePercent = double.MaxValue
+                TotalEntries = totalEntries,
+                HitCount = hitCount,
+                MissCount = missCount,
+                HitRate = hitRate,
+                TotalSizeBytes = totalSizeBytes,
+                EvictionCount = evictionCount,
+                ExpirationCount = expirationCount
             };
 
             // Assert
-            Assert.Equal(int.MaxValue, stats.TotalEntries);
-            Assert.Equal(int.MaxValue, stats.ExpiredEntries);
-            Assert.Equal(long.MaxValue, stats.TotalSizeBytes);
-            Assert.Equal(int.MaxValue, stats.TotalAccesses);
-            Assert.Equal(double.MaxValue, stats.AverageAccessCount);
-            Assert.Equal(double.MaxValue, stats.MemoryUsagePercent);
+            Assert.Equal(totalEntries, statistics.TotalEntries);
+            Assert.Equal(hitCount, statistics.HitCount);
+            Assert.Equal(missCount, statistics.MissCount);
+            Assert.Equal(hitRate, statistics.HitRate);
+            Assert.Equal(totalSizeBytes, statistics.TotalSizeBytes);
+            Assert.Equal(evictionCount, statistics.EvictionCount);
+            Assert.Equal(expirationCount, statistics.ExpirationCount);
         }
 
         [Fact]
         public void CacheStatistics_WithMinValues_HandlesCorrectly()
         {
+            // Arrange
+            const int totalEntries = 0;
+            const long hitCount = 0;
+            const long missCount = 0;
+            const double hitRate = 0.0;
+            const long totalSizeBytes = 0;
+            const long evictionCount = 0;
+            const long expirationCount = 0;
+
             // Act
-            var stats = new CacheStatistics
+            var statistics = new CacheStatistics
             {
-                TotalEntries = int.MinValue,
-                ExpiredEntries = int.MinValue,
-                TotalSizeBytes = long.MinValue,
-                TotalAccesses = int.MinValue,
-                AverageAccessCount = double.MinValue,
-                MemoryUsagePercent = double.MinValue
+                TotalEntries = totalEntries,
+                HitCount = hitCount,
+                MissCount = missCount,
+                HitRate = hitRate,
+                TotalSizeBytes = totalSizeBytes,
+                EvictionCount = evictionCount,
+                ExpirationCount = expirationCount
             };
 
             // Assert
-            Assert.Equal(int.MinValue, stats.TotalEntries);
-            Assert.Equal(int.MinValue, stats.ExpiredEntries);
-            Assert.Equal(long.MinValue, stats.TotalSizeBytes);
-            Assert.Equal(int.MinValue, stats.TotalAccesses);
-            Assert.Equal(double.MinValue, stats.AverageAccessCount);
-            Assert.Equal(double.MinValue, stats.MemoryUsagePercent);
+            Assert.Equal(totalEntries, statistics.TotalEntries);
+            Assert.Equal(hitCount, statistics.HitCount);
+            Assert.Equal(missCount, statistics.MissCount);
+            Assert.Equal(hitRate, statistics.HitRate);
+            Assert.Equal(totalSizeBytes, statistics.TotalSizeBytes);
+            Assert.Equal(evictionCount, statistics.EvictionCount);
+            Assert.Equal(expirationCount, statistics.ExpirationCount);
         }
 
         [Fact]
         public void CacheStatistics_WithNegativeValues_HandlesCorrectly()
         {
+            // Arrange
+            const int totalEntries = -1;
+            const long hitCount = -1;
+            const long missCount = -1;
+            const double hitRate = -1.0;
+            const long totalSizeBytes = -1;
+            const long evictionCount = -1;
+            const long expirationCount = -1;
+
             // Act
-            var stats = new CacheStatistics
+            var statistics = new CacheStatistics
             {
-                TotalEntries = -10,
-                ExpiredEntries = -5,
-                TotalSizeBytes = -1000,
-                TotalAccesses = -50,
-                AverageAccessCount = -2.5,
-                MemoryUsagePercent = -10.0
+                TotalEntries = totalEntries,
+                HitCount = hitCount,
+                MissCount = missCount,
+                HitRate = hitRate,
+                TotalSizeBytes = totalSizeBytes,
+                EvictionCount = evictionCount,
+                ExpirationCount = expirationCount
             };
 
             // Assert
-            Assert.Equal(-10, stats.TotalEntries);
-            Assert.Equal(-5, stats.ExpiredEntries);
-            Assert.Equal(-1000, stats.TotalSizeBytes);
-            Assert.Equal(-50, stats.TotalAccesses);
-            Assert.Equal(-2.5, stats.AverageAccessCount);
-            Assert.Equal(-10.0, stats.MemoryUsagePercent);
-        }
-
-        [Fact]
-        public void CacheStatistics_WithZeroValues_HandlesCorrectly()
-        {
-            // Act
-            var stats = new CacheStatistics
-            {
-                TotalEntries = 0,
-                ExpiredEntries = 0,
-                TotalSizeBytes = 0,
-                TotalAccesses = 0,
-                AverageAccessCount = 0.0,
-                MemoryUsagePercent = 0.0
-            };
-
-            // Assert
-            Assert.Equal(0, stats.TotalEntries);
-            Assert.Equal(0, stats.ExpiredEntries);
-            Assert.Equal(0, stats.TotalSizeBytes);
-            Assert.Equal(0, stats.TotalAccesses);
-            Assert.Equal(0.0, stats.AverageAccessCount);
-            Assert.Equal(0.0, stats.MemoryUsagePercent);
-        }
-
-        [Fact]
-        public void CacheStatistics_WithDecimalValues_HandlesCorrectly()
-        {
-            // Act
-            var stats = new CacheStatistics
-            {
-                TotalEntries = 42,
-                ExpiredEntries = 7,
-                TotalSizeBytes = 123456789,
-                TotalAccesses = 999,
-                AverageAccessCount = 23.456789,
-                MemoryUsagePercent = 87.123456
-            };
-
-            // Assert
-            Assert.Equal(42, stats.TotalEntries);
-            Assert.Equal(7, stats.ExpiredEntries);
-            Assert.Equal(123456789, stats.TotalSizeBytes);
-            Assert.Equal(999, stats.TotalAccesses);
-            Assert.Equal(23.456789, stats.AverageAccessCount);
-            Assert.Equal(87.123456, stats.MemoryUsagePercent);
-        }
-
-        [Fact]
-        public void CacheStatistics_WithVerySmallValues_HandlesCorrectly()
-        {
-            // Act
-            var stats = new CacheStatistics
-            {
-                TotalEntries = 1,
-                ExpiredEntries = 0,
-                TotalSizeBytes = 1,
-                TotalAccesses = 1,
-                AverageAccessCount = 0.000001,
-                MemoryUsagePercent = 0.000001
-            };
-
-            // Assert
-            Assert.Equal(1, stats.TotalEntries);
-            Assert.Equal(0, stats.ExpiredEntries);
-            Assert.Equal(1, stats.TotalSizeBytes);
-            Assert.Equal(1, stats.TotalAccesses);
-            Assert.Equal(0.000001, stats.AverageAccessCount);
-            Assert.Equal(0.000001, stats.MemoryUsagePercent);
+            Assert.Equal(totalEntries, statistics.TotalEntries);
+            Assert.Equal(hitCount, statistics.HitCount);
+            Assert.Equal(missCount, statistics.MissCount);
+            Assert.Equal(hitRate, statistics.HitRate);
+            Assert.Equal(totalSizeBytes, statistics.TotalSizeBytes);
+            Assert.Equal(evictionCount, statistics.EvictionCount);
+            Assert.Equal(expirationCount, statistics.ExpirationCount);
         }
 
         #endregion

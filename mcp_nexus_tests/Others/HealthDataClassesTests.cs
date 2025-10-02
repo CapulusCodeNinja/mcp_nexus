@@ -32,8 +32,7 @@ namespace mcp_nexus_tests.Health
         {
             // Arrange
             var timestamp = DateTime.UtcNow;
-            var memoryHealth = new MemoryHealth();
-            memoryHealth.SetMemoryInfo(true, 100.5, 50.0, 200.0, 8000.0, "Memory healthy");
+            var memoryHealth = new MemoryHealth { IsHealthy = true, WorkingSetMB = 100.5 };
             var cpuHealth = new CpuHealth { IsHealthy = true, CpuUsagePercent = 25.0 };
             var diskHealth = new DiskHealth { IsHealthy = true, UnhealthyDrives = new List<string>() };
             var threadHealth = new ThreadHealth { IsHealthy = true, ThreadCount = 10 };
@@ -85,8 +84,15 @@ namespace mcp_nexus_tests.Health
             const string message = "Memory usage normal";
 
             // Act
-            var memory = new MemoryHealth();
-            memory.SetMemoryInfo(true, workingSet, privateMemory, virtualMemory, totalPhysical, message);
+            var memory = new MemoryHealth
+            {
+                IsHealthy = true,
+                WorkingSetMB = workingSet,
+                PrivateMemoryMB = privateMemory,
+                VirtualMemoryMB = virtualMemory,
+                TotalPhysicalMemoryMB = totalPhysical,
+                Message = message
+            };
 
             // Assert
             Assert.True(memory.IsHealthy);
@@ -311,8 +317,15 @@ namespace mcp_nexus_tests.Health
         public void HealthStatus_WithNullValues_HandlesGracefully()
         {
             // Act
-            var status = new AdvancedHealthStatus();
-            status.SetHealthStatus(false, null!);
+            var status = new AdvancedHealthStatus
+            {
+                Message = null!,
+                MemoryUsage = null,
+                CpuUsage = null,
+                DiskUsage = null,
+                ThreadCount = null,
+                GcStatus = null
+            };
 
             // Assert
             Assert.Null(status.Message);
@@ -327,8 +340,10 @@ namespace mcp_nexus_tests.Health
         public void HealthStatus_WithEmptyMessage_HandlesCorrectly()
         {
             // Act
-            var status = new AdvancedHealthStatus();
-            status.SetHealthStatus(false, string.Empty);
+            var status = new AdvancedHealthStatus
+            {
+                Message = string.Empty
+            };
 
             // Assert
             Assert.Equal(string.Empty, status.Message);
