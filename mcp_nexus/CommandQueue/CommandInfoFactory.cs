@@ -28,7 +28,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>New command info instance</returns>
         public CommandInfo CreateCommandInfoFromQueuedCommand(QueuedCommand queuedCommand, int queuePosition = 0)
         {
-            return new CommandInfo(queuedCommand.Id, queuedCommand.Command, queuedCommand.State,
+            return new CommandInfo(queuedCommand.Id ?? string.Empty, queuedCommand.Command ?? string.Empty, queuedCommand.State,
                 queuedCommand.QueueTime, queuePosition);
         }
     }

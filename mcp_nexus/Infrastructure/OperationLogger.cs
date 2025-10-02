@@ -139,6 +139,7 @@ namespace mcp_nexus.Infrastructure
             {
                 // Implementation would export logs to file
                 _logger.LogInformation("Logs exported to {FilePath}", filePath);
+                await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)

@@ -87,7 +87,7 @@ namespace mcp_nexus.CommandQueue
                 m_currentCommand = queuedCommand;
 
                 // Update the command in active commands (it should already be there from queueing)
-                m_activeCommands[queuedCommand.Id] = queuedCommand;
+                m_activeCommands[queuedCommand.Id ?? string.Empty] = queuedCommand;
 
                 // Update command state
                 UpdateCommandState(queuedCommand, CommandState.Executing);
@@ -113,11 +113,11 @@ namespace mcp_nexus.CommandQueue
                 // Send completion notification
                 if (m_notificationService != null)
                 {
-                    await m_notificationService.NotifyCommandStatusAsync(queuedCommand.Id, queuedCommand.Command, "completed",
+                    await m_notificationService.NotifyCommandStatusAsync(queuedCommand.Id ?? string.Empty, queuedCommand.Command ?? string.Empty, "completed",
                         result: result, error: string.Empty, queuePosition: 0, message: $"Completed in {elapsed.TotalMilliseconds:F0}ms");
                 }
             }
-            catch (OperationCanceledException) when (queuedCommand.CancellationTokenSource.Token.IsCancellationRequested)
+            catch (OperationCanceledException) when (queuedCommand.CancellationTokenSource?.Token.IsCancellationRequested == true)
             {
                 // Command was specifically cancelled
                 CompleteCommand(queuedCommand, "Command was cancelled", CommandState.Cancelled);
@@ -161,7 +161,7 @@ namespace mcp_nexus.CommandQueue
                 // Send failure notification
                 if (m_notificationService != null)
                 {
-                    await m_notificationService.NotifyCommandStatusAsync(queuedCommand.Id, queuedCommand.Command, "failed",
+                    await m_notificationService.NotifyCommandStatusAsync(queuedCommand.Id ?? string.Empty, queuedCommand.Command ?? string.Empty, "failed",
                         result: string.Empty, error: ex.Message, queuePosition: 0, message: $"Failed after {elapsed.TotalMilliseconds:F0}ms");
                 }
             }
@@ -185,7 +185,7 @@ namespace mcp_nexus.CommandQueue
             {
                 UpdateCommandState(command, state);
 
-                if (!command.CompletionSource.Task.IsCompleted)
+                if (command.CompletionSource?.Task.IsCompleted == false)
                 {
                     if (state == CommandState.Completed)
                         command.CompletionSource.SetResult(result);
@@ -210,7 +210,7 @@ namespace mcp_nexus.CommandQueue
             {
                 // Update the command record (assuming QueuedCommand is mutable or we track state separately)
                 var updatedCommand = command.WithState(newState);
-                m_activeCommands[command.Id] = updatedCommand;
+                m_activeCommands[command.Id ?? string.Empty] = updatedCommand;
 
                 m_logger.LogTrace("🔄 Command {CommandId} state changed to {State}", command.Id, newState);
             }
@@ -239,7 +239,7 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                command.CancellationTokenSource.Cancel();
+                command.CancellationTokenSource?.Cancel();
                 m_recoveryManager.CancelCommand(commandId, reason);
 
                 m_logger.LogInformation("🚫 Cancelled command {CommandId}: {Reason}", commandId, reason ?? "User requested");
@@ -278,7 +278,7 @@ namespace mcp_nexus.CommandQueue
         /// <param name="queuedCommand">The command to register</param>
         public void RegisterQueuedCommand(QueuedCommand queuedCommand)
         {
-            m_activeCommands[queuedCommand.Id] = queuedCommand;
+            m_activeCommands[queuedCommand.Id ?? string.Empty] = queuedCommand;
             m_logger.LogTrace("📝 Registered queued command {CommandId} for tracking", queuedCommand.Id);
         }
 
@@ -305,7 +305,7 @@ namespace mcp_nexus.CommandQueue
                 return $"Command not found: {commandId}";
 
             // Check if command is still executing
-            if (!queuedCommand.CompletionSource.Task.IsCompleted)
+            if (queuedCommand.CompletionSource?.Task.IsCompleted == false)
             {
                 var elapsed = DateTime.UtcNow - queuedCommand.QueueTime;
                 return $"Command is still executing (elapsed: {elapsed:mm\\:ss}, command: {commandId})";
@@ -313,7 +313,7 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                var result = await queuedCommand.CompletionSource.Task;
+                var result = await (queuedCommand.CompletionSource?.Task ?? Task.FromResult(string.Empty));
                 return result;
             }
             catch (Exception ex)
@@ -352,11 +352,11 @@ namespace mcp_nexus.CommandQueue
                 return null;
 
             var elapsed = DateTime.UtcNow - queuedCommand.QueueTime;
-            var isCompleted = queuedCommand.CompletionSource.Task.IsCompleted;
+            var isCompleted = queuedCommand.CompletionSource?.Task.IsCompleted == true;
 
             return new CommandInfo(
-                queuedCommand.Id,
-                queuedCommand.Command,
+                queuedCommand.Id ?? string.Empty,
+                queuedCommand.Command ?? string.Empty,
                 queuedCommand.State,
                 queuedCommand.QueueTime,
                 0
@@ -380,7 +380,7 @@ namespace mcp_nexus.CommandQueue
             var current = m_currentCommand;
             if (current != null)
             {
-                results.Add((current.Id, current.Command, current.QueueTime, "Executing"));
+                results.Add((current.Id ?? string.Empty, current.Command ?? string.Empty, current.QueueTime, "Executing"));
             }
 
             // Add other active commands
@@ -398,7 +398,7 @@ namespace mcp_nexus.CommandQueue
                         CommandState.Failed => "Failed",
                         _ => "Unknown"
                     };
-                    results.Add((command.Id, command.Command, command.QueueTime, status));
+                    results.Add((command.Id ?? string.Empty, command.Command ?? string.Empty, command.QueueTime, status));
                 }
             }
 

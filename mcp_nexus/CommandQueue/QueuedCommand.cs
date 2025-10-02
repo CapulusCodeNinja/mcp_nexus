@@ -218,11 +218,11 @@ namespace mcp_nexus.CommandQueue
         public QueuedCommand With(string? id = null, string? command = null, DateTime? queueTime = null, TaskCompletionSource<string>? completionSource = null, CancellationTokenSource? cancellationTokenSource = null, CommandState? state = null)
         {
             return new QueuedCommand(
-                id ?? m_id,
-                command ?? m_command,
+                id ?? m_id ?? string.Empty,
+                command ?? m_command ?? string.Empty,
                 queueTime ?? m_queueTime,
-                completionSource ?? m_completionSource,
-                cancellationTokenSource ?? m_cancellationTokenSource,
+                completionSource ?? m_completionSource ?? new TaskCompletionSource<string>(),
+                cancellationTokenSource ?? m_cancellationTokenSource ?? new CancellationTokenSource(),
                 state ?? m_state
             );
         }
@@ -232,7 +232,13 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public QueuedCommand WithState(CommandState newState)
         {
-            return new QueuedCommand(m_id, m_command, m_queueTime, m_completionSource, m_cancellationTokenSource, newState);
+            return new QueuedCommand(
+                m_id ?? string.Empty, 
+                m_command ?? string.Empty, 
+                m_queueTime, 
+                m_completionSource ?? new TaskCompletionSource<string>(), 
+                m_cancellationTokenSource ?? new CancellationTokenSource(), 
+                newState);
         }
 
         /// <summary>
@@ -240,7 +246,13 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public QueuedCommand WithCompletionSource(TaskCompletionSource<string> newCompletionSource)
         {
-            return new QueuedCommand(m_id, m_command, m_queueTime, newCompletionSource, m_cancellationTokenSource, m_state);
+            return new QueuedCommand(
+                m_id ?? string.Empty, 
+                m_command ?? string.Empty, 
+                m_queueTime, 
+                newCompletionSource, 
+                m_cancellationTokenSource ?? new CancellationTokenSource(), 
+                m_state);
         }
 
         #endregion

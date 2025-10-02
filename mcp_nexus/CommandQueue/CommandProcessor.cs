@@ -107,7 +107,7 @@ namespace mcp_nexus.CommandQueue
 
                 // Update command state to executing
                 var updatedCommand = command.WithState(CommandState.Executing);
-                m_tracker.UpdateState(command.Id, CommandState.Executing);
+                m_tracker.UpdateState(command.Id ?? string.Empty, CommandState.Executing);
 
                 // Start heartbeat for long-running commands
                 using var heartbeatCts = new CancellationTokenSource();
@@ -118,11 +118,11 @@ namespace mcp_nexus.CommandQueue
                     // Execute the command with timeout
                     using var timeoutCts = new CancellationTokenSource(m_config.DefaultCommandTimeout);
                     using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
-                        command.CancellationTokenSource.Token,
+                        command.CancellationTokenSource?.Token ?? CancellationToken.None,
                         timeoutCts.Token,
                         m_processingCts.Token);
 
-                    var result = await m_cdbSession.ExecuteCommand(command.Command, combinedCts.Token);
+                    var result = await m_cdbSession.ExecuteCommand(command.Command ?? string.Empty, combinedCts.Token);
 
                     // Stop heartbeat
                     heartbeatCts.Cancel();
@@ -138,7 +138,7 @@ namespace mcp_nexus.CommandQueue
                     catch { }
 
                     CompleteCommandSafely(command, result ?? string.Empty, CommandState.Completed);
-                    m_tracker.UpdateState(command.Id, CommandState.Completed);
+                    m_tracker.UpdateState(command.Id ?? string.Empty, CommandState.Completed);
 
                     m_tracker.IncrementCompleted();
 
@@ -151,7 +151,7 @@ namespace mcp_nexus.CommandQueue
                         try
                         {
                             await Task.Delay(TimeSpan.FromMinutes(5)); // Keep for 5 minutes for result retrieval
-                            m_tracker.TryRemoveCommand(command.Id, out _);
+                            m_tracker.TryRemoveCommand(command.Id ?? string.Empty, out _);
                             m_logger.LogTrace("Removed completed command {CommandId} from tracker", command.Id);
                         }
                         catch (Exception ex)
@@ -160,11 +160,11 @@ namespace mcp_nexus.CommandQueue
                         }
                     });
                 }
-                catch (OperationCanceledException) when (command.CancellationTokenSource.Token.IsCancellationRequested)
+                catch (OperationCanceledException) when (command.CancellationTokenSource?.Token.IsCancellationRequested == true)
                 {
                     // Command was explicitly cancelled
                     CompleteCommandSafely(command, "Command was cancelled by user request", CommandState.Cancelled);
-                    m_tracker.UpdateState(command.Id, CommandState.Cancelled);
+                    m_tracker.UpdateState(command.Id ?? string.Empty, CommandState.Cancelled);
                     m_tracker.IncrementCancelled();
                     m_logger.LogWarning("⚠️ Command {CommandId} was cancelled by user in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
@@ -175,7 +175,7 @@ namespace mcp_nexus.CommandQueue
                         try
                         {
                             await Task.Delay(TimeSpan.FromMinutes(5));
-                            m_tracker.TryRemoveCommand(command.Id, out _);
+                            m_tracker.TryRemoveCommand(command.Id ?? string.Empty, out _);
                         }
                         catch (Exception ex)
                         {
@@ -191,7 +191,7 @@ namespace mcp_nexus.CommandQueue
                         : "Command cancelled due to service shutdown";
 
                     CompleteCommandSafely(command, message, CommandState.Failed);
-                    m_tracker.UpdateState(command.Id, CommandState.Failed);
+                    m_tracker.UpdateState(command.Id ?? string.Empty, CommandState.Failed);
                     m_tracker.IncrementFailed();
                     m_logger.LogWarning("⏰ Command {CommandId} timed out or was cancelled in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
@@ -202,7 +202,7 @@ namespace mcp_nexus.CommandQueue
                         try
                         {
                             await Task.Delay(TimeSpan.FromMinutes(5));
-                            m_tracker.TryRemoveCommand(command.Id, out _);
+                            m_tracker.TryRemoveCommand(command.Id ?? string.Empty, out _);
                         }
                         catch (Exception ex)
                         {
@@ -221,7 +221,7 @@ namespace mcp_nexus.CommandQueue
             {
                 // Unexpected error during execution
                 CompleteCommandSafely(command, $"Command execution failed: {ex.Message}", CommandState.Failed);
-                m_tracker.UpdateState(command.Id, CommandState.Failed);
+                m_tracker.UpdateState(command.Id ?? string.Empty, CommandState.Failed);
                 m_tracker.IncrementFailed();
                 m_logger.LogError(ex, "❌ Command {CommandId} failed with exception in {Elapsed}ms",
                     command.Id, stopwatch.ElapsedMilliseconds);
@@ -232,7 +232,7 @@ namespace mcp_nexus.CommandQueue
                     try
                     {
                         await Task.Delay(TimeSpan.FromMinutes(5));
-                        m_tracker.TryRemoveCommand(command.Id, out _);
+                        m_tracker.TryRemoveCommand(command.Id ?? string.Empty, out _);
                     }
                     catch (Exception ex)
                     {
@@ -295,7 +295,7 @@ namespace mcp_nexus.CommandQueue
                 var completedCommand = command.WithState(state);
 
                 // Set the result
-                command.CompletionSource.TrySetResult(result);
+                command.CompletionSource?.TrySetResult(result);
 
                 m_logger.LogTrace("✅ Command {CommandId} completed with state {State}", command.Id, state);
             }
@@ -306,7 +306,7 @@ namespace mcp_nexus.CommandQueue
                 // Ensure the completion source is set even if there's an error
                 try
                 {
-                    command.CompletionSource.TrySetResult($"Command completed with errors: {ex.Message}");
+                    command.CompletionSource?.TrySetResult($"Command completed with errors: {ex.Message}");
                 }
                 catch
                 {
@@ -335,14 +335,14 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                if (command.CancellationTokenSource.Token.IsCancellationRequested)
+                if (command.CancellationTokenSource?.Token.IsCancellationRequested == true)
                 {
                     m_logger.LogDebug("Command {CommandId} is already cancelled", commandId);
                     return true;
                 }
 
                 m_logger.LogInformation("🚫 Cancelling command {CommandId}", commandId);
-                command.CancellationTokenSource.Cancel();
+                command.CancellationTokenSource?.Cancel();
 
                 // If it's not currently executing, complete it immediately
                 var currentCommand = m_tracker.GetCurrentCommand();

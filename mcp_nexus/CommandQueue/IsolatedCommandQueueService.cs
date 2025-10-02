@@ -87,7 +87,7 @@ namespace mcp_nexus.CommandQueue
             m_logger.LogTrace("🔄 Adding command {CommandId} to active commands dictionary for session {SessionId}", commandId, m_config.SessionId);
             if (!m_tracker.TryAddCommand(commandId, queuedCommand))
             {
-                queuedCommand.CancellationTokenSource.Dispose();
+                queuedCommand.CancellationTokenSource?.Dispose();
                 throw new InvalidOperationException($"Command ID conflict: {commandId}");
             }
             m_logger.LogTrace("✅ Successfully added command {CommandId} to active commands dictionary for session {SessionId}", commandId, m_config.SessionId);
@@ -115,7 +115,7 @@ namespace mcp_nexus.CommandQueue
             {
                 // Clean up on failure
                 m_tracker.TryRemoveCommand(commandId, out _);
-                queuedCommand.CancellationTokenSource.Dispose();
+                queuedCommand.CancellationTokenSource?.Dispose();
 
                 m_logger.LogError(ex, "❌ Failed to queue command {CommandId} for session {SessionId}", commandId, m_config.SessionId);
                 throw;
@@ -139,7 +139,7 @@ namespace mcp_nexus.CommandQueue
             try
             {
                 m_logger.LogTrace("⏳ Waiting for command {CommandId} result in session {SessionId}", commandId, m_config.SessionId);
-                var result = await command.CompletionSource.Task;
+                var result = await (command.CompletionSource?.Task ?? Task.FromResult(string.Empty));
                 m_logger.LogTrace("✅ Command {CommandId} result received in session {SessionId}", commandId, m_config.SessionId);
                 return result;
             }

@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -7,6 +8,7 @@ namespace mcp_nexus.Infrastructure
     /// <summary>
     /// Orchestrates the installation of Windows services
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class ServiceInstallationOrchestrator
     {
         private readonly ILogger<ServiceInstallationOrchestrator> _logger;
@@ -34,6 +36,7 @@ namespace mcp_nexus.Infrastructure
         /// <param name="displayName">Display name for the service</param>
         /// <param name="description">Service description</param>
         /// <returns>True if installation was successful</returns>
+        [SupportedOSPlatform("windows")]
         public async Task<bool> InstallServiceAsync(string serviceName, string executablePath, string displayName, string description)
         {
             try
@@ -100,6 +103,7 @@ namespace mcp_nexus.Infrastructure
         /// <param name="serviceName">Name of the service</param>
         /// <param name="executablePath">Path to the service executable</param>
         /// <returns>True if uninstallation was successful</returns>
+        [SupportedOSPlatform("windows")]
         public async Task<bool> UninstallServiceAsync(string serviceName, string executablePath)
         {
             try
@@ -180,6 +184,7 @@ namespace mcp_nexus.Infrastructure
         /// <param name="serviceName">Name of the service</param>
         /// <param name="executablePath">Path to the service executable</param>
         /// <returns>True if service installation is valid</returns>
+        [SupportedOSPlatform("windows")]
         public async Task<bool> ValidateInstallationAsync(string serviceName, string executablePath)
         {
             try

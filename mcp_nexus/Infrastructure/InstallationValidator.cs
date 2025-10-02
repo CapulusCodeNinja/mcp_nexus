@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Versioning;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -9,6 +11,7 @@ namespace mcp_nexus.Infrastructure
     /// <summary>
     /// Validates Windows service installation requirements and environment
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class InstallationValidator
     {
         private readonly ILogger<InstallationValidator> _logger;
@@ -308,6 +311,7 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 _logger.LogInformation("Service configuration validation completed with {ErrorCount} errors", result.Errors.Count);
+                await Task.CompletedTask;
                 return result;
             }
             catch (Exception ex)
@@ -357,6 +361,7 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 _logger.LogInformation("Installation files validation completed with {ErrorCount} errors", result.Errors.Count);
+                await Task.CompletedTask;
                 return result;
             }
             catch (Exception ex)
@@ -372,6 +377,7 @@ namespace mcp_nexus.Infrastructure
             return Environment.OSVersion.Platform == PlatformID.Win32NT;
         }
 
+        [SupportedOSPlatform("windows")]
         private static bool IsRunAsAdministrator()
         {
             try
@@ -404,7 +410,7 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                var drive = new DriveInfo(Path.GetPathRoot(Environment.CurrentDirectory));
+                var drive = new DriveInfo(Path.GetPathRoot(Environment.CurrentDirectory) ?? string.Empty);
                 return drive.AvailableFreeSpace;
             }
             catch

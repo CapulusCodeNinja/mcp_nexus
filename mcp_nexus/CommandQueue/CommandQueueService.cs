@@ -100,7 +100,7 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                var result = await queuedCommand.CompletionSource.Task;
+                var result = await (queuedCommand.CompletionSource?.Task ?? Task.FromResult(string.Empty));
                 m_logger.LogTrace("✅ Command {CommandId} result retrieved", commandId);
                 return result;
             }
@@ -132,7 +132,7 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                command.CancellationTokenSource.Cancel();
+                command.CancellationTokenSource?.Cancel();
                 m_logger.LogInformation("🚫 Cancelled command {CommandId}", commandId);
                 return true;
             }
@@ -181,7 +181,7 @@ namespace mcp_nexus.CommandQueue
             var current = m_processor.GetCurrentCommand();
             if (current != null)
             {
-                results.Add((current.Id, current.Command, current.QueueTime, "Executing"));
+                results.Add((current.Id ?? string.Empty, current.Command ?? string.Empty, current.QueueTime, "Executing"));
             }
 
             // Add other active commands
@@ -199,7 +199,7 @@ namespace mcp_nexus.CommandQueue
                         CommandState.Failed => "Failed",
                         _ => "Unknown"
                     };
-                    results.Add((command.Id, command.Command, command.QueueTime, status));
+                    results.Add((command.Id ?? string.Empty, command.Command ?? string.Empty, command.QueueTime, status));
                 }
             }
 
@@ -247,8 +247,8 @@ namespace mcp_nexus.CommandQueue
             if (m_activeCommands.TryGetValue(commandId, out var command))
             {
                 return new CommandInfo(
-                    command.Id,
-                    command.Command,
+                    command.Id ?? string.Empty,
+                    command.Command ?? string.Empty,
                     command.State,
                     command.QueueTime,
                     0

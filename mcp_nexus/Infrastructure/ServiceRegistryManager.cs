@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
@@ -9,6 +10,7 @@ namespace mcp_nexus.Infrastructure
     /// <summary>
     /// Manages Windows service registry operations
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class ServiceRegistryManager
     {
         private readonly ILogger<ServiceRegistryManager> _logger;
@@ -19,6 +21,7 @@ namespace mcp_nexus.Infrastructure
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        [SupportedOSPlatform("windows")]
         public async Task<bool> CreateServiceRegistryAsync(ServiceConfiguration configuration)
         {
             try
@@ -65,6 +68,7 @@ namespace mcp_nexus.Infrastructure
                 SetFailureActions(serviceKey, configuration);
 
                 _logger.LogInformation("Successfully created service registry for {ServiceName}", configuration.ServiceName);
+                await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
@@ -74,6 +78,7 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        [SupportedOSPlatform("windows")]
         public async Task<bool> UpdateServiceRegistryAsync(ServiceConfiguration configuration)
         {
             try
@@ -99,6 +104,7 @@ namespace mcp_nexus.Infrastructure
                 serviceKey.SetValue("Start", (int)configuration.StartType);
 
                 _logger.LogInformation("Successfully updated service registry for {ServiceName}", configuration.ServiceName);
+                await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
@@ -108,6 +114,7 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        [SupportedOSPlatform("windows")]
         public async Task<bool> DeleteServiceRegistryAsync(string serviceName)
         {
             try
@@ -121,6 +128,7 @@ namespace mcp_nexus.Infrastructure
 
                 key.DeleteSubKeyTree(serviceName, false);
                 _logger.LogInformation("Successfully deleted service registry for {ServiceName}", serviceName);
+                await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
@@ -130,6 +138,7 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        [SupportedOSPlatform("windows")]
         public async Task<bool> ServiceRegistryExistsAsync(string serviceName)
         {
             try
@@ -141,6 +150,7 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 using var serviceKey = key.OpenSubKey(serviceName, false);
+                await Task.CompletedTask;
                 return serviceKey != null;
             }
             catch (Exception ex)
@@ -150,6 +160,7 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        [SupportedOSPlatform("windows")]
         public async Task<ServiceRegistryInfo?> GetServiceRegistryInfoAsync(string serviceName)
         {
             try
@@ -166,6 +177,7 @@ namespace mcp_nexus.Infrastructure
                     return null;
                 }
 
+                await Task.CompletedTask;
                 return new ServiceRegistryInfo
                 {
                     ServiceName = serviceName,
@@ -184,6 +196,7 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        [SupportedOSPlatform("windows")]
         public async Task<bool> SetServiceStartTypeAsync(string serviceName, ServiceStartType startType)
         {
             try
@@ -202,6 +215,7 @@ namespace mcp_nexus.Infrastructure
 
                 serviceKey.SetValue("Start", (int)startType);
                 _logger.LogInformation("Set start type to {StartType} for service {ServiceName}", startType, serviceName);
+                await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)

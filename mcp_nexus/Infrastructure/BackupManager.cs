@@ -14,7 +14,7 @@ namespace mcp_nexus.Infrastructure
         private readonly ILogger<BackupManager> _logger;
         private readonly string _backupDirectory;
 
-        public BackupManager(ILogger<BackupManager> logger, string backupDirectory = null)
+        public BackupManager(ILogger<BackupManager> logger, string? backupDirectory = null)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _backupDirectory = backupDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MCP-Nexus", "Backups");
@@ -26,7 +26,7 @@ namespace mcp_nexus.Infrastructure
         /// <param name="sourceFiles">Files to backup</param>
         /// <param name="backupName">Name for the backup</param>
         /// <returns>Path to the created backup</returns>
-        public async Task<string> CreateBackupAsync(IEnumerable<string> sourceFiles, string backupName = null)
+        public async Task<string> CreateBackupAsync(IEnumerable<string> sourceFiles, string? backupName = null)
         {
             try
             {
@@ -51,6 +51,7 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 _logger.LogInformation("Backup created successfully: {BackupPath}", backupPath);
+                await Task.CompletedTask; // Fix CS1998 warning
                 return backupPath;
             }
             catch (Exception ex)
@@ -91,6 +92,7 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 _logger.LogInformation("Backup restored successfully from {BackupPath} to {DestinationDirectory}", backupPath, destinationDirectory);
+                await Task.CompletedTask; // Fix CS1998 warning
                 return true;
             }
             catch (Exception ex)
@@ -115,6 +117,7 @@ namespace mcp_nexus.Infrastructure
 
                 var backupDirectories = Directory.GetDirectories(_backupDirectory);
                 _logger.LogInformation("Found {Count} backup directories", backupDirectories.Length);
+                await Task.CompletedTask; // Fix CS1998 warning
                 return backupDirectories;
             }
             catch (Exception ex)
@@ -154,6 +157,7 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 _logger.LogInformation("Cleaned up {DeletedCount} old backup directories", deletedCount);
+                await Task.CompletedTask; // Fix CS1998 warning
                 return deletedCount;
             }
             catch (Exception ex)

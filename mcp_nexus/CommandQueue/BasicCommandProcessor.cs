@@ -84,12 +84,12 @@ namespace mcp_nexus.CommandQueue
             {
                 // Set as current command
                 m_currentCommand = queuedCommand;
-                UpdateCommandState(queuedCommand.Id, CommandState.Executing);
+                UpdateCommandState(queuedCommand.Id ?? string.Empty, CommandState.Executing);
 
                 m_logger.LogInformation("⚡ Processing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
 
                 // Execute command
-                var result = await m_cdbSession.ExecuteCommand(queuedCommand.Command, cancellationToken);
+                var result = await m_cdbSession.ExecuteCommand(queuedCommand.Command ?? string.Empty, cancellationToken);
 
                 // Complete successfully
                 CompleteCommand(queuedCommand, result, CommandState.Completed);
@@ -99,7 +99,7 @@ namespace mcp_nexus.CommandQueue
                 m_logger.LogInformation("✅ Command {CommandId} completed in {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
             }
-            catch (OperationCanceledException) when (queuedCommand.CancellationTokenSource.Token.IsCancellationRequested)
+            catch (OperationCanceledException) when (queuedCommand.CancellationTokenSource?.Token.IsCancellationRequested == true)
             {
                 // Command was specifically cancelled
                 CompleteCommand(queuedCommand, "Command was cancelled", CommandState.Cancelled);
@@ -144,9 +144,9 @@ namespace mcp_nexus.CommandQueue
         {
             try
             {
-                UpdateCommandState(command.Id, state);
+                UpdateCommandState(command.Id ?? string.Empty, state);
 
-                if (!command.CompletionSource.Task.IsCompleted)
+                if (command.CompletionSource?.Task.IsCompleted == false)
                 {
                     if (state == CommandState.Completed)
                         command.CompletionSource.SetResult(result);

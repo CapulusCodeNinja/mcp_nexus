@@ -36,6 +36,7 @@ namespace mcp_nexus.Infrastructure
 
                 File.Copy(sourcePath, destinationPath, true);
                 _logger.LogInformation("Successfully copied file from {SourcePath} to {DestinationPath}", sourcePath, destinationPath);
+                await Task.CompletedTask; // Fix CS1998 warning
                 return true;
             }
             catch (Exception ex)
@@ -54,6 +55,7 @@ namespace mcp_nexus.Infrastructure
                     File.Delete(filePath);
                     _logger.LogInformation("Successfully deleted file: {FilePath}", filePath);
                 }
+                await Task.CompletedTask; // Fix CS1998 warning
                 return true;
             }
             catch (Exception ex)
@@ -72,6 +74,7 @@ namespace mcp_nexus.Infrastructure
                     Directory.CreateDirectory(directoryPath);
                     _logger.LogInformation("Successfully created directory: {DirectoryPath}", directoryPath);
                 }
+                await Task.CompletedTask; // Fix CS1998 warning
                 return true;
             }
             catch (Exception ex)

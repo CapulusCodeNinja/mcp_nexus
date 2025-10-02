@@ -26,7 +26,7 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public void NotifyCommandStatusFireAndForget(QueuedCommand command, string status, string? result = null, int progress = 0)
         {
-            NotifyCommandStatusFireAndForget(command.Id, command.Command, status, result, progress);
+            NotifyCommandStatusFireAndForget(command.Id ?? string.Empty, command.Command ?? string.Empty, status, result, progress);
         }
 
         /// <summary>
@@ -71,8 +71,8 @@ namespace mcp_nexus.CommandQueue
                         var progress = Math.Min(95, (int)(elapsed.TotalMinutes * 10)); // Rough progress based on time
 
                         await m_notificationService.NotifyCommandStatusAsync(
-                            command.Id,
-                            command.Command,
+                            command.Id ?? string.Empty,
+                            command.Command ?? string.Empty,
                             status,
                             progress,
                             string.Empty,

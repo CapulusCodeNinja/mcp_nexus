@@ -40,7 +40,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The command result</returns>
         public async Task<string> ExecuteCommandWithRecoveryAsync(QueuedCommand queuedCommand, CancellationToken cancellationToken)
         {
-            var commandTimeout = m_config.DetermineCommandTimeout(queuedCommand.Command);
+            var commandTimeout = m_config.DetermineCommandTimeout(queuedCommand.Command ?? string.Empty);
             var startTime = DateTime.UtcNow;
 
             m_logger.LogInformation("🔄 Executing resilient command {CommandId}: {Command} (timeout: {Timeout})",
@@ -104,8 +104,8 @@ namespace mcp_nexus.CommandQueue
             try
             {
                 // Start command timeout
-                var commandTimeout = m_config.DetermineCommandTimeout(queuedCommand.Command);
-                m_timeoutService.StartCommandTimeout(queuedCommand.Id, commandTimeout, () =>
+                var commandTimeout = m_config.DetermineCommandTimeout(queuedCommand.Command ?? string.Empty);
+                m_timeoutService.StartCommandTimeout(queuedCommand.Id ?? string.Empty, commandTimeout, () =>
                 {
                     m_logger.LogError("Command {CommandId} timed out", queuedCommand.Id);
                     // The timeout will be handled by the calling method
@@ -113,17 +113,17 @@ namespace mcp_nexus.CommandQueue
                 });
 
                 // Execute the command
-                var result = await m_cdbSession.ExecuteCommand(queuedCommand.Command, cancellationToken);
+                var result = await m_cdbSession.ExecuteCommand(queuedCommand.Command ?? string.Empty, cancellationToken);
 
                 // Cancel timeout since command completed
-                m_timeoutService.CancelCommandTimeout(queuedCommand.Id);
+                m_timeoutService.CancelCommandTimeout(queuedCommand.Id ?? string.Empty);
 
                 return result;
             }
             catch (Exception)
             {
                 // Ensure cleanup even on failure
-                m_timeoutService.CancelCommandTimeout(queuedCommand.Id);
+                m_timeoutService.CancelCommandTimeout(queuedCommand.Id ?? string.Empty);
                 throw;
             }
         }
@@ -133,7 +133,7 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         private Task? StartHeartbeatAsync(QueuedCommand queuedCommand, DateTime startTime, CancellationToken cancellationToken)
         {
-            var commandTimeout = m_config.DetermineCommandTimeout(queuedCommand.Command);
+            var commandTimeout = m_config.DetermineCommandTimeout(queuedCommand.Command ?? string.Empty);
 
             // Only start heartbeat for commands that might take longer than 30 seconds
             if (commandTimeout <= TimeSpan.FromSeconds(30))
@@ -148,7 +148,7 @@ namespace mcp_nexus.CommandQueue
                         await Task.Delay(m_config.HeartbeatInterval, cancellationToken);
 
                         var elapsed = DateTime.UtcNow - startTime;
-                        var heartbeatDetails = ResilientQueueConfiguration.GenerateHeartbeatDetails(queuedCommand.Command, elapsed);
+                        var heartbeatDetails = ResilientQueueConfiguration.GenerateHeartbeatDetails(queuedCommand.Command ?? string.Empty, elapsed);
 
                         m_logger.LogDebug("💓 Heartbeat for command {CommandId}: {Details} (elapsed: {Elapsed})",
                             queuedCommand.Id, heartbeatDetails, elapsed);
@@ -156,7 +156,7 @@ namespace mcp_nexus.CommandQueue
                         // Send notification if service is available
                         if (m_notificationService != null)
                         {
-                            await m_notificationService.NotifyCommandHeartbeatAsync(queuedCommand.Id, queuedCommand.Command, elapsed, heartbeatDetails);
+                            await m_notificationService.NotifyCommandHeartbeatAsync(queuedCommand.Id ?? string.Empty, queuedCommand.Command ?? string.Empty, elapsed, heartbeatDetails);
                         }
                     }
                 }

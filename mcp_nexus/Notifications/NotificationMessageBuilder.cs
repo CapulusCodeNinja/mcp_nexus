@@ -64,7 +64,7 @@ namespace mcp_nexus.Notifications
         /// <param name="status">Command status</param>
         /// <param name="result">Command result</param>
         /// <returns>Builder instance</returns>
-        public static NotificationMessageBuilder CreateCommandStatusNotification(string commandId, string status, string result = null)
+        public static NotificationMessageBuilder CreateCommandStatusNotification(string commandId, string status, string? result = null)
         {
             return new NotificationMessageBuilder()
                 .SetMethod("notifications/commandStatus")
@@ -101,7 +101,7 @@ namespace mcp_nexus.Notifications
         /// <param name="healthStatus">Health status</param>
         /// <param name="status">Status details</param>
         /// <returns>Builder instance</returns>
-        public static NotificationMessageBuilder CreateServerHealthNotification(string healthStatus, string status = null)
+        public static NotificationMessageBuilder CreateServerHealthNotification(string healthStatus, string? status = null)
         {
             return new NotificationMessageBuilder()
                 .SetMethod("notifications/serverHealth")

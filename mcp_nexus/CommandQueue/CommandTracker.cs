@@ -116,8 +116,8 @@ namespace mcp_nexus.CommandQueue
             var remaining = CalculateRemainingTime(queuePosition);
 
             return new CommandInfo(
-                command.Id,
-                command.Command,
+                command.Id ?? string.Empty,
+                command.Command ?? string.Empty,
                 command.State,
                 command.QueueTime,
                 queuePosition
@@ -169,7 +169,7 @@ namespace mcp_nexus.CommandQueue
             var current = m_currentCommand;
             if (current != null)
             {
-                results.Add((current.Id, current.Command, current.QueueTime, "Executing"));
+                results.Add((current.Id ?? string.Empty, current.Command ?? string.Empty, current.QueueTime, "Executing"));
             }
 
             // Add queued commands
@@ -179,7 +179,7 @@ namespace mcp_nexus.CommandQueue
                 for (int i = 0; i < queuedCommands.Length; i++)
                 {
                     var cmd = queuedCommands[i];
-                    results.Add((cmd.Id, cmd.Command, cmd.QueueTime, $"Queued (position {i + 1})"));
+                    results.Add((cmd.Id ?? string.Empty, cmd.Command ?? string.Empty, cmd.QueueTime, $"Queued (position {i + 1})"));
                 }
             }
             catch (Exception ex)
@@ -238,12 +238,12 @@ namespace mcp_nexus.CommandQueue
                 var command = kvp.Value;
                 try
                 {
-                    if (!command.CancellationTokenSource.Token.IsCancellationRequested)
+                    if (command.CancellationTokenSource?.Token.IsCancellationRequested == false)
                     {
                         command.CancellationTokenSource.Cancel();
-                        command.CompletionSource.TrySetResult($"Command cancelled: {reasonText}");
+                        command.CompletionSource?.TrySetResult($"Command cancelled: {reasonText}");
                         // update state to cancelled
-                        UpdateState(command.Id, CommandState.Cancelled);
+                        UpdateState(command.Id ?? string.Empty, CommandState.Cancelled);
                         cancelledCount++;
                         IncrementCancelled();
                     }

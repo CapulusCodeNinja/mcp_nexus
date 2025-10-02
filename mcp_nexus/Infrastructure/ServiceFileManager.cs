@@ -115,6 +115,7 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 _logger.LogInformation("Cleaned up {DeletedCount} old backup directories", deletedCount);
+                await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
@@ -152,6 +153,7 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 _logger.LogInformation("Service files validation successful");
+                await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
@@ -172,6 +174,7 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 _logger.LogInformation("Service files validation successful");
+                await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
@@ -190,6 +193,7 @@ namespace mcp_nexus.Infrastructure
                     Directory.Delete(targetPath, true);
                     _logger.LogInformation("Successfully deleted service files from {TargetPath}", targetPath);
                 }
+                await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
@@ -213,6 +217,7 @@ namespace mcp_nexus.Infrastructure
                 var files = directory.GetFiles("*", SearchOption.AllDirectories);
                 
                 _logger.LogInformation("Found {FileCount} files in service directory", files.Length);
+                await Task.CompletedTask;
                 return files;
             }
             catch (Exception ex)
@@ -378,6 +383,7 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 logger.LogInformation("Cleaned up {DeletedCount} old backup directories", deletedCount);
+                await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)

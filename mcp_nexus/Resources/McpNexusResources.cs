@@ -322,7 +322,7 @@ namespace mcp_nexus.Resources
                 // Convert to dictionary
                 foreach (var cmd in realCommands)
                 {
-                    commands[cmd.commandId] = cmd;
+                    commands[cmd.commandId ?? string.Empty] = cmd;
                 }
             }
             catch (Exception ex)
