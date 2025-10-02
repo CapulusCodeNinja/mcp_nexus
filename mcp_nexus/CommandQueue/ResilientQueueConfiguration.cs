@@ -7,6 +7,7 @@ namespace mcp_nexus.CommandQueue
     /// </summary>
     public class ResilientQueueConfiguration
     {
+        public string SessionId { get; }
         public TimeSpan DefaultCommandTimeout { get; }
         public TimeSpan ComplexCommandTimeout { get; }
         public TimeSpan MaxCommandTimeout { get; }
@@ -16,6 +17,7 @@ namespace mcp_nexus.CommandQueue
         public TimeSpan RecoveryCheckInterval { get; }
 
         public ResilientQueueConfiguration(
+            string sessionId = "unknown",
             TimeSpan? defaultCommandTimeout = null,
             TimeSpan? complexCommandTimeout = null,
             TimeSpan? maxCommandTimeout = null,
@@ -24,6 +26,7 @@ namespace mcp_nexus.CommandQueue
             TimeSpan? heartbeatInterval = null,
             TimeSpan? recoveryCheckInterval = null)
         {
+            SessionId = sessionId ?? "unknown";
             DefaultCommandTimeout = defaultCommandTimeout ?? ApplicationConstants.DefaultCommandTimeout;
             ComplexCommandTimeout = complexCommandTimeout ?? ApplicationConstants.MaxCommandTimeout;
             MaxCommandTimeout = maxCommandTimeout ?? ApplicationConstants.LongRunningCommandTimeout;

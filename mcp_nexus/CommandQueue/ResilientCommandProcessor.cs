@@ -101,7 +101,12 @@ namespace mcp_nexus.CommandQueue
                 CompleteCommand(queuedCommand, result, CommandState.Completed);
                 Interlocked.Increment(ref m_commandsProcessed);
 
-                var elapsed = DateTime.UtcNow - startTime;
+                var completionTime = DateTime.UtcNow;
+                var elapsed = completionTime - startTime;
+                
+                // Log detailed command statistics
+                LogCommandStatistics(queuedCommand, startTime, completionTime, CommandState.Completed);
+
                 m_logger.LogInformation("✅ Command {CommandId} completed in {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
 
@@ -118,7 +123,12 @@ namespace mcp_nexus.CommandQueue
                 CompleteCommand(queuedCommand, "Command was cancelled", CommandState.Cancelled);
                 Interlocked.Increment(ref m_commandsCancelled);
 
-                var elapsed = DateTime.UtcNow - startTime;
+                var completionTime = DateTime.UtcNow;
+                var elapsed = completionTime - startTime;
+                
+                // Log detailed command statistics
+                LogCommandStatistics(queuedCommand, startTime, completionTime, CommandState.Cancelled);
+
                 m_logger.LogWarning("🚫 Command {CommandId} was cancelled after {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
             }
@@ -126,6 +136,10 @@ namespace mcp_nexus.CommandQueue
             {
                 // Service shutdown
                 CompleteCommand(queuedCommand, "Service is shutting down", CommandState.Cancelled);
+                
+                var completionTime = DateTime.UtcNow;
+                LogCommandStatistics(queuedCommand, startTime, completionTime, CommandState.Cancelled);
+
                 m_logger.LogInformation("🛑 Command {CommandId} cancelled due to service shutdown", queuedCommand.Id);
             }
             catch (Exception ex)
@@ -135,7 +149,12 @@ namespace mcp_nexus.CommandQueue
                 CompleteCommand(queuedCommand, errorMessage, CommandState.Failed);
                 Interlocked.Increment(ref m_commandsFailed);
 
-                var elapsed = DateTime.UtcNow - startTime;
+                var completionTime = DateTime.UtcNow;
+                var elapsed = completionTime - startTime;
+                
+                // Log detailed command statistics
+                LogCommandStatistics(queuedCommand, startTime, completionTime, CommandState.Failed);
+
                 m_logger.LogError(ex, "❌ Command {CommandId} failed after {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
 
@@ -447,6 +466,41 @@ namespace mcp_nexus.CommandQueue
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "Error during command cleanup");
+            }
+        }
+
+        /// <summary>
+        /// Logs detailed command execution statistics
+        /// </summary>
+        private void LogCommandStatistics(QueuedCommand command, DateTime executionStartTime, DateTime completionTime, CommandState finalState)
+        {
+            try
+            {
+                var timeInQueue = executionStartTime - command.QueueTime;
+                var timeExecution = completionTime - executionStartTime;
+                var totalDuration = completionTime - command.QueueTime;
+
+                // Structured log for easy parsing - all times in milliseconds
+                m_logger.LogInformation(
+                    "📊 COMMAND_STATS | SessionId: {SessionId} | CommandId: {CommandId} | Command: {Command} | " +
+                    "State: {State} | QueuedAt: {QueuedAt:yyyy-MM-dd HH:mm:ss.fff} | " +
+                    "StartedAt: {StartedAt:yyyy-MM-dd HH:mm:ss.fff} | CompletedAt: {CompletedAt:yyyy-MM-dd HH:mm:ss.fff} | " +
+                    "TimeInQueue: {TimeInQueueMs}ms | TimeExecution: {TimeExecutionMs}ms | TotalDuration: {TotalDurationMs}ms",
+                    m_config.SessionId,
+                    command.Id,
+                    command.Command,
+                    finalState,
+                    command.QueueTime,
+                    executionStartTime,
+                    completionTime,
+                    timeInQueue.TotalMilliseconds,
+                    timeExecution.TotalMilliseconds,
+                    totalDuration.TotalMilliseconds
+                );
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogWarning(ex, "Error logging command statistics for {CommandId}", command.Id);
             }
         }
 

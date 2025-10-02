@@ -29,13 +29,14 @@ namespace mcp_nexus.CommandQueue
             ILoggerFactory loggerFactory,
             ICommandTimeoutService timeoutService,
             ICdbSessionRecoveryService recoveryService,
-            IMcpNotificationService? notificationService = null)
+            IMcpNotificationService? notificationService = null,
+            string? sessionId = null)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_notificationService = notificationService;
 
             // Create focused components
-            m_config = new ResilientQueueConfiguration();
+            m_config = new ResilientQueueConfiguration(sessionId: sessionId ?? "unknown");
             m_recoveryManager = new CommandRecoveryManager(
                 cdbSession, logger, timeoutService, recoveryService, m_config, notificationService);
             m_processor = new ResilientCommandProcessor(
