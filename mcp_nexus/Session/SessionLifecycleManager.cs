@@ -94,13 +94,13 @@ namespace mcp_nexus.Session
                     ProcessId = GetCdbProcessId(cdbSession)
                 };
 
-                // Session is ready for use now
-                sessionInfo.Status = SessionStatus.Active;
-                m_logger.LogTrace("Session {SessionId} status set to Active", sessionId);
-
-                // Add to sessions dictionary
+                // Add to sessions dictionary first
                 m_sessions[sessionId] = sessionInfo;
                 Interlocked.Increment(ref m_totalSessionsCreated);
+
+                // Session is ready for use now
+                sessionInfo.Status = SessionStatus.Active;
+                m_logger.LogInformation("✅ Session {SessionId} created and marked as Active (command queue may still be initializing)", sessionId);
 
                 // NOTE: Extension loading issue - !analyze requires ext.dll to be loaded
                 // However, auto-loading .load ext has historically caused output capture issues
@@ -149,16 +149,23 @@ namespace mcp_nexus.Session
             {
                 m_logger.LogInformation("🔒 Closing session {SessionId}", sessionId);
 
-                // Cancel all pending commands
-                var cancelledCount = sessionInfo.CommandQueue.CancelAllCommands("Session closing");
-                if (cancelledCount > 0)
+                // Cancel all pending commands if command queue exists
+                if (sessionInfo?.CommandQueue != null)
                 {
-                    m_logger.LogInformation("Cancelled {Count} pending commands for session {SessionId}",
-                        cancelledCount, sessionId);
+                    var cancelledCount = sessionInfo.CommandQueue.CancelAllCommands("Session closing");
+                    if (cancelledCount > 0)
+                    {
+                        m_logger.LogInformation("Cancelled {Count} pending commands for session {SessionId}",
+                            cancelledCount, sessionId);
+                    }
+                }
+                else
+                {
+                    m_logger.LogTrace("No command queue to cancel for session {SessionId}", sessionId);
                 }
 
                 // Cleanup components (includes stopping CDB session)
-                await CleanupSessionComponents(sessionInfo.CdbSession, sessionInfo.CommandQueue);
+                await CleanupSessionComponents(sessionInfo?.CdbSession, sessionInfo?.CommandQueue);
 
                 Interlocked.Increment(ref m_totalSessionsClosed);
                 stopwatch.Stop();
@@ -167,8 +174,15 @@ namespace mcp_nexus.Session
                     sessionId, stopwatch.ElapsedMilliseconds);
 
                 // Send closure notification
-                await m_notificationService.NotifySessionEventAsync(sessionId, "closed",
-                    "Session closed successfully", GetSessionContext(sessionInfo));
+                if (sessionInfo != null)
+                {
+                    await m_notificationService.NotifySessionEventAsync(sessionId, "closed",
+                        "Session closed successfully", GetSessionContext(sessionInfo));
+                }
+                else
+                {
+                    m_logger.LogTrace("Skipping notification for null session {SessionId}", sessionId);
+                }
 
                 return true;
             }
@@ -317,14 +331,24 @@ namespace mcp_nexus.Session
         /// </summary>
         private SessionContext GetSessionContext(SessionInfo sessionInfo)
         {
+            if (sessionInfo == null)
+            {
+                return new SessionContext
+                {
+                    SessionId = "unknown",
+                    Description = "Session context unavailable",
+                    Status = "Unknown"
+                };
+            }
+
             return new SessionContext
             {
-                SessionId = sessionInfo.SessionId,
+                SessionId = sessionInfo.SessionId ?? "unknown",
                 DumpPath = sessionInfo.DumpPath,
                 CreatedAt = sessionInfo.CreatedAt,
                 LastActivity = sessionInfo.LastActivity,
                 Status = sessionInfo.Status.ToString(),
-                Description = $"Session for {Path.GetFileName(sessionInfo.DumpPath)}"
+                Description = $"Session for {Path.GetFileName(sessionInfo.DumpPath ?? "Unknown")}"
             };
         }
 

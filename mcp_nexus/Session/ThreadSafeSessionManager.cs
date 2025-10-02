@@ -218,16 +218,31 @@ namespace mcp_nexus.Session
             commandQueue = null;
 
             if (string.IsNullOrWhiteSpace(sessionId))
-                return false;
-
-            if (m_sessions.TryGetValue(sessionId, out var session) &&
-                (session.Status == SessionStatus.Active || session.Status == SessionStatus.Initializing) && !session.IsDisposed)
             {
-                UpdateActivity(sessionId);
-                commandQueue = session.CommandQueue;
-                var available = commandQueue != null;
-                m_logger.LogTrace("TryGetCommandQueue: {SessionId} available={Available}", sessionId, available);
-                return available;
+                m_logger.LogTrace("TryGetCommandQueue: SessionId is null or empty");
+                return false;
+            }
+
+            if (m_sessions.TryGetValue(sessionId, out var session))
+            {
+                var isActive = (session.Status == SessionStatus.Active || session.Status == SessionStatus.Initializing) && !session.IsDisposed;
+                var queueExists = session.CommandQueue != null;
+                
+                m_logger.LogTrace("TryGetCommandQueue: {SessionId} found - Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}, QueueExists={QueueExists}", 
+                    sessionId, session.Status, session.IsDisposed, isActive, queueExists);
+
+                if (isActive)
+                {
+                    UpdateActivity(sessionId);
+                    commandQueue = session.CommandQueue;
+                    var available = commandQueue != null;
+                    m_logger.LogTrace("TryGetCommandQueue: {SessionId} available={Available}", sessionId, available);
+                    return available;
+                }
+            }
+            else
+            {
+                m_logger.LogTrace("TryGetCommandQueue: {SessionId} not found in sessions dictionary", sessionId);
             }
 
             m_logger.LogWarning("TryGetCommandQueue: {SessionId} not ready or missing", sessionId);

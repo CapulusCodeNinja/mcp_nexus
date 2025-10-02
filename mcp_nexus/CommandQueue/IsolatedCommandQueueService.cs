@@ -57,7 +57,16 @@ namespace mcp_nexus.CommandQueue
             // Notify startup
             m_notificationManager.NotifyServiceStartup();
 
-            m_logger.LogInformation("✅ IsolatedCommandQueueService created for session {SessionId}", sessionId);
+            m_logger.LogInformation("✅ IsolatedCommandQueueService created for session {SessionId} (background task initializing)", sessionId);
+        }
+
+        /// <summary>
+        /// Checks if the command queue is ready to accept commands
+        /// </summary>
+        /// <returns>True if ready, false otherwise</returns>
+        public bool IsReady()
+        {
+            return !m_disposed && m_processingTask != null && !m_processingTask.IsFaulted && !m_processingCts.Token.IsCancellationRequested;
         }
 
         public string QueueCommand(string command)

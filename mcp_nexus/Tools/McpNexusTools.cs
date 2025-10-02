@@ -180,14 +180,23 @@ namespace mcp_nexus.Tools
                 // Try to get queue without throwing to avoid transient races, log details if missing
                 if (!sessionManager.TryGetCommandQueue(sessionId, out var commandQueue) || commandQueue == null)
                 {
-                    // Brief retry loop to handle immediate post-creation race (reduced to ~250ms max)
-                    for (int attempt = 1; attempt <= 5; attempt++)
+                    // Extended retry loop to handle command queue initialization race condition
+                    // Background processing task needs time to initialize after session creation
+                    for (int attempt = 1; attempt <= 20; attempt++)
                     {
-                        await Task.Delay(50); // Reduced from 100ms to 50ms for faster response
+                        await Task.Delay(100); // 100ms delay per attempt
                         if (sessionManager.TryGetCommandQueue(sessionId, out commandQueue) && commandQueue != null)
                         {
+                            // Additional check: verify the queue is actually ready to accept commands
+                            if (commandQueue is IsolatedCommandQueueService isolatedQueue && !isolatedQueue.IsReady())
+                            {
+                                logger.LogTrace("Command queue found but not ready for {SessionId} after {Attempt} attempts", sessionId, attempt);
+                                commandQueue = null; // Reset to continue retry loop
+                                continue;
+                            }
+                            
                             logger.LogTrace("Command queue became available for {SessionId} after {Attempt} attempts ({Ms}ms)",
-                                sessionId, attempt, attempt * 50);
+                                sessionId, attempt, attempt * 100);
                             break;
                         }
                     }

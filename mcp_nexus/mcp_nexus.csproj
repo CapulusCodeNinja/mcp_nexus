@@ -4,9 +4,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>1.0.6.2</Version>
-    <AssemblyVersion>1.0.6.2</AssemblyVersion>
-    <FileVersion>1.0.6.2</FileVersion>
+    <Version>1.0.6.3</Version>
+    <AssemblyVersion>1.0.6.3</AssemblyVersion>
+    <FileVersion>1.0.6.3</FileVersion>
     <Product>MCP Nexus</Product>
     <Description>Model Context Protocol Server for Windows Debugging Tools</Description>
     <Company>CapulusCodeNinja</Company>
