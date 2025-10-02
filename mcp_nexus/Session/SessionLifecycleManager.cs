@@ -99,6 +99,11 @@ namespace mcp_nexus.Session
                 }
 
                 // Create session info using constructor (CommandQueue is read-only)
+                if (commandQueue == null)
+                {
+                    throw new InvalidOperationException($"Command queue is null for session {sessionId}");
+                }
+                
                 var sessionInfo = new SessionInfo(
                     sessionId, 
                     cdbSession, 
@@ -207,7 +212,10 @@ namespace mcp_nexus.Session
                 }
 
                 // Cleanup components (includes stopping CDB session)
-                await CleanupSessionComponents(sessionInfo?.CdbSession, sessionInfo?.CommandQueue);
+                if (sessionInfo?.CdbSession != null && sessionInfo?.CommandQueue != null)
+                {
+                    await CleanupSessionComponents(sessionInfo.CdbSession, sessionInfo.CommandQueue);
+                }
 
                 Interlocked.Increment(ref m_totalSessionsClosed);
                 stopwatch.Stop();

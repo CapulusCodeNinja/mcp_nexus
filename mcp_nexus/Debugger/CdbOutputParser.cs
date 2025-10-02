@@ -171,7 +171,7 @@ namespace mcp_nexus.Debugger
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error reading available lines from {StreamName}", streamName);
+                m_logger.LogError(ex, "Error reading available lines from {StreamName}", streamName);
             }
 
             return lines.Count > 0 ? string.Join(Environment.NewLine, lines) : string.Empty;

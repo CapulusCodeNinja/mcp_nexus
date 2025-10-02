@@ -12,6 +12,7 @@ namespace mcp_nexus.Debugger
         private readonly CdbSessionConfiguration m_config;
         private readonly CdbOutputParser m_outputParser;
         private readonly object m_cancellationLock = new();
+        private readonly SemaphoreSlim m_commandExecutionSemaphore = new(1, 1); // Ensure only one command executes at a time
         private readonly SemaphoreSlim m_streamAccessSemaphore = new(1, 1); // Add stream access synchronization for async operations
         private CancellationTokenSource? m_currentOperationCts;
 
@@ -33,51 +34,63 @@ namespace mcp_nexus.Debugger
             CdbProcessManager processManager,
             CancellationToken externalCancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(command))
-                throw new ArgumentException("Command cannot be null or empty", nameof(command));
-
-            if (!processManager.IsActive)
-                throw new InvalidOperationException("No active debugging session");
-
-            m_logger.LogInformation("🎯 CDB ExecuteCommand START (TRUE ASYNC): {Command}", command);
-
-            // BULLETPROOF: Set command context for stateful parsing
-            m_outputParser.SetCurrentCommand(command);
-
-            // Set up cancellation
-            CancellationTokenSource operationCts;
-            CancellationTokenSource? timeoutCts = null;
-            lock (m_cancellationLock)
-            {
-                try
-                {
-                    timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(m_config.CommandTimeoutMs));
-                    operationCts = CancellationTokenSource.CreateLinkedTokenSource(
-                        externalCancellationToken,
-                        timeoutCts.Token);
-                    m_currentOperationCts = operationCts;
-                }
-                catch
-                {
-                    timeoutCts?.Dispose();
-                    throw;
-                }
-            }
-
+            // Ensure only one command executes at a time to prevent stream concurrency issues
+            m_logger.LogDebug("🔒 Waiting for command execution semaphore for command: {Command}", command);
+            await m_commandExecutionSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
+            m_logger.LogDebug("🔓 Acquired command execution semaphore for command: {Command}", command);
             try
             {
-                // TRUE ASYNC: No blocking, proper async/await all the way through
-                return await ExecuteCommandInternalAsync(command, processManager, operationCts.Token).ConfigureAwait(false);
+                if (string.IsNullOrWhiteSpace(command))
+                    throw new ArgumentException("Command cannot be null or empty", nameof(command));
+
+                if (!processManager.IsActive)
+                    throw new InvalidOperationException("No active debugging session");
+
+                m_logger.LogInformation("🎯 CDB ExecuteCommand START (TRUE ASYNC): {Command}", command);
+
+                // BULLETPROOF: Set command context for stateful parsing
+                m_outputParser.SetCurrentCommand(command);
+
+                // Set up cancellation
+                CancellationTokenSource operationCts;
+                CancellationTokenSource? timeoutCts = null;
+                lock (m_cancellationLock)
+                {
+                    try
+                    {
+                        timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(m_config.CommandTimeoutMs));
+                        operationCts = CancellationTokenSource.CreateLinkedTokenSource(
+                            externalCancellationToken,
+                            timeoutCts.Token);
+                        m_currentOperationCts = operationCts;
+                    }
+                    catch
+                    {
+                        timeoutCts?.Dispose();
+                        throw;
+                    }
+                }
+
+                try
+                {
+                    // TRUE ASYNC: No blocking, proper async/await all the way through
+                    return await ExecuteCommandInternalAsync(command, processManager, operationCts.Token).ConfigureAwait(false);
+                }
+                finally
+                {
+                    lock (m_cancellationLock)
+                    {
+                        if (m_currentOperationCts == operationCts)
+                            m_currentOperationCts = null;
+                    }
+                    operationCts.Dispose();
+                    timeoutCts?.Dispose();
+                }
             }
             finally
             {
-                lock (m_cancellationLock)
-                {
-                    if (m_currentOperationCts == operationCts)
-                        m_currentOperationCts = null;
-                }
-                operationCts.Dispose();
-                timeoutCts?.Dispose();
+                m_logger.LogDebug("🔓 Releasing command execution semaphore for command: {Command}", command);
+                m_commandExecutionSemaphore.Release();
             }
         }
 
@@ -423,7 +436,7 @@ namespace mcp_nexus.Debugger
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error reading stderr: {Message}", ex.Message);
+                m_logger.LogError(ex, "Error reading stderr: {Message}", ex.Message);
             }
         }
 
@@ -540,6 +553,7 @@ namespace mcp_nexus.Debugger
         /// </summary>
         public void Dispose()
         {
+            m_commandExecutionSemaphore?.Dispose();
             m_streamAccessSemaphore?.Dispose();
         }
     }

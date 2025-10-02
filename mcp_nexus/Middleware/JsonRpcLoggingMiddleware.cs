@@ -83,12 +83,16 @@ namespace mcp_nexus.Middleware
             var formattedResponse = FormatSseResponseForLogging(responseBodyText);
             
             // Try to decode the text for easier debugging
-            var (decodedText, decodeSuccess) = DecodeJsonText(responseBodyText);
+            // For Trace level, don't truncate; for Debug and higher, truncate large fields
+            var (decodedText, decodeSuccess) = DecodeJsonText(responseBodyText, shouldTruncate: false); // Trace level - no truncation
             if (decodeSuccess)
             {
                 // DecodeJsonText succeeded - use Trace for main response, Debug for decoded text
                 m_logger.LogTrace("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
-                m_logger.LogDebug("📤 JSON-RPC Response Text:\n{DecodedText}", decodedText);
+                
+                // For Debug level, truncate large fields
+                var (truncatedDecodedText, _) = DecodeJsonText(responseBodyText, shouldTruncate: true);
+                m_logger.LogDebug("📤 JSON-RPC Response Text:\n{DecodedText}", truncatedDecodedText);
             }
             else
             {
@@ -99,6 +103,12 @@ namespace mcp_nexus.Middleware
 
         private static string FormatJsonForLogging(string json)
         {
+            // Handle empty or whitespace-only responses
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return "[Empty response body]";
+            }
+
             try
             {
                 using var document = JsonDocument.Parse(json);
@@ -108,14 +118,15 @@ namespace mcp_nexus.Middleware
                 writer.Flush();
                 return System.Text.Encoding.UTF8.GetString(stream.ToArray());
             }
-            catch (JsonException ex)
+            catch (JsonException)
             {
-                var sanitizedJson = json.Length > 1000 ? json.Substring(0, 1000) + "..." : json;
-                return $"[Invalid JSON - {ex.Message}]: {sanitizedJson}";
+                // Return the raw content if it's not valid JSON
+                return json;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return $"[JSON formatting error - {ex.Message}]: {json.Substring(0, Math.Min(json.Length, 100))}...";
+                // Return the raw content if there's any other error
+                return json;
             }
         }
 
@@ -143,7 +154,54 @@ namespace mcp_nexus.Middleware
             }
         }
 
-        private static (string result, bool success) DecodeJsonText(string responseText)
+        private static JsonElement TruncateLargeFields(JsonElement element, int maxFieldLength = 1000, bool shouldTruncate = true)
+        {
+            // If truncation is disabled, return the element as-is
+            if (!shouldTruncate)
+            {
+                return element;
+            }
+
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.Object:
+                    var truncatedObject = new Dictionary<string, object>();
+                    foreach (var property in element.EnumerateObject())
+                    {
+                        if (property.Value.ValueKind == JsonValueKind.String && property.Value.GetString()?.Length > maxFieldLength)
+                        {
+                            var originalValue = property.Value.GetString() ?? "";
+                            truncatedObject[property.Name] = originalValue.Substring(0, maxFieldLength) + $"...(truncated {originalValue.Length - maxFieldLength} chars)";
+                        }
+                        else
+                        {
+                            truncatedObject[property.Name] = TruncateLargeFields(property.Value, maxFieldLength, shouldTruncate);
+                        }
+                    }
+                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedObject)).RootElement;
+
+                case JsonValueKind.Array:
+                    var truncatedArray = new List<object>();
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        truncatedArray.Add(TruncateLargeFields(item, maxFieldLength, shouldTruncate));
+                    }
+                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedArray)).RootElement;
+
+                case JsonValueKind.String:
+                    var stringValue = element.GetString() ?? "";
+                    if (stringValue.Length > maxFieldLength)
+                    {
+                        return JsonDocument.Parse($"\"{stringValue.Substring(0, maxFieldLength)}...(truncated {stringValue.Length - maxFieldLength} chars)\"").RootElement;
+                    }
+                    return element;
+
+                default:
+                    return element;
+            }
+        }
+
+        private static (string result, bool success) DecodeJsonText(string responseText, bool shouldTruncate = true)
         {
             // Handle empty or whitespace-only responses
             if (string.IsNullOrWhiteSpace(responseText))
@@ -179,21 +237,14 @@ namespace mcp_nexus.Middleware
                         // Decode the text field content
                         var decodedText = System.Text.RegularExpressions.Regex.Unescape(textField.GetString() ?? "");
                         
-                        // Format the decoded JSON content
-                        try
-                        {
-                            using var textDocument = JsonDocument.Parse(decodedText);
-                            using var stream = new MemoryStream();
-                            using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
-                            textDocument.WriteTo(writer);
-                            writer.Flush();
-                            return (System.Text.Encoding.UTF8.GetString(stream.ToArray()), true);
-                        }
-                        catch
-                        {
-                            // If it's not valid JSON, return the decoded text as-is
-                            return (decodedText, true);
-                        }
+                        using var textDocument = JsonDocument.Parse(decodedText);
+                        var truncatedJson = TruncateLargeFields(textDocument.RootElement, 1000, shouldTruncate);
+                        
+                        using var stream = new MemoryStream();
+                        using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
+                        truncatedJson.WriteTo(writer);
+                        writer.Flush();
+                        return (System.Text.Encoding.UTF8.GetString(stream.ToArray()), true);
                     }
                 }
 
