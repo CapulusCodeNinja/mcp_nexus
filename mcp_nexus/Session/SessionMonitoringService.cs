@@ -290,9 +290,13 @@ namespace mcp_nexus.Session
                 }
 
                 // Session health hints
-                if (!session.CdbSession.IsActive)
+                if (session.CdbSession != null && !session.CdbSession.IsActive)
                 {
                     hints.Add("⚠️ CDB session is not active - session may need to be recreated");
+                }
+                else if (session.CdbSession == null)
+                {
+                    hints.Add("⚠️ CDB session is not initialized - session may need to be recreated");
                 }
 
                 // File-based hints
