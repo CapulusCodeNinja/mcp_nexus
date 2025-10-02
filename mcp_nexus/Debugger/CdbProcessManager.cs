@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Runtime.InteropServices;
 using mcp_nexus.Configuration;
 
@@ -213,8 +214,26 @@ namespace mcp_nexus.Debugger
 
             // Set up streams
             m_debuggerInput = m_debuggerProcess.StandardInput;
-            m_debuggerOutput = m_debuggerProcess.StandardOutput;
-            m_debuggerError = m_debuggerProcess.StandardError;
+
+            // Increase read buffer sizes for stdout/stderr to reduce syscalls and allocations
+            // Wrap the underlying base streams with larger-buffer StreamReaders (leaveOpen=true)
+            var stdoutEncoding = m_debuggerProcess.StandardOutput.CurrentEncoding;
+            var stderrEncoding = m_debuggerProcess.StandardError.CurrentEncoding;
+            const int largeBufferSize = 64 * 1024; // 64KB
+
+            m_debuggerOutput = new StreamReader(
+                m_debuggerProcess.StandardOutput.BaseStream,
+                stdoutEncoding,
+                detectEncodingFromByteOrderMarks: false,
+                bufferSize: largeBufferSize,
+                leaveOpen: true);
+
+            m_debuggerError = new StreamReader(
+                m_debuggerProcess.StandardError.BaseStream,
+                stderrEncoding,
+                detectEncodingFromByteOrderMarks: false,
+                bufferSize: largeBufferSize,
+                leaveOpen: true);
 
             // Configure streams
             m_debuggerInput.AutoFlush = true;

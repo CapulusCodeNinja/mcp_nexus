@@ -126,10 +126,15 @@ namespace mcp_nexus.Debugger
 
             try
             {
-                // Send command (TRUE ASYNC)
-                await SendCommandAsync(command, debuggerInput, cancellationToken).ConfigureAwait(false);
+                // Chain start and end markers around the original command. If the echo is suppressed, we fall back to prompt/timeout
+                var chainedCommand = string.IsNullOrWhiteSpace(command)
+                    ? $".echo {CdbSentinels.StartMarker}; .echo {CdbSentinels.EndMarker}"
+                    : $".echo {CdbSentinels.StartMarker}; {command}; .echo {CdbSentinels.EndMarker}";
 
-                // Read response (TRUE ASYNC)
+                // Send command (TRUE ASYNC)
+                await SendCommandAsync(chainedCommand, debuggerInput, cancellationToken).ConfigureAwait(false);
+
+                // Read response (TRUE ASYNC) with sentinel short-circuit
                 var output = await ReadCommandOutputAsync(processManager, cancellationToken).ConfigureAwait(false);
 
                 m_logger.LogInformation("✅ CDB ExecuteCommand COMPLETED: {Command}", command);
@@ -300,6 +305,21 @@ namespace mcp_nexus.Debugger
                         continue;
                     }
 
+                    // Drop start marker from output, if present
+                    if (string.Equals(readResult.Line, CdbSentinels.StartMarker, StringComparison.Ordinal))
+                    {
+                        // Skip writing start marker to output
+                        lastOutputTime = DateTime.Now;
+                        continue;
+                    }
+
+                    // Check end sentinel for short-circuit completion and do not emit it
+                    if (string.Equals(readResult.Line, CdbSentinels.EndMarker, StringComparison.Ordinal))
+                    {
+                        m_logger.LogTrace("Sentinel detected - completing stdout read early");
+                        break; // Do NOT write sentinel to output
+                    }
+
                     // Write line to channel
                     await writer.WriteAsync((readResult.Line, false), cancellationToken).ConfigureAwait(false);
                     linesRead++;
@@ -357,6 +377,14 @@ namespace mcp_nexus.Debugger
                             break; // End of stream
                         
                         emptySpins = 0;
+
+                        // Drop markers if they appear on stderr for any reason
+                        if (string.Equals(line, CdbSentinels.StartMarker, StringComparison.Ordinal) ||
+                            string.Equals(line, CdbSentinels.EndMarker, StringComparison.Ordinal))
+                        {
+                            continue;
+                        }
+
                         try
                         {
                             await writer.WriteAsync((line, true), cancellationToken).ConfigureAwait(false);
