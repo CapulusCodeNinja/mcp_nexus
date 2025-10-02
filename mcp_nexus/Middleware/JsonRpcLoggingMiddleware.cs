@@ -82,6 +82,13 @@ namespace mcp_nexus.Middleware
 
             var formattedResponse = FormatSseResponseForLogging(responseBodyText);
             m_logger.LogInformation("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
+            
+            // Also log the decoded text for easier debugging
+            var decodedText = DecodeJsonText(responseBodyText);
+            if (!string.IsNullOrEmpty(decodedText))
+            {
+                m_logger.LogInformation("📤 JSON-RPC Response Text: {DecodedText}", decodedText);
+            }
         }
 
         private static string FormatJsonForLogging(string json)
@@ -127,6 +134,91 @@ namespace mcp_nexus.Middleware
             catch
             {
                 return sseResponse;
+            }
+        }
+
+        private static string DecodeJsonText(string responseText)
+        {
+            try
+            {
+                // Handle Server-Sent Events format - extract only the JSON data part
+                var lines = responseText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("data: "))
+                    {
+                        var jsonPart = line.Substring(6).Trim();
+                        return DecodeJsonStringValues(jsonPart);
+                    }
+                }
+
+                // If no data: line found, try to decode as JSON directly
+                return DecodeJsonStringValues(responseText);
+            }
+            catch
+            {
+                return responseText;
+            }
+        }
+
+        private static string DecodeJsonStringValues(string json)
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(json);
+                using var stream = new MemoryStream();
+                using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
+                
+                // Recursively decode string values
+                DecodeJsonElement(document.RootElement, writer);
+                writer.Flush();
+                
+                return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+            }
+            catch
+            {
+                return json;
+            }
+        }
+
+        private static void DecodeJsonElement(JsonElement element, Utf8JsonWriter writer)
+        {
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.Object:
+                    writer.WriteStartObject();
+                    foreach (var property in element.EnumerateObject())
+                    {
+                        writer.WritePropertyName(property.Name);
+                        DecodeJsonElement(property.Value, writer);
+                    }
+                    writer.WriteEndObject();
+                    break;
+                case JsonValueKind.Array:
+                    writer.WriteStartArray();
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        DecodeJsonElement(item, writer);
+                    }
+                    writer.WriteEndArray();
+                    break;
+                case JsonValueKind.String:
+                    // Decode Unicode escape sequences
+                    var decodedString = System.Text.RegularExpressions.Regex.Unescape(element.GetString() ?? "");
+                    writer.WriteStringValue(decodedString);
+                    break;
+                case JsonValueKind.Number:
+                    writer.WriteNumberValue(element.GetDecimal());
+                    break;
+                case JsonValueKind.True:
+                    writer.WriteBooleanValue(true);
+                    break;
+                case JsonValueKind.False:
+                    writer.WriteBooleanValue(false);
+                    break;
+                case JsonValueKind.Null:
+                    writer.WriteNullValue();
+                    break;
             }
         }
     }
