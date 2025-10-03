@@ -15,14 +15,12 @@ namespace mcp_nexus_tests.Infrastructure
         private readonly Mock<ILogger<ServiceInstallationOrchestrator>> m_MockLogger;
         private readonly Mock<ServiceFileManager> m_MockFileManager;
         private readonly Mock<ServiceRegistryManager> m_MockRegistryManager;
-        private readonly Mock<OperationLogger> m_MockOperationLogger;
 
         public ServiceInstallationOrchestratorTests()
         {
             m_MockLogger = new Mock<ILogger<ServiceInstallationOrchestrator>>();
             m_MockFileManager = new Mock<ServiceFileManager>(Mock.Of<ILogger<ServiceFileManager>>());
             m_MockRegistryManager = new Mock<ServiceRegistryManager>(Mock.Of<ILogger<ServiceRegistryManager>>());
-            m_MockOperationLogger = new Mock<OperationLogger>(Mock.Of<ILogger<OperationLogger>>());
         }
 
         [Fact]
@@ -54,7 +52,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UninstallServiceAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object, m_MockOperationLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object);
             var result = await orchestrator.UninstallServiceAsync("TestService", "C:\\Test\\test.exe");
             // Should not throw, but may return false if uninstallation fails
             Assert.True(result == true || result == false);
@@ -64,7 +62,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UninstallServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object, m_MockOperationLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object);
             var result = await orchestrator.UninstallServiceAsync("TestService", "C:\\Test\\test.exe");
             // Should not throw, but may return false if uninstallation fails
             Assert.True(result == true || result == false);
@@ -74,7 +72,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidateInstallationAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object, m_MockOperationLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object);
             var result = await orchestrator.ValidateInstallationAsync("TestService", "C:\\Test\\test.exe");
             // Should not throw, but may return false if validation fails
             Assert.True(result == true || result == false);
@@ -84,7 +82,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidateInstallationAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object, m_MockOperationLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object);
             var result = await orchestrator.ValidateInstallationAsync("TestService", "C:\\Test\\test.exe");
             // Should not throw, but may return false if validation fails
             Assert.True(result == true || result == false);
@@ -94,7 +92,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UpdateServiceAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object, m_MockOperationLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object);
             var result = await orchestrator.UpdateServiceAsync("TestService", "C:\\Test\\test.exe", "Test Service", "Test Description");
             // Should not throw, but may return false if update fails
             Assert.True(result == true || result == false);
@@ -104,7 +102,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UpdateServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object, m_MockOperationLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object);
             var result = await orchestrator.UpdateServiceAsync("TestService", "C:\\Test\\test.exe", "Test Service", "Test Description");
             // Should not throw, but may return false if update fails
             Assert.True(result == true || result == false);
@@ -162,7 +160,7 @@ namespace mcp_nexus_tests.Infrastructure
             // This test verifies that all methods handle exceptions gracefully
             // Since we can't easily mock static dependencies, we test that they don't throw
             var installResult = await ServiceInstallationOrchestrator.InstallServiceStaticAsync(m_MockLogger.Object);
-            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object, m_MockOperationLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object);
             var uninstallResult = await orchestrator.UninstallServiceAsync("TestService", "C:\\Test\\test.exe");
             var validateResult = await orchestrator.ValidateInstallationAsync("TestService", "C:\\Test\\test.exe");
             var updateResult = await orchestrator.UpdateServiceAsync("TestService", "C:\\Test\\test.exe", "Test Service", "Test Description");
@@ -188,7 +186,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UninstallServiceAsync_HandlesServiceNotInstalled()
         {
             // This test verifies that the method handles the case when service is not installed
-            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object, m_MockOperationLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object);
             var result = await orchestrator.UninstallServiceAsync("TestService", "C:\\Test\\test.exe");
 
             // Should return a boolean result without throwing
@@ -199,7 +197,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ForceUninstallServiceAsync_HandlesPrerequisitesFailure()
         {
             // This test verifies that the method handles prerequisite validation failures
-            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object, m_MockOperationLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object);
             var result = await orchestrator.ValidateInstallationAsync("TestService", "C:\\Test\\test.exe");
 
             // Should return a boolean result without throwing
@@ -210,7 +208,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UpdateServiceAsync_HandlesPrerequisitesFailure()
         {
             // This test verifies that the method handles prerequisite validation failures
-            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object, m_MockOperationLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object);
             var result = await orchestrator.UpdateServiceAsync("TestService", "C:\\Test\\test.exe", "Test Service", "Test Description");
 
             // Should return a boolean result without throwing
@@ -221,7 +219,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UpdateServiceAsync_HandlesNoUpdateNeeded()
         {
             // This test verifies that the method handles the case when no update is needed
-            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object, m_MockOperationLogger.Object);
+            var orchestrator = new ServiceInstallationOrchestrator(m_MockLogger.Object, m_MockFileManager.Object, m_MockRegistryManager.Object);
             var result = await orchestrator.UpdateServiceAsync("TestService", "C:\\Test\\test.exe", "Test Service", "Test Description");
 
             // Should return a boolean result without throwing
