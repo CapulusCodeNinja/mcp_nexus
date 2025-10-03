@@ -1041,7 +1041,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Act & Assert
             Assert.Empty(instanceFields);
-            Assert.Empty(instanceMethods.Where(m => m.DeclaringType == installerType));
+            Assert.DoesNotContain(instanceMethods, m => m.DeclaringType == installerType);
             Assert.Empty(instanceProperties);
         }
     }

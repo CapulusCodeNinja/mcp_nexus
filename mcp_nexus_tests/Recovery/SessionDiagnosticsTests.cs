@@ -573,6 +573,7 @@ namespace mcp_nexus_tests.Recovery
             {
                 var json = JsonSerializer.Serialize(diagnostics);
                 var deserialized = JsonSerializer.Deserialize<SessionDiagnostics>(json);
+                Assert.NotNull(deserialized);
                 Assert.Equal(diagnostics.IsActive, deserialized.IsActive);
                 Assert.Equal(diagnostics.LastHealthCheck, deserialized.LastHealthCheck);
                 Assert.Equal(diagnostics.TimeSinceLastCheck, deserialized.TimeSinceLastCheck);

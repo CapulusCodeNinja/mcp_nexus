@@ -202,7 +202,7 @@ namespace mcp_nexus_tests.Infrastructure
         }
 
         [Fact]
-        public void Apply_CanBeCalledConcurrently()
+        public async Task Apply_CanBeCalledConcurrently()
         {
             // Arrange
             var tasks = new Task[10];
@@ -225,7 +225,7 @@ namespace mcp_nexus_tests.Infrastructure
                 });
             }
 
-            Task.WaitAll(tasks);
+            await Task.WhenAll(tasks);
 
             // Assert
             for (int i = 0; i < 10; i++)
@@ -318,7 +318,7 @@ namespace mcp_nexus_tests.Infrastructure
         }
 
         [Fact]
-        public void Apply_CanBeCalledFromDifferentThreads()
+        public async Task Apply_CanBeCalledFromDifferentThreads()
         {
             // Arrange
             var results = new bool[5];
@@ -342,7 +342,7 @@ namespace mcp_nexus_tests.Infrastructure
                 });
             }
 
-            Task.WaitAll(tasks);
+            await Task.WhenAll(tasks);
 
             // Assert
             for (int i = 0; i < 5; i++)
@@ -352,7 +352,7 @@ namespace mcp_nexus_tests.Infrastructure
         }
 
         [Fact]
-        public void Apply_ThreadPoolBehaviorAfterCall()
+        public async Task Apply_ThreadPoolBehaviorAfterCall()
         {
             // Arrange
             ThreadPoolTuning.Apply();
@@ -362,7 +362,7 @@ namespace mcp_nexus_tests.Infrastructure
             var task = Task.Run(() => Thread.Sleep(10));
 
             // Assert
-            Assert.True(task.Wait(TimeSpan.FromSeconds(1)));
+            await task.WaitAsync(TimeSpan.FromSeconds(1));
         }
 
         [Fact]

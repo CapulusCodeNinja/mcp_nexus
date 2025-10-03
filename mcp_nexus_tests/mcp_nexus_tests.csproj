@@ -4,6 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
     <IsPackable>false</IsPackable>
     <CollectCoverage>true</CollectCoverage>
     <ExcludeByFile>**/*Tests.cs,**/*Test.cs,**/mcp_nexus_tests/**/*</ExcludeByFile>

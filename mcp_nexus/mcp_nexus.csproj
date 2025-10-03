@@ -4,6 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
     <Version>1.0.6.8</Version>
     <AssemblyVersion>1.0.6.8</AssemblyVersion>
     <FileVersion>1.0.6.8</FileVersion>

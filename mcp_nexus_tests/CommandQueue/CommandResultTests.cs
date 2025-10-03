@@ -264,7 +264,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             Assert.Equal(errorMessage, result.ErrorMessage);
-            Assert.Equal(10000, result.ErrorMessage.Length);
+            Assert.Equal(10000, result.ErrorMessage?.Length ?? 0);
         }
 
         [Fact]
