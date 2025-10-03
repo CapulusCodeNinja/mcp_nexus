@@ -43,6 +43,9 @@ namespace mcp_nexus.Configuration
         /// </summary>
         private static Microsoft.Extensions.Logging.LogLevel GetLogLevelFromConfiguration(IConfiguration configuration)
         {
+            if (configuration == null)
+                return Microsoft.Extensions.Logging.LogLevel.Information;
+                
             var logLevelString = configuration["Logging:LogLevel"] ?? "Information";
             return ParseLogLevel(logLevelString);
         }
@@ -95,6 +98,9 @@ namespace mcp_nexus.Configuration
         /// </summary>
         private static Microsoft.Extensions.Logging.LogLevel ParseLogLevel(string logLevelString)
         {
+            if (string.IsNullOrEmpty(logLevelString))
+                return Microsoft.Extensions.Logging.LogLevel.Information;
+                
             return logLevelString.ToLowerInvariant() switch
             {
                 "trace" => Microsoft.Extensions.Logging.LogLevel.Trace,
