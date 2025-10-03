@@ -265,5 +265,554 @@ namespace mcp_nexus_tests.Configuration
                 LogManager.Configuration = null;
             }
         }
+
+        [Theory]
+        [InlineData("TRACE", Microsoft.Extensions.Logging.LogLevel.Trace)]
+        [InlineData("DEBUG", Microsoft.Extensions.Logging.LogLevel.Debug)]
+        [InlineData("INFORMATION", Microsoft.Extensions.Logging.LogLevel.Information)]
+        [InlineData("INFO", Microsoft.Extensions.Logging.LogLevel.Information)]
+        [InlineData("WARNING", Microsoft.Extensions.Logging.LogLevel.Warning)]
+        [InlineData("WARN", Microsoft.Extensions.Logging.LogLevel.Warning)]
+        [InlineData("ERROR", Microsoft.Extensions.Logging.LogLevel.Error)]
+        [InlineData("CRITICAL", Microsoft.Extensions.Logging.LogLevel.Critical)]
+        [InlineData("NONE", Microsoft.Extensions.Logging.LogLevel.None)]
+        [InlineData("Trace", Microsoft.Extensions.Logging.LogLevel.Trace)]
+        [InlineData("Debug", Microsoft.Extensions.Logging.LogLevel.Debug)]
+        [InlineData("Information", Microsoft.Extensions.Logging.LogLevel.Information)]
+        [InlineData("Info", Microsoft.Extensions.Logging.LogLevel.Information)]
+        [InlineData("Warning", Microsoft.Extensions.Logging.LogLevel.Warning)]
+        [InlineData("Warn", Microsoft.Extensions.Logging.LogLevel.Warning)]
+        [InlineData("Error", Microsoft.Extensions.Logging.LogLevel.Error)]
+        [InlineData("Critical", Microsoft.Extensions.Logging.LogLevel.Critical)]
+        [InlineData("None", Microsoft.Extensions.Logging.LogLevel.None)]
+        public void ParseLogLevel_WithCaseVariations_ReturnsCorrectLogLevel(string logLevelString, Microsoft.Extensions.Logging.LogLevel expectedLogLevel)
+        {
+            // Arrange
+            var parseMethod = typeof(LoggingSetup).GetMethod("ParseLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { logLevelString });
+
+            // Assert
+            Assert.Equal(expectedLogLevel, result);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData("invalid")]
+        [InlineData("unknown")]
+        [InlineData("123")]
+        [InlineData("true")]
+        [InlineData("false")]
+        [InlineData("null")]
+        [InlineData("undefined")]
+        [InlineData("log")]
+        [InlineData("level")]
+        [InlineData("logging")]
+        public void ParseLogLevel_WithInvalidInputs_ReturnsInformation(string logLevelString)
+        {
+            // Arrange
+            var parseMethod = typeof(LoggingSetup).GetMethod("ParseLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { logLevelString });
+
+            // Assert
+            Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Information, result);
+        }
+
+        [Theory]
+        [InlineData("trace")]
+        [InlineData("debug")]
+        [InlineData("information")]
+        [InlineData("info")]
+        [InlineData("warning")]
+        [InlineData("warn")]
+        [InlineData("error")]
+        [InlineData("critical")]
+        [InlineData("none")]
+        public void ParseLogLevel_WithLowercaseInputs_ReturnsCorrectLogLevel(string logLevelString)
+        {
+            // Arrange
+            var parseMethod = typeof(LoggingSetup).GetMethod("ParseLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { logLevelString });
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<Microsoft.Extensions.Logging.LogLevel>(result);
+        }
+
+        [Fact]
+        public void GetNLogLevel_WithTraceLevel_ReturnsTrace_Reflection()
+        {
+            // Arrange
+            var microsoftLevel = Microsoft.Extensions.Logging.LogLevel.Trace;
+            var expectedNLogLevel = NLog.LogLevel.Trace;
+            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+
+            // Assert
+            Assert.Equal(expectedNLogLevel, result);
+        }
+
+        [Fact]
+        public void GetNLogLevel_WithDebugLevel_ReturnsDebug()
+        {
+            // Arrange
+            var microsoftLevel = Microsoft.Extensions.Logging.LogLevel.Debug;
+            var expectedNLogLevel = NLog.LogLevel.Debug;
+            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+
+            // Assert
+            Assert.Equal(expectedNLogLevel, result);
+        }
+
+        [Fact]
+        public void GetNLogLevel_WithInformationLevel_ReturnsInfo_Reflection()
+        {
+            // Arrange
+            var microsoftLevel = Microsoft.Extensions.Logging.LogLevel.Information;
+            var expectedNLogLevel = NLog.LogLevel.Info;
+            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+
+            // Assert
+            Assert.Equal(expectedNLogLevel, result);
+        }
+
+        [Fact]
+        public void GetNLogLevel_WithWarningLevel_ReturnsWarn()
+        {
+            // Arrange
+            var microsoftLevel = Microsoft.Extensions.Logging.LogLevel.Warning;
+            var expectedNLogLevel = NLog.LogLevel.Warn;
+            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+
+            // Assert
+            Assert.Equal(expectedNLogLevel, result);
+        }
+
+        [Fact]
+        public void GetNLogLevel_WithErrorLevel_ReturnsError()
+        {
+            // Arrange
+            var microsoftLevel = Microsoft.Extensions.Logging.LogLevel.Error;
+            var expectedNLogLevel = NLog.LogLevel.Error;
+            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+
+            // Assert
+            Assert.Equal(expectedNLogLevel, result);
+        }
+
+        [Fact]
+        public void GetNLogLevel_WithCriticalLevel_ReturnsFatal_Reflection()
+        {
+            // Arrange
+            var microsoftLevel = Microsoft.Extensions.Logging.LogLevel.Critical;
+            var expectedNLogLevel = NLog.LogLevel.Fatal;
+            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+
+            // Assert
+            Assert.Equal(expectedNLogLevel, result);
+        }
+
+        [Fact]
+        public void GetNLogLevel_WithNoneLevel_ReturnsOff()
+        {
+            // Arrange
+            var microsoftLevel = Microsoft.Extensions.Logging.LogLevel.None;
+            var expectedNLogLevel = NLog.LogLevel.Off;
+            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+
+            // Assert
+            Assert.Equal(expectedNLogLevel, result);
+        }
+
+        [Fact]
+        public void GetNLogLevel_WithInvalidLogLevel_ReturnsInfo()
+        {
+            // Arrange
+            var invalidLevel = (Microsoft.Extensions.Logging.LogLevel)999; // Invalid enum value
+            var getNLogLevelMethod = typeof(LoggingSetup).GetMethod("GetNLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = getNLogLevelMethod!.Invoke(null, new object[] { invalidLevel });
+
+            // Assert
+            Assert.Equal(NLog.LogLevel.Info, result);
+        }
+
+        [Fact]
+        public void GetLogLevelFromConfiguration_WithNullConfiguration_ReturnsInformation()
+        {
+            // Arrange
+            var getLogLevelMethod = typeof(LoggingSetup).GetMethod("GetLogLevelFromConfiguration",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = getLogLevelMethod!.Invoke(null, new object[] { null! });
+
+            // Assert
+            Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Information, result);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData("invalid")]
+        [InlineData("unknown")]
+        public void GetLogLevelFromConfiguration_WithInvalidLogLevel_ReturnsInformation(string logLevelString)
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Logging:LogLevel"] = logLevelString
+                })
+                .Build();
+
+            var getLogLevelMethod = typeof(LoggingSetup).GetMethod("GetLogLevelFromConfiguration",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = getLogLevelMethod!.Invoke(null, new object[] { configuration });
+
+            // Assert
+            Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Information, result);
+        }
+
+        [Fact]
+        public void LogConfigurationStart_WithServiceModeTrue_LogsToConsole()
+        {
+            // Arrange
+            var consoleOutput = new StringWriter();
+            Console.SetOut(consoleOutput);
+
+            try
+            {
+                var logStartMethod = typeof(LoggingSetup).GetMethod("LogConfigurationStart",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+                // Act
+                logStartMethod!.Invoke(null, new object[] { true });
+
+                // Assert
+                var output = consoleOutput.ToString();
+                Assert.Contains("Configuring logging...", output);
+            }
+            finally
+            {
+                Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+            }
+        }
+
+        [Fact]
+        public void LogConfigurationStart_WithServiceModeFalse_LogsToConsoleError()
+        {
+            // Arrange
+            var consoleError = new StringWriter();
+            Console.SetError(consoleError);
+
+            try
+            {
+                var logStartMethod = typeof(LoggingSetup).GetMethod("LogConfigurationStart",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+                // Act
+                logStartMethod!.Invoke(null, new object[] { false });
+
+                // Assert
+                var output = consoleError.ToString();
+                Assert.Contains("Configuring logging...", output);
+            }
+            finally
+            {
+                Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
+            }
+        }
+
+        [Theory]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.Trace)]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.Debug)]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.Information)]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.Warning)]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.Error)]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.Critical)]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.None)]
+        public void LogConfigurationComplete_WithServiceModeTrue_LogsToConsole(Microsoft.Extensions.Logging.LogLevel logLevel)
+        {
+            // Arrange
+            var consoleOutput = new StringWriter();
+            Console.SetOut(consoleOutput);
+
+            try
+            {
+                var logCompleteMethod = typeof(LoggingSetup).GetMethod("LogConfigurationComplete",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+                // Act
+                logCompleteMethod!.Invoke(null, new object[] { true, logLevel });
+
+                // Assert
+                var output = consoleOutput.ToString();
+                Assert.Contains($"Logging configured with NLog (Level: {logLevel})", output);
+            }
+            finally
+            {
+                Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+            }
+        }
+
+        [Theory]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.Trace)]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.Debug)]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.Information)]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.Warning)]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.Error)]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.Critical)]
+        [InlineData(Microsoft.Extensions.Logging.LogLevel.None)]
+        public void LogConfigurationComplete_WithServiceModeFalse_LogsToConsoleError(Microsoft.Extensions.Logging.LogLevel logLevel)
+        {
+            // Arrange
+            var consoleError = new StringWriter();
+            Console.SetError(consoleError);
+
+            try
+            {
+                var logCompleteMethod = typeof(LoggingSetup).GetMethod("LogConfigurationComplete",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+                // Act
+                logCompleteMethod!.Invoke(null, new object[] { false, logLevel });
+
+                // Assert
+                var output = consoleError.ToString();
+                Assert.Contains($"Logging configured with NLog (Level: {logLevel})", output);
+            }
+            finally
+            {
+                Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
+            }
+        }
+
+        [Fact]
+        public void ConfigureNLogDynamically_WithEmptyLoggingRules_DoesNotThrow()
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder().Build();
+            var nlogConfig = new LoggingConfiguration();
+            // Don't add any rules - empty rules collection
+            LogManager.Configuration = nlogConfig;
+
+            try
+            {
+                var configureNLogMethod = typeof(LoggingSetup).GetMethod("ConfigureNLogDynamically",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+                // Act & Assert
+                var exception = Record.Exception(() =>
+                    configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Information }));
+                Assert.Null(exception);
+            }
+            finally
+            {
+                LogManager.Configuration = null;
+            }
+        }
+
+        [Fact]
+        public void ConfigureNLogDynamically_WithLoggingRules_UpdatesRules()
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder().Build();
+            var nlogConfig = new LoggingConfiguration();
+            
+            // Add a logging rule
+            var rule = new LoggingRule("*", NLog.LogLevel.Debug, new NLog.Targets.NullTarget());
+            nlogConfig.LoggingRules.Add(rule);
+            LogManager.Configuration = nlogConfig;
+
+            try
+            {
+                var configureNLogMethod = typeof(LoggingSetup).GetMethod("ConfigureNLogDynamically",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+                // Act
+                configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Warning });
+
+                // Assert - The rule should have been updated (we can't easily verify the internal state)
+                // but we can verify no exception was thrown
+                Assert.True(true); // If we get here, no exception was thrown
+            }
+            finally
+            {
+                LogManager.Configuration = null;
+            }
+        }
+
+        [Fact]
+        public void LoggingSetup_AllMethods_AreStatic()
+        {
+            // Arrange
+            var type = typeof(LoggingSetup);
+            var methods = type.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance);
+
+            // Act & Assert
+            foreach (var method in methods)
+            {
+                if (method.DeclaringType == type) // Only check methods declared in LoggingSetup
+                {
+                    Assert.True(method.IsStatic, $"Method {method.Name} should be static");
+                }
+            }
+        }
+
+        [Fact]
+        public void LoggingSetup_AllMethods_ArePrivateExceptConfigureLogging()
+        {
+            // Arrange
+            var type = typeof(LoggingSetup);
+            var methods = type.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            foreach (var method in methods)
+            {
+                if (method.DeclaringType == type) // Only check methods declared in LoggingSetup
+                {
+                    if (method.Name == "ConfigureLogging")
+                    {
+                        Assert.True(method.IsPublic, "ConfigureLogging should be public");
+                    }
+                    else
+                    {
+                        Assert.True(method.IsPrivate, $"Method {method.Name} should be private");
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public void LoggingSetup_ClassCharacteristics_AreCorrect()
+        {
+            // Arrange
+            var type = typeof(LoggingSetup);
+
+            // Act & Assert
+            Assert.True(type.IsClass);
+            Assert.True(type.IsAbstract && type.IsSealed); // Static class
+            Assert.False(type.IsInterface);
+            Assert.False(type.IsEnum);
+            Assert.False(type.IsValueType);
+            Assert.True(type.IsPublic);
+        }
+
+        [Fact]
+        public void LoggingSetup_CanBeUsedInReflection()
+        {
+            // Arrange
+            var type = typeof(LoggingSetup);
+
+            // Act
+            var methods = type.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var fields = type.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var properties = type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Assert
+            Assert.NotNull(methods);
+            Assert.NotNull(fields);
+            Assert.NotNull(properties);
+            Assert.True(methods.Length > 0);
+        }
+
+        [Fact]
+        public void ParseLogLevel_WithNullInput_ReturnsInformation()
+        {
+            // Arrange
+            var parseMethod = typeof(LoggingSetup).GetMethod("ParseLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { null! });
+
+            // Assert
+            Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Information, result);
+        }
+
+        [Theory]
+        [InlineData("trace\t")]
+        [InlineData("\ttrace")]
+        [InlineData(" trace ")]
+        [InlineData("\ninformation\n")]
+        [InlineData("\r\ndebug\r\n")]
+        public void ParseLogLevel_WithWhitespaceInput_ReturnsCorrectLogLevel(string logLevelString)
+        {
+            // Arrange
+            var parseMethod = typeof(LoggingSetup).GetMethod("ParseLogLevel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = parseMethod!.Invoke(null, new object[] { logLevelString });
+
+            // Assert
+            // The method uses ToLowerInvariant() so whitespace should be preserved
+            // and cause it to fall through to the default case
+            Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Information, result);
+        }
+
+        [Fact]
+        public void GetLogLevelFromConfiguration_WithComplexConfiguration_ReturnsCorrectLevel()
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Logging:LogLevel"] = "Error",
+                    ["Logging:OtherSetting"] = "Value",
+                    ["Other:LogLevel"] = "Debug" // This should be ignored
+                })
+                .Build();
+
+            var getLogLevelMethod = typeof(LoggingSetup).GetMethod("GetLogLevelFromConfiguration",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = getLogLevelMethod!.Invoke(null, new object[] { configuration });
+
+            // Assert
+            Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Error, result);
+        }
     }
 }

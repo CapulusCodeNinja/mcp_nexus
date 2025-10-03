@@ -31,27 +31,23 @@ namespace mcp_nexus
             // IMMEDIATE startup logging to track how far we get
             try
             {
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] MCP Nexus starting...");
-                Console.Error.Flush();
+                Console.Error.WriteLine($" MCP Nexus starting...");
 
                 // Set up global exception handlers FIRST
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Setting up global exception handlers...");
-                Console.Error.Flush();
+                Console.Error.WriteLine($" Setting up global exception handlers...");
+                
                 SetupGlobalExceptionHandlers();
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Global exception handlers set up.");
-                Console.Error.Flush();
+                Console.Error.WriteLine($" Global exception handlers set up.");
             }
             catch (Exception startupEx)
             {
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] STARTUP EXCEPTION: {startupEx}");
-                Console.Error.Flush();
+                Console.Error.WriteLine($" STARTUP EXCEPTION: {startupEx}");
                 Environment.Exit(1);
             }
 
             try
             {
-                Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Setting environment variables...");
-                Console.Error.Flush();
+                Console.Error.WriteLine($" Setting environment variables...");
 
                 // Pre-warm ThreadPool to reduce cold-start thread acquisition under bursty load
                 mcp_nexus.Infrastructure.ThreadPoolTuning.Apply();
@@ -63,16 +59,15 @@ namespace mcp_nexus
                     if (args.Contains("--service") || args.Contains("--install") || args.Contains("--uninstall") || args.Contains("--update"))
                     {
                         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Service");
-                        Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Environment set to Service mode");
+                        Console.Error.WriteLine($" Environment set to Service mode");
                     }
                     else
                     {
                         // Default to Production for non-development builds
                         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
-                        Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Environment set to Production mode");
+                        Console.Error.WriteLine($" Environment set to Production mode");
                     }
                 }
-                Console.Error.Flush();
 
                 // Check if this is a help request first
                 if (args.Length > 0 && (args[0] == "--help" || args[0] == "-h" || args[0] == "help"))
@@ -159,13 +154,11 @@ namespace mcp_nexus
 
                 if (commandLineArgs.Update)
                 {
-                    Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Update command detected");
-                    Console.Error.Flush();
+                    Console.Error.WriteLine($" Update command detected");
 
                     if (OperatingSystem.IsWindows())
                     {
-                        Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Creating logger for update process...");
-                        Console.Error.Flush();
+                        Console.Error.WriteLine($" Creating logger for update process...");
 
                         // Create a logger using NLog configuration for the update process
                         using var loggerFactory = LoggerFactory.Create(builder =>
@@ -176,20 +169,17 @@ namespace mcp_nexus
                         });
                         var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
-                        Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Starting update service call...");
-                        Console.Error.Flush();
+                        Console.Error.WriteLine($" Starting update service call...");
 
                         await WindowsServiceInstaller.UpdateServiceAsync(logger);
 
-                        Console.Error.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.fff}] Update service call completed");
-                        Console.Error.Flush();
+                        Console.Error.WriteLine($" Update service call completed");
 
                         Environment.Exit(0);
                     }
                     else
                     {
                         await Console.Error.WriteLineAsync("ERROR: Service update is only supported on Windows.");
-                        Environment.Exit(1);
                     }
                     return;
                 }
@@ -201,7 +191,6 @@ namespace mcp_nexus
                 if (commandLineArgs.ServiceMode && !OperatingSystem.IsWindows())
                 {
                     await Console.Error.WriteLineAsync("ERROR: Service mode is only supported on Windows.");
-                    Environment.Exit(1);
                     return;
                 }
 
@@ -900,30 +889,19 @@ namespace mcp_nexus
 
                 // IMMEDIATE console output with flushing
                 Console.Error.WriteLine("################################################################################");
-                Console.Error.Flush();
                 Console.Error.WriteLine($"FATAL UNHANDLED EXCEPTION - {source}");
-                Console.Error.Flush();
                 Console.Error.WriteLine($"Time: {timestamp}");
-                Console.Error.Flush();
                 Console.Error.WriteLine($"Terminating: {isTerminating}");
-                Console.Error.Flush();
                 Console.Error.WriteLine("################################################################################");
-                Console.Error.Flush();
 
                 if (ex != null)
                 {
                     Console.Error.WriteLine($"Exception Type: {ex.GetType().FullName}");
-                    Console.Error.Flush();
                     Console.Error.WriteLine($"Message: {ex.Message}");
-                    Console.Error.Flush();
                     Console.Error.WriteLine($"Source: {ex.Source}");
-                    Console.Error.Flush();
                     Console.Error.WriteLine($"TargetSite: {ex.TargetSite}");
-                    Console.Error.Flush();
                     Console.Error.WriteLine("Stack Trace:");
-                    Console.Error.Flush();
                     Console.Error.WriteLine(ex.StackTrace ?? "No stack trace available");
-                    Console.Error.Flush();
 
                     // Handle inner exceptions
                     var innerEx = ex.InnerException;
@@ -978,7 +956,6 @@ namespace mcp_nexus
                     {
                         File.AppendAllText(logFile, logContent);
                         Console.Error.WriteLine($"Crash details written to: {logFile}");
-                        Console.Error.Flush();
                         break; // Stop after first successful write
                     }
                     catch
