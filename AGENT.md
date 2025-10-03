@@ -72,8 +72,10 @@ public ReturnType MethodName(ParameterType paramName)
 - **Classes**: PascalCase (e.g., `SessionManager`, `CommandQueueService`)
 - **Methods**: PascalCase (e.g., `CreateSessionAsync`, `QueueCommand`)
 - **Properties**: PascalCase (e.g., `SessionId`, `IsHealthy`)
-- **Fields**: camelCase with `m_` prefix (e.g., `m_logger`, `m_sessions`)
+- **Fields**: camelCase with `m_` prefix followed by PascalCase (e.g., `m_Logger`, `m_Sessions`, `m_CommandQueue`)
 - **Constants**: PascalCase (e.g., `MaxSessions`, `DefaultTimeout`)
+
+**IMPORTANT**: Member variables must follow the pattern `m_PascalCase` where the first letter after the underscore is uppercase. This ensures consistency with C# naming conventions and improves code readability.
 - **Enums**: PascalCase (e.g., `CommandState`, `CircuitState`)
 
 ### Code Organization

@@ -14,18 +14,19 @@ namespace mcp_nexus.Session
     /// </summary>
     public class SessionLifecycleManager
     {
-        private readonly ILogger m_logger;
-        private readonly IServiceProvider m_serviceProvider;
-        private readonly ILoggerFactory m_loggerFactory;
-        private readonly IMcpNotificationService m_notificationService;
-        private readonly SessionManagerConfiguration m_config;
-        private readonly ConcurrentDictionary<string, SessionInfo> m_sessions;
-        private readonly AdvancedMetricsService? m_metricsService;
+        private readonly ILogger m_Logger;
+        private readonly IServiceProvider m_ServiceProvider;
+        private readonly ILoggerFactory m_LoggerFactory;
+        private readonly IMcpNotificationService m_NotificationService;
+        private readonly SessionManagerConfiguration m_Config;
+        private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions;
+        private readonly ConcurrentDictionary<string, SessionCommandResultCache> m_SessionCaches;
+        private readonly AdvancedMetricsService? m_MetricsService;
 
         // Thread-safe counters
-        private long m_totalSessionsCreated = 0;
-        private long m_totalSessionsClosed = 0;
-        private long m_totalSessionsExpired = 0;
+        private long m_TotalSessionsCreated = 0;
+        private long m_TotalSessionsClosed = 0;
+        private long m_TotalSessionsExpired = 0;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SessionLifecycleManager"/> class.
@@ -45,21 +46,22 @@ namespace mcp_nexus.Session
             SessionManagerConfiguration config,
             ConcurrentDictionary<string, SessionInfo> sessions)
         {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            m_loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-            m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
-            m_config = config ?? throw new ArgumentNullException(nameof(config));
-            m_sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            m_LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+            m_NotificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            m_Config = config ?? throw new ArgumentNullException(nameof(config));
+            m_Sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
+            m_SessionCaches = new ConcurrentDictionary<string, SessionCommandResultCache>();
 
             // Try to get metrics service (may not be available in all configurations)
             try
             {
-                m_metricsService = m_serviceProvider.GetService<AdvancedMetricsService>();
+                m_MetricsService = m_ServiceProvider.GetService<AdvancedMetricsService>();
             }
             catch
             {
-                m_metricsService = null;
+                m_MetricsService = null;
             }
         }
 
@@ -83,41 +85,41 @@ namespace mcp_nexus.Session
 
             try
             {
-                m_logger.LogInformation("🔧 Creating session {SessionId} for dump: {DumpPath}", sessionId, dumpPath);
+                m_Logger.LogInformation("🔧 Creating session {SessionId} for dump: {DumpPath}", sessionId, dumpPath);
 
                 // Create session components
                 var sessionLogger = CreateSessionLogger(sessionId);
                 var cdbSession = CreateCdbSession(sessionLogger, sessionId);
 
-                m_logger.LogInformation("🔧 Creating command queue for session {SessionId}", sessionId);
+                m_Logger.LogInformation("🔧 Creating command queue for session {SessionId}", sessionId);
                 ICommandQueueService? commandQueue = null;
                 try
                 {
                     commandQueue = CreateCommandQueue(cdbSession, sessionLogger, sessionId);
-                    m_logger.LogInformation("✅ Command queue created successfully for session {SessionId}", sessionId);
-                    m_logger.LogInformation("🔍 Command queue object: {CommandQueueType}, IsNull: {IsNull}",
+                    m_Logger.LogInformation("✅ Command queue created successfully for session {SessionId}", sessionId);
+                    m_Logger.LogInformation("🔍 Command queue object: {CommandQueueType}, IsNull: {IsNull}",
                         commandQueue?.GetType().Name ?? "null", commandQueue == null);
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogError(ex, "❌ Failed to create command queue for session {SessionId}", sessionId);
+                    m_Logger.LogError(ex, "❌ Failed to create command queue for session {SessionId}", sessionId);
                     throw;
                 }
 
                 // Start CDB session asynchronously
-                var cdbTarget = m_config.ConstructCdbTarget(dumpPath, symbolsPath);
+                var cdbTarget = m_Config.ConstructCdbTarget(dumpPath, symbolsPath);
                 var startSuccess = await cdbSession.StartSession(cdbTarget, null);
 
                 if (!startSuccess)
                 {
                     // Log detailed CDB detection failure information
-                    m_logger.LogError("❌ CDB session startup failed for {DumpPath}", dumpPath);
-                    m_logger.LogError("🔍 This typically means CDB.exe is not installed or not found in:");
-                    m_logger.LogError("   - PATH environment variable");
-                    m_logger.LogError("   - Standard Windows SDK locations");
-                    m_logger.LogError("   - Visual Studio installations");
-                    m_logger.LogError("💡 SOLUTION: Install Windows SDK with Debugging Tools from:");
-                    m_logger.LogError("   https://developer.microsoft.com/windows/downloads/windows-sdk/");
+                    m_Logger.LogError("❌ CDB session startup failed for {DumpPath}", dumpPath);
+                    m_Logger.LogError("🔍 This typically means CDB.exe is not installed or not found in:");
+                    m_Logger.LogError("   - PATH environment variable");
+                    m_Logger.LogError("   - Standard Windows SDK locations");
+                    m_Logger.LogError("   - Visual Studio installations");
+                    m_Logger.LogError("💡 SOLUTION: Install Windows SDK with Debugging Tools from:");
+                    m_Logger.LogError("   https://developer.microsoft.com/windows/downloads/windows-sdk/");
 
                     // Cleanup on failure
                     if (cdbSession != null && commandQueue != null)
@@ -143,23 +145,23 @@ namespace mcp_nexus.Session
                 );
 
                 // Verify command queue was properly stored
-                m_logger.LogInformation("🔍 Before null check - commandQueue: {CommandQueueType}, sessionInfo.CommandQueue: {SessionCommandQueueType}",
+                m_Logger.LogInformation("🔍 Before null check - commandQueue: {CommandQueueType}, sessionInfo.CommandQueue: {SessionCommandQueueType}",
                     commandQueue?.GetType().Name ?? "null", sessionInfo.CommandQueue?.GetType().Name ?? "null");
 
                 if (sessionInfo.CommandQueue == null)
                 {
-                    m_logger.LogError("❌ Command queue is null in session info for {SessionId}", sessionId);
+                    m_Logger.LogError("❌ Command queue is null in session info for {SessionId}", sessionId);
                     throw new InvalidOperationException($"Command queue is null in session info for {sessionId}");
                 }
 
-                m_logger.LogInformation("✅ Session info created with command queue for {SessionId}", sessionId);
+                m_Logger.LogInformation("✅ Session info created with command queue for {SessionId}", sessionId);
 
                 // Add to sessions dictionary first
-                m_sessions[sessionId] = sessionInfo;
-                Interlocked.Increment(ref m_totalSessionsCreated);
+                m_Sessions[sessionId] = sessionInfo;
+                Interlocked.Increment(ref m_TotalSessionsCreated);
 
                 // Wait for command queue to be ready before marking session as Active
-                m_logger.LogInformation("⏳ Waiting for command queue to be ready for session {SessionId}", sessionId);
+                m_Logger.LogInformation("⏳ Waiting for command queue to be ready for session {SessionId}", sessionId);
                 var maxWaitTime = TimeSpan.FromSeconds(5);
                 var waitStart = DateTime.UtcNow;
 
@@ -167,7 +169,7 @@ namespace mcp_nexus.Session
                 {
                     if (commandQueue is IsolatedCommandQueueService isolatedQueue && isolatedQueue.IsReady())
                     {
-                        m_logger.LogInformation("✅ Command queue is ready for session {SessionId}", sessionId);
+                        m_Logger.LogInformation("✅ Command queue is ready for session {SessionId}", sessionId);
                         break;
                     }
 
@@ -176,7 +178,7 @@ namespace mcp_nexus.Session
 
                 // Session is ready for use now
                 sessionInfo.Status = SessionStatus.Active;
-                m_logger.LogInformation("✅ Session {SessionId} created and marked as Active", sessionId);
+                m_Logger.LogInformation("✅ Session {SessionId} created and marked as Active", sessionId);
 
                 // NOTE: Extension loading issue - !analyze requires ext.dll to be loaded
                 // However, auto-loading .load ext has historically caused output capture issues
@@ -184,11 +186,11 @@ namespace mcp_nexus.Session
                 // TODO: Investigate alternative solutions (CDB startup flags, pre-warm extension loading, etc.)
 
                 stopwatch.Stop();
-                m_logger.LogInformation("✅ Session {SessionId} created successfully in {Elapsed}ms",
+                m_Logger.LogInformation("✅ Session {SessionId} created successfully in {Elapsed}ms",
                     sessionId, stopwatch.ElapsedMilliseconds);
 
                 // Send creation notification
-                await m_notificationService.NotifySessionEventAsync(sessionId, "created",
+                await m_NotificationService.NotifySessionEventAsync(sessionId, "created",
                     $"Session created for {Path.GetFileName(dumpPath)}", GetSessionContext(sessionInfo));
 
                 return sessionInfo;
@@ -196,7 +198,7 @@ namespace mcp_nexus.Session
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                m_logger.LogError(ex, "❌ Failed to create session {SessionId} after {Elapsed}ms",
+                m_Logger.LogError(ex, "❌ Failed to create session {SessionId} after {Elapsed}ms",
                     sessionId, stopwatch.ElapsedMilliseconds);
                 throw;
             }
@@ -217,9 +219,9 @@ namespace mcp_nexus.Session
             if (string.IsNullOrWhiteSpace(sessionId))
                 return false;
 
-            if (!m_sessions.TryRemove(sessionId, out var sessionInfo))
+            if (!m_Sessions.TryRemove(sessionId, out var sessionInfo))
             {
-                m_logger.LogWarning("Session {SessionId} not found for closure", sessionId);
+                m_Logger.LogWarning("Session {SessionId} not found for closure", sessionId);
                 return false;
             }
 
@@ -227,7 +229,7 @@ namespace mcp_nexus.Session
 
             try
             {
-                m_logger.LogInformation("🔒 Closing session {SessionId}", sessionId);
+                m_Logger.LogInformation("🔒 Closing session {SessionId}", sessionId);
 
                 // Cancel all pending commands if command queue exists
                 if (sessionInfo?.CommandQueue != null)
@@ -235,13 +237,13 @@ namespace mcp_nexus.Session
                     var cancelledCount = sessionInfo.CommandQueue.CancelAllCommands("Session closing");
                     if (cancelledCount > 0)
                     {
-                        m_logger.LogInformation("Cancelled {Count} pending commands for session {SessionId}",
+                        m_Logger.LogInformation("Cancelled {Count} pending commands for session {SessionId}",
                             cancelledCount, sessionId);
                     }
                 }
                 else
                 {
-                    m_logger.LogTrace("No command queue to cancel for session {SessionId}", sessionId);
+                    m_Logger.LogTrace("No command queue to cancel for session {SessionId}", sessionId);
                 }
 
                 // Cleanup components (includes stopping CDB session)
@@ -250,32 +252,35 @@ namespace mcp_nexus.Session
                     await CleanupSessionComponents(sessionInfo.CdbSession, sessionInfo.CommandQueue);
                 }
 
-                Interlocked.Increment(ref m_totalSessionsClosed);
+                // Cleanup session command result cache
+                RemoveSessionCache(sessionId);
+
+                Interlocked.Increment(ref m_TotalSessionsClosed);
                 stopwatch.Stop();
 
-                m_logger.LogInformation("✅ Session {SessionId} closed successfully in {Elapsed}ms",
+                m_Logger.LogInformation("✅ Session {SessionId} closed successfully in {Elapsed}ms",
                     sessionId, stopwatch.ElapsedMilliseconds);
 
                 // Send closure notification
                 if (sessionInfo != null)
                 {
-                    await m_notificationService.NotifySessionEventAsync(sessionId, "closed",
+                    await m_NotificationService.NotifySessionEventAsync(sessionId, "closed",
                         "Session closed successfully", GetSessionContext(sessionInfo));
                 }
                 else
                 {
-                    m_logger.LogTrace("Skipping notification for null session {SessionId}", sessionId);
+                    m_Logger.LogTrace("Skipping notification for null session {SessionId}", sessionId);
                 }
 
                 // Clean up session-specific metrics
-                m_metricsService?.CleanupSessionMetrics(sessionId);
+                m_MetricsService?.CleanupSessionMetrics(sessionId);
 
                 return true;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                m_logger.LogError(ex, "❌ Error closing session {SessionId} after {Elapsed}ms",
+                m_Logger.LogError(ex, "❌ Error closing session {SessionId} after {Elapsed}ms",
                     sessionId, stopwatch.ElapsedMilliseconds);
                 return false;
             }
@@ -295,10 +300,10 @@ namespace mcp_nexus.Session
             var now = DateTime.UtcNow;
 
             // Find expired sessions
-            foreach (var kvp in m_sessions)
+            foreach (var kvp in m_Sessions)
             {
                 var sessionInfo = kvp.Value;
-                if (m_config.IsSessionExpired(sessionInfo.LastActivity))
+                if (m_Config.IsSessionExpired(sessionInfo.LastActivity))
                 {
                     expiredSessions.Add(kvp.Key);
                 }
@@ -307,7 +312,7 @@ namespace mcp_nexus.Session
             if (expiredSessions.Count == 0)
                 return 0;
 
-            m_logger.LogInformation("🧹 Cleaning up {Count} expired sessions", expiredSessions.Count);
+            m_Logger.LogInformation("🧹 Cleaning up {Count} expired sessions", expiredSessions.Count);
 
             var cleanedCount = 0;
             foreach (var sessionId in expiredSessions)
@@ -317,24 +322,24 @@ namespace mcp_nexus.Session
                     if (await CloseSessionAsync(sessionId))
                     {
                         cleanedCount++;
-                        Interlocked.Increment(ref m_totalSessionsExpired);
+                        Interlocked.Increment(ref m_TotalSessionsExpired);
 
-                        m_logger.LogInformation("🗑️ Expired session {SessionId} cleaned up", sessionId);
+                        m_Logger.LogInformation("🗑️ Expired session {SessionId} cleaned up", sessionId);
 
                         // Send expiry notification
-                        await m_notificationService.NotifySessionEventAsync(sessionId, "expired",
+                        await m_NotificationService.NotifySessionEventAsync(sessionId, "expired",
                             "Session expired due to inactivity", string.Empty);
                     }
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogError(ex, "Error cleaning up expired session {SessionId}", sessionId);
+                    m_Logger.LogError(ex, "Error cleaning up expired session {SessionId}", sessionId);
                 }
             }
 
             if (cleanedCount > 0)
             {
-                m_logger.LogInformation("✅ Cleaned up {CleanedCount}/{TotalCount} expired sessions",
+                m_Logger.LogInformation("✅ Cleaned up {CleanedCount}/{TotalCount} expired sessions",
                     cleanedCount, expiredSessions.Count);
             }
 
@@ -351,9 +356,9 @@ namespace mcp_nexus.Session
         public (long Created, long Closed, long Expired) GetLifecycleStats()
         {
             return (
-                Interlocked.Read(ref m_totalSessionsCreated),
-                Interlocked.Read(ref m_totalSessionsClosed),
-                Interlocked.Read(ref m_totalSessionsExpired)
+                Interlocked.Read(ref m_TotalSessionsCreated),
+                Interlocked.Read(ref m_TotalSessionsClosed),
+                Interlocked.Read(ref m_TotalSessionsExpired)
             );
         }
 
@@ -365,7 +370,7 @@ namespace mcp_nexus.Session
         private ILogger CreateSessionLogger(string sessionId)
         {
             // Create a scoped logger with session context
-            var loggerFactory = m_serviceProvider.GetRequiredService<ILoggerFactory>();
+            var loggerFactory = m_ServiceProvider.GetRequiredService<ILoggerFactory>();
             return loggerFactory.CreateLogger($"Session.{sessionId}");
         }
 
@@ -378,18 +383,18 @@ namespace mcp_nexus.Session
         private ICdbSession CreateCdbSession(ILogger sessionLogger, string sessionId)
         {
             // Diagnostic logging to see what CDB path is actually being used
-            m_logger.LogInformation("🔧 Creating CDB session with path: {CdbPath}", m_config.CdbOptions.CustomCdbPath ?? "NULL");
+            m_Logger.LogInformation("🔧 Creating CDB session with path: {CdbPath}", m_Config.CdbOptions.CustomCdbPath ?? "NULL");
 
             // Use typed logger so logs from CdbSession appear properly
-            var typedCdbLogger = m_loggerFactory.CreateLogger<CdbSession>();
+            var typedCdbLogger = m_LoggerFactory.CreateLogger<CdbSession>();
             return new CdbSession(
                 typedCdbLogger,
-                m_config.CdbOptions.CommandTimeoutMs,
-                m_config.CdbOptions.IdleTimeoutMs,
-                m_config.CdbOptions.CustomCdbPath,
-                m_config.CdbOptions.SymbolServerTimeoutMs,
-                m_config.CdbOptions.SymbolServerMaxRetries,
-                m_config.CdbOptions.SymbolSearchPath
+                m_Config.CdbOptions.CommandTimeoutMs,
+                m_Config.CdbOptions.IdleTimeoutMs,
+                m_Config.CdbOptions.CustomCdbPath,
+                m_Config.CdbOptions.SymbolServerTimeoutMs,
+                m_Config.CdbOptions.SymbolServerMaxRetries,
+                m_Config.CdbOptions.SymbolSearchPath
             );
         }
 
@@ -402,11 +407,15 @@ namespace mcp_nexus.Session
         /// <returns>A configured command queue service instance.</returns>
         private ICommandQueueService CreateCommandQueue(ICdbSession cdbSession, ILogger sessionLogger, string sessionId)
         {
+            // Get or create the session cache
+            var sessionCache = GetOrCreateSessionCache(sessionId);
+            
             return new IsolatedCommandQueueService(
                 cdbSession,
-                m_loggerFactory.CreateLogger<IsolatedCommandQueueService>(),
-                m_notificationService,
-                sessionId
+                m_LoggerFactory.CreateLogger<IsolatedCommandQueueService>(),
+                m_NotificationService,
+                sessionId,
+                sessionCache
             );
         }
 
@@ -423,7 +432,7 @@ namespace mcp_nexus.Session
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Could not retrieve CDB process ID");
+                m_Logger.LogWarning(ex, "Could not retrieve CDB process ID");
                 return null;
             }
         }
@@ -468,7 +477,7 @@ namespace mcp_nexus.Session
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error disposing command queue during cleanup");
+                m_Logger.LogWarning(ex, "Error disposing command queue during cleanup");
             }
 
             try
@@ -482,7 +491,64 @@ namespace mcp_nexus.Session
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error disposing CDB session during cleanup");
+                m_Logger.LogWarning(ex, "Error disposing CDB session during cleanup");
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates a command result cache for the specified session
+        /// </summary>
+        /// <param name="sessionId">The session identifier</param>
+        /// <returns>The session's command result cache</returns>
+        public SessionCommandResultCache GetOrCreateSessionCache(string sessionId)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId))
+                throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
+
+            return m_SessionCaches.GetOrAdd(sessionId, _ =>
+            {
+                m_Logger.LogDebug("📦 Creating command result cache for session {SessionId}", sessionId);
+                return new SessionCommandResultCache(
+                    maxMemoryBytes: 100 * 1024 * 1024, // 100MB default
+                    maxResults: 1000,
+                    memoryPressureThreshold: 0.8,
+                    logger: null); // Use null logger to avoid type mismatch
+            });
+        }
+
+        /// <summary>
+        /// Gets the command result cache for the specified session if it exists
+        /// </summary>
+        /// <param name="sessionId">The session identifier</param>
+        /// <returns>The session's command result cache, or null if not found</returns>
+        public SessionCommandResultCache? GetSessionCache(string sessionId)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId))
+                return null;
+
+            return m_SessionCaches.TryGetValue(sessionId, out var cache) ? cache : null;
+        }
+
+        /// <summary>
+        /// Removes and disposes the command result cache for the specified session
+        /// </summary>
+        /// <param name="sessionId">The session identifier</param>
+        public void RemoveSessionCache(string sessionId)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId))
+                return;
+
+            if (m_SessionCaches.TryRemove(sessionId, out var cache))
+            {
+                try
+                {
+                    cache.Dispose();
+                    m_Logger.LogDebug("🗑️ Disposed command result cache for session {SessionId}", sessionId);
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.LogWarning(ex, "Error disposing command result cache for session {SessionId}", sessionId);
+                }
             }
         }
     }

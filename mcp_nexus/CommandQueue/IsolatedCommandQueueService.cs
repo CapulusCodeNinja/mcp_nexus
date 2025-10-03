@@ -10,21 +10,21 @@ namespace mcp_nexus.CommandQueue
     /// </summary>
     public class IsolatedCommandQueueService : ICommandQueueService, IDisposable
     {
-        private readonly ICdbSession m_cdbSession;
-        private readonly ILogger<IsolatedCommandQueueService> m_logger;
-        private readonly IMcpNotificationService m_notificationService;
+        private readonly ICdbSession m_CdbSession;
+        private readonly ILogger<IsolatedCommandQueueService> m_Logger;
+        private readonly IMcpNotificationService m_NotificationService;
 
         // Focused components
-        private readonly CommandQueueConfiguration m_config;
-        private readonly CommandTracker m_tracker;
-        private readonly CommandProcessor m_processor;
-        private readonly CommandNotificationManager m_notificationManager;
+        private readonly CommandQueueConfiguration m_Config;
+        private readonly CommandTracker m_Tracker;
+        private readonly CommandProcessor m_Processor;
+        private readonly CommandNotificationManager m_NotificationManager;
 
         // Core infrastructure
-        private readonly BlockingCollection<QueuedCommand> m_commandQueue;
-        private readonly CancellationTokenSource m_processingCts = new();
-        private readonly Task m_processingTask;
-        private bool m_disposed = false;
+        private readonly BlockingCollection<QueuedCommand> m_CommandQueue;
+        private readonly CancellationTokenSource m_ProcessingCts = new();
+        private readonly Task m_ProcessingTask;
+        private bool m_Disposed = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IsolatedCommandQueueService"/> class.
@@ -33,39 +33,41 @@ namespace mcp_nexus.CommandQueue
         /// <param name="logger">The logger instance for recording queue operations.</param>
         /// <param name="notificationService">The notification service for sending notifications.</param>
         /// <param name="sessionId">The unique identifier for the debugging session.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
+        /// <param name="resultCache">Optional session command result cache for storing results.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
         public IsolatedCommandQueueService(
             ICdbSession cdbSession,
             ILogger<IsolatedCommandQueueService> logger,
             IMcpNotificationService notificationService,
-            string sessionId)
+            string sessionId,
+            SessionCommandResultCache? resultCache = null)
         {
-            m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            m_CdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_NotificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
 
             // Create configuration
-            m_config = new CommandQueueConfiguration(sessionId);
+            m_Config = new CommandQueueConfiguration(sessionId);
 
             // Create command queue
-            m_commandQueue = new BlockingCollection<QueuedCommand>();
+            m_CommandQueue = new BlockingCollection<QueuedCommand>();
 
             // Create focused components
-            m_tracker = new CommandTracker(m_logger, m_config, m_commandQueue);
-            m_processor = new CommandProcessor(m_cdbSession, m_logger, m_config, m_tracker, m_commandQueue, m_processingCts);
-            m_notificationManager = new CommandNotificationManager(m_notificationService, m_logger, m_config);
+            m_Tracker = new CommandTracker(m_Logger, m_Config, m_CommandQueue);
+            m_Processor = new CommandProcessor(m_CdbSession, m_Logger, m_Config, m_Tracker, m_CommandQueue, m_ProcessingCts, resultCache);
+            m_NotificationManager = new CommandNotificationManager(m_NotificationService, m_Logger, m_Config);
 
-            m_logger.LogInformation("🚀 IsolatedCommandQueueService initializing for session {SessionId}", sessionId);
+            m_Logger.LogInformation("🚀 IsolatedCommandQueueService initializing for session {SessionId}", sessionId);
 
             // Start processing task
-            m_logger.LogTrace("🔄 Starting background processing task for session {SessionId}", sessionId);
-            m_processingTask = Task.Run(m_processor.ProcessCommandQueueAsync, m_processingCts.Token);
-            m_logger.LogTrace("✅ Background processing task started for session {SessionId}, Task ID: {TaskId}", sessionId, m_processingTask.Id);
+            m_Logger.LogTrace("🔄 Starting background processing task for session {SessionId}", sessionId);
+            m_ProcessingTask = Task.Run(m_Processor.ProcessCommandQueueAsync, m_ProcessingCts.Token);
+            m_Logger.LogTrace("✅ Background processing task started for session {SessionId}, Task ID: {TaskId}", sessionId, m_ProcessingTask.Id);
 
             // Notify startup
-            m_notificationManager.NotifyServiceStartup();
+            m_NotificationManager.NotifyServiceStartup();
 
-            m_logger.LogInformation("✅ IsolatedCommandQueueService created for session {SessionId} (background task initializing)", sessionId);
+            m_Logger.LogInformation("✅ IsolatedCommandQueueService created for session {SessionId} (background task initializing)", sessionId);
         }
 
         /// <summary>
@@ -74,7 +76,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>True if ready, false otherwise</returns>
         public bool IsReady()
         {
-            return !m_disposed && m_processingTask != null && !m_processingTask.IsFaulted && !m_processingCts.Token.IsCancellationRequested;
+            return !m_Disposed && m_ProcessingTask != null && !m_ProcessingTask.IsFaulted && !m_ProcessingCts.Token.IsCancellationRequested;
         }
 
         /// <summary>
@@ -92,10 +94,10 @@ namespace mcp_nexus.CommandQueue
                 throw new ArgumentException("Command cannot be null or empty", nameof(command));
 
             // Generate unique command ID
-            var commandId = m_tracker.GenerateCommandId();
+            var commandId = m_Tracker.GenerateCommandId();
 
-            m_logger.LogTrace("🔄 Queueing command {CommandId} in session {SessionId}: {Command}",
-                commandId, m_config.SessionId, command);
+            m_Logger.LogTrace("🔄 Queueing command {CommandId} in session {SessionId}: {Command}",
+                commandId, m_Config.SessionId, command);
 
             // Create command object
             var queuedCommand = new QueuedCommand(
@@ -108,40 +110,40 @@ namespace mcp_nexus.CommandQueue
             );
 
             // Add to tracking dictionary first
-            m_logger.LogTrace("🔄 Adding command {CommandId} to active commands dictionary for session {SessionId}", commandId, m_config.SessionId);
-            if (!m_tracker.TryAddCommand(commandId, queuedCommand))
+            m_Logger.LogTrace("🔄 Adding command {CommandId} to active commands dictionary for session {SessionId}", commandId, m_Config.SessionId);
+            if (!m_Tracker.TryAddCommand(commandId, queuedCommand))
             {
                 queuedCommand.CancellationTokenSource?.Dispose();
                 throw new InvalidOperationException($"Command ID conflict: {commandId}");
             }
-            m_logger.LogTrace("✅ Successfully added command {CommandId} to active commands dictionary for session {SessionId}", commandId, m_config.SessionId);
+            m_Logger.LogTrace("✅ Successfully added command {CommandId} to active commands dictionary for session {SessionId}", commandId, m_Config.SessionId);
 
             try
             {
                 // Add to processing queue
-                m_logger.LogTrace("🔄 Adding command {CommandId} to processing queue for session {SessionId}", commandId, m_config.SessionId);
-                m_commandQueue.Add(queuedCommand, m_processingCts.Token);
-                m_logger.LogTrace("✅ Successfully added command {CommandId} to processing queue for session {SessionId}", commandId, m_config.SessionId);
+                m_Logger.LogTrace("🔄 Adding command {CommandId} to processing queue for session {SessionId}", commandId, m_Config.SessionId);
+                m_CommandQueue.Add(queuedCommand, m_ProcessingCts.Token);
+                m_Logger.LogTrace("✅ Successfully added command {CommandId} to processing queue for session {SessionId}", commandId, m_Config.SessionId);
 
                 // Notify command queued
-                var queuePosition = m_tracker.GetQueuePosition(commandId);
-                var statusMessage = m_notificationManager.CreateQueuedStatusMessage(queuePosition, TimeSpan.Zero);
-                var progress = m_notificationManager.CalculateQueueProgress(queuePosition, TimeSpan.Zero);
+                var queuePosition = m_Tracker.GetQueuePosition(commandId);
+                var statusMessage = m_NotificationManager.CreateQueuedStatusMessage(queuePosition, TimeSpan.Zero);
+                var progress = m_NotificationManager.CalculateQueueProgress(queuePosition, TimeSpan.Zero);
 
-                m_notificationManager.NotifyCommandStatusFireAndForget(commandId, command, statusMessage, null, progress);
+                m_NotificationManager.NotifyCommandStatusFireAndForget(commandId, command, statusMessage, null, progress);
 
-                m_logger.LogInformation("✅ Command {CommandId} queued successfully for session {SessionId} (position: {Position})",
-                    commandId, m_config.SessionId, queuePosition);
+                m_Logger.LogInformation("✅ Command {CommandId} queued successfully for session {SessionId} (position: {Position})",
+                    commandId, m_Config.SessionId, queuePosition);
 
                 return commandId;
             }
             catch (Exception ex)
             {
                 // Clean up on failure
-                m_tracker.TryRemoveCommand(commandId, out _);
+                m_Tracker.TryRemoveCommand(commandId, out _);
                 queuedCommand.CancellationTokenSource?.Dispose();
 
-                m_logger.LogError(ex, "❌ Failed to queue command {CommandId} for session {SessionId}", commandId, m_config.SessionId);
+                m_Logger.LogError(ex, "❌ Failed to queue command {CommandId} for session {SessionId}", commandId, m_Config.SessionId);
                 throw;
             }
         }
@@ -162,23 +164,23 @@ namespace mcp_nexus.CommandQueue
             if (string.IsNullOrWhiteSpace(commandId))
                 return "Command ID cannot be null or empty";
 
-            var command = m_tracker.GetCommand(commandId);
+            var command = m_Tracker.GetCommand(commandId);
             if (command == null)
             {
-                m_logger.LogWarning("Command {CommandId} not found for session {SessionId}", commandId, m_config.SessionId);
+                m_Logger.LogWarning("Command {CommandId} not found for session {SessionId}", commandId, m_Config.SessionId);
                 return $"Command not found: {commandId}";
             }
 
             try
             {
-                m_logger.LogTrace("⏳ Waiting for command {CommandId} result in session {SessionId}", commandId, m_config.SessionId);
+                m_Logger.LogTrace("⏳ Waiting for command {CommandId} result in session {SessionId}", commandId, m_Config.SessionId);
                 var result = await (command.CompletionSource?.Task ?? Task.FromResult(string.Empty));
-                m_logger.LogTrace("✅ Command {CommandId} result received in session {SessionId}", commandId, m_config.SessionId);
+                m_Logger.LogTrace("✅ Command {CommandId} result received in session {SessionId}", commandId, m_Config.SessionId);
                 return result;
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "❌ Error getting result for command {CommandId} in session {SessionId}", commandId, m_config.SessionId);
+                m_Logger.LogError(ex, "❌ Error getting result for command {CommandId} in session {SessionId}", commandId, m_Config.SessionId);
                 return $"Error getting command result: {ex.Message}";
             }
         }
@@ -186,13 +188,13 @@ namespace mcp_nexus.CommandQueue
         public CommandState? GetCommandState(string commandId)
         {
             ThrowIfDisposed();
-            return m_tracker.GetCommandState(commandId);
+            return m_Tracker.GetCommandState(commandId);
         }
 
         public CommandInfo? GetCommandInfo(string commandId)
         {
             ThrowIfDisposed();
-            return m_tracker.GetCommandInfo(commandId);
+            return m_Tracker.GetCommandInfo(commandId);
         }
 
         /// <summary>
@@ -204,13 +206,13 @@ namespace mcp_nexus.CommandQueue
         /// <exception cref="ObjectDisposedException">Thrown when the service has been disposed.</exception>
         public bool CancelCommand(string commandId)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return false;
 
-            var success = m_processor.CancelCommand(commandId);
+            var success = m_Processor.CancelCommand(commandId);
             if (success)
             {
-                m_notificationManager.NotifyCommandCancellation(commandId, "User requested cancellation");
+                m_NotificationManager.NotifyCommandCancellation(commandId, "User requested cancellation");
             }
             return success;
         }
@@ -223,31 +225,31 @@ namespace mcp_nexus.CommandQueue
         /// <exception cref="ObjectDisposedException">Thrown when the service has been disposed.</exception>
         public int CancelAllCommands(string? reason = null)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return 0;
 
-            var count = m_tracker.CancelAllCommands(reason);
+            var count = m_Tracker.CancelAllCommands(reason);
             if (count > 0)
             {
-                m_notificationManager.NotifyBulkCommandCancellation(count, reason ?? "Service shutdown");
+                m_NotificationManager.NotifyBulkCommandCancellation(count, reason ?? "Service shutdown");
             }
             return count;
         }
 
         public IEnumerable<(string Id, string Command, DateTime QueueTime, string Status)> GetQueueStatus()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return Enumerable.Empty<(string, string, DateTime, string)>();
 
-            return m_tracker.GetQueueStatus();
+            return m_Tracker.GetQueueStatus();
         }
 
         public QueuedCommand? GetCurrentCommand()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return null;
 
-            return m_tracker.GetCurrentCommand();
+            return m_Tracker.GetCurrentCommand();
         }
 
         /// <summary>
@@ -257,27 +259,27 @@ namespace mcp_nexus.CommandQueue
         /// <exception cref="ObjectDisposedException">Thrown when the service has been disposed.</exception>
         public void ForceShutdownImmediate()
         {
-            m_logger.LogWarning("🚨 Force shutdown requested for session {SessionId}", m_config.SessionId);
+            m_Logger.LogWarning("🚨 Force shutdown requested for session {SessionId}", m_Config.SessionId);
 
             try
             {
-                m_processingCts.Cancel();
+                m_ProcessingCts.Cancel();
                 // Stop accepting more commands and unblock consumers
-                try { m_commandQueue.CompleteAdding(); } catch { }
-                m_notificationManager.NotifyServiceShutdown("Force shutdown requested");
+                try { m_CommandQueue.CompleteAdding(); } catch { }
+                m_NotificationManager.NotifyServiceShutdown("Force shutdown requested");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error during force shutdown for session {SessionId}", m_config.SessionId);
+                m_Logger.LogError(ex, "Error during force shutdown for session {SessionId}", m_Config.SessionId);
             }
         }
 
         public (long Total, long Completed, long Failed, long Cancelled) GetPerformanceStats()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return (0, 0, 0, 0);
 
-            return m_tracker.GetPerformanceStats();
+            return m_Tracker.GetPerformanceStats();
         }
 
         /// <summary>
@@ -286,7 +288,7 @@ namespace mcp_nexus.CommandQueue
         /// <exception cref="ObjectDisposedException">Thrown when the service has been disposed.</exception>
         private void ThrowIfDisposed()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(IsolatedCommandQueueService));
         }
 
@@ -295,55 +297,74 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public void Dispose()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return;
 
-            m_logger.LogInformation("🧹 Disposing IsolatedCommandQueueService for session {SessionId}", m_config.SessionId);
+            m_Logger.LogInformation("🧹 Disposing IsolatedCommandQueueService for session {SessionId}", m_Config.SessionId);
 
             try
             {
                 // Cancel all commands
                 var cancelledCount = CancelAllCommands("Service disposal");
-                m_logger.LogInformation("Cancelled {Count} commands during disposal", cancelledCount);
+                m_Logger.LogInformation("Cancelled {Count} commands during disposal", cancelledCount);
 
                 // Signal shutdown
-                m_processingCts.Cancel();
-                m_notificationManager.NotifyServiceShutdown("Service disposed");
+                m_ProcessingCts.Cancel();
+                m_NotificationManager.NotifyServiceShutdown("Service disposed");
 
                 // Complete adding to unblock processing loop immediately
-                try { m_commandQueue.CompleteAdding(); } catch { }
+                try { m_CommandQueue.CompleteAdding(); } catch { }
 
                 // Wait for processing to complete
                 try
                 {
-                    if (!m_processingTask.Wait(m_config.ShutdownTimeout))
+                    if (!m_ProcessingTask.Wait(m_Config.ShutdownTimeout))
                     {
-                        m_logger.LogWarning("Processing task did not complete within {Timeout}ms, forcing shutdown",
-                            m_config.ShutdownTimeout.TotalMilliseconds);
+                        m_Logger.LogWarning("Processing task did not complete within {Timeout}ms, forcing shutdown",
+                            m_Config.ShutdownTimeout.TotalMilliseconds);
                     }
                 }
                 catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is TaskCanceledException))
                 {
-                    m_logger.LogDebug("Processing task was cancelled during shutdown (expected)");
+                    m_Logger.LogDebug("Processing task was cancelled during shutdown (expected)");
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogWarning(ex, "Error waiting for processing task to complete during disposal");
+                    m_Logger.LogWarning(ex, "Error waiting for processing task to complete during disposal");
                 }
 
                 // Dispose resources
-                m_commandQueue.Dispose();
-                m_processingCts.Dispose();
+                m_CommandQueue.Dispose();
+                m_ProcessingCts.Dispose();
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error during disposal of IsolatedCommandQueueService for session {SessionId}", m_config.SessionId);
+                m_Logger.LogError(ex, "Error during disposal of IsolatedCommandQueueService for session {SessionId}", m_Config.SessionId);
             }
             finally
             {
-                m_disposed = true;
-                m_logger.LogInformation("✅ IsolatedCommandQueueService disposed for session {SessionId}", m_config.SessionId);
+                m_Disposed = true;
+                m_Logger.LogInformation("✅ IsolatedCommandQueueService disposed for session {SessionId}", m_Config.SessionId);
             }
+        }
+
+        /// <summary>
+        /// Gets the cached result of a specific command from the session cache
+        /// </summary>
+        /// <param name="commandId">The command identifier</param>
+        /// <returns>The cached command result, or null if not found</returns>
+        public ICommandResult? GetCachedCommandResult(string commandId)
+        {
+            return m_Processor.GetCommandResult(commandId);
+        }
+
+        /// <summary>
+        /// Gets cache statistics for monitoring
+        /// </summary>
+        /// <returns>Cache statistics, or null if no cache is available</returns>
+        public CacheStatistics? GetCacheStatistics()
+        {
+            return m_Processor.GetCacheStatistics();
         }
     }
 }

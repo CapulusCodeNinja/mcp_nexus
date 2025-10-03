@@ -8,20 +8,21 @@ namespace mcp_nexus.CommandQueue
     /// </summary>
     public class BasicCommandProcessor
     {
-        private readonly ICdbSession m_cdbSession;
-        private readonly ILogger<BasicCommandProcessor> m_logger;
-        private readonly BasicQueueConfiguration m_config;
-        private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands;
-        private volatile QueuedCommand? m_currentCommand;
+        private readonly ICdbSession m_CdbSession;
+        private readonly ILogger<BasicCommandProcessor> m_Logger;
+        private readonly BasicQueueConfiguration m_Config;
+        private readonly ConcurrentDictionary<string, QueuedCommand> m_ActiveCommands;
+        private readonly SessionCommandResultCache? m_ResultCache;
+        private volatile QueuedCommand? m_CurrentCommand;
 
         // Performance counters
-        private long m_commandsProcessed = 0;
-        private long m_commandsFailed = 0;
-        private long m_commandsCancelled = 0;
-        private DateTime m_lastStatsLog = DateTime.UtcNow;
+        private long m_CommandsProcessed = 0;
+        private long m_CommandsFailed = 0;
+        private long m_CommandsCancelled = 0;
+        private DateTime m_LastStatsLog = DateTime.UtcNow;
 
         // Cleanup timer
-        private readonly Timer m_cleanupTimer;
+        private readonly Timer m_CleanupTimer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BasicCommandProcessor"/> class.
@@ -30,20 +31,31 @@ namespace mcp_nexus.CommandQueue
         /// <param name="logger">The logger instance for recording processing operations.</param>
         /// <param name="config">The basic queue configuration settings.</param>
         /// <param name="activeCommands">The concurrent dictionary for tracking active commands.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
+        /// <param name="resultCache">Optional session command result cache for storing results.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
         public BasicCommandProcessor(
             ICdbSession cdbSession,
             ILogger<BasicCommandProcessor> logger,
             BasicQueueConfiguration config,
-            ConcurrentDictionary<string, QueuedCommand> activeCommands)
+            ConcurrentDictionary<string, QueuedCommand> activeCommands,
+            SessionCommandResultCache? resultCache = null)
         {
-            m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_config = config ?? throw new ArgumentNullException(nameof(config));
-            m_activeCommands = activeCommands ?? throw new ArgumentNullException(nameof(activeCommands));
+            m_CdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_Config = config ?? throw new ArgumentNullException(nameof(config));
+            m_ActiveCommands = activeCommands ?? throw new ArgumentNullException(nameof(activeCommands));
+
+            // Use provided cache or create a default one if memory optimization is enabled
+            m_ResultCache = resultCache ?? (m_Config.EnableMemoryOptimization 
+                ? new SessionCommandResultCache(
+                    m_Config.MaxCommandMemoryBytes,
+                    m_Config.MaxCommandsInMemory,
+                    m_Config.MemoryPressureThreshold,
+                    null) // Use null logger for now to avoid type mismatch
+                : null);
 
             // Initialize cleanup timer
-            m_cleanupTimer = new Timer(CleanupCompletedCommands, null, m_config.CleanupInterval, m_config.CleanupInterval);
+            m_CleanupTimer = new Timer(CleanupCompletedCommands, null, m_Config.CleanupInterval, m_Config.CleanupInterval);
         }
 
         /// <summary>
@@ -54,7 +66,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>Task representing the processing operation</returns>
         public async Task ProcessCommandQueueAsync(BlockingCollection<QueuedCommand> commandQueue, CancellationToken cancellationToken)
         {
-            m_logger.LogInformation("🚀 Starting basic command processor");
+            m_Logger.LogInformation("🚀 Starting basic command processor");
 
             try
             {
@@ -68,16 +80,16 @@ namespace mcp_nexus.CommandQueue
             }
             catch (OperationCanceledException)
             {
-                m_logger.LogInformation("🛑 Command processor stopped due to cancellation");
+                m_Logger.LogInformation("🛑 Command processor stopped due to cancellation");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "💥 Fatal error in command processor");
+                m_Logger.LogError(ex, "💥 Fatal error in command processor");
                 throw;
             }
             finally
             {
-                m_logger.LogInformation("🏁 Command processor shutdown complete");
+                m_Logger.LogInformation("🏁 Command processor shutdown complete");
             }
         }
 
@@ -94,54 +106,76 @@ namespace mcp_nexus.CommandQueue
             try
             {
                 // Set as current command
-                m_currentCommand = queuedCommand;
+                m_CurrentCommand = queuedCommand;
                 UpdateCommandState(queuedCommand.Id ?? string.Empty, CommandState.Executing);
 
-                m_logger.LogInformation("⚡ Processing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
+                m_Logger.LogInformation("⚡ Processing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
 
                 // Execute command
-                var result = await m_cdbSession.ExecuteCommand(queuedCommand.Command ?? string.Empty, cancellationToken);
+                var result = await m_CdbSession.ExecuteCommand(queuedCommand.Command ?? string.Empty, cancellationToken);
+
+                // Store result in cache for session persistence
+                var commandResult = CommandResult.Success(result, DateTime.UtcNow - startTime);
+                m_ResultCache?.StoreResult(queuedCommand.Id ?? string.Empty, commandResult);
 
                 // Complete successfully
                 CompleteCommand(queuedCommand, result, CommandState.Completed);
-                Interlocked.Increment(ref m_commandsProcessed);
+                Interlocked.Increment(ref m_CommandsProcessed);
 
                 var elapsed = DateTime.UtcNow - startTime;
-                m_logger.LogInformation("✅ Command {CommandId} completed in {Elapsed}ms",
+                m_Logger.LogInformation("✅ Command {CommandId} completed in {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
             }
             catch (OperationCanceledException) when (queuedCommand.CancellationTokenSource?.Token.IsCancellationRequested == true)
             {
                 // Command was specifically cancelled
-                CompleteCommand(queuedCommand, "Command was cancelled", CommandState.Cancelled);
-                Interlocked.Increment(ref m_commandsCancelled);
-
+                var errorMessage = "Command was cancelled";
                 var elapsed = DateTime.UtcNow - startTime;
-                m_logger.LogWarning("🚫 Command {CommandId} was cancelled after {Elapsed}ms",
+                
+                // Store cancelled result in cache
+                var cancelledResult = CommandResult.Failure(errorMessage, elapsed);
+                m_ResultCache?.StoreResult(queuedCommand.Id ?? string.Empty, cancelledResult);
+                
+                CompleteCommand(queuedCommand, errorMessage, CommandState.Cancelled);
+                Interlocked.Increment(ref m_CommandsCancelled);
+
+                m_Logger.LogWarning("🚫 Command {CommandId} was cancelled after {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 // Service shutdown
-                CompleteCommand(queuedCommand, "Service is shutting down", CommandState.Cancelled);
-                m_logger.LogInformation("🛑 Command {CommandId} cancelled due to service shutdown", queuedCommand.Id);
+                var errorMessage = "Service is shutting down";
+                var elapsed = DateTime.UtcNow - startTime;
+                
+                // Store cancelled result in cache
+                var cancelledResult = CommandResult.Failure(errorMessage, elapsed);
+                m_ResultCache?.StoreResult(queuedCommand.Id ?? string.Empty, cancelledResult);
+                
+                CompleteCommand(queuedCommand, errorMessage, CommandState.Cancelled);
+                m_Logger.LogInformation("🛑 Command {CommandId} cancelled due to service shutdown", queuedCommand.Id);
             }
             catch (Exception ex)
             {
                 // Command failed
                 var errorMessage = $"Command execution failed: {ex.Message}";
-                CompleteCommand(queuedCommand, errorMessage, CommandState.Failed);
-                Interlocked.Increment(ref m_commandsFailed);
-
                 var elapsed = DateTime.UtcNow - startTime;
-                m_logger.LogError(ex, "❌ Command {CommandId} failed after {Elapsed}ms",
+                
+                // Store failed result in cache
+                var failedResult = CommandResult.Failure(errorMessage, elapsed);
+                m_ResultCache?.StoreResult(queuedCommand.Id ?? string.Empty, failedResult);
+                
+                CompleteCommand(queuedCommand, errorMessage, CommandState.Failed);
+                Interlocked.Increment(ref m_CommandsFailed);
+
+                m_Logger.LogError(ex, "❌ Command {CommandId} failed after {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
             }
             finally
             {
                 // Clear current command
-                if (m_currentCommand == queuedCommand)
-                    m_currentCommand = null;
+                if (m_CurrentCommand == queuedCommand)
+                    m_CurrentCommand = null;
 
                 // Log periodic statistics
                 LogPeriodicStatistics();
@@ -172,7 +206,7 @@ namespace mcp_nexus.CommandQueue
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error completing command {CommandId}", command.Id);
+                m_Logger.LogError(ex, "Error completing command {CommandId}", command.Id);
             }
         }
 
@@ -185,17 +219,17 @@ namespace mcp_nexus.CommandQueue
         {
             try
             {
-                if (m_activeCommands.TryGetValue(commandId, out var command))
+                if (m_ActiveCommands.TryGetValue(commandId, out var command))
                 {
                     var updatedCommand = command.WithState(newState);
-                    m_activeCommands[commandId] = updatedCommand;
+                    m_ActiveCommands[commandId] = updatedCommand;
 
-                    m_logger.LogTrace("🔄 Command {CommandId} state changed to {State}", commandId, newState);
+                    m_Logger.LogTrace("🔄 Command {CommandId} state changed to {State}", commandId, newState);
                 }
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error updating command state for {CommandId}", commandId);
+                m_Logger.LogError(ex, "Error updating command state for {CommandId}", commandId);
             }
         }
 
@@ -205,7 +239,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The current command, or null if none is executing</returns>
         public QueuedCommand? GetCurrentCommand()
         {
-            return m_currentCommand;
+            return m_CurrentCommand;
         }
 
         /// <summary>
@@ -215,9 +249,9 @@ namespace mcp_nexus.CommandQueue
         public (long Processed, long Failed, long Cancelled) GetPerformanceStats()
         {
             return (
-                Interlocked.Read(ref m_commandsProcessed),
-                Interlocked.Read(ref m_commandsFailed),
-                Interlocked.Read(ref m_commandsCancelled)
+                Interlocked.Read(ref m_CommandsProcessed),
+                Interlocked.Read(ref m_CommandsFailed),
+                Interlocked.Read(ref m_CommandsCancelled)
             );
         }
 
@@ -227,12 +261,12 @@ namespace mcp_nexus.CommandQueue
         private void LogPeriodicStatistics()
         {
             var now = DateTime.UtcNow;
-            if (now - m_lastStatsLog >= m_config.StatsLogInterval)
+            if (now - m_LastStatsLog >= m_Config.StatsLogInterval)
             {
                 var stats = GetPerformanceStats();
-                m_logger.LogInformation("📊 Command stats - Processed: {Processed}, Failed: {Failed}, Cancelled: {Cancelled}, Active: {Active}",
-                    stats.Processed, stats.Failed, stats.Cancelled, m_activeCommands.Count);
-                m_lastStatsLog = now;
+                m_Logger.LogInformation("📊 Command stats - Processed: {Processed}, Failed: {Failed}, Cancelled: {Cancelled}, Active: {Active}",
+                    stats.Processed, stats.Failed, stats.Cancelled, m_ActiveCommands.Count);
+                m_LastStatsLog = now;
             }
         }
 
@@ -252,10 +286,10 @@ namespace mcp_nexus.CommandQueue
         {
             try
             {
-                var cutoffTime = DateTime.UtcNow - m_config.CommandRetentionTime;
+                var cutoffTime = DateTime.UtcNow - m_Config.CommandRetentionTime;
                 var commandsToRemove = new List<string>();
 
-                foreach (var kvp in m_activeCommands)
+                foreach (var kvp in m_ActiveCommands)
                 {
                     var command = kvp.Value;
                     if (command.State is CommandState.Completed or CommandState.Failed or CommandState.Cancelled &&
@@ -267,18 +301,37 @@ namespace mcp_nexus.CommandQueue
 
                 foreach (var commandId in commandsToRemove)
                 {
-                    m_activeCommands.TryRemove(commandId, out _);
+                    m_ActiveCommands.TryRemove(commandId, out _);
                 }
 
                 if (commandsToRemove.Count > 0)
                 {
-                    m_logger.LogDebug("🧹 Cleaned up {Count} completed commands", commandsToRemove.Count);
+                    m_Logger.LogDebug("🧹 Cleaned up {Count} completed commands", commandsToRemove.Count);
                 }
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error during command cleanup");
+                m_Logger.LogError(ex, "Error during command cleanup");
             }
+        }
+
+        /// <summary>
+        /// Gets the result of a specific command from the cache
+        /// </summary>
+        /// <param name="commandId">The command identifier</param>
+        /// <returns>The cached command result, or null if not found</returns>
+        public ICommandResult? GetCommandResult(string commandId)
+        {
+            return m_ResultCache?.GetResult(commandId);
+        }
+
+        /// <summary>
+        /// Gets cache statistics for monitoring
+        /// </summary>
+        /// <returns>Cache statistics, or null if no cache is available</returns>
+        public CacheStatistics? GetCacheStatistics()
+        {
+            return m_ResultCache?.GetStatistics();
         }
 
         /// <summary>
@@ -288,12 +341,17 @@ namespace mcp_nexus.CommandQueue
         {
             try
             {
-                m_cleanupTimer?.Dispose();
-                m_logger.LogInformation("🧹 Basic command processor disposed");
+                m_CleanupTimer?.Dispose();
+                // Only dispose cache if it was created by this processor (not injected)
+                if (m_ResultCache != null && m_Config.EnableMemoryOptimization)
+                {
+                    m_ResultCache.Dispose();
+                }
+                m_Logger.LogInformation("🧹 Basic command processor disposed");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error disposing basic command processor");
+                m_Logger.LogError(ex, "Error disposing basic command processor");
             }
         }
     }
