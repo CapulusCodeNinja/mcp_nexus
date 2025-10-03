@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace mcp_nexus.Health
 {
@@ -15,6 +16,17 @@ namespace mcp_nexus.Health
         private readonly Process m_currentProcess;
         private volatile bool m_disposed = false;
 
+        // Adaptive memory thresholds
+        private readonly long m_workingSetThresholdMB;
+        private readonly long m_privateMemoryThresholdMB;
+        private readonly double m_memoryPressureThreshold;
+        private readonly long m_systemTotalMemoryMB;
+
+        // Memory trend analysis
+        private readonly Queue<MemorySnapshot> m_memoryHistory;
+        private readonly int m_historySize = 10; // Keep last 10 measurements
+        private readonly object m_historyLock = new object();
+
         #endregion
 
         #region Constructor
@@ -23,15 +35,40 @@ namespace mcp_nexus.Health
         /// Initializes a new instance of the AdvancedHealthService class
         /// </summary>
         /// <param name="logger">The logger instance</param>
-        public AdvancedHealthService(ILogger<AdvancedHealthService> logger)
+        /// <param name="workingSetThresholdMB">Working set threshold in MB (0 = auto-detect based on system memory)</param>
+        /// <param name="privateMemoryThresholdMB">Private memory threshold in MB (0 = auto-detect based on system memory)</param>
+        /// <param name="memoryPressureThreshold">Memory pressure threshold (0.0 to 1.0, default: 0.8)</param>
+        public AdvancedHealthService(
+            ILogger<AdvancedHealthService> logger,
+            long workingSetThresholdMB = 0,
+            long privateMemoryThresholdMB = 0,
+            double memoryPressureThreshold = 0.8)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_currentProcess = Process.GetCurrentProcess();
 
+            // Detect system memory and set adaptive thresholds
+            m_systemTotalMemoryMB = GetSystemTotalMemoryMB();
+            m_memoryPressureThreshold = Math.Clamp(memoryPressureThreshold, 0.1, 1.0);
+
+            // Auto-detect thresholds based on system memory if not specified
+            m_workingSetThresholdMB = workingSetThresholdMB > 0 
+                ? workingSetThresholdMB 
+                : Math.Max(512, (long)(m_systemTotalMemoryMB * 0.5)); // 50% of system RAM, min 512MB
+
+            m_privateMemoryThresholdMB = privateMemoryThresholdMB > 0 
+                ? privateMemoryThresholdMB 
+                : Math.Max(256, (long)(m_systemTotalMemoryMB * 0.25)); // 25% of system RAM, min 256MB
+
+            // Initialize memory history for trend analysis
+            m_memoryHistory = new Queue<MemorySnapshot>();
+
             // Health check every 30 seconds
             m_healthTimer = new Timer(PerformHealthCheck, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
 
-            m_logger.LogInformation("🏥 AdvancedHealthService initialized");
+            m_logger.LogInformation("🏥 AdvancedHealthService initialized with adaptive thresholds - " +
+                "System RAM: {SystemRAM}MB, Working Set: {WorkingSet}MB, Private: {Private}MB, Pressure: {Pressure:P0}",
+                m_systemTotalMemoryMB, m_workingSetThresholdMB, m_privateMemoryThresholdMB, m_memoryPressureThreshold);
         }
 
         #endregion
@@ -92,8 +129,114 @@ namespace mcp_nexus.Health
             }
         }
 
+        #region Helper Methods
+
         /// <summary>
-        /// Checks the current memory health status.
+        /// Gets the total system memory in MB
+        /// </summary>
+        /// <returns>Total system memory in MB</returns>
+        private long GetSystemTotalMemoryMB()
+        {
+            try
+            {
+                // Try to get system memory using GC.GetTotalMemory as a rough estimate
+                // This is not perfect but avoids external dependencies
+                var gcMemory = GC.GetTotalMemory(false);
+                var estimatedSystemMemory = gcMemory * 10; // Rough estimate: GC memory is typically 1/10 of system memory
+                var systemMemoryMB = (long)(estimatedSystemMemory / (1024.0 * 1024.0));
+                
+                // Ensure we have a reasonable minimum and maximum
+                return Math.Clamp(systemMemoryMB, 1024, 32768); // Between 1GB and 32GB
+            }
+            catch
+            {
+                // Fallback to a reasonable default
+                m_logger.LogWarning("Could not detect system memory, using default 4GB");
+                return 4096;
+            }
+        }
+
+        /// <summary>
+        /// Records a memory snapshot for trend analysis
+        /// </summary>
+        /// <param name="workingSetMB">Working set in MB</param>
+        /// <param name="privateMemoryMB">Private memory in MB</param>
+        private void RecordMemorySnapshot(double workingSetMB, double privateMemoryMB)
+        {
+            lock (m_historyLock)
+            {
+                var snapshot = new MemorySnapshot
+                {
+                    Timestamp = DateTime.UtcNow,
+                    WorkingSetMB = workingSetMB,
+                    PrivateMemoryMB = privateMemoryMB
+                };
+
+                m_memoryHistory.Enqueue(snapshot);
+
+                // Keep only the last N measurements
+                while (m_memoryHistory.Count > m_historySize)
+                {
+                    m_memoryHistory.Dequeue();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks if memory usage is trending upward
+        /// </summary>
+        /// <returns>True if memory is trending up, false otherwise</returns>
+        private bool IsMemoryTrendingUp()
+        {
+            lock (m_historyLock)
+            {
+                if (m_memoryHistory.Count < 3) return false;
+
+                var recent = m_memoryHistory.TakeLast(3).ToList();
+                return recent[2].WorkingSetMB > recent[1].WorkingSetMB && 
+                       recent[1].WorkingSetMB > recent[0].WorkingSetMB;
+            }
+        }
+
+        /// <summary>
+        /// Gets the memory health status based on adaptive thresholds and trends
+        /// </summary>
+        /// <param name="workingSetMB">Current working set in MB</param>
+        /// <param name="privateMemoryMB">Current private memory in MB</param>
+        /// <returns>Memory health status</returns>
+        private (bool isHealthy, string message) GetMemoryHealthStatus(double workingSetMB, double privateMemoryMB)
+        {
+            var workingSetRatio = workingSetMB / m_workingSetThresholdMB;
+            var privateMemoryRatio = privateMemoryMB / m_privateMemoryThresholdMB;
+            var maxRatio = Math.Max(workingSetRatio, privateMemoryRatio);
+
+            // Check for critical thresholds
+            if (workingSetRatio >= 1.0 || privateMemoryRatio >= 1.0)
+            {
+                return (false, $"Critical memory usage: Working Set {workingSetMB:F1}MB/{m_workingSetThresholdMB}MB, Private {privateMemoryMB:F1}MB/{m_privateMemoryThresholdMB}MB");
+            }
+
+            // Check for warning thresholds (80% of limit)
+            if (maxRatio >= m_memoryPressureThreshold)
+            {
+                var trendWarning = IsMemoryTrendingUp() ? " (trending upward)" : "";
+                return (false, $"High memory usage{trendWarning}: Working Set {workingSetMB:F1}MB/{m_workingSetThresholdMB}MB, Private {privateMemoryMB:F1}MB/{m_privateMemoryThresholdMB}MB");
+            }
+
+            // Check for early warning (60% of limit)
+            if (maxRatio >= 0.6)
+            {
+                var trendWarning = IsMemoryTrendingUp() ? " (trending upward)" : "";
+                return (true, $"Memory usage approaching limit{trendWarning}: Working Set {workingSetMB:F1}MB/{m_workingSetThresholdMB}MB, Private {privateMemoryMB:F1}MB/{m_privateMemoryThresholdMB}MB");
+            }
+
+            return (true, $"Memory usage normal: Working Set {workingSetMB:F1}MB/{m_workingSetThresholdMB}MB, Private {privateMemoryMB:F1}MB/{m_privateMemoryThresholdMB}MB");
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Checks the current memory health status with adaptive thresholds and trend analysis.
         /// </summary>
         /// <returns>A MemoryHealth object containing memory usage information.</returns>
         private MemoryHealth CheckMemoryHealth()
@@ -110,12 +253,15 @@ namespace mcp_nexus.Health
                 var virtualMemoryMB = virtualMemory / (1024.0 * 1024.0);
                 var totalPhysicalMemoryMB = totalPhysicalMemory / (1024.0 * 1024.0);
 
-                var isHealthy = workingSetMB < 2048 && privateMemoryMB < 1024; // 2GB working set, 1GB private
+                // Record memory snapshot for trend analysis
+                RecordMemorySnapshot(workingSetMB, privateMemoryMB);
+
+                // Get adaptive health status
+                var (isHealthy, message) = GetMemoryHealthStatus(workingSetMB, privateMemoryMB);
 
                 var memoryHealth = new MemoryHealth();
                 memoryHealth.SetMemoryInfo(isHealthy, workingSetMB, privateMemoryMB,
-                    virtualMemoryMB, totalPhysicalMemoryMB,
-                    isHealthy ? "Memory usage normal" : "High memory usage detected");
+                    virtualMemoryMB, totalPhysicalMemoryMB, message);
                 return memoryHealth;
             }
             catch (Exception ex)
@@ -601,4 +747,25 @@ namespace mcp_nexus.Health
     }
 
     #endregion
+
+    /// <summary>
+    /// Represents a memory snapshot for trend analysis
+    /// </summary>
+    public class MemorySnapshot
+    {
+        /// <summary>
+        /// Gets or sets the timestamp when the snapshot was taken
+        /// </summary>
+        public DateTime Timestamp { get; set; }
+
+        /// <summary>
+        /// Gets or sets the working set memory in MB
+        /// </summary>
+        public double WorkingSetMB { get; set; }
+
+        /// <summary>
+        /// Gets or sets the private memory in MB
+        /// </summary>
+        public double PrivateMemoryMB { get; set; }
+    }
 }

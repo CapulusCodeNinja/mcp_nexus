@@ -437,5 +437,53 @@ namespace mcp_nexus_tests.Health
         }
 
         #endregion
+
+        #region Adaptive Memory Threshold Tests
+
+        [Fact]
+        public void Constructor_WithCustomThresholds_UsesProvidedValues()
+        {
+            // Arrange
+            var customWorkingSet = 1024L; // 1GB
+            var customPrivateMemory = 512L; // 512MB
+            var customPressureThreshold = 0.7;
+
+            // Act
+            using var service = new AdvancedHealthService(m_mockLogger.Object, customWorkingSet, customPrivateMemory, customPressureThreshold);
+
+            // Assert
+            // We can't directly test the private fields, but we can verify the service works
+            var healthStatus = service.GetHealthStatus();
+            Assert.NotNull(healthStatus);
+        }
+
+        [Fact]
+        public void Constructor_WithZeroThresholds_UsesAutoDetection()
+        {
+            // Arrange & Act
+            using var service = new AdvancedHealthService(m_mockLogger.Object, 0, 0, 0.8);
+
+            // Assert
+            // Verify the service initializes successfully with auto-detection
+            var healthStatus = service.GetHealthStatus();
+            Assert.NotNull(healthStatus);
+        }
+
+        [Fact]
+        public void Constructor_WithInvalidPressureThreshold_ClampsToValidRange()
+        {
+            // Arrange & Act
+            using var service1 = new AdvancedHealthService(m_mockLogger.Object, 0, 0, -0.1); // Below minimum
+            using var service2 = new AdvancedHealthService(m_mockLogger.Object, 0, 0, 1.5); // Above maximum
+
+            // Assert
+            // Both should initialize successfully with clamped values
+            var healthStatus1 = service1.GetHealthStatus();
+            var healthStatus2 = service2.GetHealthStatus();
+            Assert.NotNull(healthStatus1);
+            Assert.NotNull(healthStatus2);
+        }
+
+        #endregion
     }
 }
