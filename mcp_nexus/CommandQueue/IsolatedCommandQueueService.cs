@@ -77,6 +77,13 @@ namespace mcp_nexus.CommandQueue
             return !m_disposed && m_processingTask != null && !m_processingTask.IsFaulted && !m_processingCts.Token.IsCancellationRequested;
         }
 
+        /// <summary>
+        /// Queues a command for execution in the isolated queue.
+        /// </summary>
+        /// <param name="command">The command to queue for execution.</param>
+        /// <returns>The unique command ID for tracking the queued command.</returns>
+        /// <exception cref="ArgumentException">Thrown when the command is null or empty.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when the service has been disposed.</exception>
         public string QueueCommand(string command)
         {
             ThrowIfDisposed();
@@ -139,6 +146,15 @@ namespace mcp_nexus.CommandQueue
             }
         }
 
+        /// <summary>
+        /// Gets the result of a completed command by its ID.
+        /// </summary>
+        /// <param name="commandId">The unique identifier of the command.</param>
+        /// <returns>
+        /// The result of the command if it has completed successfully; otherwise, 
+        /// an error message indicating the command status or that it was not found.
+        /// </returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the service has been disposed.</exception>
         public async Task<string> GetCommandResult(string commandId)
         {
             ThrowIfDisposed();
@@ -179,6 +195,13 @@ namespace mcp_nexus.CommandQueue
             return m_tracker.GetCommandInfo(commandId);
         }
 
+        /// <summary>
+        /// Cancels a queued command by its ID.
+        /// </summary>
+        /// <param name="commandId">The ID of the command to cancel.</param>
+        /// <returns><c>true</c> if the command was found and cancelled; otherwise, <c>false</c>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the command ID is null.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when the service has been disposed.</exception>
         public bool CancelCommand(string commandId)
         {
             if (m_disposed)
@@ -192,6 +215,12 @@ namespace mcp_nexus.CommandQueue
             return success;
         }
 
+        /// <summary>
+        /// Cancels all queued commands.
+        /// </summary>
+        /// <param name="reason">Optional reason for cancelling all commands.</param>
+        /// <returns>The number of commands that were cancelled.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the service has been disposed.</exception>
         public int CancelAllCommands(string? reason = null)
         {
             if (m_disposed)
@@ -221,6 +250,11 @@ namespace mcp_nexus.CommandQueue
             return m_tracker.GetCurrentCommand();
         }
 
+        /// <summary>
+        /// Forces immediate shutdown of the command queue service.
+        /// This method cancels all pending commands and stops processing immediately.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown when the service has been disposed.</exception>
         public void ForceShutdownImmediate()
         {
             m_logger.LogWarning("🚨 Force shutdown requested for session {SessionId}", m_config.SessionId);
@@ -246,12 +280,19 @@ namespace mcp_nexus.CommandQueue
             return m_tracker.GetPerformanceStats();
         }
 
+        /// <summary>
+        /// Throws an ObjectDisposedException if the service has been disposed.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown when the service has been disposed.</exception>
         private void ThrowIfDisposed()
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(IsolatedCommandQueueService));
         }
 
+        /// <summary>
+        /// Disposes the isolated command queue service and all its resources.
+        /// </summary>
         public void Dispose()
         {
             if (m_disposed)

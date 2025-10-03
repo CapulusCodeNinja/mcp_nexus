@@ -119,7 +119,8 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Marks the command as completed
+        /// <summary>
+        /// Marks the command as completed.
         /// </summary>
         public void MarkCompleted()
         {
@@ -129,6 +130,8 @@ namespace mcp_nexus.CommandQueue
 
         /// <summary>
         /// Updates the queue position
+        /// <summary>
+        /// Updates the queue position of the command.
         /// </summary>
         /// <param name="position">New queue position</param>
         public void UpdateQueuePosition(int position)

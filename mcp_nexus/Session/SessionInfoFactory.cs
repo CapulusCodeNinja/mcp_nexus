@@ -30,7 +30,7 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// Creates a default session info instance with default values.
+        /// Creates a new SessionInfo instance with default values.
         /// </summary>
         /// <returns>
         /// A new <see cref="SessionInfo"/> instance with default values.

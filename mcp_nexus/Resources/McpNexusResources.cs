@@ -363,8 +363,11 @@ namespace mcp_nexus.Resources
         }
 
         /// <summary>
-        /// Gets the status string for a command
+        /// <summary>
+        /// Gets the status string for a command.
         /// </summary>
+        /// <param name="cmd">The command to get the status for.</param>
+        /// <returns>The status string for the command.</returns>
         private static string GetCommandStatus(QueuedCommand cmd)
         {
             return cmd.State switch
@@ -379,8 +382,14 @@ namespace mcp_nexus.Resources
         }
 
         /// <summary>
-        /// Calculates queue position for a command
+        /// <summary>
+        /// Calculates queue position for a command.
+        /// <summary>
+        /// Calculates the queue position for a command.
         /// </summary>
+        /// <param name="cmd">The command to calculate position for.</param>
+        /// <param name="allCommands">All commands in the queue.</param>
+        /// <returns>The queue position of the command.</returns>
         private static int GetQueuePositionForCommand(QueuedCommand cmd, List<QueuedCommand> allCommands)
         {
             var queuedCommands = allCommands.Where(c => c.State == CommandState.Queued).ToList();
@@ -401,8 +410,14 @@ namespace mcp_nexus.Resources
         }
 
         /// <summary>
-        /// Calculates progress percentage for a command
+        /// <summary>
+        /// Calculates progress percentage for a command.
+        /// <summary>
+        /// Calculates the progress percentage for a command.
         /// </summary>
+        /// <param name="cmd">The command to calculate progress for.</param>
+        /// <param name="allCommands">All commands in the queue.</param>
+        /// <returns>The progress percentage of the command.</returns>
         private static int GetProgressPercentageForCommand(QueuedCommand cmd, List<QueuedCommand> allCommands)
         {
             if (cmd.State == CommandState.Completed)
@@ -430,8 +445,12 @@ namespace mcp_nexus.Resources
         }
 
         /// <summary>
-        /// Generates dynamic message for a command
+        /// <summary>
+        /// Generates dynamic message for a command.
         /// </summary>
+        /// <param name="cmd">The command to generate message for.</param>
+        /// <param name="allCommands">All commands in the queue.</param>
+        /// <returns>A dynamic message for the command.</returns>
         private static string GetCommandMessage(QueuedCommand cmd, List<QueuedCommand> allCommands)
         {
             if (cmd.State == CommandState.Completed)

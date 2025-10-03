@@ -132,6 +132,7 @@ namespace mcp_nexus.Caching
 
         /// <summary>
         /// Records a cache hit.
+        /// <summary>
         /// This method increments the hit counter in a thread-safe manner.
         /// </summary>
         public void RecordHit()
@@ -141,6 +142,7 @@ namespace mcp_nexus.Caching
 
         /// <summary>
         /// Records a cache miss.
+        /// <summary>
         /// This method increments the miss counter in a thread-safe manner.
         /// </summary>
         public void RecordMiss()
@@ -150,6 +152,7 @@ namespace mcp_nexus.Caching
 
         /// <summary>
         /// Records a cache set operation.
+        /// <summary>
         /// This method increments the set counter in a thread-safe manner.
         /// </summary>
         public void RecordSet()

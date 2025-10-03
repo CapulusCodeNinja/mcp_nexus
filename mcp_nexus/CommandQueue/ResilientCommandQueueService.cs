@@ -73,6 +73,9 @@ namespace mcp_nexus.CommandQueue
         /// <summary>
         /// Queues a command for execution
         /// </summary>
+        /// <summary>
+        /// Queues a command for execution with resilience features.
+        /// </summary>
         /// <param name="command">The command to execute</param>
         /// <returns>The unique command ID</returns>
         public string QueueCommand(string command)
@@ -140,6 +143,9 @@ namespace mcp_nexus.CommandQueue
         /// <summary>
         /// Cancels a specific command
         /// </summary>
+        /// <summary>
+        /// Cancels a specific command by ID.
+        /// </summary>
         /// <param name="commandId">The command ID to cancel</param>
         /// <returns>True if the command was cancelled</returns>
         public bool CancelCommand(string commandId)
@@ -152,6 +158,9 @@ namespace mcp_nexus.CommandQueue
 
         /// <summary>
         /// Cancels all commands
+        /// </summary>
+        /// <summary>
+        /// Cancels all queued commands.
         /// </summary>
         /// <param name="reason">The reason for cancellation</param>
         /// <returns>The number of commands cancelled</returns>
@@ -226,7 +235,8 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Disposes the service and all resources
+        /// <summary>
+        /// Disposes the service and all resources.
         /// </summary>
         public void Dispose()
         {

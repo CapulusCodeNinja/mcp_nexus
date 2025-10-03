@@ -447,6 +447,12 @@ namespace mcp_nexus.Debugger
             }
         }
 
+        /// <summary>
+        /// Calculates the idle timeout based on the current configuration.
+        /// <summary>
+        /// Calculates the idle timeout based on configuration.
+        /// </summary>
+        /// <returns>The idle timeout in milliseconds.</returns>
         private int CalculateIdleTimeout()
         {
             // Use configured idle timeout to allow symbol server downloads to complete
@@ -455,6 +461,11 @@ namespace mcp_nexus.Debugger
             return m_config.IdleTimeoutMs;
         }
 
+        /// <summary>
+        /// Checks if the absolute timeout has been exceeded.
+        /// </summary>
+        /// <param name="startTime">The time when the command execution started.</param>
+        /// <returns><c>true</c> if the absolute timeout has been exceeded; otherwise, <c>false</c>.</returns>
         private bool CheckAbsoluteTimeout(DateTime startTime)
         {
             var currentElapsed = DateTime.Now - startTime;
@@ -467,6 +478,12 @@ namespace mcp_nexus.Debugger
             return false;
         }
 
+        /// <summary>
+        /// Checks if the idle timeout has been exceeded.
+        /// </summary>
+        /// <param name="lastOutputTime">The time when the last output was received.</param>
+        /// <param name="idleTimeoutMs">The idle timeout in milliseconds.</param>
+        /// <returns><c>true</c> if the idle timeout has been exceeded; otherwise, <c>false</c>.</returns>
         private bool CheckIdleTimeout(DateTime lastOutputTime, int idleTimeoutMs)
         {
             var idleElapsed = (DateTime.Now - lastOutputTime).TotalMilliseconds;
@@ -545,6 +562,11 @@ namespace mcp_nexus.Debugger
             await Task.Delay(10, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Determines if a command line indicates command completion.
+        /// </summary>
+        /// <param name="line">The line to check for completion indicators.</param>
+        /// <returns><c>true</c> if the line indicates command completion; otherwise, <c>false</c>.</returns>
         private bool IsCommandComplete(string line)
         {
             if (m_outputParser.IsCommandComplete(line))
@@ -557,6 +579,8 @@ namespace mcp_nexus.Debugger
 
         /// <summary>
         /// Disposes of resources used by the command executor.
+        /// <summary>
+        /// Disposes of the command executor resources.
         /// This method releases semaphores and other unmanaged resources.
         /// </summary>
         public void Dispose()

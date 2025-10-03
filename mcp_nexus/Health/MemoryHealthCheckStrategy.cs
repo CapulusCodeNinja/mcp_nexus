@@ -60,7 +60,7 @@ namespace mcp_nexus.Health
         }
 
         /// <summary>
-        /// Checks if this strategy is applicable for the current context
+        /// Checks if this strategy is applicable for the current context.
         /// </summary>
         /// <returns>True if applicable, false otherwise</returns>
         public bool IsApplicable()

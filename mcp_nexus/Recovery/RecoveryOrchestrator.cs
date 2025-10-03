@@ -239,6 +239,7 @@ namespace mcp_nexus.Recovery
 
         /// <summary>
         /// Resets the recovery attempt counter.
+        /// <summary>
         /// This method is called when recovery is successful to reset the retry state.
         /// </summary>
         private void ResetRecoveryCounter()
@@ -264,6 +265,14 @@ namespace mcp_nexus.Recovery
         /// <param name="step">The current recovery step.</param>
         /// <param name="success">Whether the recovery step was successful.</param>
         /// <param name="message">Additional message about the recovery event.</param>
+        /// <returns>
+        /// <summary>
+        /// Sends a recovery notification asynchronously.
+        /// </summary>
+        /// <param name="reason">The reason for the recovery action.</param>
+        /// <param name="step">The recovery step being performed.</param>
+        /// <param name="success">Whether the recovery step was successful.</param>
+        /// <param name="message">Additional message about the recovery.</param>
         /// <returns>
         /// A <see cref="Task"/> representing the asynchronous operation.
         /// </returns>
@@ -292,6 +301,10 @@ namespace mcp_nexus.Recovery
         /// This method provides information about recovery attempts, timing, and current state.
         /// </summary>
         /// <returns>
+        /// <summary>
+        /// Gets the current recovery statistics.
+        /// </summary>
+        /// <returns>
         /// A <see cref="RecoveryStatistics"/> object containing current recovery information.
         /// </returns>
         public RecoveryStatistics GetRecoveryStatistics()
@@ -316,6 +329,8 @@ namespace mcp_nexus.Recovery
 
         /// <summary>
         /// Disposes the recovery orchestrator and releases all resources.
+        /// <summary>
+        /// Disposes the recovery orchestrator.
         /// This method cleans up the recovery lock and logs the disposal.
         /// </summary>
         public void Dispose()

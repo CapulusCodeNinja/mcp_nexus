@@ -34,8 +34,10 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// Configures HTTP request and response limits for security
+        /// <summary>
+        /// Configures HTTP request and response limits for security.
         /// </summary>
+        /// <param name="services">The service collection to configure.</param>
         private static void ConfigureServerLimits(IServiceCollection services)
         {
             services.Configure<IISServerOptions>(options =>
@@ -54,8 +56,10 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// Configures CORS policy for MCP clients
+        /// <summary>
+        /// Configures CORS policy for MCP clients.
         /// </summary>
+        /// <param name="services">The service collection to configure.</param>
         private static void ConfigureCors(IServiceCollection services)
         {
             services.AddCors(options =>
@@ -70,8 +74,11 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// Configures rate limiting to prevent abuse
+        /// <summary>
+        /// Configures rate limiting to prevent abuse.
         /// </summary>
+        /// <param name="services">The service collection to configure.</param>
+        /// <param name="configuration">The application configuration.</param>
         private static void ConfigureRateLimit(IServiceCollection services, IConfiguration configuration)
         {
             services.AddMemoryCache();
@@ -83,8 +90,10 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// Configures JSON serialization options for security and consistency
+        /// <summary>
+        /// Configures JSON serialization options for security and consistency.
         /// </summary>
+        /// <param name="services">The service collection to configure.</param>
         private static void ConfigureJsonOptions(IServiceCollection services)
         {
             services.Configure<JsonOptions>(options =>
@@ -101,8 +110,10 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// Configures the MCP server with HTTP transport
+        /// <summary>
+        /// Configures the MCP server with HTTP transport.
         /// </summary>
+        /// <param name="services">The service collection to configure.</param>
         private static void ConfigureMcpServer(IServiceCollection services)
         {
             services.AddMcpServer()

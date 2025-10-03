@@ -84,6 +84,10 @@ namespace mcp_nexus.Health
             }
         }
 
+        /// <summary>
+        /// Gets the current memory usage of the application process.
+        /// </summary>
+        /// <returns>The memory usage in bytes, or 0 if unable to determine.</returns>
         private long GetMemoryUsage()
         {
             try
@@ -98,6 +102,10 @@ namespace mcp_nexus.Health
             }
         }
 
+        /// <summary>
+        /// Gets the current number of active sessions.
+        /// </summary>
+        /// <returns>The number of active sessions, or 0 if unable to determine.</returns>
         private int GetActiveSessionCount()
         {
             try
@@ -245,7 +253,8 @@ namespace mcp_nexus.Health
         }
 
         /// <summary>
-        /// Clears all issues
+        /// <summary>
+        /// Clears all issues.
         /// </summary>
         public void ClearIssues()
         {

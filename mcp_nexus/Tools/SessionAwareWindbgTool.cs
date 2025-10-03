@@ -395,6 +395,12 @@ namespace mcp_nexus.Tools
             return Task.FromResult(ExecuteCommandSync(sessionId, command));
         }
 
+        /// <summary>
+        /// Executes a command synchronously against the specified session.
+        /// </summary>
+        /// <param name="sessionId">The ID of the session to execute the command against.</param>
+        /// <param name="command">The command to execute.</param>
+        /// <returns>The result of the command execution.</returns>
         private object ExecuteCommandSync(string sessionId, string command)
         {
             try
@@ -477,6 +483,13 @@ namespace mcp_nexus.Tools
 
         #region Utility Methods
 
+        /// <summary>
+        /// Generates AI guidance based on command status and results.
+        /// </summary>
+        /// <param name="status">The current status of the command.</param>
+        /// <param name="commandId">The ID of the command.</param>
+        /// <param name="result">The result of the command execution.</param>
+        /// <returns>AI guidance information for the user.</returns>
         private AIGuidance GenerateStatusGuidance(string status, string commandId, string result)
         {
             return status switch

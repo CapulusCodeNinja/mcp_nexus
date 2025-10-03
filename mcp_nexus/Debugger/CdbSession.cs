@@ -85,6 +85,11 @@ namespace mcp_nexus.Debugger
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull
                 => m_InnerLogger.BeginScope(state);
 
+            /// <summary>
+            /// Determines if logging is enabled for the specified log level.
+            /// </summary>
+            /// <param name="logLevel">The log level to check.</param>
+            /// <returns><c>true</c> if logging is enabled for the specified level; otherwise, <c>false</c>.</returns>
             public bool IsEnabled(LogLevel logLevel)
                 => m_InnerLogger.IsEnabled(logLevel);
 
@@ -257,6 +262,10 @@ namespace mcp_nexus.Debugger
             });
         }
 
+        /// <summary>
+        /// Throws an ObjectDisposedException if this instance has been disposed.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
         private void ThrowIfDisposed()
         {
             if (m_disposed)
@@ -264,6 +273,10 @@ namespace mcp_nexus.Debugger
         }
 
         // Backward compatibility methods for tests
+        /// <summary>
+        /// Gets the current system architecture for backward compatibility with tests.
+        /// </summary>
+        /// <returns>A string representing the current architecture.</returns>
         private string GetCurrentArchitecture()
         {
             return m_config.GetCurrentArchitecture();
@@ -281,6 +294,11 @@ namespace mcp_nexus.Debugger
             }
         }
 
+        /// <summary>
+        /// Determines if a command line indicates command completion.
+        /// </summary>
+        /// <param name="line">The line to check for completion indicators.</param>
+        /// <returns><c>true</c> if the line indicates command completion; otherwise, <c>false</c>.</returns>
         private bool IsCommandComplete(string line)
         {
             return m_outputParser.IsCommandComplete(line);

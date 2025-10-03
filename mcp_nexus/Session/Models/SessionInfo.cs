@@ -128,7 +128,7 @@ namespace mcp_nexus.Session.Models
         #region IDisposable Implementation
 
         /// <summary>
-        /// Thread-safe disposal of session resources
+        /// Thread-safe disposal of session resources.
         /// </summary>
         public void Dispose()
         {

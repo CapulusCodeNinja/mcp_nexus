@@ -79,7 +79,7 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Determines the appropriate timeout for a command based on its complexity
+        /// Determines the appropriate timeout for a command based on its complexity.
         /// </summary>
         /// <param name="command">The command to analyze</param>
         /// <returns>The recommended timeout for the command</returns>

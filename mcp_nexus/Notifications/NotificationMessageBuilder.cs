@@ -22,7 +22,7 @@ namespace mcp_nexus.Notifications
         }
 
         /// <summary>
-        /// Sets the method for the notification
+        /// Sets the method name for the notification.
         /// </summary>
         /// <param name="method">Method name</param>
         /// <returns>Builder instance</returns>
@@ -33,7 +33,7 @@ namespace mcp_nexus.Notifications
         }
 
         /// <summary>
-        /// Sets the parameters for the notification
+        /// Sets the parameters for the notification.
         /// </summary>
         /// <param name="parameters">Parameters object</param>
         /// <returns>Builder instance</returns>
@@ -44,7 +44,7 @@ namespace mcp_nexus.Notifications
         }
 
         /// <summary>
-        /// Builds the notification message
+        /// Builds the notification message.
         /// </summary>
         /// <returns>McpNotification instance</returns>
         public McpNotification Build()
@@ -53,7 +53,7 @@ namespace mcp_nexus.Notifications
         }
 
         /// <summary>
-        /// Builds the notification message as JSON string
+        /// Builds the notification message as JSON.
         /// </summary>
         /// <returns>JSON string representation</returns>
         public string BuildJson()

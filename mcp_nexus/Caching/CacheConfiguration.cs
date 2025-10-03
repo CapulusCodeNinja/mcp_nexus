@@ -54,7 +54,7 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Determines if memory pressure cleanup should be triggered.
+        /// Determines if cache cleanup should be triggered based on current memory usage.
         /// </summary>
         /// <param name="currentMemoryUsage">The current memory usage in bytes.</param>
         /// <returns>
@@ -66,7 +66,7 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Calculates the target memory usage after cleanup.
+        /// Gets the target memory usage after cleanup operations.
         /// </summary>
         /// <returns>
         /// The target memory usage in bytes (60% of maximum memory).

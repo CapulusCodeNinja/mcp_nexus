@@ -303,6 +303,11 @@ namespace mcp_nexus
             await Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Parses command line arguments using System.CommandLine.
+        /// </summary>
+        /// <param name="args">The command line arguments to parse.</param>
+        /// <returns>A CommandLineArguments object containing the parsed values.</returns>
         private static CommandLineArguments ParseCommandLineArguments(string[] args)
         {
             var result = new CommandLineArguments();
@@ -351,6 +356,13 @@ namespace mcp_nexus
             return result;
         }
 
+        /// <summary>
+        /// <summary>
+        /// Logs the startup banner with application information and configuration details.
+        /// </summary>
+        /// <param name="args">The parsed command line arguments.</param>
+        /// <param name="host">The host address the application will bind to.</param>
+        /// <param name="port">The port number the application will listen on.</param>
         private static void LogStartupBanner(CommandLineArguments args, string host, int? port)
         {
             var logger = NLog.LogManager.GetCurrentClassLogger();
@@ -428,6 +440,13 @@ namespace mcp_nexus
             logger.Info("╚═══════════════════════════════════════════════════════════════════╝");
         }
 
+        /// <summary>
+        /// Formats a banner line with a label and value, truncating if necessary.
+        /// </summary>
+        /// <param name="label">The label for the banner line.</param>
+        /// <param name="value">The value to display.</param>
+        /// <param name="contentWidth">The maximum width for the content.</param>
+        /// <returns>A formatted banner line string.</returns>
         private static string FormatBannerLine(string label, string value, int contentWidth)
         {
             var content = $"{label,-12} {value}";
@@ -438,6 +457,13 @@ namespace mcp_nexus
             return $"* {content.PadRight(contentWidth)} *";
         }
 
+        /// <summary>
+        /// <summary>
+        /// Formats a centered banner line with the specified text.
+        /// </summary>
+        /// <param name="text">The text to center in the banner line.</param>
+        /// <param name="contentWidth">The maximum width for the content.</param>
+        /// <returns>A formatted centered banner line string.</returns>
         private static string FormatCenteredBannerLine(string text, int contentWidth)
         {
             if (text.Length > contentWidth)
@@ -452,6 +478,11 @@ namespace mcp_nexus
             return $"* {centeredContent} *";
         }
 
+        /// <summary>
+        /// Logs the current configuration settings for debugging purposes.
+        /// </summary>
+        /// <param name="configuration">The application configuration.</param>
+        /// <param name="commandLineArgs">The parsed command line arguments.</param>
         private static void LogConfigurationSettings(IConfiguration configuration, CommandLineArguments commandLineArgs)
         {
             var logger = NLog.LogManager.GetCurrentClassLogger();
@@ -552,6 +583,10 @@ namespace mcp_nexus
             logger.Info("");
         }
 
+        /// <summary>
+        /// Gets information about the CDB executable path for logging.
+        /// </summary>
+        /// <returns>A string describing the CDB path configuration.</returns>
         private static string GetCdbPathInfo()
         {
             try
@@ -571,6 +606,11 @@ namespace mcp_nexus
             }
         }
 
+        /// <summary>
+        /// Gets information about a configuration provider for logging.
+        /// </summary>
+        /// <param name="provider">The configuration provider to get information about.</param>
+        /// <returns>A string describing the configuration provider.</returns>
         private static string GetProviderInfo(IConfigurationProvider provider)
         {
             try
@@ -604,23 +644,78 @@ namespace mcp_nexus
             }
         }
 
+        /// <summary>
+        /// Represents parsed command line arguments for the MCP Nexus application.
+        /// </summary>
         private class CommandLineArguments
         {
+            /// <summary>
+            /// Gets or sets the custom path to the CDB.exe debugger executable.
+            /// </summary>
             public string? CustomCdbPath { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether to use HTTP transport instead of stdio.
+            /// </summary>
             public bool UseHttp { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether to run in Windows service mode (implies HTTP).
+            /// </summary>
             public bool ServiceMode { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether to install MCP Nexus as a Windows service.
+            /// </summary>
             public bool Install { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether to uninstall the MCP Nexus Windows service.
+            /// </summary>
             public bool Uninstall { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether to force uninstall the MCP Nexus service (removes registry entries).
+            /// </summary>
             public bool ForceUninstall { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether to update the MCP Nexus service (stop, update files, restart).
+            /// </summary>
             public bool Update { get; set; }
+
+            /// <summary>
+            /// Gets or sets the HTTP server port number.
+            /// </summary>
             public int? Port { get; set; }
+
+            /// <summary>
+            /// Gets or sets the HTTP server host binding address.
+            /// </summary>
             public string? Host { get; set; }
 
-            // Track original command line values for source reporting
+            /// <summary>
+            /// Gets or sets a value indicating whether the host was specified via command line (for source reporting).
+            /// </summary>
             public bool HostFromCommandLine { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether the port was specified via command line (for source reporting).
+            /// </summary>
             public bool PortFromCommandLine { get; set; }
         }
 
+        /// <summary>
+        /// Runs the MCP server in HTTP mode for web-based integration.
+        /// </summary>
+        /// <param name="args">The command line arguments.</param>
+        /// <param name="commandLineArgs">The parsed command line arguments.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <remarks>
+        /// In HTTP mode, the server runs as a web application accessible via HTTP endpoints.
+        /// This mode supports both regular HTTP operation and Windows service mode.
+        /// The server configuration is determined by appsettings files and command line overrides.
+        /// </remarks>
         private static async Task RunHttpServer(string[] args, CommandLineArguments commandLineArgs)
         {
             var logMessage = commandLineArgs.ServiceMode ?
@@ -685,6 +780,16 @@ namespace mcp_nexus
             await app.RunAsync();
         }
 
+        /// <summary>
+        /// Runs the MCP server in stdio mode for AI client integration.
+        /// </summary>
+        /// <param name="args">The command line arguments.</param>
+        /// <param name="commandLineArgs">The parsed command line arguments.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <remarks>
+        /// In stdio mode, the server communicates with AI clients through standard input/output streams.
+        /// All console output is redirected to stderr to avoid interfering with the MCP protocol on stdout.
+        /// </remarks>
         private static async Task RunStdioServer(string[] args, CommandLineArguments commandLineArgs)
         {
             // Configure UTF-8 encoding for all console streams (stdin, stdout, stderr)
@@ -733,6 +838,10 @@ namespace mcp_nexus
 
 
 
+        /// <summary>
+        /// Configures services for stdio mode operation.
+        /// </summary>
+        /// <param name="services">The service collection to configure.</param>
         private static void ConfigureStdioServices(IServiceCollection services)
         {
             Console.Error.WriteLine("Configuring MCP server for stdio...");
@@ -749,6 +858,10 @@ namespace mcp_nexus
             Console.Error.WriteLine("MCP server configured with stdio transport, tools, and resources from assembly");
         }
 
+        /// <summary>
+        /// Configures the HTTP request pipeline for web mode operation.
+        /// </summary>
+        /// <param name="app">The web application to configure.</param>
         private static void ConfigureHttpPipeline(WebApplication app)
         {
             Console.WriteLine("Configuring HTTP request pipeline...");
@@ -783,7 +896,8 @@ namespace mcp_nexus
         }
 
         /// <summary>
-        /// Determines if JSON-RPC debug logging should be enabled based on logging levels
+        /// <summary>
+        /// Determines if JSON-RPC debug logging should be enabled based on logging levels.
         /// </summary>
         private static bool ShouldEnableJsonRpcLogging(ILoggerFactory loggerFactory)
         {
@@ -793,7 +907,8 @@ namespace mcp_nexus
         }
 
         /// <summary>
-        /// Formats Server-Sent Events (SSE) response for better human readability in logs
+        /// <summary>
+        /// Formats Server-Sent Events (SSE) response for better human readability in logs.
         /// </summary>
         private static string FormatSseResponseForLogging(string sseResponse)
         {
@@ -830,7 +945,8 @@ namespace mcp_nexus
         }
 
         /// <summary>
-        /// Formats JSON string for better human readability in logs
+        /// <summary>
+        /// Formats JSON string for better human readability in logs.
         /// </summary>
         private static string FormatJsonForLogging(string json)
         {
@@ -858,7 +974,8 @@ namespace mcp_nexus
         }
 
         /// <summary>
-        /// Sets up global exception handlers to catch unhandled exceptions from all sources
+        /// <summary>
+        /// Sets up global exception handlers to catch unhandled exceptions from all sources.
         /// </summary>
         private static void SetupGlobalExceptionHandlers()
         {
@@ -888,7 +1005,8 @@ namespace mcp_nexus
         }
 
         /// <summary>
-        /// Logs fatal exceptions with comprehensive details
+        /// <summary>
+        /// Logs fatal exceptions with comprehensive details.
         /// </summary>
         private static void LogFatalException(Exception? ex, string source, bool isTerminating)
         {

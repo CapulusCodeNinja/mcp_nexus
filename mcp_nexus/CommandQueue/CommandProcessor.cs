@@ -295,8 +295,12 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Safely completes a command with the given result and state
+        /// <summary>
+        /// Safely completes a command with the given result and state.
         /// </summary>
+        /// <param name="command">The command to complete.</param>
+        /// <param name="result">The result of the command execution.</param>
+        /// <param name="state">The final state of the command.</param>
         private void CompleteCommandSafely(QueuedCommand command, string result, CommandState state)
         {
             try
@@ -326,8 +330,11 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Cancels a specific command by ID
+        /// <summary>
+        /// Cancels a specific command by ID.
         /// </summary>
+        /// <param name="commandId">The ID of the command to cancel.</param>
+        /// <returns><c>true</c> if the command was found and cancelled; otherwise, <c>false</c>.</returns>
         public bool CancelCommand(string commandId)
         {
             if (commandId == null)

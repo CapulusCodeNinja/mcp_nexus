@@ -271,7 +271,7 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Triggers cleanup of completed commands (for testing purposes)
+        /// Triggers cleanup of completed commands (for testing purposes).
         /// </summary>
         public void TriggerCleanup()
         {

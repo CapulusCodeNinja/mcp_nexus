@@ -92,6 +92,10 @@ namespace mcp_nexus.Health
             }
         }
 
+        /// <summary>
+        /// Checks the current memory health status.
+        /// </summary>
+        /// <returns>A MemoryHealth object containing memory usage information.</returns>
         private MemoryHealth CheckMemoryHealth()
         {
             try
@@ -123,6 +127,10 @@ namespace mcp_nexus.Health
             }
         }
 
+        /// <summary>
+        /// Checks the current CPU health status.
+        /// </summary>
+        /// <returns>A CpuHealth object containing CPU usage information.</returns>
         private CpuHealth CheckCpuHealth()
         {
             try
@@ -147,6 +155,10 @@ namespace mcp_nexus.Health
             }
         }
 
+        /// <summary>
+        /// Checks the current disk health status.
+        /// </summary>
+        /// <returns>A DiskHealth object containing disk usage information.</returns>
         private DiskHealth CheckDiskHealth()
         {
             try
@@ -179,6 +191,10 @@ namespace mcp_nexus.Health
             }
         }
 
+        /// <summary>
+        /// Checks the current thread health status.
+        /// </summary>
+        /// <returns>A ThreadHealth object containing thread count information.</returns>
         private ThreadHealth CheckThreadHealth()
         {
             try
@@ -200,6 +216,10 @@ namespace mcp_nexus.Health
             }
         }
 
+        /// <summary>
+        /// Checks the current garbage collection health status.
+        /// </summary>
+        /// <returns>A GcHealth object containing GC information.</returns>
         private GcHealth CheckGcHealth()
         {
             try
@@ -228,6 +248,10 @@ namespace mcp_nexus.Health
             }
         }
 
+        /// <summary>
+        /// Performs a comprehensive health check of all system components.
+        /// </summary>
+        /// <param name="state">The timer state (unused).</param>
         private void PerformHealthCheck(object? state)
         {
             if (m_disposed) return;

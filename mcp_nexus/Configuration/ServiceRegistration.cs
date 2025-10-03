@@ -37,8 +37,12 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// Registers core services (debugger, session management, etc.)
+        /// <summary>
+        /// Registers core services (debugger, session management, etc.).
         /// </summary>
+        /// <param name="services">The service collection to register services with.</param>
+        /// <param name="configuration">The application configuration.</param>
+        /// <param name="customCdbPath">Optional custom path to the CDB executable.</param>
         private static void RegisterCoreServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath)
         {
             // Get NLog logger for service registration
@@ -124,8 +128,10 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// Registers advanced services for performance and reliability
+        /// <summary>
+        /// Registers advanced services for performance and reliability.
         /// </summary>
+        /// <param name="services">The service collection to register services with.</param>
         private static void RegisterAdvancedServices(IServiceCollection services)
         {
             services.AddSingleton<mcp_nexus.Metrics.AdvancedMetricsService>();
@@ -145,8 +151,10 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// Registers recovery and timeout services
+        /// <summary>
+        /// Registers recovery and timeout services.
         /// </summary>
+        /// <param name="services">The service collection to register services with.</param>
         private static void RegisterRecoveryServices(IServiceCollection services)
         {
             services.AddSingleton<ICommandTimeoutService, CommandTimeoutService>();

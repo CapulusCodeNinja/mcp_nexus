@@ -36,6 +36,8 @@ namespace mcp_nexus.Infrastructure
 
         /// <summary>
         /// Adds an error message to the validation result and marks it as invalid.
+        /// <summary>
+        /// Adds an error message to the validation result.
         /// </summary>
         /// <param name="error">The error message to add.</param>
         public void AddError(string error)
@@ -46,6 +48,8 @@ namespace mcp_nexus.Infrastructure
 
         /// <summary>
         /// Adds a warning message to the validation result.
+        /// <summary>
+        /// Adds a warning message to the validation result.
         /// </summary>
         /// <param name="warning">The warning message to add.</param>
         public void AddWarning(string warning)
@@ -53,6 +57,8 @@ namespace mcp_nexus.Infrastructure
             Warnings.Add(warning);
         }
 
+        /// <summary>
+        /// Adds an informational message to the validation result.
         /// <summary>
         /// Adds an informational message to the validation result.
         /// </summary>

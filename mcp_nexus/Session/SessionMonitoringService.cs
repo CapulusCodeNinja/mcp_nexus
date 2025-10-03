@@ -229,6 +229,10 @@ namespace mcp_nexus.Session
         /// <summary>
         /// Gets the total queue size across all sessions
         /// </summary>
+        /// <summary>
+        /// Gets the total queue size across all sessions.
+        /// </summary>
+        /// <returns>The total number of queued commands across all sessions.</returns>
         private int GetTotalQueueSize()
         {
             try
@@ -247,6 +251,10 @@ namespace mcp_nexus.Session
         /// <summary>
         /// Gets the total number of active commands across all sessions
         /// </summary>
+        /// <summary>
+        /// Gets the total number of active commands across all sessions.
+        /// </summary>
+        /// <returns>The total number of currently executing commands.</returns>
         private int GetTotalActiveCommands()
         {
             try
@@ -356,7 +364,8 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// Disposes the monitoring service
+        /// <summary>
+        /// Disposes the monitoring service.
         /// </summary>
         public void Dispose()
         {

@@ -171,8 +171,10 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Updates the state of a command
+        /// Updates the state of a command.
         /// </summary>
+        /// <param name="commandId">The ID of the command to update.</param>
+        /// <param name="newState">The new state to set for the command.</param>
         private void UpdateCommandState(string commandId, CommandState newState)
         {
             try

@@ -73,6 +73,13 @@ namespace mcp_nexus.Resilience
             }, timeoutValue);
         }
 
+        /// <summary>
+        /// Gets an existing circuit breaker or creates a new one for the specified circuit name.
+        /// </summary>
+        /// <param name="circuitName">The name of the circuit breaker.</param>
+        /// <param name="failureThreshold">The number of failures before opening the circuit.</param>
+        /// <param name="recoveryTimeout">The timeout before attempting to close the circuit.</param>
+        /// <returns>The circuit breaker state for the specified circuit name.</returns>
         private CircuitBreakerState GetOrCreateCircuit(string circuitName, int failureThreshold, TimeSpan recoveryTimeout)
         {
             return m_circuits.GetOrAdd(circuitName, _ => new CircuitBreakerState
@@ -142,6 +149,10 @@ namespace mcp_nexus.Resilience
             }
         }
 
+        /// <summary>
+        /// Monitors all circuit breakers and performs periodic maintenance.
+        /// </summary>
+        /// <param name="state">The timer state (unused).</param>
         private void MonitorCircuits(object? state)
         {
             if (m_disposed) return;
@@ -171,6 +182,11 @@ namespace mcp_nexus.Resilience
             }
         }
 
+        /// <summary>
+        /// Gets the current status of a specific circuit breaker.
+        /// </summary>
+        /// <param name="circuitName">The name of the circuit breaker to check.</param>
+        /// <returns>The current status of the circuit breaker, or null if not found.</returns>
         public CircuitBreakerStatus GetCircuitStatus(string circuitName)
         {
             if (m_circuits.TryGetValue(circuitName, out var circuit))
@@ -209,7 +225,8 @@ namespace mcp_nexus.Resilience
         #region IDisposable Implementation
 
         /// <summary>
-        /// Disposes the circuit breaker service
+        /// <summary>
+        /// Disposes the circuit breaker service.
         /// </summary>
         public void Dispose()
         {

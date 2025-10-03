@@ -56,6 +56,10 @@ namespace mcp_nexus.Protocol
             await NotifyToolsChanged();
         }
 
+        /// <summary>
+        /// Creates the MCP tool schema for opening a dump analyze session.
+        /// </summary>
+        /// <returns>The MCP tool schema for the open dump analyze session tool.</returns>
         private static McpToolSchema CreateNexusOpenDumpAnalyzeSessionTool()
         {
             return new McpToolSchema
@@ -85,6 +89,10 @@ namespace mcp_nexus.Protocol
             };
         }
 
+        /// <summary>
+        /// Creates the MCP tool schema for closing a dump analyze session.
+        /// </summary>
+        /// <returns>The MCP tool schema for the close dump analyze session tool.</returns>
         private static McpToolSchema CreateNexusCloseDumpAnalyzeSessionTool()
         {
             return new McpToolSchema
@@ -109,6 +117,10 @@ namespace mcp_nexus.Protocol
             };
         }
 
+        /// <summary>
+        /// Creates the MCP tool schema for executing async commands in a dump analyze session.
+        /// </summary>
+        /// <returns>The MCP tool schema for the dump analyze session async command tool.</returns>
         private static McpToolSchema CreateNexusDumpAnalyzeSessionAsyncCommandTool()
         {
             return new McpToolSchema

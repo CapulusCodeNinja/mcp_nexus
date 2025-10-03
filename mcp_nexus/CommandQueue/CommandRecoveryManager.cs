@@ -182,8 +182,11 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Determines if recovery should be attempted for a given exception
+        /// <summary>
+        /// Determines if recovery should be attempted for a given exception.
         /// </summary>
+        /// <param name="ex">The exception to evaluate for recovery eligibility.</param>
+        /// <returns><c>true</c> if recovery should be attempted; otherwise, <c>false</c>.</returns>
         private static bool ShouldAttemptRecovery(Exception ex)
         {
             return ex is InvalidOperationException ||
@@ -245,7 +248,8 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Performs cleanup operations for the recovery manager
+        /// <summary>
+        /// Performs cleanup operations for the recovery manager.
         /// </summary>
         public void Cleanup()
         {

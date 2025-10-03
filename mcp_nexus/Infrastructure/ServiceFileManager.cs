@@ -429,6 +429,12 @@ namespace mcp_nexus.Infrastructure
         /// <param name="servicePath">The service directory path to validate.</param>
         /// <returns>
         /// <c>true</c> if the installation files are valid; otherwise, <c>false</c>.
+        /// <summary>
+        /// Validates that all required installation files are present and accessible.
+        /// </summary>
+        /// <param name="servicePath">The path to the service installation directory.</param>
+        /// <returns>
+        /// <c>true</c> if all required files are present and accessible; otherwise, <c>false</c>.
         /// </returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="servicePath"/> is null or empty.</exception>
         public bool ValidateInstallationFiles(string servicePath)
@@ -443,6 +449,12 @@ namespace mcp_nexus.Infrastructure
         /// <param name="backupPath">The backup directory path to get information for.</param>
         /// <returns>
         /// An object containing backup information including path, creation time, and size.
+        /// <summary>
+        /// Gets information about a backup directory.
+        /// </summary>
+        /// <param name="backupPath">The path to the backup directory.</param>
+        /// <returns>
+        /// An object containing backup information, or null if the backup doesn't exist.
         /// </returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="backupPath"/> is null or empty.</exception>
         public object GetBackupInfo(string backupPath)

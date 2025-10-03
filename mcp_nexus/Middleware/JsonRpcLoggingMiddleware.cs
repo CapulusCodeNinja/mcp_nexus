@@ -38,6 +38,11 @@ namespace mcp_nexus.Middleware
             }
         }
 
+        /// <summary>
+        /// Determines whether a request should be logged based on its context.
+        /// </summary>
+        /// <param name="context">The HTTP context of the request.</param>
+        /// <returns><c>true</c> if the request should be logged; otherwise, <c>false</c>.</returns>
         private static bool ShouldLogRequest(HttpContext context)
         {
             return context.Request.Path == "/" && context.Request.Method == "POST";
@@ -111,6 +116,11 @@ namespace mcp_nexus.Middleware
             }
         }
 
+        /// <summary>
+        /// Formats JSON for better readability in logs.
+        /// </summary>
+        /// <param name="json">The JSON string to format.</param>
+        /// <returns>A formatted JSON string.</returns>
         private static string FormatJsonForLogging(string json)
         {
             // Handle empty or whitespace-only responses
@@ -140,6 +150,11 @@ namespace mcp_nexus.Middleware
             }
         }
 
+        /// <summary>
+        /// Formats Server-Sent Events response for better readability in logs.
+        /// </summary>
+        /// <param name="sseResponse">The SSE response string to format.</param>
+        /// <returns>A formatted SSE response string.</returns>
         private static string FormatSseResponseForLogging(string sseResponse)
         {
             try
@@ -164,6 +179,13 @@ namespace mcp_nexus.Middleware
             }
         }
 
+        /// <summary>
+        /// Truncates large fields in a JSON element to prevent log overflow.
+        /// </summary>
+        /// <param name="element">The JSON element to process.</param>
+        /// <param name="maxFieldLength">The maximum length for field values.</param>
+        /// <param name="shouldTruncate">Whether to actually truncate the fields.</param>
+        /// <returns>A new JSON element with truncated fields.</returns>
         private static JsonElement TruncateLargeFields(JsonElement element, int maxFieldLength = 1000, bool shouldTruncate = true)
         {
             // If truncation is disabled, return the element as-is

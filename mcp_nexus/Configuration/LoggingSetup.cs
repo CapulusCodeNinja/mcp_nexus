@@ -29,8 +29,10 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// Logs the start of logging configuration
+        /// <summary>
+        /// Logs the start of logging configuration.
         /// </summary>
+        /// <param name="isServiceMode">Whether the application is running in service mode.</param>
         private static void LogConfigurationStart(bool isServiceMode)
         {
             var logMessage = "Configuring logging...";
@@ -57,8 +59,12 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// Configures NLog dynamically based on application settings
+        /// <summary>
+        /// Configures NLog dynamically based on application settings.
         /// </summary>
+        /// <param name="configuration">The application configuration.</param>
+        /// <param name="logLevel">The log level to configure.</param>
+        /// <param name="isServiceMode">Whether the application is running in service mode.</param>
         private static void ConfigureNLogDynamically(IConfiguration configuration, Microsoft.Extensions.Logging.LogLevel logLevel, bool isServiceMode)
         {
             var nlogConfig = LogManager.Configuration;
@@ -83,8 +89,11 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// Configures log paths based on service mode
+        /// <summary>
+        /// Configures log paths based on service mode.
         /// </summary>
+        /// <param name="nlogConfig">The NLog configuration to update.</param>
+        /// <param name="isServiceMode">Whether the application is running in service mode.</param>
         private static void ConfigureLogPaths(NLog.Config.LoggingConfiguration nlogConfig, bool isServiceMode)
         {
             string logDirectory;

@@ -29,16 +29,27 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Sends a command status notification (fire and forget)
+        /// <summary>
+        /// Sends a command status notification (fire and forget).
         /// </summary>
+        /// <param name="command">The command to notify about.</param>
+        /// <param name="status">The current status of the command.</param>
+        /// <param name="result">Optional result of the command execution.</param>
+        /// <param name="progress">Optional progress percentage (0-100).</param>
         public void NotifyCommandStatusFireAndForget(QueuedCommand command, string status, string? result = null, int progress = 0)
         {
             NotifyCommandStatusFireAndForget(command.Id ?? string.Empty, command.Command ?? string.Empty, status, result, progress);
         }
 
         /// <summary>
-        /// Sends a command status notification (fire and forget)
+        /// <summary>
+        /// Sends a command status notification (fire and forget).
         /// </summary>
+        /// <param name="commandId">The ID of the command to notify about.</param>
+        /// <param name="command">The command text.</param>
+        /// <param name="status">The current status of the command.</param>
+        /// <param name="result">Optional result of the command execution.</param>
+        /// <param name="progress">Optional progress percentage (0-100).</param>
         public void NotifyCommandStatusFireAndForget(string commandId, string command, string status, string? result = null, int progress = 0)
         {
             try
@@ -63,8 +74,11 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Sends a command heartbeat notification (fire and forget)
+        /// <summary>
+        /// Sends a command heartbeat notification (fire and forget).
         /// </summary>
+        /// <param name="command">The command to send heartbeat for.</param>
+        /// <param name="elapsed">The elapsed time since the command started.</param>
         public void NotifyCommandHeartbeatFireAndForget(QueuedCommand command, TimeSpan elapsed)
         {
             try
@@ -99,8 +113,12 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Creates a status message for a queued command
+        /// <summary>
+        /// Creates a status message for a queued command.
         /// </summary>
+        /// <param name="queuePosition">The position of the command in the queue.</param>
+        /// <param name="elapsed">The elapsed time since the command was queued.</param>
+        /// <returns>A formatted status message for the queued command.</returns>
         public string CreateQueuedStatusMessage(int queuePosition, TimeSpan elapsed)
         {
             var remainingMinutes = Math.Max(3, queuePosition * 2); // Estimate

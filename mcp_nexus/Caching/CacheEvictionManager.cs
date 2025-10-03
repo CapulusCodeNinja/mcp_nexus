@@ -65,6 +65,10 @@ namespace mcp_nexus.Caching
         /// This method identifies and removes entries that have exceeded their time-to-live.
         /// </summary>
         /// <returns>
+        /// <summary>
+        /// Removes expired entries from the cache.
+        /// </summary>
+        /// <returns>
         /// The number of entries removed.
         /// </returns>
         public int RemoveExpiredEntries()
@@ -116,6 +120,11 @@ namespace mcp_nexus.Caching
         /// </summary>
         /// <param name="targetMemoryBytes">The target memory usage in bytes.</param>
         /// <returns>
+        /// <summary>
+        /// Evicts the least recently used entries to free up memory.
+        /// </summary>
+        /// <param name="targetMemoryBytes">The target memory usage in bytes.</param>
+        /// <returns>
         /// The number of entries evicted.
         /// </returns>
         public int EvictLeastRecentlyUsed(long targetMemoryBytes)
@@ -164,6 +173,10 @@ namespace mcp_nexus.Caching
             return evictedCount;
         }
 
+        /// <summary>
+        /// Calculates the current memory usage of the cache.
+        /// </summary>
+        /// <returns>
         /// <summary>
         /// Calculates the current memory usage of the cache.
         /// </summary>

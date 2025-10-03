@@ -46,8 +46,10 @@ namespace mcp_nexus.CommandQueue
         public void SetCurrentCommand(QueuedCommand? command) => m_currentCommand = command;
 
         /// <summary>
-        /// Generates a unique command ID and increments the counter
+        /// <summary>
+        /// Generates a unique command ID and increments the counter.
         /// </summary>
+        /// <returns>A unique command ID string.</returns>
         public string GenerateCommandId()
         {
             var commandNumber = Interlocked.Increment(ref m_commandCounter);
@@ -55,16 +57,23 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Adds a command to the tracking dictionary
+        /// <summary>
+        /// Adds a command to the tracking dictionary.
         /// </summary>
+        /// <param name="commandId">The unique command ID.</param>
+        /// <param name="command">The command to track.</param>
+        /// <returns>True if the command was added successfully; otherwise, false.</returns>
         public bool TryAddCommand(string commandId, QueuedCommand command)
         {
             return m_activeCommands.TryAdd(commandId, command);
         }
 
         /// <summary>
-        /// Updates the state of an existing command in a thread-safe way
+        /// <summary>
+        /// Updates the state of an existing command in a thread-safe way.
         /// </summary>
+        /// <param name="commandId">The unique command ID.</param>
+        /// <param name="newState">The new state to set for the command.</param>
         public void UpdateState(string commandId, CommandState newState)
         {
             if (string.IsNullOrWhiteSpace(commandId)) return;
@@ -78,8 +87,12 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Removes a command from the tracking dictionary
+        /// <summary>
+        /// Removes a command from the tracking dictionary.
         /// </summary>
+        /// <param name="commandId">The unique command ID.</param>
+        /// <param name="command">The removed command, if found.</param>
+        /// <returns>True if the command was removed successfully; otherwise, false.</returns>
         public bool TryRemoveCommand(string commandId, out QueuedCommand? command)
         {
             return m_activeCommands.TryRemove(commandId, out command);
@@ -137,8 +150,11 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Gets the position of a command in the queue
+        /// <summary>
+        /// Gets the position of a command in the queue.
         /// </summary>
+        /// <param name="commandId">The unique command ID.</param>
+        /// <returns>The queue position of the command, or -1 if not found.</returns>
         public int GetQueuePosition(string commandId)
         {
             try
@@ -230,8 +246,11 @@ namespace mcp_nexus.CommandQueue
         public void IncrementCancelled() => Interlocked.Increment(ref m_cancelledCommands);
 
         /// <summary>
-        /// Cancels all commands with an optional reason
+        /// <summary>
+        /// Cancels all commands with an optional reason.
         /// </summary>
+        /// <param name="reason">The reason for cancellation.</param>
+        /// <returns>The number of commands that were cancelled.</returns>
         public int CancelAllCommands(string? reason = null)
         {
             var cancelledCount = 0;
@@ -265,6 +284,11 @@ namespace mcp_nexus.CommandQueue
             return cancelledCount;
         }
 
+        /// <summary>
+        /// Calculates the estimated remaining time for a command based on its queue position.
+        /// </summary>
+        /// <param name="queuePosition">The position of the command in the queue.</param>
+        /// <returns>An estimated time remaining for the command to be processed.</returns>
         private TimeSpan CalculateRemainingTime(int queuePosition)
         {
             if (queuePosition <= 0) return TimeSpan.Zero;
@@ -274,6 +298,11 @@ namespace mcp_nexus.CommandQueue
             return TimeSpan.FromMinutes(queuePosition * estimatedMinutesPerCommand);
         }
 
+        /// <summary>
+        /// Determines if a command is in a completed state.
+        /// </summary>
+        /// <param name="state">The command state to check.</param>
+        /// <returns><c>true</c> if the command is completed, failed, or cancelled; otherwise, <c>false</c>.</returns>
         private static bool IsCommandCompleted(CommandState state)
         {
             return state is CommandState.Completed or CommandState.Failed or CommandState.Cancelled;

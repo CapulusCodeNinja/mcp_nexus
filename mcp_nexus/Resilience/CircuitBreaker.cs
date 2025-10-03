@@ -90,6 +90,10 @@ namespace mcp_nexus.Resilience
             }, operationName);
         }
 
+        /// <summary>
+        /// Handles successful operation execution by updating circuit breaker state.
+        /// </summary>
+        /// <param name="operationName">The name of the operation that succeeded.</param>
         private void OnSuccess(string operationName)
         {
             // Use Interlocked for lock-free state updates
@@ -104,6 +108,11 @@ namespace mcp_nexus.Resilience
             Interlocked.Exchange(ref m_failureCount, 0);
         }
 
+        /// <summary>
+        /// Handles failed operation execution by updating circuit breaker state.
+        /// </summary>
+        /// <param name="operationName">The name of the operation that failed.</param>
+        /// <param name="exception">The exception that caused the failure.</param>
         private void OnFailure(string operationName, Exception exception)
         {
             // Use Interlocked for lock-free updates
@@ -121,11 +130,18 @@ namespace mcp_nexus.Resilience
             }
         }
 
+        /// <summary>
+        /// Gets the current state of the circuit breaker.
+        /// </summary>
+        /// <returns>The current circuit breaker state.</returns>
         public CircuitState GetState()
         {
             return (CircuitState)Interlocked.CompareExchange(ref m_state, m_state, m_state);
         }
 
+        /// <summary>
+        /// Resets the circuit breaker to the closed state.
+        /// </summary>
         public void Reset()
         {
             Interlocked.Exchange(ref m_failureCount, 0);
@@ -133,12 +149,19 @@ namespace mcp_nexus.Resilience
             m_logger.LogInformation("Circuit breaker manually reset");
         }
 
+        /// <summary>
+        /// Throws an ObjectDisposedException if this instance has been disposed.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
         private void ThrowIfDisposed()
         {
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CircuitBreaker));
         }
 
+        /// <summary>
+        /// Disposes of the circuit breaker resources.
+        /// </summary>
         public void Dispose()
         {
             if (!m_disposed)
@@ -149,16 +172,43 @@ namespace mcp_nexus.Resilience
         }
     }
 
+    /// <summary>
+    /// Represents the possible states of a circuit breaker.
+    /// </summary>
     public enum CircuitState
     {
-        Closed,    // Normal operation
-        Open,      // Failing fast
-        HalfOpen   // Testing if service is back
+        /// <summary>
+        /// Normal operation - all requests are allowed through.
+        /// </summary>
+        Closed,
+
+        /// <summary>
+        /// Failing fast - all requests are immediately rejected.
+        /// </summary>
+        Open,
+
+        /// <summary>
+        /// Testing if service is back - limited requests are allowed to test recovery.
+        /// </summary>
+        HalfOpen
     }
 
+    /// <summary>
+    /// Exception thrown when an operation is attempted while the circuit breaker is in the open state.
+    /// </summary>
     public class CircuitBreakerOpenException : Exception
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CircuitBreakerOpenException"/> class.
+        /// </summary>
+        /// <param name="message">The error message that explains the reason for the exception.</param>
         public CircuitBreakerOpenException(string message) : base(message) { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CircuitBreakerOpenException"/> class.
+        /// </summary>
+        /// <param name="message">The error message that explains the reason for the exception.</param>
+        /// <param name="innerException">The exception that is the cause of the current exception.</param>
         public CircuitBreakerOpenException(string message, Exception innerException) : base(message, innerException) { }
     }
 }

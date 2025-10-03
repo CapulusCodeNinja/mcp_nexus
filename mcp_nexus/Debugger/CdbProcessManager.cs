@@ -190,6 +190,15 @@ namespace mcp_nexus.Debugger
             }
         }
 
+        /// <summary>
+        /// Finds the CDB executable path using the configured settings.
+        /// </summary>
+        /// <returns>The path to the CDB executable.</returns>
+        /// <exception cref="FileNotFoundException">Thrown when the CDB executable cannot be found or accessed.</exception>
+        /// <remarks>
+        /// This method uses the CDB path that was resolved during service startup.
+        /// It performs validation to ensure the executable actually exists and is accessible.
+        /// </remarks>
         private string FindCdbExecutable()
         {
             m_logger.LogDebug("Searching for CDB executable...");
@@ -225,6 +234,17 @@ namespace mcp_nexus.Debugger
             }
         }
 
+        /// <summary>
+        /// Creates a ProcessStartInfo object for launching CDB with the specified target and configuration.
+        /// </summary>
+        /// <param name="cdbPath">The path to the CDB executable.</param>
+        /// <param name="target">The target for CDB (dump file path or command line arguments).</param>
+        /// <returns>A configured ProcessStartInfo object ready for process execution.</returns>
+        /// <remarks>
+        /// This method handles both dump file targets (prefixed with -z) and direct command line arguments.
+        /// It automatically includes symbol search paths from configuration and sets up proper UTF-8 encoding.
+        /// The working directory is set to the CDB executable directory to avoid path resolution issues.
+        /// </remarks>
         private ProcessStartInfo CreateProcessStartInfo(string cdbPath, string target)
         {
             // If target already contains flags, use as-is; otherwise treat as dump path
@@ -248,6 +268,16 @@ namespace mcp_nexus.Debugger
             return startInfo;
         }
 
+        /// <summary>
+        /// Internal method to start the CDB process with the specified configuration.
+        /// </summary>
+        /// <param name="processInfo">The process start information for CDB.</param>
+        /// <param name="target">The target description for logging purposes.</param>
+        /// <returns><c>true</c> if the process started successfully; otherwise, <c>false</c>.</returns>
+        /// <remarks>
+        /// This method handles the actual process creation and stream setup.
+        /// It configures large buffer sizes for output streams to improve performance.
+        /// </remarks>
         private bool StartProcessInternal(ProcessStartInfo processInfo, string target)
         {
             m_logger.LogDebug("Starting CDB process...");
@@ -318,6 +348,14 @@ namespace mcp_nexus.Debugger
             return true;
         }
 
+        /// <summary>
+        /// Internal method to stop the CDB process and clean up resources.
+        /// </summary>
+        /// <returns><c>true</c> if the process was stopped successfully; otherwise, <c>false</c>.</returns>
+        /// <remarks>
+        /// This method handles graceful shutdown of the CDB process and cleanup of associated resources.
+        /// It attempts to close the process gracefully before forcing termination if necessary.
+        /// </remarks>
         private bool StopProcessInternal()
         {
             if (!m_isActive || m_debuggerProcess == null)
@@ -368,6 +406,13 @@ namespace mcp_nexus.Debugger
             }
         }
 
+        /// <summary>
+        /// Cleans up all resources associated with the CDB process.
+        /// </summary>
+        /// <remarks>
+        /// This method disposes of all streams and the process object.
+        /// It should be called when the process is no longer needed or during disposal.
+        /// </remarks>
         private void CleanupResources()
         {
             var wasActive = m_isActive;
@@ -398,6 +443,19 @@ namespace mcp_nexus.Debugger
             }
         }
 
+        /// <summary>
+        /// Gets the command line arguments for a running process by its process ID.
+        /// </summary>
+        /// <param name="processId">The process ID to get command line arguments for.</param>
+        /// <returns>
+        /// The command line arguments of the process if successful; otherwise, <c>null</c>.
+        /// Returns <c>null</c> on non-Windows platforms or if the process cannot be accessed.
+        /// </returns>
+        /// <remarks>
+        /// This method is Windows-specific and will return <c>null</c> on other platforms.
+        /// The method handles exceptions gracefully and returns <c>null</c> if the process
+        /// cannot be found or accessed.
+        /// </remarks>
         private static string? GetProcessCommandLine(int processId)
         {
             try
@@ -414,6 +472,10 @@ namespace mcp_nexus.Debugger
             }
         }
 
+        /// <summary>
+        /// Throws an ObjectDisposedException if this instance has been disposed.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
         private void ThrowIfDisposed()
         {
             if (m_disposed)

@@ -81,7 +81,8 @@ namespace mcp_nexus.Caching
         #region Public Methods
 
         /// <summary>
-        /// Updates the last accessed time and increments access count
+        /// <summary>
+        /// Updates the last accessed time and increments access count.
         /// </summary>
         public void UpdateAccess()
         {
@@ -102,6 +103,8 @@ namespace mcp_nexus.Caching
 
         /// <summary>
         /// Checks if the entry is expired
+        /// <summary>
+        /// Determines if the cache entry has expired.
         /// </summary>
         /// <returns>True if expired</returns>
         public bool IsExpired()

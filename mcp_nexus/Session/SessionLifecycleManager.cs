@@ -343,8 +343,11 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// Creates a logger for a specific session
+        /// <summary>
+        /// Creates a logger for a specific session.
         /// </summary>
+        /// <param name="sessionId">The session ID to create a logger for.</param>
+        /// <returns>A logger instance configured for the session.</returns>
         private ILogger CreateSessionLogger(string sessionId)
         {
             // Create a scoped logger with session context
@@ -353,8 +356,11 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// Creates a CDB session for debugging
+        /// Creates a CDB session for debugging.
         /// </summary>
+        /// <param name="sessionLogger">The logger for the session.</param>
+        /// <param name="sessionId">The session ID.</param>
+        /// <returns>A configured CDB session instance.</returns>
         private ICdbSession CreateCdbSession(ILogger sessionLogger, string sessionId)
         {
             // Diagnostic logging to see what CDB path is actually being used
@@ -374,8 +380,12 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// Creates a command queue for the session
+        /// Creates a command queue for the session.
         /// </summary>
+        /// <param name="cdbSession">The CDB session instance.</param>
+        /// <param name="sessionLogger">The logger for the session.</param>
+        /// <param name="sessionId">The session ID.</param>
+        /// <returns>A configured command queue service instance.</returns>
         private ICommandQueueService CreateCommandQueue(ICdbSession cdbSession, ILogger sessionLogger, string sessionId)
         {
             return new IsolatedCommandQueueService(
@@ -405,8 +415,11 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// Creates a session context for notifications
+        /// <summary>
+        /// Creates a session context for notifications.
         /// </summary>
+        /// <param name="sessionInfo">The session information.</param>
+        /// <returns>A session context for notifications.</returns>
         private SessionContext GetSessionContext(SessionInfo sessionInfo)
         {
             if (sessionInfo == null)

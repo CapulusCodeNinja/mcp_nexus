@@ -45,9 +45,9 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Logs the end of an operation with success or failure status.
+        /// Logs the end of an operation.
         /// </summary>
-        /// <param name="operation">The name of the operation being ended.</param>
+        /// <param name="operation">The name of the operation that ended.</param>
         /// <param name="success">Whether the operation completed successfully.</param>
         /// <param name="result">Optional result message. Default is empty string.</param>
         public void LogOperationEnd(string operation, bool success, string result = "")
@@ -67,6 +67,9 @@ namespace mcp_nexus.Infrastructure
 
         /// <summary>
         /// Logs an error that occurred during an operation.
+        /// </summary>
+        /// <summary>
+        /// Logs an operation error.
         /// </summary>
         /// <param name="operation">The name of the operation that failed.</param>
         /// <param name="exception">The exception that occurred.</param>

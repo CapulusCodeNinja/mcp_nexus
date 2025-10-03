@@ -173,6 +173,9 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Validates all registered services for basic configuration issues.
+        /// </summary>
         private void ValidateServices()
         {
             foreach (var service in m_Services)
@@ -199,6 +202,9 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Validates that there are no circular dependencies in the service registrations.
+        /// </summary>
         private void ValidateCircularDependencies()
         {
             var visited = new HashSet<Type>();

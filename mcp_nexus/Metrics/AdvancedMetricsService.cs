@@ -161,6 +161,10 @@ namespace mcp_nexus.Metrics
 
         #region Private Methods
 
+        /// <summary>
+        /// Collects and logs current metrics.
+        /// </summary>
+        /// <param name="state">The timer state (unused).</param>
         private void CollectMetrics(object? state)
         {
             if (m_disposed) return;
@@ -176,6 +180,10 @@ namespace mcp_nexus.Metrics
             }
         }
 
+        /// <summary>
+        /// Logs a summary of the current metrics snapshot.
+        /// </summary>
+        /// <param name="snapshot">The metrics snapshot to log.</param>
         private void LogMetricsSummary(AdvancedMetricsSnapshot snapshot)
         {
             m_logger.LogInformation("📊 METRICS SUMMARY - {Timestamp}", snapshot.Timestamp);

@@ -21,7 +21,7 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Creates a command info instance for a queued command
+        /// Creates a CommandInfo instance from a QueuedCommand.
         /// </summary>
         /// <param name="queuedCommand">Queued command to create info for</param>
         /// <param name="queuePosition">Queue position</param>
