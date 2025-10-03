@@ -232,7 +232,7 @@ namespace mcp_nexus_tests.Configuration
 
                 // Act & Assert
                 var exception = Record.Exception(() =>
-                    configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Debug }));
+                    configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Debug, false }));
                 Assert.Null(exception);
             }
             finally
@@ -256,7 +256,7 @@ namespace mcp_nexus_tests.Configuration
 
                 // Act & Assert
                 var exception = Record.Exception(() =>
-                    configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Information }));
+                    configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Information, false }));
                 Assert.Null(exception);
             }
             finally
@@ -644,7 +644,7 @@ namespace mcp_nexus_tests.Configuration
 
                 // Act & Assert
                 var exception = Record.Exception(() =>
-                    configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Information }));
+                    configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Information, false }));
                 Assert.Null(exception);
             }
             finally
@@ -671,7 +671,7 @@ namespace mcp_nexus_tests.Configuration
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
                 // Act
-                configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Warning });
+                configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Warning, false });
 
                 // Assert - The rule should have been updated (we can't easily verify the internal state)
                 // but we can verify no exception was thrown
@@ -813,6 +813,121 @@ namespace mcp_nexus_tests.Configuration
 
             // Assert
             Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Error, result);
+        }
+
+        [Fact]
+        public void ConfigureLogPaths_WithServiceMode_UsesProgramData()
+        {
+            // Arrange
+            var nlogConfig = new LoggingConfiguration();
+            var fileTarget = new NLog.Targets.FileTarget("mainFile")
+            {
+                FileName = "original-path.log",
+                ArchiveFileName = "original-archive.log"
+            };
+            nlogConfig.AddTarget(fileTarget);
+            nlogConfig.AddRule(NLog.LogLevel.Info, NLog.LogLevel.Fatal, fileTarget);
+
+            var configureLogPathsMethod = typeof(LoggingSetup).GetMethod("ConfigureLogPaths",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            configureLogPathsMethod!.Invoke(null, new object[] { nlogConfig, true });
+
+            // Assert
+            var programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            var expectedLogDir = Path.Combine(programDataPath, "MCP-Nexus", "Logs");
+            var expectedLogFile = Path.Combine(expectedLogDir, "mcp-nexus.log");
+
+            Assert.Equal(expectedLogFile, fileTarget.FileName.ToString());
+            // Note: ArchiveFileName is configured in nlog.config and not modified dynamically
+            // Note: InternalLogFile is set through LogManager.Configuration.Variables, not directly on the config object
+        }
+
+        [Fact]
+        public void ConfigureLogPaths_WithNonServiceMode_UsesApplicationDirectory()
+        {
+            // Arrange
+            var nlogConfig = new LoggingConfiguration();
+            var fileTarget = new NLog.Targets.FileTarget("mainFile")
+            {
+                FileName = "original-path.log",
+                ArchiveFileName = "original-archive.log"
+            };
+            nlogConfig.AddTarget(fileTarget);
+            nlogConfig.AddRule(NLog.LogLevel.Info, NLog.LogLevel.Fatal, fileTarget);
+
+            var configureLogPathsMethod = typeof(LoggingSetup).GetMethod("ConfigureLogPaths",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            configureLogPathsMethod!.Invoke(null, new object[] { nlogConfig, false });
+
+            // Assert
+            var appDir = AppDomain.CurrentDomain.BaseDirectory;
+            var expectedLogDir = Path.Combine(appDir, "logs");
+            var expectedLogFile = Path.Combine(expectedLogDir, "mcp-nexus.log");
+
+            Assert.Equal(expectedLogFile, fileTarget.FileName.ToString());
+            // Note: ArchiveFileName is configured in nlog.config and not modified dynamically
+            // Note: InternalLogFile is set through LogManager.Configuration.Variables, not directly on the config object
+        }
+
+        [Fact]
+        public void ConfigureLogPaths_WithMultipleFileTargets_OnlyUpdatesMainFileTarget()
+        {
+            // Arrange
+            var nlogConfig = new LoggingConfiguration();
+            var mainFileTarget = new NLog.Targets.FileTarget("mainFile")
+            {
+                FileName = "main-original.log",
+                ArchiveFileName = "main-archive.log"
+            };
+            var otherFileTarget = new NLog.Targets.FileTarget("otherFile")
+            {
+                FileName = "other-original.log",
+                ArchiveFileName = "other-archive.log"
+            };
+            nlogConfig.AddTarget(mainFileTarget);
+            nlogConfig.AddTarget(otherFileTarget);
+            nlogConfig.AddRule(NLog.LogLevel.Info, NLog.LogLevel.Fatal, mainFileTarget);
+            nlogConfig.AddRule(NLog.LogLevel.Debug, NLog.LogLevel.Fatal, otherFileTarget);
+
+            var configureLogPathsMethod = typeof(LoggingSetup).GetMethod("ConfigureLogPaths",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            configureLogPathsMethod!.Invoke(null, new object[] { nlogConfig, true });
+
+            // Assert
+            var programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            var expectedLogDir = Path.Combine(programDataPath, "MCP-Nexus", "Logs");
+            var expectedLogFile = Path.Combine(expectedLogDir, "mcp-nexus.log");
+
+            // Main file target should be updated
+            Assert.Equal(expectedLogFile, mainFileTarget.FileName.ToString());
+            // Note: ArchiveFileName is configured in nlog.config and not modified dynamically
+
+            // Other file target should remain unchanged
+            Assert.Equal("other-original.log", otherFileTarget.FileName.ToString());
+            Assert.Equal("other-archive.log", otherFileTarget.ArchiveFileName.ToString());
+        }
+
+        [Fact]
+        public void ConfigureLogPaths_WithNoFileTargets_DoesNotThrow()
+        {
+            // Arrange
+            var nlogConfig = new LoggingConfiguration();
+            // No file targets added
+
+            var configureLogPathsMethod = typeof(LoggingSetup).GetMethod("ConfigureLogPaths",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act & Assert
+            var exception = Record.Exception(() => 
+                configureLogPathsMethod!.Invoke(null, new object[] { nlogConfig, true }));
+            
+            Assert.Null(exception);
         }
     }
 }

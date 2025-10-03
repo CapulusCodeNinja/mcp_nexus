@@ -1,5 +1,7 @@
 using NLog.Web;
 using NLog;
+using System.IO;
+using System.Linq;
 
 namespace mcp_nexus.Configuration
 {
@@ -16,7 +18,7 @@ namespace mcp_nexus.Configuration
             LogConfigurationStart(isServiceMode);
 
             var logLevel = GetLogLevelFromConfiguration(configuration);
-            ConfigureNLogDynamically(configuration, logLevel);
+            ConfigureNLogDynamically(configuration, logLevel, isServiceMode);
             ConfigureMicrosoftLogging(logging, logLevel);
 
             LogConfigurationComplete(isServiceMode, logLevel);
@@ -53,17 +55,109 @@ namespace mcp_nexus.Configuration
         /// <summary>
         /// Configures NLog dynamically based on application settings
         /// </summary>
-        private static void ConfigureNLogDynamically(IConfiguration configuration, Microsoft.Extensions.Logging.LogLevel logLevel)
+        private static void ConfigureNLogDynamically(IConfiguration configuration, Microsoft.Extensions.Logging.LogLevel logLevel, bool isServiceMode)
         {
             var nlogConfig = LogManager.Configuration;
             if (nlogConfig != null)
             {
                 var nlogLevel = GetNLogLevel(logLevel);
+                
+                // Configure log paths based on service mode
+                ConfigureLogPaths(nlogConfig, isServiceMode);
+                
                 foreach (var rule in nlogConfig.LoggingRules)
                 {
                     rule.SetLoggingLevels(nlogLevel, NLog.LogLevel.Fatal);
                 }
+                
+                // Apply the configuration
                 LogManager.Configuration = nlogConfig;
+                
+                // Set internal log file path after configuration is applied
+                SetInternalLogFile(isServiceMode);
+            }
+        }
+
+        /// <summary>
+        /// Configures log paths based on service mode
+        /// </summary>
+        private static void ConfigureLogPaths(NLog.Config.LoggingConfiguration nlogConfig, bool isServiceMode)
+        {
+            string logDirectory;
+            string internalLogFile;
+            
+            if (isServiceMode)
+            {
+                // Use ProgramData for service mode
+                var programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                logDirectory = Path.Combine(programDataPath, "MCP-Nexus", "Logs");
+                internalLogFile = Path.Combine(logDirectory, "mcp-nexus-internal.log");
+                
+                // Ensure ProgramData directories exist
+                try
+                {
+                    Directory.CreateDirectory(logDirectory);
+                    Directory.CreateDirectory(Path.Combine(logDirectory, "archive"));
+                }
+                catch (Exception)
+                {
+                    // If directory creation fails, continue - NLog will handle it
+                }
+            }
+            else
+            {
+                // Use application directory for non-service mode
+                logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+                internalLogFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp-nexus-internal.log");
+            }
+
+            // Update internal log file path - this needs to be set before applying the configuration
+            // We'll set it through the LogManager after the configuration is applied
+
+            // Update file target paths
+            foreach (var target in nlogConfig.AllTargets.OfType<NLog.Targets.FileTarget>())
+            {
+                if (target.Name == "mainFile")
+                {
+                    // Update main log file path
+                    target.FileName = Path.Combine(logDirectory, "mcp-nexus.log");
+                    // Update archive path to use the new log directory
+                    target.ArchiveFileName = Path.Combine(logDirectory, "archive", "mcp-nexus-${shortdate}-{##}.log");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the internal log file path based on service mode
+        /// </summary>
+        private static void SetInternalLogFile(bool isServiceMode)
+        {
+            try
+            {
+                string internalLogFile;
+                
+                if (isServiceMode)
+                {
+                    // Use ProgramData for service mode
+                    var programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                    internalLogFile = Path.Combine(programDataPath, "MCP-Nexus", "Logs", "mcp-nexus-internal.log");
+                }
+                else
+                {
+                    // Use application directory for non-service mode
+                    internalLogFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp-nexus-internal.log");
+                }
+
+                // Set the internal log file through LogManager
+                if (LogManager.Configuration != null)
+                {
+                    LogManager.Configuration.Variables["internalLogFile"] = internalLogFile;
+                }
+            }
+            catch (Exception)
+            {
+                // If setting internal log file fails, continue without it
+                // This is not critical for the application to function
             }
         }
 
