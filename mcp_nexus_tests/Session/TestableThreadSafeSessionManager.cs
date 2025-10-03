@@ -19,6 +19,7 @@ namespace mcp_nexus_tests.Session
         private readonly Mock<ICommandQueueService> _mockCommandQueue;
         private readonly Dictionary<string, SessionInfo> _mockSessionInfos = new();
         private readonly Dictionary<string, SessionContext> _mockSessionContexts = new();
+        private readonly SessionManagerConfiguration _config;
         private int _sessionCounter = 0;
 
         public TestableThreadSafeSessionManager(
@@ -30,6 +31,7 @@ namespace mcp_nexus_tests.Session
             IOptions<CdbSessionOptions>? cdbOptions = null)
             : base(logger, serviceProvider, loggerFactory, notificationService, config, cdbOptions)
         {
+            _config = new SessionManagerConfiguration(config ?? Options.Create(new SessionConfiguration()), cdbOptions ?? Options.Create(new CdbSessionOptions()));
             _mockCdbSession = new Mock<ICdbSession>();
             _mockCommandQueue = new Mock<ICommandQueueService>();
 
@@ -56,6 +58,12 @@ namespace mcp_nexus_tests.Session
 
             if (string.IsNullOrWhiteSpace(dumpPath))
                 throw new ArgumentException("Dump path cannot be empty", nameof(dumpPath));
+
+            // Check session count limits (same as base class)
+            if (_config.WouldExceedSessionLimit(_mockSessionInfos.Count))
+            {
+                throw new SessionLimitExceededException(_mockSessionInfos.Count, _config.Config.MaxConcurrentSessions);
+            }
 
             // Generate session ID
             var sessionNumber = Interlocked.Increment(ref _sessionCounter);
@@ -100,9 +108,13 @@ namespace mcp_nexus_tests.Session
                 throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
 
             if (_mockSessionContexts.TryGetValue(sessionId, out var context))
+            {
+                if (context.Status == "Disposed")
+                    throw new SessionNotFoundException(sessionId, "Session has been disposed");
                 return context;
+            }
 
-            throw new InvalidOperationException($"Session {sessionId} not found");
+            throw new SessionNotFoundException(sessionId);
         }
 
         /// <summary>
@@ -164,6 +176,12 @@ namespace mcp_nexus_tests.Session
                 context.LastActivity = DateTime.UtcNow;
             }
         }
+
+        /// <summary>
+        /// Override to work with mock sessions
+        /// </summary>
+        // Note: TryGetCommandQueue is not virtual, so we can't override it
+        // The test will need to work with the base implementation
 
         public Mock<ICdbSession> MockCdbSession => _mockCdbSession;
         public Mock<ICommandQueueService> MockCommandQueue => _mockCommandQueue;
