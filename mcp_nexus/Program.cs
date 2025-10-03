@@ -297,7 +297,7 @@ namespace mcp_nexus
             Console.WriteLine("NOTES:");
             Console.WriteLine("  - Service commands require administrator privileges on Windows");
             Console.WriteLine("  - Updates create backups in: C:\\Program Files\\MCP-Nexus\\backups\\[timestamp]");
-            Console.WriteLine("  - HTTP mode runs on localhost:5000/mcp (or custom port if specified)");
+            Console.WriteLine("  - HTTP mode runs on localhost:5000/ (or custom port if specified)");
             Console.WriteLine();
             Console.WriteLine("For more information, visit: https://github.com/your-repo/mcp_nexus");
             await Task.CompletedTask;

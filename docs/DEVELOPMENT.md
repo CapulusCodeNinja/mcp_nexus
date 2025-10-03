@@ -357,6 +357,33 @@ dotnet test
 dotnet run --project mcp_nexus/mcp_nexus.csproj
 ```
 
+### Port Configuration
+
+**Default Ports:**
+- **Development Mode**: `5117` (when `ASPNETCORE_ENVIRONMENT=Development`)
+- **Production Mode**: `5000` (default HTTP port)
+- **Service Mode**: `5511` (Windows service default)
+
+**HTTP Endpoint:**
+- **Base URL**: `http://localhost:<PORT>/` (root path, not `/mcp`)
+- **MCP Protocol**: JSON-RPC over HTTP at the root endpoint
+
+**Command Line Options:**
+```bash
+# Use default port for current mode
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http
+
+# Use custom port
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http --port 8080
+
+# Install service with custom port
+dotnet run --project mcp_nexus/mcp_nexus.csproj -- --install --port 9000
+```
+
+**Log Directory Locations:**
+- **Service Mode**: `C:\ProgramData\MCP-Nexus\Logs\` (automatic creation)
+- **Interactive Mode**: `.\logs\` (relative to application directory)
+
 ### Production Deployment
 
 ```bash

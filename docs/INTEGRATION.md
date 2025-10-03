@@ -144,8 +144,7 @@ First, I'll open the crash dump session and then run the standard analysis comma
 ### HTTP Transport
 
 **Protocol**: JSON-RPC over HTTP
-**Endpoint**: `http://localhost:5000/mcp`
-**Notifications**: Server-Sent Events (SSE) at `/mcp/notifications`
+**Endpoint**: `http://localhost:5000/` (root path)`
 **Use Case**: Web integration, development, debugging
 
 **Advantages**:
@@ -164,12 +163,18 @@ First, I'll open the crash dump session and then run the standard analysis comma
 {
   "servers": {
     "mcp-nexus-http": {
-      "url": "http://localhost:5000/mcp",
+      "url": "http://localhost:5000/",
       "type": "http"
     }
   }
 }
 ```
+
+**Port Configuration**:
+- **Development**: `http://localhost:5117/`
+- **Production**: `http://localhost:5000/`
+- **Service Mode**: `http://localhost:5511/`
+- **Custom Port**: `http://localhost:<PORT>/`
 
 ## 📡 Real-Time Notifications
 
@@ -490,6 +495,17 @@ Would you like me to save this report or analyze any specific aspects further?
 ```
 
 ## 🚨 Troubleshooting Integration Issues
+
+### Log Locations
+
+**Service Mode (Windows Service):**
+- **Main Logs**: `C:\ProgramData\MCP-Nexus\Logs\`
+- **Internal Logs**: `C:\ProgramData\MCP-Nexus\Logs\mcp-nexus-internal.log`
+- **Archive**: `C:\ProgramData\MCP-Nexus\Logs\archive\`
+
+**Interactive Mode:**
+- **Main Logs**: `.\logs\` (relative to application directory)
+- **Internal Logs**: `.\mcp-nexus-internal.log`
 
 ### Common Issues
 

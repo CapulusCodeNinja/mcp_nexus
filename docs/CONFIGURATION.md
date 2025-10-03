@@ -14,6 +14,19 @@
 
 ## Logging Configuration
 
+### Log Directory Locations
+
+**Service Mode (Windows Service):**
+- **Main Logs**: `C:\ProgramData\MCP-Nexus\Logs\`
+- **Internal Logs**: `C:\ProgramData\MCP-Nexus\Logs\mcp-nexus-internal.log`
+- **Archive**: `C:\ProgramData\MCP-Nexus\Logs\archive\`
+- **Auto-Creation**: Directories are created automatically during service startup
+
+**Interactive Mode (Development/Production):**
+- **Main Logs**: `.\logs\` (relative to application directory)
+- **Internal Logs**: `.\mcp-nexus-internal.log`
+- **Archive**: `.\logs\archive\`
+
 ### Single LogLevel Setting
 
 The logging system uses a simplified single `LogLevel` setting:
@@ -52,6 +65,17 @@ The logging system uses a simplified single `LogLevel` setting:
   }
 }
 ```
+
+**Default Ports by Mode:**
+- **Development Mode**: `5117` (when `ASPNETCORE_ENVIRONMENT=Development`)
+- **Production Mode**: `5000` (default HTTP port)
+- **Service Mode**: `5511` (Windows service default)
+- **Configuration Override**: Any port specified in `McpNexus:Server:Port`
+- **Command Line Override**: `--port <PORT>` option
+
+**HTTP Endpoint:**
+- **Base URL**: `http://localhost:<PORT>/` (root path, not `/mcp`)
+- **MCP Protocol**: JSON-RPC over HTTP at the root endpoint
 
 ### Transport Configuration
 
@@ -158,7 +182,7 @@ Windows symbol path format with multiple sources:
     "ClientIdHeader": "X-ClientId",         // Header for client identification
     "GeneralRules": [
       {
-        "Endpoint": "*:/mcp",               // Endpoint pattern (all MCP endpoints)
+        "Endpoint": "*:/",                  // Endpoint pattern (all MCP endpoints)
         "Period": "1m",                     // Time period for rate limiting
         "Limit": 100                        // Maximum requests per period
       }
@@ -184,6 +208,7 @@ Windows symbol path format with multiple sources:
 - **LogLevel**: `"Information"` (optimized for service logging)
 - **ServiceMode**: `true` (Windows service mode)
 - **StartupDelayMs**: `1000` (reduced startup delay)
+- **Log Directory**: `C:\ProgramData\MCP-Nexus\Logs\` (automatic directory creation)
 
 ## Configuration Validation
 
@@ -213,11 +238,16 @@ ArgumentException: Invalid log level 'InvalidLevel'. Valid values are: Trace, De
   "McpNexus": {
     "Server": {
       "Host": "127.0.0.1",
-      "Port": 5511
+      "Port": 5000
     }
   }
 }
 ```
+
+**Usage:**
+- **Development**: `dotnet run -- --http` (uses port 5117)
+- **Production**: `dotnet run -- --http` (uses port 5000)
+- **Custom Port**: `dotnet run -- --http --port 8080`
 
 ### High-Performance Configuration
 ```json
@@ -228,7 +258,7 @@ ArgumentException: Invalid log level 'InvalidLevel'. Valid values are: Trace, De
   "McpNexus": {
     "Server": {
       "Host": "0.0.0.0",
-      "Port": 5511
+      "Port": 5000
     },
     "SessionManagement": {
       "MaxConcurrentSessions": 5000,
@@ -248,7 +278,7 @@ ArgumentException: Invalid log level 'InvalidLevel'. Valid values are: Trace, De
   "McpNexus": {
     "Server": {
       "Host": "127.0.0.1",
-      "Port": 5511
+      "Port": 5117
     },
     "Transport": {
       "Mode": "http",
