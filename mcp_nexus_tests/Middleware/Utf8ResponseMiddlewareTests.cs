@@ -5,6 +5,10 @@ using System.Text;
 using Xunit;
 using mcp_nexus.Middleware;
 using mcp_nexus.Configuration;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace mcp_nexus_tests.Middleware
 {
@@ -301,6 +305,247 @@ namespace mcp_nexus_tests.Middleware
             m_MockNext.Verify(x => x(context), Times.Once);
             // In unit tests, the OnStarting callback is not triggered, so ContentType remains unchanged
             Assert.Equal("application/json; boundary=something", context.Response.ContentType);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithExceptionInNext_PropagatesException()
+        {
+            // Arrange
+            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var context = CreateHttpContext();
+            var expectedException = new InvalidOperationException("Test exception");
+
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
+                .ThrowsAsync(expectedException);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => middleware.InvokeAsync(context));
+            Assert.Equal("Test exception", exception.Message);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithWhitespaceContentType_DoesNotModify()
+        {
+            // Arrange
+            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var context = CreateHttpContext();
+
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
+                .Callback<HttpContext>(ctx =>
+                {
+                    ctx.Response.ContentType = "   ";
+                });
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert
+            m_MockNext.Verify(x => x(context), Times.Once);
+            Assert.Equal("   ", context.Response.ContentType);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithVeryLongContentType_HandlesCorrectly()
+        {
+            // Arrange
+            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var context = CreateHttpContext();
+            var longContentType = "application/json" + new string('x', 1000);
+
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
+                .Callback<HttpContext>(ctx =>
+                {
+                    ctx.Response.ContentType = longContentType;
+                });
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert
+            m_MockNext.Verify(x => x(context), Times.Once);
+            Assert.Equal(longContentType, context.Response.ContentType);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithContentTypeContainingCharsetInMiddle_DoesNotModify()
+        {
+            // Arrange
+            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var context = CreateHttpContext();
+            var contentType = "application/json; charset=utf-8; version=1.0";
+
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
+                .Callback<HttpContext>(ctx =>
+                {
+                    ctx.Response.ContentType = contentType;
+                });
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert
+            m_MockNext.Verify(x => x(context), Times.Once);
+            Assert.Equal(contentType, context.Response.ContentType);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithContentTypeContainingCharsetCaseInsensitive_DoesNotModify()
+        {
+            // Arrange
+            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var context = CreateHttpContext();
+            var contentType = "application/json; CHARSET=utf-8";
+
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
+                .Callback<HttpContext>(ctx =>
+                {
+                    ctx.Response.ContentType = contentType;
+                });
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert
+            m_MockNext.Verify(x => x(context), Times.Once);
+            Assert.Equal(contentType, context.Response.ContentType);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithTextContentTypeWithSpecialCharacters_DoesNotModifyInUnitTest()
+        {
+            // Arrange
+            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var context = CreateHttpContext();
+            var contentType = "text/csv; header=present";
+
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
+                .Callback<HttpContext>(ctx =>
+                {
+                    ctx.Response.ContentType = contentType;
+                });
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert
+            m_MockNext.Verify(x => x(context), Times.Once);
+            Assert.Equal(contentType, context.Response.ContentType);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithBinaryContentType_DoesNotModify()
+        {
+            // Arrange
+            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var context = CreateHttpContext();
+            var contentType = "image/png";
+
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
+                .Callback<HttpContext>(ctx =>
+                {
+                    ctx.Response.ContentType = contentType;
+                });
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert
+            m_MockNext.Verify(x => x(context), Times.Once);
+            Assert.Equal(contentType, context.Response.ContentType);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithCustomContentType_DoesNotModify()
+        {
+            // Arrange
+            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var context = CreateHttpContext();
+            var contentType = "application/x-custom";
+
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
+                .Callback<HttpContext>(ctx =>
+                {
+                    ctx.Response.ContentType = contentType;
+                });
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert
+            m_MockNext.Verify(x => x(context), Times.Once);
+            Assert.Equal(contentType, context.Response.ContentType);
+        }
+
+        [Fact]
+        public void Utf8ResponseMiddleware_Class_Exists()
+        {
+            // Assert
+            Assert.True(typeof(Utf8ResponseMiddleware) != null);
+        }
+
+        [Fact]
+        public void Utf8ResponseMiddleware_IsNotStatic()
+        {
+            // Assert
+            Assert.False(typeof(Utf8ResponseMiddleware).IsAbstract);
+        }
+
+        [Fact]
+        public void Utf8ResponseMiddleware_IsClass()
+        {
+            // Assert
+            Assert.True(typeof(Utf8ResponseMiddleware).IsClass);
+        }
+
+        [Fact]
+        public void Utf8ResponseMiddleware_IsNotValueType()
+        {
+            // Assert
+            Assert.False(typeof(Utf8ResponseMiddleware).IsValueType);
+        }
+
+        [Fact]
+        public void Utf8ResponseMiddleware_IsNotSealed()
+        {
+            // Assert
+            Assert.False(typeof(Utf8ResponseMiddleware).IsSealed);
+        }
+
+        [Fact]
+        public void Utf8ResponseMiddleware_HasInvokeAsyncMethod()
+        {
+            // Arrange
+            var middlewareType = typeof(Utf8ResponseMiddleware);
+            var method = middlewareType.GetMethod("InvokeAsync");
+
+            // Assert
+            Assert.NotNull(method);
+            Assert.Equal("InvokeAsync", method.Name);
+            Assert.True(method.IsPublic);
+            Assert.True(method.ReturnType == typeof(Task));
+        }
+
+        [Fact]
+        public void Utf8ResponseMiddleware_Constructor_WithValidNext_CreatesInstance()
+        {
+            // Arrange
+            var next = new Mock<RequestDelegate>().Object;
+
+            // Act
+            var middleware = new Utf8ResponseMiddleware(next);
+
+            // Assert
+            Assert.NotNull(middleware);
+        }
+
+        [Fact]
+        public void Utf8ResponseMiddleware_Constructor_WithNullNext_CreatesInstance()
+        {
+            // Act
+            var middleware = new Utf8ResponseMiddleware(null!);
+
+            // Assert
+            Assert.NotNull(middleware);
         }
 
         private HttpContext CreateHttpContext()

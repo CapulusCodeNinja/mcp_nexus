@@ -26,6 +26,12 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
+                if (configuration == null)
+                {
+                    m_Logger.LogError("Configuration cannot be null");
+                    return false;
+                }
+
                 using var key = Registry.LocalMachine.OpenSubKey(ServicesKeyPath, true);
                 if (key == null)
                 {
@@ -83,6 +89,12 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
+                if (configuration == null)
+                {
+                    m_Logger.LogError("Configuration cannot be null");
+                    return false;
+                }
+
                 using var key = Registry.LocalMachine.OpenSubKey(ServicesKeyPath, true);
                 if (key == null)
                 {
@@ -119,6 +131,12 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
+                if (string.IsNullOrEmpty(serviceName))
+                {
+                    m_Logger.LogError("Service name cannot be null or empty");
+                    return false;
+                }
+
                 using var key = Registry.LocalMachine.OpenSubKey(ServicesKeyPath, true);
                 if (key == null)
                 {
@@ -143,6 +161,11 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
+                if (string.IsNullOrEmpty(serviceName))
+                {
+                    return false;
+                }
+
                 using var key = Registry.LocalMachine.OpenSubKey(ServicesKeyPath, false);
                 if (key == null)
                 {
@@ -165,6 +188,11 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
+                if (string.IsNullOrEmpty(serviceName))
+                {
+                    return null;
+                }
+
                 using var key = Registry.LocalMachine.OpenSubKey(ServicesKeyPath, false);
                 if (key == null)
                 {
@@ -201,6 +229,11 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
+                if (string.IsNullOrEmpty(serviceName))
+                {
+                    return false;
+                }
+
                 using var key = Registry.LocalMachine.OpenSubKey(ServicesKeyPath, true);
                 if (key == null)
                 {
