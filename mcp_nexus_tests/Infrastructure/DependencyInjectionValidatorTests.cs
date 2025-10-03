@@ -563,16 +563,16 @@ namespace mcp_nexus_tests.Infrastructure
             var implementationTypeField = typeof(ServiceDescriptor).GetField("_implementationType", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var implementationFactoryField = typeof(ServiceDescriptor).GetField("_implementationFactory", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var implementationInstanceField = typeof(ServiceDescriptor).GetField("_implementationInstance", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
+
             implementationTypeField?.SetValue(serviceDescriptor, null);
             implementationFactoryField?.SetValue(serviceDescriptor, null);
             implementationInstanceField?.SetValue(serviceDescriptor, null);
-            
+
             // Add the modified service descriptor to the collection using reflection
             var servicesField = typeof(ServiceCollection).GetField("_descriptors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var descriptors = servicesField?.GetValue(services) as IList<ServiceDescriptor>;
             descriptors?.Add(serviceDescriptor);
-            
+
             var validator = new DependencyInjectionValidator(services);
 
             // Act

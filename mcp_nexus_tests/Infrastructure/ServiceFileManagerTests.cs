@@ -104,7 +104,7 @@ namespace mcp_nexus_tests.Infrastructure
             var manager = new ServiceFileManager(m_MockLogger.Object);
             Directory.CreateDirectory(m_TestSourceDir);
             Directory.CreateDirectory(m_TestTargetDir);
-            
+
             try
             {
                 await File.WriteAllTextAsync(Path.Combine(m_TestSourceDir, "test.txt"), "test content");
@@ -129,7 +129,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Arrange
             var manager = new ServiceFileManager(m_MockLogger.Object);
             Directory.CreateDirectory(m_TestSourceDir);
-            
+
             try
             {
                 await File.WriteAllTextAsync(Path.Combine(m_TestSourceDir, "test.txt"), "test content");
@@ -155,7 +155,7 @@ namespace mcp_nexus_tests.Infrastructure
             // Arrange
             var manager = new ServiceFileManager(m_MockLogger.Object);
             Directory.CreateDirectory(m_TestSourceDir);
-            
+
             try
             {
                 // Create a file that will cause an exception when copying
@@ -397,8 +397,8 @@ namespace mcp_nexus_tests.Infrastructure
             await File.WriteAllTextAsync(Path.Combine(m_TestServiceDir, "test.exe"), "executable");
             await File.WriteAllTextAsync(Path.Combine(m_TestServiceDir, "appsettings.json"), "{}");
             await File.WriteAllTextAsync(Path.Combine(m_TestServiceDir, "appsettings.Production.json"), "{}");
-            var config = new ServiceConfiguration 
-            { 
+            var config = new ServiceConfiguration
+            {
                 ExecutableName = "test.exe",
                 InstallFolder = m_TestServiceDir
             };

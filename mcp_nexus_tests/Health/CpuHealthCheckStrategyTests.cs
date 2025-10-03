@@ -46,7 +46,7 @@ namespace mcp_nexus_tests.Health
             Assert.NotNull(strategy);
             Assert.Equal("CPU Health Check", strategy.StrategyName);
             Assert.True(strategy.IsApplicable());
-            
+
             // Verify the threshold was set correctly
             var actualThreshold = TestHelperExtensions.GetPrivateField<double>(strategy, "m_cpuThresholdPercent");
             Assert.Equal(customThreshold, actualThreshold);
@@ -198,12 +198,12 @@ namespace mcp_nexus_tests.Health
             Assert.True(result.Data.ContainsKey("CpuUsagePercent"));
             Assert.True(result.Data.ContainsKey("TotalProcessorTime"));
             Assert.True(result.Data.ContainsKey("ThresholdPercent"));
-            
+
             // Verify data types
             Assert.IsType<double>(result.Data["CpuUsagePercent"]);
             Assert.IsType<TimeSpan>(result.Data["TotalProcessorTime"]);
             Assert.IsType<double>(result.Data["ThresholdPercent"]);
-            
+
             // Verify threshold is set correctly
             Assert.Equal(50.0, result.Data["ThresholdPercent"]);
         }
@@ -235,13 +235,13 @@ namespace mcp_nexus_tests.Health
             // Assert
             Assert.NotNull(result);
             Assert.NotNull(result.Message);
-            
+
             // The message should contain either "healthy" or "High CPU usage detected"
             var isHealthyMessage = result.Message.Contains("CPU usage is healthy");
             var isUnhealthyMessage = result.Message.Contains("High CPU usage detected");
-            
+
             Assert.True(isHealthyMessage || isUnhealthyMessage);
-            
+
             // The message should contain a percentage value
             Assert.Contains("%", result.Message);
         }
@@ -258,18 +258,18 @@ namespace mcp_nexus_tests.Health
             // Assert
             Assert.NotNull(result);
             Assert.NotNull(result.Data);
-            
+
             var cpuUsage = (double)result.Data["CpuUsagePercent"];
             var threshold = (double)result.Data["ThresholdPercent"];
             var totalProcessorTime = (TimeSpan)result.Data["TotalProcessorTime"];
-            
+
             // CPU usage should be between 0 and 100 (or slightly above due to Math.Min(100, ...))
             Assert.True(cpuUsage >= 0);
             Assert.True(cpuUsage <= 100.1); // Allow for small floating point errors
-            
+
             // Threshold should be exactly what we set
             Assert.Equal(80.0, threshold);
-            
+
             // Total processor time should be non-negative
             Assert.True(totalProcessorTime >= TimeSpan.Zero);
         }
@@ -286,7 +286,7 @@ namespace mcp_nexus_tests.Health
             // Assert
             Assert.NotNull(task);
             Assert.True(task is Task<IHealthCheckResult>);
-            
+
             var result = await task;
             Assert.NotNull(result);
         }
@@ -304,11 +304,11 @@ namespace mcp_nexus_tests.Health
             // Assert
             Assert.NotNull(result1);
             Assert.NotNull(result2);
-            
+
             // Both results should have the same structure
             Assert.Equal(result1.Data.Keys, result2.Data.Keys);
             Assert.Equal(result1.Data["ThresholdPercent"], result2.Data["ThresholdPercent"]);
-            
+
             // Both results should be valid
             Assert.NotNull(result1.Message);
             Assert.NotNull(result2.Message);
@@ -353,7 +353,7 @@ namespace mcp_nexus_tests.Health
             Assert.NotNull(result);
             Assert.NotNull(result.Message);
             Assert.NotNull(result.Data);
-            
+
             // The result should be valid regardless of whether it's healthy or unhealthy
             var isHealthyMessage = result.Message.Contains("CPU usage is healthy");
             var isUnhealthyMessage = result.Message.Contains("High CPU usage detected");

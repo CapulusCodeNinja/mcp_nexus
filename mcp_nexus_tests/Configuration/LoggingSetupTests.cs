@@ -659,7 +659,7 @@ namespace mcp_nexus_tests.Configuration
             // Arrange
             var configuration = new ConfigurationBuilder().Build();
             var nlogConfig = new LoggingConfiguration();
-            
+
             // Add a logging rule
             var rule = new LoggingRule("*", NLog.LogLevel.Debug, new NLog.Targets.NullTarget());
             nlogConfig.LoggingRules.Add(rule);
@@ -924,9 +924,9 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
-            var exception = Record.Exception(() => 
+            var exception = Record.Exception(() =>
                 configureLogPathsMethod!.Invoke(null, new object[] { nlogConfig, true }));
-            
+
             Assert.Null(exception);
         }
     }

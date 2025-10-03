@@ -52,8 +52,8 @@ namespace mcp_nexus.Infrastructure
         {
             using var activity = m_Logger.BeginScope("InstallService");
             var stopwatch = Stopwatch.StartNew();
-            
-            m_Logger.LogInformation("Starting service installation: {ServiceName} at {ExecutablePath}", 
+
+            m_Logger.LogInformation("Starting service installation: {ServiceName} at {ExecutablePath}",
                 serviceName, executablePath);
 
             try
@@ -86,14 +86,14 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 stopwatch.Stop();
-                m_Logger.LogInformation("Service installation completed successfully: {ServiceName} in {Duration}ms", 
+                m_Logger.LogInformation("Service installation completed successfully: {ServiceName} in {Duration}ms",
                     serviceName, stopwatch.ElapsedMilliseconds);
                 return true;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                m_Logger.LogError(ex, "Service installation failed: {ServiceName} after {Duration}ms", 
+                m_Logger.LogError(ex, "Service installation failed: {ServiceName} after {Duration}ms",
                     serviceName, stopwatch.ElapsedMilliseconds);
                 return false;
             }
@@ -139,8 +139,8 @@ namespace mcp_nexus.Infrastructure
         {
             using var activity = m_Logger.BeginScope("UninstallService");
             var stopwatch = Stopwatch.StartNew();
-            
-            m_Logger.LogInformation("Starting service uninstallation: {ServiceName} at {ExecutablePath}", 
+
+            m_Logger.LogInformation("Starting service uninstallation: {ServiceName} at {ExecutablePath}",
                 serviceName, executablePath);
 
             try
@@ -164,14 +164,14 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 stopwatch.Stop();
-                m_Logger.LogInformation("Service uninstallation completed successfully: {ServiceName} in {Duration}ms", 
+                m_Logger.LogInformation("Service uninstallation completed successfully: {ServiceName} in {Duration}ms",
                     serviceName, stopwatch.ElapsedMilliseconds);
                 return true;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                m_Logger.LogError(ex, "Service uninstallation failed: {ServiceName} after {Duration}ms", 
+                m_Logger.LogError(ex, "Service uninstallation failed: {ServiceName} after {Duration}ms",
                     serviceName, stopwatch.ElapsedMilliseconds);
                 return false;
             }
@@ -194,8 +194,8 @@ namespace mcp_nexus.Infrastructure
         {
             using var activity = m_Logger.BeginScope("UpdateService");
             var stopwatch = Stopwatch.StartNew();
-            
-            m_Logger.LogInformation("Starting service update: {ServiceName} at {ExecutablePath}", 
+
+            m_Logger.LogInformation("Starting service update: {ServiceName} at {ExecutablePath}",
                 serviceName, executablePath);
 
             try
@@ -219,14 +219,14 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 stopwatch.Stop();
-                m_Logger.LogInformation("Service update completed successfully: {ServiceName} in {Duration}ms", 
+                m_Logger.LogInformation("Service update completed successfully: {ServiceName} in {Duration}ms",
                     serviceName, stopwatch.ElapsedMilliseconds);
                 return true;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                m_Logger.LogError(ex, "Service update failed: {ServiceName} after {Duration}ms", 
+                m_Logger.LogError(ex, "Service update failed: {ServiceName} after {Duration}ms",
                     serviceName, stopwatch.ElapsedMilliseconds);
                 return false;
             }
@@ -248,8 +248,8 @@ namespace mcp_nexus.Infrastructure
         {
             using var activity = m_Logger.BeginScope("ValidateInstallation");
             var stopwatch = Stopwatch.StartNew();
-            
-            m_Logger.LogInformation("Starting service installation validation: {ServiceName} at {ExecutablePath}", 
+
+            m_Logger.LogInformation("Starting service installation validation: {ServiceName} at {ExecutablePath}",
                 serviceName, executablePath);
 
             try
@@ -273,14 +273,14 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 stopwatch.Stop();
-                m_Logger.LogInformation("Service installation validation completed successfully: {ServiceName} in {Duration}ms", 
+                m_Logger.LogInformation("Service installation validation completed successfully: {ServiceName} in {Duration}ms",
                     serviceName, stopwatch.ElapsedMilliseconds);
                 return true;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                m_Logger.LogError(ex, "Service installation validation failed: {ServiceName} after {Duration}ms", 
+                m_Logger.LogError(ex, "Service installation validation failed: {ServiceName} after {Duration}ms",
                     serviceName, stopwatch.ElapsedMilliseconds);
                 return false;
             }

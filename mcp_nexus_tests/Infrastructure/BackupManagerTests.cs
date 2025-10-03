@@ -285,10 +285,10 @@ namespace mcp_nexus_tests.Infrastructure
             var backupManager = new BackupManager(m_MockLogger.Object, m_TestBackupDir);
             var testFile1 = Path.Combine(m_TestInstallDir, "test1.txt");
             var testFile2 = Path.Combine(m_TestInstallDir, "test2.txt");
-            
+
             await File.WriteAllTextAsync(testFile1, "Test content 1");
             await File.WriteAllTextAsync(testFile2, "Test content 2");
-            
+
             var sourceFiles = new List<string> { testFile1, testFile2 };
 
             // Act
@@ -308,9 +308,9 @@ namespace mcp_nexus_tests.Infrastructure
             var backupManager = new BackupManager(m_MockLogger.Object, m_TestBackupDir);
             var existingFile = Path.Combine(m_TestInstallDir, "existing.txt");
             var nonExistentFile = Path.Combine(m_TestInstallDir, "nonexistent.txt");
-            
+
             await File.WriteAllTextAsync(existingFile, "Test content");
-            
+
             var sourceFiles = new List<string> { existingFile, nonExistentFile };
 
             // Act
@@ -379,11 +379,11 @@ namespace mcp_nexus_tests.Infrastructure
             var backupManager = new BackupManager(m_MockLogger.Object, m_TestBackupDir);
             var testFile1 = Path.Combine(m_TestBackupDir, "backup_test", "file1.txt");
             var testFile2 = Path.Combine(m_TestBackupDir, "backup_test", "file2.txt");
-            
+
             Directory.CreateDirectory(Path.Combine(m_TestBackupDir, "backup_test"));
             await File.WriteAllTextAsync(testFile1, "Backup content 1");
             await File.WriteAllTextAsync(testFile2, "Backup content 2");
-            
+
             var restoreDir = Path.Combine(m_TestInstallDir, "restore");
 
             // Act
@@ -418,10 +418,10 @@ namespace mcp_nexus_tests.Infrastructure
             var backupManager = new BackupManager(m_MockLogger.Object, m_TestBackupDir);
             var backupDir = Path.Combine(m_TestBackupDir, "backup_test");
             var testFile = Path.Combine(backupDir, "file.txt");
-            
+
             Directory.CreateDirectory(backupDir);
             await File.WriteAllTextAsync(testFile, "Backup content");
-            
+
             var restoreDir = Path.Combine(m_TestInstallDir, "new_restore");
 
             // Act
@@ -454,7 +454,7 @@ namespace mcp_nexus_tests.Infrastructure
             var backupManager = new BackupManager(m_MockLogger.Object, m_TestBackupDir);
             var backup1 = Path.Combine(m_TestBackupDir, "backup1");
             var backup2 = Path.Combine(m_TestBackupDir, "backup2");
-            
+
             Directory.CreateDirectory(backup1);
             Directory.CreateDirectory(backup2);
 
@@ -489,10 +489,10 @@ namespace mcp_nexus_tests.Infrastructure
             var backupManager = new BackupManager(m_MockLogger.Object, m_TestBackupDir);
             var oldBackup = Path.Combine(m_TestBackupDir, "old_backup");
             var newBackup = Path.Combine(m_TestBackupDir, "new_backup");
-            
+
             Directory.CreateDirectory(oldBackup);
             Directory.CreateDirectory(newBackup);
-            
+
             // Set old backup creation time to 35 days ago
             var oldDirInfo = new DirectoryInfo(oldBackup);
             oldDirInfo.CreationTimeUtc = DateTime.UtcNow.AddDays(-35);
@@ -513,10 +513,10 @@ namespace mcp_nexus_tests.Infrastructure
             var backupManager = new BackupManager(m_MockLogger.Object, m_TestBackupDir);
             var backup1 = Path.Combine(m_TestBackupDir, "backup1");
             var backup2 = Path.Combine(m_TestBackupDir, "backup2");
-            
+
             Directory.CreateDirectory(backup1);
             Directory.CreateDirectory(backup2);
-            
+
             // Set backup1 to 10 days old, backup2 to 20 days old
             new DirectoryInfo(backup1).CreationTimeUtc = DateTime.UtcNow.AddDays(-10);
             new DirectoryInfo(backup2).CreationTimeUtc = DateTime.UtcNow.AddDays(-20);

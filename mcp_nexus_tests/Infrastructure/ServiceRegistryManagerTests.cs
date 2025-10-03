@@ -665,11 +665,11 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Act & Assert
             // Use reflection to test private method
-            var method = typeof(ServiceRegistryManager).GetMethod("GetServiceAccountName", 
+            var method = typeof(ServiceRegistryManager).GetMethod("GetServiceAccountName",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
+
             Assert.NotNull(method);
-            
+
             var localServiceResult = method.Invoke(manager, new object[] { ServiceAccount.LocalService });
             var networkServiceResult = method.Invoke(manager, new object[] { ServiceAccount.NetworkService });
             var localSystemResult = method.Invoke(manager, new object[] { ServiceAccount.LocalSystem });

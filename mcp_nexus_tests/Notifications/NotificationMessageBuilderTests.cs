@@ -390,7 +390,7 @@ namespace mcp_nexus_tests.Notifications
             // Assert
             Assert.NotNull(result);
             Assert.NotEmpty(result);
-            
+
             // Verify it's valid JSON
             var notification = JsonSerializer.Deserialize<McpNotification>(result);
             Assert.NotNull(notification);
@@ -413,7 +413,7 @@ namespace mcp_nexus_tests.Notifications
             // Assert
             Assert.NotNull(result);
             Assert.NotEmpty(result);
-            
+
             // Verify it's valid JSON
             var notification = JsonSerializer.Deserialize<McpNotification>(result);
             Assert.NotNull(notification);
@@ -440,7 +440,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.Contains("\\u65B9\\u6CD5", result); // "方法" escaped
             Assert.Contains("\\u6D4B\\u8BD5", result); // "测试" escaped
             Assert.Contains("\\uD83D\\uDE80", result); // "🚀" escaped
-            
+
             // Verify it's valid JSON
             var notification = JsonSerializer.Deserialize<McpNotification>(result);
             Assert.NotNull(notification);
@@ -461,7 +461,7 @@ namespace mcp_nexus_tests.Notifications
             // Assert
             Assert.NotNull(result);
             Assert.NotEmpty(result);
-            
+
             // Verify it's valid JSON
             var notification = JsonSerializer.Deserialize<McpNotification>(result);
             Assert.NotNull(notification);
@@ -757,7 +757,7 @@ namespace mcp_nexus_tests.Notifications
             // Assert
             Assert.NotNull(json);
             Assert.NotEmpty(json);
-            
+
             // Verify it can be deserialized
             var deserialized = JsonSerializer.Deserialize<McpNotification>(json);
             Assert.NotNull(deserialized);
@@ -829,7 +829,7 @@ namespace mcp_nexus_tests.Notifications
             // Assert
             Assert.NotNull(result);
             Assert.NotEmpty(result);
-            
+
             // Verify it's valid JSON
             var notification = JsonSerializer.Deserialize<McpNotification>(result);
             Assert.NotNull(notification);

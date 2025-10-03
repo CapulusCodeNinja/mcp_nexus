@@ -62,7 +62,7 @@ namespace mcp_nexus_tests.CommandQueue
             var queueTime = DateTime.UtcNow;
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 factory.CreateCommandInfo(commandId!, command, state, queueTime));
         }
 
@@ -77,7 +77,7 @@ namespace mcp_nexus_tests.CommandQueue
             var queueTime = DateTime.UtcNow;
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 factory.CreateCommandInfo(commandId, command!, state, queueTime));
         }
 
@@ -433,7 +433,7 @@ namespace mcp_nexus_tests.CommandQueue
             QueuedCommand? queuedCommand = null;
 
             // Act & Assert
-            Assert.Throws<NullReferenceException>(() => 
+            Assert.Throws<NullReferenceException>(() =>
                 factory.CreateCommandInfoFromQueuedCommand(queuedCommand!));
         }
 

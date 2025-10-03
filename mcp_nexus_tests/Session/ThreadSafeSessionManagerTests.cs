@@ -1027,7 +1027,7 @@ namespace mcp_nexus_tests.Session
                 // Act & Assert
                 var exception = await Assert.ThrowsAsync<SessionLimitExceededException>(() =>
                     sessionManager.CreateSessionAsync(dumpPath2));
-                
+
                 Assert.Equal(1, exception.CurrentSessions);
                 Assert.Equal(1, exception.MaxSessions);
             }
@@ -1178,7 +1178,7 @@ namespace mcp_nexus_tests.Session
                 Assert.Equal(3, sessionIds.Length);
                 Assert.All(sessionIds, id => Assert.NotNull(id));
                 Assert.All(sessionIds, id => Assert.NotEqual(string.Empty, id));
-                
+
                 // Verify all sessions exist
                 Assert.True(sessionManager.SessionExists(sessionIds[0]));
                 Assert.True(sessionManager.SessionExists(sessionIds[1]));

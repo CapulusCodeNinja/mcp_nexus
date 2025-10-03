@@ -176,7 +176,7 @@ namespace mcp_nexus_tests.Health
 
             // Assert
             Assert.NotNull(result.Data);
-            
+
             var workingSetBytes = (long)result.Data["WorkingSetBytes"];
             var workingSetMB = (double)result.Data["WorkingSetMB"];
             var thresholdBytes = (long)result.Data["ThresholdBytes"];

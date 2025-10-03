@@ -117,7 +117,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             ThreadPool.GetMinThreads(out var newWorker, out var newIo);
-            
+
             // The new values should be at least as high as the original values
             Assert.True(newWorker >= originalWorker);
             Assert.True(newIo >= originalIo);
@@ -421,11 +421,11 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             ThreadPool.GetMinThreads(out var worker, out var io);
-            
+
             // Should not be unreasonably high
             Assert.True(worker <= Environment.ProcessorCount * 10);
             Assert.True(io <= Environment.ProcessorCount * 10);
-            
+
             // Should not be unreasonably low
             Assert.True(worker >= 2);
             Assert.True(io >= 2);

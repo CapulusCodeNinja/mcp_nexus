@@ -141,9 +141,9 @@ namespace mcp_nexus_tests.Health
         public void Data_ReturnsCorrectValues()
         {
             // Arrange
-            var data = new Dictionary<string, object> 
-            { 
-                { "cpu_usage", 75.5 }, 
+            var data = new Dictionary<string, object>
+            {
+                { "cpu_usage", 75.5 },
                 { "memory_mb", 2048 },
                 { "status", "warning" }
             };

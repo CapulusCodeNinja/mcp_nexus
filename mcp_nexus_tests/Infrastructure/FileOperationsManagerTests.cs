@@ -622,7 +622,7 @@ namespace mcp_nexus_tests.Infrastructure
             {
                 // Create source file
                 await File.WriteAllTextAsync(sourcePath, "test content");
-                
+
                 // Make destination file read-only to force exception during copy
                 File.SetAttributes(destinationPath, FileAttributes.ReadOnly);
 
