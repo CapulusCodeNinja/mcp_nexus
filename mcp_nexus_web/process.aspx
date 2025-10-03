@@ -169,14 +169,25 @@ void ProcessDumpFileSimple(string filePath, string jobId)
 {
     try
     {
+        // Configuration - File size limits and memory management
+        const long maxFileSize = 2L * 1024 * 1024 * 1024; // 2GB limit to prevent memory issues
+        const int streamBufferSize = 8192; // 8KB buffer for streaming operations
+        
+        // Check file size before processing (limit to 2GB to prevent memory issues)
+        var fileInfo = new FileInfo(filePath);
+        
+        if (fileInfo.Length > maxFileSize)
+        {
+            Response.Write("ERROR: File too large. Maximum size is 2GB. File size: " + 
+                (fileInfo.Length / (1024.0 * 1024.0)).ToString("F1") + " MB");
+            return;
+        }
+        
         // Create a simple HTTP request to upload.aspx with proper multipart form data
         string boundary = "----WebKitFormBoundary" + DateTime.Now.Ticks.ToString("x");
-        
-        // Read the file
-        byte[] fileData = File.ReadAllBytes(filePath);
         string fileName = Path.GetFileName(filePath);
         
-        // Build multipart form data
+        // Build multipart form data headers
         var formData = new System.Text.StringBuilder();
         formData.AppendLine("--" + boundary);
         formData.AppendLine("Content-Disposition: form-data; name=\"dumpFile\"; filename=\"" + fileName + "\"");
@@ -186,24 +197,36 @@ void ProcessDumpFileSimple(string filePath, string jobId)
         byte[] formDataBytes = System.Text.Encoding.UTF8.GetBytes(formData.ToString());
         byte[] endBoundaryBytes = System.Text.Encoding.UTF8.GetBytes("\r\n--" + boundary + "--\r\n");
         
-        // Combine all parts
-        byte[] postData = new byte[formDataBytes.Length + fileData.Length + endBoundaryBytes.Length];
-        System.Buffer.BlockCopy(formDataBytes, 0, postData, 0, formDataBytes.Length);
-        System.Buffer.BlockCopy(fileData, 0, postData, formDataBytes.Length, fileData.Length);
-        System.Buffer.BlockCopy(endBoundaryBytes, 0, postData, formDataBytes.Length + fileData.Length, endBoundaryBytes.Length);
+        // Calculate total content length for streaming
+        long totalContentLength = formDataBytes.Length + fileInfo.Length + endBoundaryBytes.Length;
         
         // Create HTTP request
         var request = System.Net.WebRequest.Create("http://localhost/upload.aspx") as System.Net.HttpWebRequest;
         request.Method = "POST";
         request.ContentType = "multipart/form-data; boundary=" + boundary;
-        request.ContentLength = postData.Length;
+        request.ContentLength = totalContentLength;
         request.Timeout = 600000; // 10 minutes timeout to match upload.aspx processing time
         request.ReadWriteTimeout = 600000; // 10 minutes for reading response
         
-        // Send request
+        // Send request using streaming to avoid loading entire file into memory
         using (var requestStream = request.GetRequestStream())
         {
-            requestStream.Write(postData, 0, postData.Length);
+            // Write form data headers
+            requestStream.Write(formDataBytes, 0, formDataBytes.Length);
+            
+            // Stream the file content directly without loading into memory
+            using (var fileStream = File.OpenRead(filePath))
+            {
+                var buffer = new byte[streamBufferSize]; // Configurable buffer for streaming
+                int bytesRead;
+                while ((bytesRead = fileStream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    requestStream.Write(buffer, 0, bytesRead);
+                }
+            }
+            
+            // Write end boundary
+            requestStream.Write(endBoundaryBytes, 0, endBoundaryBytes.Length);
         }
         
         // Get response

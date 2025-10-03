@@ -10,6 +10,11 @@
     {
         Response.ContentType = "text/plain";
         
+        // Configuration - File size limits and memory management
+        const long maxFileSize = 2L * 1024 * 1024 * 1024; // 2GB limit to prevent memory issues
+        const int streamBufferSize = 8192; // 8KB buffer for streaming operations
+        const int maxConcurrentUploads = 5; // Limit concurrent uploads to prevent memory overload
+        
         try
         {
             // Check if this is a POST request with files
@@ -36,6 +41,16 @@
                 
                 if (file != null && file.ContentLength > 0)
                 {
+                    // Check file size limit (2GB to prevent memory issues)
+                    
+                    if (file.ContentLength > maxFileSize)
+                    {
+                        commandOutputs.Add("ERROR: File '" + file.FileName + "' is too large. " +
+                            "Maximum size is 2GB. File size: " + 
+                            (file.ContentLength / (1024.0 * 1024.0)).ToString("F1") + " MB");
+                        continue;
+                    }
+                    
                     // Generate standardized filename: dump_<timestamp>.<ext>
                     string fileExtension = Path.GetExtension(file.FileName);
                     string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
@@ -43,16 +58,32 @@
                     
                     string filePath = Path.Combine(uploadsPath, uniqueFileName);
                     
-                    // Save the file
-                    file.SaveAs(filePath);
-                    uploadedFiles.Add(filePath);
-                    
-                    // Log the upload
-                    LogUpload(file.FileName, uniqueFileName, file.ContentLength);
-                    
-                    // Analyze file and collect output
-                    string analysisOutput = TriggerWSLCommand(filePath);
-                    commandOutputs.Add("File: " + uniqueFileName + "\n" + analysisOutput);
+                    // Save the file using streaming to avoid memory issues
+                    try
+                    {
+                        using (var fileStream = File.Create(filePath))
+                        {
+                            var buffer = new byte[streamBufferSize]; // Configurable buffer for streaming
+                            int bytesRead;
+                            while ((bytesRead = file.InputStream.Read(buffer, 0, buffer.Length)) > 0)
+                            {
+                                fileStream.Write(buffer, 0, bytesRead);
+                            }
+                        }
+                        
+                        uploadedFiles.Add(filePath);
+                        
+                        // Log the upload
+                        LogUpload(file.FileName, uniqueFileName, file.ContentLength);
+                        
+                        // Analyze file and collect output
+                        string analysisOutput = TriggerWSLCommand(filePath);
+                        commandOutputs.Add("File: " + uniqueFileName + "\n" + analysisOutput);
+                    }
+                    catch (Exception ex)
+                    {
+                        commandOutputs.Add("ERROR: Failed to save file '" + file.FileName + "': " + ex.Message);
+                    }
                 }
             }
 
