@@ -141,7 +141,7 @@ namespace mcp_nexus.Session
                     commandQueue,
                     dumpPath,
                     symbolsPath,
-                    GetCdbProcessId(cdbSession)
+                    cdbSession.ProcessId
                 );
 
                 // Verify command queue was properly stored
@@ -183,7 +183,6 @@ namespace mcp_nexus.Session
                 // NOTE: Extension loading issue - !analyze requires ext.dll to be loaded
                 // However, auto-loading .load ext has historically caused output capture issues
                 // Modern CDB should auto-load extensions, but some systems may not
-                // TODO: Investigate alternative solutions (CDB startup flags, pre-warm extension loading, etc.)
 
                 stopwatch.Stop();
                 m_Logger.LogInformation("✅ Session {SessionId} created successfully in {Elapsed}ms",
@@ -419,23 +418,6 @@ namespace mcp_nexus.Session
             );
         }
 
-        /// <summary>
-        /// Gets the process ID of a CDB session
-        /// </summary>
-        private int? GetCdbProcessId(ICdbSession cdbSession)
-        {
-            try
-            {
-                // This would need to be implemented based on the CDB session's process tracking
-                // For now, return null as a placeholder
-                return null;
-            }
-            catch (Exception ex)
-            {
-                m_Logger.LogWarning(ex, "Could not retrieve CDB process ID");
-                return null;
-            }
-        }
 
         /// <summary>
         /// Creates a session context for notifications.

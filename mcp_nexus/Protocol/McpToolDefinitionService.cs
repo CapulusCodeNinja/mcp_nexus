@@ -48,13 +48,6 @@ namespace mcp_nexus.Protocol
             }
         }
 
-        /// <summary>
-        /// Notify clients that the tools list has changed (async version for compatibility)
-        /// </summary>
-        public async Task NotifyToolsChangedAsync()
-        {
-            await NotifyToolsChanged();
-        }
 
         /// <summary>
         /// Creates the MCP tool schema for opening a dump analyze session.

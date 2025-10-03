@@ -16,6 +16,11 @@ namespace mcp_nexus.Debugger
         bool IsActive { get; }
 
         /// <summary>
+        /// Gets the process ID of the CDB debugger process.
+        /// </summary>
+        int? ProcessId { get; }
+
+        /// <summary>
         /// Starts a debugging session with the specified target.
         /// </summary>
         /// <param name="target">The target to debug (dump file path or process ID).</param>

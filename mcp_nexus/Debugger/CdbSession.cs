@@ -112,6 +112,28 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
+        /// Gets the process ID of the CDB debugger process.
+        /// </summary>
+        public int? ProcessId
+        {
+            get
+            {
+                if (m_disposed)
+                    return null;
+
+                try
+                {
+                    return m_processManager.DebuggerProcess?.Id;
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogWarning(ex, "Could not retrieve CDB process ID");
+                    return null;
+                }
+            }
+        }
+
+        /// <summary>
         /// Cancels the currently executing command operation.
         /// This method is thread-safe and can be called from any thread.
         /// </summary>

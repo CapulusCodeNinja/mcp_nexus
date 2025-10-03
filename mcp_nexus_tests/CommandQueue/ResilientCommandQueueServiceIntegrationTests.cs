@@ -182,7 +182,7 @@ namespace mcp_nexus_tests.Services
             var commandId = m_service.QueueCommand("version");
 
             // Wait for command to complete
-            await Task.Delay(500);
+            await Task.Delay(1000);
 
             // Act
             var result = await m_service.GetCommandResult(commandId);

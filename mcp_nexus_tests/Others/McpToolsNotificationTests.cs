@@ -67,7 +67,7 @@ namespace mcp_nexus_tests.Services
             var service = new McpToolDefinitionService();
 
             // Act & Assert - Should not throw
-            await service.NotifyToolsChangedAsync();
+            await service.NotifyToolsChanged();
         }
 
         [Fact]

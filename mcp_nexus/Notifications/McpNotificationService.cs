@@ -88,18 +88,6 @@ namespace mcp_nexus.Notifications
             await Task.WhenAll(tasks);
         }
 
-        /// <summary>
-        /// Sends a notification asynchronously (alias for PublishNotificationAsync).
-        /// </summary>
-        /// <param name="eventType">The type of event to send.</param>
-        /// <param name="data">The event data to send.</param>
-        /// <returns>
-        /// A <see cref="Task"/> representing the asynchronous operation.
-        /// </returns>
-        public async Task SendNotificationAsync(string eventType, object data)
-        {
-            await PublishNotificationAsync(eventType, data);
-        }
 
         /// <summary>
         /// Subscribes to notifications of a specific event type.

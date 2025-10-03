@@ -20,15 +20,6 @@ namespace mcp_nexus.Notifications
         /// </returns>
         Task PublishNotificationAsync(string eventType, object data);
 
-        /// <summary>
-        /// Sends a notification asynchronously (alias for PublishNotificationAsync).
-        /// </summary>
-        /// <param name="eventType">The type of event to send.</param>
-        /// <param name="data">The event data to send.</param>
-        /// <returns>
-        /// A <see cref="Task"/> representing the asynchronous operation.
-        /// </returns>
-        Task SendNotificationAsync(string eventType, object data);
 
         /// <summary>
         /// Subscribes to notifications of a specific event type.

@@ -127,7 +127,7 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task SendNotificationAsync_WithCustomMethod_SendsNotification()
+        public async Task PublishNotificationAsync_WithCustomMethod_SendsNotification()
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
@@ -143,7 +143,7 @@ namespace mcp_nexus_tests.Services
             var customParams = new { message = "test", value = 42 };
 
             // Act
-            await m_service.SendNotificationAsync("custom/test", customParams);
+            await m_service.PublishNotificationAsync("custom/test", customParams);
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -153,10 +153,10 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task SendNotificationAsync_WithNoHandlers_LogsWarning()
+        public async Task PublishNotificationAsync_WithNoHandlers_LogsWarning()
         {
             // Act
-            await m_service.SendNotificationAsync("test/method", new { });
+            await m_service.PublishNotificationAsync("test/method", new { });
 
             // Assert
             m_mockLogger.Verify(
@@ -170,7 +170,7 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task SendNotificationAsync_WithMultipleHandlers_SendsToAllHandlers()
+        public async Task PublishNotificationAsync_WithMultipleHandlers_SendsToAllHandlers()
         {
             // Arrange
             var receivedNotifications1 = new List<McpNotification>();
@@ -189,7 +189,7 @@ namespace mcp_nexus_tests.Services
             });
 
             // Act
-            await m_service.SendNotificationAsync("test/broadcast", new { data = "shared" });
+            await m_service.PublishNotificationAsync("test/broadcast", new { data = "shared" });
 
             // Assert
             Assert.Single(receivedNotifications1);
@@ -199,7 +199,7 @@ namespace mcp_nexus_tests.Services
         }
 
         [Fact]
-        public async Task SendNotificationAsync_HandlerThrowsException_ContinuesWithOtherHandlers()
+        public async Task PublishNotificationAsync_HandlerThrowsException_ContinuesWithOtherHandlers()
         {
             // Arrange
             var receivedNotifications = new List<McpNotification>();
@@ -221,7 +221,7 @@ namespace mcp_nexus_tests.Services
             });
 
             // Act
-            await m_service.SendNotificationAsync("test/error", new { });
+            await m_service.PublishNotificationAsync("test/error", new { });
 
             // Assert
             Assert.True(exceptionThrown);
@@ -242,7 +242,7 @@ namespace mcp_nexus_tests.Services
 
             // Act
             m_service.Subscribe("test-event", Handler);
-            await m_service.SendNotificationAsync("test-event", null!);
+            await m_service.PublishNotificationAsync("test-event", null!);
 
             // Assert
             Assert.True(handlerCalled);
