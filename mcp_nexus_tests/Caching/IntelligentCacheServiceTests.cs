@@ -484,7 +484,7 @@ namespace mcp_nexus_tests.Caching
         }
 
         [Fact]
-        public void Set_WithComplexObject_EstimatesDefaultSize()
+        public void Set_WithComplexObject_EstimatesSizeWithReflection()
         {
             // Arrange
             var objectLogger = new Mock<ILogger<IntelligentCacheService<string, object>>>();
@@ -497,7 +497,84 @@ namespace mcp_nexus_tests.Caching
 
             // Assert
             var stats = objectCache.GetStatistics();
-            Assert.Equal(100, stats.TotalSizeBytes); // Default estimate
+            // Should be much more accurate than the old 100-byte default
+            // Expecting at least 40+ bytes for the anonymous object with string and int
+            // (48 bytes is reasonable for object overhead + string "test" + int 123)
+            Assert.True(stats.TotalSizeBytes >= 40, $"Expected at least 40 bytes, but got {stats.TotalSizeBytes} bytes");
+            Assert.True(stats.TotalSizeBytes <= 200); // Reasonable upper bound
+        }
+
+        [Fact]
+        public void Set_WithList_EstimatesSizeAccurately()
+        {
+            // Arrange
+            var listLogger = new Mock<ILogger<IntelligentCacheService<string, List<string>>>>();
+            using var listCache = new IntelligentCacheService<string, List<string>>(listLogger.Object);
+            var key = "test-key";
+            var value = new List<string> { "item1", "item2", "item3" }; // 3 strings
+
+            // Act
+            listCache.Set(key, value);
+
+            // Assert
+            var stats = listCache.GetStatistics();
+            // Should account for list overhead + 3 strings (6 chars * 2 bytes each = 12 bytes)
+            Assert.True(stats.TotalSizeBytes >= 50); // List overhead + string data
+            Assert.True(stats.TotalSizeBytes <= 100); // Reasonable upper bound
+        }
+
+        [Fact]
+        public void Set_WithDictionary_EstimatesSizeAccurately()
+        {
+            // Arrange
+            var dictLogger = new Mock<ILogger<IntelligentCacheService<string, Dictionary<string, int>>>>();
+            using var dictCache = new IntelligentCacheService<string, Dictionary<string, int>>(dictLogger.Object);
+            var key = "test-key";
+            var value = new Dictionary<string, int> { { "key1", 1 }, { "key2", 2 } };
+
+            // Act
+            dictCache.Set(key, value);
+
+            // Assert
+            var stats = dictCache.GetStatistics();
+            // Should account for dictionary overhead + 2 key-value pairs
+            Assert.True(stats.TotalSizeBytes >= 50); // Dictionary overhead + data
+            Assert.True(stats.TotalSizeBytes <= 150); // Reasonable upper bound
+        }
+
+        [Fact]
+        public void Set_WithArray_EstimatesSizeAccurately()
+        {
+            // Arrange
+            var arrayLogger = new Mock<ILogger<IntelligentCacheService<string, int[]>>>();
+            using var arrayCache = new IntelligentCacheService<string, int[]>(arrayLogger.Object);
+            var key = "test-key";
+            var value = new int[] { 1, 2, 3, 4, 5 }; // 5 integers
+
+            // Act
+            arrayCache.Set(key, value);
+
+            // Assert
+            var stats = arrayCache.GetStatistics();
+            // Should account for array overhead + 5 integers (5 * 4 = 20 bytes)
+            Assert.True(stats.TotalSizeBytes >= 40); // Array overhead + data
+            Assert.True(stats.TotalSizeBytes <= 60); // Reasonable upper bound
+        }
+
+        [Fact]
+        public void Set_WithLargeString_EstimatesSizeAccurately()
+        {
+            // Arrange
+            var key = "test-key";
+            var largeString = new string('A', 1000); // 1000 characters = 2000 bytes
+
+            // Act
+            m_cacheService.Set(key, largeString);
+
+            // Assert
+            var stats = m_cacheService.GetStatistics();
+            Assert.True(stats.TotalSizeBytes >= 2000); // Should be at least 2000 bytes
+            Assert.True(stats.TotalSizeBytes <= 2100); // Small overhead for cache entry
         }
 
         #endregion

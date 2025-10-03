@@ -299,7 +299,7 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Estimates the size of a value in bytes
+        /// Estimates the size of a value in bytes using a hybrid approach
         /// </summary>
         /// <param name="value">The value to estimate</param>
         /// <returns>Estimated size in bytes</returns>
@@ -311,6 +311,7 @@ namespace mcp_nexus.Caching
 
                 return value switch
                 {
+                    // Primitive types - accurate estimates
                     string str => str.Length * 2, // Unicode characters are 2 bytes
                     byte[] bytes => bytes.Length,
                     int => 4,
@@ -320,7 +321,22 @@ namespace mcp_nexus.Caching
                     bool => 1,
                     DateTime => 8,
                     Guid => 16,
-                    _ => 100 // Default estimate for complex objects
+                    decimal => 16,
+                    char => 2,
+                    short => 2,
+                    ushort => 2,
+                    uint => 4,
+                    ulong => 8,
+                    sbyte => 1,
+                    byte => 1,
+                    
+                    // Common collection types - optimized handlers (order matters!)
+                    Array array => EstimateArraySize(array),
+                    System.Collections.IDictionary dictionary => EstimateDictionarySize(dictionary),
+                    System.Collections.ICollection collection => EstimateCollectionSize(collection),
+                    
+                    // Fallback to reflection-based estimation
+                    _ => EstimateComplexObjectSize(value)
                 };
             }
             catch (Exception ex)
@@ -328,6 +344,241 @@ namespace mcp_nexus.Caching
                 m_logger.LogWarning(ex, "Error estimating size for value of type {Type}", typeof(TValue).Name);
                 return 64; // Default fallback
             }
+        }
+
+        /// <summary>
+        /// Estimates the size of a collection using optimized calculation
+        /// </summary>
+        /// <param name="collection">The collection to estimate</param>
+        /// <returns>Estimated size in bytes</returns>
+        private long EstimateCollectionSize(System.Collections.ICollection collection)
+        {
+            try
+            {
+                var baseSize = 24; // Collection object overhead
+                var elementSize = 0L;
+                var count = collection.Count;
+                
+                if (count == 0) return baseSize;
+                
+                // Sample first few elements to estimate element size
+                var sampleSize = Math.Min(count, 10);
+                var sampleCount = 0;
+                
+                foreach (var item in collection)
+                {
+                    if (sampleCount >= sampleSize) break;
+                    
+                    elementSize += EstimateElementSize(item);
+                    sampleCount++;
+                }
+                
+                // Calculate average element size and multiply by count
+                var avgElementSize = sampleCount > 0 ? elementSize / sampleCount : 8;
+                return baseSize + (avgElementSize * count);
+            }
+            catch
+            {
+                // Fallback: estimate based on count
+                return 24 + (collection.Count * 8);
+            }
+        }
+
+        /// <summary>
+        /// Estimates the size of a dictionary using optimized calculation
+        /// </summary>
+        /// <param name="dictionary">The dictionary to estimate</param>
+        /// <returns>Estimated size in bytes</returns>
+        private long EstimateDictionarySize(System.Collections.IDictionary dictionary)
+        {
+            try
+            {
+                var baseSize = 32; // Dictionary object overhead
+                var keyValueSize = 0L;
+                var count = dictionary.Count;
+                
+                if (count == 0) return baseSize;
+                
+                // Sample first few key-value pairs
+                var sampleSize = Math.Min(count, 10);
+                var sampleCount = 0;
+                
+                foreach (System.Collections.DictionaryEntry entry in dictionary)
+                {
+                    if (sampleCount >= sampleSize) break;
+                    
+                    keyValueSize += EstimateElementSize(entry.Key);
+                    keyValueSize += EstimateElementSize(entry.Value);
+                    sampleCount++;
+                }
+                
+                // Calculate average key-value size and multiply by count
+                var avgKeyValueSize = sampleCount > 0 ? keyValueSize / sampleCount : 16;
+                return baseSize + (avgKeyValueSize * count);
+            }
+            catch
+            {
+                // Fallback: estimate based on count
+                return 32 + (dictionary.Count * 16);
+            }
+        }
+
+        /// <summary>
+        /// Estimates the size of an array using optimized calculation
+        /// </summary>
+        /// <param name="array">The array to estimate</param>
+        /// <returns>Estimated size in bytes</returns>
+        private long EstimateArraySize(Array array)
+        {
+            try
+            {
+                var baseSize = 24; // Array object overhead
+                var elementSize = 0L;
+                var length = array.Length;
+                
+                if (length == 0) return baseSize;
+                
+                // Sample first few elements
+                var sampleSize = Math.Min(length, 10);
+                var sampleCount = 0;
+                
+                for (int i = 0; i < sampleSize; i++)
+                {
+                    var item = array.GetValue(i);
+                    elementSize += EstimateElementSize(item);
+                    sampleCount++;
+                }
+                
+                // Calculate average element size and multiply by length
+                var avgElementSize = sampleCount > 0 ? elementSize / sampleCount : 8;
+                return baseSize + (avgElementSize * length);
+            }
+            catch
+            {
+                // Fallback: estimate based on length
+                return 24 + (array.Length * 8);
+            }
+        }
+
+        /// <summary>
+        /// Estimates the size of a single element (recursive)
+        /// </summary>
+        /// <param name="element">The element to estimate</param>
+        /// <returns>Estimated size in bytes</returns>
+        private long EstimateElementSize(object? element)
+        {
+            if (element == null) return 0;
+            
+            return element switch
+            {
+                string str => str.Length * 2,
+                byte[] bytes => bytes.Length,
+                int => 4,
+                long => 8,
+                double => 8,
+                float => 4,
+                bool => 1,
+                DateTime => 8,
+                Guid => 16,
+                decimal => 16,
+                char => 2,
+                short => 2,
+                ushort => 2,
+                uint => 4,
+                ulong => 8,
+                sbyte => 1,
+                byte => 1,
+                _ => EstimateComplexObjectSize(element)
+            };
+        }
+
+        /// <summary>
+        /// Estimates the size of a complex object using reflection
+        /// </summary>
+        /// <param name="obj">The object to estimate</param>
+        /// <returns>Estimated size in bytes</returns>
+        private long EstimateComplexObjectSize(object obj)
+        {
+            try
+            {
+                var type = obj.GetType();
+                var totalSize = 0L;
+                
+                // Object overhead (header + type info)
+                totalSize += 24;
+                
+                // Get all fields (including private ones)
+                var fields = type.GetFields(System.Reflection.BindingFlags.Public | 
+                                          System.Reflection.BindingFlags.NonPublic | 
+                                          System.Reflection.BindingFlags.Instance);
+                
+                foreach (var field in fields)
+                {
+                    try
+                    {
+                        var fieldValue = field.GetValue(obj);
+                        if (fieldValue != null)
+                        {
+                            totalSize += EstimateElementSize(fieldValue);
+                        }
+                    }
+                    catch
+                    {
+                        // Skip fields that can't be accessed
+                        totalSize += 8; // Conservative estimate
+                    }
+                }
+                
+                // Get all properties
+                var properties = type.GetProperties(System.Reflection.BindingFlags.Public | 
+                                                  System.Reflection.BindingFlags.Instance);
+                
+                foreach (var property in properties)
+                {
+                    try
+                    {
+                        if (property.CanRead && property.GetIndexParameters().Length == 0)
+                        {
+                            var propertyValue = property.GetValue(obj);
+                            if (propertyValue != null)
+                            {
+                                totalSize += EstimateElementSize(propertyValue);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Skip properties that can't be accessed
+                        totalSize += 8; // Conservative estimate
+                    }
+                }
+                
+                return totalSize;
+            }
+            catch
+            {
+                // Fallback: return a reasonable estimate based on type
+                return GetTypeBasedEstimate(obj.GetType());
+            }
+        }
+
+        /// <summary>
+        /// Gets a type-based size estimate as fallback
+        /// </summary>
+        /// <param name="type">The type to estimate</param>
+        /// <returns>Estimated size in bytes</returns>
+        private long GetTypeBasedEstimate(Type type)
+        {
+            // Return reasonable estimates based on common patterns
+            return type.Name switch
+            {
+                var name when name.Contains("Result") => 512,      // Command results
+                var name when name.Contains("Data") => 1024,       // Data objects
+                var name when name.Contains("Config") => 256,      // Configuration objects
+                var name when name.Contains("Info") => 128,        // Info objects
+                var name when name.Contains("Metadata") => 256,    // Metadata objects
+                _ => 200 // Generic complex object estimate
+            };
         }
 
         /// <summary>
