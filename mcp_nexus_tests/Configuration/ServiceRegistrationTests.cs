@@ -26,12 +26,12 @@ namespace mcp_nexus_tests.Configuration
     /// </summary>
     public class ServiceRegistrationTests
     {
-        private readonly ServiceCollection _services;
-        private readonly IConfiguration _configuration;
+        private readonly ServiceCollection m_Services;
+        private readonly IConfiguration m_Configuration;
 
         public ServiceRegistrationTests()
         {
-            _services = new ServiceCollection();
+            m_Services = new ServiceCollection();
             var configurationData = new Dictionary<string, string?>
             {
                 ["McpNexus:Debugging:CommandTimeoutMs"] = "30000",
@@ -43,7 +43,7 @@ namespace mcp_nexus_tests.Configuration
                 ["McpNexus:SessionManagement:MaxSessions"] = "10",
                 ["McpNexus:SessionManagement:SessionTimeoutMinutes"] = "30"
             };
-            _configuration = new ConfigurationBuilder()
+            m_Configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(configurationData)
                 .Build();
         }
@@ -68,7 +68,7 @@ namespace mcp_nexus_tests.Configuration
         {
             // Arrange
             var services = new ServiceCollection();
-            var configuration = _configuration;
+            var configuration = m_Configuration;
 
             // Act & Assert
             var exception = Record.Exception(() => ServiceRegistration.RegisterServices(services, configuration, null));
@@ -79,7 +79,7 @@ namespace mcp_nexus_tests.Configuration
         public void RegisterServices_WithNullServices_ThrowsArgumentNullException()
         {
             // Arrange
-            var configuration = _configuration;
+            var configuration = m_Configuration;
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => ServiceRegistration.RegisterServices(null!, configuration, null));
@@ -100,7 +100,7 @@ namespace mcp_nexus_tests.Configuration
         {
             // Arrange
             var services = new ServiceCollection();
-            var configuration = _configuration;
+            var configuration = m_Configuration;
             var customCdbPath = "C:\\Windows\\System32\\cdb.exe";
 
             // Act & Assert
@@ -113,7 +113,7 @@ namespace mcp_nexus_tests.Configuration
         {
             // Arrange
             var services = new ServiceCollection();
-            var configuration = _configuration;
+            var configuration = m_Configuration;
             var consoleError = new StringWriter();
             Console.SetError(consoleError);
 
@@ -148,7 +148,7 @@ namespace mcp_nexus_tests.Configuration
         {
             // Arrange
             var services = new ServiceCollection();
-            var configuration = _configuration;
+            var configuration = m_Configuration;
 
             // Add required logging services
             services.AddLogging();
@@ -185,7 +185,7 @@ namespace mcp_nexus_tests.Configuration
         {
             // Arrange
             var services = new ServiceCollection();
-            var configuration = _configuration;
+            var configuration = m_Configuration;
 
             // Add required logging services
             services.AddLogging();
@@ -218,7 +218,7 @@ namespace mcp_nexus_tests.Configuration
         {
             // Arrange
             var services = new ServiceCollection();
-            var configuration = _configuration;
+            var configuration = m_Configuration;
 
             // Add required logging services
             services.AddLogging();
@@ -242,7 +242,7 @@ namespace mcp_nexus_tests.Configuration
         {
             // Arrange
             var services = new ServiceCollection();
-            var configuration = _configuration;
+            var configuration = m_Configuration;
 
             // Add required logging services
             services.AddLogging();
@@ -266,7 +266,7 @@ namespace mcp_nexus_tests.Configuration
         {
             // Arrange
             var services = new ServiceCollection();
-            var configuration = _configuration;
+            var configuration = m_Configuration;
 
             // Act
             ServiceRegistration.RegisterServices(services, configuration, null);
@@ -285,7 +285,7 @@ namespace mcp_nexus_tests.Configuration
         {
             // Arrange
             var services = new ServiceCollection();
-            var configuration = _configuration;
+            var configuration = m_Configuration;
 
             // Act
             ServiceRegistration.RegisterServices(services, configuration, null);

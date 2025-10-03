@@ -78,16 +78,16 @@ namespace mcp_nexus.Infrastructure
         public class ServiceControlManagerHandle : IDisposable
         {
             private bool _disposed = false;
-            private readonly nint _handle;
+            private readonly nint m_Handle;
 
             internal ServiceControlManagerHandle(nint handle)
             {
-                _handle = handle;
+                m_Handle = handle;
             }
 
             public static implicit operator nint(ServiceControlManagerHandle handle)
             {
-                return handle?._handle ?? nint.Zero;
+                return handle?.m_Handle ?? nint.Zero;
             }
 
             public void Dispose()
@@ -95,9 +95,9 @@ namespace mcp_nexus.Infrastructure
                 if (!_disposed)
                 {
                     _disposed = true;
-                    if (_handle != nint.Zero)
+                    if (m_Handle != nint.Zero)
                     {
-                        CloseServiceHandle(_handle);
+                        CloseServiceHandle(m_Handle);
                     }
                 }
             }

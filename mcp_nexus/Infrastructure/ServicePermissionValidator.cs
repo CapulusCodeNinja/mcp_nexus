@@ -9,24 +9,24 @@ namespace mcp_nexus.Infrastructure
     /// </summary>
     public class ServicePermissionValidator
     {
-        private readonly ILogger<ServicePermissionValidator> _logger;
+        private readonly ILogger<ServicePermissionValidator> m_Logger;
 
         public ServicePermissionValidator(ILogger<ServicePermissionValidator> logger)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<bool> ValidatePermissionsAsync(string serviceName)
         {
             try
             {
-                _logger.LogInformation("Validating permissions for service {ServiceName}", serviceName);
+                m_Logger.LogInformation("Validating permissions for service {ServiceName}", serviceName);
                 await Task.Delay(100); // Placeholder implementation
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to validate permissions for service {ServiceName}", serviceName);
+                m_Logger.LogError(ex, "Failed to validate permissions for service {ServiceName}", serviceName);
                 return false;
             }
         }

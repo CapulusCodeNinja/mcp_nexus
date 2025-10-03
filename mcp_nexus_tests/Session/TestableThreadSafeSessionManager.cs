@@ -15,11 +15,11 @@ namespace mcp_nexus_tests.Session
     /// </summary>
     public class TestableThreadSafeSessionManager : ThreadSafeSessionManager
     {
-        private readonly Mock<ICdbSession> _mockCdbSession;
-        private readonly Mock<ICommandQueueService> _mockCommandQueue;
-        private readonly Dictionary<string, SessionInfo> _mockSessionInfos = new();
-        private readonly Dictionary<string, SessionContext> _mockSessionContexts = new();
-        private readonly SessionManagerConfiguration _config;
+        private readonly Mock<ICdbSession> m_MockCdbSession;
+        private readonly Mock<ICommandQueueService> m_MockCommandQueue;
+        private readonly Dictionary<string, SessionInfo> m_MockSessionInfos = new();
+        private readonly Dictionary<string, SessionContext> m_MockSessionContexts = new();
+        private readonly SessionManagerConfiguration m_Config;
         private int _sessionCounter = 0;
 
         public TestableThreadSafeSessionManager(
@@ -31,19 +31,19 @@ namespace mcp_nexus_tests.Session
             IOptions<CdbSessionOptions>? cdbOptions = null)
             : base(logger, serviceProvider, loggerFactory, notificationService, config, cdbOptions)
         {
-            _config = new SessionManagerConfiguration(config ?? Options.Create(new SessionConfiguration()), cdbOptions ?? Options.Create(new CdbSessionOptions()));
-            _mockCdbSession = new Mock<ICdbSession>();
-            _mockCommandQueue = new Mock<ICommandQueueService>();
+            m_Config = new SessionManagerConfiguration(config ?? Options.Create(new SessionConfiguration()), cdbOptions ?? Options.Create(new CdbSessionOptions()));
+            m_MockCdbSession = new Mock<ICdbSession>();
+            m_MockCommandQueue = new Mock<ICommandQueueService>();
 
             // Setup mock CDB session to return success
-            _mockCdbSession.Setup(x => x.IsActive).Returns(true);
-            _mockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string?>()))
+            m_MockCdbSession.Setup(x => x.IsActive).Returns(true);
+            m_MockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string?>()))
                 .Returns(Task.FromResult(true));
-            _mockCdbSession.Setup(x => x.StopSession())
+            m_MockCdbSession.Setup(x => x.StopSession())
                 .Returns(Task.FromResult(true));
 
             // Setup mock command queue
-            _mockCommandQueue.Setup(x => x.GetQueueStatus())
+            m_MockCommandQueue.Setup(x => x.GetQueueStatus())
                 .Returns(new List<(string Id, string Command, DateTime QueueTime, string Status)>());
         }
 
@@ -60,9 +60,9 @@ namespace mcp_nexus_tests.Session
                 throw new ArgumentException("Dump path cannot be empty", nameof(dumpPath));
 
             // Check session count limits (same as base class)
-            if (_config.WouldExceedSessionLimit(_mockSessionInfos.Count))
+            if (m_Config.WouldExceedSessionLimit(m_MockSessionInfos.Count))
             {
-                throw new SessionLimitExceededException(_mockSessionInfos.Count, _config.Config.MaxConcurrentSessions);
+                throw new SessionLimitExceededException(m_MockSessionInfos.Count, m_Config.Config.MaxConcurrentSessions);
             }
 
             // Generate session ID
@@ -77,8 +77,8 @@ namespace mcp_nexus_tests.Session
                 SymbolsPath = symbolsPath,
                 CreatedAt = DateTime.UtcNow,
                 Status = SessionStatus.Active,
-                CdbSession = _mockCdbSession.Object,
-                CommandQueue = _mockCommandQueue.Object
+                CdbSession = m_MockCdbSession.Object,
+                CommandQueue = m_MockCommandQueue.Object
             };
 
             // Create mock session context
@@ -92,8 +92,8 @@ namespace mcp_nexus_tests.Session
                 Description = $"Mock session for {Path.GetFileName(dumpPath)}"
             };
 
-            _mockSessionInfos[sessionId] = sessionInfo;
-            _mockSessionContexts[sessionId] = sessionContext;
+            m_MockSessionInfos[sessionId] = sessionInfo;
+            m_MockSessionContexts[sessionId] = sessionContext;
 
             await Task.Delay(1, cancellationToken); // Simulate async work
             return sessionId;
@@ -107,7 +107,7 @@ namespace mcp_nexus_tests.Session
             if (string.IsNullOrEmpty(sessionId))
                 throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
 
-            if (_mockSessionContexts.TryGetValue(sessionId, out var context))
+            if (m_MockSessionContexts.TryGetValue(sessionId, out var context))
             {
                 if (context.Status == "Disposed")
                     throw new SessionNotFoundException(sessionId, "Session has been disposed");
@@ -122,7 +122,7 @@ namespace mcp_nexus_tests.Session
         /// </summary>
         public override IEnumerable<SessionContext> GetActiveSessions()
         {
-            return _mockSessionContexts.Values.Where(s => s.Status == "Active");
+            return m_MockSessionContexts.Values.Where(s => s.Status == "Active");
         }
 
         /// <summary>
@@ -131,7 +131,7 @@ namespace mcp_nexus_tests.Session
         public override IEnumerable<SessionInfo> GetAllSessions()
         {
             // Based on the test expectation, GetAllSessions should only return active sessions
-            return _mockSessionInfos.Values.Where(s => s.Status == SessionStatus.Active);
+            return m_MockSessionInfos.Values.Where(s => s.Status == SessionStatus.Active);
         }
 
         /// <summary>
@@ -139,8 +139,8 @@ namespace mcp_nexus_tests.Session
         /// </summary>
         public override bool SessionExists(string sessionId)
         {
-            return _mockSessionInfos.ContainsKey(sessionId) &&
-                   _mockSessionInfos[sessionId].Status == SessionStatus.Active;
+            return m_MockSessionInfos.ContainsKey(sessionId) &&
+                   m_MockSessionInfos[sessionId].Status == SessionStatus.Active;
         }
 
         /// <summary>
@@ -155,8 +155,8 @@ namespace mcp_nexus_tests.Session
             if (string.IsNullOrWhiteSpace(sessionId))
                 throw new ArgumentException("Session ID cannot be empty or whitespace", nameof(sessionId));
 
-            if (_mockSessionInfos.TryGetValue(sessionId, out var info) &&
-                _mockSessionContexts.TryGetValue(sessionId, out var context))
+            if (m_MockSessionInfos.TryGetValue(sessionId, out var info) &&
+                m_MockSessionContexts.TryGetValue(sessionId, out var context))
             {
                 info.Status = SessionStatus.Disposed;
                 context.Status = "Disposed";
@@ -171,7 +171,7 @@ namespace mcp_nexus_tests.Session
         /// </summary>
         public override void UpdateActivity(string sessionId)
         {
-            if (_mockSessionContexts.TryGetValue(sessionId, out var context))
+            if (m_MockSessionContexts.TryGetValue(sessionId, out var context))
             {
                 context.LastActivity = DateTime.UtcNow;
             }
@@ -183,7 +183,7 @@ namespace mcp_nexus_tests.Session
         // Note: TryGetCommandQueue is not virtual, so we can't override it
         // The test will need to work with the base implementation
 
-        public Mock<ICdbSession> MockCdbSession => _mockCdbSession;
-        public Mock<ICommandQueueService> MockCommandQueue => _mockCommandQueue;
+        public Mock<ICdbSession> MockCdbSession => m_MockCdbSession;
+        public Mock<ICommandQueueService> MockCommandQueue => m_MockCommandQueue;
     }
 }

@@ -10,64 +10,64 @@ namespace mcp_nexus_tests.Debugger
     /// </summary>
     public class CdbProcessManagerTests : IDisposable
     {
-        private readonly Mock<ILogger<CdbProcessManager>> _mockLogger;
-        private readonly CdbSessionConfiguration _config;
-        private readonly CdbProcessManager _processManager;
+        private readonly Mock<ILogger<CdbProcessManager>> m_MockLogger;
+        private readonly CdbSessionConfiguration m_Config;
+        private readonly CdbProcessManager m_ProcessManager;
 
         public CdbProcessManagerTests()
         {
-            _mockLogger = new Mock<ILogger<CdbProcessManager>>();
-            _config = new CdbSessionConfiguration();
-            _processManager = new CdbProcessManager(_mockLogger.Object, _config);
+            m_MockLogger = new Mock<ILogger<CdbProcessManager>>();
+            m_Config = new CdbSessionConfiguration();
+            m_ProcessManager = new CdbProcessManager(m_MockLogger.Object, m_Config);
         }
 
         public void Dispose()
         {
-            _processManager.Dispose();
+            m_ProcessManager.Dispose();
         }
 
         [Fact]
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() =>
-                new CdbProcessManager(null!, _config));
+                new CdbProcessManager(null!, m_Config));
         }
 
         [Fact]
         public void Constructor_WithNullConfig_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() =>
-                new CdbProcessManager(_mockLogger.Object, null!));
+                new CdbProcessManager(m_MockLogger.Object, null!));
         }
 
         [Fact]
         public void Constructor_InitializesCorrectly()
         {
-            Assert.False(_processManager.IsActive);
-            Assert.Null(_processManager.DebuggerProcess);
-            Assert.Null(_processManager.DebuggerInput);
-            Assert.Null(_processManager.DebuggerOutput);
-            Assert.Null(_processManager.DebuggerError);
+            Assert.False(m_ProcessManager.IsActive);
+            Assert.Null(m_ProcessManager.DebuggerProcess);
+            Assert.Null(m_ProcessManager.DebuggerInput);
+            Assert.Null(m_ProcessManager.DebuggerOutput);
+            Assert.Null(m_ProcessManager.DebuggerError);
         }
 
         [Fact]
         public void StartProcess_WithNullTarget_ReturnsFalse()
         {
-            var result = _processManager.StartProcess(null!);
+            var result = m_ProcessManager.StartProcess(null!);
             Assert.False(result);
         }
 
         [Fact]
         public void StartProcess_WithEmptyTarget_ReturnsFalse()
         {
-            var result = _processManager.StartProcess("");
+            var result = m_ProcessManager.StartProcess("");
             Assert.False(result);
         }
 
         [Fact]
         public void StartProcess_WithWhitespaceTarget_ReturnsFalse()
         {
-            var result = _processManager.StartProcess("   ");
+            var result = m_ProcessManager.StartProcess("   ");
             Assert.False(result);
         }
 
@@ -75,7 +75,7 @@ namespace mcp_nexus_tests.Debugger
         public void StartProcess_WithNonExistentCdbPath_ReturnsFalse()
         {
             var configWithInvalidPath = new CdbSessionConfiguration(customCdbPath: "nonexistent.exe");
-            var processManager = new CdbProcessManager(_mockLogger.Object, configWithInvalidPath);
+            var processManager = new CdbProcessManager(m_MockLogger.Object, configWithInvalidPath);
 
             var result = processManager.StartProcess("test.dmp");
 
@@ -88,7 +88,7 @@ namespace mcp_nexus_tests.Debugger
         public void StartProcess_WithNullCdbPath_ReturnsFalse()
         {
             var configWithNullPath = new CdbSessionConfiguration(customCdbPath: null);
-            var processManager = new CdbProcessManager(_mockLogger.Object, configWithNullPath);
+            var processManager = new CdbProcessManager(m_MockLogger.Object, configWithNullPath);
 
             var result = processManager.StartProcess("test.dmp");
             Assert.False(result);
@@ -99,7 +99,7 @@ namespace mcp_nexus_tests.Debugger
         public void StartProcess_WithEmptyCdbPath_ReturnsFalse()
         {
             var configWithEmptyPath = new CdbSessionConfiguration(customCdbPath: "");
-            var processManager = new CdbProcessManager(_mockLogger.Object, configWithEmptyPath);
+            var processManager = new CdbProcessManager(m_MockLogger.Object, configWithEmptyPath);
 
             var result = processManager.StartProcess("test.dmp");
             Assert.False(result);
@@ -109,7 +109,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void StopProcess_WhenNotActive_ReturnsFalse()
         {
-            var result = _processManager.StopProcess();
+            var result = m_ProcessManager.StopProcess();
 
             Assert.False(result);
         }
@@ -117,33 +117,33 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void StopProcess_WhenDisposed_ThrowsObjectDisposedException()
         {
-            _processManager.Dispose();
+            m_ProcessManager.Dispose();
 
-            Assert.Throws<ObjectDisposedException>(() => _processManager.StopProcess());
+            Assert.Throws<ObjectDisposedException>(() => m_ProcessManager.StopProcess());
         }
 
         [Fact]
         public void StartProcess_WhenDisposed_ThrowsObjectDisposedException()
         {
-            _processManager.Dispose();
+            m_ProcessManager.Dispose();
 
-            Assert.Throws<ObjectDisposedException>(() => _processManager.StartProcess("test.dmp"));
+            Assert.Throws<ObjectDisposedException>(() => m_ProcessManager.StartProcess("test.dmp"));
         }
 
         [Fact]
         public void StartProcess_WhenDisposed_ThrowsObjectDisposedExceptionWithOverride()
         {
-            _processManager.Dispose();
+            m_ProcessManager.Dispose();
 
-            Assert.Throws<ObjectDisposedException>(() => _processManager.StartProcess("test.dmp", "cdb.exe"));
+            Assert.Throws<ObjectDisposedException>(() => m_ProcessManager.StartProcess("test.dmp", "cdb.exe"));
         }
 
         [Fact]
         public void LogProcessDiagnostics_WithNullProcess_LogsNoProcess()
         {
-            _processManager.LogProcessDiagnostics("test");
+            m_ProcessManager.LogProcessDiagnostics("test");
 
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Debug,
                     It.IsAny<EventId>(),
@@ -156,9 +156,9 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void LogProcessDiagnostics_WithEmptyContext_LogsDiagnostics()
         {
-            _processManager.LogProcessDiagnostics("");
+            m_ProcessManager.LogProcessDiagnostics("");
 
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Debug,
                     It.IsAny<EventId>(),
@@ -171,9 +171,9 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void LogProcessDiagnostics_WithNullContext_LogsDiagnostics()
         {
-            _processManager.LogProcessDiagnostics(null!);
+            m_ProcessManager.LogProcessDiagnostics(null!);
 
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Debug,
                     It.IsAny<EventId>(),
@@ -190,10 +190,10 @@ namespace mcp_nexus_tests.Debugger
             // since we can't easily make the process throw an exception
             // We'll test the basic functionality instead
 
-            _processManager.LogProcessDiagnostics("test");
+            m_ProcessManager.LogProcessDiagnostics("test");
 
             // Should not throw and should log the no process message
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Debug,
                     It.IsAny<EventId>(),
@@ -206,16 +206,16 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void Dispose_WhenNotDisposed_SetsDisposedFlag()
         {
-            _processManager.Dispose();
+            m_ProcessManager.Dispose();
 
-            Assert.False(_processManager.IsActive);
+            Assert.False(m_ProcessManager.IsActive);
         }
 
         [Fact]
         public void Dispose_WhenAlreadyDisposed_DoesNotThrow()
         {
-            _processManager.Dispose();
-            _processManager.Dispose();
+            m_ProcessManager.Dispose();
+            m_ProcessManager.Dispose();
 
             Assert.True(true);
         }
@@ -223,45 +223,45 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void IsActive_WhenDisposed_ReturnsFalse()
         {
-            _processManager.Dispose();
+            m_ProcessManager.Dispose();
 
-            Assert.False(_processManager.IsActive);
+            Assert.False(m_ProcessManager.IsActive);
         }
 
         [Fact]
         public void IsActive_WhenNotDisposed_ReturnsFalse()
         {
-            Assert.False(_processManager.IsActive);
+            Assert.False(m_ProcessManager.IsActive);
         }
 
         [Fact]
         public void IsActive_WhenNotInitialized_ReturnsFalse()
         {
-            Assert.False(_processManager.IsActive);
+            Assert.False(m_ProcessManager.IsActive);
         }
 
         [Fact]
         public void DebuggerProcess_WhenNotStarted_ReturnsNull()
         {
-            Assert.Null(_processManager.DebuggerProcess);
+            Assert.Null(m_ProcessManager.DebuggerProcess);
         }
 
         [Fact]
         public void DebuggerInput_WhenNotStarted_ReturnsNull()
         {
-            Assert.Null(_processManager.DebuggerInput);
+            Assert.Null(m_ProcessManager.DebuggerInput);
         }
 
         [Fact]
         public void DebuggerOutput_WhenNotStarted_ReturnsNull()
         {
-            Assert.Null(_processManager.DebuggerOutput);
+            Assert.Null(m_ProcessManager.DebuggerOutput);
         }
 
         [Fact]
         public void DebuggerError_WhenNotStarted_ReturnsNull()
         {
-            Assert.Null(_processManager.DebuggerError);
+            Assert.Null(m_ProcessManager.DebuggerError);
         }
 
         [Fact]
@@ -271,10 +271,10 @@ namespace mcp_nexus_tests.Debugger
             // since we can't easily make the config throw an exception
             // We'll test the basic functionality instead
 
-            var result = _processManager.StartProcess("test.dmp");
+            var result = m_ProcessManager.StartProcess("test.dmp");
 
             Assert.False(result);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
@@ -297,7 +297,7 @@ namespace mcp_nexus_tests.Debugger
                 File.WriteAllText(tempCdbPath, "dummy cdb content");
 
                 var configWithValidPath = new CdbSessionConfiguration(customCdbPath: tempCdbPath);
-                var processManager = new CdbProcessManager(_mockLogger.Object, configWithValidPath);
+                var processManager = new CdbProcessManager(m_MockLogger.Object, configWithValidPath);
 
                 var result = processManager.StartProcess("test.dmp");
 
@@ -326,7 +326,7 @@ namespace mcp_nexus_tests.Debugger
                 File.WriteAllText(tempCdbPath, "dummy cdb content");
 
                 var configWithValidPath = new CdbSessionConfiguration(customCdbPath: "original.exe");
-                var processManager = new CdbProcessManager(_mockLogger.Object, configWithValidPath);
+                var processManager = new CdbProcessManager(m_MockLogger.Object, configWithValidPath);
 
                 var result = processManager.StartProcess("test.dmp", tempCdbPath);
 
@@ -355,7 +355,7 @@ namespace mcp_nexus_tests.Debugger
                 File.WriteAllText(tempCdbPath, "dummy cdb content");
 
                 var configWithValidPath = new CdbSessionConfiguration(customCdbPath: tempCdbPath);
-                var processManager = new CdbProcessManager(_mockLogger.Object, configWithValidPath);
+                var processManager = new CdbProcessManager(m_MockLogger.Object, configWithValidPath);
 
                 var result = processManager.StartProcess("-z test.dmp");
 
@@ -386,7 +386,7 @@ namespace mcp_nexus_tests.Debugger
                 var configWithSymbolPath = new CdbSessionConfiguration(
                     customCdbPath: tempCdbPath,
                     symbolSearchPath: "srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols");
-                var processManager = new CdbProcessManager(_mockLogger.Object, configWithSymbolPath);
+                var processManager = new CdbProcessManager(m_MockLogger.Object, configWithSymbolPath);
 
                 var result = processManager.StartProcess("test.dmp");
 

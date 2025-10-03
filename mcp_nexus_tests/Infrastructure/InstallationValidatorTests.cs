@@ -15,11 +15,11 @@ namespace mcp_nexus_tests.Infrastructure
     [SupportedOSPlatform("windows")]
     public class InstallationValidatorTests
     {
-        private readonly Mock<ILogger> _mockLogger;
+        private readonly Mock<ILogger> m_MockLogger;
 
         public InstallationValidatorTests()
         {
-            _mockLogger = new Mock<ILogger>();
+            m_MockLogger = new Mock<ILogger>();
         }
 
         [Fact]
@@ -43,7 +43,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidateInstallationPrerequisitesAsync_WithLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await InstallationValidator.ValidateInstallationPrerequisitesAsync(_mockLogger.Object);
+            var result = await InstallationValidator.ValidateInstallationPrerequisitesAsync(m_MockLogger.Object);
 
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result.IsValid || !result.IsValid);
@@ -63,7 +63,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidateUninstallationPrerequisitesAsync_WithLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await InstallationValidator.ValidateUninstallationPrerequisitesAsync(_mockLogger.Object);
+            var result = await InstallationValidator.ValidateUninstallationPrerequisitesAsync(m_MockLogger.Object);
 
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result.IsValid || !result.IsValid);
@@ -83,7 +83,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidateUpdatePrerequisitesAsync_WithLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await InstallationValidator.ValidateUpdatePrerequisitesAsync(_mockLogger.Object);
+            var result = await InstallationValidator.ValidateUpdatePrerequisitesAsync(m_MockLogger.Object);
 
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result.IsValid || !result.IsValid);
@@ -103,7 +103,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void ValidateInstallationSuccess_WithLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = InstallationValidator.ValidateInstallationSuccess(_mockLogger.Object);
+            var result = InstallationValidator.ValidateInstallationSuccess(m_MockLogger.Object);
 
             // The result depends on the actual system state, but the method should not throw
             Assert.True(result.IsValid || !result.IsValid);

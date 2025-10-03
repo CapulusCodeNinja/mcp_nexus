@@ -12,11 +12,11 @@ namespace mcp_nexus_tests.Infrastructure
     [SupportedOSPlatform("windows")]
     public class ServiceRegistryManagerTests
     {
-        private readonly Mock<ILogger> _mockLogger;
+        private readonly Mock<ILogger> m_MockLogger;
 
         public ServiceRegistryManagerTests()
         {
-            _mockLogger = new Mock<ILogger>();
+            m_MockLogger = new Mock<ILogger>();
         }
 
         [Fact]
@@ -87,7 +87,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task RunScCommandAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.RunScCommandAsync("query", _mockLogger.Object);
+            var result = await ServiceRegistryManager.RunScCommandAsync("query", m_MockLogger.Object);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -96,7 +96,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task RunScCommandAsync_WithAllowFailureTrue_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.RunScCommandAsync("query", _mockLogger.Object, true);
+            var result = await ServiceRegistryManager.RunScCommandAsync("query", m_MockLogger.Object, true);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -105,7 +105,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task RunScCommandAsync_WithAllowFailureFalse_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.RunScCommandAsync("query", _mockLogger.Object, false);
+            var result = await ServiceRegistryManager.RunScCommandAsync("query", m_MockLogger.Object, false);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -123,7 +123,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ForceCleanupServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.ForceCleanupServiceStaticAsync(_mockLogger.Object);
+            var result = await ServiceRegistryManager.ForceCleanupServiceStaticAsync(m_MockLogger.Object);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -141,7 +141,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task DirectRegistryCleanupAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.DirectRegistryCleanupStaticAsync(_mockLogger.Object);
+            var result = await ServiceRegistryManager.DirectRegistryCleanupStaticAsync(m_MockLogger.Object);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -159,7 +159,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CreateServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.CreateServiceStaticAsync(_mockLogger.Object);
+            var result = await ServiceRegistryManager.CreateServiceStaticAsync(m_MockLogger.Object);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -177,7 +177,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task DeleteServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.DeleteServiceStaticAsync(_mockLogger.Object);
+            var result = await ServiceRegistryManager.DeleteServiceStaticAsync(m_MockLogger.Object);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -284,11 +284,11 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task AllAsyncMethods_HandleExceptions()
         {
             // This test verifies that all async methods handle exceptions gracefully
-            await ServiceRegistryManager.RunScCommandAsync("query", _mockLogger.Object);
-            await ServiceRegistryManager.ForceCleanupServiceStaticAsync(_mockLogger.Object);
-            await ServiceRegistryManager.DirectRegistryCleanupStaticAsync(_mockLogger.Object);
-            await ServiceRegistryManager.CreateServiceStaticAsync(_mockLogger.Object);
-            await ServiceRegistryManager.DeleteServiceStaticAsync(_mockLogger.Object);
+            await ServiceRegistryManager.RunScCommandAsync("query", m_MockLogger.Object);
+            await ServiceRegistryManager.ForceCleanupServiceStaticAsync(m_MockLogger.Object);
+            await ServiceRegistryManager.DirectRegistryCleanupStaticAsync(m_MockLogger.Object);
+            await ServiceRegistryManager.CreateServiceStaticAsync(m_MockLogger.Object);
+            await ServiceRegistryManager.DeleteServiceStaticAsync(m_MockLogger.Object);
 
             // Should not throw exceptions
             Assert.True(true);
@@ -347,7 +347,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task RunScCommandAsync_WithInvalidCommand_HandlesGracefully()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.RunScCommandAsync("invalidcommand", _mockLogger.Object);
+            var result = await ServiceRegistryManager.RunScCommandAsync("invalidcommand", m_MockLogger.Object);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }
@@ -356,7 +356,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task RunScCommandAsync_WithLongRunningCommand_HandlesGracefully()
         {
             // Act & Assert
-            var result = await ServiceRegistryManager.RunScCommandAsync("query type= service", _mockLogger.Object);
+            var result = await ServiceRegistryManager.RunScCommandAsync("query type= service", m_MockLogger.Object);
             // Should not throw, result should be boolean
             Assert.True(result == true || result == false);
         }

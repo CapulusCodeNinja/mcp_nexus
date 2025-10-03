@@ -13,11 +13,11 @@ namespace mcp_nexus_tests.Infrastructure
     /// </summary>
     public class FileOperationsManagerTests
     {
-        private readonly Mock<ILogger<FileOperationsManager>> _mockLogger;
+        private readonly Mock<ILogger<FileOperationsManager>> m_MockLogger;
 
         public FileOperationsManagerTests()
         {
-            _mockLogger = new Mock<ILogger<FileOperationsManager>>();
+            m_MockLogger = new Mock<ILogger<FileOperationsManager>>();
         }
 
         [Fact]
@@ -38,7 +38,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void Constructor_WithValidLogger_CreatesInstance()
         {
             // Act
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
 
             // Assert
             Assert.NotNull(manager);
@@ -48,7 +48,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CopyFileAsync_WithNonExistentSource_ReturnsFalse()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var sourcePath = "nonexistent.txt";
             var destinationPath = "destination.txt";
 
@@ -57,7 +57,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             Assert.False(result);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
@@ -71,7 +71,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CopyFileAsync_WithValidSource_CreatesDestinationDirectoryAndCopiesFile()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var sourcePath = Path.GetTempFileName();
             var destinationDir = Path.Combine(Path.GetTempPath(), "TestDir");
             var destinationPath = Path.Combine(destinationDir, "copied.txt");
@@ -88,7 +88,7 @@ namespace mcp_nexus_tests.Infrastructure
                 Assert.True(result);
                 Assert.True(File.Exists(destinationPath));
                 Assert.True(Directory.Exists(destinationDir));
-                _mockLogger.Verify(
+                m_MockLogger.Verify(
                     x => x.Log(
                         LogLevel.Information,
                         It.IsAny<EventId>(),
@@ -110,7 +110,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CopyFileAsync_WithExistingDestination_OverwritesFile()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var sourcePath = Path.GetTempFileName();
             var destinationPath = Path.GetTempFileName();
 
@@ -141,7 +141,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task DeleteFileAsync_WithNonExistentFile_ReturnsTrue()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var filePath = "nonexistent.txt";
 
             // Act
@@ -155,7 +155,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task DeleteFileAsync_WithExistingFile_DeletesFile()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var filePath = Path.GetTempFileName();
 
             try
@@ -166,7 +166,7 @@ namespace mcp_nexus_tests.Infrastructure
                 // Assert
                 Assert.True(result);
                 Assert.False(File.Exists(filePath));
-                _mockLogger.Verify(
+                m_MockLogger.Verify(
                     x => x.Log(
                         LogLevel.Information,
                         It.IsAny<EventId>(),
@@ -186,7 +186,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CreateDirectoryAsync_WithNonExistentDirectory_CreatesDirectory()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var directoryPath = Path.Combine(Path.GetTempPath(), "TestDirectory");
 
             try
@@ -197,7 +197,7 @@ namespace mcp_nexus_tests.Infrastructure
                 // Assert
                 Assert.True(result);
                 Assert.True(Directory.Exists(directoryPath));
-                _mockLogger.Verify(
+                m_MockLogger.Verify(
                     x => x.Log(
                         LogLevel.Information,
                         It.IsAny<EventId>(),
@@ -217,7 +217,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CreateDirectoryAsync_WithExistingDirectory_ReturnsTrue()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var directoryPath = Path.Combine(Path.GetTempPath(), "ExistingDirectory");
             Directory.CreateDirectory(directoryPath);
 
@@ -241,7 +241,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task FileExistsAsync_WithExistingFile_ReturnsTrue()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var filePath = Path.GetTempFileName();
 
             try
@@ -263,7 +263,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task FileExistsAsync_WithNonExistentFile_ReturnsFalse()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var filePath = "nonexistent.txt";
 
             // Act
@@ -277,7 +277,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task GetFileSizeAsync_WithExistingFile_ReturnsCorrectSize()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var filePath = Path.GetTempFileName();
             var content = "test content";
 
@@ -302,7 +302,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task GetFileSizeAsync_WithNonExistentFile_ReturnsZero()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var filePath = "nonexistent.txt";
 
             // Act
@@ -316,7 +316,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task GetFilesAsync_WithExistingDirectory_ReturnsFiles()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var directoryPath = Path.Combine(Path.GetTempPath(), "TestDirectory");
             Directory.CreateDirectory(directoryPath);
 
@@ -356,7 +356,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task GetFilesAsync_WithNonExistentDirectory_ReturnsEmptyArray()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var directoryPath = "nonexistent_directory";
 
             // Act
@@ -371,7 +371,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task GetFilesAsync_WithPattern_ReturnsMatchingFiles()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var directoryPath = Path.Combine(Path.GetTempPath(), "TestDirectory");
             Directory.CreateDirectory(directoryPath);
 
@@ -414,7 +414,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task GetFilesAsync_WithSubdirectories_ReturnsAllFiles()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var directoryPath = Path.Combine(Path.GetTempPath(), "TestDirectory");
             var subDirectoryPath = Path.Combine(directoryPath, "SubDirectory");
             Directory.CreateDirectory(directoryPath);
@@ -457,7 +457,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CopyFileAsync_WithInvalidPath_HandlesException()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var sourcePath = Path.GetTempFileName();
             var destinationPath = "invalid/path/with/invalid/characters/<>:|?*";
 
@@ -470,7 +470,7 @@ namespace mcp_nexus_tests.Infrastructure
 
                 // Assert
                 Assert.False(result);
-                _mockLogger.Verify(
+                m_MockLogger.Verify(
                     x => x.Log(
                         LogLevel.Error,
                         It.IsAny<EventId>(),
@@ -490,7 +490,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task DeleteFileAsync_WithReadOnlyFile_HandlesException()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var filePath = Path.GetTempFileName();
 
             try
@@ -503,7 +503,7 @@ namespace mcp_nexus_tests.Infrastructure
 
                 // Assert
                 Assert.False(result);
-                _mockLogger.Verify(
+                m_MockLogger.Verify(
                     x => x.Log(
                         LogLevel.Error,
                         It.IsAny<EventId>(),
@@ -527,7 +527,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CreateDirectoryAsync_WithInvalidPath_HandlesException()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var directoryPath = "invalid/path/with/invalid/characters/<>:|?*";
 
             // Act
@@ -535,7 +535,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             Assert.False(result);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
@@ -549,7 +549,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task GetFileSizeAsync_WithAccessDenied_HandlesException()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var filePath = "C:\\Windows\\System32\\config\\SAM"; // This file is typically inaccessible
 
             // Act
@@ -565,7 +565,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task GetFilesAsync_WithAccessDenied_HandlesException()
         {
             // Arrange
-            var manager = new FileOperationsManager(_mockLogger.Object);
+            var manager = new FileOperationsManager(m_MockLogger.Object);
             var directoryPath = "C:\\Windows\\System32\\config"; // This directory may be inaccessible
 
             // Act

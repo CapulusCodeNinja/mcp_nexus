@@ -12,13 +12,13 @@ namespace mcp_nexus_tests.Middleware
     /// </summary>
     public class ContentTypeValidationMiddlewareTests
     {
-        private readonly Mock<ILogger<ContentTypeValidationMiddleware>> _mockLogger;
-        private readonly Mock<RequestDelegate> _mockNext;
+        private readonly Mock<ILogger<ContentTypeValidationMiddleware>> m_MockLogger;
+        private readonly Mock<RequestDelegate> m_MockNext;
 
         public ContentTypeValidationMiddlewareTests()
         {
-            _mockLogger = new Mock<ILogger<ContentTypeValidationMiddleware>>();
-            _mockNext = new Mock<RequestDelegate>();
+            m_MockLogger = new Mock<ILogger<ContentTypeValidationMiddleware>>();
+            m_MockNext = new Mock<RequestDelegate>();
         }
 
         [Fact]
@@ -32,7 +32,7 @@ namespace mcp_nexus_tests.Middleware
         public void Constructor_WithValidParameters_CreatesInstance()
         {
             // Act
-            var middleware = new ContentTypeValidationMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new ContentTypeValidationMiddleware(m_MockNext.Object, m_MockLogger.Object);
 
             // Assert
             Assert.NotNull(middleware);
@@ -42,7 +42,7 @@ namespace mcp_nexus_tests.Middleware
         public void Constructor_WithNullNext_CreatesInstance()
         {
             // Act
-            var middleware = new ContentTypeValidationMiddleware(null!, _mockLogger.Object);
+            var middleware = new ContentTypeValidationMiddleware(null!, m_MockLogger.Object);
 
             // Assert
             Assert.NotNull(middleware);
@@ -52,7 +52,7 @@ namespace mcp_nexus_tests.Middleware
         public void Constructor_WithNullLogger_CreatesInstance()
         {
             // Act
-            var middleware = new ContentTypeValidationMiddleware(_mockNext.Object, null!);
+            var middleware = new ContentTypeValidationMiddleware(m_MockNext.Object, null!);
 
             // Assert
             Assert.NotNull(middleware);
@@ -62,42 +62,42 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithValidJsonContentType_CallsNext()
         {
             // Arrange
-            var middleware = new ContentTypeValidationMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new ContentTypeValidationMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/", "POST", "application/json");
 
             // Act
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(next => next(context), Times.Once);
+            m_MockNext.Verify(next => next(context), Times.Once);
         }
 
         [Fact]
         public async Task InvokeAsync_WithValidJsonContentTypeWithCharset_CallsNext()
         {
             // Arrange
-            var middleware = new ContentTypeValidationMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new ContentTypeValidationMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/", "POST", "application/json; charset=utf-8");
 
             // Act
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(next => next(context), Times.Once);
+            m_MockNext.Verify(next => next(context), Times.Once);
         }
 
         [Fact]
         public async Task InvokeAsync_WithInvalidContentType_Returns400AndDoesNotCallNext()
         {
             // Arrange
-            var middleware = new ContentTypeValidationMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new ContentTypeValidationMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/", "POST", "text/plain");
 
             // Act
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(next => next(context), Times.Never);
+            m_MockNext.Verify(next => next(context), Times.Never);
             Assert.Equal(400, context.Response.StatusCode);
             Assert.Equal("application/json; charset=utf-8", context.Response.ContentType);
         }
@@ -106,14 +106,14 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithNullContentType_Returns400AndDoesNotCallNext()
         {
             // Arrange
-            var middleware = new ContentTypeValidationMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new ContentTypeValidationMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/", "POST", null);
 
             // Act
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(next => next(context), Times.Never);
+            m_MockNext.Verify(next => next(context), Times.Never);
             Assert.Equal(400, context.Response.StatusCode);
             Assert.Equal("application/json; charset=utf-8", context.Response.ContentType);
         }
@@ -122,14 +122,14 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithEmptyContentType_Returns400AndDoesNotCallNext()
         {
             // Arrange
-            var middleware = new ContentTypeValidationMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new ContentTypeValidationMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/", "POST", "");
 
             // Act
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(next => next(context), Times.Never);
+            m_MockNext.Verify(next => next(context), Times.Never);
             Assert.Equal(400, context.Response.StatusCode);
             Assert.Equal("application/json; charset=utf-8", context.Response.ContentType);
         }
@@ -138,42 +138,42 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithNonRootPath_CallsNext()
         {
             // Arrange
-            var middleware = new ContentTypeValidationMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new ContentTypeValidationMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/api/test", "POST", "text/plain");
 
             // Act
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(next => next(context), Times.Once);
+            m_MockNext.Verify(next => next(context), Times.Once);
         }
 
         [Fact]
         public async Task InvokeAsync_WithNonPostMethod_CallsNext()
         {
             // Arrange
-            var middleware = new ContentTypeValidationMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new ContentTypeValidationMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/", "GET", "text/plain");
 
             // Act
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(next => next(context), Times.Once);
+            m_MockNext.Verify(next => next(context), Times.Once);
         }
 
         [Fact]
         public async Task InvokeAsync_WithInvalidContentType_LogsWarning()
         {
             // Arrange
-            var middleware = new ContentTypeValidationMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new ContentTypeValidationMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/", "POST", "text/plain");
 
             // Act
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
@@ -187,7 +187,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithInvalidContentType_ReturnsJsonRpcErrorResponse()
         {
             // Arrange
-            var middleware = new ContentTypeValidationMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new ContentTypeValidationMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/", "POST", "text/plain");
 
             // Act
@@ -209,14 +209,14 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithValidContentType_DoesNotLogWarning()
         {
             // Arrange
-            var middleware = new ContentTypeValidationMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new ContentTypeValidationMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/", "POST", "application/json");
 
             // Act
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),

@@ -17,29 +17,29 @@ namespace mcp_nexus_tests.Session
     /// </summary>
     public class SessionLifecycleManagerTests : IDisposable
     {
-        private readonly Mock<ILogger> _mockLogger;
-        private readonly Mock<ILogger<CdbSession>> _mockCdbLogger;
-        private readonly Mock<ILogger<IsolatedCommandQueueService>> _mockCommandQueueLogger;
-        private readonly Mock<IServiceProvider> _mockServiceProvider;
-        private readonly Mock<ILoggerFactory> _mockLoggerFactory;
-        private readonly Mock<IMcpNotificationService> _mockNotificationService;
-        private readonly Mock<ICdbSession> _mockCdbSession;
-        private readonly Mock<ICommandQueueService> _mockCommandQueue;
-        private readonly SessionManagerConfiguration _config;
-        private readonly ConcurrentDictionary<string, SessionInfo> _sessions;
-        private readonly SessionLifecycleManager _manager;
+        private readonly Mock<ILogger> m_MockLogger;
+        private readonly Mock<ILogger<CdbSession>> m_MockCdbLogger;
+        private readonly Mock<ILogger<IsolatedCommandQueueService>> mm_MockCommandQueueLogger;
+        private readonly Mock<IServiceProvider> m_MockServiceProvider;
+        private readonly Mock<ILoggerFactory> mm_MockLoggerFactory;
+        private readonly Mock<IMcpNotificationService> m_MockNotificationService;
+        private readonly Mock<ICdbSession> m_MockCdbSession;
+        private readonly Mock<ICommandQueueService> m_MockCommandQueue;
+        private readonly SessionManagerConfiguration m_Config;
+        private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions;
+        private readonly SessionLifecycleManager m_Manager;
 
         public SessionLifecycleManagerTests()
         {
-            _mockLogger = new Mock<ILogger>();
-            _mockCdbLogger = new Mock<ILogger<CdbSession>>();
-            _mockCommandQueueLogger = new Mock<ILogger<IsolatedCommandQueueService>>();
-            _mockServiceProvider = new Mock<IServiceProvider>();
-            _mockLoggerFactory = new Mock<ILoggerFactory>();
-            _mockNotificationService = new Mock<IMcpNotificationService>();
-            _mockCdbSession = new Mock<ICdbSession>();
-            _mockCommandQueue = new Mock<ICommandQueueService>();
-            _sessions = new ConcurrentDictionary<string, SessionInfo>();
+            m_MockLogger = new Mock<ILogger>();
+            m_MockCdbLogger = new Mock<ILogger<CdbSession>>();
+            mm_MockCommandQueueLogger = new Mock<ILogger<IsolatedCommandQueueService>>();
+            m_MockServiceProvider = new Mock<IServiceProvider>();
+            mm_MockLoggerFactory = new Mock<ILoggerFactory>();
+            m_MockNotificationService = new Mock<IMcpNotificationService>();
+            m_MockCdbSession = new Mock<ICdbSession>();
+            m_MockCommandQueue = new Mock<ICommandQueueService>();
+            m_Sessions = new ConcurrentDictionary<string, SessionInfo>();
 
             var sessionConfig = new SessionConfiguration
             {
@@ -60,19 +60,19 @@ namespace mcp_nexus_tests.Session
                 SymbolSearchPath = "srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols"
             };
 
-            _config = new SessionManagerConfiguration(
+            m_Config = new SessionManagerConfiguration(
                 Options.Create(sessionConfig),
                 Options.Create(cdbOptions));
 
             // Setup mocks - simplified to avoid extension method issues
 
-            _manager = new SessionLifecycleManager(
-                _mockLogger.Object,
-                _mockServiceProvider.Object,
-                _mockLoggerFactory.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions);
+            m_Manager = new SessionLifecycleManager(
+                m_MockLogger.Object,
+                m_MockServiceProvider.Object,
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions);
         }
 
         [Fact]
@@ -80,8 +80,8 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionLifecycleManager(
-                null!, _mockServiceProvider.Object, _mockLoggerFactory.Object,
-                _mockNotificationService.Object, _config, _sessions));
+                null!, m_MockServiceProvider.Object, mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object, m_Config, m_Sessions));
         }
 
         [Fact]
@@ -89,8 +89,8 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionLifecycleManager(
-                _mockLogger.Object, null!, _mockLoggerFactory.Object,
-                _mockNotificationService.Object, _config, _sessions));
+                m_MockLogger.Object, null!, mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object, m_Config, m_Sessions));
         }
 
         [Fact]
@@ -98,8 +98,8 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionLifecycleManager(
-                _mockLogger.Object, _mockServiceProvider.Object, null!,
-                _mockNotificationService.Object, _config, _sessions));
+                m_MockLogger.Object, m_MockServiceProvider.Object, null!,
+                m_MockNotificationService.Object, m_Config, m_Sessions));
         }
 
         [Fact]
@@ -107,8 +107,8 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionLifecycleManager(
-                _mockLogger.Object, _mockServiceProvider.Object, _mockLoggerFactory.Object,
-                null!, _config, _sessions));
+                m_MockLogger.Object, m_MockServiceProvider.Object, mm_MockLoggerFactory.Object,
+                null!, m_Config, m_Sessions));
         }
 
         [Fact]
@@ -116,8 +116,8 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionLifecycleManager(
-                _mockLogger.Object, _mockServiceProvider.Object, _mockLoggerFactory.Object,
-                _mockNotificationService.Object, null!, _sessions));
+                m_MockLogger.Object, m_MockServiceProvider.Object, mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object, null!, m_Sessions));
         }
 
         [Fact]
@@ -125,8 +125,8 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionLifecycleManager(
-                _mockLogger.Object, _mockServiceProvider.Object, _mockLoggerFactory.Object,
-                _mockNotificationService.Object, _config, null!));
+                m_MockLogger.Object, m_MockServiceProvider.Object, mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object, m_Config, null!));
         }
 
         [Fact]
@@ -134,12 +134,12 @@ namespace mcp_nexus_tests.Session
         {
             // Act
             var manager = new SessionLifecycleManager(
-                _mockLogger.Object,
-                _mockServiceProvider.Object,
-                _mockLoggerFactory.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions);
+                m_MockLogger.Object,
+                m_MockServiceProvider.Object,
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions);
 
             // Assert
             Assert.NotNull(manager);
@@ -150,12 +150,12 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var sessionId = "test-session-4";
-            var sessionInfo = new SessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, "C:\\Test\\dump.dmp")
+            var sessionInfo = new SessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, "C:\\Test\\dump.dmp")
             {
                 LastActivity = DateTime.UtcNow,
                 Status = SessionStatus.Active
             };
-            _sessions[sessionId] = sessionInfo;
+            m_Sessions[sessionId] = sessionInfo;
 
             // Debug: Verify the session info was created correctly
             Assert.NotNull(sessionInfo);
@@ -163,28 +163,28 @@ namespace mcp_nexus_tests.Session
             Assert.NotNull(sessionInfo.CommandQueue);
             Assert.Equal(sessionId, sessionInfo.SessionId);
 
-            _mockCdbSession.Setup(x => x.IsActive).Returns(true);
-            _mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
-            _mockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(5);
+            m_MockCdbSession.Setup(x => x.IsActive).Returns(true);
+            m_MockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
+            m_MockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(5);
 
             // Debug: Check session info before closing
             Assert.NotNull(sessionInfo.CdbSession);
             Assert.NotNull(sessionInfo.CommandQueue);
 
             // Act
-            var result = await _manager.CloseSessionAsync(sessionId);
+            var result = await m_Manager.CloseSessionAsync(sessionId);
 
             // Wait a bit for async operations to complete
             await Task.Delay(100);
 
             // Assert
             Assert.True(result);
-            Assert.False(_sessions.ContainsKey(sessionId));
+            Assert.False(m_Sessions.ContainsKey(sessionId));
 
             // Debug: Check if the mocks were called
-            _mockCdbSession.Verify(x => x.IsActive, Times.AtLeastOnce);
-            _mockCommandQueue.Verify(x => x.CancelAllCommands("Session closing"), Times.Once);
-            _mockCdbSession.Verify(x => x.StopSession(), Times.Once);
+            m_MockCdbSession.Verify(x => x.IsActive, Times.AtLeastOnce);
+            m_MockCommandQueue.Verify(x => x.CancelAllCommands("Session closing"), Times.Once);
+            m_MockCdbSession.Verify(x => x.StopSession(), Times.Once);
         }
 
         [Fact]
@@ -194,7 +194,7 @@ namespace mcp_nexus_tests.Session
             var sessionId = "non-existent-session";
 
             // Act
-            var result = await _manager.CloseSessionAsync(sessionId);
+            var result = await m_Manager.CloseSessionAsync(sessionId);
 
             // Assert
             Assert.False(result);
@@ -204,7 +204,7 @@ namespace mcp_nexus_tests.Session
         public async Task CloseSessionAsync_WithEmptySessionId_ReturnsFalse()
         {
             // Act
-            var result = await _manager.CloseSessionAsync("");
+            var result = await m_Manager.CloseSessionAsync("");
 
             // Assert
             Assert.False(result);
@@ -214,7 +214,7 @@ namespace mcp_nexus_tests.Session
         public async Task CloseSessionAsync_WithNullSessionId_ReturnsFalse()
         {
             // Act
-            var result = await _manager.CloseSessionAsync(null!);
+            var result = await m_Manager.CloseSessionAsync(null!);
 
             // Assert
             Assert.False(result);
@@ -229,16 +229,16 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = sessionId,
                 DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = _mockCdbSession.Object,
-                CommandQueue = _mockCommandQueue.Object,
+                CdbSession = m_MockCdbSession.Object,
+                CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow,
                 LastActivity = DateTime.UtcNow, // Recent activity
                 Status = SessionStatus.Active
             };
-            _sessions[sessionId] = sessionInfo;
+            m_Sessions[sessionId] = sessionInfo;
 
             // Act
-            var result = await _manager.CleanupExpiredSessionsAsync();
+            var result = await m_Manager.CleanupExpiredSessionsAsync();
 
             // Assert
             Assert.Equal(0, result);
@@ -253,30 +253,30 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = sessionId,
                 DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = _mockCdbSession.Object,
-                CommandQueue = _mockCommandQueue.Object,
+                CdbSession = m_MockCdbSession.Object,
+                CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddHours(-2),
                 LastActivity = DateTime.UtcNow.AddHours(-2), // Old activity
                 Status = SessionStatus.Active
             };
-            _sessions[sessionId] = sessionInfo;
+            m_Sessions[sessionId] = sessionInfo;
 
-            _mockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
-            _mockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(0);
+            m_MockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
+            m_MockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(0);
 
             // Act
-            var result = await _manager.CleanupExpiredSessionsAsync();
+            var result = await m_Manager.CleanupExpiredSessionsAsync();
 
             // Assert
             Assert.Equal(1, result);
-            Assert.False(_sessions.ContainsKey(sessionId));
+            Assert.False(m_Sessions.ContainsKey(sessionId));
         }
 
         [Fact]
         public void GetLifecycleStats_WithNoActivity_ReturnsZeroStats()
         {
             // Act
-            var stats = _manager.GetLifecycleStats();
+            var stats = m_Manager.GetLifecycleStats();
 
             // Assert
             Assert.Equal(0, stats.Created);

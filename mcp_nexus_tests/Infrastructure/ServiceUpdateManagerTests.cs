@@ -15,11 +15,11 @@ namespace mcp_nexus_tests.Infrastructure
     [SupportedOSPlatform("windows")]
     public class ServiceUpdateManagerTests
     {
-        private readonly Mock<ILogger> _mockLogger;
+        private readonly Mock<ILogger> m_MockLogger;
 
         public ServiceUpdateManagerTests()
         {
-            _mockLogger = new Mock<ILogger>();
+            m_MockLogger = new Mock<ILogger>();
         }
 
         [Fact]

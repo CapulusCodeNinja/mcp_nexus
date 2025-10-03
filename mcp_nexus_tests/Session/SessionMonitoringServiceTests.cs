@@ -16,23 +16,23 @@ namespace mcp_nexus_tests.Session
     /// </summary>
     public class SessionMonitoringServiceTests : IDisposable
     {
-        private readonly Mock<ILogger> _mockLogger;
-        private readonly Mock<IMcpNotificationService> _mockNotificationService;
-        private readonly Mock<SessionLifecycleManager> _mockLifecycleManager;
-        private readonly Mock<ICdbSession> _mockCdbSession;
-        private readonly Mock<ICommandQueueService> _mockCommandQueue;
-        private readonly SessionManagerConfiguration _config;
-        private readonly ConcurrentDictionary<string, SessionInfo> _sessions;
-        private readonly CancellationTokenSource _shutdownCts;
+        private readonly Mock<ILogger> m_MockLogger;
+        private readonly Mock<IMcpNotificationService> m_MockNotificationService;
+        private readonly Mock<SessionLifecycleManager> m_MockLifecycleManager;
+        private readonly Mock<ICdbSession> m_MockCdbSession;
+        private readonly Mock<ICommandQueueService> m_MockCommandQueue;
+        private readonly SessionManagerConfiguration m_Config;
+        private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions;
+        private readonly CancellationTokenSource m_ShutdownCts;
 
         public SessionMonitoringServiceTests()
         {
-            _mockLogger = new Mock<ILogger>();
-            _mockNotificationService = new Mock<IMcpNotificationService>();
-            _mockCdbSession = new Mock<ICdbSession>();
-            _mockCommandQueue = new Mock<ICommandQueueService>();
-            _sessions = new ConcurrentDictionary<string, SessionInfo>();
-            _shutdownCts = new CancellationTokenSource();
+            m_MockLogger = new Mock<ILogger>();
+            m_MockNotificationService = new Mock<IMcpNotificationService>();
+            m_MockCdbSession = new Mock<ICdbSession>();
+            m_MockCommandQueue = new Mock<ICommandQueueService>();
+            m_Sessions = new ConcurrentDictionary<string, SessionInfo>();
+            m_ShutdownCts = new CancellationTokenSource();
 
             var sessionConfig = new SessionConfiguration
             {
@@ -53,7 +53,7 @@ namespace mcp_nexus_tests.Session
                 SymbolSearchPath = "srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols"
             };
 
-            _config = new SessionManagerConfiguration(
+            m_Config = new SessionManagerConfiguration(
                 Options.Create(sessionConfig),
                 Options.Create(cdbOptions));
 
@@ -62,13 +62,13 @@ namespace mcp_nexus_tests.Session
             var mockLoggerFactory = new Mock<ILoggerFactory>();
 
             // Create the lifecycle manager with proper mocks
-            _mockLifecycleManager = new Mock<SessionLifecycleManager>(
-                _mockLogger.Object,
+            m_MockLifecycleManager = new Mock<SessionLifecycleManager>(
+                m_MockLogger.Object,
                 mockServiceProvider.Object,
                 mockLoggerFactory.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions);
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions);
         }
 
         [Fact]
@@ -76,8 +76,8 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionMonitoringService(
-                null!, _mockNotificationService.Object, _config, _sessions,
-                _mockLifecycleManager.Object, _shutdownCts));
+                null!, m_MockNotificationService.Object, m_Config, m_Sessions,
+                m_MockLifecycleManager.Object, m_ShutdownCts));
         }
 
         [Fact]
@@ -85,8 +85,8 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionMonitoringService(
-                _mockLogger.Object, null!, _config, _sessions,
-                _mockLifecycleManager.Object, _shutdownCts));
+                m_MockLogger.Object, null!, m_Config, m_Sessions,
+                m_MockLifecycleManager.Object, m_ShutdownCts));
         }
 
         [Fact]
@@ -94,8 +94,8 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionMonitoringService(
-                _mockLogger.Object, _mockNotificationService.Object, null!, _sessions,
-                _mockLifecycleManager.Object, _shutdownCts));
+                m_MockLogger.Object, m_MockNotificationService.Object, null!, m_Sessions,
+                m_MockLifecycleManager.Object, m_ShutdownCts));
         }
 
         [Fact]
@@ -103,8 +103,8 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionMonitoringService(
-                _mockLogger.Object, _mockNotificationService.Object, _config, null!,
-                _mockLifecycleManager.Object, _shutdownCts));
+                m_MockLogger.Object, m_MockNotificationService.Object, m_Config, null!,
+                m_MockLifecycleManager.Object, m_ShutdownCts));
         }
 
         [Fact]
@@ -112,8 +112,8 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionMonitoringService(
-                _mockLogger.Object, _mockNotificationService.Object, _config, _sessions,
-                null!, _shutdownCts));
+                m_MockLogger.Object, m_MockNotificationService.Object, m_Config, m_Sessions,
+                null!, m_ShutdownCts));
         }
 
         [Fact]
@@ -121,8 +121,8 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionMonitoringService(
-                _mockLogger.Object, _mockNotificationService.Object, _config, _sessions,
-                _mockLifecycleManager.Object, null!));
+                m_MockLogger.Object, m_MockNotificationService.Object, m_Config, m_Sessions,
+                m_MockLifecycleManager.Object, null!));
         }
 
         [Fact]
@@ -130,12 +130,12 @@ namespace mcp_nexus_tests.Session
         {
             // Act
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Assert
             Assert.NotNull(service);
@@ -150,21 +150,21 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = sessionId,
                 DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = _mockCdbSession.Object,
-                CommandQueue = _mockCommandQueue.Object,
+                CdbSession = m_MockCdbSession.Object,
+                CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-10),
                 LastActivity = DateTime.UtcNow.AddMinutes(-5),
                 Status = SessionStatus.Active
             };
-            _sessions[sessionId] = sessionInfo;
+            m_Sessions[sessionId] = sessionInfo;
 
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             var originalActivity = sessionInfo.LastActivity;
 
@@ -180,12 +180,12 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Act
             service.UpdateActivity("non-existent-session");
@@ -200,12 +200,12 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Act
             service.UpdateActivity("");
@@ -219,12 +219,12 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Act
             service.UpdateActivity(null!);
@@ -241,8 +241,8 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = "test-session-1",
                 DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = _mockCdbSession.Object,
-                CommandQueue = _mockCommandQueue.Object,
+                CdbSession = m_MockCdbSession.Object,
+                CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-2), // New session
                 LastActivity = DateTime.UtcNow.AddMinutes(-1),
                 Status = SessionStatus.Active
@@ -250,12 +250,12 @@ namespace mcp_nexus_tests.Session
 
             var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>();
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Act
             var hints = service.GenerateUsageHints(sessionInfo, queueStatus);
@@ -272,8 +272,8 @@ namespace mcp_nexus_tests.Session
             // Arrange
             var sessionInfo = new SessionInfo(
                 "test-session-1",
-                _mockCdbSession.Object,
-                _mockCommandQueue.Object,
+                m_MockCdbSession.Object,
+                m_MockCommandQueue.Object,
                 "C:\\Test\\dump.dmp",
                 null,
                 null)
@@ -284,12 +284,12 @@ namespace mcp_nexus_tests.Session
 
             var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>();
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Act
             var hints = service.GenerateUsageHints(sessionInfo, queueStatus);
@@ -308,8 +308,8 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = "test-session-1",
                 DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = _mockCdbSession.Object,
-                CommandQueue = _mockCommandQueue.Object,
+                CdbSession = m_MockCdbSession.Object,
+                CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-10),
                 LastActivity = DateTime.UtcNow.AddMinutes(-1),
                 Status = SessionStatus.Active
@@ -317,12 +317,12 @@ namespace mcp_nexus_tests.Session
 
             var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>();
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Act
             var hints = service.GenerateUsageHints(sessionInfo, queueStatus);
@@ -341,8 +341,8 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = "test-session-1",
                 DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = _mockCdbSession.Object,
-                CommandQueue = _mockCommandQueue.Object,
+                CdbSession = m_MockCdbSession.Object,
+                CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-10),
                 LastActivity = DateTime.UtcNow.AddMinutes(-1),
                 Status = SessionStatus.Active
@@ -359,12 +359,12 @@ namespace mcp_nexus_tests.Session
             };
 
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Act
             var hints = service.GenerateUsageHints(sessionInfo, queueStatus);
@@ -381,8 +381,8 @@ namespace mcp_nexus_tests.Session
             // Arrange
             var sessionInfo = new SessionInfo(
                 "test-session-1",
-                _mockCdbSession.Object,
-                _mockCommandQueue.Object,
+                m_MockCdbSession.Object,
+                m_MockCommandQueue.Object,
                 "C:\\Test\\crash.dmp", // Crash dump
                 null,
                 null)
@@ -393,12 +393,12 @@ namespace mcp_nexus_tests.Session
 
             var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>();
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Act
             var hints = service.GenerateUsageHints(sessionInfo, queueStatus);
@@ -421,8 +421,8 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = sessionId1,
                 DumpPath = "C:\\Test\\dump1.dmp",
-                CdbSession = _mockCdbSession.Object,
-                CommandQueue = _mockCommandQueue.Object,
+                CdbSession = m_MockCdbSession.Object,
+                CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-20),
                 LastActivity = DateTime.UtcNow.AddMinutes(-1),
                 Status = SessionStatus.Active
@@ -432,23 +432,23 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = sessionId2,
                 DumpPath = "C:\\Test\\dump2.dmp",
-                CdbSession = _mockCdbSession.Object,
-                CommandQueue = _mockCommandQueue.Object,
+                CdbSession = m_MockCdbSession.Object,
+                CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-10),
                 LastActivity = DateTime.UtcNow.AddMinutes(-2),
                 Status = SessionStatus.Active
             };
 
-            _sessions[sessionId1] = sessionInfo1;
-            _sessions[sessionId2] = sessionInfo2;
+            m_Sessions[sessionId1] = sessionInfo1;
+            m_Sessions[sessionId2] = sessionInfo2;
 
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Act
             var averageLifetime = service.CalculateAverageSessionLifetime();
@@ -462,12 +462,12 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Act
             var averageLifetime = service.CalculateAverageSessionLifetime();
@@ -481,12 +481,12 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Act
             service.Dispose();
@@ -501,12 +501,12 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var service = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
-                _config,
-                _sessions,
-                _mockLifecycleManager.Object,
-                _shutdownCts);
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
 
             // Act & Assert
             service.Dispose();
@@ -522,7 +522,7 @@ namespace mcp_nexus_tests.Session
 
         public void Dispose()
         {
-            _shutdownCts?.Dispose();
+            m_ShutdownCts?.Dispose();
         }
     }
 }

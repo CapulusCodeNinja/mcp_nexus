@@ -11,13 +11,13 @@ namespace mcp_nexus.Infrastructure
     /// </summary>
     public class BackupManager
     {
-        private readonly ILogger<BackupManager> _logger;
-        private readonly string _backupDirectory;
+        private readonly ILogger<BackupManager> m_Logger;
+        private readonly string m_BackupDirectory;
 
         public BackupManager(ILogger<BackupManager> logger, string? backupDirectory = null)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _backupDirectory = backupDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MCP-Nexus", "Backups");
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_BackupDirectory = backupDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MCP-Nexus", "Backups");
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace mcp_nexus.Infrastructure
             {
                 var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
                 var backupNameWithTimestamp = string.IsNullOrEmpty(backupName) ? $"backup_{timestamp}" : $"{backupName}_{timestamp}";
-                var backupPath = Path.Combine(_backupDirectory, backupNameWithTimestamp);
+                var backupPath = Path.Combine(m_BackupDirectory, backupNameWithTimestamp);
 
                 if (!Directory.Exists(backupPath))
                 {
@@ -46,17 +46,17 @@ namespace mcp_nexus.Infrastructure
                         var fileName = Path.GetFileName(sourceFile);
                         var destinationFile = Path.Combine(backupPath, fileName);
                         File.Copy(sourceFile, destinationFile, true);
-                        _logger.LogInformation("Backed up file: {SourceFile} to {DestinationFile}", sourceFile, destinationFile);
+                        m_Logger.LogInformation("Backed up file: {SourceFile} to {DestinationFile}", sourceFile, destinationFile);
                     }
                 }
 
-                _logger.LogInformation("Backup created successfully: {BackupPath}", backupPath);
+                m_Logger.LogInformation("Backup created successfully: {BackupPath}", backupPath);
                 await Task.CompletedTask; // Fix CS1998 warning
                 return backupPath;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create backup");
+                m_Logger.LogError(ex, "Failed to create backup");
                 throw;
             }
         }
@@ -73,7 +73,7 @@ namespace mcp_nexus.Infrastructure
             {
                 if (!Directory.Exists(backupPath))
                 {
-                    _logger.LogError("Backup directory does not exist: {BackupPath}", backupPath);
+                    m_Logger.LogError("Backup directory does not exist: {BackupPath}", backupPath);
                     return false;
                 }
 
@@ -88,16 +88,16 @@ namespace mcp_nexus.Infrastructure
                     var fileName = Path.GetFileName(file);
                     var destinationFile = Path.Combine(destinationDirectory, fileName);
                     File.Copy(file, destinationFile, true);
-                    _logger.LogInformation("Restored file: {SourceFile} to {DestinationFile}", file, destinationFile);
+                    m_Logger.LogInformation("Restored file: {SourceFile} to {DestinationFile}", file, destinationFile);
                 }
 
-                _logger.LogInformation("Backup restored successfully from {BackupPath} to {DestinationDirectory}", backupPath, destinationDirectory);
+                m_Logger.LogInformation("Backup restored successfully from {BackupPath} to {DestinationDirectory}", backupPath, destinationDirectory);
                 await Task.CompletedTask; // Fix CS1998 warning
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to restore backup from {BackupPath}", backupPath);
+                m_Logger.LogError(ex, "Failed to restore backup from {BackupPath}", backupPath);
                 return false;
             }
         }
@@ -110,19 +110,19 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                if (!Directory.Exists(_backupDirectory))
+                if (!Directory.Exists(m_BackupDirectory))
                 {
                     return new List<string>();
                 }
 
-                var backupDirectories = Directory.GetDirectories(_backupDirectory);
-                _logger.LogInformation("Found {Count} backup directories", backupDirectories.Length);
+                var backupDirectories = Directory.GetDirectories(m_BackupDirectory);
+                m_Logger.LogInformation("Found {Count} backup directories", backupDirectories.Length);
                 await Task.CompletedTask; // Fix CS1998 warning
                 return backupDirectories;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to list backups");
+                m_Logger.LogError(ex, "Failed to list backups");
                 return new List<string>();
             }
         }
@@ -136,7 +136,7 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                if (!Directory.Exists(_backupDirectory))
+                if (!Directory.Exists(m_BackupDirectory))
                 {
                     return 0;
                 }
@@ -144,7 +144,7 @@ namespace mcp_nexus.Infrastructure
                 var cutoffDate = DateTime.UtcNow.AddDays(-retentionDays);
                 var deletedCount = 0;
 
-                var backupDirectories = Directory.GetDirectories(_backupDirectory);
+                var backupDirectories = Directory.GetDirectories(m_BackupDirectory);
                 foreach (var backupDir in backupDirectories)
                 {
                     var dirInfo = new DirectoryInfo(backupDir);
@@ -152,17 +152,17 @@ namespace mcp_nexus.Infrastructure
                     {
                         Directory.Delete(backupDir, true);
                         deletedCount++;
-                        _logger.LogInformation("Deleted old backup: {BackupDirectory}", backupDir);
+                        m_Logger.LogInformation("Deleted old backup: {BackupDirectory}", backupDir);
                     }
                 }
 
-                _logger.LogInformation("Cleaned up {DeletedCount} old backup directories", deletedCount);
+                m_Logger.LogInformation("Cleaned up {DeletedCount} old backup directories", deletedCount);
                 await Task.CompletedTask; // Fix CS1998 warning
                 return deletedCount;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to cleanup old backups");
+                m_Logger.LogError(ex, "Failed to cleanup old backups");
                 return 0;
             }
         }
@@ -170,7 +170,7 @@ namespace mcp_nexus.Infrastructure
         /// <summary>
         /// Gets the backup directory path
         /// </summary>
-        public string BackupDirectory => _backupDirectory;
+        public string BackupDirectory => m_BackupDirectory;
 
         // Static methods for compatibility with existing code
         public static async Task<string> CreateBackupAsync(ILogger logger)

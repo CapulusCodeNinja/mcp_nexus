@@ -10,12 +10,12 @@ namespace mcp_nexus.Infrastructure
     /// </summary>
     public class OperationLogger
     {
-        private readonly ILogger<OperationLogger> _logger;
-        private readonly List<OperationLogEntry> _logEntries = new();
+        private readonly ILogger<OperationLogger> m_Logger;
+        private readonly List<OperationLogEntry> m_LogEntries = new();
 
         public OperationLogger(ILogger<OperationLogger> logger)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public void LogOperationStart(string operation, string details = "")
@@ -29,13 +29,13 @@ namespace mcp_nexus.Infrastructure
                 Status = OperationStatus.Started
             };
 
-            _logEntries.Add(entry);
-            _logger.LogInformation("Operation started: {Operation} - {Details}", operation, details);
+            m_LogEntries.Add(entry);
+            m_Logger.LogInformation("Operation started: {Operation} - {Details}", operation, details);
         }
 
         public void LogOperationEnd(string operation, bool success, string result = "")
         {
-            var entry = _logEntries.FindLast(e => e.Operation == operation && e.Status == OperationStatus.Started);
+            var entry = m_LogEntries.FindLast(e => e.Operation == operation && e.Status == OperationStatus.Started);
             if (entry != null)
             {
                 entry.EndTime = DateTime.UtcNow;
@@ -43,14 +43,14 @@ namespace mcp_nexus.Infrastructure
                 entry.Result = result;
                 // Duration is calculated property, no assignment needed
 
-                _logger.LogInformation("Operation {Status}: {Operation} - Duration: {Duration}ms - {Result}",
+                m_Logger.LogInformation("Operation {Status}: {Operation} - Duration: {Duration}ms - {Result}",
                     success ? "completed" : "failed", operation, entry.Duration?.TotalMilliseconds ?? 0, result);
             }
         }
 
         public void LogOperationError(string operation, Exception exception)
         {
-            var entry = _logEntries.FindLast(e => e.Operation == operation && e.Status == OperationStatus.Started);
+            var entry = m_LogEntries.FindLast(e => e.Operation == operation && e.Status == OperationStatus.Started);
             if (entry != null)
             {
                 entry.EndTime = DateTime.UtcNow;
@@ -58,7 +58,7 @@ namespace mcp_nexus.Infrastructure
                 entry.Error = exception.Message;
                 // Duration is calculated property, no assignment needed
 
-                _logger.LogError(exception, "Operation failed: {Operation} - Duration: {Duration}ms",
+                m_Logger.LogError(exception, "Operation failed: {Operation} - Duration: {Duration}ms",
                     operation, entry.Duration?.TotalMilliseconds ?? 0);
             }
         }
@@ -75,8 +75,8 @@ namespace mcp_nexus.Infrastructure
                 Data = data
             };
 
-            _logEntries.Add(entry);
-            _logger.LogInformation("Service event: {EventType} - {Message}", eventType, message);
+            m_LogEntries.Add(entry);
+            m_Logger.LogInformation("Service event: {EventType} - {Message}", eventType, message);
         }
 
         public void LogServiceWarning(string message, object? data = null)
@@ -91,8 +91,8 @@ namespace mcp_nexus.Infrastructure
                 Data = data
             };
 
-            _logEntries.Add(entry);
-            _logger.LogWarning("Service warning: {Message}", message);
+            m_LogEntries.Add(entry);
+            m_Logger.LogWarning("Service warning: {Message}", message);
         }
 
         public void LogServiceError(string message, Exception? exception = null, object? data = null)
@@ -108,29 +108,29 @@ namespace mcp_nexus.Infrastructure
                 Data = data
             };
 
-            _logEntries.Add(entry);
-            _logger.LogError(exception, "Service error: {Message}", message);
+            m_LogEntries.Add(entry);
+            m_Logger.LogError(exception, "Service error: {Message}", message);
         }
 
         public IReadOnlyList<OperationLogEntry> GetLogEntries()
         {
-            return _logEntries.AsReadOnly();
+            return m_LogEntries.AsReadOnly();
         }
 
         public IReadOnlyList<OperationLogEntry> GetLogEntries(string operation)
         {
-            return _logEntries.FindAll(e => e.Operation == operation).AsReadOnly();
+            return m_LogEntries.FindAll(e => e.Operation == operation).AsReadOnly();
         }
 
         public IReadOnlyList<OperationLogEntry> GetLogEntries(OperationStatus status)
         {
-            return _logEntries.FindAll(e => e.Status == status).AsReadOnly();
+            return m_LogEntries.FindAll(e => e.Status == status).AsReadOnly();
         }
 
         public void ClearLogs()
         {
-            _logEntries.Clear();
-            _logger.LogInformation("Operation logs cleared");
+            m_LogEntries.Clear();
+            m_Logger.LogInformation("Operation logs cleared");
         }
 
         public async Task<bool> ExportLogsAsync(string filePath)
@@ -138,19 +138,19 @@ namespace mcp_nexus.Infrastructure
             try
             {
                 // Implementation would export logs to file
-                _logger.LogInformation("Logs exported to {FilePath}", filePath);
+                m_Logger.LogInformation("Logs exported to {FilePath}", filePath);
                 await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to export logs to {FilePath}", filePath);
+                m_Logger.LogError(ex, "Failed to export logs to {FilePath}", filePath);
                 return false;
             }
         }
 
 
-        public IReadOnlyList<OperationLogEntry> Operations => _logEntries.AsReadOnly();
+        public IReadOnlyList<OperationLogEntry> Operations => m_LogEntries.AsReadOnly();
 
         // Static methods for compatibility with existing code
         public static void LogInfo(ILogger logger, string operation, string message)

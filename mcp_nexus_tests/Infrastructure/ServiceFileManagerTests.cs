@@ -12,25 +12,25 @@ namespace mcp_nexus_tests.Infrastructure
     [SupportedOSPlatform("windows")]
     public class ServiceFileManagerTests : IDisposable
     {
-        private readonly Mock<ILogger> _mockLogger;
-        private readonly string _testSourceDir;
-        private readonly string _testTargetDir;
+        private readonly Mock<ILogger> m_MockLogger;
+        private readonly string m_TestSourceDir;
+        private readonly string m_TestTargetDir;
 
         public ServiceFileManagerTests()
         {
-            _mockLogger = new Mock<ILogger>();
-            _testSourceDir = Path.Combine(Path.GetTempPath(), "ServiceFileManagerTest_Source");
-            _testTargetDir = Path.Combine(Path.GetTempPath(), "ServiceFileManagerTest_Target");
+            m_MockLogger = new Mock<ILogger>();
+            m_TestSourceDir = Path.Combine(Path.GetTempPath(), "ServiceFileManagerTest_Source");
+            m_TestTargetDir = Path.Combine(Path.GetTempPath(), "ServiceFileManagerTest_Target");
         }
 
         public void Dispose()
         {
             // Cleanup test directories
-            if (Directory.Exists(_testSourceDir))
+            if (Directory.Exists(m_TestSourceDir))
             {
                 try
                 {
-                    Directory.Delete(_testSourceDir, recursive: true);
+                    Directory.Delete(m_TestSourceDir, recursive: true);
                 }
                 catch
                 {
@@ -38,11 +38,11 @@ namespace mcp_nexus_tests.Infrastructure
                 }
             }
 
-            if (Directory.Exists(_testTargetDir))
+            if (Directory.Exists(m_TestTargetDir))
             {
                 try
                 {
-                    Directory.Delete(_testTargetDir, recursive: true);
+                    Directory.Delete(m_TestTargetDir, recursive: true);
                 }
                 catch
                 {
@@ -71,7 +71,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task BuildProjectForDeploymentAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceFileManager.BuildProjectForDeploymentAsync(_mockLogger.Object);
+            var result = await ServiceFileManager.BuildProjectForDeploymentAsync(m_MockLogger.Object);
             // Should not throw, but may return false if no project found
             Assert.True(result == true || result == false);
         }
@@ -120,7 +120,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CopyApplicationFilesAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            await ServiceFileManager.CopyApplicationFilesAsync(_mockLogger.Object);
+            await ServiceFileManager.CopyApplicationFilesAsync(m_MockLogger.Object);
             // Should not throw
         }
 
@@ -129,7 +129,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                ServiceFileManager.CopyDirectoryAsync(null!, _testTargetDir, _mockLogger.Object));
+                ServiceFileManager.CopyDirectoryAsync(null!, m_TestTargetDir, m_MockLogger.Object));
         }
 
         [Fact]
@@ -137,7 +137,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                ServiceFileManager.CopyDirectoryAsync(_testSourceDir, null!, _mockLogger.Object));
+                ServiceFileManager.CopyDirectoryAsync(m_TestSourceDir, null!, m_MockLogger.Object));
         }
 
         [Fact]
@@ -145,7 +145,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                ServiceFileManager.CopyDirectoryAsync("", _testTargetDir, _mockLogger.Object));
+                ServiceFileManager.CopyDirectoryAsync("", m_TestTargetDir, m_MockLogger.Object));
         }
 
         [Fact]
@@ -153,18 +153,18 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                ServiceFileManager.CopyDirectoryAsync(_testSourceDir, "", _mockLogger.Object));
+                ServiceFileManager.CopyDirectoryAsync(m_TestSourceDir, "", m_MockLogger.Object));
         }
 
         [Fact]
         public async Task CopyDirectoryAsync_WithValidDirectories_DoesNotThrow()
         {
             // Arrange
-            Directory.CreateDirectory(_testSourceDir);
-            Directory.CreateDirectory(_testTargetDir);
+            Directory.CreateDirectory(m_TestSourceDir);
+            Directory.CreateDirectory(m_TestTargetDir);
 
             // Act & Assert
-            await ServiceFileManager.CopyDirectoryAsync(_testSourceDir, _testTargetDir, _mockLogger.Object);
+            await ServiceFileManager.CopyDirectoryAsync(m_TestSourceDir, m_TestTargetDir, m_MockLogger.Object);
             // Should not throw
         }
 
@@ -172,11 +172,11 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CopyDirectoryAsync_WithNullLogger_DoesNotThrow()
         {
             // Arrange
-            Directory.CreateDirectory(_testSourceDir);
-            Directory.CreateDirectory(_testTargetDir);
+            Directory.CreateDirectory(m_TestSourceDir);
+            Directory.CreateDirectory(m_TestTargetDir);
 
             // Act & Assert
-            await ServiceFileManager.CopyDirectoryAsync(_testSourceDir, _testTargetDir, null!);
+            await ServiceFileManager.CopyDirectoryAsync(m_TestSourceDir, m_TestTargetDir, null!);
             // Should not throw
         }
 
@@ -194,7 +194,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CreateBackupAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceFileManager.CreateBackupAsync(_mockLogger.Object);
+            var result = await ServiceFileManager.CreateBackupAsync(m_MockLogger.Object);
             // Should not throw, result can be null or string
             // Result should be a boolean - just verify it doesn't throw
             Assert.True(result == true || result == false);
@@ -204,7 +204,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupOldBackupsStaticAsync_WithDefaultMaxBackups_DoesNotThrow()
         {
             // Act & Assert
-            await ServiceFileManager.CleanupOldBackupsStaticAsync("C:\\Test\\Backup", 30, _mockLogger.Object);
+            await ServiceFileManager.CleanupOldBackupsStaticAsync("C:\\Test\\Backup", 30, m_MockLogger.Object);
             // Should not throw
         }
 
@@ -212,7 +212,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupOldBackupsStaticAsync_WithCustomMaxBackups_DoesNotThrow()
         {
             // Act & Assert
-            await ServiceFileManager.CleanupOldBackupsStaticAsync("test-path", 10, _mockLogger.Object);
+            await ServiceFileManager.CleanupOldBackupsStaticAsync("test-path", 10, m_MockLogger.Object);
             // Should not throw
         }
 
@@ -220,7 +220,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupOldBackupsStaticAsync_WithNullLogger_DoesNotThrow()
         {
             // Act & Assert
-            await ServiceFileManager.CleanupOldBackupsStaticAsync("test-path", 5, _mockLogger.Object);
+            await ServiceFileManager.CleanupOldBackupsStaticAsync("test-path", 5, m_MockLogger.Object);
             // Should not throw
         }
 
@@ -356,10 +356,10 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task AllAsyncMethods_HandleExceptions()
         {
             // This test verifies that all async methods handle exceptions gracefully
-            await ServiceFileManager.BuildProjectForDeploymentAsync(_mockLogger.Object);
-            await ServiceFileManager.CopyApplicationFilesAsync(_mockLogger.Object);
-            await ServiceFileManager.CreateBackupAsync(_mockLogger.Object);
-            await ServiceFileManager.CleanupOldBackupsStaticAsync("test-path", 5, _mockLogger.Object);
+            await ServiceFileManager.BuildProjectForDeploymentAsync(m_MockLogger.Object);
+            await ServiceFileManager.CopyApplicationFilesAsync(m_MockLogger.Object);
+            await ServiceFileManager.CreateBackupAsync(m_MockLogger.Object);
+            await ServiceFileManager.CleanupOldBackupsStaticAsync("test-path", 5, m_MockLogger.Object);
 
             // Should not throw exceptions
             Assert.True(true);

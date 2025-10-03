@@ -11,11 +11,11 @@ namespace mcp_nexus.Infrastructure
     /// </summary>
     public class ProjectBuilder
     {
-        private readonly ILogger<ProjectBuilder> _logger;
+        private readonly ILogger<ProjectBuilder> m_Logger;
 
         public ProjectBuilder(ILogger<ProjectBuilder> logger)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -49,21 +49,21 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                _logger.LogInformation("Building project {ProjectPath} with configuration {Configuration}", projectPath, configuration);
+                m_Logger.LogInformation("Building project {ProjectPath} with configuration {Configuration}", projectPath, configuration);
 
                 var buildResult = await RunDotNetBuildAsync(projectPath, outputPath, configuration);
                 if (!buildResult.Success)
                 {
-                    _logger.LogError("Build failed: {Error}", buildResult.Error);
+                    m_Logger.LogError("Build failed: {Error}", buildResult.Error);
                     return false;
                 }
 
-                _logger.LogInformation("Project built successfully to {OutputPath}", outputPath);
+                m_Logger.LogInformation("Project built successfully to {OutputPath}", outputPath);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to build project {ProjectPath}", projectPath);
+                m_Logger.LogError(ex, "Failed to build project {ProjectPath}", projectPath);
                 return false;
             }
         }
@@ -80,22 +80,22 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                _logger.LogInformation("Publishing project {ProjectPath} with configuration {Configuration} and runtime {Runtime}",
+                m_Logger.LogInformation("Publishing project {ProjectPath} with configuration {Configuration} and runtime {Runtime}",
                     projectPath, configuration, runtime);
 
                 var publishResult = await RunDotNetPublishAsync(projectPath, outputPath, configuration, runtime);
                 if (!publishResult.Success)
                 {
-                    _logger.LogError("Publish failed: {Error}", publishResult.Error);
+                    m_Logger.LogError("Publish failed: {Error}", publishResult.Error);
                     return false;
                 }
 
-                _logger.LogInformation("Project published successfully to {OutputPath}", outputPath);
+                m_Logger.LogInformation("Project published successfully to {OutputPath}", outputPath);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to publish project {ProjectPath}", projectPath);
+                m_Logger.LogError(ex, "Failed to publish project {ProjectPath}", projectPath);
                 return false;
             }
         }
@@ -109,21 +109,21 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                _logger.LogInformation("Cleaning project {ProjectPath}", projectPath);
+                m_Logger.LogInformation("Cleaning project {ProjectPath}", projectPath);
 
                 var cleanResult = await RunDotNetCleanAsync(projectPath);
                 if (!cleanResult.Success)
                 {
-                    _logger.LogError("Clean failed: {Error}", cleanResult.Error);
+                    m_Logger.LogError("Clean failed: {Error}", cleanResult.Error);
                     return false;
                 }
 
-                _logger.LogInformation("Project cleaned successfully");
+                m_Logger.LogInformation("Project cleaned successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to clean project {ProjectPath}", projectPath);
+                m_Logger.LogError(ex, "Failed to clean project {ProjectPath}", projectPath);
                 return false;
             }
         }
@@ -137,21 +137,21 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                _logger.LogInformation("Restoring dependencies for project {ProjectPath}", projectPath);
+                m_Logger.LogInformation("Restoring dependencies for project {ProjectPath}", projectPath);
 
                 var restoreResult = await RunDotNetRestoreAsync(projectPath);
                 if (!restoreResult.Success)
                 {
-                    _logger.LogError("Restore failed: {Error}", restoreResult.Error);
+                    m_Logger.LogError("Restore failed: {Error}", restoreResult.Error);
                     return false;
                 }
 
-                _logger.LogInformation("Project dependencies restored successfully");
+                m_Logger.LogInformation("Project dependencies restored successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to restore project {ProjectPath}", projectPath);
+                m_Logger.LogError(ex, "Failed to restore project {ProjectPath}", projectPath);
                 return false;
             }
         }
@@ -165,11 +165,11 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                _logger.LogInformation("Validating project {ProjectPath}", projectPath);
+                m_Logger.LogInformation("Validating project {ProjectPath}", projectPath);
 
                 if (!File.Exists(projectPath))
                 {
-                    _logger.LogError("Project file not found: {ProjectPath}", projectPath);
+                    m_Logger.LogError("Project file not found: {ProjectPath}", projectPath);
                     return false;
                 }
 
@@ -177,7 +177,7 @@ namespace mcp_nexus.Infrastructure
                 var restoreResult = await RestoreProjectAsync(projectPath);
                 if (!restoreResult)
                 {
-                    _logger.LogError("Failed to restore project dependencies");
+                    m_Logger.LogError("Failed to restore project dependencies");
                     return false;
                 }
 
@@ -185,16 +185,16 @@ namespace mcp_nexus.Infrastructure
                 var buildResult = await RunDotNetBuildAsync(projectPath, null, "Debug");
                 if (!buildResult.Success)
                 {
-                    _logger.LogError("Project validation failed: {Error}", buildResult.Error);
+                    m_Logger.LogError("Project validation failed: {Error}", buildResult.Error);
                     return false;
                 }
 
-                _logger.LogInformation("Project validation successful");
+                m_Logger.LogInformation("Project validation successful");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to validate project {ProjectPath}", projectPath);
+                m_Logger.LogError(ex, "Failed to validate project {ProjectPath}", projectPath);
                 return false;
             }
         }

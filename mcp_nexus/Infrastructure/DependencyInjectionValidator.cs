@@ -13,17 +13,17 @@ namespace mcp_nexus.Infrastructure
     /// </summary>
     public class DependencyInjectionValidator
     {
-        private readonly IServiceCollection _services;
-        private readonly List<ValidationResult> _validationResults = new();
+        private readonly IServiceCollection m_Services;
+        private readonly List<ValidationResult> m_ValidationResults = new();
 
         public DependencyInjectionValidator(IServiceCollection services)
         {
-            _services = services ?? throw new ArgumentNullException(nameof(services));
+            m_Services = services ?? throw new ArgumentNullException(nameof(services));
         }
 
         public ValidationResult Validate()
         {
-            _validationResults.Clear();
+            m_ValidationResults.Clear();
             ValidateServices();
             ValidateCircularDependencies();
             ValidateLifetimeMismatches();
@@ -31,19 +31,19 @@ namespace mcp_nexus.Infrastructure
 
             return new ValidationResult
             {
-                IsValid = !_validationResults.Any(r => r.Severity == ValidationSeverity.Error),
-                Results = _validationResults.ToList()
+                IsValid = !m_ValidationResults.Any(r => r.Severity == ValidationSeverity.Error),
+                Results = m_ValidationResults.ToList()
             };
         }
 
         public ValidationResult ValidateServiceRegistration(Type serviceType, Type implementationType)
         {
-            _validationResults.Clear();
+            m_ValidationResults.Clear();
 
             // Check if service type is valid
             if (serviceType == null)
             {
-                _validationResults.Add(new ValidationResult
+                m_ValidationResults.Add(new ValidationResult
                 {
                     Severity = ValidationSeverity.Error,
                     Message = "Service type cannot be null",
@@ -54,7 +54,7 @@ namespace mcp_nexus.Infrastructure
             // Check if implementation type is valid
             if (implementationType == null)
             {
-                _validationResults.Add(new ValidationResult
+                m_ValidationResults.Add(new ValidationResult
                 {
                     Severity = ValidationSeverity.Error,
                     Message = "Implementation type cannot be null",
@@ -65,7 +65,7 @@ namespace mcp_nexus.Infrastructure
             // Check if implementation type can be assigned to service type
             if (serviceType != null && implementationType != null && !serviceType.IsAssignableFrom(implementationType))
             {
-                _validationResults.Add(new ValidationResult
+                m_ValidationResults.Add(new ValidationResult
                 {
                     Severity = ValidationSeverity.Error,
                     Message = $"Implementation type {implementationType.Name} cannot be assigned to service type {serviceType.Name}",
@@ -75,8 +75,8 @@ namespace mcp_nexus.Infrastructure
 
             return new ValidationResult
             {
-                IsValid = !_validationResults.Any(r => r.Severity == ValidationSeverity.Error),
-                Results = _validationResults.ToList()
+                IsValid = !m_ValidationResults.Any(r => r.Severity == ValidationSeverity.Error),
+                Results = m_ValidationResults.ToList()
             };
         }
 
@@ -137,11 +137,11 @@ namespace mcp_nexus.Infrastructure
 
         private void ValidateServices()
         {
-            foreach (var service in _services)
+            foreach (var service in m_Services)
             {
                 if (service.ServiceType == null)
                 {
-                    _validationResults.Add(new ValidationResult
+                    m_ValidationResults.Add(new ValidationResult
                     {
                         Severity = ValidationSeverity.Error,
                         Message = "Service type cannot be null",
@@ -151,7 +151,7 @@ namespace mcp_nexus.Infrastructure
 
                 if (service.ImplementationType == null && service.ImplementationFactory == null && service.ImplementationInstance == null)
                 {
-                    _validationResults.Add(new ValidationResult
+                    m_ValidationResults.Add(new ValidationResult
                     {
                         Severity = ValidationSeverity.Warning,
                         Message = "Service has no implementation",
@@ -166,7 +166,7 @@ namespace mcp_nexus.Infrastructure
             var visited = new HashSet<Type>();
             var recursionStack = new HashSet<Type>();
 
-            foreach (var service in _services.Where(s => s.ServiceType != null))
+            foreach (var service in m_Services.Where(s => s.ServiceType != null))
             {
                 if (!visited.Contains(service.ServiceType))
                 {
@@ -187,7 +187,7 @@ namespace mcp_nexus.Infrastructure
                 {
                     if (recursionStack.Contains(parameter.ParameterType))
                     {
-                        _validationResults.Add(new ValidationResult
+                        m_ValidationResults.Add(new ValidationResult
                         {
                             Severity = ValidationSeverity.Error,
                             Message = $"Circular dependency detected: {serviceType.Name} -> {parameter.ParameterType.Name}",
@@ -206,9 +206,9 @@ namespace mcp_nexus.Infrastructure
 
         private void ValidateLifetimeMismatches()
         {
-            var serviceMap = _services.ToDictionary(s => s.ServiceType, s => s);
+            var serviceMap = m_Services.ToDictionary(s => s.ServiceType, s => s);
 
-            foreach (var service in _services.Where(s => s.ServiceType != null))
+            foreach (var service in m_Services.Where(s => s.ServiceType != null))
             {
                 var constructor = service.ServiceType.GetConstructors().FirstOrDefault();
                 if (constructor != null)
@@ -219,7 +219,7 @@ namespace mcp_nexus.Infrastructure
                         {
                             if (IsLifetimeMismatch(service.Lifetime, dependency.Lifetime))
                             {
-                                _validationResults.Add(new ValidationResult
+                                m_ValidationResults.Add(new ValidationResult
                                 {
                                     Severity = ValidationSeverity.Warning,
                                     Message = $"Lifetime mismatch: {service.ServiceType.Name} ({service.Lifetime}) depends on {parameter.ParameterType.Name} ({dependency.Lifetime})",
@@ -241,16 +241,16 @@ namespace mcp_nexus.Infrastructure
 
         private void ValidateMissingDependencies()
         {
-            foreach (var service in _services.Where(s => s.ServiceType != null))
+            foreach (var service in m_Services.Where(s => s.ServiceType != null))
             {
                 var constructor = service.ServiceType.GetConstructors().FirstOrDefault();
                 if (constructor != null)
                 {
                     foreach (var parameter in constructor.GetParameters())
                     {
-                        if (!_services.Any(s => s.ServiceType == parameter.ParameterType))
+                        if (!m_Services.Any(s => s.ServiceType == parameter.ParameterType))
                         {
-                            _validationResults.Add(new ValidationResult
+                            m_ValidationResults.Add(new ValidationResult
                             {
                                 Severity = ValidationSeverity.Error,
                                 Message = $"Missing dependency: {service.ServiceType.Name} requires {parameter.ParameterType.Name}",

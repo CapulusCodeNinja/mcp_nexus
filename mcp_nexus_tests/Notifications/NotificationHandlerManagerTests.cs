@@ -12,13 +12,13 @@ namespace mcp_nexus_tests.Notifications
     /// </summary>
     public class NotificationHandlerManagerTests
     {
-        private readonly Mock<ILogger> _mockLogger;
-        private readonly McpNotificationService _manager;
+        private readonly Mock<ILogger> m_MockLogger;
+        private readonly McpNotificationService m_Manager;
 
         public NotificationHandlerManagerTests()
         {
-            _mockLogger = new Mock<ILogger>();
-            _manager = new McpNotificationService();
+            m_MockLogger = new Mock<ILogger>();
+            m_Manager = new McpNotificationService();
         }
 
         [Fact]
@@ -38,7 +38,7 @@ namespace mcp_nexus_tests.Notifications
             var handler = new Func<object, Task>(_ => Task.CompletedTask);
 
             // Act
-            var subscriptionId = _manager.Subscribe("TestEvent", handler);
+            var subscriptionId = m_Manager.Subscribe("TestEvent", handler);
 
             // Assert
             Assert.False(string.IsNullOrEmpty(subscriptionId));
@@ -48,7 +48,7 @@ namespace mcp_nexus_tests.Notifications
         public void Subscribe_WithNullHandler_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => _manager.Subscribe("TestEvent", null!));
+            Assert.Throws<ArgumentNullException>(() => m_Manager.Subscribe("TestEvent", null!));
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace mcp_nexus_tests.Notifications
             var handler = new Func<object, Task>(_ => Task.CompletedTask);
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => _manager.Subscribe(null!, handler));
+            Assert.Throws<ArgumentException>(() => m_Manager.Subscribe(null!, handler));
         }
 
         [Fact]
@@ -68,7 +68,7 @@ namespace mcp_nexus_tests.Notifications
             var handler = new Func<object, Task>(_ => Task.CompletedTask);
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => _manager.Subscribe("", handler));
+            Assert.Throws<ArgumentException>(() => m_Manager.Subscribe("", handler));
         }
 
         [Fact]
@@ -76,10 +76,10 @@ namespace mcp_nexus_tests.Notifications
         {
             // Arrange
             var handler = new Func<object, Task>(_ => Task.CompletedTask);
-            var subscriptionId = _manager.Subscribe("TestEvent", handler);
+            var subscriptionId = m_Manager.Subscribe("TestEvent", handler);
 
             // Act
-            var result = _manager.Unsubscribe(subscriptionId);
+            var result = m_Manager.Unsubscribe(subscriptionId);
 
             // Assert
             Assert.True(result);
@@ -92,7 +92,7 @@ namespace mcp_nexus_tests.Notifications
             var invalidId = Guid.NewGuid().ToString();
 
             // Act
-            var result = _manager.Unsubscribe(invalidId);
+            var result = m_Manager.Unsubscribe(invalidId);
 
             // Assert
             Assert.False(result);
@@ -102,7 +102,7 @@ namespace mcp_nexus_tests.Notifications
         public void Unsubscribe_WithNullSubscriptionId_ReturnsFalse()
         {
             // Act
-            var result = _manager.Unsubscribe(null!);
+            var result = m_Manager.Unsubscribe(null!);
 
             // Assert
             Assert.False(result);
@@ -119,10 +119,10 @@ namespace mcp_nexus_tests.Notifications
                 return Task.CompletedTask;
             });
 
-            _manager.Subscribe("TestEvent", handler);
+            m_Manager.Subscribe("TestEvent", handler);
 
             // Act
-            await _manager.PublishNotificationAsync("TestEvent", "TestData");
+            await m_Manager.PublishNotificationAsync("TestEvent", "TestData");
 
             // Assert
             Assert.Single(receivedData);
@@ -135,7 +135,7 @@ namespace mcp_nexus_tests.Notifications
         public async Task PublishNotificationAsync_WithNoHandlers_DoesNotThrow()
         {
             // Act & Assert
-            await _manager.PublishNotificationAsync("NonExistentEvent", "TestData");
+            await m_Manager.PublishNotificationAsync("NonExistentEvent", "TestData");
             // Should not throw
         }
 
@@ -143,7 +143,7 @@ namespace mcp_nexus_tests.Notifications
         public async Task PublishNotificationAsync_WithNullEventType_DoesNotThrow()
         {
             // Act & Assert
-            await _manager.PublishNotificationAsync(null!, "TestData");
+            await m_Manager.PublishNotificationAsync(null!, "TestData");
             // Should not throw
         }
 
@@ -151,7 +151,7 @@ namespace mcp_nexus_tests.Notifications
         public async Task PublishNotificationAsync_WithEmptyEventType_DoesNotThrow()
         {
             // Act & Assert
-            await _manager.PublishNotificationAsync("", "TestData");
+            await m_Manager.PublishNotificationAsync("", "TestData");
             // Should not throw
         }
 
@@ -174,11 +174,11 @@ namespace mcp_nexus_tests.Notifications
                 return Task.CompletedTask;
             });
 
-            _manager.Subscribe("TestEvent", handler1);
-            _manager.Subscribe("TestEvent", handler2);
+            m_Manager.Subscribe("TestEvent", handler1);
+            m_Manager.Subscribe("TestEvent", handler2);
 
             // Act
-            await _manager.PublishNotificationAsync("TestEvent", "TestData");
+            await m_Manager.PublishNotificationAsync("TestEvent", "TestData");
 
             // Assert
             Assert.Single(receivedData1);
@@ -203,11 +203,11 @@ namespace mcp_nexus_tests.Notifications
                 return Task.CompletedTask;
             });
 
-            _manager.Subscribe("TestEvent", handler1);
-            _manager.Subscribe("TestEvent", handler2);
+            m_Manager.Subscribe("TestEvent", handler1);
+            m_Manager.Subscribe("TestEvent", handler2);
 
             // Act
-            await _manager.PublishNotificationAsync("TestEvent", "TestData");
+            await m_Manager.PublishNotificationAsync("TestEvent", "TestData");
 
             // Assert
             Assert.Single(receivedData);
@@ -227,10 +227,10 @@ namespace mcp_nexus_tests.Notifications
                 return Task.CompletedTask;
             });
 
-            _manager.Subscribe("CommandStatus", handler);
+            m_Manager.Subscribe("CommandStatus", handler);
 
             // Act
-            await _manager.NotifyCommandStatusAsync("session1", "cmd1", "executing");
+            await m_Manager.NotifyCommandStatusAsync("session1", "cmd1", "executing");
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -247,10 +247,10 @@ namespace mcp_nexus_tests.Notifications
                 return Task.CompletedTask;
             });
 
-            _manager.Subscribe("CommandHeartbeat", handler);
+            m_Manager.Subscribe("CommandHeartbeat", handler);
 
             // Act
-            await _manager.NotifyCommandHeartbeatAsync("session1", "cmd1");
+            await m_Manager.NotifyCommandHeartbeatAsync("session1", "cmd1");
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -267,10 +267,10 @@ namespace mcp_nexus_tests.Notifications
                 return Task.CompletedTask;
             });
 
-            _manager.Subscribe("SessionEvent", handler);
+            m_Manager.Subscribe("SessionEvent", handler);
 
             // Act
-            await _manager.NotifySessionEventAsync("session1", "event1", "data1");
+            await m_Manager.NotifySessionEventAsync("session1", "event1", "data1");
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -287,10 +287,10 @@ namespace mcp_nexus_tests.Notifications
                 return Task.CompletedTask;
             });
 
-            _manager.Subscribe("SessionRecovery", handler);
+            m_Manager.Subscribe("SessionRecovery", handler);
 
             // Act
-            await _manager.NotifySessionRecoveryAsync("session1", "recovery1");
+            await m_Manager.NotifySessionRecoveryAsync("session1", "recovery1");
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -307,10 +307,10 @@ namespace mcp_nexus_tests.Notifications
                 return Task.CompletedTask;
             });
 
-            _manager.Subscribe("ServerHealth", handler);
+            m_Manager.Subscribe("ServerHealth", handler);
 
             // Act
-            await _manager.NotifyServerHealthAsync("healthy");
+            await m_Manager.NotifyServerHealthAsync("healthy");
 
             // Assert
             Assert.Single(receivedNotifications);
@@ -327,10 +327,10 @@ namespace mcp_nexus_tests.Notifications
                 return Task.CompletedTask;
             });
 
-            _manager.Subscribe("ToolsListChanged", handler);
+            m_Manager.Subscribe("ToolsListChanged", handler);
 
             // Act
-            await _manager.NotifyToolsListChangedAsync();
+            await m_Manager.NotifyToolsListChangedAsync();
 
             // Assert
             Assert.Single(receivedNotifications);

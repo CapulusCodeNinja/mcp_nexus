@@ -11,10 +11,10 @@ namespace mcp_nexus.Infrastructure
     [SupportedOSPlatform("windows")]
     public class ServiceInstallationOrchestrator
     {
-        private readonly ILogger<ServiceInstallationOrchestrator> _logger;
-        private readonly ServiceFileManager _fileManager;
-        private readonly ServiceRegistryManager _registryManager;
-        private readonly OperationLogger _operationLogger;
+        private readonly ILogger<ServiceInstallationOrchestrator> m_Logger;
+        private readonly ServiceFileManager m_FileManager;
+        private readonly ServiceRegistryManager m_RegistryManager;
+        private readonly OperationLogger m_OperationLogger;
 
         public ServiceInstallationOrchestrator(
             ILogger<ServiceInstallationOrchestrator> logger,
@@ -22,10 +22,10 @@ namespace mcp_nexus.Infrastructure
             ServiceRegistryManager registryManager,
             OperationLogger operationLogger)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _fileManager = fileManager ?? throw new ArgumentNullException(nameof(fileManager));
-            _registryManager = registryManager ?? throw new ArgumentNullException(nameof(registryManager));
-            _operationLogger = operationLogger ?? throw new ArgumentNullException(nameof(operationLogger));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_FileManager = fileManager ?? throw new ArgumentNullException(nameof(fileManager));
+            m_RegistryManager = registryManager ?? throw new ArgumentNullException(nameof(registryManager));
+            m_OperationLogger = operationLogger ?? throw new ArgumentNullException(nameof(operationLogger));
         }
 
         /// <summary>
@@ -41,13 +41,13 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                _operationLogger.LogOperationStart("InstallService", $"Installing service: {serviceName}");
+                m_OperationLogger.LogOperationStart("InstallService", $"Installing service: {serviceName}");
 
                 // Copy service files
-                var copyResult = await _fileManager.CopyServiceFilesAsync(executablePath, executablePath);
+                var copyResult = await m_FileManager.CopyServiceFilesAsync(executablePath, executablePath);
                 if (!copyResult)
                 {
-                    _operationLogger.LogOperationError("InstallService", new Exception("Failed to copy service files"));
+                    m_OperationLogger.LogOperationError("InstallService", new Exception("Failed to copy service files"));
                     return false;
                 }
 
@@ -61,19 +61,19 @@ namespace mcp_nexus.Infrastructure
                     ExecutableName = Path.GetFileName(executablePath)
                 };
 
-                var registryResult = await _registryManager.CreateServiceRegistryAsync(configuration);
+                var registryResult = await m_RegistryManager.CreateServiceRegistryAsync(configuration);
                 if (!registryResult)
                 {
-                    _operationLogger.LogOperationError("InstallService", new Exception("Failed to create service registry"));
+                    m_OperationLogger.LogOperationError("InstallService", new Exception("Failed to create service registry"));
                     return false;
                 }
 
-                _operationLogger.LogOperationEnd("InstallService", true, $"Service {serviceName} installed successfully");
+                m_OperationLogger.LogOperationEnd("InstallService", true, $"Service {serviceName} installed successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                _operationLogger.LogOperationError("InstallService", ex);
+                m_OperationLogger.LogOperationError("InstallService", ex);
                 return false;
             }
         }
@@ -109,31 +109,31 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                _operationLogger.LogOperationStart("UninstallService", $"Uninstalling service: {serviceName}");
+                m_OperationLogger.LogOperationStart("UninstallService", $"Uninstalling service: {serviceName}");
 
                 // Unregister service from registry
-                var unregisterResult = await _registryManager.DeleteServiceRegistryAsync(serviceName);
+                var unregisterResult = await m_RegistryManager.DeleteServiceRegistryAsync(serviceName);
                 if (!unregisterResult)
                 {
-                    _operationLogger.LogOperationError("UninstallService", new Exception("Failed to unregister service from registry"));
+                    m_OperationLogger.LogOperationError("UninstallService", new Exception("Failed to unregister service from registry"));
                     return false;
                 }
 
                 // Delete service files
-                var deleteResult = await _fileManager.DeleteServiceFilesAsync(executablePath);
+                var deleteResult = await m_FileManager.DeleteServiceFilesAsync(executablePath);
                 if (!deleteResult)
                 {
-                    _operationLogger.LogOperationError("UninstallService", new Exception("Failed to delete service files"));
+                    m_OperationLogger.LogOperationError("UninstallService", new Exception("Failed to delete service files"));
                     return false;
                 }
 
-                _operationLogger.LogOperationEnd("UninstallService", true, $"Service {serviceName} uninstalled successfully");
+                m_OperationLogger.LogOperationEnd("UninstallService", true, $"Service {serviceName} uninstalled successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                _operationLogger.LogOperationError("UninstallService", ex);
-                _logger.LogError(ex, "Failed to uninstall service {ServiceName}", serviceName);
+                m_OperationLogger.LogOperationError("UninstallService", ex);
+                m_Logger.LogError(ex, "Failed to uninstall service {ServiceName}", serviceName);
                 return false;
             }
         }
@@ -150,13 +150,13 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                _operationLogger.LogOperationStart("UpdateService", $"Updating service: {serviceName}");
+                m_OperationLogger.LogOperationStart("UpdateService", $"Updating service: {serviceName}");
 
                 // First uninstall the existing service
                 var uninstallResult = await UninstallServiceAsync(serviceName, executablePath);
                 if (!uninstallResult)
                 {
-                    _operationLogger.LogOperationError("UpdateService", new Exception("Failed to uninstall existing service"));
+                    m_OperationLogger.LogOperationError("UpdateService", new Exception("Failed to uninstall existing service"));
                     return false;
                 }
 
@@ -164,17 +164,17 @@ namespace mcp_nexus.Infrastructure
                 var installResult = await InstallServiceAsync(serviceName, executablePath, displayName, description);
                 if (!installResult)
                 {
-                    _operationLogger.LogOperationError("UpdateService", new Exception("Failed to install updated service"));
+                    m_OperationLogger.LogOperationError("UpdateService", new Exception("Failed to install updated service"));
                     return false;
                 }
 
-                _operationLogger.LogOperationEnd("UpdateService", true, $"Service {serviceName} updated successfully");
+                m_OperationLogger.LogOperationEnd("UpdateService", true, $"Service {serviceName} updated successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                _operationLogger.LogOperationError("UpdateService", ex);
-                _logger.LogError(ex, "Failed to update service {ServiceName}", serviceName);
+                m_OperationLogger.LogOperationError("UpdateService", ex);
+                m_Logger.LogError(ex, "Failed to update service {ServiceName}", serviceName);
                 return false;
             }
         }
@@ -190,31 +190,31 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                _operationLogger.LogOperationStart("ValidateInstallation", $"Validating installation for service: {serviceName}");
+                m_OperationLogger.LogOperationStart("ValidateInstallation", $"Validating installation for service: {serviceName}");
 
                 // Check if service exists in registry
-                var existsInRegistry = await _registryManager.ServiceRegistryExistsAsync(serviceName);
+                var existsInRegistry = await m_RegistryManager.ServiceRegistryExistsAsync(serviceName);
                 if (!existsInRegistry)
                 {
-                    _operationLogger.LogOperationEnd("ValidateInstallation", false, "Service not found in registry");
+                    m_OperationLogger.LogOperationEnd("ValidateInstallation", false, "Service not found in registry");
                     return false;
                 }
 
                 // Verify service files
-                var filesValid = await _fileManager.ValidateServiceFilesAsync(executablePath);
+                var filesValid = await m_FileManager.ValidateServiceFilesAsync(executablePath);
                 if (!filesValid)
                 {
-                    _operationLogger.LogOperationEnd("ValidateInstallation", false, "Service files are invalid");
+                    m_OperationLogger.LogOperationEnd("ValidateInstallation", false, "Service files are invalid");
                     return false;
                 }
 
-                _operationLogger.LogOperationEnd("ValidateInstallation", true, $"Service {serviceName} installation is valid");
+                m_OperationLogger.LogOperationEnd("ValidateInstallation", true, $"Service {serviceName} installation is valid");
                 return true;
             }
             catch (Exception ex)
             {
-                _operationLogger.LogOperationError("ValidateInstallation", ex);
-                _logger.LogError(ex, "Failed to validate installation for service {ServiceName}", serviceName);
+                m_OperationLogger.LogOperationError("ValidateInstallation", ex);
+                m_Logger.LogError(ex, "Failed to validate installation for service {ServiceName}", serviceName);
                 return false;
             }
         }

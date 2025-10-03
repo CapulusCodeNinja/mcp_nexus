@@ -13,20 +13,20 @@ namespace mcp_nexus_tests.Middleware
     /// </summary>
     public class JsonRpcLoggingMiddlewareTests
     {
-        private readonly Mock<RequestDelegate> _mockNext;
-        private readonly Mock<ILogger<JsonRpcLoggingMiddleware>> _mockLogger;
+        private readonly Mock<RequestDelegate> m_MockNext;
+        private readonly Mock<ILogger<JsonRpcLoggingMiddleware>> m_MockLogger;
 
         public JsonRpcLoggingMiddlewareTests()
         {
-            _mockNext = new Mock<RequestDelegate>();
-            _mockLogger = new Mock<ILogger<JsonRpcLoggingMiddleware>>();
+            m_MockNext = new Mock<RequestDelegate>();
+            m_MockLogger = new Mock<ILogger<JsonRpcLoggingMiddleware>>();
         }
 
         [Fact]
         public void Constructor_WithValidParameters_CreatesInstance()
         {
             // Act
-            var middleware = new JsonRpcLoggingMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new JsonRpcLoggingMiddleware(m_MockNext.Object, m_MockLogger.Object);
 
             // Assert
             Assert.NotNull(middleware);
@@ -36,7 +36,7 @@ namespace mcp_nexus_tests.Middleware
         public void Constructor_WithNullNext_CreatesInstance()
         {
             // Act
-            var middleware = new JsonRpcLoggingMiddleware(null!, _mockLogger.Object);
+            var middleware = new JsonRpcLoggingMiddleware(null!, m_MockLogger.Object);
 
             // Assert
             Assert.NotNull(middleware);
@@ -46,7 +46,7 @@ namespace mcp_nexus_tests.Middleware
         public void Constructor_WithNullLogger_CreatesInstance()
         {
             // Act
-            var middleware = new JsonRpcLoggingMiddleware(_mockNext.Object, null!);
+            var middleware = new JsonRpcLoggingMiddleware(m_MockNext.Object, null!);
 
             // Assert
             Assert.NotNull(middleware);
@@ -56,41 +56,41 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithNonRootPath_CallsNext()
         {
             // Arrange
-            var middleware = new JsonRpcLoggingMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new JsonRpcLoggingMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/api/test", "POST");
 
             // Act
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(x => x(context), Times.Once);
+            m_MockNext.Verify(x => x(context), Times.Once);
         }
 
         [Fact]
         public async Task InvokeAsync_WithNonPostMethod_CallsNext()
         {
             // Arrange
-            var middleware = new JsonRpcLoggingMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new JsonRpcLoggingMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/", "GET");
 
             // Act
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(x => x(context), Times.Once);
+            m_MockNext.Verify(x => x(context), Times.Once);
         }
 
         [Fact]
         public async Task InvokeAsync_WithRootPathAndPostMethod_LogsRequestAndResponse()
         {
             // Arrange
-            var middleware = new JsonRpcLoggingMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new JsonRpcLoggingMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var requestJson = """{"jsonrpc": "2.0", "method": "test", "id": 1}""";
             var responseJson = """{"jsonrpc": "2.0", "result": "success", "id": 1}""";
             var context = CreateHttpContext("/", "POST", requestJson);
 
             // Setup response
-            _mockNext.Setup(x => x(It.IsAny<HttpContext>()))
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
                 .Callback<HttpContext>(ctx =>
                 {
                     var responseBytes = Encoding.UTF8.GetBytes(responseJson);
@@ -101,7 +101,7 @@ namespace mcp_nexus_tests.Middleware
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(x => x(context), Times.Once);
+            m_MockNext.Verify(x => x(context), Times.Once);
             VerifyLogCalled(LogLevel.Debug, "📨 JSON-RPC Request:");
             VerifyLogCalled(LogLevel.Debug, "📤 JSON-RPC Response:");
         }
@@ -110,11 +110,11 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithInvalidJsonRequest_LogsFormattedError()
         {
             // Arrange
-            var middleware = new JsonRpcLoggingMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new JsonRpcLoggingMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var invalidJson = """{"jsonrpc": "2.0", "method": "test", "id": 1"""; // Missing closing brace
             var context = CreateHttpContext("/", "POST", invalidJson);
 
-            _mockNext.Setup(x => x(It.IsAny<HttpContext>()))
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
                 .Callback<HttpContext>(ctx =>
                 {
                     var responseBytes = Encoding.UTF8.GetBytes("""{"jsonrpc": "2.0", "error": "Invalid JSON", "id": 1}""");
@@ -125,7 +125,7 @@ namespace mcp_nexus_tests.Middleware
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(x => x(context), Times.Once);
+            m_MockNext.Verify(x => x(context), Times.Once);
             VerifyLogCalled(LogLevel.Debug, "📨 JSON-RPC Request:");
             VerifyLogCalled(LogLevel.Trace, "📤 JSON-RPC Response:");
         }
@@ -134,12 +134,12 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithSseResponse_LogsFormattedResponse()
         {
             // Arrange
-            var middleware = new JsonRpcLoggingMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new JsonRpcLoggingMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var requestJson = """{"jsonrpc": "2.0", "method": "test", "id": 1}""";
             var sseResponse = "data: {\"jsonrpc\": \"2.0\", \"result\": \"success\", \"id\": 1}\n\n";
             var context = CreateHttpContext("/", "POST", requestJson);
 
-            _mockNext.Setup(x => x(It.IsAny<HttpContext>()))
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
                 .Callback<HttpContext>(ctx =>
                 {
                     var responseBytes = Encoding.UTF8.GetBytes(sseResponse);
@@ -150,7 +150,7 @@ namespace mcp_nexus_tests.Middleware
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(x => x(context), Times.Once);
+            m_MockNext.Verify(x => x(context), Times.Once);
             VerifyLogCalled(LogLevel.Debug, "📨 JSON-RPC Request:");
             VerifyLogCalled(LogLevel.Debug, "📤 JSON-RPC Response:");
         }
@@ -159,10 +159,10 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithEmptyRequestBody_LogsRequest()
         {
             // Arrange
-            var middleware = new JsonRpcLoggingMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new JsonRpcLoggingMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var context = CreateHttpContext("/", "POST", "");
 
-            _mockNext.Setup(x => x(It.IsAny<HttpContext>()))
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
                 .Callback<HttpContext>(ctx =>
                 {
                     var responseBytes = Encoding.UTF8.GetBytes("""{"jsonrpc": "2.0", "result": "success", "id": 1}""");
@@ -173,7 +173,7 @@ namespace mcp_nexus_tests.Middleware
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(x => x(context), Times.Once);
+            m_MockNext.Verify(x => x(context), Times.Once);
             VerifyLogCalled(LogLevel.Debug, "📨 JSON-RPC Request:");
             VerifyLogCalled(LogLevel.Debug, "📤 JSON-RPC Response:");
         }
@@ -182,11 +182,11 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithLargeJsonRequest_TruncatesInError()
         {
             // Arrange
-            var middleware = new JsonRpcLoggingMiddleware(_mockNext.Object, _mockLogger.Object);
+            var middleware = new JsonRpcLoggingMiddleware(m_MockNext.Object, m_MockLogger.Object);
             var largeJson = new string('a', 2000) + """{"jsonrpc": "2.0", "method": "test", "id": 1}""";
             var context = CreateHttpContext("/", "POST", largeJson);
 
-            _mockNext.Setup(x => x(It.IsAny<HttpContext>()))
+            m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
                 .Callback<HttpContext>(ctx =>
                 {
                     var responseBytes = Encoding.UTF8.GetBytes("""{"jsonrpc": "2.0", "result": "success", "id": 1}""");
@@ -197,7 +197,7 @@ namespace mcp_nexus_tests.Middleware
             await middleware.InvokeAsync(context);
 
             // Assert
-            _mockNext.Verify(x => x(context), Times.Once);
+            m_MockNext.Verify(x => x(context), Times.Once);
             VerifyLogCalled(LogLevel.Debug, "📨 JSON-RPC Request:");
             VerifyLogCalled(LogLevel.Debug, "📤 JSON-RPC Response:");
         }
@@ -229,7 +229,7 @@ namespace mcp_nexus_tests.Middleware
 
         private void VerifyLogCalled(LogLevel level, string message)
         {
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     level,
                     It.IsAny<EventId>(),

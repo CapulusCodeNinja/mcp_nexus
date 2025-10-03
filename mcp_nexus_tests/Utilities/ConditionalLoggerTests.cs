@@ -10,11 +10,11 @@ namespace mcp_nexus_tests.Utilities
     /// </summary>
     public class ConditionalLoggerTests
     {
-        private readonly Mock<ILogger> _mockLogger;
+        private readonly Mock<ILogger> m_MockLogger;
 
         public ConditionalLoggerTests()
         {
-            _mockLogger = new Mock<ILogger>();
+            m_MockLogger = new Mock<ILogger>();
         }
 
         [Fact]
@@ -32,7 +32,7 @@ namespace mcp_nexus_tests.Utilities
             var args = new object[] { "arg1", "arg2" };
 
             // Act
-            ConditionalLogger.LogTrace(_mockLogger.Object, message, args);
+            ConditionalLogger.LogTrace(m_MockLogger.Object, message, args);
 
             // Assert
             // Note: The actual behavior depends on ENABLE_TRACE_LOGGING compilation symbol
@@ -50,7 +50,7 @@ namespace mcp_nexus_tests.Utilities
             var args = new object[] { "arg1" };
 
             // Act
-            ConditionalLogger.LogTrace(_mockLogger.Object, exception, message, args);
+            ConditionalLogger.LogTrace(m_MockLogger.Object, exception, message, args);
 
             // Assert
             // Note: The actual behavior depends on ENABLE_TRACE_LOGGING compilation symbol
@@ -67,7 +67,7 @@ namespace mcp_nexus_tests.Utilities
             var args = new object[] { "arg1", "arg2" };
 
             // Act
-            ConditionalLogger.LogDebug(_mockLogger.Object, message, args);
+            ConditionalLogger.LogDebug(m_MockLogger.Object, message, args);
 
             // Assert
             // Note: The actual behavior depends on DEBUG compilation symbol
@@ -85,7 +85,7 @@ namespace mcp_nexus_tests.Utilities
             var args = new object[] { "arg1" };
 
             // Act
-            ConditionalLogger.LogDebug(_mockLogger.Object, exception, message, args);
+            ConditionalLogger.LogDebug(m_MockLogger.Object, exception, message, args);
 
             // Assert
             // Note: The actual behavior depends on DEBUG compilation symbol
@@ -98,7 +98,7 @@ namespace mcp_nexus_tests.Utilities
         public void IsTraceEnabled_ReturnsBoolean()
         {
             // Act
-            var result = ConditionalLogger.IsTraceEnabled(_mockLogger.Object);
+            var result = ConditionalLogger.IsTraceEnabled(m_MockLogger.Object);
 
             // Assert
             // Note: The actual behavior depends on ENABLE_TRACE_LOGGING compilation symbol
@@ -111,7 +111,7 @@ namespace mcp_nexus_tests.Utilities
         public void IsDebugEnabled_ReturnsBoolean()
         {
             // Act
-            var result = ConditionalLogger.IsDebugEnabled(_mockLogger.Object);
+            var result = ConditionalLogger.IsDebugEnabled(m_MockLogger.Object);
 
             // Assert
             // Note: The actual behavior depends on DEBUG compilation symbol
@@ -164,10 +164,10 @@ namespace mcp_nexus_tests.Utilities
 
             // Act & Assert
             // These should not throw even with null message due to preprocessor directives
-            ConditionalLogger.LogTrace(_mockLogger.Object, null!, args);
-            ConditionalLogger.LogTrace(_mockLogger.Object, new Exception("test"), null!, args);
-            ConditionalLogger.LogDebug(_mockLogger.Object, null!, args);
-            ConditionalLogger.LogDebug(_mockLogger.Object, new Exception("test"), null!, args);
+            ConditionalLogger.LogTrace(m_MockLogger.Object, null!, args);
+            ConditionalLogger.LogTrace(m_MockLogger.Object, new Exception("test"), null!, args);
+            ConditionalLogger.LogDebug(m_MockLogger.Object, null!, args);
+            ConditionalLogger.LogDebug(m_MockLogger.Object, new Exception("test"), null!, args);
         }
 
         [Fact]
@@ -178,10 +178,10 @@ namespace mcp_nexus_tests.Utilities
 
             // Act & Assert
             // These should not throw even with null args due to preprocessor directives
-            ConditionalLogger.LogTrace(_mockLogger.Object, message, null!);
-            ConditionalLogger.LogTrace(_mockLogger.Object, new Exception("test"), message, null!);
-            ConditionalLogger.LogDebug(_mockLogger.Object, message, null!);
-            ConditionalLogger.LogDebug(_mockLogger.Object, new Exception("test"), message, null!);
+            ConditionalLogger.LogTrace(m_MockLogger.Object, message, null!);
+            ConditionalLogger.LogTrace(m_MockLogger.Object, new Exception("test"), message, null!);
+            ConditionalLogger.LogDebug(m_MockLogger.Object, message, null!);
+            ConditionalLogger.LogDebug(m_MockLogger.Object, new Exception("test"), message, null!);
         }
 
         [Fact]

@@ -19,21 +19,21 @@ namespace mcp_nexus_tests.Session
     /// </summary>
     public class SessionStatisticsCollectorTests : IDisposable
     {
-        private readonly Mock<ILogger> _mockLogger;
-        private readonly Mock<IServiceProvider> _mockServiceProvider;
-        private readonly Mock<ILoggerFactory> _mockLoggerFactory;
-        private readonly Mock<IMcpNotificationService> _mockNotificationService;
-        private readonly SessionLifecycleManager _lifecycleManager;
-        private readonly SessionMonitoringService _monitoringService;
-        private readonly ConcurrentDictionary<string, SessionInfo> _sessions;
+        private readonly Mock<ILogger> m_MockLogger;
+        private readonly Mock<IServiceProvider> m_MockServiceProvider;
+        private readonly Mock<ILoggerFactory> mm_MockLoggerFactory;
+        private readonly Mock<IMcpNotificationService> m_MockNotificationService;
+        private readonly SessionLifecycleManager m_LifecycleManager;
+        private readonly SessionMonitoringService m_MonitoringService;
+        private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions;
 
         public SessionStatisticsCollectorTests()
         {
-            _mockLogger = new Mock<ILogger>();
-            _mockServiceProvider = new Mock<IServiceProvider>();
-            _mockLoggerFactory = new Mock<ILoggerFactory>();
-            _mockNotificationService = new Mock<IMcpNotificationService>();
-            _sessions = new ConcurrentDictionary<string, SessionInfo>();
+            m_MockLogger = new Mock<ILogger>();
+            m_MockServiceProvider = new Mock<IServiceProvider>();
+            mm_MockLoggerFactory = new Mock<ILoggerFactory>();
+            m_MockNotificationService = new Mock<IMcpNotificationService>();
+            m_Sessions = new ConcurrentDictionary<string, SessionInfo>();
 
             // Create real instances with proper mocks
             var sessionConfig = new SessionConfiguration
@@ -59,21 +59,21 @@ namespace mcp_nexus_tests.Session
                 Options.Create(sessionConfig),
                 Options.Create(cdbOptions));
 
-            _lifecycleManager = new SessionLifecycleManager(
-                _mockLogger.Object,
-                _mockServiceProvider.Object,
-                _mockLoggerFactory.Object,
-                _mockNotificationService.Object,
+            m_LifecycleManager = new SessionLifecycleManager(
+                m_MockLogger.Object,
+                m_MockServiceProvider.Object,
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
                 config,
-                _sessions);
+                m_Sessions);
 
             var shutdownCts = new CancellationTokenSource();
-            _monitoringService = new SessionMonitoringService(
-                _mockLogger.Object,
-                _mockNotificationService.Object,
+            m_MonitoringService = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
                 config,
-                _sessions,
-                _lifecycleManager,
+                m_Sessions,
+                m_LifecycleManager,
                 shutdownCts);
         }
 
@@ -82,7 +82,7 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionStatisticsCollector(
-                null!, _sessions, _lifecycleManager, _monitoringService));
+                null!, m_Sessions, m_LifecycleManager, m_MonitoringService));
         }
 
         [Fact]
@@ -90,7 +90,7 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionStatisticsCollector(
-                _mockLogger.Object, null!, _lifecycleManager, _monitoringService));
+                m_MockLogger.Object, null!, m_LifecycleManager, m_MonitoringService));
         }
 
         [Fact]
@@ -98,7 +98,7 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionStatisticsCollector(
-                _mockLogger.Object, _sessions, null!, _monitoringService));
+                m_MockLogger.Object, m_Sessions, null!, m_MonitoringService));
         }
 
         [Fact]
@@ -106,7 +106,7 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionStatisticsCollector(
-                _mockLogger.Object, _sessions, _lifecycleManager, null!));
+                m_MockLogger.Object, m_Sessions, m_LifecycleManager, null!));
         }
 
         [Fact]
@@ -114,7 +114,7 @@ namespace mcp_nexus_tests.Session
         {
             // Act
             var collector = new SessionStatisticsCollector(
-                _mockLogger.Object, _sessions, _lifecycleManager, _monitoringService);
+                m_MockLogger.Object, m_Sessions, m_LifecycleManager, m_MonitoringService);
 
             // Assert
             Assert.NotNull(collector);
@@ -125,7 +125,7 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var collector = new SessionStatisticsCollector(
-                _mockLogger.Object, _sessions, _lifecycleManager, _monitoringService);
+                m_MockLogger.Object, m_Sessions, m_LifecycleManager, m_MonitoringService);
 
             // Act
             var stats = collector.GetStatistics();
@@ -152,11 +152,11 @@ namespace mcp_nexus_tests.Session
             var sessionInfo1 = CreateMockSessionInfo(sessionId1, "dump1.dmp", SessionStatus.Active);
             var sessionInfo2 = CreateMockSessionInfo(sessionId2, "dump2.dmp", SessionStatus.Active);
 
-            _sessions[sessionId1] = sessionInfo1;
-            _sessions[sessionId2] = sessionInfo2;
+            m_Sessions[sessionId1] = sessionInfo1;
+            m_Sessions[sessionId2] = sessionInfo2;
 
             var collector = new SessionStatisticsCollector(
-                _mockLogger.Object, _sessions, _lifecycleManager, _monitoringService);
+                m_MockLogger.Object, m_Sessions, m_LifecycleManager, m_MonitoringService);
 
             // Act
             var stats = collector.GetStatistics();
@@ -174,7 +174,7 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var collector = new SessionStatisticsCollector(
-                _mockLogger.Object, _sessions, _lifecycleManager, _monitoringService);
+                m_MockLogger.Object, m_Sessions, m_LifecycleManager, m_MonitoringService);
 
             // Act
             var stats = collector.GetStatistics();
@@ -195,11 +195,11 @@ namespace mcp_nexus_tests.Session
             var activeSession = CreateMockSessionInfo(sessionId1, "dump1.dmp", SessionStatus.Active);
             var inactiveSession = CreateMockSessionInfo(sessionId2, "dump2.dmp", SessionStatus.Disposed);
 
-            _sessions[sessionId1] = activeSession;
-            _sessions[sessionId2] = inactiveSession;
+            m_Sessions[sessionId1] = activeSession;
+            m_Sessions[sessionId2] = inactiveSession;
 
             var collector = new SessionStatisticsCollector(
-                _mockLogger.Object, _sessions, _lifecycleManager, _monitoringService);
+                m_MockLogger.Object, m_Sessions, m_LifecycleManager, m_MonitoringService);
 
             // Act
             var activeSessions = collector.GetActiveSessions().ToList();
@@ -219,11 +219,11 @@ namespace mcp_nexus_tests.Session
             var activeSession = CreateMockSessionInfo(sessionId1, "dump1.dmp", SessionStatus.Active);
             var disposedSession = CreateMockSessionInfo(sessionId2, "dump2.dmp", SessionStatus.Disposed);
 
-            _sessions[sessionId1] = activeSession;
-            _sessions[sessionId2] = disposedSession;
+            m_Sessions[sessionId1] = activeSession;
+            m_Sessions[sessionId2] = disposedSession;
 
             var collector = new SessionStatisticsCollector(
-                _mockLogger.Object, _sessions, _lifecycleManager, _monitoringService);
+                m_MockLogger.Object, m_Sessions, m_LifecycleManager, m_MonitoringService);
 
             // Act
             var activeSessions = collector.GetActiveSessions().ToList();
@@ -243,11 +243,11 @@ namespace mcp_nexus_tests.Session
             var validSession = CreateMockSessionInfo(sessionId1, "dump1.dmp", SessionStatus.Active);
             var problematicSession = CreateMockSessionInfo(sessionId2, "dump2.dmp", SessionStatus.Active);
 
-            _sessions[sessionId1] = validSession;
-            _sessions[sessionId2] = problematicSession;
+            m_Sessions[sessionId1] = validSession;
+            m_Sessions[sessionId2] = problematicSession;
 
             var collector = new SessionStatisticsCollector(
-                _mockLogger.Object, _sessions, _lifecycleManager, _monitoringService);
+                m_MockLogger.Object, m_Sessions, m_LifecycleManager, m_MonitoringService);
 
             // Act
             var activeSessions = collector.GetActiveSessions().ToList();
@@ -269,11 +269,11 @@ namespace mcp_nexus_tests.Session
             var session1 = CreateMockSessionInfo(sessionId1, "dump1.dmp", SessionStatus.Active);
             var session2 = CreateMockSessionInfo(sessionId2, "dump2.dmp", SessionStatus.Active);
 
-            _sessions[sessionId1] = session1;
-            _sessions[sessionId2] = session2;
+            m_Sessions[sessionId1] = session1;
+            m_Sessions[sessionId2] = session2;
 
             var collector = new SessionStatisticsCollector(
-                _mockLogger.Object, _sessions, _lifecycleManager, _monitoringService);
+                m_MockLogger.Object, m_Sessions, m_LifecycleManager, m_MonitoringService);
 
             // Act
             var allSessions = collector.GetAllSessions().ToList();
@@ -290,7 +290,7 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var collector = new SessionStatisticsCollector(
-                _mockLogger.Object, _sessions, _lifecycleManager, _monitoringService);
+                m_MockLogger.Object, m_Sessions, m_LifecycleManager, m_MonitoringService);
 
 
             // Act
@@ -298,7 +298,7 @@ namespace mcp_nexus_tests.Session
 
             // Assert
             // Verify that information logging was called
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -313,7 +313,7 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var collector = new SessionStatisticsCollector(
-                _mockLogger.Object, _sessions, _lifecycleManager, _monitoringService);
+                m_MockLogger.Object, m_Sessions, m_LifecycleManager, m_MonitoringService);
 
             // Act
             collector.LogStatisticsSummary();
@@ -321,7 +321,7 @@ namespace mcp_nexus_tests.Session
             // Assert
             // Since we're using real instances, no error should be logged in normal operation
             // This test verifies that the method completes successfully
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),

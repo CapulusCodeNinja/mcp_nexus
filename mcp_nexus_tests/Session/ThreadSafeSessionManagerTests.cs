@@ -15,24 +15,24 @@ namespace mcp_nexus_tests.Session
 {
     public class ThreadSafeSessionManagerTests : IDisposable
     {
-        private readonly Mock<ILogger<ThreadSafeSessionManager>> _mockLogger;
-        private readonly Mock<IServiceProvider> _mockServiceProvider;
-        private readonly Mock<IMcpNotificationService> _mockNotificationService;
-        private readonly Mock<ILoggerFactory> _mockLoggerFactory;
-        private readonly Mock<ILogger> _mockSessionLogger;
-        private readonly SessionConfiguration _config;
-        private readonly CdbSessionOptions _cdbOptions;
+        private readonly Mock<ILogger<ThreadSafeSessionManager>> m_MockLogger;
+        private readonly Mock<IServiceProvider> m_MockServiceProvider;
+        private readonly Mock<IMcpNotificationService> m_MockNotificationService;
+        private readonly Mock<ILoggerFactory> mm_MockLoggerFactory;
+        private readonly Mock<ILogger> m_MockSessionLogger;
+        private readonly SessionConfiguration m_Config;
+        private readonly CdbSessionOptions m_CdbOptions;
         private ThreadSafeSessionManager _sessionManager = null!;
 
         public ThreadSafeSessionManagerTests()
         {
-            _mockLogger = new Mock<ILogger<ThreadSafeSessionManager>>();
-            _mockServiceProvider = new Mock<IServiceProvider>();
-            _mockNotificationService = new Mock<IMcpNotificationService>();
-            _mockLoggerFactory = new Mock<ILoggerFactory>();
-            _mockSessionLogger = new Mock<ILogger>();
+            m_MockLogger = new Mock<ILogger<ThreadSafeSessionManager>>();
+            m_MockServiceProvider = new Mock<IServiceProvider>();
+            m_MockNotificationService = new Mock<IMcpNotificationService>();
+            mm_MockLoggerFactory = new Mock<ILoggerFactory>();
+            m_MockSessionLogger = new Mock<ILogger>();
 
-            _config = new SessionConfiguration
+            m_Config = new SessionConfiguration
             {
                 MaxConcurrentSessions = 10,
                 SessionTimeout = TimeSpan.FromMinutes(30),
@@ -41,7 +41,7 @@ namespace mcp_nexus_tests.Session
                 MemoryCleanupThresholdBytes = 1_000_000_000
             };
 
-            _cdbOptions = new CdbSessionOptions
+            m_CdbOptions = new CdbSessionOptions
             {
                 CommandTimeoutMs = 30000,
                 SymbolServerTimeoutMs = 30000,
@@ -56,19 +56,19 @@ namespace mcp_nexus_tests.Session
         private void SetupMocks()
         {
             // Setup service provider mocks
-            _mockServiceProvider.Setup(sp => sp.GetService(typeof(ILoggerFactory)))
-                .Returns(_mockLoggerFactory.Object);
+            m_MockServiceProvider.Setup(sp => sp.GetService(typeof(ILoggerFactory)))
+                .Returns(mm_MockLoggerFactory.Object);
 
             // Setup the required ConcurrentDictionary service
             var sessions = new ConcurrentDictionary<string, SessionInfo>();
-            _mockServiceProvider.Setup(sp => sp.GetService(typeof(ConcurrentDictionary<string, SessionInfo>)))
+            m_MockServiceProvider.Setup(sp => sp.GetService(typeof(ConcurrentDictionary<string, SessionInfo>)))
                 .Returns(sessions);
 
-            _mockLoggerFactory.Setup(lf => lf.CreateLogger(It.IsAny<string>()))
-                .Returns(_mockSessionLogger.Object);
+            mm_MockLoggerFactory.Setup(lf => lf.CreateLogger(It.IsAny<string>()))
+                .Returns(m_MockSessionLogger.Object);
 
             // Setup notification service mock
-            _mockNotificationService.Setup(ns => ns.NotifySessionEventAsync(
+            m_MockNotificationService.Setup(ns => ns.NotifySessionEventAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SessionContext>()))
                 .Returns(Task.CompletedTask);
         }
@@ -76,23 +76,23 @@ namespace mcp_nexus_tests.Session
         private ThreadSafeSessionManager CreateSessionManager()
         {
             return new ThreadSafeSessionManager(
-                _mockLogger.Object,
-                _mockServiceProvider.Object,
-                _mockLoggerFactory.Object,
-                _mockNotificationService.Object,
-                Options.Create(_config),
-                Options.Create(_cdbOptions));
+                m_MockLogger.Object,
+                m_MockServiceProvider.Object,
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
+                Options.Create(m_Config),
+                Options.Create(m_CdbOptions));
         }
 
         private TestableThreadSafeSessionManager CreateTestableSessionManager()
         {
             return new TestableThreadSafeSessionManager(
-                _mockLogger.Object,
-                _mockServiceProvider.Object,
-                _mockLoggerFactory.Object,
-                _mockNotificationService.Object,
-                Options.Create(_config),
-                Options.Create(_cdbOptions));
+                m_MockLogger.Object,
+                m_MockServiceProvider.Object,
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
+                Options.Create(m_Config),
+                Options.Create(m_CdbOptions));
         }
 
         public void Dispose()
@@ -110,7 +110,7 @@ namespace mcp_nexus_tests.Session
 
             // Assert
             Assert.NotNull(sessionManager);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -126,11 +126,11 @@ namespace mcp_nexus_tests.Session
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ThreadSafeSessionManager(
                 null!,
-                _mockServiceProvider.Object,
-                _mockLoggerFactory.Object,
-                _mockNotificationService.Object,
-                Options.Create(_config),
-                Options.Create(_cdbOptions)));
+                m_MockServiceProvider.Object,
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
+                Options.Create(m_Config),
+                Options.Create(m_CdbOptions)));
         }
 
         [Fact]
@@ -138,12 +138,12 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ThreadSafeSessionManager(
-                _mockLogger.Object,
+                m_MockLogger.Object,
                 null!,
-                _mockLoggerFactory.Object,
-                _mockNotificationService.Object,
-                Options.Create(_config),
-                Options.Create(_cdbOptions)));
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
+                Options.Create(m_Config),
+                Options.Create(m_CdbOptions)));
         }
 
         [Fact]
@@ -151,12 +151,12 @@ namespace mcp_nexus_tests.Session
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ThreadSafeSessionManager(
-                _mockLogger.Object,
-                _mockServiceProvider.Object,
-                _mockLoggerFactory.Object,
+                m_MockLogger.Object,
+                m_MockServiceProvider.Object,
+                mm_MockLoggerFactory.Object,
                 null!,
-                Options.Create(_config),
-                Options.Create(_cdbOptions)));
+                Options.Create(m_Config),
+                Options.Create(m_CdbOptions)));
         }
 
         [Fact]
@@ -164,12 +164,12 @@ namespace mcp_nexus_tests.Session
         {
             // Act
             var sessionManager = new ThreadSafeSessionManager(
-                _mockLogger.Object,
-                _mockServiceProvider.Object,
-                _mockLoggerFactory.Object,
-                _mockNotificationService.Object,
+                m_MockLogger.Object,
+                m_MockServiceProvider.Object,
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
                 null,
-                Options.Create(_cdbOptions));
+                Options.Create(m_CdbOptions));
 
             // Assert
             Assert.NotNull(sessionManager);
@@ -181,11 +181,11 @@ namespace mcp_nexus_tests.Session
         {
             // Act
             var sessionManager = new ThreadSafeSessionManager(
-                _mockLogger.Object,
-                _mockServiceProvider.Object,
-                _mockLoggerFactory.Object,
-                _mockNotificationService.Object,
-                Options.Create(_config),
+                m_MockLogger.Object,
+                m_MockServiceProvider.Object,
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
+                Options.Create(m_Config),
                 null);
 
             // Assert
@@ -1009,12 +1009,12 @@ namespace mcp_nexus_tests.Session
             };
 
             var sessionManager = new TestableThreadSafeSessionManager(
-                _mockLogger.Object,
-                _mockServiceProvider.Object,
-                _mockLoggerFactory.Object,
-                _mockNotificationService.Object,
+                m_MockLogger.Object,
+                m_MockServiceProvider.Object,
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
                 Options.Create(config),
-                Options.Create(_cdbOptions));
+                Options.Create(m_CdbOptions));
 
             var dumpPath1 = Path.GetTempFileName();
             var dumpPath2 = Path.GetTempFileName();

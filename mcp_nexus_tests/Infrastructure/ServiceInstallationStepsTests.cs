@@ -12,23 +12,23 @@ namespace mcp_nexus_tests.Infrastructure
     [SupportedOSPlatform("windows")]
     public class ServiceInstallationStepsTests : IDisposable
     {
-        private readonly Mock<ILogger> _mockLogger;
-        private readonly string _testInstallDir;
+        private readonly Mock<ILogger> m_MockLogger;
+        private readonly string m_TestInstallDir;
 
         public ServiceInstallationStepsTests()
         {
-            _mockLogger = new Mock<ILogger>();
-            _testInstallDir = Path.Combine(Path.GetTempPath(), "ServiceInstallationStepsTest");
+            m_MockLogger = new Mock<ILogger>();
+            m_TestInstallDir = Path.Combine(Path.GetTempPath(), "ServiceInstallationStepsTest");
         }
 
         public void Dispose()
         {
             // Cleanup test directory
-            if (Directory.Exists(_testInstallDir))
+            if (Directory.Exists(m_TestInstallDir))
             {
                 try
                 {
-                    Directory.Delete(_testInstallDir, recursive: true);
+                    Directory.Delete(m_TestInstallDir, recursive: true);
                 }
                 catch
                 {
@@ -57,7 +57,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task PerformInstallationStepsAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceInstallationSteps.PerformInstallationStepsAsync("TestService", "Test Display Name", "Test Description", "C:\\Test\\Path", _mockLogger.Object);
+            var result = await ServiceInstallationSteps.PerformInstallationStepsAsync("TestService", "Test Display Name", "Test Description", "C:\\Test\\Path", m_MockLogger.Object);
             // Should not throw, but may return false if no project found
             Assert.True(result == true || result == false);
         }
@@ -75,7 +75,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task RegisterServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceInstallationSteps.RegisterServiceAsync(_mockLogger.Object);
+            var result = await ServiceInstallationSteps.RegisterServiceAsync(m_MockLogger.Object);
             // Should not throw, but may return false if service registration fails
             Assert.True(result == true || result == false);
         }
@@ -93,7 +93,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UnregisterServiceAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceInstallationSteps.UnregisterServiceAsync(_mockLogger.Object);
+            var result = await ServiceInstallationSteps.UnregisterServiceAsync(m_MockLogger.Object);
             // Should not throw, but may return false if service unregistration fails
             Assert.True(result == true || result == false);
         }
@@ -111,7 +111,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupInstallationAsync_WithValidLogger_DoesNotThrow()
         {
             // Act & Assert
-            var result = await ServiceInstallationSteps.CleanupInstallationAsync(_mockLogger.Object);
+            var result = await ServiceInstallationSteps.CleanupInstallationAsync(m_MockLogger.Object);
             // Should not throw, but may return false if cleanup fails
             Assert.True(result == true || result == false);
         }
@@ -120,7 +120,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupInstallationAsync_WithNonExistentDirectory_ReturnsTrue()
         {
             // Act
-            var result = await ServiceInstallationSteps.CleanupInstallationAsync(_mockLogger.Object);
+            var result = await ServiceInstallationSteps.CleanupInstallationAsync(m_MockLogger.Object);
 
             // Assert
             Assert.True(result);
@@ -130,10 +130,10 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupInstallationAsync_WithExistingDirectory_ReturnsTrue()
         {
             // Arrange
-            Directory.CreateDirectory(_testInstallDir);
+            Directory.CreateDirectory(m_TestInstallDir);
 
             // Act
-            var result = await ServiceInstallationSteps.CleanupInstallationAsync(_mockLogger.Object);
+            var result = await ServiceInstallationSteps.CleanupInstallationAsync(m_MockLogger.Object);
 
             // Assert
             Assert.True(result);
@@ -219,7 +219,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // This test verifies that the method handles exceptions gracefully
             // Since we can't easily mock static dependencies, we test that it doesn't throw
-            var result = await ServiceInstallationSteps.PerformInstallationStepsAsync("TestService", "Test Display Name", "Test Description", "C:\\Test\\Path", _mockLogger.Object);
+            var result = await ServiceInstallationSteps.PerformInstallationStepsAsync("TestService", "Test Display Name", "Test Description", "C:\\Test\\Path", m_MockLogger.Object);
 
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
@@ -229,7 +229,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task RegisterServiceAsync_HandlesExceptions()
         {
             // This test verifies that the method handles exceptions gracefully
-            var result = await ServiceInstallationSteps.RegisterServiceAsync(_mockLogger.Object);
+            var result = await ServiceInstallationSteps.RegisterServiceAsync(m_MockLogger.Object);
 
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
@@ -239,7 +239,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task UnregisterServiceAsync_HandlesExceptions()
         {
             // This test verifies that the method handles exceptions gracefully
-            var result = await ServiceInstallationSteps.UnregisterServiceAsync(_mockLogger.Object);
+            var result = await ServiceInstallationSteps.UnregisterServiceAsync(m_MockLogger.Object);
 
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);
@@ -249,7 +249,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupInstallationAsync_HandlesExceptions()
         {
             // This test verifies that the method handles exceptions gracefully
-            var result = await ServiceInstallationSteps.CleanupInstallationAsync(_mockLogger.Object);
+            var result = await ServiceInstallationSteps.CleanupInstallationAsync(m_MockLogger.Object);
 
             // Should return a boolean result without throwing
             Assert.True(result == true || result == false);

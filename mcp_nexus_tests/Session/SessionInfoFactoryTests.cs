@@ -10,15 +10,15 @@ namespace mcp_nexus_tests.Session
 {
     public class SessionInfoFactoryTests
     {
-        private readonly SessionInfoFactory _factory;
-        private readonly Mock<ICdbSession> _mockCdbSession;
-        private readonly Mock<ICommandQueueService> _mockCommandQueue;
+        private readonly SessionInfoFactory m_Factory;
+        private readonly Mock<ICdbSession> m_MockCdbSession;
+        private readonly Mock<ICommandQueueService> m_MockCommandQueue;
 
         public SessionInfoFactoryTests()
         {
-            _factory = new SessionInfoFactory();
-            _mockCdbSession = new Mock<ICdbSession>();
-            _mockCommandQueue = new Mock<ICommandQueueService>();
+            m_Factory = new SessionInfoFactory();
+            m_MockCdbSession = new Mock<ICdbSession>();
+            m_MockCommandQueue = new Mock<ICommandQueueService>();
         }
 
         [Fact]
@@ -52,13 +52,13 @@ namespace mcp_nexus_tests.Session
             var processId = 1234;
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, symbolsPath, processId);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, symbolsPath, processId);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(sessionId, result.SessionId);
-            Assert.Equal(_mockCdbSession.Object, result.CdbSession);
-            Assert.Equal(_mockCommandQueue.Object, result.CommandQueue);
+            Assert.Equal(m_MockCdbSession.Object, result.CdbSession);
+            Assert.Equal(m_MockCommandQueue.Object, result.CommandQueue);
             Assert.Equal(dumpPath, result.DumpPath);
             Assert.Equal(symbolsPath, result.SymbolsPath);
             Assert.Equal(processId, result.ProcessId);
@@ -72,13 +72,13 @@ namespace mcp_nexus_tests.Session
             var dumpPath = @"C:\temp\minimal.dmp";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(sessionId, result.SessionId);
-            Assert.Equal(_mockCdbSession.Object, result.CdbSession);
-            Assert.Equal(_mockCommandQueue.Object, result.CommandQueue);
+            Assert.Equal(m_MockCdbSession.Object, result.CdbSession);
+            Assert.Equal(m_MockCommandQueue.Object, result.CommandQueue);
             Assert.Equal(dumpPath, result.DumpPath);
             Assert.Null(result.SymbolsPath);
             Assert.Null(result.ProcessId);
@@ -92,7 +92,7 @@ namespace mcp_nexus_tests.Session
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                _factory.CreateSessionInfo(null!, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath));
+                m_Factory.CreateSessionInfo(null!, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath));
         }
 
         [Fact]
@@ -103,7 +103,7 @@ namespace mcp_nexus_tests.Session
             var dumpPath = @"C:\temp\test.dmp";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotNull(result);
@@ -118,7 +118,7 @@ namespace mcp_nexus_tests.Session
             var dumpPath = @"C:\temp\test.dmp";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotNull(result);
@@ -134,7 +134,7 @@ namespace mcp_nexus_tests.Session
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                _factory.CreateSessionInfo(sessionId, null!, _mockCommandQueue.Object, dumpPath));
+                m_Factory.CreateSessionInfo(sessionId, null!, m_MockCommandQueue.Object, dumpPath));
         }
 
         [Fact]
@@ -146,7 +146,7 @@ namespace mcp_nexus_tests.Session
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, null!, dumpPath));
+                m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, null!, dumpPath));
         }
 
         [Fact]
@@ -157,7 +157,7 @@ namespace mcp_nexus_tests.Session
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, null!));
+                m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, null!));
         }
 
         [Fact]
@@ -168,7 +168,7 @@ namespace mcp_nexus_tests.Session
             var dumpPath = "";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotNull(result);
@@ -183,7 +183,7 @@ namespace mcp_nexus_tests.Session
             var dumpPath = "   ";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotNull(result);
@@ -198,7 +198,7 @@ namespace mcp_nexus_tests.Session
             var dumpPath = @"C:\temp\test.dmp";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotNull(result);
@@ -213,7 +213,7 @@ namespace mcp_nexus_tests.Session
             var dumpPath = @"C:\测试\转储文件.dmp";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotNull(result);
@@ -229,7 +229,7 @@ namespace mcp_nexus_tests.Session
             var symbolsPath = @"C:\符号文件\调试符号";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, symbolsPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, symbolsPath);
 
             // Assert
             Assert.NotNull(result);
@@ -244,7 +244,7 @@ namespace mcp_nexus_tests.Session
             var dumpPath = @"C:\temp\test.dmp";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotNull(result);
@@ -259,7 +259,7 @@ namespace mcp_nexus_tests.Session
             var dumpPath = @"C:\" + new string('A', 10000) + ".dmp";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotNull(result);
@@ -275,7 +275,7 @@ namespace mcp_nexus_tests.Session
             var symbolsPath = @"C:\" + new string('B', 10000);
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, symbolsPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, symbolsPath);
 
             // Assert
             Assert.NotNull(result);
@@ -290,7 +290,7 @@ namespace mcp_nexus_tests.Session
             var dumpPath = @"C:\temp\test.dmp";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotNull(result);
@@ -305,7 +305,7 @@ namespace mcp_nexus_tests.Session
             var dumpPath = @"C:\temp\test!@#$%^&*()_+-=[]{}|;':\,./<>?.dmp";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotNull(result);
@@ -321,7 +321,7 @@ namespace mcp_nexus_tests.Session
             var symbolsPath = @"C:\symbols!@#$%^&*()_+-=[]{}|;':\,./<>?";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, symbolsPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, symbolsPath);
 
             // Assert
             Assert.NotNull(result);
@@ -337,7 +337,7 @@ namespace mcp_nexus_tests.Session
             var processId = 0;
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, null, processId);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, null, processId);
 
             // Assert
             Assert.NotNull(result);
@@ -353,7 +353,7 @@ namespace mcp_nexus_tests.Session
             var processId = -1;
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, null, processId);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, null, processId);
 
             // Assert
             Assert.NotNull(result);
@@ -369,7 +369,7 @@ namespace mcp_nexus_tests.Session
             var processId = int.MaxValue;
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, null, processId);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, null, processId);
 
             // Assert
             Assert.NotNull(result);
@@ -385,7 +385,7 @@ namespace mcp_nexus_tests.Session
             var processId = int.MinValue;
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, null, processId);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, null, processId);
 
             // Assert
             Assert.NotNull(result);
@@ -401,7 +401,7 @@ namespace mcp_nexus_tests.Session
             var symbolsPath = "";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, symbolsPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, symbolsPath);
 
             // Assert
             Assert.NotNull(result);
@@ -417,7 +417,7 @@ namespace mcp_nexus_tests.Session
             var symbolsPath = "   ";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, symbolsPath);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, symbolsPath);
 
             // Assert
             Assert.NotNull(result);
@@ -433,8 +433,8 @@ namespace mcp_nexus_tests.Session
             var dumpPath = @"C:\temp\test.dmp";
 
             // Act
-            var result1 = _factory.CreateSessionInfo(sessionId1, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
-            var result2 = _factory.CreateSessionInfo(sessionId2, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result1 = m_Factory.CreateSessionInfo(sessionId1, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
+            var result2 = m_Factory.CreateSessionInfo(sessionId2, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotSame(result1, result2);
@@ -449,8 +449,8 @@ namespace mcp_nexus_tests.Session
             var dumpPath = @"C:\temp\test.dmp";
 
             // Act
-            var result1 = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
-            var result2 = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath);
+            var result1 = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
+            var result2 = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath);
 
             // Assert
             Assert.NotSame(result1, result2);
@@ -462,7 +462,7 @@ namespace mcp_nexus_tests.Session
         public void CreateDefaultSessionInfo_ReturnsSessionInfo()
         {
             // Act
-            var result = _factory.CreateDefaultSessionInfo();
+            var result = m_Factory.CreateDefaultSessionInfo();
 
             // Assert
             Assert.NotNull(result);
@@ -473,8 +473,8 @@ namespace mcp_nexus_tests.Session
         public void CreateDefaultSessionInfo_MultipleCalls_ReturnDifferentInstances()
         {
             // Act
-            var result1 = _factory.CreateDefaultSessionInfo();
-            var result2 = _factory.CreateDefaultSessionInfo();
+            var result1 = m_Factory.CreateDefaultSessionInfo();
+            var result2 = m_Factory.CreateDefaultSessionInfo();
 
             // Assert
             Assert.NotSame(result1, result2);
@@ -484,7 +484,7 @@ namespace mcp_nexus_tests.Session
         public void CreateDefaultSessionInfo_ReturnsDefaultValues()
         {
             // Act
-            var result = _factory.CreateDefaultSessionInfo();
+            var result = m_Factory.CreateDefaultSessionInfo();
 
             // Assert
             Assert.NotNull(result);
@@ -552,7 +552,7 @@ namespace mcp_nexus_tests.Session
             var dumpPath = @"C:\temp\test.dmp";
 
             // Act
-            var result = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, null, null);
+            var result = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, null, null);
 
             // Assert
             Assert.NotNull(result);
@@ -572,8 +572,8 @@ namespace mcp_nexus_tests.Session
             var processId = 1234;
 
             // Act
-            var result1 = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, symbolsPath, null);
-            var result2 = _factory.CreateSessionInfo(sessionId, _mockCdbSession.Object, _mockCommandQueue.Object, dumpPath, null, processId);
+            var result1 = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, symbolsPath, null);
+            var result2 = m_Factory.CreateSessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, dumpPath, null, processId);
 
             // Assert
             Assert.NotNull(result1);

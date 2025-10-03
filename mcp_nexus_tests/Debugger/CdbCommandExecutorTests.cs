@@ -12,19 +12,19 @@ namespace mcp_nexus_tests.Debugger
 {
     public class CdbCommandExecutorTests
     {
-        private readonly Mock<ILogger<CdbCommandExecutor>> _mockLogger;
-        private readonly Mock<ILogger<CdbOutputParser>> _mockOutputParserLogger;
-        private readonly CdbSessionConfiguration _config;
-        private readonly CdbOutputParser _outputParser;
-        private readonly CdbCommandExecutor _executor;
+        private readonly Mock<ILogger<CdbCommandExecutor>> m_MockLogger;
+        private readonly Mock<ILogger<CdbOutputParser>> m_MockOutputParserLogger;
+        private readonly CdbSessionConfiguration m_Config;
+        private readonly CdbOutputParser m_OutputParser;
+        private readonly CdbCommandExecutor m_Executor;
 
         public CdbCommandExecutorTests()
         {
-            _mockLogger = new Mock<ILogger<CdbCommandExecutor>>();
-            _mockOutputParserLogger = new Mock<ILogger<CdbOutputParser>>();
-            _config = new CdbSessionConfiguration();
-            _outputParser = new CdbOutputParser(_mockOutputParserLogger.Object);
-            _executor = new CdbCommandExecutor(_mockLogger.Object, _config, _outputParser);
+            m_MockLogger = new Mock<ILogger<CdbCommandExecutor>>();
+            m_MockOutputParserLogger = new Mock<ILogger<CdbOutputParser>>();
+            m_Config = new CdbSessionConfiguration();
+            m_OutputParser = new CdbOutputParser(m_MockOutputParserLogger.Object);
+            m_Executor = new CdbCommandExecutor(m_MockLogger.Object, m_Config, m_OutputParser);
         }
 
         [Fact]
@@ -54,7 +54,7 @@ namespace mcp_nexus_tests.Debugger
             // Arrange
             var logger = new Mock<ILogger<CdbCommandExecutor>>();
             var config = new CdbSessionConfiguration();
-            var outputParser = new CdbOutputParser(_mockOutputParserLogger.Object);
+            var outputParser = new CdbOutputParser(m_MockOutputParserLogger.Object);
 
             // Act
             var executor = new CdbCommandExecutor(logger.Object, config, outputParser);
@@ -68,7 +68,7 @@ namespace mcp_nexus_tests.Debugger
         {
             // Arrange
             var config = new CdbSessionConfiguration();
-            var outputParser = new CdbOutputParser(_mockOutputParserLogger.Object);
+            var outputParser = new CdbOutputParser(m_MockOutputParserLogger.Object);
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new CdbCommandExecutor(null!, config, outputParser));
@@ -78,10 +78,10 @@ namespace mcp_nexus_tests.Debugger
         public void Constructor_WithNullConfig_ThrowsArgumentNullException()
         {
             // Arrange
-            var outputParser = new CdbOutputParser(_mockOutputParserLogger.Object);
+            var outputParser = new CdbOutputParser(m_MockOutputParserLogger.Object);
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new CdbCommandExecutor(_mockLogger.Object, null!, outputParser));
+            Assert.Throws<ArgumentNullException>(() => new CdbCommandExecutor(m_MockLogger.Object, null!, outputParser));
         }
 
         [Fact]
@@ -91,7 +91,7 @@ namespace mcp_nexus_tests.Debugger
             var config = new CdbSessionConfiguration();
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new CdbCommandExecutor(_mockLogger.Object, config, null!));
+            Assert.Throws<ArgumentNullException>(() => new CdbCommandExecutor(m_MockLogger.Object, config, null!));
         }
 
         [Fact]
@@ -102,7 +102,7 @@ namespace mcp_nexus_tests.Debugger
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _executor.ExecuteCommandAsync(null!, mockProcessManager.Object, CancellationToken.None));
+                m_Executor.ExecuteCommandAsync(null!, mockProcessManager.Object, CancellationToken.None));
         }
 
         [Fact]
@@ -113,7 +113,7 @@ namespace mcp_nexus_tests.Debugger
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _executor.ExecuteCommandAsync("", mockProcessManager.Object, CancellationToken.None));
+                m_Executor.ExecuteCommandAsync("", mockProcessManager.Object, CancellationToken.None));
         }
 
         [Fact]
@@ -124,14 +124,14 @@ namespace mcp_nexus_tests.Debugger
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _executor.ExecuteCommandAsync("   ", mockProcessManager.Object, CancellationToken.None));
+                m_Executor.ExecuteCommandAsync("   ", mockProcessManager.Object, CancellationToken.None));
         }
 
         [Fact]
         public void CancelCurrentOperation_WithNoActiveOperation_DoesNotThrow()
         {
             // Act & Assert
-            var exception = Record.Exception(() => _executor.CancelCurrentOperation());
+            var exception = Record.Exception(() => m_Executor.CancelCurrentOperation());
             Assert.Null(exception);
         }
 
@@ -139,7 +139,7 @@ namespace mcp_nexus_tests.Debugger
         public void CancelCurrentOperation_WithActiveOperation_CancelsOperation()
         {
             // Act
-            _executor.CancelCurrentOperation();
+            m_Executor.CancelCurrentOperation();
 
             // Assert
             // The method should complete without throwing
@@ -150,8 +150,8 @@ namespace mcp_nexus_tests.Debugger
         public void Dispose_CalledMultipleTimes_DoesNotThrow()
         {
             // Act & Assert
-            var exception1 = Record.Exception(() => _executor.Dispose());
-            var exception2 = Record.Exception(() => _executor.Dispose());
+            var exception1 = Record.Exception(() => m_Executor.Dispose());
+            var exception2 = Record.Exception(() => m_Executor.Dispose());
             
             Assert.Null(exception1);
             Assert.Null(exception2);
@@ -161,7 +161,7 @@ namespace mcp_nexus_tests.Debugger
         public void Dispose_DisposesResources()
         {
             // Act
-            _executor.Dispose();
+            m_Executor.Dispose();
 
             // Assert
             // The method should complete without throwing
@@ -179,7 +179,7 @@ namespace mcp_nexus_tests.Debugger
             // Act & Assert
             // The method will likely throw due to mocking limitations, but we can verify it's callable
             await Assert.ThrowsAnyAsync<Exception>(() =>
-                _executor.ExecuteCommandAsync("test command", mockProcessManager.Object, CancellationToken.None));
+                m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object, CancellationToken.None));
         }
 
         [Fact]
@@ -193,7 +193,7 @@ namespace mcp_nexus_tests.Debugger
             // Act & Assert
             // The method will likely throw due to mocking limitations, but we can verify it's callable
             await Assert.ThrowsAnyAsync<Exception>(() =>
-                _executor.ExecuteCommandAsync("test command", mockProcessManager.Object, cts.Token));
+                m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object, cts.Token));
         }
 
         [Fact]
@@ -206,7 +206,7 @@ namespace mcp_nexus_tests.Debugger
             // Act & Assert
             // The method will likely throw due to mocking limitations, but we can verify it's callable
             await Assert.ThrowsAnyAsync<Exception>(() =>
-                _executor.ExecuteCommandAsync(longCommand, mockProcessManager.Object, CancellationToken.None));
+                m_Executor.ExecuteCommandAsync(longCommand, mockProcessManager.Object, CancellationToken.None));
         }
 
         [Fact]
@@ -219,7 +219,7 @@ namespace mcp_nexus_tests.Debugger
             // Act & Assert
             // The method will likely throw due to mocking limitations, but we can verify it's callable
             await Assert.ThrowsAnyAsync<Exception>(() =>
-                _executor.ExecuteCommandAsync(unicodeCommand, mockProcessManager.Object, CancellationToken.None));
+                m_Executor.ExecuteCommandAsync(unicodeCommand, mockProcessManager.Object, CancellationToken.None));
         }
 
         [Fact]
@@ -232,7 +232,7 @@ namespace mcp_nexus_tests.Debugger
             // Act & Assert
             // The method will likely throw due to mocking limitations, but we can verify it's callable
             await Assert.ThrowsAnyAsync<Exception>(() =>
-                _executor.ExecuteCommandAsync(specialCommand, mockProcessManager.Object, CancellationToken.None));
+                m_Executor.ExecuteCommandAsync(specialCommand, mockProcessManager.Object, CancellationToken.None));
         }
 
         [Fact]
@@ -249,7 +249,7 @@ namespace mcp_nexus_tests.Debugger
                 tasks[i] = Task.Run(async () =>
                 {
                     await Assert.ThrowsAnyAsync<Exception>(() =>
-                        _executor.ExecuteCommandAsync($"command{index}", mockProcessManager.Object, CancellationToken.None));
+                        m_Executor.ExecuteCommandAsync($"command{index}", mockProcessManager.Object, CancellationToken.None));
                 });
             }
 
@@ -268,7 +268,7 @@ namespace mcp_nexus_tests.Debugger
             // Act & Assert
             // The method will likely throw due to mocking limitations, but we can verify it's callable
             await Assert.ThrowsAnyAsync<Exception>(() =>
-                _executor.ExecuteCommandAsync("test command", mockProcessManager.Object, CancellationToken.None));
+                m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object, CancellationToken.None));
         }
 
         [Fact]
@@ -284,8 +284,8 @@ namespace mcp_nexus_tests.Debugger
                 symbolSearchPath: null,
                 startupDelayMs: 1000
             );
-            var outputParser = new CdbOutputParser(_mockOutputParserLogger.Object);
-            var executor = new CdbCommandExecutor(_mockLogger.Object, config, outputParser);
+            var outputParser = new CdbOutputParser(m_MockOutputParserLogger.Object);
+            var executor = new CdbCommandExecutor(m_MockLogger.Object, config, outputParser);
             var mockProcessManager = new Mock<CdbProcessManager>();
 
             // Act & Assert

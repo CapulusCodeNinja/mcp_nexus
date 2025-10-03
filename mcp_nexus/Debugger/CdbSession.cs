@@ -62,21 +62,21 @@ namespace mcp_nexus.Debugger
         /// </summary>
         private class LoggerWrapper<T> : ILogger<T>
         {
-            private readonly ILogger _innerLogger;
+            private readonly ILogger m_InnerLogger;
 
             public LoggerWrapper(ILogger logger)
             {
-                _innerLogger = logger ?? throw new ArgumentNullException(nameof(logger));
+                m_InnerLogger = logger ?? throw new ArgumentNullException(nameof(logger));
             }
 
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull
-                => _innerLogger.BeginScope(state);
+                => m_InnerLogger.BeginScope(state);
 
             public bool IsEnabled(LogLevel logLevel)
-                => _innerLogger.IsEnabled(logLevel);
+                => m_InnerLogger.IsEnabled(logLevel);
 
             public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-                => _innerLogger.Log(logLevel, eventId, state, exception, formatter);
+                => m_InnerLogger.Log(logLevel, eventId, state, exception, formatter);
         }
 
         /// <summary>

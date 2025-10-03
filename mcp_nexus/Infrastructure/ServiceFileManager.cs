@@ -11,11 +11,11 @@ namespace mcp_nexus.Infrastructure
     /// </summary>
     public class ServiceFileManager
     {
-        private readonly ILogger<ServiceFileManager> _logger;
+        private readonly ILogger<ServiceFileManager> m_Logger;
 
         public ServiceFileManager(ILogger<ServiceFileManager> logger)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<bool> CopyServiceFilesAsync(string sourcePath, string targetPath)
@@ -24,23 +24,23 @@ namespace mcp_nexus.Infrastructure
             {
                 if (!Directory.Exists(sourcePath))
                 {
-                    _logger.LogError("Source path does not exist: {SourcePath}", sourcePath);
+                    m_Logger.LogError("Source path does not exist: {SourcePath}", sourcePath);
                     return false;
                 }
 
                 if (!Directory.Exists(targetPath))
                 {
                     Directory.CreateDirectory(targetPath);
-                    _logger.LogInformation("Created target directory: {TargetPath}", targetPath);
+                    m_Logger.LogInformation("Created target directory: {TargetPath}", targetPath);
                 }
 
                 await CopyDirectoryAsync(sourcePath, targetPath);
-                _logger.LogInformation("Successfully copied service files from {SourcePath} to {TargetPath}", sourcePath, targetPath);
+                m_Logger.LogInformation("Successfully copied service files from {SourcePath} to {TargetPath}", sourcePath, targetPath);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to copy service files from {SourcePath} to {TargetPath}", sourcePath, targetPath);
+                m_Logger.LogError(ex, "Failed to copy service files from {SourcePath} to {TargetPath}", sourcePath, targetPath);
                 return false;
             }
         }
@@ -51,7 +51,7 @@ namespace mcp_nexus.Infrastructure
             {
                 if (!Directory.Exists(servicePath))
                 {
-                    _logger.LogError("Service path does not exist: {ServicePath}", servicePath);
+                    m_Logger.LogError("Service path does not exist: {ServicePath}", servicePath);
                     return false;
                 }
 
@@ -59,12 +59,12 @@ namespace mcp_nexus.Infrastructure
                 var backupDir = Path.Combine(backupPath, $"backup_{timestamp}");
 
                 await CopyDirectoryAsync(servicePath, backupDir);
-                _logger.LogInformation("Successfully backed up service files to {BackupPath}", backupDir);
+                m_Logger.LogInformation("Successfully backed up service files to {BackupPath}", backupDir);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to backup service files from {ServicePath} to {BackupPath}", servicePath, backupPath);
+                m_Logger.LogError(ex, "Failed to backup service files from {ServicePath} to {BackupPath}", servicePath, backupPath);
                 return false;
             }
         }
@@ -75,17 +75,17 @@ namespace mcp_nexus.Infrastructure
             {
                 if (!Directory.Exists(backupPath))
                 {
-                    _logger.LogError("Backup path does not exist: {BackupPath}", backupPath);
+                    m_Logger.LogError("Backup path does not exist: {BackupPath}", backupPath);
                     return false;
                 }
 
                 await CopyDirectoryAsync(backupPath, servicePath);
-                _logger.LogInformation("Successfully restored service files from {BackupPath} to {ServicePath}", backupPath, servicePath);
+                m_Logger.LogInformation("Successfully restored service files from {BackupPath} to {ServicePath}", backupPath, servicePath);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to restore service files from {BackupPath} to {ServicePath}", backupPath, servicePath);
+                m_Logger.LogError(ex, "Failed to restore service files from {BackupPath} to {ServicePath}", backupPath, servicePath);
                 return false;
             }
         }
@@ -96,7 +96,7 @@ namespace mcp_nexus.Infrastructure
             {
                 if (!Directory.Exists(backupPath))
                 {
-                    _logger.LogWarning("Backup path does not exist: {BackupPath}", backupPath);
+                    m_Logger.LogWarning("Backup path does not exist: {BackupPath}", backupPath);
                     return true;
                 }
 
@@ -110,17 +110,17 @@ namespace mcp_nexus.Infrastructure
                     {
                         Directory.Delete(directory, true);
                         deletedCount++;
-                        _logger.LogInformation("Deleted old backup: {BackupDirectory}", directory);
+                        m_Logger.LogInformation("Deleted old backup: {BackupDirectory}", directory);
                     }
                 }
 
-                _logger.LogInformation("Cleaned up {DeletedCount} old backup directories", deletedCount);
+                m_Logger.LogInformation("Cleaned up {DeletedCount} old backup directories", deletedCount);
                 await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to cleanup old backups in {BackupPath}", backupPath);
+                m_Logger.LogError(ex, "Failed to cleanup old backups in {BackupPath}", backupPath);
                 return false;
             }
         }
@@ -131,7 +131,7 @@ namespace mcp_nexus.Infrastructure
             {
                 if (!Directory.Exists(servicePath))
                 {
-                    _logger.LogError("Service path does not exist: {ServicePath}", servicePath);
+                    m_Logger.LogError("Service path does not exist: {ServicePath}", servicePath);
                     return false;
                 }
 
@@ -147,18 +147,18 @@ namespace mcp_nexus.Infrastructure
                     var fullPath = Path.Combine(servicePath, file);
                     if (!File.Exists(fullPath))
                     {
-                        _logger.LogError("Required file missing: {FilePath}", fullPath);
+                        m_Logger.LogError("Required file missing: {FilePath}", fullPath);
                         return false;
                     }
                 }
 
-                _logger.LogInformation("Service files validation successful");
+                m_Logger.LogInformation("Service files validation successful");
                 await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to validate service files in {ServicePath}", servicePath);
+                m_Logger.LogError(ex, "Failed to validate service files in {ServicePath}", servicePath);
                 return false;
             }
         }
@@ -169,17 +169,17 @@ namespace mcp_nexus.Infrastructure
             {
                 if (!Directory.Exists(servicePath))
                 {
-                    _logger.LogError("Service path does not exist: {ServicePath}", servicePath);
+                    m_Logger.LogError("Service path does not exist: {ServicePath}", servicePath);
                     return false;
                 }
 
-                _logger.LogInformation("Service files validation successful");
+                m_Logger.LogInformation("Service files validation successful");
                 await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to validate service files in {ServicePath}", servicePath);
+                m_Logger.LogError(ex, "Failed to validate service files in {ServicePath}", servicePath);
                 return false;
             }
         }
@@ -191,14 +191,14 @@ namespace mcp_nexus.Infrastructure
                 if (Directory.Exists(targetPath))
                 {
                     Directory.Delete(targetPath, true);
-                    _logger.LogInformation("Successfully deleted service files from {TargetPath}", targetPath);
+                    m_Logger.LogInformation("Successfully deleted service files from {TargetPath}", targetPath);
                 }
                 await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to delete service files from {TargetPath}", targetPath);
+                m_Logger.LogError(ex, "Failed to delete service files from {TargetPath}", targetPath);
                 return false;
             }
         }
@@ -209,20 +209,20 @@ namespace mcp_nexus.Infrastructure
             {
                 if (!Directory.Exists(servicePath))
                 {
-                    _logger.LogError("Service path does not exist: {ServicePath}", servicePath);
+                    m_Logger.LogError("Service path does not exist: {ServicePath}", servicePath);
                     return Array.Empty<FileInfo>();
                 }
 
                 var directory = new DirectoryInfo(servicePath);
                 var files = directory.GetFiles("*", SearchOption.AllDirectories);
 
-                _logger.LogInformation("Found {FileCount} files in service directory", files.Length);
+                m_Logger.LogInformation("Found {FileCount} files in service directory", files.Length);
                 await Task.CompletedTask;
                 return files;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get service files from {ServicePath}", servicePath);
+                m_Logger.LogError(ex, "Failed to get service files from {ServicePath}", servicePath);
                 return Array.Empty<FileInfo>();
             }
         }
@@ -263,14 +263,14 @@ namespace mcp_nexus.Infrastructure
         {
             try
             {
-                _logger.LogInformation("Creating backup");
+                m_Logger.LogInformation("Creating backup");
                 // Placeholder implementation
                 await Task.Delay(100);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create backup");
+                m_Logger.LogError(ex, "Failed to create backup");
                 return false;
             }
         }

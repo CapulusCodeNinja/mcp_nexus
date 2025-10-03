@@ -19,13 +19,13 @@ namespace mcp_nexus_tests.Configuration
     /// </summary>
     public class HttpServerSetupTests
     {
-        private readonly Mock<IConfiguration> _mockConfiguration;
-        private readonly ServiceCollection _services;
+        private readonly Mock<IConfiguration> m_MockConfiguration;
+        private readonly ServiceCollection m_Services;
 
         public HttpServerSetupTests()
         {
-            _mockConfiguration = new Mock<IConfiguration>();
-            _services = new ServiceCollection();
+            m_MockConfiguration = new Mock<IConfiguration>();
+            m_Services = new ServiceCollection();
         }
 
         [Fact]

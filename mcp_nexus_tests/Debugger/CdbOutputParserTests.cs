@@ -12,13 +12,13 @@ namespace mcp_nexus_tests.Debugger
     /// </summary>
     public class CdbOutputParserTests : IDisposable
     {
-        private readonly Mock<ILogger<CdbOutputParser>> _mockLogger;
-        private readonly CdbOutputParser _parser;
+        private readonly Mock<ILogger<CdbOutputParser>> m_MockLogger;
+        private readonly CdbOutputParser m_Parser;
 
         public CdbOutputParserTests()
         {
-            _mockLogger = new Mock<ILogger<CdbOutputParser>>();
-            _parser = new CdbOutputParser(_mockLogger.Object);
+            m_MockLogger = new Mock<ILogger<CdbOutputParser>>();
+            m_Parser = new CdbOutputParser(m_MockLogger.Object);
         }
 
         public void Dispose()
@@ -35,7 +35,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void SetCurrentCommand_WithNullCommand_SetsNull()
         {
-            _parser.SetCurrentCommand(null!);
+            m_Parser.SetCurrentCommand(null!);
 
             // Verify the command was set (we can't directly access private field, but we can test behavior)
             Assert.True(true); // This test verifies no exception is thrown
@@ -44,7 +44,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void SetCurrentCommand_WithEmptyCommand_SetsEmpty()
         {
-            _parser.SetCurrentCommand("");
+            m_Parser.SetCurrentCommand("");
 
             // Verify the command was set
             Assert.True(true); // This test verifies no exception is thrown
@@ -53,7 +53,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void SetCurrentCommand_WithWhitespaceCommand_TrimsAndSets()
         {
-            _parser.SetCurrentCommand("  test command  ");
+            m_Parser.SetCurrentCommand("  test command  ");
 
             // Verify the command was set
             Assert.True(true); // This test verifies no exception is thrown
@@ -62,7 +62,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void SetCurrentCommand_WithValidCommand_SetsCommand()
         {
-            _parser.SetCurrentCommand("test command");
+            m_Parser.SetCurrentCommand("test command");
 
             // Verify the command was set
             Assert.True(true); // This test verifies no exception is thrown
@@ -71,7 +71,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void IsCommandComplete_WithNullLine_ReturnsFalse()
         {
-            var result = _parser.IsCommandComplete(null!);
+            var result = m_Parser.IsCommandComplete(null!);
 
             Assert.False(result);
         }
@@ -79,7 +79,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void IsCommandComplete_WithEmptyLine_ReturnsFalse()
         {
-            var result = _parser.IsCommandComplete("");
+            var result = m_Parser.IsCommandComplete("");
 
             Assert.False(result);
         }
@@ -87,7 +87,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void IsCommandComplete_WithCdbPrompt_ReturnsTrue()
         {
-            var result = _parser.IsCommandComplete("0:000>");
+            var result = m_Parser.IsCommandComplete("0:000>");
 
             Assert.True(result);
         }
@@ -95,7 +95,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void IsCommandComplete_WithCdbPromptWithSpaces_ReturnsTrue()
         {
-            var result = _parser.IsCommandComplete("  0:000>  ");
+            var result = m_Parser.IsCommandComplete("  0:000>  ");
 
             Assert.True(result);
         }
@@ -103,7 +103,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void IsCommandComplete_WithCdbPromptWithDifferentNumbers_ReturnsTrue()
         {
-            var result = _parser.IsCommandComplete("123:456>");
+            var result = m_Parser.IsCommandComplete("123:456>");
 
             Assert.True(result);
         }
@@ -111,7 +111,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void IsCommandComplete_WithRegularOutput_ReturnsFalse()
         {
-            var result = _parser.IsCommandComplete("Some debugger output");
+            var result = m_Parser.IsCommandComplete("Some debugger output");
 
             Assert.False(result);
         }
@@ -119,9 +119,9 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void IsCommandComplete_WithMultipleLines_ProcessesEachLine()
         {
-            _parser.IsCommandComplete("Line 1");
-            _parser.IsCommandComplete("Line 2");
-            var result = _parser.IsCommandComplete("0:000>");
+            m_Parser.IsCommandComplete("Line 1");
+            m_Parser.IsCommandComplete("Line 2");
+            var result = m_Parser.IsCommandComplete("0:000>");
 
             Assert.True(result);
         }
@@ -129,7 +129,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void FormatOutputForLogging_WithNullOutput_ReturnsEmptyBrackets()
         {
-            var result = _parser.FormatOutputForLogging(null!);
+            var result = m_Parser.FormatOutputForLogging(null!);
 
             Assert.Equal("[Empty]", result);
         }
@@ -137,7 +137,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void FormatOutputForLogging_WithEmptyOutput_ReturnsEmptyBrackets()
         {
-            var result = _parser.FormatOutputForLogging("");
+            var result = m_Parser.FormatOutputForLogging("");
 
             Assert.Equal("[Empty]", result);
         }
@@ -146,7 +146,7 @@ namespace mcp_nexus_tests.Debugger
         public void FormatOutputForLogging_WithShortOutput_ReturnsAsIs()
         {
             var output = "Short output";
-            var result = _parser.FormatOutputForLogging(output);
+            var result = m_Parser.FormatOutputForLogging(output);
 
             Assert.Equal(output, result);
         }
@@ -155,7 +155,7 @@ namespace mcp_nexus_tests.Debugger
         public void FormatOutputForLogging_WithLongOutput_Truncates()
         {
             var output = new string('A', 1500);
-            var result = _parser.FormatOutputForLogging(output, 1000);
+            var result = m_Parser.FormatOutputForLogging(output, 1000);
 
             Assert.Equal(1000 + "... [truncated]".Length, result.Length);
             Assert.EndsWith("... [truncated]", result);
@@ -165,7 +165,7 @@ namespace mcp_nexus_tests.Debugger
         public void FormatOutputForLogging_WithNullCharacters_ReplacesWithEscapeSequence()
         {
             var output = "Test\0Output";
-            var result = _parser.FormatOutputForLogging(output);
+            var result = m_Parser.FormatOutputForLogging(output);
 
             Assert.Equal("Test\\0Output", result);
         }
@@ -174,7 +174,7 @@ namespace mcp_nexus_tests.Debugger
         public void FormatOutputForLogging_WithCustomMaxLength_RespectsLimit()
         {
             var output = "This is a test output";
-            var result = _parser.FormatOutputForLogging(output, 10);
+            var result = m_Parser.FormatOutputForLogging(output, 10);
 
             Assert.Equal(10 + "... [truncated]".Length, result.Length);
             Assert.EndsWith("... [truncated]", result);
@@ -183,7 +183,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithNullOutput_ReturnsEmptyAnalysis()
         {
-            var result = _parser.AnalyzeOutput(null!);
+            var result = m_Parser.AnalyzeOutput(null!);
 
             Assert.True(result.IsEmpty);
             Assert.False(result.HasErrors);
@@ -195,7 +195,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithEmptyOutput_ReturnsEmptyAnalysis()
         {
-            var result = _parser.AnalyzeOutput("");
+            var result = m_Parser.AnalyzeOutput("");
 
             Assert.True(result.IsEmpty);
             Assert.False(result.HasErrors);
@@ -207,7 +207,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithErrorText_DetectsErrors()
         {
-            var result = _parser.AnalyzeOutput("Error: Something went wrong");
+            var result = m_Parser.AnalyzeOutput("Error: Something went wrong");
 
             Assert.False(result.IsEmpty);
             Assert.True(result.HasErrors);
@@ -219,7 +219,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithUnableToText_DetectsErrors()
         {
-            var result = _parser.AnalyzeOutput("Unable to connect to target");
+            var result = m_Parser.AnalyzeOutput("Unable to connect to target");
 
             Assert.False(result.IsEmpty);
             Assert.True(result.HasErrors);
@@ -228,7 +228,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithInvalidText_DetectsErrors()
         {
-            var result = _parser.AnalyzeOutput("Invalid parameter");
+            var result = m_Parser.AnalyzeOutput("Invalid parameter");
 
             Assert.False(result.IsEmpty);
             Assert.True(result.HasErrors);
@@ -237,7 +237,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithFailedText_DetectsErrors()
         {
-            var result = _parser.AnalyzeOutput("Failed to execute command");
+            var result = m_Parser.AnalyzeOutput("Failed to execute command");
 
             Assert.False(result.IsEmpty);
             Assert.True(result.HasErrors);
@@ -246,7 +246,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithWarningText_DetectsWarnings()
         {
-            var result = _parser.AnalyzeOutput("Warning: This is a warning");
+            var result = m_Parser.AnalyzeOutput("Warning: This is a warning");
 
             Assert.False(result.IsEmpty);
             Assert.False(result.HasErrors);
@@ -258,7 +258,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithWarnText_DetectsWarnings()
         {
-            var result = _parser.AnalyzeOutput("WARN: This is a warning");
+            var result = m_Parser.AnalyzeOutput("WARN: This is a warning");
 
             Assert.False(result.IsEmpty);
             Assert.True(result.HasWarnings);
@@ -267,7 +267,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithCautionText_DetectsWarnings()
         {
-            var result = _parser.AnalyzeOutput("Caution: Be careful");
+            var result = m_Parser.AnalyzeOutput("Caution: Be careful");
 
             Assert.False(result.IsEmpty);
             Assert.True(result.HasWarnings);
@@ -276,7 +276,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithSuccessText_DetectsSuccess()
         {
-            var result = _parser.AnalyzeOutput("Success: Operation completed");
+            var result = m_Parser.AnalyzeOutput("Success: Operation completed");
 
             Assert.False(result.IsEmpty);
             Assert.False(result.HasErrors);
@@ -288,7 +288,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithOkText_DetectsSuccess()
         {
-            var result = _parser.AnalyzeOutput("OK: Everything is fine");
+            var result = m_Parser.AnalyzeOutput("OK: Everything is fine");
 
             Assert.False(result.IsEmpty);
             Assert.True(result.HasSuccessIndicators);
@@ -297,7 +297,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithCompleteText_DetectsSuccess()
         {
-            var result = _parser.AnalyzeOutput("Complete: All done");
+            var result = m_Parser.AnalyzeOutput("Complete: All done");
 
             Assert.False(result.IsEmpty);
             Assert.True(result.HasSuccessIndicators);
@@ -306,7 +306,7 @@ namespace mcp_nexus_tests.Debugger
         [Fact]
         public void AnalyzeOutput_WithPrompt_DetectsPrompt()
         {
-            var result = _parser.AnalyzeOutput("0:000>");
+            var result = m_Parser.AnalyzeOutput("0:000>");
 
             Assert.False(result.IsEmpty);
             Assert.False(result.HasErrors);
@@ -319,7 +319,7 @@ namespace mcp_nexus_tests.Debugger
         public void AnalyzeOutput_WithComplexOutput_DetectsMultiplePatterns()
         {
             var output = "Warning: Something happened\nError: Failed\nSuccess: Fixed\n0:000>";
-            var result = _parser.AnalyzeOutput(output);
+            var result = m_Parser.AnalyzeOutput(output);
 
             Assert.False(result.IsEmpty);
             Assert.True(result.HasErrors);
@@ -332,7 +332,7 @@ namespace mcp_nexus_tests.Debugger
         public void AnalyzeOutput_WithNoPatterns_ReturnsCleanAnalysis()
         {
             var output = "Just some regular output";
-            var result = _parser.AnalyzeOutput(output);
+            var result = m_Parser.AnalyzeOutput(output);
 
             Assert.False(result.IsEmpty);
             Assert.False(result.HasErrors);
@@ -346,7 +346,7 @@ namespace mcp_nexus_tests.Debugger
         {
             var mockLogger = new Mock<ILogger>();
 
-            _parser.CaptureAvailableOutput(null, null, "test", mockLogger.Object);
+            m_Parser.CaptureAvailableOutput(null, null, "test", mockLogger.Object);
 
             // Should not throw exception
             Assert.True(true);
@@ -361,7 +361,7 @@ namespace mcp_nexus_tests.Debugger
             var outputReader = new StreamReader(outputStream);
             var errorReader = new StreamReader(errorStream);
 
-            _parser.CaptureAvailableOutput(outputReader, errorReader, "test", mockLogger.Object);
+            m_Parser.CaptureAvailableOutput(outputReader, errorReader, "test", mockLogger.Object);
 
             // Should not throw exception
             Assert.True(true);
@@ -378,7 +378,7 @@ namespace mcp_nexus_tests.Debugger
             var outputReader = new StreamReader(outputStream);
             var errorReader = new StreamReader(errorStream);
 
-            _parser.CaptureAvailableOutput(outputReader, errorReader, "test", mockLogger.Object);
+            m_Parser.CaptureAvailableOutput(outputReader, errorReader, "test", mockLogger.Object);
 
             // Should not throw exception and should read the data
             Assert.True(true);
@@ -394,7 +394,7 @@ namespace mcp_nexus_tests.Debugger
             var errorStream = new MemoryStream();
             var errorReader = new StreamReader(errorStream);
 
-            _parser.CaptureAvailableOutput(outputReader, errorReader, "test", mockLogger.Object);
+            m_Parser.CaptureAvailableOutput(outputReader, errorReader, "test", mockLogger.Object);
 
             // Should not throw exception
             Assert.True(true);

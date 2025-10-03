@@ -11,11 +11,11 @@ namespace mcp_nexus.Infrastructure
     /// </summary>
     public class FileOperationsManager
     {
-        private readonly ILogger<FileOperationsManager> _logger;
+        private readonly ILogger<FileOperationsManager> m_Logger;
 
         public FileOperationsManager(ILogger<FileOperationsManager> logger)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<bool> CopyFileAsync(string sourcePath, string destinationPath)
@@ -24,7 +24,7 @@ namespace mcp_nexus.Infrastructure
             {
                 if (!File.Exists(sourcePath))
                 {
-                    _logger.LogError("Source file does not exist: {SourcePath}", sourcePath);
+                    m_Logger.LogError("Source file does not exist: {SourcePath}", sourcePath);
                     return false;
                 }
 
@@ -35,13 +35,13 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 File.Copy(sourcePath, destinationPath, true);
-                _logger.LogInformation("Successfully copied file from {SourcePath} to {DestinationPath}", sourcePath, destinationPath);
+                m_Logger.LogInformation("Successfully copied file from {SourcePath} to {DestinationPath}", sourcePath, destinationPath);
                 await Task.CompletedTask; // Fix CS1998 warning
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to copy file from {SourcePath} to {DestinationPath}", sourcePath, destinationPath);
+                m_Logger.LogError(ex, "Failed to copy file from {SourcePath} to {DestinationPath}", sourcePath, destinationPath);
                 return false;
             }
         }
@@ -53,14 +53,14 @@ namespace mcp_nexus.Infrastructure
                 if (File.Exists(filePath))
                 {
                     File.Delete(filePath);
-                    _logger.LogInformation("Successfully deleted file: {FilePath}", filePath);
+                    m_Logger.LogInformation("Successfully deleted file: {FilePath}", filePath);
                 }
                 await Task.CompletedTask; // Fix CS1998 warning
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to delete file: {FilePath}", filePath);
+                m_Logger.LogError(ex, "Failed to delete file: {FilePath}", filePath);
                 return false;
             }
         }
@@ -72,14 +72,14 @@ namespace mcp_nexus.Infrastructure
                 if (!Directory.Exists(directoryPath))
                 {
                     Directory.CreateDirectory(directoryPath);
-                    _logger.LogInformation("Successfully created directory: {DirectoryPath}", directoryPath);
+                    m_Logger.LogInformation("Successfully created directory: {DirectoryPath}", directoryPath);
                 }
                 await Task.CompletedTask; // Fix CS1998 warning
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create directory: {DirectoryPath}", directoryPath);
+                m_Logger.LogError(ex, "Failed to create directory: {DirectoryPath}", directoryPath);
                 return false;
             }
         }
@@ -102,7 +102,7 @@ namespace mcp_nexus.Infrastructure
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get file size for: {FilePath}", filePath);
+                m_Logger.LogError(ex, "Failed to get file size for: {FilePath}", filePath);
                 return 0;
             }
         }
@@ -120,7 +120,7 @@ namespace mcp_nexus.Infrastructure
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get files from directory: {DirectoryPath}", directoryPath);
+                m_Logger.LogError(ex, "Failed to get files from directory: {DirectoryPath}", directoryPath);
                 return Array.Empty<string>();
             }
         }

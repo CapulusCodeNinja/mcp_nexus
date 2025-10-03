@@ -13,19 +13,19 @@ namespace mcp_nexus_tests.Infrastructure
     [SupportedOSPlatform("windows")]
     public class BackupManagerTests : IDisposable
     {
-        private readonly string _testBackupDir;
-        private readonly string _testInstallDir;
-        private readonly Mock<ILogger> _mockLogger;
+        private readonly string m_TestBackupDir;
+        private readonly string m_TestInstallDir;
+        private readonly Mock<ILogger> m_MockLogger;
 
         public BackupManagerTests()
         {
-            _testBackupDir = Path.Combine(Path.GetTempPath(), "BackupManagerTests_Backups");
-            _testInstallDir = Path.Combine(Path.GetTempPath(), "BackupManagerTests_Install");
-            _mockLogger = new Mock<ILogger>();
+            m_TestBackupDir = Path.Combine(Path.GetTempPath(), "BackupManagerTests_Backups");
+            m_TestInstallDir = Path.Combine(Path.GetTempPath(), "BackupManagerTests_Install");
+            m_MockLogger = new Mock<ILogger>();
 
             // Create test directories
-            Directory.CreateDirectory(_testBackupDir);
-            Directory.CreateDirectory(_testInstallDir);
+            Directory.CreateDirectory(m_TestBackupDir);
+            Directory.CreateDirectory(m_TestInstallDir);
 
             // Set up static configuration for testing
             // Note: In a real test, you'd need to mock ServiceConfiguration or use a test configuration
@@ -38,7 +38,7 @@ namespace mcp_nexus_tests.Infrastructure
             var nonExistentDir = Path.Combine(Path.GetTempPath(), "NonExistentDir");
 
             // Act
-            var result = await BackupManager.CreateBackupAsync(_mockLogger.Object);
+            var result = await BackupManager.CreateBackupAsync(m_MockLogger.Object);
 
             // Assert
             Assert.NotNull(result);
@@ -50,9 +50,9 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             // Create some test files in the install directory
-            var testFile1 = Path.Combine(_testInstallDir, "test1.txt");
-            var testFile2 = Path.Combine(_testInstallDir, "subdir", "test2.txt");
-            Directory.CreateDirectory(Path.Combine(_testInstallDir, "subdir"));
+            var testFile1 = Path.Combine(m_TestInstallDir, "test1.txt");
+            var testFile2 = Path.Combine(m_TestInstallDir, "subdir", "test2.txt");
+            Directory.CreateDirectory(Path.Combine(m_TestInstallDir, "subdir"));
 
             await File.WriteAllTextAsync(testFile1, "Test content 1");
             await File.WriteAllTextAsync(testFile2, "Test content 2");
@@ -62,7 +62,7 @@ namespace mcp_nexus_tests.Infrastructure
             try
             {
                 // Act
-                var result = await BackupManager.CreateBackupAsync(_mockLogger.Object);
+                var result = await BackupManager.CreateBackupAsync(m_MockLogger.Object);
 
                 // Assert
                 // The result will be null because ServiceConfiguration.InstallFolder doesn't exist in test
@@ -88,7 +88,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupOldBackupsAsync_WithNonExistentBackupsFolder_DoesNotThrow()
         {
             // Act & Assert
-            await BackupManager.CleanupOldBackupsAsync(5, _mockLogger.Object);
+            await BackupManager.CleanupOldBackupsAsync(5, m_MockLogger.Object);
             // Should not throw
         }
 
@@ -108,7 +108,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task CleanupOldBackupsAsync_WithVariousMaxBackups_DoesNotThrow(int maxBackups)
         {
             // Act & Assert
-            await BackupManager.CleanupOldBackupsAsync(maxBackups, _mockLogger.Object);
+            await BackupManager.CleanupOldBackupsAsync(maxBackups, m_MockLogger.Object);
             // Should not throw
         }
 
@@ -236,10 +236,10 @@ namespace mcp_nexus_tests.Infrastructure
             // Clean up test directories
             try
             {
-                if (Directory.Exists(_testBackupDir))
-                    Directory.Delete(_testBackupDir, recursive: true);
-                if (Directory.Exists(_testInstallDir))
-                    Directory.Delete(_testInstallDir, recursive: true);
+                if (Directory.Exists(m_TestBackupDir))
+                    Directory.Delete(m_TestBackupDir, recursive: true);
+                if (Directory.Exists(m_TestInstallDir))
+                    Directory.Delete(m_TestInstallDir, recursive: true);
             }
             catch
             {

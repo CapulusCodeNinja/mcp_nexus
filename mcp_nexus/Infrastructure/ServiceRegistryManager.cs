@@ -13,12 +13,12 @@ namespace mcp_nexus.Infrastructure
     [SupportedOSPlatform("windows")]
     public class ServiceRegistryManager
     {
-        private readonly ILogger<ServiceRegistryManager> _logger;
+        private readonly ILogger<ServiceRegistryManager> m_Logger;
         private const string ServicesKeyPath = @"SYSTEM\CurrentControlSet\Services";
 
         public ServiceRegistryManager(ILogger<ServiceRegistryManager> logger)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         [SupportedOSPlatform("windows")]
@@ -29,14 +29,14 @@ namespace mcp_nexus.Infrastructure
                 using var key = Registry.LocalMachine.OpenSubKey(ServicesKeyPath, true);
                 if (key == null)
                 {
-                    _logger.LogError("Failed to open services registry key");
+                    m_Logger.LogError("Failed to open services registry key");
                     return false;
                 }
 
                 using var serviceKey = key.CreateSubKey(configuration.ServiceName);
                 if (serviceKey == null)
                 {
-                    _logger.LogError("Failed to create service registry key for {ServiceName}", configuration.ServiceName);
+                    m_Logger.LogError("Failed to create service registry key for {ServiceName}", configuration.ServiceName);
                     return false;
                 }
 
@@ -67,13 +67,13 @@ namespace mcp_nexus.Infrastructure
                 // Set failure actions
                 SetFailureActions(serviceKey, configuration);
 
-                _logger.LogInformation("Successfully created service registry for {ServiceName}", configuration.ServiceName);
+                m_Logger.LogInformation("Successfully created service registry for {ServiceName}", configuration.ServiceName);
                 await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create service registry for {ServiceName}", configuration.ServiceName);
+                m_Logger.LogError(ex, "Failed to create service registry for {ServiceName}", configuration.ServiceName);
                 return false;
             }
         }
@@ -86,14 +86,14 @@ namespace mcp_nexus.Infrastructure
                 using var key = Registry.LocalMachine.OpenSubKey(ServicesKeyPath, true);
                 if (key == null)
                 {
-                    _logger.LogError("Failed to open services registry key");
+                    m_Logger.LogError("Failed to open services registry key");
                     return false;
                 }
 
                 using var serviceKey = key.OpenSubKey(configuration.ServiceName, true);
                 if (serviceKey == null)
                 {
-                    _logger.LogError("Service registry key not found for {ServiceName}", configuration.ServiceName);
+                    m_Logger.LogError("Service registry key not found for {ServiceName}", configuration.ServiceName);
                     return false;
                 }
 
@@ -103,13 +103,13 @@ namespace mcp_nexus.Infrastructure
                 serviceKey.SetValue("ImagePath", configuration.ExecutablePath);
                 serviceKey.SetValue("Start", (int)configuration.StartType);
 
-                _logger.LogInformation("Successfully updated service registry for {ServiceName}", configuration.ServiceName);
+                m_Logger.LogInformation("Successfully updated service registry for {ServiceName}", configuration.ServiceName);
                 await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to update service registry for {ServiceName}", configuration.ServiceName);
+                m_Logger.LogError(ex, "Failed to update service registry for {ServiceName}", configuration.ServiceName);
                 return false;
             }
         }
@@ -122,18 +122,18 @@ namespace mcp_nexus.Infrastructure
                 using var key = Registry.LocalMachine.OpenSubKey(ServicesKeyPath, true);
                 if (key == null)
                 {
-                    _logger.LogError("Failed to open services registry key");
+                    m_Logger.LogError("Failed to open services registry key");
                     return false;
                 }
 
                 key.DeleteSubKeyTree(serviceName, false);
-                _logger.LogInformation("Successfully deleted service registry for {ServiceName}", serviceName);
+                m_Logger.LogInformation("Successfully deleted service registry for {ServiceName}", serviceName);
                 await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to delete service registry for {ServiceName}", serviceName);
+                m_Logger.LogError(ex, "Failed to delete service registry for {ServiceName}", serviceName);
                 return false;
             }
         }
@@ -155,7 +155,7 @@ namespace mcp_nexus.Infrastructure
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to check if service registry exists for {ServiceName}", serviceName);
+                m_Logger.LogError(ex, "Failed to check if service registry exists for {ServiceName}", serviceName);
                 return false;
             }
         }
@@ -191,7 +191,7 @@ namespace mcp_nexus.Infrastructure
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get service registry info for {ServiceName}", serviceName);
+                m_Logger.LogError(ex, "Failed to get service registry info for {ServiceName}", serviceName);
                 return null;
             }
         }
@@ -214,13 +214,13 @@ namespace mcp_nexus.Infrastructure
                 }
 
                 serviceKey.SetValue("Start", (int)startType);
-                _logger.LogInformation("Set start type to {StartType} for service {ServiceName}", startType, serviceName);
+                m_Logger.LogInformation("Set start type to {StartType} for service {ServiceName}", startType, serviceName);
                 await Task.CompletedTask;
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to set start type for service {ServiceName}", serviceName);
+                m_Logger.LogError(ex, "Failed to set start type for service {ServiceName}", serviceName);
                 return false;
             }
         }
@@ -446,7 +446,7 @@ namespace mcp_nexus.Infrastructure
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to set failure actions for service");
+                m_Logger.LogWarning(ex, "Failed to set failure actions for service");
             }
         }
     }

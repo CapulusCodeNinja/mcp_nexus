@@ -10,11 +10,11 @@ namespace mcp_nexus.Notifications
     /// </summary>
     public class NotificationMessageBuilder
     {
-        private readonly McpNotification _notification;
+        private readonly McpNotification m_Notification;
 
         public NotificationMessageBuilder()
         {
-            _notification = new McpNotification();
+            m_Notification = new McpNotification();
         }
 
         /// <summary>
@@ -24,7 +24,7 @@ namespace mcp_nexus.Notifications
         /// <returns>Builder instance</returns>
         public NotificationMessageBuilder SetMethod(string method)
         {
-            _notification.Method = method;
+            m_Notification.Method = method;
             return this;
         }
 
@@ -35,7 +35,7 @@ namespace mcp_nexus.Notifications
         /// <returns>Builder instance</returns>
         public NotificationMessageBuilder SetParameters(object parameters)
         {
-            _notification.Params = parameters;
+            m_Notification.Params = parameters;
             return this;
         }
 
@@ -45,7 +45,7 @@ namespace mcp_nexus.Notifications
         /// <returns>McpNotification instance</returns>
         public McpNotification Build()
         {
-            return _notification;
+            return m_Notification;
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace mcp_nexus.Notifications
         /// <returns>JSON string representation</returns>
         public string BuildJson()
         {
-            return JsonSerializer.Serialize(_notification);
+            return JsonSerializer.Serialize(m_Notification);
         }
 
         /// <summary>

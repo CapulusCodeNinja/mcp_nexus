@@ -9,11 +9,11 @@ namespace mcp_nexus_tests.Infrastructure
 {
     public class ServicePermissionValidatorTests
     {
-        private readonly Mock<ILogger<ServicePermissionValidator>> _mockLogger;
+        private readonly Mock<ILogger<ServicePermissionValidator>> m_MockLogger;
 
         public ServicePermissionValidatorTests()
         {
-            _mockLogger = new Mock<ILogger<ServicePermissionValidator>>();
+            m_MockLogger = new Mock<ILogger<ServicePermissionValidator>>();
         }
 
         [Fact]
@@ -27,7 +27,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void Constructor_WithValidLogger_CreatesInstance()
         {
             // Act
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
 
             // Assert
             Assert.NotNull(validator);
@@ -37,7 +37,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidatePermissionsAsync_WithValidServiceName_ReturnsTrue()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
             var serviceName = "TestService";
 
             // Act
@@ -45,7 +45,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             Assert.True(result);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -59,14 +59,14 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidatePermissionsAsync_WithNullServiceName_LogsAndReturnsTrue()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
 
             // Act
             var result = await validator.ValidatePermissionsAsync(null!);
 
             // Assert
             Assert.True(result);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -80,14 +80,14 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidatePermissionsAsync_WithEmptyServiceName_LogsAndReturnsTrue()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
 
             // Act
             var result = await validator.ValidatePermissionsAsync(string.Empty);
 
             // Assert
             Assert.True(result);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -101,14 +101,14 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidatePermissionsAsync_WithWhitespaceServiceName_LogsAndReturnsTrue()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
 
             // Act
             var result = await validator.ValidatePermissionsAsync("   ");
 
             // Assert
             Assert.True(result);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -122,7 +122,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidatePermissionsAsync_WithVeryLongServiceName_LogsAndReturnsTrue()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
             var serviceName = new string('A', 1000);
 
             // Act
@@ -130,7 +130,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             Assert.True(result);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -144,7 +144,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidatePermissionsAsync_WithSpecialCharactersServiceName_LogsAndReturnsTrue()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
             var serviceName = "Test-Service_123!@#$%^&*()";
 
             // Act
@@ -152,7 +152,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             Assert.True(result);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -166,7 +166,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidatePermissionsAsync_WithUnicodeServiceName_LogsAndReturnsTrue()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
             var serviceName = "测试服务_TestService_🎯";
 
             // Act
@@ -174,7 +174,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             Assert.True(result);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -188,11 +188,11 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidatePermissionsAsync_WithException_LogsErrorAndReturnsFalse()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
             var serviceName = "TestService";
 
             // Mock the logger to throw an exception during the first Log call (information)
-            _mockLogger.Setup(x => x.Log(
+            m_MockLogger.Setup(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Validating permissions for service {serviceName}")),
@@ -205,7 +205,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Assert
             Assert.False(result);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
@@ -219,7 +219,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidatePermissionsAsync_WithTaskDelay_CompletesAsynchronously()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
             var serviceName = "TestService";
             var startTime = DateTime.UtcNow;
 
@@ -236,7 +236,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void HasRequiredPermissions_ReturnsTrue()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
 
             // Act
             var result = validator.HasRequiredPermissions();
@@ -249,7 +249,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void HasRequiredPermissions_CalledMultipleTimes_ReturnsConsistentResult()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
 
             // Act
             var result1 = validator.HasRequiredPermissions();
@@ -268,7 +268,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void IsAdministrator_ReturnsTrue()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
 
             // Act
             var result = validator.IsAdministrator();
@@ -281,7 +281,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void IsAdministrator_CalledMultipleTimes_ReturnsConsistentResult()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
 
             // Act
             var result1 = validator.IsAdministrator();
@@ -375,7 +375,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidatePermissionsAsync_WithConcurrentCalls_HandlesCorrectly()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
             var serviceName = "TestService";
 
             // Act
@@ -393,7 +393,7 @@ namespace mcp_nexus_tests.Infrastructure
         public async Task ValidatePermissionsAsync_WithDifferentServiceNames_LogsCorrectly()
         {
             // Arrange
-            var validator = new ServicePermissionValidator(_mockLogger.Object);
+            var validator = new ServicePermissionValidator(m_MockLogger.Object);
             var serviceNames = new[] { "Service1", "Service2", "Service3" };
 
             // Act
@@ -403,7 +403,7 @@ namespace mcp_nexus_tests.Infrastructure
             }
 
             // Assert
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -411,7 +411,7 @@ namespace mcp_nexus_tests.Infrastructure
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -419,7 +419,7 @@ namespace mcp_nexus_tests.Infrastructure
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
-            _mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
