@@ -102,8 +102,8 @@ namespace mcp_nexus
                         });
                         var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
-                        await WindowsServiceInstaller.InstallServiceAsync(logger);
-                        Environment.Exit(0);
+                        var installResult = await WindowsServiceInstaller.InstallServiceAsync(logger);
+                        Environment.Exit(installResult ? 0 : 1);
                     }
                     else
                     {
@@ -126,8 +126,8 @@ namespace mcp_nexus
                         });
                         var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
-                        await WindowsServiceInstaller.UninstallServiceAsync(logger);
-                        Environment.Exit(0);
+                        var uninstallResult = await WindowsServiceInstaller.UninstallServiceAsync(logger);
+                        Environment.Exit(uninstallResult ? 0 : 1);
                     }
                     else
                     {
@@ -150,8 +150,8 @@ namespace mcp_nexus
                         });
                         var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
-                        await WindowsServiceInstaller.ForceUninstallServiceAsync(logger);
-                        Environment.Exit(0);
+                        var forceUninstallResult = await WindowsServiceInstaller.ForceUninstallServiceAsync(logger);
+                        Environment.Exit(forceUninstallResult ? 0 : 1);
                     }
                     else
                     {
@@ -180,11 +180,11 @@ namespace mcp_nexus
 
                         Console.Error.WriteLine($" Starting update service call...");
 
-                        await WindowsServiceInstaller.UpdateServiceAsync(logger);
+                        var updateResult = await WindowsServiceInstaller.UpdateServiceAsync(logger);
 
-                        Console.Error.WriteLine($" Update service call completed");
+                        Console.Error.WriteLine($" Update service call completed with result: {updateResult}");
 
-                        Environment.Exit(0);
+                        Environment.Exit(updateResult ? 0 : 1);
                     }
                     else
                     {

@@ -10,104 +10,98 @@ namespace mcp_nexus.Infrastructure
     [SupportedOSPlatform("windows")]
     public static class WindowsServiceInstaller
     {
-        /// <summary>
-        /// Installs the Windows service asynchronously.
-        /// This is a placeholder implementation for testing purposes.
-        /// </summary>
-        /// <param name="logger">The logger instance for recording installation operations and errors. Can be null.</param>
-        /// <returns>
-        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
-        /// Returns <c>true</c> if the service was installed successfully; otherwise, <c>false</c>.
-        /// </returns>
-        public static Task<bool> InstallAsync(ILogger? logger = null)
-        {
-            return Task.Run(() =>
-            {
-                Console.WriteLine($"Installing Windows service: {ServiceName}");
-                return true; // Placeholder implementation
-            });
-        }
-
-        /// <summary>
-        /// Installs the Windows service (legacy method for compatibility).
-        /// This is a placeholder implementation for testing purposes.
-        /// </summary>
-        /// <param name="serviceName">The name of the service to install.</param>
-        /// <param name="displayName">The display name for the service in the Windows Services console.</param>
-        /// <param name="description">The description of the service.</param>
-        public static void Install(string serviceName, string displayName, string description)
-        {
-            // Placeholder implementation for compatibility
-            // In a real implementation, this would use ServiceInstaller
-            Console.WriteLine($"Installing Windows service: {serviceName}");
-        }
-
-        /// <summary>
-        /// Installs the Windows service with default values (legacy method for compatibility).
-        /// This is a placeholder implementation for testing purposes.
-        /// </summary>
-        public static void Install()
-        {
-            Install(ServiceName, DisplayName, Description);
-        }
-
-        /// <summary>
-        /// Uninstalls the Windows service.
-        /// This is a placeholder implementation for testing purposes.
-        /// </summary>
-        /// <param name="serviceName">The name of the service to uninstall.</param>
-        public static void Uninstall(string serviceName)
-        {
-            // Placeholder implementation for compatibility
-            Console.WriteLine($"Uninstalling Windows service: {serviceName}");
-        }
-
-        /// <summary>
-        /// Starts the Windows service.
-        /// This is a placeholder implementation for testing purposes.
-        /// </summary>
-        /// <param name="serviceName">The name of the service to start.</param>
-        public static void Start(string serviceName)
-        {
-            // Placeholder implementation for compatibility
-            Console.WriteLine($"Starting Windows service: {serviceName}");
-        }
-
-        /// <summary>
-        /// Stops the Windows service.
-        /// This is a placeholder implementation for testing purposes.
-        /// </summary>
-        /// <param name="serviceName">The name of the service to stop.</param>
-        public static void Stop(string serviceName)
-        {
-            // Placeholder implementation for compatibility
-            Console.WriteLine($"Stopping Windows service: {serviceName}");
-        }
 
         /// <summary>
         /// Installs the Windows service asynchronously
         /// </summary>
         /// <param name="logger">Logger instance</param>
-        public static Task<bool> InstallServiceAsync(ILogger? logger = null)
+        public static async Task<bool> InstallServiceAsync(ILogger? logger = null)
         {
-            return Task.Run(() =>
+            try
             {
-                Install(ServiceName, DisplayName, Description);
-                return true; // Placeholder implementation
-            });
+                logger?.LogInformation("Installing MCP Nexus service");
+
+                // Build the project first
+                var buildResult = await BuildProjectForDeploymentAsync(logger);
+                if (!buildResult)
+                {
+                    logger?.LogError("Build failed during service installation");
+                    return false;
+                }
+
+                // Copy files to installation directory
+                var copyResult = await CopyApplicationFilesAsync(logger);
+                if (!copyResult)
+                {
+                    logger?.LogError("File copy failed during service installation");
+                    return false;
+                }
+
+                // Install the service using sc command
+                var installCommand = $"create \"{ServiceName}\" binPath= \"{Path.Combine(InstallFolder, "mcp_nexus.exe")}\" start= auto DisplayName= \"{DisplayName}\"";
+                var installResult = await RunScCommandAsync(installCommand, logger);
+                
+                if (installResult)
+                {
+                    logger?.LogInformation("Service installed successfully");
+                    return true;
+                }
+                else
+                {
+                    logger?.LogError("Service installation failed");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "Exception during service installation");
+                return false;
+            }
         }
 
         /// <summary>
         /// Uninstalls the Windows service asynchronously
         /// </summary>
         /// <param name="logger">Logger instance</param>
-        public static Task<bool> UninstallServiceAsync(ILogger? logger = null)
+        public static async Task<bool> UninstallServiceAsync(ILogger? logger = null)
         {
-            return Task.Run(() =>
+            try
             {
-                Uninstall(ServiceName);
-                return true; // Placeholder implementation
-            });
+                logger?.LogInformation("Uninstalling MCP Nexus service");
+
+                // Stop the service first
+                var stopCommand = $"stop \"{ServiceName}\"";
+                var stopResult = await RunScCommandAsync(stopCommand, logger);
+                if (stopResult)
+                {
+                    logger?.LogInformation("Service stopped successfully");
+                    await Task.Delay(2000); // Wait for service to fully stop
+                }
+                else
+                {
+                    logger?.LogWarning("Service stop command failed (may not be running)");
+                }
+
+                // Delete the service
+                var deleteCommand = $"delete \"{ServiceName}\"";
+                var deleteResult = await RunScCommandAsync(deleteCommand, logger);
+                
+                if (deleteResult)
+                {
+                    logger?.LogInformation("Service uninstalled successfully");
+                    return true;
+                }
+                else
+                {
+                    logger?.LogError("Service uninstallation failed");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "Exception during service uninstallation");
+                return false;
+            }
         }
 
 
@@ -115,13 +109,45 @@ namespace mcp_nexus.Infrastructure
         /// Force uninstalls the Windows service asynchronously
         /// </summary>
         /// <param name="logger">Logger instance</param>
-        public static Task<bool> ForceUninstallServiceAsync(ILogger? logger = null)
+        public static async Task<bool> ForceUninstallServiceAsync(ILogger? logger = null)
         {
-            return Task.Run(() =>
+            try
             {
-                Uninstall(ServiceName);
-                return true; // Placeholder implementation
-            });
+                logger?.LogInformation("Force uninstalling MCP Nexus service");
+
+                // Force stop the service
+                var stopCommand = $"stop \"{ServiceName}\"";
+                var stopResult = await RunScCommandWithForceAsync(stopCommand, logger!, true);
+                if (stopResult)
+                {
+                    logger?.LogInformation("Service force stopped successfully");
+                    await Task.Delay(3000); // Wait longer for force stop
+                }
+                else
+                {
+                    logger?.LogWarning("Service force stop command failed (may not be running)");
+                }
+
+                // Force delete the service
+                var deleteCommand = $"delete \"{ServiceName}\"";
+                var deleteResult = await RunScCommandWithForceAsync(deleteCommand, logger!, true);
+                
+                if (deleteResult)
+                {
+                    logger?.LogInformation("Service force uninstalled successfully");
+                    return true;
+                }
+                else
+                {
+                    logger?.LogError("Service force uninstallation failed");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "Exception during force service uninstallation");
+                return false;
+            }
         }
 
 
@@ -212,139 +238,8 @@ namespace mcp_nexus.Infrastructure
         }
 
 
-        /// <summary>
-        /// Validates installation files asynchronously
-        /// </summary>
-        /// <param name="logger">Logger instance</param>
-        public static Task<bool> ValidateInstallationFilesAsync(ILogger? logger = null)
-        {
-            return Task.Run(() =>
-            {
-                Console.WriteLine($"Validating installation files for: {ServiceName}");
-                return true; // Placeholder implementation
-            });
-        }
 
 
-        /// <summary>
-        /// Creates backup asynchronously
-        /// </summary>
-        /// <param name="logger">Logger instance</param>
-        public static Task<bool> CreateBackupAsync(ILogger? logger = null)
-        {
-            return Task.Run(() =>
-            {
-                Console.WriteLine($"Creating backup for: {ServiceName}");
-                return true; // Placeholder implementation
-            });
-        }
-
-
-        /// <summary>
-        /// Cleans up old backups asynchronously
-        /// </summary>
-        /// <param name="logger">Logger instance</param>
-        public static Task<bool> CleanupOldBackupsAsync(ILogger? logger = null)
-        {
-            return Task.Run(() =>
-            {
-                Console.WriteLine($"Cleaning up old backups for: {ServiceName}");
-                return true; // Placeholder implementation
-            });
-        }
-
-
-        // Additional private methods expected by tests
-        /// <summary>
-        /// Copies application files from source to target directory asynchronously.
-        /// </summary>
-        /// <param name="sourcePath">The source directory path.</param>
-        /// <param name="targetPath">The target directory path.</param>
-        /// <returns>
-        /// A <see cref="Task"/> representing the asynchronous operation.
-        /// </returns>
-        private static Task CopyApplicationFilesAsync(string sourcePath, string targetPath)
-        {
-            return Task.Run(() => Console.WriteLine($"Copying application files from {sourcePath} to {targetPath}"));
-        }
-
-        /// <summary>
-        /// Copies a directory from source to target asynchronously.
-        /// </summary>
-        /// <param name="sourcePath">The source directory path.</param>
-        /// <param name="targetPath">The target directory path.</param>
-        /// <returns>
-        /// A <see cref="Task"/> representing the asynchronous operation.
-        /// </returns>
-        private static Task CopyDirectoryAsync(string sourcePath, string targetPath)
-        {
-            return Task.Run(() => Console.WriteLine($"Copying directory from {sourcePath} to {targetPath}"));
-        }
-
-        /// <summary>
-        /// Builds the project for deployment asynchronously.
-        /// </summary>
-        /// <param name="serviceName">The name of the service being deployed.</param>
-        /// <returns>
-        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
-        /// Returns <c>true</c> if the build completed successfully; otherwise, <c>false</c>.
-        /// </returns>
-        private static Task<bool> BuildProjectForDeploymentAsync(string serviceName)
-        {
-            return Task.Run(() =>
-            {
-                Console.WriteLine($"Building project for deployment: {serviceName}");
-                return true; // Placeholder implementation
-            });
-        }
-
-
-        // Private methods expected by tests
-
-        /// <summary>
-        /// Finds the project directory for the current service.
-        /// </summary>
-        /// <returns>
-        /// The project directory path if found; otherwise, <c>null</c>.
-        /// </returns>
-        private static string? FindProjectDirectory()
-        {
-            return Environment.CurrentDirectory; // Placeholder implementation
-        }
-
-        /// <summary>
-        /// Forces cleanup of a Windows service asynchronously.
-        /// </summary>
-        /// <param name="serviceName">The name of the service to cleanup.</param>
-        /// <returns>
-        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
-        /// Returns <c>true</c> if the cleanup completed successfully; otherwise, <c>false</c>.
-        /// </returns>
-        private static Task<bool> ForceCleanupServiceAsync(string serviceName)
-        {
-            return Task.Run(() =>
-            {
-                Console.WriteLine($"Force cleaning up service: {serviceName}");
-                return true; // Placeholder implementation
-            });
-        }
-
-        /// <summary>
-        /// Performs direct registry cleanup for a Windows service asynchronously.
-        /// </summary>
-        /// <param name="serviceName">The name of the service to cleanup from the registry.</param>
-        /// <returns>
-        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
-        /// Returns <c>true</c> if the registry cleanup completed successfully; otherwise, <c>false</c>.
-        /// </returns>
-        private static Task<bool> DirectRegistryCleanupAsync(string serviceName)
-        {
-            return Task.Run(() =>
-            {
-                Console.WriteLine($"Direct registry cleanup for: {serviceName}");
-                return true; // Placeholder implementation
-            });
-        }
 
         /// <summary>
         /// Runs a Windows Service Control (sc) command with force option asynchronously.
@@ -356,38 +251,13 @@ namespace mcp_nexus.Infrastructure
         /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
         /// Returns <c>true</c> if the command executed successfully; otherwise, <c>false</c>.
         /// </returns>
-        private static Task<bool> RunScCommandWithForceAsync(string command, ILogger logger, bool force)
+        private static async Task<bool> RunScCommandWithForceAsync(string command, ILogger logger, bool force)
         {
-            return Task.Run(() =>
-            {
-                Console.WriteLine($"Running sc command: {command} with force={force}");
-                return true; // Placeholder implementation
-            });
+            // Add force parameter to the command if needed
+            var fullCommand = force ? $"{command} /force" : command;
+            return await RunScCommandAsync(fullCommand, logger);
         }
 
-        // Additional methods expected by tests
-        /// <summary>
-        /// Checks if the current process is running as an administrator.
-        /// </summary>
-        /// <returns>
-        /// <c>true</c> if the current process is running as an administrator; otherwise, <c>false</c>.
-        /// </returns>
-        private static bool IsRunAsAdministrator()
-        {
-            return false; // Placeholder implementation
-        }
-
-        /// <summary>
-        /// Checks if a Windows service is installed.
-        /// </summary>
-        /// <param name="serviceName">The name of the service to check.</param>
-        /// <returns>
-        /// <c>true</c> if the service is installed; otherwise, <c>false</c>.
-        /// </returns>
-        private static bool IsServiceInstalled(string serviceName)
-        {
-            return false; // Placeholder implementation
-        }
 
         // Constants expected by tests
         private const string ServiceName = "MCP-Nexus";
