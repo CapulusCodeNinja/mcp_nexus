@@ -15,6 +15,7 @@ namespace mcp_nexus.Metrics
         private readonly ConcurrentDictionary<string, PerformanceCounter> m_counters = new();
         private readonly ConcurrentDictionary<string, AdvancedHistogram> m_histograms = new();
         private readonly Timer m_metricsTimer;
+        private readonly Timer m_cleanupTimer;
         private volatile bool m_disposed = false;
 
         #endregion
@@ -31,6 +32,9 @@ namespace mcp_nexus.Metrics
 
             // Start metrics collection timer (every 30 seconds)
             m_metricsTimer = new Timer(CollectMetrics, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+
+            // Start cleanup timer (every 5 minutes)
+            m_cleanupTimer = new Timer(CleanupOldMetrics, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
 
             m_logger.LogInformation("🚀 AdvancedMetricsService initialized");
         }
@@ -51,9 +55,9 @@ namespace mcp_nexus.Metrics
             if (m_disposed) return;
 
             var counterKey = $"commands.{sessionId}";
-            var histogramKey = $"command_duration.{sessionId}";
+            var histogramKey = "command_duration_all_sessions"; // Aggregate histogram
 
-            // Record counter
+            // Record counter (keep session-specific for detailed tracking)
             m_counters.AddOrUpdate(counterKey,
                 new PerformanceCounter { Total = 1, Successful = success ? 1 : 0, Failed = success ? 0 : 1 },
                 (key, existing) => new PerformanceCounter
@@ -63,7 +67,7 @@ namespace mcp_nexus.Metrics
                     Failed = existing.Failed + (success ? 0 : 1)
                 });
 
-            // Record histogram
+            // Record aggregate histogram
             m_histograms.AddOrUpdate(histogramKey,
                 new AdvancedHistogram { Values = new List<double> { duration.TotalMilliseconds } },
                 (key, existing) =>
@@ -71,8 +75,8 @@ namespace mcp_nexus.Metrics
                     lock (existing.Values)
                     {
                         existing.Values.Add(duration.TotalMilliseconds);
-                        // Keep only last 1000 values to prevent memory leaks
-                        if (existing.Values.Count > 1000)
+                        // Keep only last 5000 values for aggregate data
+                        if (existing.Values.Count > 5000)
                         {
                             existing.Values.RemoveAt(0);
                         }
@@ -106,7 +110,7 @@ namespace mcp_nexus.Metrics
 
             if (duration.HasValue)
             {
-                var histogramKey = $"session_{eventType}_duration";
+                var histogramKey = $"session_{eventType}_duration_all_sessions"; // Aggregate histogram
                 m_histograms.AddOrUpdate(histogramKey,
                     new AdvancedHistogram { Values = new List<double> { duration.Value.TotalMilliseconds } },
                     (key, existing) =>
@@ -114,7 +118,8 @@ namespace mcp_nexus.Metrics
                         lock (existing.Values)
                         {
                             existing.Values.Add(duration.Value.TotalMilliseconds);
-                            if (existing.Values.Count > 1000)
+                            // Keep only last 2000 values for aggregate data
+                            if (existing.Values.Count > 2000)
                             {
                                 existing.Values.RemoveAt(0);
                             }
@@ -221,6 +226,105 @@ namespace mcp_nexus.Metrics
             return sorted[Math.Max(0, Math.Min(index, sorted.Count - 1))];
         }
 
+        /// <summary>
+        /// Cleans up old metrics data to prevent memory leaks
+        /// </summary>
+        /// <param name="state">The timer state (unused)</param>
+        private void CleanupOldMetrics(object? state)
+        {
+            if (m_disposed) return;
+
+            try
+            {
+                var cleanedCounters = 0;
+                var cleanedHistograms = 0;
+                var cutoffTime = DateTime.UtcNow.AddHours(-2); // Keep data for 2 hours
+
+                // Clean up old session-specific counters (keep only recent sessions)
+                var countersToRemove = new List<string>();
+                foreach (var kvp in m_counters)
+                {
+                    if (kvp.Key.StartsWith("commands.") && kvp.Value.Total == 0)
+                    {
+                        countersToRemove.Add(kvp.Key);
+                    }
+                }
+
+                foreach (var key in countersToRemove)
+                {
+                    if (m_counters.TryRemove(key, out _))
+                    {
+                        cleanedCounters++;
+                    }
+                }
+
+                // Clean up old histogram data (keep only recent data)
+                foreach (var kvp in m_histograms)
+                {
+                    lock (kvp.Value.Values)
+                    {
+                        if (kvp.Value.Values.Count > 0)
+                        {
+                            // For aggregate histograms, keep only the most recent data
+                            var maxValues = kvp.Key.Contains("command_duration") ? 5000 : 2000;
+                            if (kvp.Value.Values.Count > maxValues)
+                            {
+                                var excess = kvp.Value.Values.Count - maxValues;
+                                kvp.Value.Values.RemoveRange(0, excess);
+                                cleanedHistograms += excess;
+                            }
+                        }
+                    }
+                }
+
+                if (cleanedCounters > 0 || cleanedHistograms > 0)
+                {
+                    m_logger.LogDebug("🧹 Cleaned up {CounterCount} old counters and {HistogramCount} old histogram values",
+                        cleanedCounters, cleanedHistograms);
+                }
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogError(ex, "Error during metrics cleanup");
+            }
+        }
+
+        /// <summary>
+        /// Cleans up metrics for a specific session
+        /// </summary>
+        /// <param name="sessionId">The session ID to clean up</param>
+        public void CleanupSessionMetrics(string sessionId)
+        {
+            if (m_disposed || string.IsNullOrWhiteSpace(sessionId)) return;
+
+            try
+            {
+                var keysToRemove = new List<string>();
+
+                // Find all keys related to this session
+                foreach (var key in m_counters.Keys.ToList())
+                {
+                    if (key.Contains(sessionId))
+                    {
+                        keysToRemove.Add(key);
+                    }
+                }
+
+                // Remove session-specific counters
+                foreach (var key in keysToRemove)
+                {
+                    m_counters.TryRemove(key, out _);
+                }
+
+                m_logger.LogDebug("🧹 Cleaned up metrics for session {SessionId} - removed {Count} counters",
+                    sessionId, keysToRemove.Count);
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogError(ex, "Error cleaning up metrics for session {SessionId}", sessionId);
+            }
+        }
+
         #endregion
 
         #region IDisposable Implementation
@@ -234,6 +338,7 @@ namespace mcp_nexus.Metrics
             m_disposed = true;
 
             m_metricsTimer?.Dispose();
+            m_cleanupTimer?.Dispose();
             m_logger.LogInformation("📊 AdvancedMetricsService disposed");
         }
 

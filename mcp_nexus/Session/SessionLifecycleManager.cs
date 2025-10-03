@@ -4,6 +4,7 @@ using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Session.Models;
 using mcp_nexus.Notifications;
+using mcp_nexus.Metrics;
 
 namespace mcp_nexus.Session
 {
@@ -19,6 +20,7 @@ namespace mcp_nexus.Session
         private readonly IMcpNotificationService m_notificationService;
         private readonly SessionManagerConfiguration m_config;
         private readonly ConcurrentDictionary<string, SessionInfo> m_sessions;
+        private readonly AdvancedMetricsService? m_metricsService;
 
         // Thread-safe counters
         private long m_totalSessionsCreated = 0;
@@ -49,6 +51,16 @@ namespace mcp_nexus.Session
             m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             m_config = config ?? throw new ArgumentNullException(nameof(config));
             m_sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
+
+            // Try to get metrics service (may not be available in all configurations)
+            try
+            {
+                m_metricsService = m_serviceProvider.GetService<AdvancedMetricsService>();
+            }
+            catch
+            {
+                m_metricsService = null;
+            }
         }
 
         /// <summary>
@@ -254,6 +266,9 @@ namespace mcp_nexus.Session
                 {
                     m_logger.LogTrace("Skipping notification for null session {SessionId}", sessionId);
                 }
+
+                // Clean up session-specific metrics
+                m_metricsService?.CleanupSessionMetrics(sessionId);
 
                 return true;
             }

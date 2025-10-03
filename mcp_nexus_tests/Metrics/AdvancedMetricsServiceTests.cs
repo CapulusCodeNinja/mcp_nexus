@@ -70,14 +70,14 @@ namespace mcp_nexus_tests.Metrics
             var snapshot = m_metricsService.GetMetricsSnapshot();
             Assert.NotNull(snapshot);
             Assert.True(snapshot.Counters.ContainsKey($"commands.{sessionId}"));
-            Assert.True(snapshot.Histograms.ContainsKey($"command_duration.{sessionId}"));
+            Assert.True(snapshot.Histograms.ContainsKey("command_duration_all_sessions")); // Aggregate histogram
 
             var counter = snapshot.Counters[$"commands.{sessionId}"];
             Assert.Equal(1, counter.Total);
             Assert.Equal(1, counter.Successful);
             Assert.Equal(0, counter.Failed);
 
-            var histogram = snapshot.Histograms[$"command_duration.{sessionId}"];
+            var histogram = snapshot.Histograms["command_duration_all_sessions"];
             Assert.Single(histogram.Values);
             Assert.Equal(150.0, histogram.Values[0]);
         }
@@ -120,7 +120,7 @@ namespace mcp_nexus_tests.Metrics
             Assert.Equal(2, counter.Successful);
             Assert.Equal(1, counter.Failed);
 
-            var histogram = snapshot.Histograms[$"command_duration.{sessionId}"];
+            var histogram = snapshot.Histograms["command_duration_all_sessions"];
             Assert.Equal(3, histogram.Values.Count);
             Assert.Contains(100.0, histogram.Values);
             Assert.Contains(200.0, histogram.Values);
@@ -157,7 +157,7 @@ namespace mcp_nexus_tests.Metrics
 
             // Assert
             var snapshot = m_metricsService.GetMetricsSnapshot();
-            var histogram = snapshot.Histograms[$"command_duration.{sessionId}"];
+            var histogram = snapshot.Histograms["command_duration_all_sessions"];
             Assert.Single(histogram.Values);
             Assert.Equal(300000.0, histogram.Values[0]); // 5 minutes in milliseconds
         }
@@ -180,14 +180,14 @@ namespace mcp_nexus_tests.Metrics
             // Assert
             var snapshot = m_metricsService.GetMetricsSnapshot();
             Assert.True(snapshot.Counters.ContainsKey($"sessions.{eventType}"));
-            Assert.True(snapshot.Histograms.ContainsKey($"session_{eventType}_duration"));
+            Assert.True(snapshot.Histograms.ContainsKey($"session_{eventType}_duration_all_sessions"));
 
             var counter = snapshot.Counters[$"sessions.{eventType}"];
             Assert.Equal(1, counter.Total);
             Assert.Equal(1, counter.Successful);
             Assert.Equal(0, counter.Failed);
 
-            var histogram = snapshot.Histograms[$"session_{eventType}_duration"];
+            var histogram = snapshot.Histograms[$"session_{eventType}_duration_all_sessions"];
             Assert.Single(histogram.Values);
             Assert.Equal(250.0, histogram.Values[0]);
         }
@@ -205,7 +205,7 @@ namespace mcp_nexus_tests.Metrics
             // Assert
             var snapshot = m_metricsService.GetMetricsSnapshot();
             Assert.True(snapshot.Counters.ContainsKey($"sessions.{eventType}"));
-            Assert.False(snapshot.Histograms.ContainsKey($"session_{eventType}_duration"));
+            Assert.False(snapshot.Histograms.ContainsKey($"session_{eventType}_duration_all_sessions"));
 
             var counter = snapshot.Counters[$"sessions.{eventType}"];
             Assert.Equal(1, counter.Total);
@@ -235,7 +235,7 @@ namespace mcp_nexus_tests.Metrics
             Assert.Equal(1, closedCounter.Total);
             Assert.Equal(1, closedCounter.Successful);
 
-            var createdHistogram = snapshot.Histograms["session_SESSION_CREATED_duration"];
+            var createdHistogram = snapshot.Histograms["session_SESSION_CREATED_duration_all_sessions"];
             Assert.Equal(2, createdHistogram.Values.Count);
             Assert.Contains(100.0, createdHistogram.Values);
             Assert.Contains(150.0, createdHistogram.Values);
@@ -291,8 +291,8 @@ namespace mcp_nexus_tests.Metrics
             Assert.Equal(2, snapshot.Histograms.Count);
             Assert.True(snapshot.Counters.ContainsKey("commands.session1"));
             Assert.True(snapshot.Counters.ContainsKey("sessions.SESSION_CREATED"));
-            Assert.True(snapshot.Histograms.ContainsKey("command_duration.session1"));
-            Assert.True(snapshot.Histograms.ContainsKey("session_SESSION_CREATED_duration"));
+            Assert.True(snapshot.Histograms.ContainsKey("command_duration_all_sessions"));
+            Assert.True(snapshot.Histograms.ContainsKey("session_SESSION_CREATED_duration_all_sessions"));
         }
 
         [Fact]
@@ -335,9 +335,10 @@ namespace mcp_nexus_tests.Metrics
             // Assert
             var snapshot = m_metricsService.GetMetricsSnapshot();
             Assert.NotNull(snapshot);
-            // Should have 10 sessions with counters and histograms
+            // Should have 10 sessions with counters and 1 aggregate histogram
             Assert.Equal(10, snapshot.Counters.Count);
-            Assert.Equal(10, snapshot.Histograms.Count);
+            Assert.Single(snapshot.Histograms);
+            Assert.True(snapshot.Histograms.ContainsKey("command_duration_all_sessions"));
         }
 
         #endregion
@@ -345,47 +346,47 @@ namespace mcp_nexus_tests.Metrics
         #region Histogram Management Tests
 
         [Fact]
-        public void RecordCommandExecution_WithManyValues_KeepsOnlyLast1000()
+        public void RecordCommandExecution_WithManyValues_KeepsOnlyLast5000()
         {
             // Arrange
             var sessionId = "test-session";
 
-            // Act - Record more than 1000 values
-            for (int i = 0; i < 1500; i++)
+            // Act - Record more than 5000 values
+            for (int i = 0; i < 6000; i++)
             {
                 m_metricsService.RecordCommandExecution(sessionId, "cmd", TimeSpan.FromMilliseconds(i), true);
             }
 
             // Assert
             var snapshot = m_metricsService.GetMetricsSnapshot();
-            var histogram = snapshot.Histograms[$"command_duration.{sessionId}"];
-            Assert.Equal(1000, histogram.Values.Count);
-            // Should contain the last 1000 values (500-1499)
-            Assert.Contains(500.0, histogram.Values);
-            Assert.Contains(1499.0, histogram.Values);
+            var histogram = snapshot.Histograms["command_duration_all_sessions"];
+            Assert.Equal(5000, histogram.Values.Count);
+            // Should contain the last 5000 values (1000-5999)
+            Assert.Contains(1000.0, histogram.Values);
+            Assert.Contains(5999.0, histogram.Values);
             Assert.DoesNotContain(0.0, histogram.Values);
         }
 
         [Fact]
-        public void RecordSessionEvent_WithManyValues_KeepsOnlyLast1000()
+        public void RecordSessionEvent_WithManyValues_KeepsOnlyLast2000()
         {
             // Arrange
             var sessionId = "test-session";
             var eventType = "SESSION_EVENT";
 
-            // Act - Record more than 1000 values
-            for (int i = 0; i < 1500; i++)
+            // Act - Record more than 2000 values
+            for (int i = 0; i < 2500; i++)
             {
                 m_metricsService.RecordSessionEvent(sessionId, eventType, TimeSpan.FromMilliseconds(i));
             }
 
             // Assert
             var snapshot = m_metricsService.GetMetricsSnapshot();
-            var histogram = snapshot.Histograms[$"session_{eventType}_duration"];
-            Assert.Equal(1000, histogram.Values.Count);
-            // Should contain the last 1000 values (500-1499)
+            var histogram = snapshot.Histograms[$"session_{eventType}_duration_all_sessions"];
+            Assert.Equal(2000, histogram.Values.Count);
+            // Should contain the last 2000 values (500-2499)
             Assert.Contains(500.0, histogram.Values);
-            Assert.Contains(1499.0, histogram.Values);
+            Assert.Contains(2499.0, histogram.Values);
             Assert.DoesNotContain(0.0, histogram.Values);
         }
 
@@ -514,7 +515,7 @@ namespace mcp_nexus_tests.Metrics
 
             // Assert
             var snapshot = m_metricsService.GetMetricsSnapshot();
-            var histogram = snapshot.Histograms[$"command_duration.{sessionId}"];
+            var histogram = snapshot.Histograms["command_duration_all_sessions"];
             Assert.Single(histogram.Values);
             Assert.Equal(0.0, histogram.Values[0]);
         }
@@ -533,7 +534,7 @@ namespace mcp_nexus_tests.Metrics
 
             // Assert
             var snapshot = m_metricsService.GetMetricsSnapshot();
-            var histogram = snapshot.Histograms[$"command_duration.{sessionId}"];
+            var histogram = snapshot.Histograms["command_duration_all_sessions"];
             Assert.Single(histogram.Values);
             Assert.Equal(3600000.0, histogram.Values[0]); // 1 hour in milliseconds
         }
