@@ -37,7 +37,6 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// <summary>
         /// Registers core services (debugger, session management, etc.).
         /// </summary>
         /// <param name="services">The service collection to register services with.</param>
@@ -128,7 +127,6 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// <summary>
         /// Registers advanced services for performance and reliability.
         /// </summary>
         /// <param name="services">The service collection to register services with.</param>
@@ -150,7 +148,6 @@ namespace mcp_nexus.Configuration
             Console.Error.WriteLine("Registered AdvancedHealthService for comprehensive system monitoring");
         }
 
-        /// <summary>
         /// <summary>
         /// Registers recovery and timeout services.
         /// </summary>

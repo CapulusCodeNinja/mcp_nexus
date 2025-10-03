@@ -29,7 +29,6 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// <summary>
         /// Logs the start of logging configuration.
         /// </summary>
         /// <param name="isServiceMode">Whether the application is running in service mode.</param>
@@ -59,7 +58,6 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// <summary>
         /// Configures NLog dynamically based on application settings.
         /// </summary>
         /// <param name="configuration">The application configuration.</param>
@@ -88,7 +86,6 @@ namespace mcp_nexus.Configuration
             }
         }
 
-        /// <summary>
         /// <summary>
         /// Configures log paths based on service mode.
         /// </summary>

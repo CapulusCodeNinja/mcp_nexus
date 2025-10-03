@@ -48,6 +48,11 @@ namespace mcp_nexus.Middleware
             return context.Request.Path == "/" && context.Request.Method == "POST";
         }
 
+        /// <summary>
+        /// Logs both the request and response for a JSON-RPC operation.
+        /// </summary>
+        /// <param name="context">The HTTP context containing the request and response.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task LogRequestAndResponseAsync(HttpContext context)
         {
             // Log the request
@@ -67,6 +72,11 @@ namespace mcp_nexus.Middleware
             await responseBody.CopyToAsync(originalBodyStream);
         }
 
+        /// <summary>
+        /// Reads and logs the request body for a JSON-RPC operation.
+        /// </summary>
+        /// <param name="context">The HTTP context containing the request.</param>
+        /// <returns>A <see cref="Task{string}"/> containing the request body content.</returns>
         private async Task<string> ReadAndLogRequestAsync(HttpContext context)
         {
             context.Request.EnableBuffering();
@@ -84,6 +94,12 @@ namespace mcp_nexus.Middleware
             return requestBody;
         }
 
+        /// <summary>
+        /// Reads and logs the response body for a JSON-RPC operation.
+        /// </summary>
+        /// <param name="context">The HTTP context containing the response.</param>
+        /// <param name="responseBody">The memory stream containing the response body.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task ReadAndLogResponseAsync(HttpContext context, MemoryStream responseBody)
         {
             responseBody.Seek(0, SeekOrigin.Begin);
@@ -233,6 +249,12 @@ namespace mcp_nexus.Middleware
             }
         }
 
+        /// <summary>
+        /// Decodes and formats JSON text from a response, optionally truncating large fields.
+        /// </summary>
+        /// <param name="responseText">The response text to decode.</param>
+        /// <param name="shouldTruncate">Whether to truncate large fields in the output.</param>
+        /// <returns>A tuple containing the decoded result and a success indicator.</returns>
         private static (string result, bool success) DecodeJsonText(string responseText, bool shouldTruncate = true)
         {
             // Handle empty or whitespace-only responses

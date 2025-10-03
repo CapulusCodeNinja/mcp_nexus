@@ -46,7 +46,6 @@ namespace mcp_nexus.CommandQueue
         public void SetCurrentCommand(QueuedCommand? command) => m_currentCommand = command;
 
         /// <summary>
-        /// <summary>
         /// Generates a unique command ID and increments the counter.
         /// </summary>
         /// <returns>A unique command ID string.</returns>
@@ -56,7 +55,6 @@ namespace mcp_nexus.CommandQueue
             return m_config.GenerateCommandId(commandNumber);
         }
 
-        /// <summary>
         /// <summary>
         /// Adds a command to the tracking dictionary.
         /// </summary>
@@ -68,7 +66,6 @@ namespace mcp_nexus.CommandQueue
             return m_activeCommands.TryAdd(commandId, command);
         }
 
-        /// <summary>
         /// <summary>
         /// Updates the state of an existing command in a thread-safe way.
         /// </summary>
@@ -86,7 +83,6 @@ namespace mcp_nexus.CommandQueue
             }
         }
 
-        /// <summary>
         /// <summary>
         /// Removes a command from the tracking dictionary.
         /// </summary>
@@ -149,7 +145,6 @@ namespace mcp_nexus.CommandQueue
             };
         }
 
-        /// <summary>
         /// <summary>
         /// Gets the position of a command in the queue.
         /// </summary>
@@ -245,7 +240,6 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public void IncrementCancelled() => Interlocked.Increment(ref m_cancelledCommands);
 
-        /// <summary>
         /// <summary>
         /// Cancels all commands with an optional reason.
         /// </summary>

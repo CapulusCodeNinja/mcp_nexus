@@ -71,9 +71,6 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Queues a command for execution
-        /// </summary>
-        /// <summary>
         /// Queues a command for execution with resilience features.
         /// </summary>
         /// <param name="command">The command to execute</param>
@@ -141,9 +138,6 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// Cancels a specific command
-        /// </summary>
-        /// <summary>
         /// Cancels a specific command by ID.
         /// </summary>
         /// <param name="commandId">The command ID to cancel</param>
@@ -156,9 +150,6 @@ namespace mcp_nexus.CommandQueue
             return m_processor.CancelCommand(commandId, "User requested cancellation");
         }
 
-        /// <summary>
-        /// Cancels all commands
-        /// </summary>
         /// <summary>
         /// Cancels all queued commands.
         /// </summary>
@@ -234,7 +225,6 @@ namespace mcp_nexus.CommandQueue
             return m_processor.GetCommandInfo(commandId);
         }
 
-        /// <summary>
         /// <summary>
         /// Disposes the service and all resources.
         /// </summary>

@@ -295,7 +295,6 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// <summary>
         /// Safely completes a command with the given result and state.
         /// </summary>
         /// <param name="command">The command to complete.</param>
@@ -329,7 +328,6 @@ namespace mcp_nexus.CommandQueue
             }
         }
 
-        /// <summary>
         /// <summary>
         /// Cancels a specific command by ID.
         /// </summary>

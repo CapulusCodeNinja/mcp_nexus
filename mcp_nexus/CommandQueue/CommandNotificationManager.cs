@@ -29,7 +29,6 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// <summary>
         /// Sends a command status notification (fire and forget).
         /// </summary>
         /// <param name="command">The command to notify about.</param>
@@ -41,7 +40,6 @@ namespace mcp_nexus.CommandQueue
             NotifyCommandStatusFireAndForget(command.Id ?? string.Empty, command.Command ?? string.Empty, status, result, progress);
         }
 
-        /// <summary>
         /// <summary>
         /// Sends a command status notification (fire and forget).
         /// </summary>
@@ -73,7 +71,6 @@ namespace mcp_nexus.CommandQueue
             }
         }
 
-        /// <summary>
         /// <summary>
         /// Sends a command heartbeat notification (fire and forget).
         /// </summary>
@@ -112,7 +109,6 @@ namespace mcp_nexus.CommandQueue
             }
         }
 
-        /// <summary>
         /// <summary>
         /// Creates a status message for a queued command.
         /// </summary>

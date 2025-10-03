@@ -34,7 +34,6 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// <summary>
         /// Configures HTTP request and response limits for security.
         /// </summary>
         /// <param name="services">The service collection to configure.</param>
@@ -56,7 +55,6 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// <summary>
         /// Configures CORS policy for MCP clients.
         /// </summary>
         /// <param name="services">The service collection to configure.</param>
@@ -74,7 +72,6 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// <summary>
         /// Configures rate limiting to prevent abuse.
         /// </summary>
         /// <param name="services">The service collection to configure.</param>
@@ -89,7 +86,6 @@ namespace mcp_nexus.Configuration
             services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
         }
 
-        /// <summary>
         /// <summary>
         /// Configures JSON serialization options for security and consistency.
         /// </summary>
@@ -109,7 +105,6 @@ namespace mcp_nexus.Configuration
             });
         }
 
-        /// <summary>
         /// <summary>
         /// Configures the MCP server with HTTP transport.
         /// </summary>

@@ -119,7 +119,6 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// <summary>
         /// Marks the command as completed.
         /// </summary>
         public void MarkCompleted()
@@ -128,8 +127,6 @@ namespace mcp_nexus.CommandQueue
             m_state = CommandState.Completed;
         }
 
-        /// <summary>
-        /// Updates the queue position
         /// <summary>
         /// Updates the queue position of the command.
         /// </summary>

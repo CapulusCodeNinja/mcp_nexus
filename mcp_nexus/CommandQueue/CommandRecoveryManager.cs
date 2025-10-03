@@ -182,7 +182,6 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
-        /// <summary>
         /// Determines if recovery should be attempted for a given exception.
         /// </summary>
         /// <param name="ex">The exception to evaluate for recovery eligibility.</param>
@@ -247,7 +246,6 @@ namespace mcp_nexus.CommandQueue
             }
         }
 
-        /// <summary>
         /// <summary>
         /// Performs cleanup operations for the recovery manager.
         /// </summary>
