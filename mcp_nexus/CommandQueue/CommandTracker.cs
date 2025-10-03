@@ -21,6 +21,13 @@ namespace mcp_nexus.CommandQueue
         private long m_failedCommands = 0;
         private long m_cancelledCommands = 0;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandTracker"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording tracking operations.</param>
+        /// <param name="config">The command queue configuration settings.</param>
+        /// <param name="commandQueue">The blocking collection for queued commands.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
         public CommandTracker(ILogger logger, CommandQueueConfiguration config, BlockingCollection<QueuedCommand> commandQueue)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));

@@ -13,6 +13,13 @@ namespace mcp_nexus.Recovery
         private DateTime m_lastHealthCheck = DateTime.UtcNow;
         private bool m_lastHealthResult = true;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SessionHealthMonitor"/> class.
+        /// </summary>
+        /// <param name="cdbSession">The CDB session to monitor.</param>
+        /// <param name="logger">The logger instance for recording health monitoring operations.</param>
+        /// <param name="config">The recovery configuration settings.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
         public SessionHealthMonitor(
             ICdbSession cdbSession,
             ILogger logger,

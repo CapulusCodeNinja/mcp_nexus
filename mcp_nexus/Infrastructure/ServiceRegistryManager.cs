@@ -8,7 +8,8 @@ using Microsoft.Win32;
 namespace mcp_nexus.Infrastructure
 {
     /// <summary>
-    /// Manages Windows service registry operations
+    /// Manages Windows service registry operations.
+    /// Provides comprehensive methods for creating, updating, deleting, and querying Windows service registry entries.
     /// </summary>
     [SupportedOSPlatform("windows")]
     public class ServiceRegistryManager
@@ -16,11 +17,25 @@ namespace mcp_nexus.Infrastructure
         private readonly ILogger<ServiceRegistryManager> m_Logger;
         private const string ServicesKeyPath = @"SYSTEM\CurrentControlSet\Services";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ServiceRegistryManager"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording registry operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public ServiceRegistryManager(ILogger<ServiceRegistryManager> logger)
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        /// <summary>
+        /// Creates a Windows service registry entry asynchronously.
+        /// </summary>
+        /// <param name="configuration">The service configuration containing the service details.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the registry entry was created successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="configuration"/> is null.</exception>
         [SupportedOSPlatform("windows")]
         public async Task<bool> CreateServiceRegistryAsync(ServiceConfiguration configuration)
         {
@@ -84,6 +99,15 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Updates an existing Windows service registry entry asynchronously.
+        /// </summary>
+        /// <param name="configuration">The service configuration containing the updated service details.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the registry entry was updated successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="configuration"/> is null.</exception>
         [SupportedOSPlatform("windows")]
         public async Task<bool> UpdateServiceRegistryAsync(ServiceConfiguration configuration)
         {
@@ -126,6 +150,15 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Deletes a Windows service registry entry asynchronously.
+        /// </summary>
+        /// <param name="serviceName">The name of the service to delete from the registry.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the registry entry was deleted successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="serviceName"/> is null or empty.</exception>
         [SupportedOSPlatform("windows")]
         public async Task<bool> DeleteServiceRegistryAsync(string serviceName)
         {
@@ -156,6 +189,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Checks if a Windows service registry entry exists asynchronously.
+        /// </summary>
+        /// <param name="serviceName">The name of the service to check.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the registry entry exists; otherwise, <c>false</c>.
+        /// </returns>
         [SupportedOSPlatform("windows")]
         public async Task<bool> ServiceRegistryExistsAsync(string serviceName)
         {
@@ -183,6 +224,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Gets information about a Windows service registry entry asynchronously.
+        /// </summary>
+        /// <param name="serviceName">The name of the service to get information for.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns a <see cref="ServiceRegistryInfo"/> object containing the service information, or <c>null</c> if not found.
+        /// </returns>
         [SupportedOSPlatform("windows")]
         public async Task<ServiceRegistryInfo?> GetServiceRegistryInfoAsync(string serviceName)
         {
@@ -224,6 +273,15 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Sets the start type for a Windows service registry entry asynchronously.
+        /// </summary>
+        /// <param name="serviceName">The name of the service to update.</param>
+        /// <param name="startType">The new start type for the service.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the start type was set successfully; otherwise, <c>false</c>.
+        /// </returns>
         [SupportedOSPlatform("windows")]
         public async Task<bool> SetServiceStartTypeAsync(string serviceName, ServiceStartType startType)
         {
@@ -258,6 +316,13 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Gets the Windows service account name for the specified account type.
+        /// </summary>
+        /// <param name="account">The service account type.</param>
+        /// <returns>
+        /// The Windows service account name.
+        /// </returns>
         private string GetServiceAccountName(ServiceAccount account)
         {
             return account switch
@@ -269,6 +334,16 @@ namespace mcp_nexus.Infrastructure
             };
         }
 
+        /// <summary>
+        /// Runs a Windows Service Control (sc) command asynchronously.
+        /// </summary>
+        /// <param name="command">The sc command to execute.</param>
+        /// <param name="logger">The logger instance for recording command operations and errors. Can be null.</param>
+        /// <param name="force">Whether to force the command execution.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the command executed successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> RunScCommandAsync(string command, ILogger? logger = null, bool force = false)
         {
             try
@@ -289,6 +364,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Runs a Windows Service Control (sc) command asynchronously (static version).
+        /// </summary>
+        /// <param name="command">The sc command to execute.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the command executed successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> RunScCommandStaticAsync(string command)
         {
             try
@@ -304,6 +387,13 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Checks if a Windows service is installed.
+        /// </summary>
+        /// <param name="serviceName">The name of the service to check.</param>
+        /// <returns>
+        /// <c>true</c> if the service is installed; otherwise, <c>false</c>.
+        /// </returns>
         public static bool IsServiceInstalled(string serviceName)
         {
             try
@@ -317,6 +407,12 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Checks if a Windows service is installed (static version).
+        /// </summary>
+        /// <returns>
+        /// <c>true</c> if the service is installed; otherwise, <c>false</c>.
+        /// </returns>
         public static bool IsServiceInstalledStatic()
         {
             try
@@ -330,6 +426,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Forces cleanup of a Windows service asynchronously.
+        /// </summary>
+        /// <param name="serviceName">The name of the service to cleanup.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the cleanup completed successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> ForceCleanupServiceAsync(string serviceName)
         {
             try
@@ -344,6 +448,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Performs direct registry cleanup for a Windows service asynchronously.
+        /// </summary>
+        /// <param name="serviceName">The name of the service to cleanup from the registry.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the registry cleanup completed successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> DirectRegistryCleanupAsync(string serviceName)
         {
             try
@@ -358,6 +470,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Creates a Windows service asynchronously.
+        /// </summary>
+        /// <param name="serviceName">The name of the service to create.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the service was created successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> CreateServiceAsync(string serviceName)
         {
             try
@@ -375,6 +495,14 @@ namespace mcp_nexus.Infrastructure
 
 
 
+        /// <summary>
+        /// Deletes a Windows service asynchronously.
+        /// </summary>
+        /// <param name="serviceName">The name of the service to delete.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the service was deleted successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> DeleteServiceAsync(string serviceName)
         {
             try
@@ -389,6 +517,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Forces cleanup of a Windows service asynchronously (static version with logger).
+        /// </summary>
+        /// <param name="logger">The logger instance for recording cleanup operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the cleanup completed successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> ForceCleanupServiceStaticAsync(ILogger? logger = null)
         {
             try
@@ -405,6 +541,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Performs direct registry cleanup for a Windows service asynchronously (static version with logger).
+        /// </summary>
+        /// <param name="logger">The logger instance for recording cleanup operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the registry cleanup completed successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> DirectRegistryCleanupStaticAsync(ILogger? logger = null)
         {
             try
@@ -421,6 +565,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Creates a Windows service asynchronously (static version with logger).
+        /// </summary>
+        /// <param name="logger">The logger instance for recording service creation operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the service was created successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> CreateServiceStaticAsync(ILogger? logger = null)
         {
             try
@@ -437,6 +589,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Deletes a Windows service asynchronously (static version with logger).
+        /// </summary>
+        /// <param name="logger">The logger instance for recording service deletion operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the service was deleted successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> DeleteServiceStaticAsync(ILogger? logger = null)
         {
             try
@@ -458,6 +618,11 @@ namespace mcp_nexus.Infrastructure
 
 
 
+        /// <summary>
+        /// Sets failure actions for service recovery in the registry.
+        /// </summary>
+        /// <param name="serviceKey">The registry key for the service.</param>
+        /// <param name="configuration">The service configuration containing failure action settings.</param>
         private void SetFailureActions(RegistryKey serviceKey, ServiceConfiguration configuration)
         {
             try
@@ -484,14 +649,44 @@ namespace mcp_nexus.Infrastructure
         }
     }
 
+    /// <summary>
+    /// Contains information about a Windows service registry entry.
+    /// </summary>
     public class ServiceRegistryInfo
     {
+        /// <summary>
+        /// Gets or sets the service name.
+        /// </summary>
         public string ServiceName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the service display name.
+        /// </summary>
         public string DisplayName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the service description.
+        /// </summary>
         public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the path to the service executable.
+        /// </summary>
         public string ImagePath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the service start type.
+        /// </summary>
         public ServiceStartType StartType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the service account name.
+        /// </summary>
         public string ObjectName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the service dependencies.
+        /// </summary>
         public string[] Dependencies { get; set; } = Array.Empty<string>();
     }
 }

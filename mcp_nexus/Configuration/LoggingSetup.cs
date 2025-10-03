@@ -11,8 +11,12 @@ namespace mcp_nexus.Configuration
     public static class LoggingSetup
     {
         /// <summary>
-        /// Configures logging for the application
+        /// Configures logging for the application.
+        /// Sets up NLog and Microsoft.Extensions.Logging based on configuration and service mode.
         /// </summary>
+        /// <param name="logging">The logging builder to configure.</param>
+        /// <param name="isServiceMode">Whether the application is running in service mode.</param>
+        /// <param name="configuration">The application configuration.</param>
         public static void ConfigureLogging(ILoggingBuilder logging, bool isServiceMode, IConfiguration configuration)
         {
             LogConfigurationStart(isServiceMode);

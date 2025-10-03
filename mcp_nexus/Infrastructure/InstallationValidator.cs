@@ -9,26 +9,54 @@ using Microsoft.Extensions.Logging;
 namespace mcp_nexus.Infrastructure
 {
     /// <summary>
-    /// Result of installation validation
+    /// Result of installation validation.
+    /// Contains validation results including errors, warnings, and informational messages.
     /// </summary>
     public class InstallationValidationResult
     {
+        /// <summary>
+        /// Gets or sets whether the installation validation passed.
+        /// </summary>
         public bool IsValid { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the list of validation errors.
+        /// </summary>
         public List<string> Errors { get; set; } = new();
+
+        /// <summary>
+        /// Gets or sets the list of validation warnings.
+        /// </summary>
         public List<string> Warnings { get; set; } = new();
+
+        /// <summary>
+        /// Gets or sets the list of informational messages.
+        /// </summary>
         public List<string> Info { get; set; } = new();
 
+        /// <summary>
+        /// Adds an error message to the validation result and marks it as invalid.
+        /// </summary>
+        /// <param name="error">The error message to add.</param>
         public void AddError(string error)
         {
             Errors.Add(error);
             IsValid = false;
         }
 
+        /// <summary>
+        /// Adds a warning message to the validation result.
+        /// </summary>
+        /// <param name="warning">The warning message to add.</param>
         public void AddWarning(string warning)
         {
             Warnings.Add(warning);
         }
 
+        /// <summary>
+        /// Adds an informational message to the validation result.
+        /// </summary>
+        /// <param name="info">The informational message to add.</param>
         public void AddInfo(string info)
         {
             Info.Add(info);
@@ -36,17 +64,22 @@ namespace mcp_nexus.Infrastructure
     }
 
     /// <summary>
-    /// Validates Windows service installation requirements and environment
+    /// Validates Windows service installation requirements and environment.
+    /// Provides comprehensive validation for service installation, uninstallation, and update operations.
     /// </summary>
     [SupportedOSPlatform("windows")]
     public static class InstallationValidator
     {
 
         /// <summary>
-        /// Validates installation prerequisites (static version for test compatibility)
+        /// Validates installation prerequisites asynchronously.
+        /// Checks system requirements, permissions, and environment for service installation.
         /// </summary>
-        /// <param name="logger">Logger instance</param>
-        /// <returns>Validation result</returns>
+        /// <param name="logger">The logger instance for recording validation operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns an <see cref="InstallationValidationResult"/> containing validation results.
+        /// </returns>
         public static async Task<InstallationValidationResult> ValidateInstallationPrerequisitesAsync(ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
@@ -68,10 +101,14 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Validates uninstallation prerequisites (static version for test compatibility)
+        /// Validates uninstallation prerequisites asynchronously.
+        /// Checks system requirements and permissions for service uninstallation.
         /// </summary>
-        /// <param name="logger">Logger instance</param>
-        /// <returns>Validation result</returns>
+        /// <param name="logger">The logger instance for recording validation operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns an <see cref="InstallationValidationResult"/> containing validation results.
+        /// </returns>
         public static async Task<InstallationValidationResult> ValidateUninstallationPrerequisitesAsync(ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
@@ -93,10 +130,14 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Validates update prerequisites (static version for test compatibility)
+        /// Validates update prerequisites asynchronously.
+        /// Checks system requirements and permissions for service updates.
         /// </summary>
-        /// <param name="logger">Logger instance</param>
-        /// <returns>Validation result</returns>
+        /// <param name="logger">The logger instance for recording validation operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns an <see cref="InstallationValidationResult"/> containing validation results.
+        /// </returns>
         public static async Task<InstallationValidationResult> ValidateUpdatePrerequisitesAsync(ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
@@ -118,10 +159,14 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Validates the installation environment (static version for test compatibility)
+        /// Validates the installation environment asynchronously.
+        /// Checks system environment, dependencies, and prerequisites for service installation.
         /// </summary>
-        /// <param name="logger">Logger instance</param>
-        /// <returns>Validation result</returns>
+        /// <param name="logger">The logger instance for recording validation operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns an <see cref="InstallationValidationResult"/> containing validation results.
+        /// </returns>
         public static async Task<InstallationValidationResult> ValidateInstallationEnvironmentAsync(ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
@@ -143,11 +188,16 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Validates service configuration (static version for test compatibility)
+        /// Validates service configuration asynchronously.
+        /// Checks service configuration parameters, paths, and settings for validity.
         /// </summary>
-        /// <param name="configuration">Service configuration to validate</param>
-        /// <param name="logger">Logger instance</param>
-        /// <returns>Validation result</returns>
+        /// <param name="configuration">The service configuration to validate.</param>
+        /// <param name="logger">The logger instance for recording validation operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns an <see cref="InstallationValidationResult"/> containing validation results.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="configuration"/> is null.</exception>
         public static async Task<InstallationValidationResult> ValidateServiceConfigurationAsync(ServiceConfiguration configuration, ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
@@ -169,12 +219,17 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Validates installation files (static version for test compatibility)
+        /// Validates installation files asynchronously.
+        /// Checks that all required files exist and are accessible for installation.
         /// </summary>
-        /// <param name="sourcePath">Path to source files</param>
-        /// <param name="requiredFiles">List of required files</param>
-        /// <param name="logger">Logger instance</param>
-        /// <returns>Validation result</returns>
+        /// <param name="sourcePath">The path to the source files directory.</param>
+        /// <param name="requiredFiles">The list of required files to validate.</param>
+        /// <param name="logger">The logger instance for recording validation operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns an <see cref="InstallationValidationResult"/> containing validation results.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="sourcePath"/> is null or empty, or when <paramref name="requiredFiles"/> is null.</exception>
         public static async Task<InstallationValidationResult> ValidateInstallationFilesAsync(string sourcePath, string[] requiredFiles, ILogger? logger = null)
         {
             var result = new InstallationValidationResult();
@@ -196,10 +251,13 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Validates installation success (static version for test compatibility)
+        /// Validates installation success.
+        /// Checks that the service installation completed successfully and is functioning properly.
         /// </summary>
-        /// <param name="logger">Logger instance</param>
-        /// <returns>Validation result</returns>
+        /// <param name="logger">The logger instance for recording validation operations and errors. Can be null.</param>
+        /// <returns>
+        /// An <see cref="InstallationValidationResult"/> containing validation results.
+        /// </returns>
         public static InstallationValidationResult ValidateInstallationSuccess(ILogger? logger = null)
         {
             var result = new InstallationValidationResult();

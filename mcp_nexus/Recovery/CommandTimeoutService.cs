@@ -2,30 +2,75 @@ using System.Collections.Concurrent;
 
 namespace mcp_nexus.Recovery
 {
+    /// <summary>
+    /// Interface for managing command timeouts.
+    /// Provides methods for starting, cancelling, and extending command timeouts.
+    /// </summary>
     public interface ICommandTimeoutService
     {
+        /// <summary>
+        /// Starts a timeout for a command.
+        /// </summary>
+        /// <param name="commandId">The unique identifier of the command.</param>
+        /// <param name="timeout">The timeout duration.</param>
+        /// <param name="onTimeout">The action to execute when the timeout occurs.</param>
         void StartCommandTimeout(string commandId, TimeSpan timeout, Func<Task> onTimeout);
+        
+        /// <summary>
+        /// Cancels a command timeout.
+        /// </summary>
+        /// <param name="commandId">The unique identifier of the command.</param>
         void CancelCommandTimeout(string commandId);
+        
+        /// <summary>
+        /// Extends a command timeout by the specified additional time.
+        /// </summary>
+        /// <param name="commandId">The unique identifier of the command.</param>
+        /// <param name="additionalTime">The additional time to add to the timeout.</param>
         void ExtendCommandTimeout(string commandId, TimeSpan additionalTime);
     }
 
+    /// <summary>
+    /// Internal record containing timeout information for a command.
+    /// </summary>
+    /// <param name="CancellationTokenSource">The cancellation token source for the timeout.</param>
+    /// <param name="OnTimeout">The action to execute when the timeout occurs.</param>
+    /// <param name="StartTime">The time when the timeout was started.</param>
     internal record TimeoutInfo(
         CancellationTokenSource CancellationTokenSource,
         Func<Task> OnTimeout,
         DateTime StartTime
     );
 
+    /// <summary>
+    /// Service for managing command timeouts.
+    /// Provides functionality to start, cancel, and extend timeouts for commands.
+    /// </summary>
     public class CommandTimeoutService : ICommandTimeoutService, IDisposable, IAsyncDisposable
     {
         private readonly ILogger<CommandTimeoutService> m_logger;
         private readonly ConcurrentDictionary<string, TimeoutInfo> m_timeouts = new();
         private bool m_disposed;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandTimeoutService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording timeout operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public CommandTimeoutService(ILogger<CommandTimeoutService> logger)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        /// <summary>
+        /// Starts a timeout for a command.
+        /// </summary>
+        /// <param name="commandId">The unique identifier of the command.</param>
+        /// <param name="timeout">The timeout duration.</param>
+        /// <param name="onTimeout">The action to execute when the timeout occurs.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandId"/> or <paramref name="onTimeout"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="commandId"/> is empty.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout"/> is negative.</exception>
         public void StartCommandTimeout(string commandId, TimeSpan timeout, Func<Task> onTimeout)
         {
             if (m_disposed) return;
@@ -89,6 +134,12 @@ namespace mcp_nexus.Recovery
             });
         }
 
+        /// <summary>
+        /// Cancels a command timeout.
+        /// </summary>
+        /// <param name="commandId">The unique identifier of the command.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandId"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="commandId"/> is empty.</exception>
         public void CancelCommandTimeout(string commandId)
         {
             if (commandId == null)
@@ -104,6 +155,14 @@ namespace mcp_nexus.Recovery
             }
         }
 
+        /// <summary>
+        /// Extends a command timeout by the specified additional time.
+        /// </summary>
+        /// <param name="commandId">The unique identifier of the command.</param>
+        /// <param name="additionalTime">The additional time to add to the timeout.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandId"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="commandId"/> is empty.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="additionalTime"/> is negative.</exception>
         public void ExtendCommandTimeout(string commandId, TimeSpan additionalTime)
         {
             if (commandId == null)
@@ -168,6 +227,9 @@ namespace mcp_nexus.Recovery
             }
         }
 
+        /// <summary>
+        /// Disposes the command timeout service and cancels all active timeouts.
+        /// </summary>
         public void Dispose()
         {
             if (m_disposed) return;
@@ -181,7 +243,10 @@ namespace mcp_nexus.Recovery
             m_timeouts.Clear();
         }
 
-        // IMPROVED: Simplified async disposal - Dispose() is synchronous
+        /// <summary>
+        /// Asynchronously disposes the command timeout service and cancels all active timeouts.
+        /// </summary>
+        /// <returns>A <see cref="ValueTask"/> representing the asynchronous disposal operation.</returns>
         public ValueTask DisposeAsync()
         {
             if (m_disposed) return ValueTask.CompletedTask;

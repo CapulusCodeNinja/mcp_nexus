@@ -4,15 +4,27 @@ using mcp_nexus.Tools;
 
 namespace mcp_nexus.Protocol
 {
+    /// <summary>
+    /// Service for providing MCP tool definitions.
+    /// Manages the collection and retrieval of available MCP tools for the server.
+    /// </summary>
     public class McpToolDefinitionService : IMcpToolDefinitionService
     {
         private readonly IMcpNotificationService? m_notificationService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="McpToolDefinitionService"/> class.
+        /// </summary>
+        /// <param name="notificationService">Optional notification service for publishing tool events.</param>
         public McpToolDefinitionService(IMcpNotificationService? notificationService = null)
         {
             m_notificationService = notificationService;
         }
 
+        /// <summary>
+        /// Gets all available MCP tools.
+        /// </summary>
+        /// <returns>An array of tool definitions.</returns>
         public McpToolSchema[] GetAllTools()
         {
             return

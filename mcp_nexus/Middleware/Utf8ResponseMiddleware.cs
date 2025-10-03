@@ -3,18 +3,29 @@ using mcp_nexus.Configuration;
 namespace mcp_nexus.Middleware
 {
     /// <summary>
-    /// Middleware that ensures all HTTP responses use UTF-8 encoding
-    /// Sets the charset parameter in Content-Type headers
+    /// Middleware that ensures all HTTP responses use UTF-8 encoding.
+    /// Sets the charset parameter in Content-Type headers for proper text encoding.
     /// </summary>
     public class Utf8ResponseMiddleware
     {
         private readonly RequestDelegate m_next;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Utf8ResponseMiddleware"/> class.
+        /// </summary>
+        /// <param name="next">The next middleware in the pipeline.</param>
         public Utf8ResponseMiddleware(RequestDelegate next)
         {
             m_next = next;
         }
 
+        /// <summary>
+        /// Invokes the middleware to process the HTTP request and ensure UTF-8 encoding.
+        /// </summary>
+        /// <param name="context">The HTTP context for the current request.</param>
+        /// <returns>
+        /// A <see cref="Task"/> representing the asynchronous operation.
+        /// </returns>
         public async Task InvokeAsync(HttpContext context)
         {
             // Intercept response to add UTF-8 charset if not present

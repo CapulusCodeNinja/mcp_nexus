@@ -15,6 +15,13 @@ namespace mcp_nexus.Health
         private readonly DateTime m_startTime = DateTime.UtcNow;
         private readonly Process m_currentProcess = Process.GetCurrentProcess();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HealthCheckService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording health check operations.</param>
+        /// <param name="sessionManager">The session manager for monitoring active sessions.</param>
+        /// <param name="commandQueue">Optional command queue service for monitoring queue status.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> or <paramref name="sessionManager"/> is null.</exception>
         public HealthCheckService(
             ILogger<HealthCheckService> logger,
             ISessionManager sessionManager,
@@ -25,6 +32,10 @@ namespace mcp_nexus.Health
             m_commandQueue = commandQueue;
         }
 
+        /// <summary>
+        /// Gets the current health status of the server.
+        /// </summary>
+        /// <returns>A <see cref="HealthStatus"/> object containing the current health information.</returns>
         public HealthStatus GetHealthStatus()
         {
             try

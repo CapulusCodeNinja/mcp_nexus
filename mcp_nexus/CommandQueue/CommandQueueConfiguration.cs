@@ -5,12 +5,39 @@ namespace mcp_nexus.CommandQueue
     /// </summary>
     public class CommandQueueConfiguration
     {
+        /// <summary>
+        /// Gets the default timeout for command execution.
+        /// </summary>
         public TimeSpan DefaultCommandTimeout { get; }
+        
+        /// <summary>
+        /// Gets the interval for sending heartbeat notifications.
+        /// </summary>
         public TimeSpan HeartbeatInterval { get; }
+        
+        /// <summary>
+        /// Gets the timeout for graceful shutdown.
+        /// </summary>
         public TimeSpan ShutdownTimeout { get; }
+        
+        /// <summary>
+        /// Gets the timeout for forced shutdown.
+        /// </summary>
         public TimeSpan ForceShutdownTimeout { get; }
+        
+        /// <summary>
+        /// Gets the session identifier.
+        /// </summary>
         public string SessionId { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandQueueConfiguration"/> class.
+        /// </summary>
+        /// <param name="sessionId">The session identifier.</param>
+        /// <param name="defaultCommandTimeout">The default timeout for command execution.</param>
+        /// <param name="heartbeatInterval">The interval for sending heartbeat notifications.</param>
+        /// <param name="shutdownTimeout">The timeout for graceful shutdown.</param>
+        /// <param name="forceShutdownTimeout">The timeout for forced shutdown.</param>
         public CommandQueueConfiguration(
             string sessionId,
             TimeSpan? defaultCommandTimeout = null,

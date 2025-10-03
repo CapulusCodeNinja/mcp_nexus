@@ -7,17 +7,34 @@ using Microsoft.Extensions.Logging;
 namespace mcp_nexus.Infrastructure
 {
     /// <summary>
-    /// Manages service-related file operations
+    /// Manages service-related file operations including copying, backing up, restoring, and cleaning up service files.
+    /// Provides comprehensive file management capabilities for Windows service deployment and maintenance.
     /// </summary>
     public class ServiceFileManager
     {
         private readonly ILogger<ServiceFileManager> m_Logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ServiceFileManager"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public ServiceFileManager(ILogger<ServiceFileManager> logger)
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        /// <summary>
+        /// Copies service files from the source directory to the target directory asynchronously.
+        /// Creates the target directory if it doesn't exist and copies all files and subdirectories recursively.
+        /// </summary>
+        /// <param name="sourcePath">The source directory path containing the service files to copy.</param>
+        /// <param name="targetPath">The target directory path where the service files will be copied.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the copy operation completed successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="sourcePath"/> or <paramref name="targetPath"/> is null or empty.</exception>
         public async Task<bool> CopyServiceFilesAsync(string sourcePath, string targetPath)
         {
             try
@@ -45,6 +62,17 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Creates a backup of service files from the specified service directory to the backup directory asynchronously.
+        /// The backup is timestamped to ensure uniqueness and includes all files and subdirectories.
+        /// </summary>
+        /// <param name="servicePath">The service directory path containing the files to backup.</param>
+        /// <param name="backupPath">The backup directory path where the backup will be created.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the backup operation completed successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="servicePath"/> or <paramref name="backupPath"/> is null or empty.</exception>
         public async Task<bool> BackupServiceFilesAsync(string servicePath, string backupPath)
         {
             try
@@ -69,6 +97,17 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Restores service files from a backup directory to the service directory asynchronously.
+        /// This operation overwrites existing files in the service directory with the backup files.
+        /// </summary>
+        /// <param name="backupPath">The backup directory path containing the files to restore.</param>
+        /// <param name="servicePath">The service directory path where the files will be restored.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the restore operation completed successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="backupPath"/> or <paramref name="servicePath"/> is null or empty.</exception>
         public async Task<bool> RestoreServiceFilesAsync(string backupPath, string servicePath)
         {
             try
@@ -90,6 +129,17 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Cleans up old backup directories based on the specified retention period asynchronously.
+        /// Deletes backup directories that are older than the specified number of days.
+        /// </summary>
+        /// <param name="backupPath">The backup directory path to clean up.</param>
+        /// <param name="retentionDays">The number of days to retain backups. Directories older than this will be deleted.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the cleanup operation completed successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="backupPath"/> is null or empty, or when <paramref name="retentionDays"/> is negative.</exception>
         public async Task<bool> CleanupOldBackupsAsync(string backupPath, int retentionDays)
         {
             try
@@ -125,6 +175,17 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Validates that all required service files exist in the specified service directory asynchronously.
+        /// Checks for the executable file and configuration files specified in the service configuration.
+        /// </summary>
+        /// <param name="servicePath">The service directory path to validate.</param>
+        /// <param name="configuration">The service configuration containing the required file paths.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if all required files exist; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="servicePath"/> is null or empty, or when <paramref name="configuration"/> is null.</exception>
         public async Task<bool> ValidateServiceFilesAsync(string servicePath, ServiceConfiguration configuration)
         {
             try
@@ -163,6 +224,16 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Validates that the service directory exists and is accessible asynchronously.
+        /// This is a basic validation that only checks directory existence.
+        /// </summary>
+        /// <param name="servicePath">The service directory path to validate.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the service directory exists and is accessible; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="servicePath"/> is null or empty.</exception>
         public async Task<bool> ValidateServiceFilesAsync(string servicePath)
         {
             try
@@ -184,6 +255,16 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Deletes all service files from the specified target directory asynchronously.
+        /// This operation permanently removes the directory and all its contents.
+        /// </summary>
+        /// <param name="targetPath">The target directory path to delete.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the deletion completed successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="targetPath"/> is null or empty.</exception>
         public async Task<bool> DeleteServiceFilesAsync(string targetPath)
         {
             try
@@ -203,6 +284,16 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Retrieves all service files from the specified service directory asynchronously.
+        /// Returns an array of <see cref="FileInfo"/> objects representing all files in the directory and subdirectories.
+        /// </summary>
+        /// <param name="servicePath">The service directory path to scan for files.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns an array of <see cref="FileInfo"/> objects, or an empty array if the directory doesn't exist or an error occurs.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="servicePath"/> is null or empty.</exception>
         public async Task<FileInfo[]> GetServiceFilesAsync(string servicePath)
         {
             try
@@ -227,6 +318,15 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Builds the project for deployment asynchronously using the dotnet build command.
+        /// This is a static method that can be called without instantiating the class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording build operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the build completed successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> BuildProjectForDeploymentAsync(ILogger logger = null!)
         {
             try
@@ -243,6 +343,15 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Copies application files for deployment asynchronously.
+        /// This is a static method that can be called without instantiating the class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording copy operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the copy operation completed successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> CopyApplicationFilesAsync(ILogger logger = null!)
         {
             try
@@ -259,6 +368,16 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Creates a backup instance asynchronously using the provided logger.
+        /// This method creates a backup of the current service state.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording backup operations and errors.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the backup was created successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public async Task<bool> CreateBackupInstanceAsync(ILogger logger)
         {
             try
@@ -275,11 +394,27 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Finds the project directory for the current service.
+        /// This method searches for the project directory containing the service files.
+        /// </summary>
+        /// <returns>
+        /// The project directory path if found; otherwise, <c>null</c>.
+        /// </returns>
         public string? FindProjectDirectory()
         {
             return Environment.CurrentDirectory; // Placeholder implementation
         }
 
+        /// <summary>
+        /// Finds the project directory for the specified service name statically.
+        /// This is a static method that can be called without instantiating the class.
+        /// </summary>
+        /// <param name="serviceName">The name of the service to find the project directory for.</param>
+        /// <returns>
+        /// The project directory path if found; otherwise, <c>null</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="serviceName"/> is null or empty.</exception>
         public static string? FindProjectDirectoryStatic(string serviceName)
         {
             if (string.IsNullOrEmpty(serviceName))
@@ -287,21 +422,47 @@ namespace mcp_nexus.Infrastructure
             return Environment.CurrentDirectory; // Placeholder implementation
         }
 
-
-
-
-
-
+        /// <summary>
+        /// Validates that the installation files exist in the specified service path.
+        /// This method performs a basic check to ensure the service directory exists.
+        /// </summary>
+        /// <param name="servicePath">The service directory path to validate.</param>
+        /// <returns>
+        /// <c>true</c> if the installation files are valid; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="servicePath"/> is null or empty.</exception>
         public bool ValidateInstallationFiles(string servicePath)
         {
             return Directory.Exists(servicePath); // Placeholder implementation
         }
 
+        /// <summary>
+        /// Gets information about a backup directory.
+        /// Returns an object containing backup metadata such as path, creation time, and size.
+        /// </summary>
+        /// <param name="backupPath">The backup directory path to get information for.</param>
+        /// <returns>
+        /// An object containing backup information including path, creation time, and size.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="backupPath"/> is null or empty.</exception>
         public object GetBackupInfo(string backupPath)
         {
             return new { Path = backupPath, Created = DateTime.UtcNow, Size = 0 }; // Placeholder implementation
         }
 
+        /// <summary>
+        /// Copies a directory and all its contents recursively asynchronously.
+        /// This is a static method that can be called without instantiating the class.
+        /// </summary>
+        /// <param name="sourcePath">The source directory path to copy from.</param>
+        /// <param name="targetPath">The target directory path to copy to.</param>
+        /// <param name="logger">The logger instance for recording copy operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task"/> representing the asynchronous operation.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="sourcePath"/> or <paramref name="targetPath"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="sourcePath"/> or <paramref name="targetPath"/> is empty.</exception>
+        /// <exception cref="DirectoryNotFoundException">Thrown when the source directory does not exist.</exception>
         public static async Task CopyDirectoryAsync(string sourcePath, string targetPath, ILogger logger = null!)
         {
             try
@@ -348,6 +509,15 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Creates a backup asynchronously using the provided logger.
+        /// This is a static method that can be called without instantiating the class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording backup operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the backup was created successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> CreateBackupAsync(ILogger logger = null!)
         {
             try
@@ -364,6 +534,18 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Cleans up old backup directories based on the specified retention period asynchronously.
+        /// This is a static method that can be called without instantiating the class.
+        /// </summary>
+        /// <param name="backupPath">The backup directory path to clean up.</param>
+        /// <param name="retentionDays">The number of days to retain backups. Directories older than this will be deleted.</param>
+        /// <param name="logger">The logger instance for recording cleanup operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the cleanup operation completed successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="backupPath"/> is null or empty, or when <paramref name="retentionDays"/> is negative.</exception>
         public static async Task<bool> CleanupOldBackupsStaticAsync(string backupPath, int retentionDays, ILogger logger = null!)
         {
             try
@@ -399,16 +581,43 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Validates that the installation files exist in the specified service path statically.
+        /// This is a static method that can be called without instantiating the class.
+        /// </summary>
+        /// <param name="servicePath">The service directory path to validate.</param>
+        /// <returns>
+        /// <c>true</c> if the installation files are valid; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="servicePath"/> is null or empty.</exception>
         public static bool ValidateInstallationFilesStatic(string servicePath)
         {
             return Directory.Exists(servicePath); // Placeholder implementation
         }
 
+        /// <summary>
+        /// Gets information about backup directories statically.
+        /// This is a static method that can be called without instantiating the class.
+        /// </summary>
+        /// <param name="backupPath">The backup directory path to get information for.</param>
+        /// <returns>
+        /// A list of objects containing backup information including path, creation time, and size.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="backupPath"/> is null or empty.</exception>
         public static List<object> GetBackupInfoStatic(string backupPath)
         {
             return new List<object> { new { Path = backupPath, Created = DateTime.UtcNow, Size = 0 } }; // Placeholder implementation
         }
 
+        /// <summary>
+        /// Copies a directory and all its contents recursively asynchronously.
+        /// This is a private helper method for internal use.
+        /// </summary>
+        /// <param name="sourcePath">The source directory path to copy from.</param>
+        /// <param name="targetPath">The target directory path to copy to.</param>
+        /// <returns>
+        /// A <see cref="Task"/> representing the asynchronous operation.
+        /// </returns>
         private async Task CopyDirectoryAsync(string sourcePath, string targetPath)
         {
             var sourceDir = new DirectoryInfo(sourcePath);

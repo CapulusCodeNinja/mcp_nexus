@@ -18,6 +18,14 @@ namespace mcp_nexus.Session
         private long m_totalCommandsProcessed = 0;
         private int m_peakConcurrentSessions = 0;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SessionStatisticsCollector"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording statistics operations and errors.</param>
+        /// <param name="sessions">The concurrent dictionary containing active sessions.</param>
+        /// <param name="lifecycleManager">The session lifecycle manager for managing session operations.</param>
+        /// <param name="monitoringService">The session monitoring service for tracking session health.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
         public SessionStatisticsCollector(
             ILogger logger,
             ConcurrentDictionary<string, SessionInfo> sessions,

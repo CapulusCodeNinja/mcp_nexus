@@ -8,7 +8,8 @@ using mcp_nexus.Notifications;
 namespace mcp_nexus.Session
 {
     /// <summary>
-    /// Manages the lifecycle of debugging sessions including creation, closure, and cleanup
+    /// Manages the lifecycle of debugging sessions including creation, closure, and cleanup.
+    /// Provides thread-safe session management with proper resource cleanup and notification support.
     /// </summary>
     public class SessionLifecycleManager
     {
@@ -24,6 +25,16 @@ namespace mcp_nexus.Session
         private long m_totalSessionsClosed = 0;
         private long m_totalSessionsExpired = 0;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SessionLifecycleManager"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording lifecycle operations and errors.</param>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <param name="loggerFactory">The logger factory for creating session-specific loggers.</param>
+        /// <param name="notificationService">The notification service for sending session events.</param>
+        /// <param name="config">The session manager configuration.</param>
+        /// <param name="sessions">The thread-safe dictionary for storing session information.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
         public SessionLifecycleManager(
             ILogger logger,
             IServiceProvider serviceProvider,
@@ -41,13 +52,19 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// Creates a new debugging session
+        /// Creates a new debugging session asynchronously.
+        /// This method initializes all session components including CDB session, command queue, and logging.
         /// </summary>
-        /// <param name="sessionId">Unique session identifier</param>
-        /// <param name="dumpPath">Path to the dump file</param>
-        /// <param name="symbolsPath">Optional symbols path</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>The created session info</returns>
+        /// <param name="sessionId">The unique session identifier.</param>
+        /// <param name="dumpPath">The path to the dump file.</param>
+        /// <param name="symbolsPath">The optional symbols path.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the created session info.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="sessionId"/> or <paramref name="dumpPath"/> is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when CDB session startup fails or command queue creation fails.</exception>
         public async Task<SessionInfo> CreateSessionAsync(string sessionId, string dumpPath, string? symbolsPath, CancellationToken cancellationToken)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -174,11 +191,15 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// Closes a debugging session
+        /// Closes a debugging session asynchronously.
+        /// This method cancels pending commands, cleans up resources, and removes the session from the dictionary.
         /// </summary>
-        /// <param name="sessionId">Session ID to close</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>True if the session was closed successfully</returns>
+        /// <param name="sessionId">The session ID to close.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the session was closed successfully; otherwise, <c>false</c>.
+        /// </returns>
         public async Task<bool> CloseSessionAsync(string sessionId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(sessionId))
@@ -246,9 +267,13 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// Cleans up expired sessions
+        /// Cleans up expired sessions asynchronously.
+        /// This method identifies and closes sessions that have exceeded their idle timeout.
         /// </summary>
-        /// <returns>Number of sessions cleaned up</returns>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the number of sessions cleaned up.
+        /// </returns>
         public async Task<int> CleanupExpiredSessionsAsync()
         {
             var expiredSessions = new List<string>();
@@ -302,9 +327,12 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// Gets lifecycle statistics
+        /// Gets lifecycle statistics.
+        /// This method returns thread-safe counters for session creation, closure, and expiration.
         /// </summary>
-        /// <returns>Lifecycle statistics</returns>
+        /// <returns>
+        /// A tuple containing the number of sessions created, closed, and expired.
+        /// </returns>
         public (long Created, long Closed, long Expired) GetLifecycleStats()
         {
             return (

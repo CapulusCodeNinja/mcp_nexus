@@ -17,6 +17,14 @@ namespace mcp_nexus.Resilience
         private int m_state = (int)CircuitState.Closed; // Use int for Interlocked operations
         private bool m_disposed = false;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CircuitBreaker"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording circuit breaker operations and errors.</param>
+        /// <param name="failureThreshold">The number of consecutive failures before opening the circuit. Default is 5.</param>
+        /// <param name="timeout">The timeout for individual operations. Default is 1 minute.</param>
+        /// <param name="retryTimeout">The timeout for retry attempts when the circuit is half-open. Default is 5 minutes.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public CircuitBreaker(
             ILogger<CircuitBreaker> logger,
             int failureThreshold = 5,
@@ -29,6 +37,14 @@ namespace mcp_nexus.Resilience
             m_retryTimeout = retryTimeout == default ? TimeSpan.FromMinutes(5) : retryTimeout;
         }
 
+        /// <summary>
+        /// Executes an operation through the circuit breaker.
+        /// </summary>
+        /// <typeparam name="T">The return type of the operation.</typeparam>
+        /// <param name="operation">The operation to execute.</param>
+        /// <param name="operationName">The name of the operation for logging purposes. Default is "operation".</param>
+        /// <returns>A task that represents the asynchronous operation and contains the result.</returns>
+        /// <exception cref="CircuitBreakerOpenException">Thrown when the circuit breaker is open and the operation cannot be executed.</exception>
         public async Task<T> ExecuteAsync<T>(Func<Task<T>> operation, string operationName = "operation")
         {
             ThrowIfDisposed();

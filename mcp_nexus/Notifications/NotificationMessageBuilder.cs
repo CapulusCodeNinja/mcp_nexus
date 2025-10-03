@@ -6,12 +6,16 @@ using mcp_nexus.Models;
 namespace mcp_nexus.Notifications
 {
     /// <summary>
-    /// Builder for creating notification messages
+    /// Builder for creating notification messages.
+    /// Provides a fluent interface for constructing MCP notification objects with various parameters and methods.
     /// </summary>
     public class NotificationMessageBuilder
     {
         private readonly McpNotification m_Notification;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NotificationMessageBuilder"/> class.
+        /// </summary>
         public NotificationMessageBuilder()
         {
             m_Notification = new McpNotification();

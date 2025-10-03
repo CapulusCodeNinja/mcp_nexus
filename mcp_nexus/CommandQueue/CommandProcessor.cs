@@ -16,6 +16,16 @@ namespace mcp_nexus.CommandQueue
         private readonly BlockingCollection<QueuedCommand> m_commandQueue;
         private readonly CancellationTokenSource m_processingCts;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandProcessor"/> class.
+        /// </summary>
+        /// <param name="cdbSession">The CDB session for executing commands.</param>
+        /// <param name="logger">The logger instance for recording processing operations.</param>
+        /// <param name="config">The command queue configuration settings.</param>
+        /// <param name="tracker">The command tracker for monitoring command status.</param>
+        /// <param name="commandQueue">The blocking collection for queued commands.</param>
+        /// <param name="processingCts">The cancellation token source for processing operations.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
         public CommandProcessor(
             ICdbSession cdbSession,
             ILogger logger,

@@ -11,6 +11,13 @@ namespace mcp_nexus.CommandQueue
         private readonly ILogger m_logger;
         private readonly CommandQueueConfiguration m_config;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandNotificationManager"/> class.
+        /// </summary>
+        /// <param name="notificationService">The notification service for sending notifications.</param>
+        /// <param name="logger">The logger instance for recording notification operations.</param>
+        /// <param name="config">The command queue configuration settings.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
         public CommandNotificationManager(
             IMcpNotificationService notificationService,
             ILogger logger,

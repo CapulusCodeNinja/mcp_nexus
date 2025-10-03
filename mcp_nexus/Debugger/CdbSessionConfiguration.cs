@@ -4,18 +4,57 @@ using System.Diagnostics;
 namespace mcp_nexus.Debugger
 {
     /// <summary>
-    /// Handles CDB session configuration, validation, and path resolution
+    /// Handles CDB session configuration, validation, and path resolution.
+    /// Provides configuration settings for CDB debugging sessions including timeouts, paths, and retry settings.
     /// </summary>
     public class CdbSessionConfiguration
     {
+        /// <summary>
+        /// Gets the command timeout in milliseconds.
+        /// </summary>
         public int CommandTimeoutMs { get; }
+
+        /// <summary>
+        /// Gets the idle timeout in milliseconds.
+        /// </summary>
         public int IdleTimeoutMs { get; }
+
+        /// <summary>
+        /// Gets the custom CDB executable path, if specified.
+        /// </summary>
         public string? CustomCdbPath { get; }
+
+        /// <summary>
+        /// Gets the symbol server timeout in milliseconds.
+        /// </summary>
         public int SymbolServerTimeoutMs { get; }
+
+        /// <summary>
+        /// Gets the maximum number of retries for symbol server operations.
+        /// </summary>
         public int SymbolServerMaxRetries { get; }
+
+        /// <summary>
+        /// Gets the symbol search path for CDB.
+        /// </summary>
         public string? SymbolSearchPath { get; }
+
+        /// <summary>
+        /// Gets the startup delay in milliseconds.
+        /// </summary>
         public int StartupDelayMs { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CdbSessionConfiguration"/> class.
+        /// </summary>
+        /// <param name="commandTimeoutMs">The command timeout in milliseconds. Default is 30000ms (30 seconds).</param>
+        /// <param name="idleTimeoutMs">The idle timeout in milliseconds. Default is 180000ms (3 minutes).</param>
+        /// <param name="customCdbPath">Optional custom path to the CDB executable. If null, uses the default path.</param>
+        /// <param name="symbolServerTimeoutMs">The symbol server timeout in milliseconds. Default is 30000ms (30 seconds).</param>
+        /// <param name="symbolServerMaxRetries">The maximum number of retries for symbol server operations. Default is 1.</param>
+        /// <param name="symbolSearchPath">Optional symbol search path for CDB. If null, uses the default path.</param>
+        /// <param name="startupDelayMs">The startup delay in milliseconds. Default is 1000ms (1 second).</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when any of the timeout or retry parameters are invalid.</exception>
         public CdbSessionConfiguration(
             int commandTimeoutMs = 30000,
             int idleTimeoutMs = 180000,
@@ -37,8 +76,14 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Validates configuration parameters
+        /// Validates configuration parameters to ensure they are within acceptable ranges.
         /// </summary>
+        /// <param name="commandTimeoutMs">The command timeout in milliseconds.</param>
+        /// <param name="idleTimeoutMs">The idle timeout in milliseconds.</param>
+        /// <param name="symbolServerTimeoutMs">The symbol server timeout in milliseconds.</param>
+        /// <param name="symbolServerMaxRetries">The maximum number of retries for symbol server operations.</param>
+        /// <param name="startupDelayMs">The startup delay in milliseconds.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when any of the parameters are invalid.</exception>
         public static void ValidateParameters(
             int commandTimeoutMs,
             int idleTimeoutMs,
@@ -63,8 +108,13 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Finds the CDB executable path
+        /// Finds the CDB executable path using custom path or standard locations.
+        /// This method searches for CDB in the configured custom path first, then falls back to standard locations.
         /// </summary>
+        /// <returns>
+        /// The path to the CDB executable if found; otherwise, <c>null</c>.
+        /// </returns>
+        /// <exception cref="FileNotFoundException">Thrown when a custom CDB path is specified but the file does not exist.</exception>
         public string? FindCdbPath()
         {
             // Use custom path if provided
@@ -89,8 +139,13 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Gets the current system architecture for CDB selection
+        /// Gets the current system architecture for CDB selection.
+        /// This method determines the appropriate CDB executable architecture based on the current process architecture.
         /// </summary>
+        /// <returns>
+        /// A string representing the current architecture ("x64", "x86", "arm64", or "arm").
+        /// Returns "x64" as a fallback for unknown architectures.
+        /// </returns>
         public string GetCurrentArchitecture()
         {
             return RuntimeInformation.ProcessArchitecture switch

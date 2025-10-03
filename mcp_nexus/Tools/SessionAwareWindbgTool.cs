@@ -20,6 +20,8 @@ namespace mcp_nexus.Tools
     /// Session-aware Windows debugging tool with multi-session support
     /// Each debugging session is isolated with its own CDB process and command queue
     /// </summary>
+    /// <param name="logger">The logger instance for recording tool operations and errors.</param>
+    /// <param name="sessionManager">The session manager for managing debugging sessions.</param>
     [McpServerToolType]
     public class SessionAwareWindbgTool(ILogger<SessionAwareWindbgTool> logger, ISessionManager sessionManager)
     {

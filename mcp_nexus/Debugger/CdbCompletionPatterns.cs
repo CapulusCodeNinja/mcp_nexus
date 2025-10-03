@@ -3,31 +3,31 @@ using System.Text.RegularExpressions;
 namespace mcp_nexus.Debugger
 {
     /// <summary>
-    /// Contains ultra-safe CDB completion patterns that are guaranteed to be stable across versions
-    /// These patterns are based on binary/structural output formats that Microsoft is unlikely to change
+    /// Contains ultra-safe CDB completion patterns that are guaranteed to be stable across versions.
+    /// These patterns are based on binary/structural output formats that Microsoft is unlikely to change.
     /// </summary>
     public static class CdbCompletionPatterns
     {
         /// <summary>
-        /// Primary CDB prompt pattern - this format has been stable for 20+ years
+        /// Primary CDB prompt pattern - this format has been stable for 20+ years.
         /// Matches patterns like "0:000>", "1:001>", etc.
-        /// IMPORTANT: Also matches prompts with output on the same line (e.g., "0:030> command output")
+        /// IMPORTANT: Also matches prompts with output on the same line (e.g., "0:030> command output").
         /// </summary>
         public static readonly Regex CdbPromptPattern = new Regex(
             @"^(\s*)?(\d+):(\d{3})(:[A-Za-z0-9_\-]+)?>",
             RegexOptions.Compiled | RegexOptions.Multiline);
 
         /// <summary>
-        /// CDB prompt at end of line pattern - for mixed output scenarios
-        /// Matches patterns like "\n0:000>" at the end of a line
+        /// CDB prompt at end of line pattern - for mixed output scenarios.
+        /// Matches patterns like "\n0:000>" at the end of a line.
         /// </summary>
         public static readonly Regex CdbPromptEndPattern = new Regex(
             @"(?:^|\r?\n)(\d+):(\d{3})(:[A-Za-z0-9_\-]+)?>\s*$",
             RegexOptions.Compiled);
 
         /// <summary>
-        /// Ultra-safe completion patterns that are based on binary/structural formats
-        /// These are unlikely to change across CDB versions or localizations
+        /// Ultra-safe completion patterns that are based on binary/structural formats.
+        /// These are unlikely to change across CDB versions or localizations.
         /// NOTE: These should ONLY match command completion, NOT dump file loading output!
         /// </summary>
         public static readonly string[] UltraSafeCompletionPatterns = {
@@ -39,10 +39,13 @@ namespace mcp_nexus.Debugger
         };
 
         /// <summary>
-        /// Checks if a line contains a CDB prompt pattern
+        /// Checks if a line contains a CDB prompt pattern.
+        /// This method uses both primary and end-of-line prompt patterns for comprehensive detection.
         /// </summary>
-        /// <param name="line">The line to check</param>
-        /// <returns>True if the line contains a CDB prompt</returns>
+        /// <param name="line">The line to check for CDB prompt patterns.</param>
+        /// <returns>
+        /// <c>true</c> if the line contains a CDB prompt; otherwise, <c>false</c>.
+        /// </returns>
         public static bool IsCdbPrompt(string line)
         {
             if (string.IsNullOrEmpty(line))
@@ -53,11 +56,13 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Checks if a line contains an ultra-safe completion pattern
-        /// These patterns are guaranteed to be stable and CDB-specific
+        /// Checks if a line contains an ultra-safe completion pattern.
+        /// These patterns are guaranteed to be stable and CDB-specific.
         /// </summary>
-        /// <param name="line">The line to check</param>
-        /// <returns>True if the line contains an ultra-safe completion pattern</returns>
+        /// <param name="line">The line to check for ultra-safe completion patterns.</param>
+        /// <returns>
+        /// <c>true</c> if the line contains an ultra-safe completion pattern; otherwise, <c>false</c>.
+        /// </returns>
         public static bool IsUltraSafeCompletion(string line)
         {
             if (string.IsNullOrEmpty(line))

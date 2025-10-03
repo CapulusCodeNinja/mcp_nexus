@@ -10,12 +10,22 @@ namespace mcp_nexus.Middleware
         private readonly RequestDelegate m_next;
         private readonly ILogger<JsonRpcLoggingMiddleware> m_logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonRpcLoggingMiddleware"/> class.
+        /// </summary>
+        /// <param name="next">The next middleware in the pipeline.</param>
+        /// <param name="logger">The logger instance for recording JSON-RPC operations.</param>
         public JsonRpcLoggingMiddleware(RequestDelegate next, ILogger<JsonRpcLoggingMiddleware> logger)
         {
             m_next = next;
             m_logger = logger;
         }
 
+        /// <summary>
+        /// Invokes the middleware to log JSON-RPC requests and responses.
+        /// </summary>
+        /// <param name="context">The HTTP context containing the request and response.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task InvokeAsync(HttpContext context)
         {
             if (ShouldLogRequest(context))

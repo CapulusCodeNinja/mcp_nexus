@@ -5,6 +5,12 @@ namespace mcp_nexus.Models
     /// </summary>
     internal static class VersionHelper
     {
+        /// <summary>
+        /// Gets the file version of the executing assembly.
+        /// </summary>
+        /// <returns>
+        /// The file version string, or "1.0.0.0" if the version cannot be determined.
+        /// </returns>
         internal static string GetFileVersion()
         {
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();

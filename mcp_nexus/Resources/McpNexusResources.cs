@@ -21,11 +21,21 @@ using ModelContextProtocol.Protocol; // For Resource type
 
 namespace mcp_nexus.Resources
 {
+    /// <summary>
+    /// Provides Model Context Protocol (MCP) resources for the MCP Nexus server.
+    /// Contains static methods that expose debugging session information, command status,
+    /// and server health data as MCP resources for AI clients to consume.
+    /// </summary>
     [McpServerResourceType]
     public static class McpNexusResources
     {
         // IMPORTANT: Method names directly determine resource names!
         // Method "Sessions" becomes resource "sessions", "Commands" becomes "commands", etc.
+        /// <summary>
+        /// Lists all active debugging sessions with status and activity information.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <returns>A JSON string containing session information including count and timestamp.</returns>
         [McpServerResource, Description("📊 SESSIONS: List all active debugging sessions with status and activity information")]
         public static Task<string> Sessions(
             IServiceProvider serviceProvider)
@@ -54,6 +64,11 @@ namespace mcp_nexus.Resources
             }
         }
 
+        /// <summary>
+        /// Lists async commands from all sessions with status and timing information.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <returns>A JSON string containing command information from all sessions.</returns>
         [McpServerResource, Description("COMMANDS: List async commands from all sessions with status and timing information")]
         public static Task<string> Commands(
             IServiceProvider serviceProvider)
@@ -105,6 +120,11 @@ namespace mcp_nexus.Resources
         }
 
 
+        /// <summary>
+        /// Provides common debugging patterns and step-by-step analysis workflows for crash dump investigation.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <returns>A JSON string containing debugging workflows and patterns.</returns>
         [McpServerResource, Description("📚 WORKFLOWS: Common debugging patterns and step-by-step analysis workflows for crash dump investigation")]
         public static Task<string> Workflows(
             IServiceProvider serviceProvider)
@@ -494,6 +514,11 @@ namespace mcp_nexus.Resources
             return $"{remainingMinutes}min {remainingSeconds}s";
         }
 
+        /// <summary>
+        /// Gets comprehensive performance metrics and statistics.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <returns>A JSON string containing performance metrics and statistics.</returns>
         [McpServerResource, Description("📊 METRICS: Get comprehensive performance metrics and statistics")]
         public static Task<string> Metrics(
             IServiceProvider serviceProvider)
@@ -513,6 +538,11 @@ namespace mcp_nexus.Resources
             }
         }
 
+        /// <summary>
+        /// Gets circuit breaker status and health information.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <returns>A JSON string containing circuit breaker status and health information.</returns>
         [McpServerResource, Description("🔧 CIRCUITS: Get circuit breaker status and health information")]
         public static Task<string> Circuits(
             IServiceProvider serviceProvider)
@@ -539,6 +569,11 @@ namespace mcp_nexus.Resources
             }
         }
 
+        /// <summary>
+        /// Gets comprehensive system health status.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <returns>A JSON string containing system health status information.</returns>
         [McpServerResource, Description("🏥 HEALTH: Get comprehensive system health status")]
         public static Task<string> Health(
             IServiceProvider serviceProvider)
@@ -558,6 +593,11 @@ namespace mcp_nexus.Resources
             }
         }
 
+        /// <summary>
+        /// Gets cache statistics and memory usage information.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <returns>A JSON string containing cache statistics and memory usage information.</returns>
         [McpServerResource, Description("💾 CACHE: Get cache statistics and memory usage information")]
         public static Task<string> Cache(
             IServiceProvider serviceProvider)

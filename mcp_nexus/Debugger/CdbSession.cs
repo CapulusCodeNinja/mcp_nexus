@@ -3,7 +3,8 @@ using System.Diagnostics;
 namespace mcp_nexus.Debugger
 {
     /// <summary>
-    /// Refactored CDB session that orchestrates focused components for debugger operations
+    /// Refactored CDB session that orchestrates focused components for debugger operations.
+    /// Provides a high-level interface for managing CDB debugging sessions with thread-safe command execution.
     /// </summary>
     public class CdbSession : IDisposable, ICdbSession
     {
@@ -19,7 +20,19 @@ namespace mcp_nexus.Debugger
 
         private bool m_disposed;
 
-        // Maintain backward compatibility with original constructor signature
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CdbSession"/> class.
+        /// Maintains backward compatibility with the original constructor signature.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording session operations and errors.</param>
+        /// <param name="commandTimeoutMs">The timeout in milliseconds for command execution. Default is 30000ms (30 seconds).</param>
+        /// <param name="idleTimeoutMs">The timeout in milliseconds for idle operations. Default is 180000ms (3 minutes).</param>
+        /// <param name="customCdbPath">Optional custom path to the CDB executable. If null, uses the default path.</param>
+        /// <param name="symbolServerTimeoutMs">The timeout in milliseconds for symbol server operations. Default is 30000ms (30 seconds).</param>
+        /// <param name="symbolServerMaxRetries">The maximum number of retries for symbol server operations. Default is 1.</param>
+        /// <param name="symbolSearchPath">Optional symbol search path for CDB. If null, uses the default path.</param>
+        /// <param name="startupDelayMs">The delay in milliseconds before starting the session. Default is 1000ms (1 second).</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public CdbSession(
             ILogger<CdbSession> logger,
             int commandTimeoutMs = 30000,
@@ -80,7 +93,7 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Gets whether the session is currently active
+        /// Gets a value indicating whether the CDB session is currently active and ready for commands.
         /// </summary>
         public bool IsActive
         {
@@ -94,8 +107,10 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Cancels the currently executing operation
+        /// Cancels the currently executing command operation.
+        /// This method is thread-safe and can be called from any thread.
         /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
         public void CancelCurrentOperation()
         {
             ThrowIfDisposed();
@@ -105,8 +120,17 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Starts a debugging session with the specified target
+        /// Starts a debugging session with the specified target.
+        /// This method initializes the CDB process and prepares it for command execution.
         /// </summary>
+        /// <param name="target">The target to debug (dump file path or process ID).</param>
+        /// <param name="arguments">Optional additional arguments for the CDB process. Currently not used.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the session was started successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="target"/> is null or empty.</exception>
         public Task<bool> StartSession(string target, string? arguments = null)
         {
             ThrowIfDisposed();
@@ -137,16 +161,36 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Executes a command in the debugging session
+        /// Executes a command in the debugging session without cancellation support.
+        /// This is a convenience method that calls <see cref="ExecuteCommand(string, CancellationToken)"/> with <see cref="CancellationToken.None"/>.
         /// </summary>
+        /// <param name="command">The CDB command to execute.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the command output as a string, or an error message if execution fails.
+        /// </returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="command"/> is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no active debugging session is available.</exception>
         public Task<string> ExecuteCommand(string command)
         {
             return ExecuteCommand(command, CancellationToken.None);
         }
 
         /// <summary>
-        /// Executes a command in the debugging session with cancellation support
+        /// Executes a command in the debugging session with cancellation support.
+        /// This method ensures thread-safe execution by using a semaphore to serialize command execution.
         /// </summary>
+        /// <param name="command">The CDB command to execute.</param>
+        /// <param name="externalCancellationToken">The cancellation token for external cancellation.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the command output as a string, or an error message if execution fails.
+        /// </returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="command"/> is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no active debugging session is available.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
         public async Task<string> ExecuteCommand(string command, CancellationToken externalCancellationToken)
         {
             ThrowIfDisposed();
@@ -183,8 +227,14 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Stops the debugging session
+        /// Stops the debugging session gracefully.
+        /// This method stops the CDB process and cleans up associated resources.
         /// </summary>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the session was stopped successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
         public Task<bool> StopSession()
         {
             ThrowIfDisposed();
@@ -237,7 +287,8 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Disposes the session and all associated resources
+        /// Disposes the session and all associated resources.
+        /// This method stops the CDB process, releases the command semaphore, and cleans up all resources.
         /// </summary>
         public void Dispose()
         {

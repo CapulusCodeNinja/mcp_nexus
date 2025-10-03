@@ -16,6 +16,11 @@ namespace mcp_nexus.Metrics
         private readonly TimeSpan m_reportingInterval = TimeSpan.FromMinutes(1);
         private bool m_disposed = false;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MetricsCollector"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording metrics operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public MetricsCollector(ILogger<MetricsCollector> logger)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -24,29 +29,59 @@ namespace mcp_nexus.Metrics
             m_reportingTimer = new Timer(ReportMetrics, null, m_reportingInterval, m_reportingInterval);
         }
 
+        /// <summary>
+        /// Increments a counter metric by the specified value.
+        /// </summary>
+        /// <param name="name">The name of the counter metric.</param>
+        /// <param name="value">The value to increment the counter by. Default is 1.0.</param>
+        /// <param name="tags">Optional tags to associate with the metric.</param>
         public void IncrementCounter(string name, double value = 1.0, Dictionary<string, string>? tags = null)
         {
             var counter = m_counters.GetOrAdd(name, _ => new Counter(name, tags ?? new Dictionary<string, string>()));
             counter.Increment(value);
         }
 
+        /// <summary>
+        /// Records a value in a histogram metric.
+        /// </summary>
+        /// <param name="name">The name of the histogram metric.</param>
+        /// <param name="value">The value to record in the histogram.</param>
+        /// <param name="tags">Optional tags to associate with the metric.</param>
         public void RecordHistogram(string name, double value, Dictionary<string, string>? tags = null)
         {
             var histogram = m_histograms.GetOrAdd(name, _ => new Histogram(name, tags ?? new Dictionary<string, string>()));
             histogram.Record(value);
         }
 
+        /// <summary>
+        /// Sets the value of a gauge metric.
+        /// </summary>
+        /// <param name="name">The name of the gauge metric.</param>
+        /// <param name="value">The value to set the gauge to.</param>
+        /// <param name="tags">Optional tags to associate with the metric.</param>
         public void SetGauge(string name, double value, Dictionary<string, string>? tags = null)
         {
             var gauge = m_gauges.GetOrAdd(name, _ => new Gauge(name, tags ?? new Dictionary<string, string>()));
             gauge.Set(value);
         }
 
+        /// <summary>
+        /// Records the execution time of an operation as a histogram metric.
+        /// </summary>
+        /// <param name="operationName">The name of the operation being measured.</param>
+        /// <param name="duration">The duration of the operation.</param>
+        /// <param name="tags">Optional tags to associate with the metric.</param>
         public void RecordExecutionTime(string operationName, TimeSpan duration, Dictionary<string, string>? tags = null)
         {
             RecordHistogram($"{operationName}_duration_ms", duration.TotalMilliseconds, tags);
         }
 
+        /// <summary>
+        /// Records command execution metrics including duration and success status.
+        /// </summary>
+        /// <param name="commandType">The type of command being executed.</param>
+        /// <param name="duration">The duration of the command execution.</param>
+        /// <param name="success">Whether the command executed successfully.</param>
         public void RecordCommandExecution(string commandType, TimeSpan duration, bool success)
         {
             var tags = new Dictionary<string, string>
@@ -64,6 +99,11 @@ namespace mcp_nexus.Metrics
             }
         }
 
+        /// <summary>
+        /// Records a session event as a counter metric.
+        /// </summary>
+        /// <param name="eventType">The type of session event.</param>
+        /// <param name="additionalTags">Optional additional tags to associate with the metric.</param>
         public void RecordSessionEvent(string eventType, Dictionary<string, string>? additionalTags = null)
         {
             var tags = new Dictionary<string, string>
@@ -82,6 +122,10 @@ namespace mcp_nexus.Metrics
             IncrementCounter("session_events_total", 1, tags);
         }
 
+        /// <summary>
+        /// Gets a snapshot of all current metrics.
+        /// </summary>
+        /// <returns>A <see cref="MetricsSnapshot"/> containing all current metric values.</returns>
         public MetricsSnapshot GetSnapshot()
         {
             var snapshot = new MetricsSnapshot();
@@ -100,6 +144,10 @@ namespace mcp_nexus.Metrics
             return snapshot;
         }
 
+        /// <summary>
+        /// Reports current metrics to the logger.
+        /// </summary>
+        /// <param name="state">The timer state (unused).</param>
         private void ReportMetrics(object? state)
         {
             try
@@ -129,6 +177,9 @@ namespace mcp_nexus.Metrics
             }
         }
 
+        /// <summary>
+        /// Disposes of the metrics collector and stops periodic reporting.
+        /// </summary>
         public void Dispose()
         {
             if (!m_disposed)
@@ -181,6 +232,13 @@ namespace mcp_nexus.Metrics
             m_timestamp = DateTime.UtcNow;
         }
 
+        /// <summary>
+        /// Initializes a new metrics snapshot with specific values.
+        /// </summary>
+        /// <param name="timestamp">The timestamp for the snapshot.</param>
+        /// <param name="counters">The counter snapshots to include.</param>
+        /// <param name="histograms">The histogram snapshots to include.</param>
+        /// <param name="gauges">The gauge snapshots to include.</param>
         public MetricsSnapshot(DateTime timestamp, List<CounterSnapshot> counters, List<HistogramSnapshot> histograms, List<GaugeSnapshot> gauges)
         {
             m_timestamp = timestamp;
@@ -236,19 +294,38 @@ namespace mcp_nexus.Metrics
         #endregion
     }
 
+    /// <summary>
+    /// Thread-safe counter metric for counting events.
+    /// </summary>
     public class Counter
     {
         private long m_valueBits = 0; // Store double as long for Interlocked operations
 
+        /// <summary>
+        /// Gets the name of the counter.
+        /// </summary>
         public string Name { get; }
+        
+        /// <summary>
+        /// Gets the tags associated with the counter.
+        /// </summary>
         public Dictionary<string, string> Tags { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Counter"/> class.
+        /// </summary>
+        /// <param name="name">The name of the counter.</param>
+        /// <param name="tags">The tags to associate with the counter.</param>
         public Counter(string name, Dictionary<string, string> tags)
         {
             Name = name;
             Tags = tags;
         }
 
+        /// <summary>
+        /// Increments the counter by the specified value.
+        /// </summary>
+        /// <param name="value">The value to increment by. Default is 1.0.</param>
         public void Increment(double value = 1.0)
         {
             // Lock-free increment using Interlocked and double-to-long conversion
@@ -263,6 +340,10 @@ namespace mcp_nexus.Metrics
             while (Interlocked.CompareExchange(ref m_valueBits, newBits, initialBits) != initialBits);
         }
 
+        /// <summary>
+        /// Gets a snapshot of the current counter value.
+        /// </summary>
+        /// <returns>A <see cref="CounterSnapshot"/> containing the current counter state.</returns>
         public CounterSnapshot GetSnapshot()
         {
             var valueBits = Interlocked.Read(ref m_valueBits);
@@ -273,20 +354,39 @@ namespace mcp_nexus.Metrics
         }
     }
 
+    /// <summary>
+    /// Thread-safe histogram metric for recording value distributions.
+    /// </summary>
     public class Histogram
     {
         private readonly List<double> m_values = new();
         private readonly object m_lock = new();
 
+        /// <summary>
+        /// Gets the name of the histogram.
+        /// </summary>
         public string Name { get; }
+        
+        /// <summary>
+        /// Gets the tags associated with the histogram.
+        /// </summary>
         public Dictionary<string, string> Tags { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Histogram"/> class.
+        /// </summary>
+        /// <param name="name">The name of the histogram.</param>
+        /// <param name="tags">The tags to associate with the histogram.</param>
         public Histogram(string name, Dictionary<string, string> tags)
         {
             Name = name;
             Tags = tags;
         }
 
+        /// <summary>
+        /// Records a value in the histogram.
+        /// </summary>
+        /// <param name="value">The value to record.</param>
         public void Record(double value)
         {
             lock (m_lock)
@@ -301,6 +401,10 @@ namespace mcp_nexus.Metrics
             }
         }
 
+        /// <summary>
+        /// Gets a snapshot of the current histogram statistics.
+        /// </summary>
+        /// <returns>A <see cref="HistogramSnapshot"/> containing the current histogram statistics.</returns>
         public HistogramSnapshot GetSnapshot()
         {
             lock (m_lock)
@@ -325,20 +429,39 @@ namespace mcp_nexus.Metrics
         }
     }
 
+    /// <summary>
+    /// Thread-safe gauge metric for recording current values.
+    /// </summary>
     public class Gauge
     {
         private double m_value = 0;
         private readonly object m_lock = new();
 
+        /// <summary>
+        /// Gets the name of the gauge.
+        /// </summary>
         public string Name { get; }
+        
+        /// <summary>
+        /// Gets the tags associated with the gauge.
+        /// </summary>
         public Dictionary<string, string> Tags { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Gauge"/> class.
+        /// </summary>
+        /// <param name="name">The name of the gauge.</param>
+        /// <param name="tags">The tags to associate with the gauge.</param>
         public Gauge(string name, Dictionary<string, string> tags)
         {
             Name = name;
             Tags = tags;
         }
 
+        /// <summary>
+        /// Sets the current value of the gauge.
+        /// </summary>
+        /// <param name="value">The value to set.</param>
         public void Set(double value)
         {
             lock (m_lock)
@@ -347,6 +470,10 @@ namespace mcp_nexus.Metrics
             }
         }
 
+        /// <summary>
+        /// Gets a snapshot of the current gauge value.
+        /// </summary>
+        /// <returns>A <see cref="GaugeSnapshot"/> containing the current gauge state.</returns>
         public GaugeSnapshot GetSnapshot()
         {
             lock (m_lock)
@@ -400,6 +527,12 @@ namespace mcp_nexus.Metrics
             m_tags = new Dictionary<string, string>();
         }
 
+        /// <summary>
+        /// Initializes a new counter snapshot with specific values.
+        /// </summary>
+        /// <param name="name">The counter name.</param>
+        /// <param name="value">The counter value.</param>
+        /// <param name="tags">The counter tags.</param>
         public CounterSnapshot(string name, double value, Dictionary<string, string>? tags = null)
         {
             m_name = name ?? string.Empty;
@@ -508,11 +641,11 @@ namespace mcp_nexus.Metrics
         #region Constructor
 
         /// <summary>
-        /// Initializes a new gauge snapshot
+        /// Initializes a new gauge snapshot with specific values.
         /// </summary>
-        /// <param name="name">Gauge name</param>
-        /// <param name="value">Gauge value</param>
-        /// <param name="tags">Gauge tags</param>
+        /// <param name="name">The gauge name.</param>
+        /// <param name="value">The gauge value.</param>
+        /// <param name="tags">The gauge tags.</param>
         public GaugeSnapshot(string name, double value, Dictionary<string, string>? tags = null)
         {
             m_name = name ?? string.Empty;

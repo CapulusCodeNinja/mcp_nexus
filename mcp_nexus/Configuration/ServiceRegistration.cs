@@ -18,8 +18,12 @@ namespace mcp_nexus.Configuration
     public static class ServiceRegistration
     {
         /// <summary>
-        /// Registers all application services with the DI container
+        /// Registers all application services with the DI container.
+        /// Configures core services, advanced services, recovery services, and tools.
         /// </summary>
+        /// <param name="services">The service collection to register services with.</param>
+        /// <param name="configuration">The application configuration.</param>
+        /// <param name="customCdbPath">Optional custom path to the CDB executable.</param>
         public static void RegisterServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath)
         {
             Console.Error.WriteLine("Registering services...");

@@ -5,12 +5,39 @@ namespace mcp_nexus.Recovery
     /// </summary>
     public class RecoveryConfiguration
     {
+        /// <summary>
+        /// Gets the timeout for command cancellation operations.
+        /// </summary>
         public TimeSpan CancellationTimeout { get; }
+        
+        /// <summary>
+        /// Gets the delay before restarting a CDB session.
+        /// </summary>
         public TimeSpan RestartDelay { get; }
+        
+        /// <summary>
+        /// Gets the interval between health checks.
+        /// </summary>
         public TimeSpan HealthCheckInterval { get; }
+        
+        /// <summary>
+        /// Gets the maximum number of recovery attempts.
+        /// </summary>
         public int MaxRecoveryAttempts { get; }
+        
+        /// <summary>
+        /// Gets the cooldown period between recovery attempts.
+        /// </summary>
         public TimeSpan RecoveryAttemptCooldown { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RecoveryConfiguration"/> class.
+        /// </summary>
+        /// <param name="cancellationTimeout">The timeout for command cancellation operations.</param>
+        /// <param name="restartDelay">The delay before restarting a CDB session.</param>
+        /// <param name="healthCheckInterval">The interval between health checks.</param>
+        /// <param name="maxRecoveryAttempts">The maximum number of recovery attempts.</param>
+        /// <param name="recoveryAttemptCooldown">The cooldown period between recovery attempts.</param>
         public RecoveryConfiguration(
             TimeSpan? cancellationTimeout = null,
             TimeSpan? restartDelay = null,

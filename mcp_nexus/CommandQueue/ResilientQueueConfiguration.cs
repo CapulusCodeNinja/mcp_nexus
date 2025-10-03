@@ -7,15 +7,57 @@ namespace mcp_nexus.CommandQueue
     /// </summary>
     public class ResilientQueueConfiguration
     {
+        /// <summary>
+        /// Gets the session identifier.
+        /// </summary>
         public string SessionId { get; }
+        
+        /// <summary>
+        /// Gets the default timeout for command execution.
+        /// </summary>
         public TimeSpan DefaultCommandTimeout { get; }
+        
+        /// <summary>
+        /// Gets the timeout for complex commands.
+        /// </summary>
         public TimeSpan ComplexCommandTimeout { get; }
+        
+        /// <summary>
+        /// Gets the maximum allowed timeout for any command.
+        /// </summary>
         public TimeSpan MaxCommandTimeout { get; }
+        
+        /// <summary>
+        /// Gets the cleanup interval for expired commands.
+        /// </summary>
         public TimeSpan CleanupInterval { get; }
+        
+        /// <summary>
+        /// Gets the retention time for completed commands.
+        /// </summary>
         public TimeSpan CommandRetentionTime { get; }
+        
+        /// <summary>
+        /// Gets the interval for sending heartbeat notifications.
+        /// </summary>
         public TimeSpan HeartbeatInterval { get; }
+        
+        /// <summary>
+        /// Gets the interval for checking recovery status.
+        /// </summary>
         public TimeSpan RecoveryCheckInterval { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResilientQueueConfiguration"/> class.
+        /// </summary>
+        /// <param name="sessionId">The session identifier.</param>
+        /// <param name="defaultCommandTimeout">The default timeout for command execution.</param>
+        /// <param name="complexCommandTimeout">The timeout for complex commands.</param>
+        /// <param name="maxCommandTimeout">The maximum allowed timeout for any command.</param>
+        /// <param name="cleanupInterval">The cleanup interval for expired commands.</param>
+        /// <param name="commandRetentionTime">The retention time for completed commands.</param>
+        /// <param name="heartbeatInterval">The interval for sending heartbeat notifications.</param>
+        /// <param name="recoveryCheckInterval">The interval for checking recovery status.</param>
         public ResilientQueueConfiguration(
             string sessionId = "unknown",
             TimeSpan? defaultCommandTimeout = null,

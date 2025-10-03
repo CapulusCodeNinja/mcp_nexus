@@ -7,13 +7,20 @@ using System.Threading.Tasks;
 namespace mcp_nexus.Infrastructure
 {
     /// <summary>
-    /// Manages backup operations for the MCP Nexus service
+    /// Manages backup operations for the MCP Nexus service.
+    /// Provides comprehensive backup creation, restoration, listing, and cleanup capabilities.
     /// </summary>
     public class BackupManager
     {
         private readonly ILogger<BackupManager> m_Logger;
         private readonly string m_BackupDirectory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BackupManager"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording backup operations and errors.</param>
+        /// <param name="backupDirectory">The directory path for storing backups. If null, uses the default ApplicationData path.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public BackupManager(ILogger<BackupManager> logger, string? backupDirectory = null)
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -21,11 +28,18 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Creates a backup of the specified files
+        /// Creates a backup of the specified files asynchronously.
+        /// Copies all source files to a timestamped backup directory.
         /// </summary>
-        /// <param name="sourceFiles">Files to backup</param>
-        /// <param name="backupName">Name for the backup</param>
-        /// <returns>Path to the created backup</returns>
+        /// <param name="sourceFiles">The collection of file paths to backup.</param>
+        /// <param name="backupName">The name for the backup. If null, uses a default timestamped name.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the path to the created backup directory.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="sourceFiles"/> is null.</exception>
+        /// <exception cref="DirectoryNotFoundException">Thrown when the backup directory cannot be created.</exception>
+        /// <exception cref="UnauthorizedAccessException">Thrown when access to source files or backup directory is denied.</exception>
         public async Task<string> CreateBackupAsync(IEnumerable<string> sourceFiles, string? backupName = null)
         {
             try
@@ -62,11 +76,17 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Restores files from a backup
+        /// Restores files from a backup asynchronously.
+        /// Copies all files from the backup directory to the destination directory.
         /// </summary>
-        /// <param name="backupPath">Path to the backup</param>
-        /// <param name="destinationDirectory">Directory to restore files to</param>
-        /// <returns>True if restore was successful</returns>
+        /// <param name="backupPath">The path to the backup directory containing the files to restore.</param>
+        /// <param name="destinationDirectory">The directory path where the files will be restored.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the restore operation completed successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="backupPath"/> or <paramref name="destinationDirectory"/> is null or empty.</exception>
+        /// <exception cref="DirectoryNotFoundException">Thrown when the backup directory does not exist.</exception>
         public async Task<bool> RestoreBackupAsync(string backupPath, string destinationDirectory)
         {
             try
@@ -103,9 +123,13 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Lists all available backups
+        /// Lists all available backups asynchronously.
+        /// Returns the paths to all backup directories in the backup directory.
         /// </summary>
-        /// <returns>List of backup directories</returns>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns a collection of backup directory paths.
+        /// </returns>
         public async Task<IEnumerable<string>> ListBackupsAsync()
         {
             try
@@ -128,10 +152,15 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Deletes old backups based on retention policy
+        /// Deletes old backups based on retention policy asynchronously.
+        /// Removes backup directories that are older than the specified retention period.
         /// </summary>
-        /// <param name="retentionDays">Number of days to retain backups</param>
-        /// <returns>Number of backups deleted</returns>
+        /// <param name="retentionDays">The number of days to retain backups. Default is 30 days.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the number of backup directories that were deleted.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="retentionDays"/> is negative.</exception>
         public async Task<int> CleanupOldBackupsAsync(int retentionDays = 30)
         {
             try
@@ -168,23 +197,49 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Gets the backup directory path
+        /// Gets the backup directory path.
         /// </summary>
         public string BackupDirectory => m_BackupDirectory;
 
-        // Static methods for compatibility with existing code
+        /// <summary>
+        /// Creates a backup asynchronously using the provided logger (static version for compatibility).
+        /// This is a static method that can be called without instantiating the class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording backup operations and errors.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the path to the created backup directory.
+        /// </returns>
         public static async Task<string> CreateBackupAsync(ILogger logger)
         {
             var backupManager = new BackupManager(Microsoft.Extensions.Logging.Abstractions.NullLogger<BackupManager>.Instance);
             return await backupManager.CreateBackupAsync(new List<string>());
         }
 
+        /// <summary>
+        /// Cleans up old backups asynchronously using the provided logger (static version for compatibility).
+        /// This is a static method that can be called without instantiating the class.
+        /// </summary>
+        /// <param name="retentionDays">The number of days to retain backups.</param>
+        /// <param name="logger">The logger instance for recording cleanup operations and errors.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the number of backup directories that were deleted.
+        /// </returns>
         public static async Task<int> CleanupOldBackupsAsync(int retentionDays, ILogger logger)
         {
             var backupManager = new BackupManager(Microsoft.Extensions.Logging.Abstractions.NullLogger<BackupManager>.Instance);
             return await backupManager.CleanupOldBackupsAsync(retentionDays);
         }
 
+        /// <summary>
+        /// Gets information about a backup directory (static version for compatibility).
+        /// This is a static method that can be called without instantiating the class.
+        /// </summary>
+        /// <param name="backupPath">The path to the backup directory to get information for.</param>
+        /// <returns>
+        /// An object containing backup information including path, creation time, and size.
+        /// </returns>
         public static object GetBackupInfo(string backupPath)
         {
             // Placeholder implementation

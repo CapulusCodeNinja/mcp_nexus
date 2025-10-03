@@ -27,6 +27,16 @@ namespace mcp_nexus.Session
         private long m_sessionCounter = 0;
         private volatile bool m_disposed = false;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ThreadSafeSessionManager"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording session management operations and errors.</param>
+        /// <param name="serviceProvider">The service provider for resolving dependencies.</param>
+        /// <param name="loggerFactory">The logger factory for creating component loggers.</param>
+        /// <param name="notificationService">The notification service for publishing session events.</param>
+        /// <param name="config">Optional session configuration options.</param>
+        /// <param name="cdbOptions">Optional CDB session options.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/>, <paramref name="serviceProvider"/>, <paramref name="loggerFactory"/>, or <paramref name="notificationService"/> is null.</exception>
         public ThreadSafeSessionManager(
             ILogger<ThreadSafeSessionManager> logger,
             IServiceProvider serviceProvider,

@@ -4,7 +4,8 @@ using System.Threading.Channels;
 namespace mcp_nexus.Debugger
 {
     /// <summary>
-    /// Handles command execution and output reading for CDB debugger sessions
+    /// Handles command execution and output reading for CDB debugger sessions.
+    /// Provides thread-safe, asynchronous command execution with proper timeout handling and output parsing.
     /// </summary>
     public class CdbCommandExecutor : IDisposable
     {
@@ -16,6 +17,13 @@ namespace mcp_nexus.Debugger
         private readonly SemaphoreSlim m_streamAccessSemaphore = new(1, 1); // Add stream access synchronization for async operations
         private CancellationTokenSource? m_currentOperationCts;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CdbCommandExecutor"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording command execution and errors.</param>
+        /// <param name="config">The CDB session configuration containing timeout and other settings.</param>
+        /// <param name="outputParser">The output parser for analyzing CDB command responses.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
         public CdbCommandExecutor(
             ILogger<CdbCommandExecutor> logger,
             CdbSessionConfiguration config,
@@ -27,8 +35,19 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Executes a command in the CDB session and returns the output (TRUE ASYNC)
+        /// Executes a command in the CDB session and returns the output asynchronously.
+        /// This method ensures thread-safe execution by using semaphores and proper timeout handling.
         /// </summary>
+        /// <param name="command">The CDB command to execute. Cannot be null or empty.</param>
+        /// <param name="processManager">The CDB process manager providing access to the debugger process streams.</param>
+        /// <param name="externalCancellationToken">Optional cancellation token for external cancellation.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the command output as a string, or an error message if execution fails.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="command"/> is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no active debugging session is available.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
         public async Task<string> ExecuteCommandAsync(
             string command,
             CdbProcessManager processManager,
@@ -95,7 +114,8 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Cancels the currently executing command
+        /// Cancels the currently executing command operation.
+        /// This method is thread-safe and can be called from any thread.
         /// </summary>
         public void CancelCurrentOperation()
         {
@@ -536,7 +556,8 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Disposes of resources
+        /// Disposes of resources used by the command executor.
+        /// This method releases semaphores and other unmanaged resources.
         /// </summary>
         public void Dispose()
         {

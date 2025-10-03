@@ -15,8 +15,11 @@ namespace mcp_nexus.Configuration
     public static class HttpServerSetup
     {
         /// <summary>
-        /// Configures services for HTTP mode
+        /// Configures services for HTTP mode.
+        /// Sets up server limits, CORS, rate limiting, JSON options, and MCP server configuration.
         /// </summary>
+        /// <param name="services">The service collection to configure.</param>
+        /// <param name="configuration">The application configuration.</param>
         public static void ConfigureHttpServices(IServiceCollection services, IConfiguration configuration)
         {
             Console.WriteLine("Configuring MCP server for HTTP...");

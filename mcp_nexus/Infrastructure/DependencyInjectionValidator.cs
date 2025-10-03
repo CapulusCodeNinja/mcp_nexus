@@ -9,18 +9,30 @@ using mcp_nexus.Notifications;
 namespace mcp_nexus.Infrastructure
 {
     /// <summary>
-    /// Validates dependency injection configuration
+    /// Validates dependency injection configuration for completeness and correctness.
+    /// Provides comprehensive validation of service registrations, circular dependencies, lifetime mismatches, and missing dependencies.
     /// </summary>
     public class DependencyInjectionValidator
     {
         private readonly IServiceCollection m_Services;
         private readonly List<ValidationResult> m_ValidationResults = new();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DependencyInjectionValidator"/> class.
+        /// </summary>
+        /// <param name="services">The service collection to validate.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> is null.</exception>
         public DependencyInjectionValidator(IServiceCollection services)
         {
             m_Services = services ?? throw new ArgumentNullException(nameof(services));
         }
 
+        /// <summary>
+        /// Validates the entire dependency injection configuration.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="ValidationResult"/> containing the validation results and any issues found.
+        /// </returns>
         public ValidationResult Validate()
         {
             m_ValidationResults.Clear();
@@ -36,6 +48,14 @@ namespace mcp_nexus.Infrastructure
             };
         }
 
+        /// <summary>
+        /// Validates a specific service registration.
+        /// </summary>
+        /// <param name="serviceType">The service type to validate.</param>
+        /// <param name="implementationType">The implementation type to validate.</param>
+        /// <returns>
+        /// A <see cref="ValidationResult"/> containing the validation results for the specific registration.
+        /// </returns>
         public ValidationResult ValidateServiceRegistration(Type serviceType, Type implementationType)
         {
             m_ValidationResults.Clear();
@@ -80,6 +100,15 @@ namespace mcp_nexus.Infrastructure
             };
         }
 
+        /// <summary>
+        /// Validates service registration using a service provider.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider to validate.</param>
+        /// <param name="logger">The logger for recording validation operations.</param>
+        /// <returns>
+        /// <c>true</c> if the service registration is valid; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="serviceProvider"/> or <paramref name="logger"/> is null.</exception>
         public static bool ValidateServiceRegistration(IServiceProvider serviceProvider, ILogger logger)
         {
             if (serviceProvider == null)
@@ -104,6 +133,15 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Validates critical services in the service provider.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider to validate.</param>
+        /// <param name="logger">The logger for recording validation operations.</param>
+        /// <returns>
+        /// A <see cref="ValidationResult"/> containing the validation results for critical services.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="serviceProvider"/> or <paramref name="logger"/> is null.</exception>
         public static ValidationResult ValidateCriticalServices(IServiceProvider serviceProvider, ILogger logger)
         {
             if (serviceProvider == null)
@@ -285,19 +323,56 @@ namespace mcp_nexus.Infrastructure
         }
     }
 
+    /// <summary>
+    /// Represents the result of a dependency injection validation operation.
+    /// Contains validation status, messages, and nested validation results.
+    /// </summary>
     public class ValidationResult
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether the validation passed.
+        /// </summary>
         public bool IsValid { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of nested validation results.
+        /// </summary>
         public List<ValidationResult> Results { get; set; } = new();
+
+        /// <summary>
+        /// Gets or sets the severity level of the validation result.
+        /// </summary>
         public ValidationSeverity Severity { get; set; }
+
+        /// <summary>
+        /// Gets or sets the validation message describing the result.
+        /// </summary>
         public string Message { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the name of the service type that was validated.
+        /// </summary>
         public string ServiceType { get; set; } = string.Empty;
     }
 
+    /// <summary>
+    /// Specifies the severity level of a validation result.
+    /// </summary>
     public enum ValidationSeverity
     {
+        /// <summary>
+        /// Informational message with no impact on validation.
+        /// </summary>
         Info,
+
+        /// <summary>
+        /// Warning message indicating a potential issue.
+        /// </summary>
         Warning,
+
+        /// <summary>
+        /// Error message indicating a validation failure.
+        /// </summary>
         Error
     }
 }

@@ -23,6 +23,14 @@ namespace mcp_nexus.CommandQueue
         // Cleanup timer
         private readonly Timer m_cleanupTimer;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BasicCommandProcessor"/> class.
+        /// </summary>
+        /// <param name="cdbSession">The CDB session for executing commands.</param>
+        /// <param name="logger">The logger instance for recording processing operations.</param>
+        /// <param name="config">The basic queue configuration settings.</param>
+        /// <param name="activeCommands">The concurrent dictionary for tracking active commands.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
         public BasicCommandProcessor(
             ICdbSession cdbSession,
             ILogger<BasicCommandProcessor> logger,

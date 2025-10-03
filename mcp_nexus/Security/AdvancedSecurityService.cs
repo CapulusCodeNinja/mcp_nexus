@@ -13,6 +13,11 @@ namespace mcp_nexus.Security
         private readonly Regex m_pathTraversalRegex;
         private readonly Regex m_sqlInjectionRegex;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AdvancedSecurityService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording security operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public AdvancedSecurityService(ILogger<AdvancedSecurityService> logger)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -35,6 +40,17 @@ namespace mcp_nexus.Security
             m_logger.LogInformation("🔒 AdvancedSecurityService initialized");
         }
 
+        /// <summary>
+        /// Validates a command for security threats and dangerous patterns.
+        /// Checks for dangerous commands, path traversal attempts, SQL injection patterns, and command length limits.
+        /// </summary>
+        /// <param name="command">The command string to validate.</param>
+        /// <returns>
+        /// A <see cref="SecurityValidationResult"/> indicating whether the command is safe to execute.
+        /// Returns <see cref="SecurityValidationResult.Valid()"/> if the command passes all security checks;
+        /// otherwise, returns <see cref="SecurityValidationResult.Invalid(string)"/> with details about the security issues found.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="command"/> is null, empty, or contains only whitespace.</exception>
         public SecurityValidationResult ValidateCommand(string command)
         {
             if (string.IsNullOrWhiteSpace(command))
@@ -83,6 +99,17 @@ namespace mcp_nexus.Security
             return SecurityValidationResult.Valid();
         }
 
+        /// <summary>
+        /// Validates a file path for security threats and access restrictions.
+        /// Checks for path traversal attempts, validates allowed root directories, and verifies file extensions.
+        /// </summary>
+        /// <param name="filePath">The file path string to validate.</param>
+        /// <returns>
+        /// A <see cref="SecurityValidationResult"/> indicating whether the file path is safe to access.
+        /// Returns <see cref="SecurityValidationResult.Valid()"/> if the path passes all security checks;
+        /// otherwise, returns <see cref="SecurityValidationResult.Invalid(string)"/> with details about the security issues found.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="filePath"/> is null, empty, or contains only whitespace.</exception>
         public SecurityValidationResult ValidateFilePath(string filePath)
         {
             if (string.IsNullOrWhiteSpace(filePath))
@@ -129,6 +156,17 @@ namespace mcp_nexus.Security
             return SecurityValidationResult.Valid();
         }
 
+        /// <summary>
+        /// Validates a session ID for proper format and security compliance.
+        /// Ensures the session ID matches the expected pattern and is not empty or malformed.
+        /// </summary>
+        /// <param name="sessionId">The session ID string to validate.</param>
+        /// <returns>
+        /// A <see cref="SecurityValidationResult"/> indicating whether the session ID is valid.
+        /// Returns <see cref="SecurityValidationResult.Valid()"/> if the session ID passes validation;
+        /// otherwise, returns <see cref="SecurityValidationResult.Invalid(string)"/> with details about the validation failure.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="sessionId"/> is null, empty, or contains only whitespace.</exception>
         public SecurityValidationResult ValidateSessionId(string sessionId)
         {
             if (string.IsNullOrWhiteSpace(sessionId))
@@ -149,18 +187,44 @@ namespace mcp_nexus.Security
         }
     }
 
+    /// <summary>
+    /// Represents the result of a security validation operation.
+    /// Contains information about whether the validation passed and any error messages.
+    /// </summary>
     public class SecurityValidationResult
     {
+        /// <summary>
+        /// Gets a value indicating whether the validation passed.
+        /// </summary>
         public bool IsValid { get; private set; }
+        
+        /// <summary>
+        /// Gets the error message if validation failed, or null if validation passed.
+        /// </summary>
         public string? ErrorMessage { get; private set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SecurityValidationResult"/> class.
+        /// </summary>
+        /// <param name="isValid">Whether the validation passed.</param>
+        /// <param name="errorMessage">The error message if validation failed, or null if validation passed.</param>
         private SecurityValidationResult(bool isValid, string? errorMessage = null)
         {
             IsValid = isValid;
             ErrorMessage = errorMessage;
         }
 
+        /// <summary>
+        /// Creates a valid security validation result.
+        /// </summary>
+        /// <returns>A <see cref="SecurityValidationResult"/> indicating successful validation.</returns>
         public static SecurityValidationResult Valid() => new(true);
+        
+        /// <summary>
+        /// Creates an invalid security validation result with the specified error message.
+        /// </summary>
+        /// <param name="errorMessage">The error message describing why validation failed.</param>
+        /// <returns>A <see cref="SecurityValidationResult"/> indicating failed validation.</returns>
         public static SecurityValidationResult Invalid(string errorMessage) => new(false, errorMessage);
     }
 }

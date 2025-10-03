@@ -24,8 +24,17 @@ using mcp_nexus.Configuration;
 
 namespace mcp_nexus
 {
+    /// <summary>
+    /// Main entry point for the MCP Nexus application.
+    /// Handles both HTTP and stdio modes, service installation, and application lifecycle management.
+    /// </summary>
     public class Program
     {
+        /// <summary>
+        /// Main entry point for the application.
+        /// </summary>
+        /// <param name="args">Command line arguments.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private static async Task Main(string[] args)
         {
             // IMMEDIATE startup logging to track how far we get

@@ -6,7 +6,8 @@ using Microsoft.Extensions.Logging;
 namespace mcp_nexus.Infrastructure
 {
     /// <summary>
-    /// Orchestrates the installation of Windows services
+    /// Orchestrates the installation of Windows services.
+    /// Provides comprehensive service installation, uninstallation, and management capabilities.
     /// </summary>
     [SupportedOSPlatform("windows")]
     public class ServiceInstallationOrchestrator
@@ -16,6 +17,14 @@ namespace mcp_nexus.Infrastructure
         private readonly ServiceRegistryManager m_RegistryManager;
         private readonly OperationLogger m_OperationLogger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ServiceInstallationOrchestrator"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording orchestration operations and errors.</param>
+        /// <param name="fileManager">The service file manager for handling file operations.</param>
+        /// <param name="registryManager">The service registry manager for handling registry operations.</param>
+        /// <param name="operationLogger">The operation logger for tracking service operations.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
         public ServiceInstallationOrchestrator(
             ILogger<ServiceInstallationOrchestrator> logger,
             ServiceFileManager fileManager,
@@ -29,13 +38,18 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Installs a Windows service
+        /// Installs a Windows service asynchronously.
+        /// Copies service files, creates registry entries, and configures the service for operation.
         /// </summary>
-        /// <param name="serviceName">Name of the service</param>
-        /// <param name="executablePath">Path to the service executable</param>
-        /// <param name="displayName">Display name for the service</param>
-        /// <param name="description">Service description</param>
-        /// <returns>True if installation was successful</returns>
+        /// <param name="serviceName">The name of the service to install.</param>
+        /// <param name="executablePath">The path to the service executable file.</param>
+        /// <param name="displayName">The display name for the service in the Windows Services console.</param>
+        /// <param name="description">The description of the service.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the service was installed successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when any of the string parameters are null or empty.</exception>
         [SupportedOSPlatform("windows")]
         public async Task<bool> InstallServiceAsync(string serviceName, string executablePath, string displayName, string description)
         {
@@ -79,10 +93,14 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Installs a Windows service (static version for test compatibility)
+        /// Installs a Windows service asynchronously (static version for test compatibility).
+        /// This is a placeholder implementation for testing purposes.
         /// </summary>
-        /// <param name="logger">Logger instance</param>
-        /// <returns>True if installation was successful</returns>
+        /// <param name="logger">The logger instance for recording installation operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the service was installed successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> InstallServiceStaticAsync(ILogger? logger = null)
         {
             try
@@ -99,11 +117,16 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Uninstalls a Windows service
+        /// Uninstalls a Windows service asynchronously.
+        /// Removes registry entries and deletes service files from the system.
         /// </summary>
-        /// <param name="serviceName">Name of the service</param>
-        /// <param name="executablePath">Path to the service executable</param>
-        /// <returns>True if uninstallation was successful</returns>
+        /// <param name="serviceName">The name of the service to uninstall.</param>
+        /// <param name="executablePath">The path to the service executable file.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the service was uninstalled successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="serviceName"/> or <paramref name="executablePath"/> is null or empty.</exception>
         [SupportedOSPlatform("windows")]
         public async Task<bool> UninstallServiceAsync(string serviceName, string executablePath)
         {
@@ -139,13 +162,18 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Updates a Windows service
+        /// Updates a Windows service asynchronously.
+        /// Uninstalls the existing service and installs the new version.
         /// </summary>
-        /// <param name="serviceName">Name of the service</param>
-        /// <param name="executablePath">Path to the service executable</param>
-        /// <param name="displayName">Display name for the service</param>
-        /// <param name="description">Service description</param>
-        /// <returns>True if update was successful</returns>
+        /// <param name="serviceName">The name of the service to update.</param>
+        /// <param name="executablePath">The path to the new service executable file.</param>
+        /// <param name="displayName">The new display name for the service in the Windows Services console.</param>
+        /// <param name="description">The new description of the service.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the service was updated successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when any of the string parameters are null or empty.</exception>
         public async Task<bool> UpdateServiceAsync(string serviceName, string executablePath, string displayName, string description)
         {
             try
@@ -180,11 +208,16 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Validates service installation
+        /// Validates service installation asynchronously.
+        /// Checks if the service exists in the registry and validates service files.
         /// </summary>
-        /// <param name="serviceName">Name of the service</param>
-        /// <param name="executablePath">Path to the service executable</param>
-        /// <returns>True if service installation is valid</returns>
+        /// <param name="serviceName">The name of the service to validate.</param>
+        /// <param name="executablePath">The path to the service executable file.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the service installation is valid; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="serviceName"/> or <paramref name="executablePath"/> is null or empty.</exception>
         [SupportedOSPlatform("windows")]
         public async Task<bool> ValidateInstallationAsync(string serviceName, string executablePath)
         {

@@ -3,10 +3,30 @@ using mcp_nexus.Notifications;
 
 namespace mcp_nexus.Recovery
 {
+    /// <summary>
+    /// Interface for CDB session recovery operations.
+    /// Provides methods for recovering stuck sessions and restarting sessions.
+    /// </summary>
     public interface ICdbSessionRecoveryService
     {
+        /// <summary>
+        /// Recovers a stuck session asynchronously.
+        /// </summary>
+        /// <param name="reason">The reason for the recovery operation.</param>
+        /// <returns>A task that represents the asynchronous operation and contains the recovery result.</returns>
         Task<bool> RecoverStuckSession(string reason);
+        
+        /// <summary>
+        /// Forces a session restart asynchronously.
+        /// </summary>
+        /// <param name="reason">The reason for the restart operation.</param>
+        /// <returns>A task that represents the asynchronous operation and contains the restart result.</returns>
         Task<bool> ForceRestartSession(string reason);
+        
+        /// <summary>
+        /// Checks if the session is healthy.
+        /// </summary>
+        /// <returns><c>true</c> if the session is healthy; otherwise, <c>false</c>.</returns>
         bool IsSessionHealthy();
     }
 
@@ -24,6 +44,13 @@ namespace mcp_nexus.Recovery
         private readonly SessionHealthMonitor m_healthMonitor;
         private readonly RecoveryOrchestrator m_orchestrator;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CdbSessionRecoveryService"/> class.
+        /// </summary>
+        /// <param name="cdbSession">The CDB session to monitor and recover.</param>
+        /// <param name="logger">The logger instance for recording recovery operations and errors.</param>
+        /// <param name="cancelAllCommandsCallback">Callback function to cancel all commands.</param>
+        /// <param name="notificationService">Optional notification service for publishing recovery events.</param>
         public CdbSessionRecoveryService(
             ICdbSession cdbSession,
             ILogger<CdbSessionRecoveryService> logger,

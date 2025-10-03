@@ -7,17 +7,32 @@ using Microsoft.Extensions.Logging;
 namespace mcp_nexus.Infrastructure
 {
     /// <summary>
-    /// Manages file operations for the service
+    /// Manages file operations for the service.
+    /// Provides methods for copying, deleting, creating directories, and querying file information.
     /// </summary>
     public class FileOperationsManager
     {
         private readonly ILogger<FileOperationsManager> m_Logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileOperationsManager"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording file operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public FileOperationsManager(ILogger<FileOperationsManager> logger)
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        /// <summary>
+        /// Copies a file from the source path to the destination path asynchronously.
+        /// </summary>
+        /// <param name="sourcePath">The path of the source file to copy.</param>
+        /// <param name="destinationPath">The path where the file should be copied.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the copy operation was successful; otherwise, <c>false</c>.
+        /// </returns>
         public async Task<bool> CopyFileAsync(string sourcePath, string destinationPath)
         {
             try
@@ -46,6 +61,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Deletes a file asynchronously.
+        /// </summary>
+        /// <param name="filePath">The path of the file to delete.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the delete operation was successful; otherwise, <c>false</c>.
+        /// </returns>
         public async Task<bool> DeleteFileAsync(string filePath)
         {
             try
@@ -65,6 +88,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Creates a directory asynchronously.
+        /// </summary>
+        /// <param name="directoryPath">The path of the directory to create.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the directory creation was successful; otherwise, <c>false</c>.
+        /// </returns>
         public async Task<bool> CreateDirectoryAsync(string directoryPath)
         {
             try
@@ -84,11 +115,27 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Checks if a file exists asynchronously.
+        /// </summary>
+        /// <param name="filePath">The path of the file to check.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the file exists; otherwise, <c>false</c>.
+        /// </returns>
         public async Task<bool> FileExistsAsync(string filePath)
         {
             return await Task.FromResult(File.Exists(filePath));
         }
 
+        /// <summary>
+        /// Gets the size of a file in bytes asynchronously.
+        /// </summary>
+        /// <param name="filePath">The path of the file to get the size for.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the file size in bytes, or 0 if the file doesn't exist or an error occurs.
+        /// </returns>
         public async Task<long> GetFileSizeAsync(string filePath)
         {
             try
@@ -107,6 +154,15 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Gets all files in a directory matching the specified pattern asynchronously.
+        /// </summary>
+        /// <param name="directoryPath">The path of the directory to search.</param>
+        /// <param name="pattern">The search pattern to match files. Default is "*" (all files).</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns an array of file paths, or an empty array if the directory doesn't exist or an error occurs.
+        /// </returns>
         public async Task<string[]> GetFilesAsync(string directoryPath, string pattern = "*")
         {
             try

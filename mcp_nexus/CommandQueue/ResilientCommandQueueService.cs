@@ -23,6 +23,16 @@ namespace mcp_nexus.CommandQueue
         private readonly ResilientCommandProcessor m_processor;
         private readonly IMcpNotificationService? m_notificationService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResilientCommandQueueService"/> class.
+        /// </summary>
+        /// <param name="cdbSession">The CDB session for executing commands.</param>
+        /// <param name="logger">The logger instance for recording queue operations.</param>
+        /// <param name="loggerFactory">The logger factory for creating component loggers.</param>
+        /// <param name="timeoutService">The timeout service for managing command timeouts.</param>
+        /// <param name="recoveryService">The recovery service for session recovery operations.</param>
+        /// <param name="notificationService">Optional notification service for publishing queue events.</param>
+        /// <param name="sessionId">Optional session identifier for the queue service.</param>
         public ResilientCommandQueueService(
             ICdbSession cdbSession,
             ILogger<ResilientCommandQueueService> logger,

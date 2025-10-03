@@ -24,6 +24,13 @@ namespace mcp_nexus.CommandQueue
         // Cleanup management
         private readonly Timer m_cleanupTimer;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResilientCommandProcessor"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording processing operations.</param>
+        /// <param name="recoveryManager">The recovery manager for handling command failures.</param>
+        /// <param name="config">The resilient queue configuration settings.</param>
+        /// <param name="notificationService">Optional notification service for publishing processing events.</param>
         public ResilientCommandProcessor(
             ILogger<ResilientCommandProcessor> logger,
             CommandRecoveryManager recoveryManager,

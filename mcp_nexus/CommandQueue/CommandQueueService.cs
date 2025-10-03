@@ -19,6 +19,13 @@ namespace mcp_nexus.CommandQueue
         private readonly BasicQueueConfiguration m_config;
         private readonly BasicCommandProcessor m_processor;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandQueueService"/> class.
+        /// </summary>
+        /// <param name="cdbSession">The CDB session for executing commands.</param>
+        /// <param name="logger">The logger instance for recording queue operations.</param>
+        /// <param name="loggerFactory">The logger factory for creating component loggers.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public CommandQueueService(ICdbSession cdbSession, ILogger<CommandQueueService> logger, ILoggerFactory loggerFactory)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));

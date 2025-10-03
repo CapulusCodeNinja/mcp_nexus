@@ -7,12 +7,18 @@ using Microsoft.Extensions.Logging;
 namespace mcp_nexus.Infrastructure
 {
     /// <summary>
-    /// Builds projects for deployment
+    /// Builds projects for deployment.
+    /// Provides methods for building, publishing, and validating .NET projects using dotnet commands.
     /// </summary>
     public class ProjectBuilder
     {
         private readonly ILogger<ProjectBuilder> m_Logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ProjectBuilder"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording build operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public ProjectBuilder(ILogger<ProjectBuilder> logger)
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));

@@ -22,6 +22,16 @@ namespace mcp_nexus.Session
         private volatile bool m_disposed = false;
         private DateTime m_lastHealthLogTime = DateTime.UtcNow;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SessionMonitoringService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording monitoring operations and errors.</param>
+        /// <param name="notificationService">The notification service for publishing monitoring events.</param>
+        /// <param name="config">The session manager configuration settings.</param>
+        /// <param name="sessions">The concurrent dictionary containing active sessions.</param>
+        /// <param name="lifecycleManager">The session lifecycle manager for managing session operations.</param>
+        /// <param name="shutdownCts">The cancellation token source for shutdown operations.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
         public SessionMonitoringService(
             ILogger logger,
             IMcpNotificationService notificationService,

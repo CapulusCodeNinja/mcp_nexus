@@ -3,10 +3,11 @@ using System.Collections.Concurrent;
 namespace mcp_nexus.Caching
 {
     /// <summary>
-    /// Manages cache eviction policies including LRU and memory pressure handling
+    /// Manages cache eviction policies including LRU and memory pressure handling.
+    /// Provides intelligent cache eviction based on memory usage and access patterns.
     /// </summary>
-    /// <typeparam name="TKey">The type of the cache key</typeparam>
-    /// <typeparam name="TValue">The type of the cache value</typeparam>
+    /// <typeparam name="TKey">The type of the cache key.</typeparam>
+    /// <typeparam name="TValue">The type of the cache value.</typeparam>
     public class CacheEvictionManager<TKey, TValue> where TKey : notnull
     {
         private readonly ILogger m_logger;
@@ -14,6 +15,13 @@ namespace mcp_nexus.Caching
         private readonly ConcurrentDictionary<TKey, CacheEntry<TValue>> m_cache;
         private readonly Timer m_cleanupTimer;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CacheEvictionManager{TKey, TValue}"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording eviction operations and errors.</param>
+        /// <param name="config">The cache configuration settings.</param>
+        /// <param name="cache">The thread-safe cache dictionary to manage.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
         public CacheEvictionManager(
             ILogger logger,
             CacheConfiguration config,
@@ -28,7 +36,8 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Checks memory pressure and triggers eviction if necessary
+        /// Checks memory pressure and triggers eviction if necessary.
+        /// This method monitors current memory usage and initiates cleanup when thresholds are exceeded.
         /// </summary>
         public void CheckMemoryPressure()
         {
@@ -52,9 +61,12 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Removes expired entries from the cache
+        /// Removes expired entries from the cache.
+        /// This method identifies and removes entries that have exceeded their time-to-live.
         /// </summary>
-        /// <returns>Number of entries removed</returns>
+        /// <returns>
+        /// The number of entries removed.
+        /// </returns>
         public int RemoveExpiredEntries()
         {
             var removedCount = 0;
@@ -99,10 +111,13 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Evicts least recently used entries until target memory is reached
+        /// Evicts least recently used entries until target memory is reached.
+        /// This method implements LRU eviction policy based on last accessed time and access count.
         /// </summary>
-        /// <param name="targetMemoryBytes">Target memory usage in bytes</param>
-        /// <returns>Number of entries evicted</returns>
+        /// <param name="targetMemoryBytes">The target memory usage in bytes.</param>
+        /// <returns>
+        /// The number of entries evicted.
+        /// </returns>
         public int EvictLeastRecentlyUsed(long targetMemoryBytes)
         {
             var evictedCount = 0;
@@ -150,9 +165,11 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Calculates the current memory usage of the cache
+        /// Calculates the current memory usage of the cache.
         /// </summary>
-        /// <returns>Current memory usage in bytes</returns>
+        /// <returns>
+        /// The current memory usage in bytes.
+        /// </returns>
         private long CalculateCurrentMemoryUsage()
         {
             try
@@ -167,8 +184,10 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Periodic cleanup callback
+        /// Periodic cleanup callback.
+        /// This method is called by the timer to perform regular cache maintenance.
         /// </summary>
+        /// <param name="state">The timer state (unused).</param>
         private void PeriodicCleanup(object? state)
         {
             try
@@ -193,7 +212,8 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Disposes the eviction manager
+        /// Disposes the eviction manager and cleans up resources.
+        /// This method stops the periodic cleanup timer and releases associated resources.
         /// </summary>
         public void Dispose()
         {

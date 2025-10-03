@@ -6,7 +6,8 @@ using mcp_nexus.Configuration;
 namespace mcp_nexus.Debugger
 {
     /// <summary>
-    /// Manages the CDB debugger process lifecycle (start, stop, monitoring)
+    /// Manages the CDB debugger process lifecycle including starting, stopping, and monitoring.
+    /// Provides thread-safe access to process streams and handles process cleanup.
     /// </summary>
     public class CdbProcessManager : IDisposable
     {
@@ -23,12 +24,37 @@ namespace mcp_nexus.Debugger
         private volatile bool m_initOutputConsumed;  // CRITICAL: ensures init output is consumed before commands execute
         private volatile bool m_isStopping;  // Track when we're intentionally stopping the process
 
+        /// <summary>
+        /// Gets the CDB debugger process instance.
+        /// </summary>
         public virtual Process? DebuggerProcess => m_debuggerProcess;
+
+        /// <summary>
+        /// Gets the input stream writer for sending commands to the CDB process.
+        /// </summary>
         public virtual StreamWriter? DebuggerInput => m_debuggerInput;
+
+        /// <summary>
+        /// Gets the output stream reader for receiving command responses from the CDB process.
+        /// </summary>
         public virtual StreamReader? DebuggerOutput => m_debuggerOutput;
+
+        /// <summary>
+        /// Gets the error stream reader for receiving error messages from the CDB process.
+        /// </summary>
         public virtual StreamReader? DebuggerError => m_debuggerError;
+
+        /// <summary>
+        /// Gets a value indicating whether the CDB process is active and ready for commands.
+        /// </summary>
         public virtual bool IsActive => m_isActive && !m_disposed && m_initOutputConsumed;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CdbProcessManager"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording process operations and errors.</param>
+        /// <param name="config">The CDB session configuration containing process settings.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> or <paramref name="config"/> is null.</exception>
         public CdbProcessManager(ILogger<CdbProcessManager> logger, CdbSessionConfiguration config)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -36,8 +62,15 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Starts the CDB debugger process with the specified target and optional explicit cdbPath override
+        /// Starts the CDB debugger process with the specified target and optional explicit CDB path override.
+        /// This method is thread-safe and will stop any existing process before starting a new one.
         /// </summary>
+        /// <param name="target">The target to debug (dump file path or process ID).</param>
+        /// <param name="cdbPathOverride">Optional override for the CDB executable path. If null, uses the configured path.</param>
+        /// <returns>
+        /// <c>true</c> if the process was started successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
         public bool StartProcess(string target, string? cdbPathOverride)
         {
             ThrowIfDisposed();
@@ -81,16 +114,27 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Backward-compatible overload
+        /// Starts the CDB debugger process with the specified target using the configured CDB path.
+        /// This is a backward-compatible overload that calls <see cref="StartProcess(string, string?)"/> with a null CDB path override.
         /// </summary>
+        /// <param name="target">The target to debug (dump file path or process ID).</param>
+        /// <returns>
+        /// <c>true</c> if the process was started successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
         public bool StartProcess(string target)
         {
             return StartProcess(target, null);
         }
 
         /// <summary>
-        /// Stops the CDB debugger process
+        /// Stops the CDB debugger process gracefully.
+        /// This method sends a quit command to the process and waits for it to exit.
         /// </summary>
+        /// <returns>
+        /// <c>true</c> if the process was stopped successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
         public bool StopProcess()
         {
             ThrowIfDisposed();
@@ -110,8 +154,10 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Logs diagnostic information about the current process
+        /// Logs diagnostic information about the current CDB process.
+        /// This method provides detailed information about the process state for debugging purposes.
         /// </summary>
+        /// <param name="context">The context in which the diagnostics are being logged (e.g., "Startup", "Error").</param>
         public void LogProcessDiagnostics(string context)
         {
             try
@@ -374,6 +420,10 @@ namespace mcp_nexus.Debugger
                 throw new ObjectDisposedException(nameof(CdbProcessManager));
         }
 
+        /// <summary>
+        /// Disposes of resources used by the process manager.
+        /// This method stops the CDB process and cleans up all associated resources.
+        /// </summary>
         public void Dispose()
         {
             if (m_disposed)

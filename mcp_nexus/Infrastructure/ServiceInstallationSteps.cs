@@ -5,10 +5,24 @@ using Microsoft.Extensions.Logging;
 namespace mcp_nexus.Infrastructure
 {
     /// <summary>
-    /// Manages the steps for service installation
+    /// Manages the steps for service installation.
+    /// Provides methods for performing installation, registration, unregistration, and cleanup operations.
     /// </summary>
     public static class ServiceInstallationSteps
     {
+        /// <summary>
+        /// Performs the complete installation steps for a Windows service asynchronously.
+        /// </summary>
+        /// <param name="serviceName">The name of the service to install.</param>
+        /// <param name="displayName">The display name of the service.</param>
+        /// <param name="description">The description of the service.</param>
+        /// <param name="executablePath">The path to the service executable.</param>
+        /// <param name="logger">The logger instance for recording installation operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the installation steps completed successfully; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when any of the required parameters are null or empty.</exception>
         public static async Task<bool> PerformInstallationStepsAsync(string serviceName, string displayName, string description, string executablePath, ILogger? logger = null)
         {
             try
@@ -24,6 +38,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Registers a Windows service asynchronously.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording registration operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the service was registered successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> RegisterServiceAsync(ILogger? logger = null)
         {
             try
@@ -39,6 +61,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Unregisters a Windows service asynchronously.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording unregistration operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the service was unregistered successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> UnregisterServiceAsync(ILogger? logger = null)
         {
             try
@@ -54,6 +84,14 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Cleans up installation artifacts asynchronously.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording cleanup operations and errors. Can be null.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if the cleanup completed successfully; otherwise, <c>false</c>.
+        /// </returns>
         public static async Task<bool> CleanupInstallationAsync(ILogger? logger = null)
         {
             try

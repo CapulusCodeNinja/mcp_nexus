@@ -8,9 +8,21 @@ namespace mcp_nexus.Session
     /// </summary>
     public class SessionManagerConfiguration
     {
+        /// <summary>
+        /// Gets the session configuration settings.
+        /// </summary>
         public SessionConfiguration Config { get; }
+        
+        /// <summary>
+        /// Gets the CDB session options.
+        /// </summary>
         public CdbSessionOptions CdbOptions { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SessionManagerConfiguration"/> class.
+        /// </summary>
+        /// <param name="config">Optional session configuration options.</param>
+        /// <param name="cdbOptions">Optional CDB session options.</param>
         public SessionManagerConfiguration(
             IOptions<SessionConfiguration>? config = null,
             IOptions<CdbSessionOptions>? cdbOptions = null)

@@ -4,7 +4,8 @@ using mcp_nexus.Notifications;
 namespace mcp_nexus.Recovery
 {
     /// <summary>
-    /// Orchestrates CDB session recovery operations with comprehensive error handling
+    /// Orchestrates CDB session recovery operations with comprehensive error handling.
+    /// Provides multi-step recovery strategies for stuck or unresponsive CDB sessions.
     /// </summary>
     public class RecoveryOrchestrator
     {
@@ -20,6 +21,16 @@ namespace mcp_nexus.Recovery
         private DateTime m_lastRecoveryAttempt = DateTime.MinValue;
         private readonly ReaderWriterLockSlim m_recoveryLock = new();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RecoveryOrchestrator"/> class.
+        /// </summary>
+        /// <param name="cdbSession">The CDB session to manage recovery for.</param>
+        /// <param name="logger">The logger instance for recording recovery operations and errors.</param>
+        /// <param name="cancelAllCommandsCallback">Callback function to cancel all pending commands.</param>
+        /// <param name="config">The recovery configuration containing retry limits and timeouts.</param>
+        /// <param name="healthMonitor">The session health monitor for checking session responsiveness.</param>
+        /// <param name="notificationService">Optional notification service for sending recovery events.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
         public RecoveryOrchestrator(
             ICdbSession cdbSession,
             ILogger logger,
@@ -37,10 +48,16 @@ namespace mcp_nexus.Recovery
         }
 
         /// <summary>
-        /// Attempts to recover a stuck CDB session using a multi-step approach
+        /// Attempts to recover a stuck CDB session using a multi-step approach.
+        /// This method implements a comprehensive recovery strategy including command cancellation,
+        /// gentle CDB cancellation, and force restart if necessary.
         /// </summary>
-        /// <param name="reason">The reason for recovery</param>
-        /// <returns>True if recovery was successful</returns>
+        /// <param name="reason">The reason for recovery (e.g., "timeout", "unresponsive").</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if recovery was successful; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="reason"/> is null or empty.</exception>
         public async Task<bool> RecoverStuckSessionAsync(string reason)
         {
             if (string.IsNullOrWhiteSpace(reason))
@@ -133,10 +150,15 @@ namespace mcp_nexus.Recovery
         }
 
         /// <summary>
-        /// Forces a restart of the CDB session
+        /// Forces a restart of the CDB session.
+        /// This method immediately stops the current session and starts a new one.
         /// </summary>
-        /// <param name="reason">The reason for restart</param>
-        /// <returns>True if restart was successful</returns>
+        /// <param name="reason">The reason for restart (e.g., "manual restart", "critical error").</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if restart was successful; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="reason"/> is null or empty.</exception>
         public async Task<bool> ForceRestartSessionAsync(string reason)
         {
             if (string.IsNullOrWhiteSpace(reason))
@@ -157,8 +179,14 @@ namespace mcp_nexus.Recovery
         }
 
         /// <summary>
-        /// Internal method to perform the actual restart operation
+        /// Internal method to perform the actual restart operation.
+        /// This method handles the low-level details of stopping and starting the CDB session.
         /// </summary>
+        /// <param name="reason">The reason for restart.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns <c>true</c> if restart was successful; otherwise, <c>false</c>.
+        /// </returns>
         private async Task<bool> ForceRestartSessionInternalAsync(string reason)
         {
             try
@@ -210,7 +238,8 @@ namespace mcp_nexus.Recovery
         }
 
         /// <summary>
-        /// Resets the recovery attempt counter
+        /// Resets the recovery attempt counter.
+        /// This method is called when recovery is successful to reset the retry state.
         /// </summary>
         private void ResetRecoveryCounter()
         {
@@ -228,8 +257,16 @@ namespace mcp_nexus.Recovery
         }
 
         /// <summary>
-        /// Sends a recovery notification if the notification service is available
+        /// Sends a recovery notification if the notification service is available.
+        /// This method sends notifications about recovery events asynchronously.
         /// </summary>
+        /// <param name="reason">The reason for recovery.</param>
+        /// <param name="step">The current recovery step.</param>
+        /// <param name="success">Whether the recovery step was successful.</param>
+        /// <param name="message">Additional message about the recovery event.</param>
+        /// <returns>
+        /// A <see cref="Task"/> representing the asynchronous operation.
+        /// </returns>
         private Task SendRecoveryNotificationAsync(string reason, string step, bool success, string message)
         {
             if (m_notificationService == null)
@@ -251,9 +288,12 @@ namespace mcp_nexus.Recovery
         }
 
         /// <summary>
-        /// Gets the current recovery statistics
+        /// Gets the current recovery statistics.
+        /// This method provides information about recovery attempts, timing, and current state.
         /// </summary>
-        /// <returns>Recovery statistics</returns>
+        /// <returns>
+        /// A <see cref="RecoveryStatistics"/> object containing current recovery information.
+        /// </returns>
         public RecoveryStatistics GetRecoveryStatistics()
         {
             m_recoveryLock.EnterReadLock();
@@ -275,7 +315,8 @@ namespace mcp_nexus.Recovery
         }
 
         /// <summary>
-        /// Disposes the recovery orchestrator
+        /// Disposes the recovery orchestrator and releases all resources.
+        /// This method cleans up the recovery lock and logs the disposal.
         /// </summary>
         public void Dispose()
         {
@@ -292,13 +333,29 @@ namespace mcp_nexus.Recovery
     }
 
     /// <summary>
-    /// Statistics about recovery operations
+    /// Statistics about recovery operations.
+    /// Contains information about recovery attempts, timing, and current state.
     /// </summary>
     public class RecoveryStatistics
     {
+        /// <summary>
+        /// Gets or sets the number of recovery attempts made.
+        /// </summary>
         public int RecoveryAttempts { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timestamp of the last recovery attempt.
+        /// </summary>
         public DateTime LastRecoveryAttempt { get; set; }
+
+        /// <summary>
+        /// Gets or sets the time elapsed since the last recovery attempt.
+        /// </summary>
         public TimeSpan TimeSinceLastAttempt { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether a recovery attempt can be made.
+        /// </summary>
         public bool CanAttemptRecovery { get; set; }
     }
 }

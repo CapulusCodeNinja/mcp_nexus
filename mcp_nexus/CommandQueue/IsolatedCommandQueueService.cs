@@ -26,6 +26,14 @@ namespace mcp_nexus.CommandQueue
         private readonly Task m_processingTask;
         private bool m_disposed = false;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IsolatedCommandQueueService"/> class.
+        /// </summary>
+        /// <param name="cdbSession">The CDB session for executing commands.</param>
+        /// <param name="logger">The logger instance for recording queue operations.</param>
+        /// <param name="notificationService">The notification service for sending notifications.</param>
+        /// <param name="sessionId">The unique identifier for the debugging session.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
         public IsolatedCommandQueueService(
             ICdbSession cdbSession,
             ILogger<IsolatedCommandQueueService> logger,

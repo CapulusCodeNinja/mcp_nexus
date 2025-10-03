@@ -5,20 +5,24 @@ using mcp_nexus.Session.Models;
 namespace mcp_nexus.Session
 {
     /// <summary>
-    /// Factory for creating session information objects using Factory Pattern
+    /// Factory for creating session information objects using Factory Pattern.
+    /// Provides methods for creating session info instances with various configurations.
     /// </summary>
     public class SessionInfoFactory
     {
         /// <summary>
-        /// Creates a new session info instance
+        /// Creates a new session info instance with the specified parameters.
         /// </summary>
-        /// <param name="sessionId">Session identifier</param>
-        /// <param name="cdbSession">CDB session</param>
-        /// <param name="commandQueue">Command queue service</param>
-        /// <param name="dumpPath">Dump file path</param>
-        /// <param name="symbolsPath">Symbols path (optional)</param>
-        /// <param name="processId">Process ID (optional)</param>
-        /// <returns>New session info instance</returns>
+        /// <param name="sessionId">The session identifier.</param>
+        /// <param name="cdbSession">The CDB session.</param>
+        /// <param name="commandQueue">The command queue service.</param>
+        /// <param name="dumpPath">The dump file path.</param>
+        /// <param name="symbolsPath">The symbols path. Can be null.</param>
+        /// <param name="processId">The process ID. Can be null.</param>
+        /// <returns>
+        /// A new <see cref="SessionInfo"/> instance.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
         public SessionInfo CreateSessionInfo(string sessionId, ICdbSession cdbSession, ICommandQueueService commandQueue,
             string dumpPath, string? symbolsPath = null, int? processId = null)
         {
@@ -26,9 +30,11 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// Creates a default session info instance
+        /// Creates a default session info instance with default values.
         /// </summary>
-        /// <returns>Default session info instance</returns>
+        /// <returns>
+        /// A new <see cref="SessionInfo"/> instance with default values.
+        /// </returns>
         public SessionInfo CreateDefaultSessionInfo()
         {
             return new SessionInfo();

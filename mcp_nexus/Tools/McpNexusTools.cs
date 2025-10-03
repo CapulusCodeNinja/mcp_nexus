@@ -18,9 +18,22 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace mcp_nexus.Tools
 {
+    /// <summary>
+    /// Provides Model Context Protocol (MCP) tools for the MCP Nexus server.
+    /// Contains static methods that expose debugging session management, command execution,
+    /// and crash dump analysis capabilities as MCP tools for AI clients to use.
+    /// </summary>
     [McpServerToolType]
     public static class McpNexusTools
     {
+        /// <summary>
+        /// Creates a new debugging session for a crash dump file.
+        /// Returns sessionId that MUST be used for all subsequent operations.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <param name="dumpPath">Full path to the crash dump file (.dmp).</param>
+        /// <param name="symbolsPath">Optional path to symbol files directory.</param>
+        /// <returns>An object containing session information including sessionId.</returns>
         [McpServerTool, Description("🚀 OPEN SESSION: Create a new debugging session for a crash dump file. Returns sessionId that MUST be used for all subsequent operations.")]
         public static async Task<object> nexus_open_dump_analyze_session(
             IServiceProvider serviceProvider,
@@ -90,6 +103,13 @@ namespace mcp_nexus.Tools
             }
         }
 
+        /// <summary>
+        /// Closes an active debugging session and cleans up resources.
+        /// Use this when done with a session.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
+        /// <returns>An object containing session closure information.</returns>
         [McpServerTool, Description("🔒 CLOSE SESSION: Close an active debugging session and clean up resources. Use this when done with a session.")]
         public static async Task<object> nexus_close_dump_analyze_session(
             IServiceProvider serviceProvider,
@@ -170,6 +190,14 @@ namespace mcp_nexus.Tools
             }
         }
 
+        /// <summary>
+        /// Queues a WinDBG command for execution in a debugging session.
+        /// Returns commandId for tracking.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
+        /// <param name="command">WinDBG command to execute (e.g., '!analyze -v', 'k', '!threads').</param>
+        /// <returns>An object containing command information including commandId.</returns>
         [McpServerTool, Description("⚡ QUEUE COMMAND: Queue a WinDBG command for execution in a debugging session. Returns commandId for tracking.")]
         public static async Task<object> nexus_enqueue_async_dump_analyze_command(
             IServiceProvider serviceProvider,
@@ -269,6 +297,13 @@ namespace mcp_nexus.Tools
             }
         }
 
+        /// <summary>
+        /// Gets the full WinDBG output and status of a specific async command.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
+        /// <param name="commandId">Command ID from nexus_enqueue_async_dump_analyze_command.</param>
+        /// <returns>An object containing command result information including output and status.</returns>
         [McpServerTool, Description("📋 READ COMMAND RESULT: Get the full WinDBG output and status of a specific async command")]
         public static async Task<object> nexus_read_dump_analyze_command_result(
             IServiceProvider serviceProvider,

@@ -3,8 +3,9 @@ using System.Text.RegularExpressions;
 namespace mcp_nexus.Debugger
 {
     /// <summary>
-    /// Handles parsing and analysis of CDB debugger output using hybrid approach
-    /// Prioritizes ultra-safe patterns over risky string matching to prevent brittleness
+    /// Handles parsing and analysis of CDB debugger output using hybrid approach.
+    /// Prioritizes ultra-safe patterns over risky string matching to prevent brittleness.
+    /// Provides command completion detection, output analysis, and context-aware parsing.
     /// </summary>
     public class CdbOutputParser
     {
@@ -14,14 +15,21 @@ namespace mcp_nexus.Debugger
         private string? m_currentCommand;
         private readonly List<string> m_outputBuffer = new();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CdbOutputParser"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording parsing operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public CdbOutputParser(ILogger<CdbOutputParser> logger)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
-        /// Sets the current command context for stateful parsing
+        /// Sets the current command context for stateful parsing.
+        /// This method clears the output buffer and sets the command context for better completion detection.
         /// </summary>
+        /// <param name="command">The command being executed. Can be null.</param>
         public void SetCurrentCommand(string command)
         {
             m_currentCommand = command?.Trim();
@@ -30,9 +38,13 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// HYBRID: Ultra-safe command completion detection that minimizes brittleness
-        /// Uses only the most reliable patterns and lets timeouts handle edge cases
+        /// Determines if a command has completed execution using ultra-safe detection patterns.
+        /// This method uses a hybrid approach that prioritizes reliable patterns over risky string matching.
         /// </summary>
+        /// <param name="line">The current line of output from the CDB process.</param>
+        /// <returns>
+        /// <c>true</c> if the command has completed; otherwise, <c>false</c>.
+        /// </returns>
         public bool IsCommandComplete(string line)
         {
             if (string.IsNullOrEmpty(line))
@@ -112,8 +124,13 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Captures any available output from the debugger streams
+        /// Captures any available output from the debugger streams without blocking.
+        /// This method reads all immediately available lines from both stdout and stderr streams.
         /// </summary>
+        /// <param name="outputReader">The stdout stream reader. Can be null.</param>
+        /// <param name="errorReader">The stderr stream reader. Can be null.</param>
+        /// <param name="context">The context for logging purposes.</param>
+        /// <param name="logger">The logger instance for recording captured output.</param>
         public void CaptureAvailableOutput(StreamReader? outputReader, StreamReader? errorReader, string context, ILogger logger)
         {
             try
@@ -178,8 +195,14 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Formats output for logging with proper truncation and sanitization
+        /// Formats output for logging with proper truncation and sanitization.
+        /// This method removes control characters and truncates long output for safe logging.
         /// </summary>
+        /// <param name="output">The output string to format.</param>
+        /// <param name="maxLength">The maximum length before truncation. Default is 1000 characters.</param>
+        /// <returns>
+        /// The formatted output string, truncated if necessary and with control characters sanitized.
+        /// </returns>
         public string FormatOutputForLogging(string output, int maxLength = 1000)
         {
             if (string.IsNullOrEmpty(output))
@@ -195,8 +218,13 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Analyzes output for common error patterns and warnings
+        /// Analyzes output for common error patterns, warnings, and success indicators.
+        /// This method performs pattern matching to identify the nature of the output.
         /// </summary>
+        /// <param name="output">The output string to analyze.</param>
+        /// <returns>
+        /// An <see cref="OutputAnalysis"/> object containing the analysis results.
+        /// </returns>
         public OutputAnalysis AnalyzeOutput(string output)
         {
             var analysis = new OutputAnalysis();
@@ -231,14 +259,33 @@ namespace mcp_nexus.Debugger
     }
 
     /// <summary>
-    /// Results of output analysis
+    /// Results of output analysis containing various indicators about the analyzed output.
     /// </summary>
     public class OutputAnalysis
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether the output is empty.
+        /// </summary>
         public bool IsEmpty { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the output contains error patterns.
+        /// </summary>
         public bool HasErrors { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the output contains warning patterns.
+        /// </summary>
         public bool HasWarnings { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the output contains success indicators.
+        /// </summary>
         public bool HasSuccessIndicators { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the output contains CDB prompt patterns.
+        /// </summary>
         public bool HasPrompt { get; set; }
     }
 }

@@ -16,6 +16,16 @@ namespace mcp_nexus.CommandQueue
         private readonly IMcpNotificationService? m_notificationService;
         private readonly ResilientQueueConfiguration m_config;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandRecoveryManager"/> class.
+        /// </summary>
+        /// <param name="cdbSession">The CDB session to monitor and recover.</param>
+        /// <param name="logger">The logger instance for recording recovery operations.</param>
+        /// <param name="timeoutService">The timeout service for managing command timeouts.</param>
+        /// <param name="recoveryService">The recovery service for session recovery operations.</param>
+        /// <param name="config">The resilient queue configuration settings.</param>
+        /// <param name="notificationService">Optional notification service for publishing recovery events.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
         public CommandRecoveryManager(
             ICdbSession cdbSession,
             ILogger logger,

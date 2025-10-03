@@ -3,7 +3,8 @@ using Microsoft.Extensions.Logging;
 namespace mcp_nexus.Notifications
 {
     /// <summary>
-    /// Stdio notification bridge implementation - maintains compatibility with existing code
+    /// Stdio notification bridge implementation - maintains compatibility with existing code.
+    /// Provides a bridge between the notification service and standard input/output streams.
     /// </summary>
     public class StdioNotificationBridge : IStdioNotificationBridge, IDisposable
     {
@@ -13,19 +14,21 @@ namespace mcp_nexus.Notifications
         private bool m_isInitialized = false;
 
         /// <summary>
-        /// Initializes a new instance of the StdioNotificationBridge
+        /// Initializes a new instance of the <see cref="StdioNotificationBridge"/> class.
         /// </summary>
-        /// <param name="notificationService">Notification service to subscribe to</param>
+        /// <param name="notificationService">The notification service to subscribe to.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="notificationService"/> is null.</exception>
         public StdioNotificationBridge(IMcpNotificationService notificationService)
         {
             m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         }
 
         /// <summary>
-        /// Initializes a new instance of the StdioNotificationBridge with logger
+        /// Initializes a new instance of the <see cref="StdioNotificationBridge"/> class with a logger.
         /// </summary>
-        /// <param name="logger">Logger instance</param>
-        /// <param name="notificationService">Notification service to subscribe to</param>
+        /// <param name="logger">The logger instance for recording bridge operations and errors.</param>
+        /// <param name="notificationService">The notification service to subscribe to.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="notificationService"/> is null.</exception>
         public StdioNotificationBridge(ILogger<StdioNotificationBridge> logger, IMcpNotificationService notificationService)
         {
             m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
@@ -33,10 +36,13 @@ namespace mcp_nexus.Notifications
         }
 
         /// <summary>
-        /// Sends a notification via stdio
+        /// Sends a notification via stdio asynchronously.
+        /// This method serializes the notification to JSON and writes it to the standard output stream.
         /// </summary>
-        /// <param name="notification">Notification to send</param>
-        /// <returns>Task representing the operation</returns>
+        /// <param name="notification">The notification object to send.</param>
+        /// <returns>
+        /// A <see cref="Task"/> representing the asynchronous operation.
+        /// </returns>
         public async Task SendNotificationAsync(object notification)
         {
             if (!m_isRunning) return;
@@ -54,9 +60,12 @@ namespace mcp_nexus.Notifications
         }
 
         /// <summary>
-        /// Starts the bridge
+        /// Starts the bridge asynchronously.
+        /// This method enables the bridge to send notifications via stdio.
         /// </summary>
-        /// <returns>Task representing the operation</returns>
+        /// <returns>
+        /// A <see cref="Task"/> representing the asynchronous operation.
+        /// </returns>
         public Task StartAsync()
         {
             m_isRunning = true;
@@ -64,9 +73,12 @@ namespace mcp_nexus.Notifications
         }
 
         /// <summary>
-        /// Stops the bridge
+        /// Stops the bridge asynchronously.
+        /// This method disables the bridge from sending notifications via stdio.
         /// </summary>
-        /// <returns>Task representing the operation</returns>
+        /// <returns>
+        /// A <see cref="Task"/> representing the asynchronous operation.
+        /// </returns>
         public Task StopAsync()
         {
             m_isRunning = false;
@@ -74,9 +86,12 @@ namespace mcp_nexus.Notifications
         }
 
         /// <summary>
-        /// Initializes the bridge
+        /// Initializes the bridge asynchronously.
+        /// This method subscribes to all notification types and enables the bridge.
         /// </summary>
-        /// <returns>Task representing the operation</returns>
+        /// <returns>
+        /// A <see cref="Task"/> representing the asynchronous operation.
+        /// </returns>
         public Task InitializeAsync()
         {
             if (!m_isInitialized)
@@ -120,7 +135,8 @@ namespace mcp_nexus.Notifications
         }
 
         /// <summary>
-        /// Disposes the bridge
+        /// Disposes the bridge and cleans up all resources.
+        /// This method unsubscribes from all notifications and stops the bridge.
         /// </summary>
         public void Dispose()
         {

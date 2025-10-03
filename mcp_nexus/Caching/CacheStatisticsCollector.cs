@@ -3,36 +3,104 @@ using System.Collections.Concurrent;
 namespace mcp_nexus.Caching
 {
     /// <summary>
-    /// Statistics about cache performance
+    /// Statistics about cache performance and usage.
+    /// Contains comprehensive metrics for monitoring cache behavior and efficiency.
     /// </summary>
     public class CacheStatistics
     {
+        /// <summary>
+        /// Gets or sets the total number of cache entries.
+        /// </summary>
         public int TotalEntries { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of expired entries.
+        /// </summary>
         public int ExpiredEntries { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total size of all cache entries in bytes.
+        /// </summary>
         public long TotalSizeBytes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total number of cache accesses.
+        /// </summary>
         public long TotalAccesses { get; set; }
+
+        /// <summary>
+        /// Gets or sets the average access count per entry.
+        /// </summary>
         public double AverageAccessCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the cache hit ratio (0.0 to 1.0).
+        /// </summary>
         public double HitRatio { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timestamp of the oldest entry.
+        /// </summary>
         public DateTime OldestEntry { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timestamp of the newest entry.
+        /// </summary>
         public DateTime NewestEntry { get; set; }
+
+        /// <summary>
+        /// Gets or sets the average age of cache entries.
+        /// </summary>
         public TimeSpan AverageAge { get; set; }
+
+        /// <summary>
+        /// Gets or sets the memory pressure in bytes (excess over limit).
+        /// </summary>
         public long MemoryPressureBytes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the memory utilization percentage (0.0 to 100.0).
+        /// </summary>
         public double MemoryUtilizationPercent { get; set; }
+
+        /// <summary>
+        /// Gets or sets the memory usage percentage (0.0 to 100.0).
+        /// </summary>
         public double MemoryUsagePercent { get; set; }
 
         // Additional properties for test compatibility
+        /// <summary>
+        /// Gets or sets the total number of cache hits.
+        /// </summary>
         public long HitCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total number of cache misses.
+        /// </summary>
         public long MissCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the cache hit rate (0.0 to 1.0).
+        /// </summary>
         public double HitRate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total number of evictions.
+        /// </summary>
         public long EvictionCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total number of expirations.
+        /// </summary>
         public long ExpirationCount { get; set; }
     }
 
     /// <summary>
-    /// Collects and provides statistics about cache performance and usage
+    /// Collects and provides statistics about cache performance and usage.
+    /// Monitors cache operations, memory usage, and performance metrics.
     /// </summary>
-    /// <typeparam name="TKey">The type of the cache key</typeparam>
-    /// <typeparam name="TValue">The type of the cache value</typeparam>
+    /// <typeparam name="TKey">The type of the cache key.</typeparam>
+    /// <typeparam name="TValue">The type of the cache value.</typeparam>
     public class CacheStatisticsCollector<TKey, TValue> where TKey : notnull
     {
         private readonly ILogger m_logger;
@@ -45,6 +113,13 @@ namespace mcp_nexus.Caching
         private long m_totalSets = 0;
         private long m_totalEvictions = 0;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CacheStatisticsCollector{TKey, TValue}"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording statistics and errors.</param>
+        /// <param name="config">The cache configuration settings.</param>
+        /// <param name="cache">The thread-safe cache dictionary to monitor.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
         public CacheStatisticsCollector(
             ILogger logger,
             CacheConfiguration config,
@@ -56,7 +131,8 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Records a cache hit
+        /// Records a cache hit.
+        /// This method increments the hit counter in a thread-safe manner.
         /// </summary>
         public void RecordHit()
         {
@@ -64,7 +140,8 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Records a cache miss
+        /// Records a cache miss.
+        /// This method increments the miss counter in a thread-safe manner.
         /// </summary>
         public void RecordMiss()
         {
@@ -72,7 +149,8 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Records a cache set operation
+        /// Records a cache set operation.
+        /// This method increments the set counter in a thread-safe manner.
         /// </summary>
         public void RecordSet()
         {
@@ -80,18 +158,22 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Records cache evictions
+        /// Records cache evictions.
+        /// This method adds the specified count to the eviction counter in a thread-safe manner.
         /// </summary>
-        /// <param name="count">Number of entries evicted</param>
+        /// <param name="count">The number of entries evicted.</param>
         public void RecordEvictions(int count)
         {
             Interlocked.Add(ref m_totalEvictions, count);
         }
 
         /// <summary>
-        /// Gets comprehensive cache statistics
+        /// Gets comprehensive cache statistics.
+        /// This method calculates and returns detailed statistics about cache performance and usage.
         /// </summary>
-        /// <returns>Current cache statistics</returns>
+        /// <returns>
+        /// A <see cref="CacheStatistics"/> object containing current cache statistics.
+        /// </returns>
         public CacheStatistics GetStatistics()
         {
             try
@@ -149,9 +231,12 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Gets performance counters
+        /// Gets performance counters.
+        /// This method returns the current values of all performance counters in a thread-safe manner.
         /// </summary>
-        /// <returns>Performance counter values</returns>
+        /// <returns>
+        /// A tuple containing the current hit count, miss count, set count, and eviction count.
+        /// </returns>
         public (long Hits, long Misses, long Sets, long Evictions) GetPerformanceCounters()
         {
             return (
@@ -163,7 +248,8 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Logs a summary of cache statistics
+        /// Logs a summary of cache statistics.
+        /// This method writes detailed cache statistics to the logger for monitoring and debugging.
         /// </summary>
         public void LogStatisticsSummary()
         {
@@ -194,7 +280,8 @@ namespace mcp_nexus.Caching
         }
 
         /// <summary>
-        /// Resets performance counters
+        /// Resets performance counters.
+        /// This method resets all performance counters to zero in a thread-safe manner.
         /// </summary>
         public void ResetCounters()
         {
