@@ -9,7 +9,7 @@ namespace mcp_nexus.Session.Models
         /// Gets the current number of active sessions.
         /// </summary>
         public int CurrentSessions { get; }
-        
+
         /// <summary>
         /// Gets the maximum allowed number of concurrent sessions.
         /// </summary>

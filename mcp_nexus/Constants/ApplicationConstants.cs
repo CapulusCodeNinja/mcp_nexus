@@ -10,17 +10,17 @@ namespace mcp_nexus.Constants
         /// Timeout for simple commands that should complete quickly.
         /// </summary>
         public static readonly TimeSpan SimpleCommandTimeout = TimeSpan.FromMinutes(2);
-        
+
         /// <summary>
         /// Default timeout for most commands.
         /// </summary>
         public static readonly TimeSpan DefaultCommandTimeout = TimeSpan.FromMinutes(5);
-        
+
         /// <summary>
         /// Maximum timeout for complex commands.
         /// </summary>
         public static readonly TimeSpan MaxCommandTimeout = TimeSpan.FromMinutes(30);
-        
+
         /// <summary>
         /// Timeout for long-running commands that may take significant time.
         /// </summary>
@@ -31,7 +31,7 @@ namespace mcp_nexus.Constants
         /// Interval for cleaning up expired commands and resources.
         /// </summary>
         public static readonly TimeSpan CleanupInterval = TimeSpan.FromMinutes(5);
-        
+
         /// <summary>
         /// How long to retain completed commands before cleanup.
         /// </summary>
@@ -42,12 +42,12 @@ namespace mcp_nexus.Constants
         /// Initial polling interval for checking command completion.
         /// </summary>
         public static readonly TimeSpan InitialPollInterval = TimeSpan.FromMilliseconds(100);
-        
+
         /// <summary>
         /// Maximum polling interval to prevent excessive CPU usage.
         /// </summary>
         public static readonly TimeSpan MaxPollInterval = TimeSpan.FromSeconds(2);
-        
+
         /// <summary>
         /// Multiplier for exponential backoff in polling.
         /// </summary>
@@ -58,12 +58,12 @@ namespace mcp_nexus.Constants
         /// Default HTTP port for the application.
         /// </summary>
         public static readonly int DefaultHttpPort = 5000;
-        
+
         /// <summary>
         /// Default development port for the application.
         /// </summary>
         public static readonly int DefaultDevPort = 5117;
-        
+
         /// <summary>
         /// Default service port for the application.
         /// </summary>
@@ -74,7 +74,7 @@ namespace mcp_nexus.Constants
         /// Timeout for waiting for process operations to complete.
         /// </summary>
         public static readonly TimeSpan ProcessWaitTimeout = TimeSpan.FromSeconds(5);
-        
+
         /// <summary>
         /// Timeout for service shutdown operations.
         /// </summary>
@@ -91,7 +91,7 @@ namespace mcp_nexus.Constants
         /// Maximum length for displaying file paths in logs.
         /// </summary>
         public const int MaxPathDisplayLength = 50;
-        
+
         /// <summary>
         /// Number of characters to show before truncation (for "..." prefix).
         /// </summary>
@@ -102,7 +102,7 @@ namespace mcp_nexus.Constants
         /// Timeout for HTTP requests.
         /// </summary>
         public static readonly TimeSpan HttpRequestTimeout = TimeSpan.FromMinutes(15);
-        
+
         /// <summary>
         /// Keep-alive timeout for HTTP connections.
         /// </summary>
@@ -113,12 +113,12 @@ namespace mcp_nexus.Constants
         /// Maximum number of recovery attempts for failed operations.
         /// </summary>
         public static readonly int MaxRecoveryAttempts = 3;
-        
+
         /// <summary>
         /// Delay between recovery attempts.
         /// </summary>
         public static readonly TimeSpan RecoveryDelay = TimeSpan.FromSeconds(5);
-        
+
         /// <summary>
         /// Interval for performing health checks.
         /// </summary>
@@ -129,12 +129,12 @@ namespace mcp_nexus.Constants
         /// Maximum number of concurrent notifications to process.
         /// </summary>
         public const int MaxConcurrentNotifications = 10;
-        
+
         /// <summary>
         /// Maximum batch size for cleanup operations.
         /// </summary>
         public const int MaxCleanupBatchSize = 100;
-        
+
         /// <summary>
         /// Maximum length for log messages before truncation.
         /// </summary>
@@ -145,22 +145,22 @@ namespace mcp_nexus.Constants
         /// Delay for CDB interrupt operations.
         /// </summary>
         public static readonly TimeSpan CdbInterruptDelay = TimeSpan.FromMilliseconds(1000);
-        
+
         /// <summary>
         /// Delay for waiting for CDB prompt.
         /// </summary>
         public static readonly TimeSpan CdbPromptDelay = TimeSpan.FromMilliseconds(2000);
-        
+
         /// <summary>
         /// Delay for CDB startup operations.
         /// </summary>
         public static readonly TimeSpan CdbStartupDelay = TimeSpan.FromMilliseconds(200);
-        
+
         /// <summary>
         /// Delay for CDB output processing.
         /// </summary>
         public static readonly TimeSpan CdbOutputDelay = TimeSpan.FromMilliseconds(500);
-        
+
         /// <summary>
         /// Delay between CDB commands.
         /// </summary>
@@ -169,7 +169,7 @@ namespace mcp_nexus.Constants
         /// Timeout for CDB output operations.
         /// </summary>
         public static readonly TimeSpan CdbOutputTimeout = TimeSpan.FromMilliseconds(5000);
-        
+
         /// <summary>
         /// Timeout for waiting for CDB process operations.
         /// </summary>

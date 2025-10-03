@@ -15,13 +15,13 @@ namespace mcp_nexus.Recovery
         /// <param name="timeout">The timeout duration.</param>
         /// <param name="onTimeout">The action to execute when the timeout occurs.</param>
         void StartCommandTimeout(string commandId, TimeSpan timeout, Func<Task> onTimeout);
-        
+
         /// <summary>
         /// Cancels a command timeout.
         /// </summary>
         /// <param name="commandId">The unique identifier of the command.</param>
         void CancelCommandTimeout(string commandId);
-        
+
         /// <summary>
         /// Extends a command timeout by the specified additional time.
         /// </summary>

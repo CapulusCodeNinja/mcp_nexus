@@ -51,7 +51,7 @@ namespace mcp_nexus.Configuration
         {
             if (configuration == null)
                 return Microsoft.Extensions.Logging.LogLevel.Information;
-                
+
             var logLevelString = configuration["Logging:LogLevel"] ?? "Information";
             return ParseLogLevel(logLevelString);
         }
@@ -65,18 +65,18 @@ namespace mcp_nexus.Configuration
             if (nlogConfig != null)
             {
                 var nlogLevel = GetNLogLevel(logLevel);
-                
+
                 // Configure log paths based on service mode
                 ConfigureLogPaths(nlogConfig, isServiceMode);
-                
+
                 foreach (var rule in nlogConfig.LoggingRules)
                 {
                     rule.SetLoggingLevels(nlogLevel, NLog.LogLevel.Fatal);
                 }
-                
+
                 // Apply the configuration
                 LogManager.Configuration = nlogConfig;
-                
+
                 // Set internal log file path after configuration is applied
                 SetInternalLogFile(isServiceMode);
             }
@@ -89,14 +89,14 @@ namespace mcp_nexus.Configuration
         {
             string logDirectory;
             string internalLogFile;
-            
+
             if (isServiceMode)
             {
                 // Use ProgramData for service mode
                 var programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
                 logDirectory = Path.Combine(programDataPath, "MCP-Nexus", "Logs");
                 internalLogFile = Path.Combine(logDirectory, "mcp-nexus-internal.log");
-                
+
                 // Ensure ProgramData directories exist
                 try
                 {
@@ -139,7 +139,7 @@ namespace mcp_nexus.Configuration
             try
             {
                 string internalLogFile;
-                
+
                 if (isServiceMode)
                 {
                     // Use ProgramData for service mode
@@ -198,7 +198,7 @@ namespace mcp_nexus.Configuration
         {
             if (string.IsNullOrEmpty(logLevelString))
                 return Microsoft.Extensions.Logging.LogLevel.Information;
-                
+
             return logLevelString.ToLowerInvariant() switch
             {
                 "trace" => Microsoft.Extensions.Logging.LogLevel.Trace,

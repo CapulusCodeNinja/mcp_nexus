@@ -9,22 +9,22 @@ namespace mcp_nexus.CommandQueue
         /// Gets the default timeout for command execution.
         /// </summary>
         public TimeSpan DefaultCommandTimeout { get; }
-        
+
         /// <summary>
         /// Gets the interval for sending heartbeat notifications.
         /// </summary>
         public TimeSpan HeartbeatInterval { get; }
-        
+
         /// <summary>
         /// Gets the timeout for graceful shutdown.
         /// </summary>
         public TimeSpan ShutdownTimeout { get; }
-        
+
         /// <summary>
         /// Gets the timeout for forced shutdown.
         /// </summary>
         public TimeSpan ForceShutdownTimeout { get; }
-        
+
         /// <summary>
         /// Gets the session identifier.
         /// </summary>

@@ -44,7 +44,7 @@ namespace mcp_nexus
 
                 // Set up global exception handlers FIRST
                 Console.Error.WriteLine($" Setting up global exception handlers...");
-                
+
                 SetupGlobalExceptionHandlers();
                 Console.Error.WriteLine($" Global exception handlers set up.");
             }

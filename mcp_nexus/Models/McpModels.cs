@@ -48,19 +48,19 @@ namespace mcp_nexus.Models
         /// </summary>
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; } = "2.0";
-        
+
         /// <summary>
         /// Gets or sets the JSON-RPC response ID.
         /// </summary>
         [JsonPropertyName("id")]
         public object? Id { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the JSON-RPC result data.
         /// </summary>
         [JsonPropertyName("result")]
         public object? Result { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the JSON-RPC error information.
         /// </summary>
@@ -79,13 +79,13 @@ namespace mcp_nexus.Models
         /// </summary>
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; } = "2.0";
-        
+
         /// <summary>
         /// Gets or sets the JSON-RPC response ID.
         /// </summary>
         [JsonPropertyName("id")]
         public object? Id { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the JSON-RPC result data.
         /// </summary>
@@ -104,13 +104,13 @@ namespace mcp_nexus.Models
         /// </summary>
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; } = "2.0";
-        
+
         /// <summary>
         /// Gets or sets the JSON-RPC response ID.
         /// </summary>
         [JsonPropertyName("id")]
         public object? Id { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the JSON-RPC error information.
         /// </summary>
@@ -157,13 +157,13 @@ namespace mcp_nexus.Models
         /// </summary>
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
-        
+
         /// <summary>
         /// Gets or sets the tool description.
         /// </summary>
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
-        
+
         /// <summary>
         /// Gets or sets the input schema definition.
         /// </summary>
@@ -195,7 +195,7 @@ namespace mcp_nexus.Models
         /// </summary>
         [JsonPropertyName("type")]
         public string Type { get; set; } = "text";
-        
+
         /// <summary>
         /// Gets or sets the content text.
         /// </summary>
@@ -214,13 +214,13 @@ namespace mcp_nexus.Models
         /// </summary>
         [JsonPropertyName("protocolVersion")]
         public string ProtocolVersion { get; set; } = "2025-06-18";
-        
+
         /// <summary>
         /// Gets or sets the server capabilities.
         /// </summary>
         [JsonPropertyName("capabilities")]
         public McpCapabilities Capabilities { get; set; } = new();
-        
+
         /// <summary>
         /// Gets or sets the server information.
         /// </summary>
@@ -348,7 +348,7 @@ namespace mcp_nexus.Models
         /// </summary>
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; } = "2.0";
-        
+
         /// <summary>
         /// Gets or sets the server info result.
         /// </summary>
@@ -367,13 +367,13 @@ namespace mcp_nexus.Models
         /// </summary>
         [JsonPropertyName("protocolVersion")]
         public string ProtocolVersion { get; set; } = "2025-06-18";
-        
+
         /// <summary>
         /// Gets or sets the server capabilities.
         /// </summary>
         [JsonPropertyName("capabilities")]
         public McpCapabilities Capabilities { get; set; } = new();
-        
+
         /// <summary>
         /// Gets or sets the server details.
         /// </summary>
@@ -430,13 +430,13 @@ namespace mcp_nexus.Models
         /// </summary>
         [JsonPropertyName("name")]
         public string Name { get; set; } = "mcp-nexus";
-        
+
         /// <summary>
         /// Gets or sets the server version.
         /// </summary>
         [JsonPropertyName("version")]
         public string Version { get; set; } = VersionHelper.GetFileVersion();
-        
+
         /// <summary>
         /// Gets or sets the server description.
         /// </summary>

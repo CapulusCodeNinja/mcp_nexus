@@ -197,7 +197,7 @@ namespace mcp_nexus.Security
         /// Gets a value indicating whether the validation passed.
         /// </summary>
         public bool IsValid { get; private set; }
-        
+
         /// <summary>
         /// Gets the error message if validation failed, or null if validation passed.
         /// </summary>
@@ -219,7 +219,7 @@ namespace mcp_nexus.Security
         /// </summary>
         /// <returns>A <see cref="SecurityValidationResult"/> indicating successful validation.</returns>
         public static SecurityValidationResult Valid() => new(true);
-        
+
         /// <summary>
         /// Creates an invalid security validation result with the specified error message.
         /// </summary>

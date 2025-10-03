@@ -12,7 +12,7 @@ namespace mcp_nexus.Session
         /// Gets the session configuration settings.
         /// </summary>
         public SessionConfiguration Config { get; }
-        
+
         /// <summary>
         /// Gets the CDB session options.
         /// </summary>

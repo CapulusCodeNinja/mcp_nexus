@@ -15,14 +15,14 @@ namespace mcp_nexus.Recovery
         /// <param name="reason">The reason for the recovery operation.</param>
         /// <returns>A task that represents the asynchronous operation and contains the recovery result.</returns>
         Task<bool> RecoverStuckSession(string reason);
-        
+
         /// <summary>
         /// Forces a session restart asynchronously.
         /// </summary>
         /// <param name="reason">The reason for the restart operation.</param>
         /// <returns>A task that represents the asynchronous operation and contains the restart result.</returns>
         Task<bool> ForceRestartSession(string reason);
-        
+
         /// <summary>
         /// Checks if the session is healthy.
         /// </summary>

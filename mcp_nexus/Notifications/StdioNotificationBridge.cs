@@ -101,33 +101,33 @@ namespace mcp_nexus.Notifications
                 {
                     await SendNotificationAsync(notification);
                 }));
-                
+
                 // Subscribe to other notification types
                 m_subscriptionIds.Add(m_notificationService.Subscribe("CommandHeartbeat", async (object notification) =>
                 {
                     await SendNotificationAsync(notification);
                 }));
-                
+
                 m_subscriptionIds.Add(m_notificationService.Subscribe("SessionEvent", async (object notification) =>
                 {
                     await SendNotificationAsync(notification);
                 }));
-                
+
                 m_subscriptionIds.Add(m_notificationService.Subscribe("SessionRecovery", async (object notification) =>
                 {
                     await SendNotificationAsync(notification);
                 }));
-                
+
                 m_subscriptionIds.Add(m_notificationService.Subscribe("ServerHealth", async (object notification) =>
                 {
                     await SendNotificationAsync(notification);
                 }));
-                
+
                 m_subscriptionIds.Add(m_notificationService.Subscribe("ToolsListChanged", async (object notification) =>
                 {
                     await SendNotificationAsync(notification);
                 }));
-                
+
                 m_isRunning = true; // Start the bridge when initialized
                 m_isInitialized = true;
             }

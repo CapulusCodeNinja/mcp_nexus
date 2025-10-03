@@ -9,22 +9,22 @@ namespace mcp_nexus.Recovery
         /// Gets the timeout for command cancellation operations.
         /// </summary>
         public TimeSpan CancellationTimeout { get; }
-        
+
         /// <summary>
         /// Gets the delay before restarting a CDB session.
         /// </summary>
         public TimeSpan RestartDelay { get; }
-        
+
         /// <summary>
         /// Gets the interval between health checks.
         /// </summary>
         public TimeSpan HealthCheckInterval { get; }
-        
+
         /// <summary>
         /// Gets the maximum number of recovery attempts.
         /// </summary>
         public int MaxRecoveryAttempts { get; }
-        
+
         /// <summary>
         /// Gets the cooldown period between recovery attempts.
         /// </summary>

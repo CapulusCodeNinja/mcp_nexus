@@ -11,12 +11,12 @@ namespace mcp_nexus.CommandQueue
         /// Gets the cleanup interval for expired commands.
         /// </summary>
         public TimeSpan CleanupInterval { get; }
-        
+
         /// <summary>
         /// Gets the retention time for completed commands.
         /// </summary>
         public TimeSpan CommandRetentionTime { get; }
-        
+
         /// <summary>
         /// Gets the interval for logging statistics.
         /// </summary>

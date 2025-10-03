@@ -120,7 +120,7 @@ namespace mcp_nexus.Infrastructure
             try
             {
                 logger.LogInformation("Starting dependency injection validation");
-                
+
                 // Basic validation - just check if service provider is functional
                 // Try to resolve any service to ensure the provider is working
                 var services = serviceProvider.GetServices<object>();
@@ -232,7 +232,7 @@ namespace mcp_nexus.Infrastructure
                         // Find the implementation type for this service type
                         var dependencyImplementation = m_Services
                             .FirstOrDefault(s => s.ServiceType == parameter.ParameterType)?.ImplementationType;
-                        
+
                         if (dependencyImplementation != null)
                         {
                             if (recursionStack.Contains(dependencyImplementation))

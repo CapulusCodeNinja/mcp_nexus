@@ -305,7 +305,7 @@ namespace mcp_nexus.Metrics
         /// Gets the name of the counter.
         /// </summary>
         public string Name { get; }
-        
+
         /// <summary>
         /// Gets the tags associated with the counter.
         /// </summary>
@@ -366,7 +366,7 @@ namespace mcp_nexus.Metrics
         /// Gets the name of the histogram.
         /// </summary>
         public string Name { get; }
-        
+
         /// <summary>
         /// Gets the tags associated with the histogram.
         /// </summary>
@@ -441,7 +441,7 @@ namespace mcp_nexus.Metrics
         /// Gets the name of the gauge.
         /// </summary>
         public string Name { get; }
-        
+
         /// <summary>
         /// Gets the tags associated with the gauge.
         /// </summary>

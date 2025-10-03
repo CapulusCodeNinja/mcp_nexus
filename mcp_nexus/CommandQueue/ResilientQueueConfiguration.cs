@@ -11,37 +11,37 @@ namespace mcp_nexus.CommandQueue
         /// Gets the session identifier.
         /// </summary>
         public string SessionId { get; }
-        
+
         /// <summary>
         /// Gets the default timeout for command execution.
         /// </summary>
         public TimeSpan DefaultCommandTimeout { get; }
-        
+
         /// <summary>
         /// Gets the timeout for complex commands.
         /// </summary>
         public TimeSpan ComplexCommandTimeout { get; }
-        
+
         /// <summary>
         /// Gets the maximum allowed timeout for any command.
         /// </summary>
         public TimeSpan MaxCommandTimeout { get; }
-        
+
         /// <summary>
         /// Gets the cleanup interval for expired commands.
         /// </summary>
         public TimeSpan CleanupInterval { get; }
-        
+
         /// <summary>
         /// Gets the retention time for completed commands.
         /// </summary>
         public TimeSpan CommandRetentionTime { get; }
-        
+
         /// <summary>
         /// Gets the interval for sending heartbeat notifications.
         /// </summary>
         public TimeSpan HeartbeatInterval { get; }
-        
+
         /// <summary>
         /// Gets the interval for checking recovery status.
         /// </summary>
