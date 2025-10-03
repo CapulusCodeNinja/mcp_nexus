@@ -109,6 +109,9 @@ namespace mcp_nexus.CommandQueue
         /// <summary>
         /// Executes a command with timeout monitoring
         /// </summary>
+        /// <param name="queuedCommand">The command to execute</param>
+        /// <param name="cancellationToken">Cancellation token for the operation</param>
+        /// <returns>The command result</returns>
         private async Task<string> ExecuteCommandWithTimeoutAsync(QueuedCommand queuedCommand, CancellationToken cancellationToken)
         {
             try
@@ -141,6 +144,10 @@ namespace mcp_nexus.CommandQueue
         /// <summary>
         /// Starts a heartbeat task for long-running commands
         /// </summary>
+        /// <param name="queuedCommand">The command to monitor</param>
+        /// <param name="startTime">The time when the command started</param>
+        /// <param name="cancellationToken">Cancellation token for the operation</param>
+        /// <returns>A task representing the heartbeat operation, or null if not needed</returns>
         private Task? StartHeartbeatAsync(QueuedCommand queuedCommand, DateTime startTime, CancellationToken cancellationToken)
         {
             var commandTimeout = m_config.DetermineCommandTimeout(queuedCommand.Command ?? string.Empty);
@@ -197,6 +204,9 @@ namespace mcp_nexus.CommandQueue
         /// <summary>
         /// Attempts to recover from a command failure
         /// </summary>
+        /// <param name="queuedCommand">The command that failed</param>
+        /// <param name="originalException">The exception that caused the failure</param>
+        /// <returns>A task representing the recovery operation</returns>
         private async Task AttemptCommandRecoveryAsync(QueuedCommand queuedCommand, Exception originalException)
         {
             try

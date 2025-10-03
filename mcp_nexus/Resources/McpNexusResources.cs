@@ -363,7 +363,6 @@ namespace mcp_nexus.Resources
         }
 
         /// <summary>
-        /// <summary>
         /// Gets the status string for a command.
         /// </summary>
         /// <param name="cmd">The command to get the status for.</param>
@@ -381,9 +380,6 @@ namespace mcp_nexus.Resources
             };
         }
 
-        /// <summary>
-        /// <summary>
-        /// Calculates queue position for a command.
         /// <summary>
         /// Calculates the queue position for a command.
         /// </summary>
@@ -409,9 +405,6 @@ namespace mcp_nexus.Resources
             return -1; // Not in queue
         }
 
-        /// <summary>
-        /// <summary>
-        /// Calculates progress percentage for a command.
         /// <summary>
         /// Calculates the progress percentage for a command.
         /// </summary>
@@ -445,8 +438,7 @@ namespace mcp_nexus.Resources
         }
 
         /// <summary>
-        /// <summary>
-        /// Generates dynamic message for a command.
+        /// Generates a dynamic message for a command based on its status and queue position.
         /// </summary>
         /// <param name="cmd">The command to generate message for.</param>
         /// <param name="allCommands">All commands in the queue.</param>

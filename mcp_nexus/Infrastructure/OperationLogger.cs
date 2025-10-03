@@ -66,9 +66,6 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Logs an error that occurred during an operation.
-        /// </summary>
-        /// <summary>
         /// Logs an operation error.
         /// </summary>
         /// <param name="operation">The name of the operation that failed.</param>

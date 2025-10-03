@@ -48,6 +48,8 @@ namespace mcp_nexus.Configuration
         /// <summary>
         /// Gets the log level from configuration
         /// </summary>
+        /// <param name="configuration">The application configuration</param>
+        /// <returns>The configured log level</returns>
         private static Microsoft.Extensions.Logging.LogLevel GetLogLevelFromConfiguration(IConfiguration configuration)
         {
             if (configuration == null)
@@ -140,6 +142,7 @@ namespace mcp_nexus.Configuration
         /// <summary>
         /// Sets the internal log file path based on service mode
         /// </summary>
+        /// <param name="isServiceMode">Whether the application is running in service mode</param>
         private static void SetInternalLogFile(bool isServiceMode)
         {
             try
@@ -174,6 +177,8 @@ namespace mcp_nexus.Configuration
         /// <summary>
         /// Configures Microsoft.Extensions.Logging
         /// </summary>
+        /// <param name="logging">The logging builder to configure</param>
+        /// <param name="logLevel">The log level to set</param>
         private static void ConfigureMicrosoftLogging(ILoggingBuilder logging, Microsoft.Extensions.Logging.LogLevel logLevel)
         {
             logging.ClearProviders();
@@ -184,6 +189,8 @@ namespace mcp_nexus.Configuration
         /// <summary>
         /// Logs the completion of logging configuration
         /// </summary>
+        /// <param name="isServiceMode">Whether the application is running in service mode</param>
+        /// <param name="logLevel">The configured log level</param>
         private static void LogConfigurationComplete(bool isServiceMode, Microsoft.Extensions.Logging.LogLevel logLevel)
         {
             var completeMessage = $"Logging configured with NLog (Level: {logLevel})";
@@ -200,6 +207,8 @@ namespace mcp_nexus.Configuration
         /// <summary>
         /// Parses log level string to LogLevel enum
         /// </summary>
+        /// <param name="logLevelString">The log level string to parse</param>
+        /// <returns>The corresponding LogLevel enum value</returns>
         private static Microsoft.Extensions.Logging.LogLevel ParseLogLevel(string logLevelString)
         {
             if (string.IsNullOrEmpty(logLevelString))
@@ -221,6 +230,8 @@ namespace mcp_nexus.Configuration
         /// <summary>
         /// Converts Microsoft LogLevel to NLog LogLevel
         /// </summary>
+        /// <param name="logLevel">The Microsoft LogLevel to convert</param>
+        /// <returns>The corresponding NLog LogLevel</returns>
         private static NLog.LogLevel GetNLogLevel(Microsoft.Extensions.Logging.LogLevel logLevel)
         {
             return logLevel switch

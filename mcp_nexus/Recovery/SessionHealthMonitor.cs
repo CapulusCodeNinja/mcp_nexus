@@ -31,8 +31,6 @@ namespace mcp_nexus.Recovery
         }
 
         /// <summary>
-        /// Checks if the CDB session is healthy and responsive
-        /// <summary>
         /// Checks if the session is currently healthy.
         /// </summary>
         /// <returns>True if the session is healthy</returns>
@@ -98,8 +96,6 @@ namespace mcp_nexus.Recovery
         }
 
         /// <summary>
-        /// Gets the time since the last health check
-        /// <summary>
         /// Gets the time elapsed since the last health check.
         /// </summary>
         /// <returns>Time since last health check</returns>
@@ -109,8 +105,6 @@ namespace mcp_nexus.Recovery
         }
 
         /// <summary>
-        /// Determines if a health check is due based on configuration
-        /// <summary>
         /// Determines if a health check should be performed based on timing.
         /// </summary>
         /// <returns>True if a health check should be performed</returns>
@@ -119,8 +113,6 @@ namespace mcp_nexus.Recovery
             return TimeSinceLastHealthCheck() >= m_config.HealthCheckInterval;
         }
 
-        /// <summary>
-        /// Performs a comprehensive session diagnostic
         /// <summary>
         /// Gets diagnostic information about the session.
         /// </summary>

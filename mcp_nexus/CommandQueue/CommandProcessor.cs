@@ -106,6 +106,8 @@ namespace mcp_nexus.CommandQueue
         /// <summary>
         /// Executes a single command with proper error handling and timeout
         /// </summary>
+        /// <param name="command">The command to execute</param>
+        /// <returns>A task representing the asynchronous operation</returns>
         private async Task ExecuteCommandSafely(QueuedCommand command)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -265,6 +267,10 @@ namespace mcp_nexus.CommandQueue
         /// <summary>
         /// Starts a heartbeat task for long-running commands
         /// </summary>
+        /// <param name="command">The command to monitor</param>
+        /// <param name="stopwatch">The stopwatch tracking command execution time</param>
+        /// <param name="cancellationToken">Cancellation token for the operation</param>
+        /// <returns>A task representing the heartbeat operation</returns>
         private async Task StartHeartbeatAsync(QueuedCommand command, Stopwatch stopwatch, CancellationToken cancellationToken)
         {
             try

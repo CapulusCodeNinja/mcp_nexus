@@ -323,18 +323,6 @@ namespace mcp_nexus.Infrastructure
         /// <returns>
         /// The Windows service account name.
         /// </returns>
-        /// <summary>
-        /// Gets the Windows service account name for the specified service account type.
-        /// </summary>
-        /// <param name="account">The service account type.</param>
-        /// <returns>
-        /// <summary>
-        /// Gets the Windows service account name for the specified account type.
-        /// </summary>
-        /// <param name="account">The service account type.</param>
-        /// <returns>
-        /// The Windows service account name.
-        /// </returns>
         private string GetServiceAccountName(ServiceAccount account)
         {
             return account switch
@@ -404,11 +392,6 @@ namespace mcp_nexus.Infrastructure
         /// </summary>
         /// <param name="serviceName">The name of the service to check.</param>
         /// <returns>
-        /// <summary>
-        /// Checks if a Windows service is installed.
-        /// </summary>
-        /// <param name="serviceName">The name of the service to check.</param>
-        /// <returns>
         /// <c>true</c> if the service is installed; otherwise, <c>false</c>.
         /// </returns>
         public static bool IsServiceInstalled(string serviceName)
@@ -424,10 +407,6 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
-        /// <summary>
-        /// Checks if a Windows service is installed (static version).
-        /// </summary>
-        /// <returns>
         /// <summary>
         /// Checks if the MCP Nexus service is installed (static method).
         /// </summary>
@@ -639,11 +618,6 @@ namespace mcp_nexus.Infrastructure
 
 
 
-        /// <summary>
-        /// Sets failure actions for service recovery in the registry.
-        /// </summary>
-        /// <param name="serviceKey">The registry key for the service.</param>
-        /// <param name="configuration">The service configuration containing failure action settings.</param>
         /// <summary>
         /// Sets the failure actions for the Windows service in the registry.
         /// </summary>

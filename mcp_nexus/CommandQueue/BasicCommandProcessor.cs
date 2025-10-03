@@ -84,6 +84,9 @@ namespace mcp_nexus.CommandQueue
         /// <summary>
         /// Processes a single command
         /// </summary>
+        /// <param name="queuedCommand">The command to process</param>
+        /// <param name="cancellationToken">Cancellation token for the operation</param>
+        /// <returns>A task representing the asynchronous operation</returns>
         private async Task ProcessSingleCommandAsync(QueuedCommand queuedCommand, CancellationToken cancellationToken)
         {
             var startTime = DateTime.UtcNow;
@@ -148,6 +151,9 @@ namespace mcp_nexus.CommandQueue
         /// <summary>
         /// Completes a command with the given result and state
         /// </summary>
+        /// <param name="command">The command to complete</param>
+        /// <param name="result">The result string of the command execution</param>
+        /// <param name="state">The final state of the command</param>
         private void CompleteCommand(QueuedCommand command, string result, CommandState state)
         {
             try
@@ -241,6 +247,7 @@ namespace mcp_nexus.CommandQueue
         /// <summary>
         /// Cleans up completed commands periodically
         /// </summary>
+        /// <param name="state">The state object passed to the timer callback (unused)</param>
         private void CleanupCompletedCommands(object? state)
         {
             try

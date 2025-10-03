@@ -94,6 +94,15 @@ namespace mcp_nexus.Resilience
             });
         }
 
+        /// <summary>
+        /// Executes an operation with circuit breaker protection.
+        /// </summary>
+        /// <typeparam name="T">The return type of the operation.</typeparam>
+        /// <param name="circuit">The circuit breaker state.</param>
+        /// <param name="operation">The operation to execute.</param>
+        /// <param name="timeout">The timeout for the operation.</param>
+        /// <returns>The result of the operation.</returns>
+        /// <exception cref="AdvancedCircuitBreakerOpenException">Thrown when the circuit is open.</exception>
         private async Task<T> ExecuteWithCircuitBreaker<T>(CircuitBreakerState circuit, Func<Task<T>> operation, TimeSpan timeout)
         {
             // Check if circuit is open and should remain open
@@ -205,6 +214,12 @@ namespace mcp_nexus.Resilience
             return new CircuitBreakerStatus { Name = circuitName, State = AdvancedCircuitState.Closed, IsHealthy = true };
         }
 
+        /// <summary>
+        /// Gets the status of all circuit breakers.
+        /// </summary>
+        /// <returns>
+        /// A dictionary containing the status of all circuit breakers, keyed by circuit name.
+        /// </returns>
         public Dictionary<string, CircuitBreakerStatus> GetAllCircuitStatuses()
         {
             return m_circuits.ToDictionary(
@@ -224,7 +239,6 @@ namespace mcp_nexus.Resilience
 
         #region IDisposable Implementation
 
-        /// <summary>
         /// <summary>
         /// Disposes the circuit breaker service.
         /// </summary>

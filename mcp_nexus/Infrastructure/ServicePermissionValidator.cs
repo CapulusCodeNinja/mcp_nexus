@@ -46,8 +46,6 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Checks if the current user has the required permissions for service operations.
-        /// <summary>
         /// Checks if the current user has the required permissions to install services.
         /// </summary>
         /// <returns>

@@ -198,6 +198,7 @@ namespace mcp_nexus.Configuration
         /// <summary>
         /// Registers tools and protocol services
         /// </summary>
+        /// <param name="services">The service collection to register services with</param>
         private static void RegisterToolsAndProtocol(IServiceCollection services)
         {
             // Command queue services

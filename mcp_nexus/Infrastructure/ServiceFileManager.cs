@@ -423,13 +423,6 @@ namespace mcp_nexus.Infrastructure
         }
 
         /// <summary>
-        /// Validates that the installation files exist in the specified service path.
-        /// This method performs a basic check to ensure the service directory exists.
-        /// </summary>
-        /// <param name="servicePath">The service directory path to validate.</param>
-        /// <returns>
-        /// <c>true</c> if the installation files are valid; otherwise, <c>false</c>.
-        /// <summary>
         /// Validates that all required installation files are present and accessible.
         /// </summary>
         /// <param name="servicePath">The path to the service installation directory.</param>
@@ -442,13 +435,6 @@ namespace mcp_nexus.Infrastructure
             return Directory.Exists(servicePath); // Placeholder implementation
         }
 
-        /// <summary>
-        /// Gets information about a backup directory.
-        /// Returns an object containing backup metadata such as path, creation time, and size.
-        /// </summary>
-        /// <param name="backupPath">The backup directory path to get information for.</param>
-        /// <returns>
-        /// An object containing backup information including path, creation time, and size.
         /// <summary>
         /// Gets information about a backup directory.
         /// </summary>

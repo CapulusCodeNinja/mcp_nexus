@@ -121,6 +121,13 @@ namespace mcp_nexus.Health
             }
         }
 
+        /// <summary>
+        /// Gets the current command queue health status.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="CommandQueueHealthStatus"/> object containing queue information, 
+        /// or <c>null</c> if the command queue service is not available.
+        /// </returns>
         private CommandQueueHealthStatus? GetCommandQueueStatus()
         {
             try
@@ -252,7 +259,6 @@ namespace mcp_nexus.Health
                 m_issues.Add(issue);
         }
 
-        /// <summary>
         /// <summary>
         /// Clears all issues.
         /// </summary>

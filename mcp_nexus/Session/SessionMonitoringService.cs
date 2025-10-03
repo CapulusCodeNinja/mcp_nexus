@@ -227,9 +227,6 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// Gets the total queue size across all sessions
-        /// </summary>
-        /// <summary>
         /// Gets the total queue size across all sessions.
         /// </summary>
         /// <returns>The total number of queued commands across all sessions.</returns>
@@ -248,9 +245,6 @@ namespace mcp_nexus.Session
             }
         }
 
-        /// <summary>
-        /// Gets the total number of active commands across all sessions
-        /// </summary>
         /// <summary>
         /// Gets the total number of active commands across all sessions.
         /// </summary>
@@ -363,7 +357,6 @@ namespace mcp_nexus.Session
             }
         }
 
-        /// <summary>
         /// <summary>
         /// Disposes the monitoring service.
         /// </summary>

@@ -343,7 +343,6 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
-        /// <summary>
         /// Creates a logger for a specific session.
         /// </summary>
         /// <param name="sessionId">The session ID to create a logger for.</param>
@@ -414,7 +413,6 @@ namespace mcp_nexus.Session
             }
         }
 
-        /// <summary>
         /// <summary>
         /// Creates a session context for notifications.
         /// </summary>

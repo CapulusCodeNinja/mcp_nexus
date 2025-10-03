@@ -448,8 +448,6 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Calculates the idle timeout based on the current configuration.
-        /// <summary>
         /// Calculates the idle timeout based on configuration.
         /// </summary>
         /// <returns>The idle timeout in milliseconds.</returns>
@@ -577,8 +575,6 @@ namespace mcp_nexus.Debugger
             return false;
         }
 
-        /// <summary>
-        /// Disposes of resources used by the command executor.
         /// <summary>
         /// Disposes of the command executor resources.
         /// This method releases semaphores and other unmanaged resources.

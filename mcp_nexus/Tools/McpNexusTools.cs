@@ -27,7 +27,6 @@ namespace mcp_nexus.Tools
     public static class McpNexusTools
     {
         /// <summary>
-        /// <summary>
         /// Creates a new debugging session for a crash dump file.
         /// Returns sessionId that MUST be used for all subsequent operations.
         /// </summary>
@@ -104,7 +103,6 @@ namespace mcp_nexus.Tools
             }
         }
 
-        /// <summary>
         /// <summary>
         /// Closes an active debugging session and cleans up resources.
         /// Use this when done with a session.
@@ -193,10 +191,8 @@ namespace mcp_nexus.Tools
         }
 
         /// <summary>
-        /// <summary>
         /// Queues a WinDBG command for execution in a debugging session.
         /// Returns commandId for tracking.
-        /// </summary>
         /// </summary>
         /// <param name="serviceProvider">The service provider for dependency injection.</param>
         /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
@@ -459,6 +455,11 @@ namespace mcp_nexus.Tools
             return null;
         }
 
+        /// <summary>
+        /// Gets a formatted ETA time string from a TimeSpan.
+        /// </summary>
+        /// <param name="remaining">The remaining time.</param>
+        /// <returns>A formatted ETA time string, or null if the time is invalid.</returns>
         private static string? GetEtaTime(TimeSpan remaining)
         {
             if (remaining.TotalMinutes <= 0)
@@ -495,9 +496,6 @@ namespace mcp_nexus.Tools
         }
 
         /// <summary>
-        /// Generates a status message for a queued command with progress information.
-        /// </summary>
-        /// <summary>
         /// Gets a formatted status message for a queued command with progress details.
         /// </summary>
         /// <param name="queuePosition">The position of the command in the queue.</param>
@@ -524,8 +522,6 @@ namespace mcp_nexus.Tools
             return $"{baseMessage}{progressInfo}{timeInfo}";
         }
 
-        /// <summary>
-        /// Generates a base status message for a command based on its queue position.
         /// <summary>
         /// Gets a base status message describing the command's current state.
         /// </summary>
@@ -591,7 +587,6 @@ namespace mcp_nexus.Tools
             };
         }
 
-        /// <summary>
         /// <summary>
         /// Provides intelligent polling recommendations based on command state and queue position.
         /// </summary>

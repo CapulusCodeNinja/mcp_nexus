@@ -9,7 +9,6 @@ namespace mcp_nexus.Utilities;
 public static class ConditionalLogger
 {
     /// <summary>
-    /// <summary>
     /// Logs a trace message only if trace logging is enabled.
     /// </summary>
     /// <param name="logger">The logger to use.</param>
@@ -22,7 +21,6 @@ public static class ConditionalLogger
 #endif
     }
 
-    /// <summary>
     /// <summary>
     /// Logs a trace message with exception only if trace logging is enabled.
     /// </summary>
@@ -38,7 +36,6 @@ public static class ConditionalLogger
     }
 
     /// <summary>
-    /// <summary>
     /// Logs a debug message only if debug logging is enabled.
     /// </summary>
     /// <param name="logger">The logger to use.</param>
@@ -51,7 +48,6 @@ public static class ConditionalLogger
 #endif
     }
 
-    /// <summary>
     /// <summary>
     /// Logs a debug message with exception only if debug logging is enabled.
     /// </summary>
@@ -67,7 +63,6 @@ public static class ConditionalLogger
     }
 
     /// <summary>
-    /// <summary>
     /// Checks if trace logging is enabled.
     /// </summary>
     /// <param name="logger">The logger to check.</param>
@@ -81,7 +76,6 @@ public static class ConditionalLogger
 #endif
     }
 
-    /// <summary>
     /// <summary>
     /// Checks if debug logging is enabled.
     /// </summary>

@@ -135,8 +135,6 @@ namespace mcp_nexus.Notifications
         }
 
         /// <summary>
-        /// Disposes the bridge and cleans up all resources.
-        /// <summary>
         /// Disposes the notification bridge.
         /// This method unsubscribes from all notifications and stops the bridge.
         /// </summary>

@@ -213,7 +213,6 @@ namespace mcp_nexus.Recovery
         }
 
         /// <summary>
-        /// <summary>
         /// Disposes the recovery service and all resources.
         /// </summary>
         public void Dispose()
