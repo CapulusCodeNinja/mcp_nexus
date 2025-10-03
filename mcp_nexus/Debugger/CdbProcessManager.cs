@@ -23,11 +23,11 @@ namespace mcp_nexus.Debugger
         private volatile bool m_initOutputConsumed;  // CRITICAL: ensures init output is consumed before commands execute
         private volatile bool m_isStopping;  // Track when we're intentionally stopping the process
 
-        public Process? DebuggerProcess => m_debuggerProcess;
-        public StreamWriter? DebuggerInput => m_debuggerInput;
-        public StreamReader? DebuggerOutput => m_debuggerOutput;
-        public StreamReader? DebuggerError => m_debuggerError;
-        public bool IsActive => m_isActive && !m_disposed && m_initOutputConsumed;
+        public virtual Process? DebuggerProcess => m_debuggerProcess;
+        public virtual StreamWriter? DebuggerInput => m_debuggerInput;
+        public virtual StreamReader? DebuggerOutput => m_debuggerOutput;
+        public virtual StreamReader? DebuggerError => m_debuggerError;
+        public virtual bool IsActive => m_isActive && !m_disposed && m_initOutputConsumed;
 
         public CdbProcessManager(ILogger<CdbProcessManager> logger, CdbSessionConfiguration config)
         {

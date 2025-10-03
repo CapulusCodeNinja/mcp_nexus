@@ -166,56 +166,71 @@ namespace mcp_nexus.Infrastructure
             var visited = new HashSet<Type>();
             var recursionStack = new HashSet<Type>();
 
-            foreach (var service in m_Services.Where(s => s.ServiceType != null))
+            foreach (var service in m_Services.Where(s => s.ServiceType != null && s.ImplementationType != null))
             {
-                if (!visited.Contains(service.ServiceType))
+                if (!visited.Contains(service.ServiceType) && service.ImplementationType != null)
                 {
-                    CheckForCircularDependency(service.ServiceType, visited, recursionStack);
+                    CheckForCircularDependency(service.ImplementationType, visited, recursionStack);
                 }
             }
         }
 
-        private void CheckForCircularDependency(Type serviceType, HashSet<Type> visited, HashSet<Type> recursionStack)
+        private void CheckForCircularDependency(Type implementationType, HashSet<Type> visited, HashSet<Type> recursionStack)
         {
-            visited.Add(serviceType);
-            recursionStack.Add(serviceType);
+            if (visited.Contains(implementationType))
+                return;
 
-            var constructor = serviceType.GetConstructors().FirstOrDefault();
+            visited.Add(implementationType);
+            recursionStack.Add(implementationType);
+
+            var constructor = implementationType.GetConstructors().FirstOrDefault();
             if (constructor != null)
             {
                 foreach (var parameter in constructor.GetParameters())
                 {
-                    if (recursionStack.Contains(parameter.ParameterType))
+                    // Only check circular dependencies for service types
+                    if (IsServiceType(parameter.ParameterType))
                     {
-                        m_ValidationResults.Add(new ValidationResult
+                        // Find the implementation type for this service type
+                        var dependencyImplementation = m_Services
+                            .FirstOrDefault(s => s.ServiceType == parameter.ParameterType)?.ImplementationType;
+                        
+                        if (dependencyImplementation != null)
                         {
-                            Severity = ValidationSeverity.Error,
-                            Message = $"Circular dependency detected: {serviceType.Name} -> {parameter.ParameterType.Name}",
-                            ServiceType = serviceType.Name
-                        });
-                    }
-                    else if (!visited.Contains(parameter.ParameterType))
-                    {
-                        CheckForCircularDependency(parameter.ParameterType, visited, recursionStack);
+                            if (recursionStack.Contains(dependencyImplementation))
+                            {
+                                m_ValidationResults.Add(new ValidationResult
+                                {
+                                    Severity = ValidationSeverity.Error,
+                                    Message = $"Circular dependency detected: {implementationType.Name} -> {parameter.ParameterType.Name}",
+                                    ServiceType = implementationType.Name
+                                });
+                            }
+                            else if (!visited.Contains(dependencyImplementation))
+                            {
+                                CheckForCircularDependency(dependencyImplementation, visited, recursionStack);
+                            }
+                        }
                     }
                 }
             }
 
-            recursionStack.Remove(serviceType);
+            recursionStack.Remove(implementationType);
         }
 
         private void ValidateLifetimeMismatches()
         {
             var serviceMap = m_Services.ToDictionary(s => s.ServiceType, s => s);
 
-            foreach (var service in m_Services.Where(s => s.ServiceType != null))
+            foreach (var service in m_Services.Where(s => s.ServiceType != null && s.ImplementationType != null))
             {
-                var constructor = service.ServiceType.GetConstructors().FirstOrDefault();
+                var constructor = service.ImplementationType?.GetConstructors().FirstOrDefault();
                 if (constructor != null)
                 {
                     foreach (var parameter in constructor.GetParameters())
                     {
-                        if (serviceMap.TryGetValue(parameter.ParameterType, out var dependency))
+                        // Only check lifetime mismatches for service types
+                        if (IsServiceType(parameter.ParameterType) && serviceMap.TryGetValue(parameter.ParameterType, out var dependency))
                         {
                             if (IsLifetimeMismatch(service.Lifetime, dependency.Lifetime))
                             {
@@ -241,14 +256,15 @@ namespace mcp_nexus.Infrastructure
 
         private void ValidateMissingDependencies()
         {
-            foreach (var service in m_Services.Where(s => s.ServiceType != null))
+            foreach (var service in m_Services.Where(s => s.ServiceType != null && s.ImplementationType != null))
             {
-                var constructor = service.ServiceType.GetConstructors().FirstOrDefault();
+                var constructor = service.ImplementationType?.GetConstructors().FirstOrDefault();
                 if (constructor != null)
                 {
                     foreach (var parameter in constructor.GetParameters())
                     {
-                        if (!m_Services.Any(s => s.ServiceType == parameter.ParameterType))
+                        // Only check for missing dependencies that are service types (interfaces or abstract classes)
+                        if (IsServiceType(parameter.ParameterType) && !m_Services.Any(s => s.ServiceType == parameter.ParameterType))
                         {
                             m_ValidationResults.Add(new ValidationResult
                             {
@@ -260,6 +276,12 @@ namespace mcp_nexus.Infrastructure
                     }
                 }
             }
+        }
+
+        private static bool IsServiceType(Type type)
+        {
+            // Check if the type is an interface or abstract class that should be registered in DI
+            return type.IsInterface || type.IsAbstract;
         }
     }
 
