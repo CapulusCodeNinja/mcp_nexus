@@ -395,9 +395,8 @@ namespace mcp_nexus.Debugger
                         await m_streamAccessSemaphore.WaitAsync(linkedCts.Token).ConfigureAwait(false);
                         try
                         {
-                            line = await debuggerError.ReadLineAsync()
-                                .WaitAsync(TimeSpan.FromMilliseconds(100), linkedCts.Token)
-                                .ConfigureAwait(false);
+                            // Use a simple ReadLineAsync without WaitAsync to avoid race conditions
+                            line = await debuggerError.ReadLineAsync().ConfigureAwait(false);
                         }
                         finally
                         {

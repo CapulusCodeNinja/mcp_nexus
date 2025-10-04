@@ -747,11 +747,8 @@ namespace mcp_nexus
                 ? $"Using host: {host}, port: {port} (from {hostSource})"
                 : $"Using host: {host} (from {hostSource}), port: {port} (from {portSource})");
 
-            // Log startup banner
-            LogStartupBanner(commandLineArgs, host, port);
-
-            // Log detailed configuration settings
-            LogConfigurationSettings(webBuilder.Configuration, commandLineArgs);
+            // Configure logging FIRST so startup logs go to the correct location
+            LoggingSetup.ConfigureLogging(webBuilder.Logging, commandLineArgs.ServiceMode, webBuilder.Configuration);
 
             // Add Windows service support if in service mode
             if (commandLineArgs.ServiceMode && OperatingSystem.IsWindows())
@@ -759,7 +756,11 @@ namespace mcp_nexus
                 webBuilder.Host.UseWindowsService();
             }
 
-            LoggingSetup.ConfigureLogging(webBuilder.Logging, commandLineArgs.ServiceMode, webBuilder.Configuration);
+            // Log startup banner AFTER logging is configured
+            LogStartupBanner(commandLineArgs, host, port);
+
+            // Log detailed configuration settings AFTER logging is configured
+            LogConfigurationSettings(webBuilder.Configuration, commandLineArgs);
             ServiceRegistration.RegisterServices(webBuilder.Services, webBuilder.Configuration, commandLineArgs.CustomCdbPath);
             HttpServerSetup.ConfigureHttpServices(webBuilder.Services, webBuilder.Configuration);
 
