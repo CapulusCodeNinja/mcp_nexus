@@ -225,9 +225,9 @@ namespace mcp_nexus.Debugger
 
             // Start readers concurrently but with proper stream synchronization
             // The semaphore in each reader method will prevent concurrent access to the same stream
-            var stdoutTask = ReadStdoutToChannelAsync(debuggerOutput, channel.Writer, cancellationToken);
+            var stdoutTask = ReadStdoutToChannelAsync(processManager, debuggerOutput, channel.Writer, cancellationToken);
             var stderrTask = debuggerError != null
-                ? ReadStderrToChannelAsync(debuggerError, channel.Writer, cancellationToken)
+                ? ReadStderrToChannelAsync(processManager, debuggerError, channel.Writer, cancellationToken)
                 : Task.CompletedTask;
 
             // Consumer: read from channel and build result
@@ -286,6 +286,7 @@ namespace mcp_nexus.Debugger
         /// Reads stdout and writes lines to channel until command completion marker found
         /// </summary>
         private async Task ReadStdoutToChannelAsync(
+            CdbProcessManager processManager,
             StreamReader debuggerOutput,
             ChannelWriter<(string Line, bool IsStderr)> writer,
             CancellationToken cancellationToken)
@@ -301,6 +302,16 @@ namespace mcp_nexus.Debugger
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    // Check if CDB process has exited unexpectedly
+                    var debuggerProcess = processManager.DebuggerProcess;
+                    if (debuggerProcess?.HasExited == true)
+                    {
+                        m_logger.LogError("CDB process has exited unexpectedly during output reading. Exit code: {ExitCode}", 
+                            debuggerProcess.ExitCode);
+                        await writer.WriteAsync(("CDB process has exited unexpectedly. Please restart the session.", false), cancellationToken).ConfigureAwait(false);
+                        break;
+                    }
+
                     // Check timeouts FIRST
                     if (CheckAbsoluteTimeout(startTime))
                     {
@@ -372,6 +383,7 @@ namespace mcp_nexus.Debugger
         /// Uses short timeout to detect when no more data is available
         /// </summary>
         private async Task ReadStderrToChannelAsync(
+            CdbProcessManager processManager,
             StreamReader debuggerError,
             ChannelWriter<(string Line, bool IsStderr)> writer,
             CancellationToken cancellationToken)
@@ -383,6 +395,15 @@ namespace mcp_nexus.Debugger
                 int emptySpins = 0;
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    // Check if CDB process has exited unexpectedly
+                    var debuggerProcess = processManager.DebuggerProcess;
+                    if (debuggerProcess?.HasExited == true)
+                    {
+                        m_logger.LogError("CDB process has exited unexpectedly during stderr reading. Exit code: {ExitCode}", 
+                            debuggerProcess.ExitCode);
+                        break;
+                    }
+
                     try
                     {
                         // Short timeout (100ms) per line - if no data, assume done

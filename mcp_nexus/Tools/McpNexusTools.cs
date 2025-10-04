@@ -53,6 +53,24 @@ namespace mcp_nexus.Tools
 
             try
             {
+                // Validate dump file exists before creating session
+                if (!File.Exists(dumpPath))
+                {
+                    logger.LogError("Dump file does not exist: {DumpPath}", dumpPath);
+                    
+                    var errorResponse = new
+                    {
+                        sessionId = (string?)null,
+                        dumpFile = Path.GetFileName(dumpPath),
+                        commandId = (string?)null,
+                        success = false,
+                        operation = "nexus_open_dump_analyze_session",
+                        message = $"Dump file does not exist: {dumpPath}"
+                    };
+
+                    return errorResponse;
+                }
+
                 var sessionId = await sessionManager.CreateSessionAsync(dumpPath, symbolsPath);
                 // Do not immediately re-query context to avoid race; trust the returned id
 
