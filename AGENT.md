@@ -107,6 +107,7 @@ public ReturnType MethodName(ParameterType paramName)
 - **One class per file**: Each class in its own file
 - **Namespace structure**: `mcp_nexus.{Category}` (e.g., `mcp_nexus.Session`, `mcp_nexus.CommandQueue`)
 - **Using statements**: Grouped by system, third-party, then project namespaces
+- **Member variable placement**: **ALL member variables (fields, properties, constants) MUST be declared at the TOP of the class definition, before any methods or constructors**
 - **Method ordering**: Constructors, public methods, private methods, dispose pattern
 
 ### Error Handling

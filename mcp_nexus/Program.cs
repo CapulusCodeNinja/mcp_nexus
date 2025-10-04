@@ -115,43 +115,31 @@ namespace mcp_nexus
 
                 if (commandLineArgs.Uninstall)
                 {
+                    Console.WriteLine("Uninstall command detected");
                     if (OperatingSystem.IsWindows())
                     {
-                        // Create a logger using NLog configuration for the uninstallation process
-                        using var loggerFactory = LoggerFactory.Create(builder =>
+                        try
                         {
-                            builder.ClearProviders();
-                            builder.AddNLogWeb();
-                            builder.SetMinimumLevel(LogLevel.Information);
-                        });
-                        var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
+                            Console.WriteLine("Starting service uninstallation...");
+                            // Create a logger using NLog configuration for the uninstallation process
+                            using var loggerFactory = LoggerFactory.Create(builder =>
+                            {
+                                builder.ClearProviders();
+                                builder.AddNLogWeb();
+                                builder.SetMinimumLevel(LogLevel.Information);
+                            });
+                            var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
-                        var uninstallResult = await WindowsServiceInstaller.UninstallServiceAsync(logger);
-                        Environment.Exit(uninstallResult ? 0 : 1);
-                    }
-                    else
-                    {
-                        await Console.Error.WriteLineAsync("ERROR: Service uninstallation is only supported on Windows.");
-                        Environment.Exit(1);
-                    }
-                    return;
-                }
-
-                if (commandLineArgs.ForceUninstall)
-                {
-                    if (OperatingSystem.IsWindows())
-                    {
-                        // Create a logger using NLog configuration for the force uninstallation process
-                        using var loggerFactory = LoggerFactory.Create(builder =>
+                            var uninstallResult = await WindowsServiceInstaller.UninstallServiceAsync(logger);
+                            Console.WriteLine($"Uninstall result: {uninstallResult}");
+                            Environment.Exit(uninstallResult ? 0 : 1);
+                        }
+                        catch (Exception ex)
                         {
-                            builder.ClearProviders();
-                            builder.AddNLogWeb();
-                            builder.SetMinimumLevel(LogLevel.Information);
-                        });
-                        var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
-
-                        var forceUninstallResult = await WindowsServiceInstaller.ForceUninstallServiceAsync(logger);
-                        Environment.Exit(forceUninstallResult ? 0 : 1);
+                            Console.WriteLine($"Error during uninstall: {ex.Message}");
+                            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                            Environment.Exit(1);
+                        }
                     }
                     else
                     {
@@ -283,7 +271,6 @@ namespace mcp_nexus
             Console.WriteLine("  --install              Install MCP Nexus as Windows service");
             Console.WriteLine("  --uninstall            Uninstall MCP Nexus Windows service");
             Console.WriteLine("  --update               Update MCP Nexus service (stop, update files, restart)");
-            Console.WriteLine("  --force-uninstall      Force uninstall MCP Nexus service (removes registry entries)");
             Console.WriteLine();
             Console.WriteLine("EXAMPLES:");
             Console.WriteLine("  mcp_nexus                          # Run in stdio mode");
@@ -317,7 +304,6 @@ namespace mcp_nexus
             var serviceOption = new Option<bool>("--service", "Run in Windows service mode (implies --http)");
             var installOption = new Option<bool>("--install", "Install MCP Nexus as Windows service");
             var uninstallOption = new Option<bool>("--uninstall", "Uninstall MCP Nexus Windows service");
-            var forceUninstallOption = new Option<bool>("--force-uninstall", "Force uninstall MCP Nexus service (removes registry entries)");
             var updateOption = new Option<bool>("--update", "Update MCP Nexus service (stop, update files, restart)");
             var portOption = new Option<int?>("--port", "HTTP server port (default: 5117 dev, 5000 production)");
             var hostOption = new Option<string?>("--host", "HTTP server host binding (default: localhost, use 0.0.0.0 for all interfaces)");
@@ -329,7 +315,6 @@ namespace mcp_nexus
                 serviceOption,
                 installOption,
                 uninstallOption,
-                forceUninstallOption,
                 updateOption,
                 portOption,
                 hostOption
@@ -343,7 +328,6 @@ namespace mcp_nexus
                 result.ServiceMode = parseResult.GetValueForOption(serviceOption);
                 result.Install = parseResult.GetValueForOption(installOption);
                 result.Uninstall = parseResult.GetValueForOption(uninstallOption);
-                result.ForceUninstall = parseResult.GetValueForOption(forceUninstallOption);
                 result.Update = parseResult.GetValueForOption(updateOption);
                 result.Port = parseResult.GetValueForOption(portOption);
                 result.Host = parseResult.GetValueForOption(hostOption);
@@ -673,11 +657,6 @@ namespace mcp_nexus
             /// Gets or sets a value indicating whether to uninstall the MCP Nexus Windows service.
             /// </summary>
             public bool Uninstall { get; set; }
-
-            /// <summary>
-            /// Gets or sets a value indicating whether to force uninstall the MCP Nexus service (removes registry entries).
-            /// </summary>
-            public bool ForceUninstall { get; set; }
 
             /// <summary>
             /// Gets or sets a value indicating whether to update the MCP Nexus service (stop, update files, restart).
