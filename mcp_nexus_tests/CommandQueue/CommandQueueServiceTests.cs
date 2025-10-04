@@ -159,6 +159,133 @@ namespace mcp_nexus_tests.Services
             Assert.Contains("Command execution failed", result);
         }
 
+        #region Additional Edge Case Tests
+
+        [Fact]
+        public void Constructor_WithNullCdbSession_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentNullException>(() => 
+                new CommandQueueService(null!, m_mockLogger.Object, m_mockLoggerFactory.Object));
+            Assert.Equal("cdbSession", exception.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_WithNullLogger_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentNullException>(() => 
+                new CommandQueueService(m_mockCdbSession.Object, null!, m_mockLoggerFactory.Object));
+            Assert.Equal("logger", exception.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_WithNullLoggerFactory_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentNullException>(() => 
+                new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object, null!));
+            Assert.Equal("factory", exception.ParamName);
+        }
+
+        [Fact]
+        public void QueueCommand_WithNullCommand_ThrowsArgumentException()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentException>(() => m_service.QueueCommand(null!));
+            Assert.Contains("not be null or empty", exception.Message);
+            Assert.Equal("command", exception.ParamName);
+        }
+
+        [Fact]
+        public void QueueCommand_WithEmptyCommand_ThrowsArgumentException()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentException>(() => m_service.QueueCommand(""));
+            Assert.Contains("not be null or empty", exception.Message);
+            Assert.Equal("command", exception.ParamName);
+        }
+
+        [Fact]
+        public void QueueCommand_WithWhitespaceCommand_ThrowsArgumentException()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentException>(() => m_service.QueueCommand("   "));
+            Assert.Contains("not be null or empty", exception.Message);
+            Assert.Equal("command", exception.ParamName);
+        }
+
+        [Fact]
+        public void CancelCommand_WithNullCommandId_ReturnsFalse()
+        {
+            // Act
+            var result = m_service.CancelCommand(null!);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void CancelCommand_WithEmptyCommandId_ReturnsFalse()
+        {
+            // Act
+            var result = m_service.CancelCommand("");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void CancelCommand_WithWhitespaceCommandId_ReturnsFalse()
+        {
+            // Act
+            var result = m_service.CancelCommand("   ");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void CancelAllCommands_WithNoActiveCommands_ReturnsZero()
+        {
+            // Act
+            var result = m_service.CancelAllCommands();
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact]
+        public void CancelAllCommands_WithActiveCommands_ReturnsCorrectCount()
+        {
+            // Arrange
+            var commandId1 = m_service.QueueCommand("test command 1");
+            var commandId2 = m_service.QueueCommand("test command 2");
+
+            // Act
+            var result = m_service.CancelAllCommands("Test cancellation");
+
+            // Assert
+            Assert.Equal(2, result);
+        }
+
+        [Fact]
+        public void TriggerCleanup_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw
+            m_service.TriggerCleanup();
+        }
+
+        [Fact]
+        public void Dispose_WhenCalledMultipleTimes_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw
+            m_service.Dispose();
+            m_service.Dispose();
+        }
+
+        #endregion
+
     }
 }
 

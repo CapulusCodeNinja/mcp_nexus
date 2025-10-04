@@ -646,5 +646,98 @@ namespace mcp_nexus_tests.Caching
         }
 
         #endregion
+
+        #region Additional Edge Case Tests
+
+        [Fact]
+        public void TryGet_WithNullKey_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentNullException>(() => m_cacheService.TryGet(null!, out _));
+            Assert.Equal("key", exception.ParamName);
+        }
+
+        [Fact]
+        public void TryGet_WithEmptyKey_ReturnsFalse()
+        {
+            // Act
+            var result = m_cacheService.TryGet("", out var value);
+
+            // Assert
+            Assert.False(result);
+            Assert.Null(value);
+        }
+
+        [Fact]
+        public void TryGet_WithWhitespaceKey_ReturnsFalse()
+        {
+            // Act
+            var result = m_cacheService.TryGet("   ", out var value);
+
+            // Assert
+            Assert.False(result);
+            Assert.Null(value);
+        }
+
+        [Fact]
+        public void Set_WithNullKey_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentNullException>(() => m_cacheService.Set(null!, "test-value"));
+            Assert.Equal("key", exception.ParamName);
+        }
+
+        [Fact]
+        public void Set_WithEmptyKey_StoresValue()
+        {
+            // Act
+            m_cacheService.Set("", "test-value");
+
+            // Assert - Should store the value
+            Assert.True(m_cacheService.TryGet("", out var value));
+            Assert.Equal("test-value", value);
+        }
+
+        [Fact]
+        public void Set_WithWhitespaceKey_StoresValue()
+        {
+            // Act
+            m_cacheService.Set("   ", "test-value");
+
+            // Assert - Should store the value
+            Assert.True(m_cacheService.TryGet("   ", out var value));
+            Assert.Equal("test-value", value);
+        }
+
+        [Fact]
+        public void TryRemove_WithNullKey_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentNullException>(() => m_cacheService.TryRemove(null!));
+            Assert.Equal("key", exception.ParamName);
+        }
+
+        [Fact]
+        public void TryRemove_WithEmptyKey_ReturnsFalse()
+        {
+            // Act
+            var result = m_cacheService.TryRemove("");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void TryRemove_WithWhitespaceKey_ReturnsFalse()
+        {
+            // Act
+            var result = m_cacheService.TryRemove("   ");
+
+            // Assert
+            Assert.False(result);
+        }
+
+
+        #endregion
     }
 }

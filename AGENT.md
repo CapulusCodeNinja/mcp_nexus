@@ -29,27 +29,52 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 - **ModelContextProtocol**: MCP server implementation
 - **WinDBG/CDB**: Windows debugging tools integration
 
-## 📜 Non-Negotiable Code Contribution Policy (Ground Rules)
+## 🚨 CRITICAL: MANDATORY GROUND RULES - READ FIRST! 🚨
 
-**These rules define the minimum acceptable standard for all code submissions and are mandatory for merging. Violations will result in immediate rejection.**
+**⚠️ THESE RULES ARE NON-NEGOTIABLE AND MUST BE FOLLOWED FOR EVERY CODE CHANGE ⚠️**
 
-### Code Structure and Quality
+**❌ VIOLATIONS WILL RESULT IN IMMEDIATE REJECTION ❌**
 
+### 🔥 IMMEDIATE REQUIREMENTS (Check These FIRST!)
+
+1. **✅ ALL TESTS MUST PASS**: Run `dotnet test` - ALL tests must be green before any submission
+2. **✅ VERSION MUST BE UPDATED**: Increment the build version in `mcp_nexus.csproj` (e.g., 1.0.6.12 → 1.0.6.13)
+3. **✅ README.md MUST BE UPDATED**: Update test count and coverage in README.md badges
+4. **✅ NO COMPILATION ERRORS**: Code must build with zero warnings and zero errors
+5. **✅ NO DEAD CODE**: Remove unused code, methods, or files
+
+### 📋 DETAILED GROUND RULES
+
+#### Code Structure and Quality
 * **Atomicity and Clarity:** Methods must be **atomic, focused, and build successfully with zero warnings** in all configurations.
 * **Code Cleanliness:** There must be **no unused code**, **dead code**, or **unused import/using directives** within any file.
 * **File-Class Parity:** Each **top-level class or interface must reside in its own dedicated file**, with the filename matching the class/interface name.
 * **Standardized Formatting:** All code must be **perfectly formatted and aligned** according to the project's established standards (enforced by `dotnet format` or equivalent tooling).
 * **Concurrency and Performance Integrity:** As this is a **server application**, code must adhere to **proper concurrency practices**. Introduction of **blocking operations, excessive/long `Thread.Sleep` calls, or potential deadlocks/livelocks is strictly prohibited**. The code must be performant and thread-safe.
 
-### Testing and Documentation
-
+#### Testing and Documentation
 * **100% Test Pass Rate:** **All unit tests must pass** (be "green") before submission.
 * **Testing Integrity:** **No existing or new tests may be excluded, ignored, or removed** without prior architectural review and approval.
 * **Documentation Synchronization:** All relevant **documentation** (e.g., Markdown documentation, README, or designated build manifest files) must be **up-to-date and reflect the current state** of the codebase and tests.
 
-### Versioning and Scope
-
+#### Versioning and Scope
 * **Version Increment:** Only the **build version component** (the last digit/identifier) in the project's versioning scheme must be incremented for this change. (Assuming a **Major.Minor.Patch.Build** semantic versioning standard.)
+
+### 🎯 COMMON VIOLATIONS TO AVOID
+
+**❌ DON'T FORGET:**
+- Running tests before submission
+- Updating version numbers
+- Updating README.md with new test counts
+- Removing dead/unused code
+- Checking for compilation errors
+
+**✅ ALWAYS DO:**
+- Run `dotnet test` and verify all tests pass
+- Update version in `mcp_nexus.csproj`
+- Update test count in README.md
+- Remove any unused code or files
+- Verify zero compilation warnings/errors
 
 ---
 
