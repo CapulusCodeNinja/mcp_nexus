@@ -514,6 +514,10 @@ namespace mcp_nexus_tests.Tools
             var mockResult = CommandResult.Success(commandResult, TimeSpan.FromMinutes(3));
 
             m_MockSessionManager
+                .Setup(x => x.SessionExists(sessionId))
+                .Returns(true);
+
+            m_MockSessionManager
                 .Setup(x => x.GetCommandInfoAndResultAsync(sessionId, commandId))
                 .ReturnsAsync((commandInfo, mockResult));
 
@@ -539,7 +543,9 @@ namespace mcp_nexus_tests.Tools
             Assert.Equal("Completed", statusElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("result", out var resultElement));
-            Assert.Equal(commandResult, resultElement.GetString());
+            // Result is now an object (ICommandResult), not a string
+            Assert.True(resultElement.TryGetProperty("Output", out var outputElement));
+            Assert.Equal(commandResult, outputElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("completedAt", out _));
             Assert.True(document.RootElement.TryGetProperty("progress", out _));
@@ -567,17 +573,13 @@ namespace mcp_nexus_tests.Tools
                 IsCompleted = false
             };
 
-            mockCommandQueue
-                .Setup(x => x.GetCommandInfo(commandId))
-                .Returns(commandInfo);
-
             m_MockSessionManager
                 .Setup(x => x.SessionExists(sessionId))
                 .Returns(true);
 
             m_MockSessionManager
-                .Setup(x => x.GetCommandQueue(sessionId))
-                .Returns(mockCommandQueue.Object);
+                .Setup(x => x.GetCommandInfoAndResultAsync(sessionId, commandId))
+                .ReturnsAsync((commandInfo, null));
 
             // Act
             var result = await McpNexusTools.nexus_read_dump_analyze_command_result(
