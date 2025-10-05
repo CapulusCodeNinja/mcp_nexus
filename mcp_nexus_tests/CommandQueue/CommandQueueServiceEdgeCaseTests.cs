@@ -6,7 +6,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using mcp_nexus_tests.Helpers;
+using mcp_nexus_tests.Mocks;
 
 namespace mcp_nexus_tests.CommandQueue
 {

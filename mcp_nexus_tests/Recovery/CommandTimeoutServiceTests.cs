@@ -12,7 +12,7 @@ using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure;
 using mcp_nexus.Session;
 
-namespace mcp_nexus_tests.Services
+namespace mcp_nexus_tests.Recovery
 {
     /// <summary>
     /// Comprehensive tests for CommandTimeoutService - manages command timeouts

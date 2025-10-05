@@ -8,7 +8,7 @@ using Moq;
 using Xunit;
 using mcp_nexus.Debugger;
 
-namespace mcp_nexus_tests.Helper
+namespace mcp_nexus_tests.Debugger
 {
     /// <summary>
     /// Comprehensive tests for CdbSession - the core debugger interaction class

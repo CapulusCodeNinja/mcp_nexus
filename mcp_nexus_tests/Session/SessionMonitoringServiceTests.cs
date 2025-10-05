@@ -8,7 +8,7 @@ using mcp_nexus.Notifications;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using System.Collections.Concurrent;
-using mcp_nexus_tests.Helpers;
+using mcp_nexus_tests.Mocks;
 
 namespace mcp_nexus_tests.Session
 {

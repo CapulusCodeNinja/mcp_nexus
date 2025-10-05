@@ -5,7 +5,7 @@ using mcp_nexus.CommandQueue;
 using mcp_nexus.Debugger;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
-using mcp_nexus_tests.Helpers;
+using mcp_nexus_tests.Mocks;
 
 namespace mcp_nexus_tests.CommandQueue
 {

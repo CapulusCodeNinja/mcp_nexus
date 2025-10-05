@@ -11,7 +11,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace mcp_nexus_tests.Services
+namespace mcp_nexus_tests.CommandQueue
 {
     /// <summary>
     /// Fast unit tests for ResilientCommandQueueService using mocks - no real background processing

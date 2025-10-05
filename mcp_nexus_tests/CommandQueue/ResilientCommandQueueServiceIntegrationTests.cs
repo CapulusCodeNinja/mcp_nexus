@@ -9,9 +9,9 @@ using mcp_nexus.Debugger;
 using mcp_nexus.Notifications;
 using mcp_nexus.Recovery;
 using mcp_nexus.Constants;
-using mcp_nexus_tests.Helpers;
+using mcp_nexus_tests.Mocks;
 
-namespace mcp_nexus_tests.Services
+namespace mcp_nexus_tests.CommandQueue
 {
     /// <summary>
     /// Integration tests for ResilientCommandQueueService - tests actual resilience patterns

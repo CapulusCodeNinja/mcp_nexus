@@ -5,7 +5,7 @@ using Moq;
 using mcp_nexus.Debugger;
 using mcp_nexus_tests.Mocks;
 
-namespace mcp_nexus_tests.Helpers
+namespace mcp_nexus_tests.Mocks
 {
     /// <summary>
     /// Helper class that provides realistic CDB mocks for all tests

@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace mcp_nexus_tests.Services
+namespace mcp_nexus_tests.Notifications
 {
     public class McpNotificationServiceTests : IDisposable
     {

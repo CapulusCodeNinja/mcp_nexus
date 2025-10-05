@@ -9,7 +9,7 @@ using mcp_nexus.Protocol;
 using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure;
 using Moq;
-using mcp_nexus_tests.Helpers;
+using mcp_nexus_tests.Mocks;
 using Microsoft.Extensions.Logging;
 
 namespace mcp_nexus_tests.Session.Models

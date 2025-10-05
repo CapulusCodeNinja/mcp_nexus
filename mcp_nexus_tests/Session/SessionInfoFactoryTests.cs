@@ -5,7 +5,7 @@ using mcp_nexus.Session;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Session.Models;
-using mcp_nexus_tests.Helpers;
+using mcp_nexus_tests.Mocks;
 using Microsoft.Extensions.Logging;
 
 namespace mcp_nexus_tests.Session

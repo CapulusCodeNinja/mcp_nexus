@@ -13,7 +13,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Text.Json;
 
-namespace mcp_nexus_tests.Services
+namespace mcp_nexus_tests.Notifications
 {
     [Collection("NotificationTestCollection")]
     public class StdioNotificationBridgeTests : IDisposable

@@ -12,9 +12,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using mcp_nexus_tests.Helpers;
+using mcp_nexus_tests.Mocks;
 
-namespace mcp_nexus_tests.Services
+namespace mcp_nexus_tests.CommandQueue
 {
     public class CommandQueueServiceTests : IDisposable
     {

@@ -7,9 +7,9 @@ using Xunit;
 using mcp_nexus.Debugger;
 using mcp_nexus.Notifications;
 using mcp_nexus.Recovery;
-using mcp_nexus_tests.Helpers;
+using mcp_nexus_tests.Mocks;
 
-namespace mcp_nexus_tests.Services
+namespace mcp_nexus_tests.Recovery
 {
     /// <summary>
     /// Comprehensive tests for CdbSessionRecoveryService - tests recovery scenarios

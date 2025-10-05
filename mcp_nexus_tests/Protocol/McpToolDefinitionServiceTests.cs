@@ -7,7 +7,7 @@ using mcp_nexus.Infrastructure;
 using mcp_nexus.Session;
 using Xunit;
 
-namespace mcp_nexus_tests.Services
+namespace mcp_nexus_tests.Protocol
 {
     public class McpToolDefinitionServiceTests
     {
