@@ -160,7 +160,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert - Command should return an error result
             Assert.NotNull(result);
-            Assert.Contains("Command execution failed", result);
+            Assert.Contains("Command execution failed: Command failed: failing-command", result);
         }
 
         #region Additional Edge Case Tests

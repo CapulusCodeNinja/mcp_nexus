@@ -160,6 +160,16 @@ namespace mcp_nexus_tests.Mocks
                 CompletionDelay = TimeSpan.FromMilliseconds(100)
             });
 
+            // Add failing command behavior for error testing
+            mock.AddCommandBehavior("failing-command", new CdbCommandBehavior
+            {
+                StdoutLines = new string[0],
+                StderrLines = new[] { "Command failed with error" },
+                ExecutionDelay = TimeSpan.FromMilliseconds(50),
+                CompletionDelay = TimeSpan.FromMilliseconds(10),
+                ShouldFail = true
+            });
+
             // Session is started automatically in constructor
             
             return mock;

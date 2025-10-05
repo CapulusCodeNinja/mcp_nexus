@@ -556,7 +556,7 @@ namespace mcp_nexus_tests.CommandQueue
             var result = await m_Service.GetCommandResult(commandId);
 
             // Assert
-            Assert.Contains("Command execution failed: Command failed", result);
+            Assert.Contains("Command execution failed: Command failed: failing-command", result);
         }
 
         [Fact]

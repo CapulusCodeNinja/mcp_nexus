@@ -113,6 +113,9 @@ namespace mcp_nexus_tests.Mocks
 
             _logger.LogInformation("Executing realistic command: {Command}", command);
 
+            // Check for cancellation before starting
+            cancellationToken.ThrowIfCancellationRequested();
+
             // Find matching behavior or use default
             var behavior = FindMatchingBehavior(command);
             

@@ -517,9 +517,10 @@ namespace mcp_nexus_tests.Recovery
         public async Task RecoverStuckSession_WhenSessionStillActiveAfterStop_ReturnsFalse()
         {
             // Arrange
-            // Realistic mock handles StopSession and IsActive internally
+            // Configure realistic mock to simulate session that remains active after stop
+            var mockCdbSession = RealisticCdbTestHelper.CreateFailingCdbSession(Mock.Of<ILogger>(), shouldFailStopSession: true);
             m_Service = new CdbSessionRecoveryService(
-                m_RealisticCdbSession,
+                mockCdbSession,
                 m_MockLogger.Object,
                 m_CancelAllCommandsCallback);
 
