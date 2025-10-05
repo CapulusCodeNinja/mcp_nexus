@@ -75,6 +75,7 @@ namespace mcp_nexus.Resources
         {
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
             var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
+            
 
             try
             {
@@ -450,7 +451,7 @@ namespace mcp_nexus.Resources
                 return "Command completed successfully";
 
             if (cmd.State == CommandState.Failed)
-                return "Command failed: Unknown error";
+                return "Command failed";
 
             if (cmd.State == CommandState.Cancelled)
                 return "Command was cancelled";
@@ -458,9 +459,7 @@ namespace mcp_nexus.Resources
             if (cmd.State == CommandState.Executing)
             {
                 var elapsed = DateTime.UtcNow - cmd.QueueTime;
-                var remainingMinutes = Math.Max(0, (int)((TimeSpan.FromMinutes(10) - elapsed).TotalMinutes));
-                var remainingSeconds = Math.Max(0, (int)((TimeSpan.FromMinutes(10) - elapsed).TotalSeconds % 60));
-                return $"Command is currently executing (elapsed: {elapsed.TotalMinutes:F1} minutes, remaining: {remainingMinutes} minutes {remainingSeconds} seconds)";
+                return $"Command is currently executing (elapsed: {elapsed.TotalMinutes:F1} minutes)";
             }
 
             if (cmd.State == CommandState.Queued)
@@ -480,15 +479,9 @@ namespace mcp_nexus.Resources
                     _ => $"Command is position {queuePosition + 1} in queue - waiting for {queuePosition} commands ahead"
                 };
 
-                // Calculate remaining time
-                var remaining = TimeSpan.FromMinutes(10) - elapsed;
-                var remainingMinutes = Math.Max(0, (int)remaining.TotalMinutes);
-                var remainingSeconds = Math.Max(0, (int)(remaining.TotalSeconds % 60));
+                var progressInfo = $" (Progress: {progressPercentage}%, Queued for: {elapsed.TotalMinutes:F1}min)";
 
-                var progressInfo = $" (Progress: {progressPercentage}%, Elapsed: {elapsed.TotalMinutes:F1}min)";
-                var timeInfo = remainingMinutes > 0 ? $", ETA: {remainingMinutes}min {remainingSeconds}s" : ", ETA: <1min";
-
-                return $"{baseMessage}{progressInfo}{timeInfo}";
+                return $"{baseMessage}{progressInfo}";
             }
 
             return "Command status unknown";
