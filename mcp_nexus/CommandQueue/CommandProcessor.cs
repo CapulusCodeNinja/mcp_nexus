@@ -165,20 +165,9 @@ namespace mcp_nexus.CommandQueue
                     m_Logger.LogInformation("✅ Command {CommandId} completed successfully in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
 
-                    // CRITICAL FIX: Remove completed command from tracker after short retention to prevent memory leak
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await Task.Delay(TimeSpan.FromMinutes(5)); // Keep for 5 minutes for result retrieval
-                            m_Tracker.TryRemoveCommand(command.Id ?? string.Empty, out _);
-                            m_Logger.LogTrace("Removed completed command {CommandId} from tracker", command.Id);
-                        }
-                        catch (Exception ex)
-                        {
-                            m_Logger.LogWarning(ex, "Error during delayed cleanup of command {CommandId}", command.Id);
-                        }
-                    });
+                    // Results are now cached, so we can clean up immediately
+                    m_Tracker.TryRemoveCommand(command.Id ?? string.Empty, out _);
+                    m_Logger.LogTrace("Removed completed command {CommandId} from tracker (result cached)", command.Id);
                 }
                 catch (OperationCanceledException) when (command.CancellationTokenSource?.Token.IsCancellationRequested == true)
                 {
@@ -193,19 +182,9 @@ namespace mcp_nexus.CommandQueue
                     m_Logger.LogWarning("⚠️ Command {CommandId} was cancelled by user in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
 
-                    // Clean up cancelled command
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await Task.Delay(TimeSpan.FromMinutes(5));
-                            m_Tracker.TryRemoveCommand(command.Id ?? string.Empty, out _);
-                        }
-                        catch (Exception ex)
-                        {
-                            m_Logger.LogWarning(ex, "Error during delayed cleanup of cancelled command {CommandId}", command.Id);
-                        }
-                    });
+                    // Results are now cached, so we can clean up immediately
+                    m_Tracker.TryRemoveCommand(command.Id ?? string.Empty, out _);
+                    m_Logger.LogTrace("Removed cancelled command {CommandId} from tracker (result cached)", command.Id);
                 }
                 catch (OperationCanceledException)
                 {
@@ -223,19 +202,9 @@ namespace mcp_nexus.CommandQueue
                     m_Logger.LogWarning("⏰ Command {CommandId} timed out or was cancelled in {Elapsed}ms",
                         command.Id, stopwatch.ElapsedMilliseconds);
 
-                    // Clean up failed/timed out command
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await Task.Delay(TimeSpan.FromMinutes(5));
-                            m_Tracker.TryRemoveCommand(command.Id ?? string.Empty, out _);
-                        }
-                        catch (Exception ex)
-                        {
-                            m_Logger.LogWarning(ex, "Error during delayed cleanup of failed command {CommandId}", command.Id);
-                        }
-                    });
+                    // Results are now cached, so we can clean up immediately
+                    m_Tracker.TryRemoveCommand(command.Id ?? string.Empty, out _);
+                    m_Logger.LogTrace("Removed failed command {CommandId} from tracker (result cached)", command.Id);
                 }
                 finally
                 {
@@ -257,19 +226,9 @@ namespace mcp_nexus.CommandQueue
                 m_Logger.LogError(ex, "❌ Command {CommandId} failed with exception in {Elapsed}ms",
                     command.Id, stopwatch.ElapsedMilliseconds);
 
-                // Clean up failed command
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await Task.Delay(TimeSpan.FromMinutes(5));
-                        m_Tracker.TryRemoveCommand(command.Id ?? string.Empty, out _);
-                    }
-                    catch (Exception ex)
-                    {
-                        m_Logger.LogWarning(ex, "Error during delayed cleanup of failed command {CommandId}", command.Id);
-                    }
-                });
+                // Results are now cached, so we can clean up immediately
+                m_Tracker.TryRemoveCommand(command.Id ?? string.Empty, out _);
+                m_Logger.LogTrace("Removed failed command {CommandId} from tracker (result cached)", command.Id);
             }
             finally
             {

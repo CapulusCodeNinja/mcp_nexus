@@ -258,7 +258,7 @@ namespace mcp_nexus.Session
             }
             else
             {
-                m_logger.LogWarning("TryGetCommandQueue: {SessionId} not found in sessions dictio
+                m_logger.LogWarning("TryGetCommandQueue: {SessionId} not found in sessions dictionary", sessionId);
                 return false;
             }
 
