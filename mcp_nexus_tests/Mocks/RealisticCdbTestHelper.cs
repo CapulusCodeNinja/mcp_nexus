@@ -21,8 +21,7 @@ namespace mcp_nexus_tests.Helpers
         {
             var mock = new RealisticCdbSessionMock(logger);
             
-            // Start the session to simulate real behavior
-            _ = mock.StartSession("test.dmp");
+            // Session is started automatically in constructor
             
             return mock;
         }
@@ -37,8 +36,33 @@ namespace mcp_nexus_tests.Helpers
             // Apply custom configuration
             configure(mock);
             
-            // Start the session to simulate real behavior
-            _ = mock.StartSession("test.dmp");
+            // Session is started automatically in constructor
+            
+            return mock;
+        }
+
+        /// <summary>
+        /// Creates a realistic CDB session mock that simulates failure scenarios
+        /// </summary>
+        public static ICdbSession CreateFailingCdbSession(ILogger logger, bool shouldFailStartSession = false, bool shouldFailStopSession = false, bool shouldThrowOnCancel = false)
+        {
+            var mock = new RealisticCdbSessionMock(logger);
+            mock.ConfigureBehavior(shouldFailStartSession, shouldFailStopSession, shouldThrowOnCancel);
+            
+            // Session is started automatically in constructor
+            
+            return mock;
+        }
+
+        /// <summary>
+        /// Creates a realistic CDB session mock that simulates recovery scenarios
+        /// </summary>
+        public static ICdbSession CreateRecoveryCdbSession(ILogger logger, params bool[] isActiveSequence)
+        {
+            var mock = new RealisticCdbSessionMock(logger);
+            mock.SetIsActiveSequence(isActiveSequence);
+            
+            // Session is started automatically in constructor
             
             return mock;
         }
@@ -107,8 +131,7 @@ namespace mcp_nexus_tests.Helpers
                 ShouldFail = true
             });
 
-            // Start the session to simulate real behavior
-            _ = mock.StartSession("test.dmp");
+            // Session is started automatically in constructor
             
             return mock;
         }
@@ -137,8 +160,7 @@ namespace mcp_nexus_tests.Helpers
                 CompletionDelay = TimeSpan.FromMilliseconds(100)
             });
 
-            // Start the session to simulate real behavior
-            _ = mock.StartSession("test.dmp");
+            // Session is started automatically in constructor
             
             return mock;
         }
@@ -168,8 +190,7 @@ namespace mcp_nexus_tests.Helpers
                 CompletionDelay = TimeSpan.FromMilliseconds(50)
             });
 
-            // Start the session to simulate real behavior
-            _ = mock.StartSession("test.dmp");
+            // Session is started automatically in constructor
             
             return mock;
         }

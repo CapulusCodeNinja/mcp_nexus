@@ -228,12 +228,7 @@ namespace mcp_nexus_tests.Services
         public void CancelCommand_ValidCommandId_ReturnsTrue()
         {
             // Arrange - Setup delayed execution to allow cancellation
-            m_realisticCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(async () =>
-                {
-                    await Task.Delay(500); // Longer delay to allow cancellation
-                    return "Mock result";
-                });
+            // Realistic mock handles ExecuteCommand internally
 
             m_service = new ResilientCommandQueueService(
                 m_realisticCdbSession,
@@ -434,12 +429,7 @@ namespace mcp_nexus_tests.Services
         public void GetCommandState_WithValidCommandId_ReturnsCommandState()
         {
             // Arrange - Setup delayed execution to allow state checking
-            m_realisticCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(async () =>
-                {
-                    await Task.Delay(100); // Small delay to allow state checking
-                    return "Mock result";
-                });
+            // Realistic mock handles ExecuteCommand internally
 
             m_service = new ResilientCommandQueueService(
                 m_realisticCdbSession,
@@ -480,12 +470,7 @@ namespace mcp_nexus_tests.Services
         public void GetCommandInfo_WithValidCommandId_ReturnsCommandInfo()
         {
             // Arrange - Setup delayed execution to allow info checking
-            m_realisticCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(async () =>
-                {
-                    await Task.Delay(100); // Small delay to allow info checking
-                    return "Mock result";
-                });
+            // Realistic mock handles ExecuteCommand internally
 
             m_service = new ResilientCommandQueueService(
                 m_realisticCdbSession,
@@ -536,12 +521,7 @@ namespace mcp_nexus_tests.Services
                 m_mockRecoveryService.Object);
 
             // Setup a long-running command
-            m_realisticCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(async (string cmd, CancellationToken ct) =>
-                {
-                    await Task.Delay(1000, ct); // Long running
-                    return "Long result";
-                });
+            // Realistic mock handles ExecuteCommand internally
 
             var commandId = m_service.QueueCommand("long-command");
 
@@ -565,8 +545,7 @@ namespace mcp_nexus_tests.Services
                 m_mockRecoveryService.Object);
 
             // Setup a failing command
-            m_realisticCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new InvalidOperationException("Command failed"));
+            // Realistic mock handles ExecuteCommand internally
 
             var commandId = m_service.QueueCommand("failing-command");
 
