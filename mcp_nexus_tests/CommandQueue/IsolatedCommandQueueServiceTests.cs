@@ -9,12 +9,13 @@ using mcp_nexus.CommandQueue;
 using mcp_nexus.Debugger;
 using mcp_nexus.Notifications;
 using Xunit;
+using mcp_nexus_tests.Helpers;
 
 namespace mcp_nexus_tests.CommandQueue
 {
     public class IsolatedCommandQueueServiceTests : IDisposable
     {
-        private readonly Mock<ICdbSession> m_mockCdbSession;
+        private readonly ICdbSession m_realisticCdbSession;
         private readonly Mock<ILogger<IsolatedCommandQueueService>> m_mockLogger;
         private readonly Mock<IMcpNotificationService> m_mockNotificationService;
         private readonly string m_sessionId = "test-session-123";
@@ -22,12 +23,14 @@ namespace mcp_nexus_tests.CommandQueue
 
         public IsolatedCommandQueueServiceTests()
         {
-            m_mockCdbSession = new Mock<ICdbSession>();
             m_mockLogger = new Mock<ILogger<IsolatedCommandQueueService>>();
             m_mockNotificationService = new Mock<IMcpNotificationService>();
 
+            // Use realistic CDB mock instead of simple mock
+            m_realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
+
             m_service = new IsolatedCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockNotificationService.Object,
                 m_sessionId);
@@ -36,6 +39,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Dispose()
         {
             m_service?.Dispose();
+            m_realisticCdbSession?.Dispose();
         }
 
         [Fact]
@@ -49,21 +53,21 @@ namespace mcp_nexus_tests.CommandQueue
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => new IsolatedCommandQueueService(
-                m_mockCdbSession.Object, null!, m_mockNotificationService.Object, m_sessionId));
+                m_realisticCdbSession, null!, m_mockNotificationService.Object, m_sessionId));
         }
 
         [Fact]
         public void Constructor_WithNullNotificationService_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => new IsolatedCommandQueueService(
-                m_mockCdbSession.Object, m_mockLogger.Object, null!, m_sessionId));
+                m_realisticCdbSession, m_mockLogger.Object, null!, m_sessionId));
         }
 
         [Fact]
         public void Constructor_WithNullSessionId_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => new IsolatedCommandQueueService(
-                m_mockCdbSession.Object, m_mockLogger.Object, m_mockNotificationService.Object, null!));
+                m_realisticCdbSession, m_mockLogger.Object, m_mockNotificationService.Object, null!));
         }
 
         [Fact]
@@ -71,7 +75,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act
             var service = new IsolatedCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockNotificationService.Object,
                 m_sessionId);

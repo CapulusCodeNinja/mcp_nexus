@@ -1,0 +1,178 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using mcp_nexus.Debugger;
+
+namespace mcp_nexus_tests.Debugger
+{
+    /// <summary>
+    /// Realistic mock of ICdbSession that simulates actual CDB behavior
+    /// This mock catches bugs that simple string-returning mocks miss
+    /// </summary>
+    public class RealisticCdbSessionMock : ICdbSession, IDisposable
+    {
+        private readonly ILogger _logger;
+        private readonly Dictionary<string, CdbCommandBehavior> _commandBehaviors;
+        private readonly Random _random;
+        private bool _isActive;
+        private bool _disposed;
+        private int? _mockProcessId;
+
+        public bool IsActive => _isActive && !_disposed;
+        public int? ProcessId => _mockProcessId;
+
+        public RealisticCdbSessionMock(ILogger logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _commandBehaviors = new Dictionary<string, CdbCommandBehavior>();
+            _random = new Random();
+            _isActive = false;
+        }
+
+        public async Task<bool> StartSession(string dumpPath, string? symbolsPath = null)
+        {
+            if (_disposed) return false;
+
+            _logger.LogInformation("Starting realistic CDB session for dump: {DumpPath}", dumpPath);
+            
+            // Simulate session startup delay
+            await Task.Delay(100);
+            
+            _isActive = true;
+            _mockProcessId = _random.Next(1000, 9999);
+            
+            return true;
+        }
+
+        public async Task<bool> StopSession()
+        {
+            if (!_isActive) return false;
+
+            _logger.LogInformation("Stopping realistic CDB session");
+            
+            // Simulate session shutdown delay
+            await Task.Delay(50);
+            
+            _isActive = false;
+            _mockProcessId = null;
+            
+            return true;
+        }
+
+        public async Task<string> ExecuteCommand(string command)
+        {
+            return await ExecuteCommand(command, CancellationToken.None);
+        }
+
+        public async Task<string> ExecuteCommand(string command, CancellationToken cancellationToken)
+        {
+            if (!_isActive)
+                throw new InvalidOperationException("Session is not active");
+
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(RealisticCdbSessionMock));
+
+            _logger.LogInformation("Executing realistic command: {Command}", command);
+
+            // Find matching behavior or use default
+            var behavior = FindMatchingBehavior(command);
+            
+            // Simulate command execution delay
+            await Task.Delay(behavior.ExecutionDelay, cancellationToken);
+            
+            if (behavior.ShouldFail)
+            {
+                throw new InvalidOperationException($"Command failed: {command}");
+            }
+
+            // Simulate realistic output with stderr/stdout coordination
+            var result = await SimulateRealisticOutput(behavior, cancellationToken);
+            
+            return result;
+        }
+
+        public void CancelCurrentOperation()
+        {
+            _logger.LogInformation("Cancelling current CDB operation");
+            // In a real implementation, this would cancel the current command
+        }
+
+        public void AddCommandBehavior(string commandPattern, CdbCommandBehavior behavior)
+        {
+            _commandBehaviors[commandPattern] = behavior;
+        }
+
+        private CdbCommandBehavior FindMatchingBehavior(string command)
+        {
+            // Look for exact match first
+            if (_commandBehaviors.TryGetValue(command, out var exactMatch))
+                return exactMatch;
+
+            // Look for pattern matches
+            foreach (var kvp in _commandBehaviors)
+            {
+                if (command.Contains(kvp.Key))
+                    return kvp.Value;
+            }
+
+            // Return default behavior
+            return new CdbCommandBehavior
+            {
+                StdoutLines = new[] { $"Mock output for: {command}" },
+                StderrLines = new string[0],
+                ExecutionDelay = TimeSpan.FromMilliseconds(10),
+                CompletionDelay = TimeSpan.FromMilliseconds(5)
+            };
+        }
+
+        private async Task<string> SimulateRealisticOutput(CdbCommandBehavior behavior, CancellationToken cancellationToken)
+        {
+            var output = new List<string>();
+
+            // Simulate stdout output
+            foreach (var line in behavior.StdoutLines)
+            {
+                output.Add(line);
+                await Task.Delay(behavior.CompletionDelay, cancellationToken);
+            }
+
+            // Simulate stderr output (this is what catches the bugs!)
+            if (behavior.StderrLines.Length > 0)
+            {
+                output.Add("[STDERR]");
+                foreach (var line in behavior.StderrLines)
+                {
+                    output.Add($"[STDERR] {line}");
+                    await Task.Delay(behavior.CompletionDelay, cancellationToken);
+                }
+            }
+
+            return string.Join("\n", output);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+
+            _isActive = false;
+            _mockProcessId = null;
+            _disposed = true;
+        }
+    }
+
+    /// <summary>
+    /// Defines the behavior for a specific CDB command
+    /// </summary>
+    public class CdbCommandBehavior
+    {
+        public string[] StdoutLines { get; set; } = Array.Empty<string>();
+        public string[] StderrLines { get; set; } = Array.Empty<string>();
+        public TimeSpan ExecutionDelay { get; set; } = TimeSpan.FromMilliseconds(10);
+        public TimeSpan CompletionDelay { get; set; } = TimeSpan.FromMilliseconds(5);
+        public bool ShouldFail { get; set; } = false;
+    }
+}

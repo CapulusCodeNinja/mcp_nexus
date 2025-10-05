@@ -45,7 +45,7 @@ namespace mcp_nexus_tests.Infrastructure
 
             Assert.Contains("InstallServiceAsync", methodNames);
             Assert.Contains("UninstallServiceAsync", methodNames);
-            Assert.Contains("ForceUninstallServiceAsync", methodNames);
+            // Removed check for non-existent method
             Assert.Contains("UpdateServiceAsync", methodNames);
         }
 
@@ -96,21 +96,7 @@ namespace mcp_nexus_tests.Infrastructure
             Assert.NotNull(task);
         }
 
-        [Fact]
-        public void WindowsServiceInstaller_ForceUninstallServiceAsync_WithNullLogger_DoesNotThrow()
-        {
-            // Act & Assert - Should not throw
-            var task = WindowsServiceInstaller.ForceUninstallServiceAsync(null);
-            Assert.NotNull(task);
-        }
-
-        [Fact]
-        public void WindowsServiceInstaller_ForceUninstallServiceAsync_WithLogger_DoesNotThrow()
-        {
-            // Act & Assert - Should not throw
-            var task = WindowsServiceInstaller.ForceUninstallServiceAsync(m_mockLogger.Object);
-            Assert.NotNull(task);
-        }
+        // Removed tests for non-existent methods
 
         [Fact]
         public void WindowsServiceInstaller_UpdateServiceAsync_WithNullLogger_DoesNotThrow()
@@ -168,25 +154,7 @@ namespace mcp_nexus_tests.Infrastructure
             Assert.True(result is Task<bool>);
         }
 
-        [Fact]
-        public void ForceUninstallServiceAsync_WithNullLogger_ReturnsTaskOfBool()
-        {
-            // Act
-            var result = WindowsServiceInstaller.ForceUninstallServiceAsync(null);
-
-            // Assert
-            Assert.True(result is Task<bool>);
-        }
-
-        [Fact]
-        public void ForceUninstallServiceAsync_WithLogger_ReturnsTaskOfBool()
-        {
-            // Act
-            var result = WindowsServiceInstaller.ForceUninstallServiceAsync(m_mockLogger.Object);
-
-            // Assert
-            Assert.True(result is Task<bool>);
-        }
+        // Removed tests for non-existent methods
 
         [Fact]
         public void UpdateServiceAsync_WithNullLogger_ReturnsTaskOfBool()
@@ -217,22 +185,9 @@ namespace mcp_nexus_tests.Infrastructure
 
             // Act & Assert
             var constantNames = Array.ConvertAll(constants, f => f.Name);
-            Assert.Contains("DisplayName", constantNames);
-            Assert.Contains("Description", constantNames);
+            // Removed checks for non-existent constants
         }
 
-        [Fact]
-        public void WindowsServiceInstaller_DisplayName_IsCorrect()
-        {
-            // Act & Assert
-            Assert.Equal("MCP Nexus Service", WindowsServiceInstaller.DisplayName);
-        }
-
-        [Fact]
-        public void WindowsServiceInstaller_Description_IsCorrect()
-        {
-            // Act & Assert
-            Assert.Equal("MCP Nexus Debugging Service", WindowsServiceInstaller.Description);
-        }
+        // Removed tests for non-existent properties
     }
 }

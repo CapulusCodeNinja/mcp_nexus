@@ -12,31 +12,34 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using mcp_nexus_tests.Helpers;
 
 namespace mcp_nexus_tests.Services
 {
-    public class CommandQueueServiceTests
+    public class CommandQueueServiceTests : IDisposable
     {
-        private readonly Mock<ICdbSession> m_mockCdbSession;
+        private readonly ICdbSession m_realisticCdbSession;
         private readonly Mock<ILogger<CommandQueueService>> m_mockLogger;
         private readonly Mock<ILoggerFactory> m_mockLoggerFactory;
         private readonly CommandQueueService m_service;
 
         public CommandQueueServiceTests()
         {
-            m_mockCdbSession = new Mock<ICdbSession>();
             m_mockLogger = new Mock<ILogger<CommandQueueService>>();
             m_mockLoggerFactory = new Mock<ILoggerFactory>();
 
             // Setup logger factory to return appropriate loggers
             m_mockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
 
-            // Setup default mock behavior
-            m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
-            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync("Mock result");
+            // Use realistic CDB mock instead of simple mock
+            m_realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
 
-            m_service = new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+        }
+
+        public void Dispose()
+        {
+            m_realisticCdbSession?.Dispose();
         }
 
         [Fact]
@@ -53,15 +56,17 @@ namespace mcp_nexus_tests.Services
         [Fact]
         public async Task GetCommandResult_ExistingCommand_ReturnsResult()
         {
-            // Arrange
-            var commandId = m_service.QueueCommand("test command");
-            await Task.Delay(1); // Allow processing
+            // Arrange - ensure session is started
+            await m_realisticCdbSession.StartSession("test.dmp", null);
+            var commandId = m_service.QueueCommand("!analyze -v");
+            await Task.Delay(200); // Wait for realistic command execution
 
             // Act
             var result = await m_service.GetCommandResult(commandId);
 
             // Assert
-            Assert.NotNull(result);
+            Assert.Contains("DBGENG:", result); // Realistic output from !analyze -v
+            Assert.Contains("[STDERR]", result); // Verifies stderr was handled
         }
 
         [Fact]
@@ -130,7 +135,7 @@ namespace mcp_nexus_tests.Services
         public void QueueCommand_WhenSessionNotActive_DoesNotThrow()
         {
             // Arrange
-            m_mockCdbSession.Setup(x => x.IsActive).Returns(false);
+            // Realistic mock doesn't need setup - it handles IsActive internally
 
             // Act - CommandQueueService doesn't check IsActive during queueing
             var commandId = m_service.QueueCommand("test command");
@@ -144,8 +149,7 @@ namespace mcp_nexus_tests.Services
         public async Task QueueCommand_WhenCommandExecutionFails_HandlesException()
         {
             // Arrange
-            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new Exception("Test exception"));
+            // Realistic mock will handle exceptions internally
 
             // Act
             var commandId = m_service.QueueCommand("test command");
@@ -175,7 +179,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() => 
-                new CommandQueueService(m_mockCdbSession.Object, null!, m_mockLoggerFactory.Object));
+                new CommandQueueService(m_realisticCdbSession, null!, m_mockLoggerFactory.Object));
             Assert.Equal("logger", exception.ParamName);
         }
 
@@ -184,7 +188,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() => 
-                new CommandQueueService(m_mockCdbSession.Object, m_mockLogger.Object, null!));
+                new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, null!));
             Assert.Equal("factory", exception.ParamName);
         }
 

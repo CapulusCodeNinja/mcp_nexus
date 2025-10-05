@@ -58,7 +58,7 @@ namespace mcp_nexus.Recovery
                 m_lastHealthResult = true;
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 m_lastHealthResult = false;
                 return false;
@@ -83,7 +83,7 @@ namespace mcp_nexus.Recovery
 
                 return Task.FromResult(true);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return Task.FromResult(false);
             }
