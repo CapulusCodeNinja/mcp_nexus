@@ -7,6 +7,7 @@ using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Notifications;
 using System.Collections.Concurrent;
+using mcp_nexus_tests.Helpers;
 
 namespace mcp_nexus_tests.Session
 {
@@ -15,7 +16,7 @@ namespace mcp_nexus_tests.Session
     /// </summary>
     public class TestableThreadSafeSessionManager : ThreadSafeSessionManager
     {
-        private readonly Mock<ICdbSession> m_MockCdbSession;
+        private readonly ICdbSession m_RealisticCdbSession;
         private readonly Mock<ICommandQueueService> m_MockCommandQueue;
         private readonly Dictionary<string, SessionInfo> m_MockSessionInfos = new();
         private readonly Dictionary<string, SessionContext> m_MockSessionContexts = new();
@@ -32,15 +33,8 @@ namespace mcp_nexus_tests.Session
             : base(logger, serviceProvider, loggerFactory, notificationService, config, cdbOptions)
         {
             m_Config = new SessionManagerConfiguration(config ?? Options.Create(new SessionConfiguration()), cdbOptions ?? Options.Create(new CdbSessionOptions()));
-            m_MockCdbSession = new Mock<ICdbSession>();
+            m_RealisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
             m_MockCommandQueue = new Mock<ICommandQueueService>();
-
-            // Setup mock CDB session to return success
-            m_MockCdbSession.Setup(x => x.IsActive).Returns(true);
-            m_MockCdbSession.Setup(x => x.StartSession(It.IsAny<string>(), It.IsAny<string?>()))
-                .Returns(Task.FromResult(true));
-            m_MockCdbSession.Setup(x => x.StopSession())
-                .Returns(Task.FromResult(true));
 
             // Setup mock command queue
             m_MockCommandQueue.Setup(x => x.GetQueueStatus())
@@ -77,7 +71,7 @@ namespace mcp_nexus_tests.Session
                 SymbolsPath = symbolsPath,
                 CreatedAt = DateTime.UtcNow,
                 Status = SessionStatus.Active,
-                CdbSession = m_MockCdbSession.Object,
+                CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object
             };
 
@@ -183,7 +177,13 @@ namespace mcp_nexus_tests.Session
         // Note: TryGetCommandQueue is not virtual, so we can't override it
         // The test will need to work with the base implementation
 
-        public Mock<ICdbSession> MockCdbSession => m_MockCdbSession;
+        public ICdbSession RealisticCdbSession => m_RealisticCdbSession;
         public Mock<ICommandQueueService> MockCommandQueue => m_MockCommandQueue;
+
+        public new void Dispose()
+        {
+            m_RealisticCdbSession?.Dispose();
+            base.Dispose();
+        }
     }
 }

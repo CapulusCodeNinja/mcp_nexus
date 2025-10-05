@@ -8,6 +8,7 @@ using mcp_nexus.Notifications;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using System.Collections.Concurrent;
+using mcp_nexus_tests.Helpers;
 
 namespace mcp_nexus_tests.Session
 {
@@ -19,7 +20,7 @@ namespace mcp_nexus_tests.Session
         private readonly Mock<ILogger> m_MockLogger;
         private readonly Mock<IMcpNotificationService> m_MockNotificationService;
         private readonly Mock<SessionLifecycleManager> m_MockLifecycleManager;
-        private readonly Mock<ICdbSession> m_MockCdbSession;
+        private readonly ICdbSession m_RealisticCdbSession;
         private readonly Mock<ICommandQueueService> m_MockCommandQueue;
         private readonly SessionManagerConfiguration m_Config;
         private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions;
@@ -29,7 +30,7 @@ namespace mcp_nexus_tests.Session
         {
             m_MockLogger = new Mock<ILogger>();
             m_MockNotificationService = new Mock<IMcpNotificationService>();
-            m_MockCdbSession = new Mock<ICdbSession>();
+            m_RealisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
             m_MockCommandQueue = new Mock<ICommandQueueService>();
             m_Sessions = new ConcurrentDictionary<string, SessionInfo>();
             m_ShutdownCts = new CancellationTokenSource();
@@ -150,7 +151,7 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = sessionId,
                 DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = m_MockCdbSession.Object,
+                CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-10),
                 LastActivity = DateTime.UtcNow.AddMinutes(-5),
@@ -241,7 +242,7 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = "test-session-1",
                 DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = m_MockCdbSession.Object,
+                CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-2), // New session
                 LastActivity = DateTime.UtcNow.AddMinutes(-1),
@@ -272,7 +273,7 @@ namespace mcp_nexus_tests.Session
             // Arrange
             var sessionInfo = new SessionInfo(
                 "test-session-1",
-                m_MockCdbSession.Object,
+                m_RealisticCdbSession,
                 m_MockCommandQueue.Object,
                 "C:\\Test\\dump.dmp",
                 null,
@@ -308,7 +309,7 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = "test-session-1",
                 DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = m_MockCdbSession.Object,
+                CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-10),
                 LastActivity = DateTime.UtcNow.AddMinutes(-1),
@@ -341,7 +342,7 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = "test-session-1",
                 DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = m_MockCdbSession.Object,
+                CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-10),
                 LastActivity = DateTime.UtcNow.AddMinutes(-1),
@@ -381,7 +382,7 @@ namespace mcp_nexus_tests.Session
             // Arrange
             var sessionInfo = new SessionInfo(
                 "test-session-1",
-                m_MockCdbSession.Object,
+                m_RealisticCdbSession,
                 m_MockCommandQueue.Object,
                 "C:\\Test\\crash.dmp", // Crash dump
                 null,
@@ -421,7 +422,7 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = sessionId1,
                 DumpPath = "C:\\Test\\dump1.dmp",
-                CdbSession = m_MockCdbSession.Object,
+                CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-20),
                 LastActivity = DateTime.UtcNow.AddMinutes(-1),
@@ -432,7 +433,7 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = sessionId2,
                 DumpPath = "C:\\Test\\dump2.dmp",
-                CdbSession = m_MockCdbSession.Object,
+                CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-10),
                 LastActivity = DateTime.UtcNow.AddMinutes(-2),
@@ -523,6 +524,7 @@ namespace mcp_nexus_tests.Session
         public void Dispose()
         {
             m_ShutdownCts?.Dispose();
+            m_RealisticCdbSession?.Dispose();
         }
     }
 }

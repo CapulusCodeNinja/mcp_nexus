@@ -11,6 +11,7 @@ using mcp_nexus.Session.Models;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Notifications;
+using mcp_nexus_tests.Helpers;
 
 namespace mcp_nexus_tests.Session
 {
@@ -333,7 +334,7 @@ namespace mcp_nexus_tests.Session
 
         private SessionInfo CreateMockSessionInfo(string sessionId, string dumpPath, SessionStatus status = SessionStatus.Active)
         {
-            var mockCdbSession = new Mock<ICdbSession>();
+            var realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
             var mockCommandQueue = new Mock<ICommandQueueService>();
 
             // Setup command queue to return some test data
@@ -345,7 +346,7 @@ namespace mcp_nexus_tests.Session
             };
             mockCommandQueue.Setup(x => x.GetQueueStatus()).Returns(queueStatus);
 
-            var sessionInfo = new SessionInfo(sessionId, mockCdbSession.Object, mockCommandQueue.Object, dumpPath);
+            var sessionInfo = new SessionInfo(sessionId, realisticCdbSession, mockCommandQueue.Object, dumpPath);
             sessionInfo.LastActivity = DateTime.UtcNow.AddMinutes(-5);
             sessionInfo.Status = status;
             return sessionInfo;

@@ -5,6 +5,7 @@ using mcp_nexus.CommandQueue;
 using mcp_nexus.Debugger;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using mcp_nexus_tests.Helpers;
 
 namespace mcp_nexus_tests.CommandQueue
 {
@@ -13,7 +14,7 @@ namespace mcp_nexus_tests.CommandQueue
     /// </summary>
     public class BasicCommandProcessorTests : IDisposable
     {
-        private readonly Mock<ICdbSession> m_MockCdbSession;
+        private readonly ICdbSession m_RealisticCdbSession;
         private readonly Mock<ILogger<BasicCommandProcessor>> m_MockLogger;
         private readonly BasicQueueConfiguration m_Config;
         private readonly ConcurrentDictionary<string, QueuedCommand> m_ActiveCommands;
@@ -21,11 +22,11 @@ namespace mcp_nexus_tests.CommandQueue
 
         public BasicCommandProcessorTests()
         {
-            m_MockCdbSession = new Mock<ICdbSession>();
+            m_RealisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
             m_MockLogger = new Mock<ILogger<BasicCommandProcessor>>();
             m_Config = new BasicQueueConfiguration();
             m_ActiveCommands = new ConcurrentDictionary<string, QueuedCommand>();
-            m_Processor = new BasicCommandProcessor(m_MockCdbSession.Object, m_MockLogger.Object, m_Config, m_ActiveCommands);
+            m_Processor = new BasicCommandProcessor(m_RealisticCdbSession, m_MockLogger.Object, m_Config, m_ActiveCommands);
         }
 
         [Fact]
@@ -41,7 +42,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                new BasicCommandProcessor(m_MockCdbSession.Object, null!, m_Config, m_ActiveCommands));
+                new BasicCommandProcessor(m_RealisticCdbSession.Object, null!, m_Config, m_ActiveCommands));
         }
 
         [Fact]
@@ -49,7 +50,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                new BasicCommandProcessor(m_MockCdbSession.Object, m_MockLogger.Object, null!, m_ActiveCommands));
+                new BasicCommandProcessor(m_RealisticCdbSession.Object, m_MockLogger.Object, null!, m_ActiveCommands));
         }
 
         [Fact]
@@ -57,14 +58,14 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                new BasicCommandProcessor(m_MockCdbSession.Object, m_MockLogger.Object, m_Config, null!));
+                new BasicCommandProcessor(m_RealisticCdbSession.Object, m_MockLogger.Object, m_Config, null!));
         }
 
         [Fact]
         public void Constructor_WithValidParameters_InitializesCorrectly()
         {
             // Act
-            var processor = new BasicCommandProcessor(m_MockCdbSession.Object, m_MockLogger.Object, m_Config, m_ActiveCommands);
+            var processor = new BasicCommandProcessor(m_RealisticCdbSession.Object, m_MockLogger.Object, m_Config, m_ActiveCommands);
 
             // Assert
             Assert.NotNull(processor);
@@ -99,14 +100,14 @@ namespace mcp_nexus_tests.CommandQueue
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();
 
-            m_MockCdbSession.Setup(x => x.ExecuteCommand("!analyze -v", It.IsAny<CancellationToken>()))
+            m_RealisticCdbSession.Setup(x => x.ExecuteCommand("!analyze -v", It.IsAny<CancellationToken>()))
                 .ReturnsAsync("Analysis completed");
 
             // Act
             await m_Processor.ProcessCommandQueueAsync(commandQueue, cancellationTokenSource.Token);
 
             // Assert
-            m_MockCdbSession.Verify(x => x.ExecuteCommand("!analyze -v", It.IsAny<CancellationToken>()), Times.Once);
+            m_RealisticCdbSession.Verify(x => x.ExecuteCommand("!analyze -v", It.IsAny<CancellationToken>()), Times.Once);
             Assert.True(completionSource.Task.IsCompleted);
             var stats = m_Processor.GetPerformanceStats();
             Assert.Equal(1, stats.Processed);
@@ -126,14 +127,14 @@ namespace mcp_nexus_tests.CommandQueue
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();
 
-            m_MockCdbSession.Setup(x => x.ExecuteCommand("!invalid", It.IsAny<CancellationToken>()))
+            m_RealisticCdbSession.Setup(x => x.ExecuteCommand("!invalid", It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception("Command failed"));
 
             // Act
             await m_Processor.ProcessCommandQueueAsync(commandQueue, cancellationTokenSource.Token);
 
             // Assert
-            m_MockCdbSession.Verify(x => x.ExecuteCommand("!invalid", It.IsAny<CancellationToken>()), Times.Once);
+            m_RealisticCdbSession.Verify(x => x.ExecuteCommand("!invalid", It.IsAny<CancellationToken>()), Times.Once);
             Assert.True(completionSource.Task.IsCompleted);
             var stats = m_Processor.GetPerformanceStats();
             Assert.Equal(0, stats.Processed);
@@ -157,7 +158,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Cancel the command before it starts
             commandCancellationTokenSource.Cancel();
 
-            m_MockCdbSession.Setup(x => x.ExecuteCommand("!analyze -v", It.IsAny<CancellationToken>()))
+            m_RealisticCdbSession.Setup(x => x.ExecuteCommand("!analyze -v", It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
 
             // Act
@@ -184,7 +185,7 @@ namespace mcp_nexus_tests.CommandQueue
             commandQueue.CompleteAdding();
 
             // Setup the mock to simulate a long-running command that will be cancelled
-            m_MockCdbSession.Setup(x => x.ExecuteCommand("!analyze -v", It.IsAny<CancellationToken>()))
+            m_RealisticCdbSession.Setup(x => x.ExecuteCommand("!analyze -v", It.IsAny<CancellationToken>()))
                 .Returns<string, CancellationToken>(async (cmd, token) =>
                 {
                     // Simulate a long-running command that checks for cancellation
@@ -304,6 +305,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Dispose()
         {
             m_Processor?.Dispose();
+            m_RealisticCdbSession?.Dispose();
         }
     }
 }

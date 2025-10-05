@@ -9,6 +9,7 @@ using mcp_nexus.Debugger;
 using mcp_nexus.Notifications;
 using mcp_nexus.Recovery;
 using mcp_nexus.Constants;
+using mcp_nexus_tests.Helpers;
 
 namespace mcp_nexus_tests.Services
 {
@@ -17,7 +18,7 @@ namespace mcp_nexus_tests.Services
     /// </summary>
     public class ResilientCommandQueueServiceIntegrationTests : IDisposable
     {
-        private readonly Mock<ICdbSession> m_mockCdbSession;
+        private readonly ICdbSession m_realisticCdbSession;
         private readonly Mock<ILogger<ResilientCommandQueueService>> m_mockLogger;
         private readonly Mock<ILoggerFactory> m_mockLoggerFactory;
         private readonly Mock<ICommandTimeoutService> m_mockTimeoutService;
@@ -27,7 +28,7 @@ namespace mcp_nexus_tests.Services
 
         public ResilientCommandQueueServiceIntegrationTests()
         {
-            m_mockCdbSession = new Mock<ICdbSession>();
+            m_realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
             m_mockLogger = new Mock<ILogger<ResilientCommandQueueService>>();
             m_mockLoggerFactory = new Mock<ILoggerFactory>();
             m_mockTimeoutService = new Mock<ICommandTimeoutService>();
@@ -38,9 +39,7 @@ namespace mcp_nexus_tests.Services
             m_mockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
 
             // Setup default mock behavior
-            m_mockCdbSession.Setup(x => x.IsActive).Returns(true);
-            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync("Mock result");
+            // Realistic mock handles IsActive and ExecuteCommand internally
 
             // Setup recovery service to succeed
             m_mockRecoveryService.Setup(x => x.RecoverStuckSession(It.IsAny<string>()))
@@ -57,7 +56,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -81,7 +80,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ResilientCommandQueueService(
-                m_mockCdbSession.Object, null!, m_mockLoggerFactory.Object, m_mockTimeoutService.Object, m_mockRecoveryService.Object));
+                m_realisticCdbSession, null!, m_mockLoggerFactory.Object, m_mockTimeoutService.Object, m_mockRecoveryService.Object));
         }
 
         [Fact]
@@ -89,7 +88,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ResilientCommandQueueService(
-                m_mockCdbSession.Object, m_mockLogger.Object, m_mockLoggerFactory.Object, null!, m_mockRecoveryService.Object));
+                m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object, null!, m_mockRecoveryService.Object));
         }
 
         [Fact]
@@ -97,7 +96,7 @@ namespace mcp_nexus_tests.Services
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ResilientCommandQueueService(
-                m_mockCdbSession.Object, m_mockLogger.Object, m_mockLoggerFactory.Object, m_mockTimeoutService.Object, null!));
+                m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object, m_mockTimeoutService.Object, null!));
         }
 
         [Fact]
@@ -105,7 +104,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -125,7 +124,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -143,7 +142,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -158,7 +157,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -173,7 +172,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -196,7 +195,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -214,7 +213,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -229,7 +228,7 @@ namespace mcp_nexus_tests.Services
         public void CancelCommand_ValidCommandId_ReturnsTrue()
         {
             // Arrange - Setup delayed execution to allow cancellation
-            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            m_realisticCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(async () =>
                 {
                     await Task.Delay(500); // Longer delay to allow cancellation
@@ -237,7 +236,7 @@ namespace mcp_nexus_tests.Services
                 });
 
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -257,7 +256,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -275,7 +274,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -291,7 +290,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -309,7 +308,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -327,7 +326,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -358,7 +357,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -375,7 +374,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -395,7 +394,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -412,7 +411,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -435,7 +434,7 @@ namespace mcp_nexus_tests.Services
         public void GetCommandState_WithValidCommandId_ReturnsCommandState()
         {
             // Arrange - Setup delayed execution to allow state checking
-            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            m_realisticCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(async () =>
                 {
                     await Task.Delay(100); // Small delay to allow state checking
@@ -443,7 +442,7 @@ namespace mcp_nexus_tests.Services
                 });
 
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -464,7 +463,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -481,7 +480,7 @@ namespace mcp_nexus_tests.Services
         public void GetCommandInfo_WithValidCommandId_ReturnsCommandInfo()
         {
             // Arrange - Setup delayed execution to allow info checking
-            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            m_realisticCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(async () =>
                 {
                     await Task.Delay(100); // Small delay to allow info checking
@@ -489,7 +488,7 @@ namespace mcp_nexus_tests.Services
                 });
 
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -512,7 +511,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -530,14 +529,14 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
             // Setup a long-running command
-            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            m_realisticCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(async (string cmd, CancellationToken ct) =>
                 {
                     await Task.Delay(1000, ct); // Long running
@@ -559,14 +558,14 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
                 m_mockRecoveryService.Object);
 
             // Setup a failing command
-            m_mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            m_realisticCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Command failed"));
 
             var commandId = m_service.QueueCommand("failing-command");
@@ -586,7 +585,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -609,7 +608,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,
@@ -635,7 +634,7 @@ namespace mcp_nexus_tests.Services
         {
             // Arrange
             m_service = new ResilientCommandQueueService(
-                m_mockCdbSession.Object,
+                m_realisticCdbSession,
                 m_mockLogger.Object,
                 m_mockLoggerFactory.Object,
                 m_mockTimeoutService.Object,

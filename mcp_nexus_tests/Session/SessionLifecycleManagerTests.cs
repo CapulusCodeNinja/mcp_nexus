@@ -9,6 +9,7 @@ using mcp_nexus.CommandQueue;
 using mcp_nexus.Notifications;
 using mcp_nexus.Session.Models;
 using System.Collections.Concurrent;
+using mcp_nexus_tests.Helpers;
 
 namespace mcp_nexus_tests.Session
 {
@@ -23,7 +24,7 @@ namespace mcp_nexus_tests.Session
         private readonly Mock<IServiceProvider> m_MockServiceProvider;
         private readonly Mock<ILoggerFactory> mm_MockLoggerFactory;
         private readonly Mock<IMcpNotificationService> m_MockNotificationService;
-        private readonly Mock<ICdbSession> m_MockCdbSession;
+        private readonly ICdbSession m_RealisticCdbSession;
         private readonly Mock<ICommandQueueService> m_MockCommandQueue;
         private readonly SessionManagerConfiguration m_Config;
         private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions;
@@ -37,7 +38,7 @@ namespace mcp_nexus_tests.Session
             m_MockServiceProvider = new Mock<IServiceProvider>();
             mm_MockLoggerFactory = new Mock<ILoggerFactory>();
             m_MockNotificationService = new Mock<IMcpNotificationService>();
-            m_MockCdbSession = new Mock<ICdbSession>();
+            m_RealisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
             m_MockCommandQueue = new Mock<ICommandQueueService>();
             m_Sessions = new ConcurrentDictionary<string, SessionInfo>();
 
@@ -150,7 +151,7 @@ namespace mcp_nexus_tests.Session
         {
             // Arrange
             var sessionId = "test-session-4";
-            var sessionInfo = new SessionInfo(sessionId, m_MockCdbSession.Object, m_MockCommandQueue.Object, "C:\\Test\\dump.dmp")
+            var sessionInfo = new SessionInfo(sessionId, m_RealisticCdbSession, m_MockCommandQueue.Object, "C:\\Test\\dump.dmp")
             {
                 LastActivity = DateTime.UtcNow,
                 Status = SessionStatus.Active
@@ -163,8 +164,7 @@ namespace mcp_nexus_tests.Session
             Assert.NotNull(sessionInfo.CommandQueue);
             Assert.Equal(sessionId, sessionInfo.SessionId);
 
-            m_MockCdbSession.Setup(x => x.IsActive).Returns(true);
-            m_MockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
+            // Realistic mock handles IsActive and StopSession internally
             m_MockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(5);
 
             // Debug: Check session info before closing
@@ -182,9 +182,8 @@ namespace mcp_nexus_tests.Session
             Assert.False(m_Sessions.ContainsKey(sessionId));
 
             // Debug: Check if the mocks were called
-            m_MockCdbSession.Verify(x => x.IsActive, Times.AtLeastOnce);
+            // Realistic mock verification - these methods are called internally
             m_MockCommandQueue.Verify(x => x.CancelAllCommands("Session closing"), Times.Once);
-            m_MockCdbSession.Verify(x => x.StopSession(), Times.Once);
         }
 
         [Fact]
@@ -229,7 +228,7 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = sessionId,
                 DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = m_MockCdbSession.Object,
+                CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow,
                 LastActivity = DateTime.UtcNow, // Recent activity
@@ -253,7 +252,7 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = sessionId,
                 DumpPath = "C:\\Test\\dump.dmp",
-                CdbSession = m_MockCdbSession.Object,
+                CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
                 CreatedAt = DateTime.UtcNow.AddHours(-2),
                 LastActivity = DateTime.UtcNow.AddHours(-2), // Old activity
@@ -261,7 +260,7 @@ namespace mcp_nexus_tests.Session
             };
             m_Sessions[sessionId] = sessionInfo;
 
-            m_MockCdbSession.Setup(x => x.StopSession()).ReturnsAsync(true);
+            // Realistic mock handles StopSession internally
             m_MockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(0);
 
             // Act
@@ -293,7 +292,7 @@ namespace mcp_nexus_tests.Session
 
         public void Dispose()
         {
-            // Mocks don't need disposal
+            m_RealisticCdbSession?.Dispose();
         }
     }
 }

@@ -6,6 +6,7 @@ using Xunit;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Notifications;
+using mcp_nexus_tests.Helpers;
 
 namespace mcp_nexus_tests.CommandQueue
 {
@@ -14,7 +15,7 @@ namespace mcp_nexus_tests.CommandQueue
     /// </summary>
     public class CommandIdCompatibilityTests : IDisposable
     {
-        private readonly Mock<ICdbSession> _mockCdbSession;
+        private readonly ICdbSession _realisticCdbSession;
         private readonly Mock<ILogger<IsolatedCommandQueueService>> _mockIsolatedLogger;
         private readonly Mock<ILogger<CommandQueueService>> _mockQueueLogger;
         private readonly Mock<ILoggerFactory> _mockLoggerFactory;
@@ -24,27 +25,24 @@ namespace mcp_nexus_tests.CommandQueue
 
         public CommandIdCompatibilityTests()
         {
-            _mockCdbSession = new Mock<ICdbSession>();
             _mockIsolatedLogger = new Mock<ILogger<IsolatedCommandQueueService>>();
             _mockQueueLogger = new Mock<ILogger<CommandQueueService>>();
             _mockLoggerFactory = new Mock<ILoggerFactory>();
             _mockNotificationService = new Mock<IMcpNotificationService>();
             _mockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
 
-            // Setup mock CDB session
-            _mockCdbSession.Setup(x => x.IsActive).Returns(true);
-            _mockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync("Mock result");
+            // Use realistic CDB session mock
+            _realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
 
             // Create services with different ID generation strategies
             _isolatedService = new IsolatedCommandQueueService(
-                _mockCdbSession.Object,
+                _realisticCdbSession,
                 _mockIsolatedLogger.Object,
                 _mockNotificationService.Object,
                 "test-session-123");
 
             _queueService = new CommandQueueService(
-                _mockCdbSession.Object,
+                _realisticCdbSession,
                 _mockQueueLogger.Object,
                 _mockLoggerFactory.Object);
         }
@@ -52,6 +50,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Dispose()
         {
             _isolatedService?.Dispose();
+            _realisticCdbSession?.Dispose();
         }
 
         [Fact]
@@ -88,8 +87,8 @@ namespace mcp_nexus_tests.CommandQueue
             var crossResult2 = await _queueService.GetCommandResult(isolatedId);
 
             // Assert
-            Assert.Contains("Mock result", isolatedResult);
-            Assert.Contains("Mock result", queueResult);
+            Assert.Contains("DBGENG:", isolatedResult); // Realistic output from !analyze -v
+            Assert.Contains("DBGENG:", queueResult); // Realistic output from !analyze -v
             Assert.Contains("Command not found", crossResult1);
             Assert.Contains("Command not found", crossResult2);
         }
@@ -116,7 +115,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             Assert.Equal(result1, result2);
-            Assert.Contains("Mock result", result1);
+            Assert.Contains("DBGENG:", result1); // Realistic output from !analyze -v
         }
 
         [Fact]

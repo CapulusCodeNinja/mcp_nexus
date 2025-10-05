@@ -9,6 +9,8 @@ using mcp_nexus.Protocol;
 using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure;
 using Moq;
+using mcp_nexus_tests.Helpers;
+using Microsoft.Extensions.Logging;
 
 namespace mcp_nexus_tests.Session.Models
 {
@@ -47,7 +49,7 @@ namespace mcp_nexus_tests.Session.Models
         public void SessionInfo_WithValues_SetsProperties()
         {
             // Arrange
-            var mockCdbSession = new Mock<ICdbSession>();
+            var realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
             var mockCommandQueue = new Mock<ICommandQueueService>();
             var createdAt = DateTime.UtcNow;
             const string sessionId = "test-session-123";
@@ -55,11 +57,11 @@ namespace mcp_nexus_tests.Session.Models
             const string symbolsPath = "C:\\symbols";
 
             // Act
-            var sessionInfo = new SessionInfo(sessionId, mockCdbSession.Object, mockCommandQueue.Object, dumpPath, symbolsPath);
+            var sessionInfo = new SessionInfo(sessionId, realisticCdbSession, mockCommandQueue.Object, dumpPath, symbolsPath);
 
             // Assert
             Assert.Equal(sessionId, sessionInfo.SessionId);
-            Assert.Equal(mockCdbSession.Object, sessionInfo.CdbSession);
+            Assert.Equal(realisticCdbSession, sessionInfo.CdbSession);
             Assert.Equal(mockCommandQueue.Object, sessionInfo.CommandQueue);
             Assert.True(sessionInfo.CreatedAt > DateTime.MinValue);
             Assert.Equal(dumpPath, sessionInfo.DumpPath);
