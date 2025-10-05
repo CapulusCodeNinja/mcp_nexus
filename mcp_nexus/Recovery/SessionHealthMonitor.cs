@@ -42,7 +42,6 @@ namespace mcp_nexus.Recovery
                 var now = DateTime.UtcNow;
                 if (now - m_lastHealthCheck < TimeSpan.FromSeconds(30))
                 {
-                    m_logger.LogTrace("🔍 Using cached health result: {Result}", m_lastHealthResult);
                     return m_lastHealthResult;
                 }
 
@@ -52,18 +51,15 @@ namespace mcp_nexus.Recovery
                 // Basic health check: is the session active?
                 if (!m_cdbSession.IsActive)
                 {
-                    m_logger.LogWarning("🔍 Health check failed: CDB session is not active");
                     m_lastHealthResult = false;
                     return false;
                 }
 
-                m_logger.LogTrace("🔍 Health check passed: CDB session is active");
                 m_lastHealthResult = true;
                 return true;
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "🔍 Health check failed with exception");
                 m_lastHealthResult = false;
                 return false;
             }
@@ -85,12 +81,10 @@ namespace mcp_nexus.Recovery
                 // In a more advanced implementation, we could send a simple command
                 // and check if it responds within a reasonable time
 
-                m_logger.LogDebug("🔍 Responsiveness check passed");
                 return Task.FromResult(true);
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "🔍 Responsiveness check failed");
                 return Task.FromResult(false);
             }
         }
@@ -130,12 +124,10 @@ namespace mcp_nexus.Recovery
                 };
 
                 // Add more diagnostic information as needed
-                m_logger.LogTrace("🔍 Session diagnostics collected");
                 return diagnostics;
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "🔍 Error collecting session diagnostics");
                 return new SessionDiagnostics
                 {
                     IsActive = false,

@@ -25,7 +25,7 @@ Analyze the crash dump file specified by `[filename]` to determine the root caus
 Core debugging tools for **crash dump analysis**.
 
 * **TOOLS**: Use `tools/call` method to execute debugging operations (**open session**, **run commands**, **close session**).
-* **RESOURCES**: Use `resources/read` method to access data (**command results**, **session lists**, **documentation**).
+* **RESOURCES**: Use `resources/read` method to access data (**command lists**, **session lists**, **documentation**, **metrics**).
 * After opening an analyze session, **WinDBG commands** can be asynchronously executed.
 * Command results can be accessed via the **'nexus_read_dump_analyze_command_result' tool** or **'List Commands' resource**.
 * Opening a session without executing commands will not have any effect.

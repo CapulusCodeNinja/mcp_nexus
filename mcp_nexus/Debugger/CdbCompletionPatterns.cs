@@ -12,18 +12,30 @@ namespace mcp_nexus.Debugger
         /// Primary CDB prompt pattern - this format has been stable for 20+ years.
         /// Matches patterns like "0:000>", "1:001>", etc.
         /// IMPORTANT: Also matches prompts with output on the same line (e.g., "0:030> command output").
+        /// Enhanced to be more robust with whitespace and variations.
         /// </summary>
         public static readonly Regex CdbPromptPattern = new Regex(
-            @"^(\s*)?(\d+):(\d{3})(:[A-Za-z0-9_\-]+)?>",
+            @"^(\s*)?(\d+):(\d{3})(:[A-Za-z0-9_\-]+)?>\s*",
             RegexOptions.Compiled | RegexOptions.Multiline);
 
         /// <summary>
         /// CDB prompt at end of line pattern - for mixed output scenarios.
         /// Matches patterns like "\n0:000>" at the end of a line.
+        /// Enhanced to be more robust with whitespace variations.
         /// </summary>
         public static readonly Regex CdbPromptEndPattern = new Regex(
             @"(?:^|\r?\n)(\d+):(\d{3})(:[A-Za-z0-9_\-]+)?>\s*$",
             RegexOptions.Compiled);
+
+        /// <summary>
+        /// Additional CDB prompt patterns for edge cases and variations.
+        /// These patterns catch prompts that might not match the primary patterns.
+        /// </summary>
+        public static readonly Regex[] AdditionalPromptPatterns = {
+            new Regex(@"^\s*\d+:\d{3}>\s*$", RegexOptions.Compiled), // Simple pattern: "0:000>"
+            new Regex(@"^\s*\d+:\d{3}>\s*.*$", RegexOptions.Compiled), // Pattern with trailing content: "0:000> some text"
+            new Regex(@"\d+:\d{3}>\s*$", RegexOptions.Compiled), // Pattern at end of line
+        };
 
         /// <summary>
         /// Ultra-safe completion patterns that are based on binary/structural formats.
@@ -41,6 +53,7 @@ namespace mcp_nexus.Debugger
         /// <summary>
         /// Checks if a line contains a CDB prompt pattern.
         /// This method uses both primary and end-of-line prompt patterns for comprehensive detection.
+        /// Enhanced with additional patterns for better robustness.
         /// </summary>
         /// <param name="line">The line to check for CDB prompt patterns.</param>
         /// <returns>
@@ -52,7 +65,19 @@ namespace mcp_nexus.Debugger
                 return false;
 
             var trimmedLine = line.Trim();
-            return CdbPromptPattern.IsMatch(trimmedLine) || CdbPromptEndPattern.IsMatch(line);
+            
+            // Check primary patterns first
+            if (CdbPromptPattern.IsMatch(trimmedLine) || CdbPromptEndPattern.IsMatch(line))
+                return true;
+            
+            // Check additional patterns for edge cases
+            foreach (var pattern in AdditionalPromptPatterns)
+            {
+                if (pattern.IsMatch(line))
+                    return true;
+            }
+            
+            return false;
         }
 
         /// <summary>

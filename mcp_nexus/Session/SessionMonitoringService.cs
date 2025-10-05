@@ -117,7 +117,6 @@ namespace mcp_nexus.Session
         /// </summary>
         private async Task MonitorSessionHealthAsync()
         {
-            m_logger.LogInformation("🔍 Starting session health monitoring");
 
             try
             {

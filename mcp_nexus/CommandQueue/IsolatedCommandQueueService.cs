@@ -164,10 +164,19 @@ namespace mcp_nexus.CommandQueue
             if (string.IsNullOrWhiteSpace(commandId))
                 return "Command ID cannot be null or empty";
 
+            // First, try to get result from cache (for completed commands that may have been cleaned up)
+            var cachedResult = m_Processor.GetCommandResult(commandId);
+            if (cachedResult != null)
+            {
+                m_Logger.LogTrace("✅ Command {CommandId} result retrieved from cache for session {SessionId}", commandId, m_Config.SessionId);
+                return cachedResult.IsSuccess ? cachedResult.Output : $"Command failed: {cachedResult.ErrorMessage}";
+            }
+
+            // If not in cache, check if command is still active in tracker
             var command = m_Tracker.GetCommand(commandId);
             if (command == null)
             {
-                m_Logger.LogWarning("Command {CommandId} not found for session {SessionId}", commandId, m_Config.SessionId);
+                m_Logger.LogWarning("Command {CommandId} not found in tracker or cache for session {SessionId}", commandId, m_Config.SessionId);
                 return $"Command not found: {commandId}";
             }
 

@@ -114,11 +114,11 @@ namespace mcp_nexus.Middleware
             var formattedResponse = FormatSseResponseForLogging(responseBodyText);
 
             // Try to decode the text for easier debugging
-            // For Trace level, don't truncate; for Debug and higher, truncate large fields
-            var (decodedText, decodeSuccess) = DecodeJsonText(responseBodyText, shouldTruncate: false); // Trace level - no truncation
+            // For Info level, don't truncate; for Debug and higher, truncate large fields
+            var (decodedText, decodeSuccess) = DecodeJsonText(responseBodyText, shouldTruncate: false); // Info level - no truncation
             if (decodeSuccess)
             {
-                // DecodeJsonText succeeded - use Trace for main response, Debug for decoded text
+                // DecodeJsonText succeeded - use Info for main response, Debug for decoded text
                 m_logger.LogTrace("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
 
                 // For Debug level, truncate large fields
@@ -127,7 +127,7 @@ namespace mcp_nexus.Middleware
             }
             else
             {
-                // DecodeJsonText failed - use Debug for main response only
+                // DecodeJsonText failed - use Info for main response only
                 m_logger.LogDebug("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
             }
         }
@@ -289,8 +289,24 @@ namespace mcp_nexus.Middleware
                     if (firstContent.TryGetProperty("text", out var textField))
                     {
                         // Decode the text field content
-                        var decodedText = System.Text.RegularExpressions.Regex.Unescape(textField.GetString() ?? "");
+                        var encodedText = textField.GetString() ?? "";
+                        string decodedText;
+                        
+                        // Unescape the string value of the "text" field, which is often a JSON string within a JSON string.
+                        // Json.TextSerializer.Deserialize<string> is the most reliable way to unescape a JSON string.
+                        try
+                        {
+                            // Try to unescape the string first. This will handle cases like "{\"key\":\"value\"}" -> {"key":"value"}
+                            decodedText = System.Text.Json.JsonSerializer.Deserialize<string>(encodedText) ?? throw new InvalidOperationException("Failed to deserialize the string");
+                        }
+                        catch
+                        {
+                            // If it fails, it might mean the string was NOT double-encoded, or it was just general-escaped.
+                            // Use the original or a generic unescape as a fallback.
+                            decodedText = System.Text.RegularExpressions.Regex.Unescape(encodedText) ?? throw new InvalidOperationException("Failed to unescape the string");
+                        }
 
+                        // Now parse the potentially unescaped result
                         using var textDocument = JsonDocument.Parse(decodedText);
                         var truncatedJson = TruncateLargeFields(textDocument.RootElement, 1000, shouldTruncate);
 

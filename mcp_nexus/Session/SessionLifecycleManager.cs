@@ -97,8 +97,6 @@ namespace mcp_nexus.Session
                 {
                     commandQueue = CreateCommandQueue(cdbSession, sessionLogger, sessionId);
                     m_Logger.LogInformation("✅ Command queue created successfully for session {SessionId}", sessionId);
-                    m_Logger.LogInformation("🔍 Command queue object: {CommandQueueType}, IsNull: {IsNull}",
-                        commandQueue?.GetType().Name ?? "null", commandQueue == null);
                 }
                 catch (Exception ex)
                 {
@@ -114,7 +112,6 @@ namespace mcp_nexus.Session
                 {
                     // Log detailed CDB detection failure information
                     m_Logger.LogError("❌ CDB session startup failed for {DumpPath}", dumpPath);
-                    m_Logger.LogError("🔍 This typically means CDB.exe is not installed or not found in:");
                     m_Logger.LogError("   - PATH environment variable");
                     m_Logger.LogError("   - Standard Windows SDK locations");
                     m_Logger.LogError("   - Visual Studio installations");
@@ -145,8 +142,6 @@ namespace mcp_nexus.Session
                 );
 
                 // Verify command queue was properly stored
-                m_Logger.LogInformation("🔍 Before null check - commandQueue: {CommandQueueType}, sessionInfo.CommandQueue: {SessionCommandQueueType}",
-                    commandQueue?.GetType().Name ?? "null", sessionInfo.CommandQueue?.GetType().Name ?? "null");
 
                 if (sessionInfo.CommandQueue == null)
                 {

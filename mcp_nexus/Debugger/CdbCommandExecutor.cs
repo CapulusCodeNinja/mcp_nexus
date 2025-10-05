@@ -165,14 +165,19 @@ namespace mcp_nexus.Debugger
                     ? $".echo {CdbSentinels.StartMarker}; .echo {CdbSentinels.EndMarker}"
                     : $".echo {CdbSentinels.StartMarker}; {command}; .echo {CdbSentinels.EndMarker}";
 
+                m_logger.LogInformation("🔧 Executing command with sentinels: '{Command}' -> '{ChainedCommand}'", 
+                    command, chainedCommand);
+
                 // Send command (TRUE ASYNC)
                 await SendCommandAsync(chainedCommand, debuggerInput, cancellationToken).ConfigureAwait(false);
 
                 // Read response (TRUE ASYNC) with sentinel short-circuit
                 var output = await ReadCommandOutputAsync(processManager, cancellationToken).ConfigureAwait(false);
 
-                m_logger.LogInformation("✅ CDB ExecuteCommand COMPLETED: {Command}", command);
-                return output;
+                m_logger.LogInformation("✅ CDB ExecuteCommand COMPLETED: {Command} (Output length: {Length})", 
+                    command, output?.Length ?? 0);
+                    
+                return output ?? string.Empty;
             }
             catch (OperationCanceledException)
             {
@@ -191,12 +196,14 @@ namespace mcp_nexus.Debugger
             cancellationToken.ThrowIfCancellationRequested();
 
             m_logger.LogDebug("Sending command to CDB: {Command}", command);
+            m_logger.LogDebug("Command length: {Length}, Contains newlines: {HasNewlines}", 
+                command.Length, command.Contains('\n') || command.Contains('\r'));
 
             // TRUE ASYNC: Use WriteLineAsync instead of blocking WriteLine
             await debuggerInput.WriteLineAsync(command).ConfigureAwait(false);
             await debuggerInput.FlushAsync().ConfigureAwait(false);
 
-            m_logger.LogTrace("Command sent successfully");
+            m_logger.LogDebug("Command sent successfully to CDB");
         }
 
         private async Task<string> ReadCommandOutputAsync(CdbProcessManager processManager, CancellationToken cancellationToken)
@@ -218,6 +225,9 @@ namespace mcp_nexus.Debugger
                 SingleWriter = false // Both stdout and stderr write to it
             });
 
+            // Shared completion signal for stdout and stderr coordination
+            var completionSignal = new CancellationTokenSource();
+
             // Thread-safe: These collections are only written by consumerTask
             // and only read after awaiting consumerTask (happens-before relationship)
             var stderrLines = new List<string>();
@@ -225,9 +235,9 @@ namespace mcp_nexus.Debugger
 
             // Start readers concurrently but with proper stream synchronization
             // The semaphore in each reader method will prevent concurrent access to the same stream
-            var stdoutTask = ReadStdoutToChannelAsync(processManager, debuggerOutput, channel.Writer, cancellationToken);
+            var stdoutTask = ReadStdoutToChannelAsync(processManager, debuggerOutput, channel.Writer, cancellationToken, completionSignal);
             var stderrTask = debuggerError != null
-                ? ReadStderrToChannelAsync(processManager, debuggerError, channel.Writer, cancellationToken)
+                ? ReadStderrToChannelAsync(processManager, debuggerError, channel.Writer, cancellationToken, completionSignal)
                 : Task.CompletedTask;
 
             // Consumer: read from channel and build result
@@ -256,7 +266,20 @@ namespace mcp_nexus.Debugger
             {
                 // Wait for both readers to complete concurrently
                 // The semaphore in each reader method prevents stream concurrency issues
-                await Task.WhenAll(stdoutTask, stderrTask).ConfigureAwait(false);
+                // Add timeout to prevent infinite waiting
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+                
+                try
+                {
+                    await Task.WhenAll(stdoutTask, stderrTask).WaitAsync(linkedCts.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
+                {
+                    m_logger.LogWarning("Command output reading timed out after 30 seconds - forcing completion");
+                    // Force completion of any remaining tasks
+                    completionSignal.Cancel();
+                }
             }
             finally
             {
@@ -289,7 +312,8 @@ namespace mcp_nexus.Debugger
             CdbProcessManager processManager,
             StreamReader debuggerOutput,
             ChannelWriter<(string Line, bool IsStderr)> writer,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            CancellationTokenSource completionSignal)
         {
             var startTime = DateTime.Now;
             var lastOutputTime = startTime;
@@ -298,7 +322,6 @@ namespace mcp_nexus.Debugger
 
             try
             {
-                m_logger.LogTrace("Started reading stdout (channel-based)...");
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
@@ -309,6 +332,21 @@ namespace mcp_nexus.Debugger
                         m_logger.LogError("CDB process has exited unexpectedly during output reading. Exit code: {ExitCode}", 
                             debuggerProcess.ExitCode);
                         await writer.WriteAsync(("CDB process has exited unexpectedly. Please restart the session.", false), cancellationToken).ConfigureAwait(false);
+                        break;
+                    }
+
+                    // Check completion signal from stderr
+                    if (completionSignal.Token.IsCancellationRequested)
+                    {
+                        m_logger.LogInformation("✅ Completion signal received from stderr - ending stdout read");
+                        break;
+                    }
+                    
+                    // Additional safety check: if we've been waiting too long with no output,
+                    // and stderr might have signaled completion, break anyway
+                    var elapsedMsSafety = (DateTime.Now - startTime).TotalMilliseconds;
+                    if (elapsedMsSafety > 10000 && linesRead == 0) // 10 seconds with no stdout output
+                    {
                         break;
                     }
 
@@ -331,14 +369,30 @@ namespace mcp_nexus.Debugger
                     if (!readResult.ShouldContinue)
                         break;
 
+                    // Check if we've been waiting long enough for a silent command to complete
+                    // Some CDB commands (like .srcpath) don't produce output but complete quickly
+                    var elapsedMs = (DateTime.Now - startTime).TotalMilliseconds;
+                    if (elapsedMs > 5000 && linesRead == 0) // 5 seconds with no output - increased timeout
+                    {
+                        // Try one more quick read to see if CDB is ready
+                        var quickReadResult = await TryReadLineWithTimeoutAsync(debuggerOutput, cancellationToken).ConfigureAwait(false);
+                        if (quickReadResult.Line != null && CdbCompletionPatterns.IsCdbPrompt(quickReadResult.Line))
+                        {
+                            m_logger.LogInformation("✅ Silent command completion confirmed - CDB prompt detected: '{Line}'", quickReadResult.Line);
+                            break;
+                        }
+                    }
+
                     if (readResult.Line == null)
                     {
                         await HandleNullLineAsync(cancellationToken).ConfigureAwait(false);
                         continue;
                     }
 
-                    // Drop start marker from output, if present
-                    if (string.Equals(readResult.Line, CdbSentinels.StartMarker, StringComparison.Ordinal))
+
+                    // Drop start marker from output, if present (handle both standalone and prompt+marker cases)
+                    if (string.Equals(readResult.Line, CdbSentinels.StartMarker, StringComparison.Ordinal) ||
+                        readResult.Line.Contains(CdbSentinels.StartMarker))
                     {
                         // Skip writing start marker to output
                         lastOutputTime = DateTime.Now;
@@ -346,9 +400,10 @@ namespace mcp_nexus.Debugger
                     }
 
                     // Check end sentinel for short-circuit completion and do not emit it
-                    if (string.Equals(readResult.Line, CdbSentinels.EndMarker, StringComparison.Ordinal))
+                    if (string.Equals(readResult.Line, CdbSentinels.EndMarker, StringComparison.Ordinal) ||
+                        readResult.Line.Contains(CdbSentinels.EndMarker))
                     {
-                        m_logger.LogTrace("Sentinel detected - completing stdout read early");
+                        m_logger.LogInformation("✅ End sentinel detected - completing stdout read early: '{Line}'", readResult.Line);
                         break; // Do NOT write sentinel to output
                     }
 
@@ -360,8 +415,17 @@ namespace mcp_nexus.Debugger
                     // Check if command is complete
                     if (IsCommandComplete(readResult.Line))
                     {
-                        m_logger.LogDebug("Command completion detected. Total lines: {LinesRead}, Total time: {TotalTime}ms",
-                            linesRead, (DateTime.Now - startTime).TotalMilliseconds);
+                        m_logger.LogInformation("✅ Command completion detected via IsCommandComplete. Total lines: {LinesRead}, Total time: {TotalTime}ms, Line: '{Line}'",
+                            linesRead, (DateTime.Now - startTime).TotalMilliseconds, readResult.Line);
+                        break;
+                    }
+
+                    // Special case: If we get a CDB prompt without any sentinels, the command completed silently
+                    // This handles commands like .srcpath, .lines, etc. that don't produce output
+                    if (CdbCompletionPatterns.IsCdbPrompt(readResult.Line) && linesRead == 0)
+                    {
+                        m_logger.LogInformation("✅ Silent command completion detected (no output produced). CDB prompt: '{Line}'", readResult.Line);
+                        // Don't write the prompt to output since it's not part of the command result
                         break;
                     }
                 }
@@ -386,7 +450,8 @@ namespace mcp_nexus.Debugger
             CdbProcessManager processManager,
             StreamReader debuggerError,
             ChannelWriter<(string Line, bool IsStderr)> writer,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            CancellationTokenSource completionSignal)
         {
             try
             {
@@ -439,6 +504,13 @@ namespace mcp_nexus.Debugger
                         try
                         {
                             await writer.WriteAsync((line, true), cancellationToken).ConfigureAwait(false);
+                            
+                            // Signal completion when stderr has output (indicates command finished with error)
+                            m_logger.LogInformation("✅ Stderr output detected - signaling command completion: '{Line}'", line);
+                            
+                            // Give stdout reader a moment to process the signal
+                            await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                            completionSignal.Cancel();
                         }
                         catch (ChannelClosedException)
                         {
@@ -524,17 +596,9 @@ namespace mcp_nexus.Debugger
                 using var idleCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, idleCts.Token);
 
-                // Synchronize stream access to prevent concurrent read operations
+                // No semaphore needed for stdout - it's already isolated from stderr
                 Task<string?> readTask;
-                await m_streamAccessSemaphore.WaitAsync(linkedCts.Token).ConfigureAwait(false);
-                try
-                {
-                    readTask = debuggerOutput.ReadLineAsync();
-                }
-                finally
-                {
-                    m_streamAccessSemaphore.Release();
-                }
+                readTask = debuggerOutput.ReadLineAsync();
 
                 try
                 {

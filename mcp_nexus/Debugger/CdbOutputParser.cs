@@ -40,6 +40,7 @@ namespace mcp_nexus.Debugger
         /// <summary>
         /// Determines if a command has completed execution using ultra-safe detection patterns.
         /// This method uses a hybrid approach that prioritizes reliable patterns over risky string matching.
+        /// Enhanced with detailed debug logging for troubleshooting.
         /// </summary>
         /// <param name="line">The current line of output from the CDB process.</param>
         /// <returns>
@@ -48,11 +49,21 @@ namespace mcp_nexus.Debugger
         public bool IsCommandComplete(string line)
         {
             if (string.IsNullOrEmpty(line))
+            {
                 return false;
+            }
 
             AddLineToBuffer(line);
 
-            // 1. PRIMARY: CDB prompts (100% reliable - format stable for 20+ years)
+            // 1. PRIMARY: Check for sentinel markers first (highest priority)
+            if (IsSentinelDetected(line))
+            {
+                LogCompletionDetected("Sentinel marker", line);
+                ResetParserState();
+                return true;
+            }
+
+            // 2. SECONDARY: CDB prompts (100% reliable - format stable for 20+ years)
             if (IsCdbPromptDetected(line))
             {
                 LogCompletionDetected("CDB prompt", line);
@@ -60,7 +71,7 @@ namespace mcp_nexus.Debugger
                 return true;
             }
 
-            // 2. SECONDARY: Ultra-safe patterns only (binary/structural formats)
+            // 3. TERTIARY: Ultra-safe patterns only (binary/structural formats)
             if (IsUltraSafeCompletionDetected(line))
             {
                 LogCompletionDetected("Ultra-safe pattern", line);
@@ -79,6 +90,26 @@ namespace mcp_nexus.Debugger
         private void AddLineToBuffer(string line)
         {
             m_outputBuffer.Add(line);
+        }
+
+        /// <summary>
+        /// Detects sentinel markers for command completion
+        /// </summary>
+        private bool IsSentinelDetected(string line)
+        {
+            // Check for start sentinel
+            if (line.Contains("MCP_NEXUS_COMMAND_SENTINEL_START"))
+            {
+                return false; // Don't complete on start sentinel, wait for end sentinel
+            }
+
+            // Check for end sentinel
+            if (line.Contains("MCP_NEXUS_SENTINEL_COMMAND_END"))
+            {
+                return true; // Complete when end sentinel is found
+            }
+
+            return false;
         }
 
         /// <summary>
