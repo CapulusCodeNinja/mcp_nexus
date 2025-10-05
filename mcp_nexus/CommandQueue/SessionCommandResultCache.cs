@@ -51,18 +51,25 @@ namespace mcp_nexus.CommandQueue
         #region Public Methods
 
         /// <summary>
-        /// Stores a command result in the cache
+        /// Stores a command result in the cache with complete metadata
         /// </summary>
         /// <param name="commandId">The command identifier</param>
         /// <param name="result">The command result to store</param>
-        public void StoreResult(string commandId, ICommandResult result)
+        /// <param name="originalCommand">The original command text</param>
+        /// <param name="queueTime">When the command was queued</param>
+        /// <param name="startTime">When the command started executing</param>
+        /// <param name="endTime">When the command finished</param>
+        public void StoreResult(string commandId, ICommandResult result, 
+            string? originalCommand = null, DateTime? queueTime = null, 
+            DateTime? startTime = null, DateTime? endTime = null)
         {
             if (m_Disposed) return;
             if (string.IsNullOrEmpty(commandId)) return;
 
             try
             {
-                var cachedResult = new CachedCommandResult(result, DateTime.UtcNow);
+                var cachedResult = new CachedCommandResult(result, DateTime.UtcNow, 
+                    originalCommand, queueTime, startTime, endTime);
                 var resultSize = EstimateResultSize(cachedResult);
 
                 lock (m_MemoryLock)
@@ -73,11 +80,11 @@ namespace mcp_nexus.CommandQueue
                         EvictOldestResults();
                     }
 
-                    // Store the new result
+                    // Store the new result with metadata
                     m_Results[commandId] = cachedResult;
                     m_CurrentMemoryUsage += resultSize;
 
-                    m_Logger?.LogTrace("💾 Stored result for command {CommandId} - Size: {SizeKB}KB, TotalMemory: {TotalMB}MB",
+                    m_Logger?.LogTrace("💾 Stored result with metadata for command {CommandId} - Size: {SizeKB}KB, TotalMemory: {TotalMB}MB",
                         commandId, resultSize / 1024.0, m_CurrentMemoryUsage / (1024.0 * 1024.0));
                 }
             }
@@ -109,6 +116,33 @@ namespace mcp_nexus.CommandQueue
             catch (Exception ex)
             {
                 m_Logger?.LogError(ex, "Failed to retrieve result for command {CommandId}", commandId);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Retrieves a cached result with metadata from the cache
+        /// </summary>
+        /// <param name="commandId">The command identifier</param>
+        /// <returns>The cached result with metadata, or null if not found</returns>
+        public CachedCommandResult? GetCachedResultWithMetadata(string commandId)
+        {
+            if (m_Disposed) return null;
+            if (string.IsNullOrEmpty(commandId)) return null;
+
+            try
+            {
+                if (m_Results.TryGetValue(commandId, out var cachedResult))
+                {
+                    // Update access time for LRU tracking
+                    cachedResult.UpdateAccessTime();
+                    return cachedResult;
+                }
+            }
+            catch (Exception ex)
+            {
+                m_Logger?.LogError(ex, "Failed to retrieve result with metadata for command {CommandId}", commandId);
             }
 
             return null;
@@ -302,17 +336,27 @@ namespace mcp_nexus.CommandQueue
     /// <summary>
     /// Represents a cached command result with access tracking
     /// </summary>
-    internal class CachedCommandResult
+    public class CachedCommandResult
     {
         public ICommandResult Result { get; }
         public DateTime CreatedTime { get; }
         public DateTime LastAccessTime { get; private set; }
+        public string? OriginalCommand { get; }
+        public DateTime QueueTime { get; }
+        public DateTime StartTime { get; }
+        public DateTime EndTime { get; }
 
-        public CachedCommandResult(ICommandResult result, DateTime createdTime)
+        public CachedCommandResult(ICommandResult result, DateTime createdTime, 
+            string? originalCommand = null, DateTime? queueTime = null, 
+            DateTime? startTime = null, DateTime? endTime = null)
         {
             Result = result ?? throw new ArgumentNullException(nameof(result));
             CreatedTime = createdTime;
             LastAccessTime = createdTime;
+            OriginalCommand = originalCommand;
+            QueueTime = queueTime ?? createdTime.AddMinutes(-1);
+            StartTime = startTime ?? createdTime.Add(-result.Duration);
+            EndTime = endTime ?? createdTime;
         }
 
         public void UpdateAccessTime()

@@ -846,8 +846,7 @@ namespace mcp_nexus
         {
             Console.WriteLine("Configuring HTTP request pipeline...");
 
-            // Add UTF-8 encoding middleware first to ensure all responses use UTF-8
-            app.UseMiddleware<Utf8ResponseMiddleware>();
+            // UTF-8 encoding middleware removed - using standard Unicode encoding
 
             // Add security middleware (GlobalExceptionHandlerMiddleware removed - was causing crashes)
             app.UseMiddleware<ContentTypeValidationMiddleware>();
@@ -934,11 +933,7 @@ namespace mcp_nexus
             {
                 // Try to parse and pretty-print the JSON
                 using var document = JsonDocument.Parse(json);
-                using var stream = new MemoryStream();
-                using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
-                document.WriteTo(writer);
-                writer.Flush();
-                return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+                return System.Text.Json.JsonSerializer.Serialize(document.RootElement, new JsonSerializerOptions { WriteIndented = true });
             }
             catch (JsonException ex)
             {

@@ -149,10 +149,7 @@ namespace mcp_nexus.Middleware
             {
                 using var document = JsonDocument.Parse(json);
                 using var stream = new MemoryStream();
-                using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
-                document.WriteTo(writer);
-                writer.Flush();
-                return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+                return System.Text.Json.JsonSerializer.Serialize(document.RootElement, new JsonSerializerOptions { WriteIndented = true });
             }
             catch (JsonException)
             {
@@ -310,11 +307,7 @@ namespace mcp_nexus.Middleware
                         using var textDocument = JsonDocument.Parse(decodedText);
                         var truncatedJson = TruncateLargeFields(textDocument.RootElement, 1000, shouldTruncate);
 
-                        using var stream = new MemoryStream();
-                        using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
-                        truncatedJson.WriteTo(writer);
-                        writer.Flush();
-                        return (System.Text.Encoding.UTF8.GetString(stream.ToArray()), true);
+                        return (System.Text.Json.JsonSerializer.Serialize(truncatedJson, new JsonSerializerOptions { WriteIndented = true }), true);
                     }
                 }
 

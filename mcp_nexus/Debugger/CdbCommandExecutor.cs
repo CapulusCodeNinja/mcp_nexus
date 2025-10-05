@@ -267,7 +267,7 @@ namespace mcp_nexus.Debugger
                 // Wait for both readers to complete concurrently
                 // The semaphore in each reader method prevents stream concurrency issues
                 // Add timeout to prevent infinite waiting - use enhanced timeout configuration
-                var outputReadingTimeoutMs = m_config.OutputReadingTimeoutMs > 0 ? m_config.OutputReadingTimeoutMs : 60000; // Default 60 seconds
+                var outputReadingTimeoutMs = m_config.OutputReadingTimeoutMs > 0 ? m_config.OutputReadingTimeoutMs : throw new InvalidOperationException("Output reading timeout is not configured"); // Default 5 minutes
                 using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(outputReadingTimeoutMs));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
                 

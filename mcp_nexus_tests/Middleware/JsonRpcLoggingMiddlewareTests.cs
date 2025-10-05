@@ -45,7 +45,7 @@ namespace mcp_nexus_tests.Middleware
             };
 
             var json = System.Text.Json.JsonSerializer.Serialize(response);
-            var bytes = Encoding.UTF8.GetBytes(json);
+            var bytes = Encoding.Unicode.GetBytes(json);
             
             context.Response.Body.Write(bytes, 0, bytes.Length);
             context.Response.ContentType = "application/json";
@@ -60,7 +60,7 @@ namespace mcp_nexus_tests.Middleware
             var context = new DefaultHttpContext();
             context.Request.Path = "/";
             context.Request.Method = "POST";
-            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"method\":\"test\"}"));
+            context.Request.Body = new MemoryStream(Encoding.Unicode.GetBytes("{\"method\":\"test\"}"));
 
             // Act
             await _middleware.InvokeAsync(context);
@@ -81,7 +81,7 @@ namespace mcp_nexus_tests.Middleware
             context.Request.Method = "POST";
             
             var requestJson = "{\"method\":\"nexus_read_dump_analyze_command_result\",\"params\":{\"sessionId\":\"sess-123\",\"commandId\":\"cmd-456\"}}";
-            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(requestJson));
+            context.Request.Body = new MemoryStream(Encoding.Unicode.GetBytes(requestJson));
 
             // Act
             await _middleware.InvokeAsync(context);
@@ -101,7 +101,7 @@ namespace mcp_nexus_tests.Middleware
             context.Request.Method = "POST";
             
             var requestJson = "{\"method\":\"test\",\"params\":{\"text\":\"Hello \\u0022World\\u0022\"}}";
-            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(requestJson));
+            context.Request.Body = new MemoryStream(Encoding.Unicode.GetBytes(requestJson));
 
             // Act
             await _middleware.InvokeAsync(context);

@@ -262,7 +262,7 @@ namespace mcp_nexus.Debugger
             m_logger.LogDebug("CDB call: {CdbPath} {Arguments}", cdbPath, arguments);
 
             // Use centralized UTF-8 encoding configuration for all CDB streams
-            var startInfo = EncodingConfiguration.CreateUtf8ProcessStartInfo(cdbPath, arguments);
+            var startInfo = EncodingConfiguration.CreateUnicodeProcessStartInfo(cdbPath, arguments);
             startInfo.WorkingDirectory = workingDirectory;
 
             return startInfo;

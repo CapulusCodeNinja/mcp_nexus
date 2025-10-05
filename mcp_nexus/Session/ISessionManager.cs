@@ -118,6 +118,18 @@ namespace mcp_nexus.Session
         /// Returns the number of sessions cleaned up.
         /// </returns>
         Task<int> CleanupExpiredSessionsAsync();
+
+        /// <summary>
+        /// Gets command information and result by checking both the command queue tracker and result cache.
+        /// This method provides a unified way to retrieve command status and results efficiently.
+        /// </summary>
+        /// <param name="sessionId">The session identifier.</param>
+        /// <param name="commandId">The command identifier.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns command information and result if found; otherwise, (null, null).
+        /// </returns>
+        Task<(CommandInfo? CommandInfo, ICommandResult? Result)> GetCommandInfoAndResultAsync(string sessionId, string commandId);
     }
 
     /// <summary>

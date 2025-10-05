@@ -236,6 +236,17 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
+        /// Gets the cached result with metadata for a command.
+        /// </summary>
+        /// <param name="commandId">The unique identifier of the command.</param>
+        /// <returns>The cached result with metadata, or null if not found.</returns>
+        public CachedCommandResult? GetCachedResultWithMetadata(string commandId)
+        {
+            // This implementation doesn't have a cache, so return null
+            return null;
+        }
+
+        /// <summary>
         /// Cancels a specific command
         /// </summary>
         /// <param name="commandId">The ID of the command to cancel</param>

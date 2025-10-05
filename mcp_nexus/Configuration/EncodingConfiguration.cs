@@ -15,14 +15,14 @@ namespace mcp_nexus.Configuration
     {
         /// <summary>
         /// The standard encoding for all external text interfaces
-        /// UTF-8 without BOM for maximum compatibility
+        /// Standard Unicode encoding for maximum compatibility
         /// </summary>
-        public static Encoding DefaultEncoding { get; } = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        public static Encoding DefaultEncoding { get; } = Encoding.Unicode;
 
         /// <summary>
         /// Content-Type charset parameter for HTTP responses
         /// </summary>
-        public const string HttpCharset = "charset=utf-8";
+        public const string HttpCharset = "charset=utf-16";
 
         /// <summary>
         /// Gets the full Content-Type header value for JSON responses
@@ -51,9 +51,9 @@ namespace mcp_nexus.Configuration
         }
 
         /// <summary>
-        /// Creates a ProcessStartInfo with UTF-8 encoding configured for all streams
+        /// Creates a ProcessStartInfo with Unicode encoding configured for all streams
         /// </summary>
-        public static ProcessStartInfo CreateUtf8ProcessStartInfo(string fileName, string arguments = "")
+        public static ProcessStartInfo CreateUnicodeProcessStartInfo(string fileName, string arguments = "")
         {
             return new ProcessStartInfo
             {

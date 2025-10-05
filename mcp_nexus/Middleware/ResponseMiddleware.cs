@@ -3,18 +3,18 @@ using mcp_nexus.Configuration;
 namespace mcp_nexus.Middleware
 {
     /// <summary>
-    /// Middleware that ensures all HTTP responses use UTF-8 encoding.
+    /// Middleware that ensures all HTTP responses use proper encoding.
     /// Sets the charset parameter in Content-Type headers for proper text encoding.
     /// </summary>
-    public class Utf8ResponseMiddleware
+    public class ResponseMiddleware
     {
         private readonly RequestDelegate m_next;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Utf8ResponseMiddleware"/> class.
+        /// Initializes a new instance of the <see cref="ResponseMiddleware"/> class.
         /// </summary>
         /// <param name="next">The next middleware in the pipeline.</param>
-        public Utf8ResponseMiddleware(RequestDelegate next)
+        public ResponseMiddleware(RequestDelegate next)
         {
             m_next = next;
         }

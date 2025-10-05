@@ -144,9 +144,12 @@ namespace mcp_nexus.CommandQueue
                     heartbeatCts.Cancel();
                     try { await heartbeatTask; } catch { /* Ignore heartbeat cancellation */ }
 
-                    // Store result in cache for session persistence
+                    // Store result in cache with complete metadata for session persistence
                     var commandResult = CommandResult.Success(result ?? string.Empty, stopwatch.Elapsed);
-                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, commandResult);
+                    var endTime = DateTime.UtcNow;
+                    var startTime = endTime.Add(-stopwatch.Elapsed);
+                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, commandResult, 
+                        command.Command, command.QueueTime, startTime, endTime);
 
                     // Complete successfully
                     // Log small preview of result for diagnostics
@@ -174,7 +177,10 @@ namespace mcp_nexus.CommandQueue
                     // Command was explicitly cancelled
                     var errorMessage = "Command was cancelled by user request";
                     var cancelledResult = CommandResult.Failure(errorMessage, stopwatch.Elapsed);
-                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, cancelledResult);
+                    var endTime = DateTime.UtcNow;
+                    var startTime = endTime.Add(-stopwatch.Elapsed);
+                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, cancelledResult, 
+                        command.Command, command.QueueTime, startTime, endTime);
                     
                     CompleteCommandSafely(command, errorMessage, CommandState.Cancelled);
                     m_Tracker.UpdateState(command.Id ?? string.Empty, CommandState.Cancelled);
@@ -194,7 +200,10 @@ namespace mcp_nexus.CommandQueue
                         : "Command cancelled due to service shutdown";
 
                     var failedResult = CommandResult.Failure(message, stopwatch.Elapsed);
-                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, failedResult);
+                    var endTime = DateTime.UtcNow;
+                    var startTime = endTime.Add(-stopwatch.Elapsed);
+                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, failedResult, 
+                        command.Command, command.QueueTime, startTime, endTime);
 
                     CompleteCommandSafely(command, message, CommandState.Failed);
                     m_Tracker.UpdateState(command.Id ?? string.Empty, CommandState.Failed);
@@ -218,7 +227,10 @@ namespace mcp_nexus.CommandQueue
                 // Unexpected error during execution
                 var errorMessage = $"Command execution failed: {ex.Message}";
                 var failedResult = CommandResult.Failure(errorMessage, stopwatch.Elapsed);
-                m_ResultCache?.StoreResult(command.Id ?? string.Empty, failedResult);
+                var endTime = DateTime.UtcNow;
+                var startTime = endTime.Add(-stopwatch.Elapsed);
+                m_ResultCache?.StoreResult(command.Id ?? string.Empty, failedResult, 
+                    command.Command, command.QueueTime, startTime, endTime);
                 
                 CompleteCommandSafely(command, errorMessage, CommandState.Failed);
                 m_Tracker.UpdateState(command.Id ?? string.Empty, CommandState.Failed);
@@ -369,6 +381,16 @@ namespace mcp_nexus.CommandQueue
         public ICommandResult? GetCommandResult(string commandId)
         {
             return m_ResultCache?.GetResult(commandId);
+        }
+
+        /// <summary>
+        /// Gets the cached result with metadata for a command.
+        /// </summary>
+        /// <param name="commandId">The unique identifier of the command.</param>
+        /// <returns>The cached result with metadata, or null if not found.</returns>
+        public CachedCommandResult? GetCachedResultWithMetadata(string commandId)
+        {
+            return m_ResultCache?.GetCachedResultWithMetadata(commandId);
         }
 
         /// <summary>

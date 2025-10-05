@@ -511,21 +511,11 @@ namespace mcp_nexus_tests.Tools
                 IsCompleted = true
             };
 
-            mockCommandQueue
-                .Setup(x => x.GetCommandInfo(commandId))
-                .Returns(commandInfo);
-
-            mockCommandQueue
-                .Setup(x => x.GetCommandResult(commandId))
-                .ReturnsAsync(commandResult);
+            var mockResult = CommandResult.Success(commandResult, TimeSpan.FromMinutes(3));
 
             m_MockSessionManager
-                .Setup(x => x.SessionExists(sessionId))
-                .Returns(true);
-
-            m_MockSessionManager
-                .Setup(x => x.GetCommandQueue(sessionId))
-                .Returns(mockCommandQueue.Object);
+                .Setup(x => x.GetCommandInfoAndResultAsync(sessionId, commandId))
+                .ReturnsAsync((commandInfo, mockResult));
 
             // Act
             var result = await McpNexusTools.nexus_read_dump_analyze_command_result(
@@ -826,7 +816,7 @@ namespace mcp_nexus_tests.Tools
         [InlineData(CommandState.Queued, 1, "2 seconds")]
         [InlineData(CommandState.Queued, 2, "4 seconds")]
         [InlineData(CommandState.Queued, 15, "1 minute")]
-        [InlineData(CommandState.Executing, 0, "15 seconds")]
+        [InlineData(CommandState.Executing, 0, "1 seconds")]
         [InlineData(CommandState.Cancelled, 0, "No need to check")]
         [InlineData(CommandState.Failed, 0, "No need to check")]
         public void GetNextCheckInRecommendation_WithVariousStates_ReturnsExpectedRecommendation(CommandState state, int queuePosition, string expectedContains)

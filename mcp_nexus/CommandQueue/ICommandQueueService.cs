@@ -21,6 +21,13 @@ namespace mcp_nexus.CommandQueue
         Task<string> GetCommandResult(string commandId);
 
         /// <summary>
+        /// Gets the cached result with metadata for a command.
+        /// </summary>
+        /// <param name="commandId">The unique identifier of the command.</param>
+        /// <returns>A task that represents the asynchronous operation and contains the cached result with metadata.</returns>
+        Task<CachedCommandResult?> GetCachedResultWithMetadata(string commandId);
+
+        /// <summary>
         /// Cancels a specific command.
         /// </summary>
         /// <param name="commandId">The unique identifier of the command to cancel.</param>

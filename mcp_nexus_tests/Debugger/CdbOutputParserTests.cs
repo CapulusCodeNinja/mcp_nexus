@@ -372,7 +372,7 @@ namespace mcp_nexus_tests.Debugger
         {
             var mockLogger = new Mock<ILogger>();
             var outputData = "Test output\nAnother line\n";
-            var outputBytes = Encoding.UTF8.GetBytes(outputData);
+            var outputBytes = Encoding.Unicode.GetBytes(outputData);
             var outputStream = new MemoryStream(outputBytes);
             var errorStream = new MemoryStream();
             var outputReader = new StreamReader(outputStream);

@@ -356,10 +356,8 @@ namespace mcp_nexus.Tools
                     };
                 }
 
-                var commandQueue = sessionManager.GetCommandQueue(sessionId);
-
-                // Get type-safe command information instead of parsing strings
-                var commandInfo = commandQueue.GetCommandInfo(commandId);
+                // Get command information and result by checking both tracker and cache
+                var (commandInfo, commandResult) = await sessionManager.GetCommandInfoAndResultAsync(sessionId, commandId);
                 if (commandInfo == null)
                 {
                     return new
@@ -372,9 +370,6 @@ namespace mcp_nexus.Tools
                         usage = SessionAwareWindbgTool.USAGE_EXPLANATION
                     };
                 }
-
-                // Get the actual command result for completed commands
-                var commandResult = commandInfo.IsCompleted ? await commandQueue.GetCommandResult(commandId) : null;
 
                 // Calculate progress percentage based on queue position and elapsed time
                 var progressPercentage = CalculateProgressPercentage(commandInfo.QueuePosition, commandInfo.Elapsed);
@@ -406,7 +401,7 @@ namespace mcp_nexus.Tools
                     operation = "nexus_read_dump_analyze_command_result",
                     status = commandInfo.State.ToString(),
                     result = isCompleted ? commandResult : null,
-                    error = (isFailed || isCancelled) ? (commandResult ?? commandInfo.State.ToString()) : null,
+                    error = (isFailed || isCancelled) ? (commandResult?.ErrorMessage ?? commandInfo.State.ToString()) : null,
                     completedAt = isCompleted ? DateTimeOffset.Now : (DateTimeOffset?)null,
                     timestamp = DateTimeOffset.Now,
                     message = isCompleted ? null : statusMessage,

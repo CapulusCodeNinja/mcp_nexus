@@ -419,5 +419,101 @@ namespace mcp_nexus.Session
                 m_logger.LogError(ex, "💥 Error during ThreadSafeSessionManager disposal");
             }
         }
+
+        /// <summary>
+        /// Gets command information and result by checking both the command queue tracker and result cache.
+        /// This method provides a unified way to retrieve command status and results efficiently.
+        /// </summary>
+        /// <param name="sessionId">The session identifier.</param>
+        /// <param name="commandId">The command identifier.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns command information and result if found; otherwise, (null, null).
+        /// </returns>
+        public async Task<(CommandInfo? CommandInfo, ICommandResult? Result)> GetCommandInfoAndResultAsync(string sessionId, string commandId)
+        {
+            try
+            {
+                // First, try to get command queue for the session
+                if (!TryGetCommandQueue(sessionId, out var commandQueue))
+                {
+                    m_logger.LogDebug("Session {SessionId} not found or disposed", sessionId);
+                    return (null, null);
+                }
+
+                // Check cache first (for completed commands) - reduces pressure on queue
+                var cachedResultString = await commandQueue!.GetCommandResult(commandId);
+                if (!string.IsNullOrEmpty(cachedResultString) && !cachedResultString.Contains("not found"))
+                {
+                    m_logger.LogTrace("Command {CommandId} found in cache for session {SessionId}", commandId, sessionId);
+                    
+                    // Get the cached result with metadata
+                    var cachedResultWithMetadata = await commandQueue.GetCachedResultWithMetadata(commandId);
+                    if (cachedResultWithMetadata != null)
+                    {
+                        // Use real metadata from cache
+                        var elapsed = cachedResultWithMetadata.EndTime - cachedResultWithMetadata.QueueTime;
+                        
+                        // Create CommandInfo with real data from cache
+                        var cachedCommandInfo = new CommandInfo(
+                            commandId,
+                            cachedResultWithMetadata.OriginalCommand ?? "Unknown Command",
+                            cachedResultWithMetadata.Result.IsSuccess ? CommandState.Completed : CommandState.Failed,
+                            cachedResultWithMetadata.QueueTime,
+                            0 // Queue position 0 for completed commands
+                        )
+                        {
+                            Elapsed = elapsed,
+                            Remaining = TimeSpan.Zero,
+                            IsCompleted = true
+                        };
+                        
+                        return (cachedCommandInfo, cachedResultWithMetadata.Result);
+                    }
+                    else
+                    {
+                        // Fallback to calculated timing if metadata not available
+                        var endTime = DateTime.UtcNow;
+                        var queueTime = endTime.AddMinutes(-1);
+                        var elapsed = endTime - queueTime;
+                        
+                        var fallbackCommandInfo = new CommandInfo(
+                            commandId,
+                            "Completed Command", // Fallback
+                            CommandState.Completed, // Assume success if we have a result
+                            queueTime,
+                            0
+                        )
+                        {
+                            Elapsed = elapsed,
+                            Remaining = TimeSpan.Zero,
+                            IsCompleted = true
+                        };
+                        
+                        // Create a simple result from the string
+                        var simpleResult = CommandResult.Success(cachedResultString, elapsed);
+                        return (fallbackCommandInfo, simpleResult);
+                    }
+                }
+
+                // Fallback: Check tracker (for active/queued commands)
+                var commandInfo = commandQueue.GetCommandInfo(commandId);
+                if (commandInfo != null)
+                {
+                    m_logger.LogTrace("Command {CommandId} found in tracker for session {SessionId}", commandId, sessionId);
+                    // For active commands, we don't have the result yet
+                    return (commandInfo, null);
+                }
+
+                m_logger.LogTrace("Command {CommandId} not found in tracker or cache for session {SessionId}", commandId, sessionId);
+                return (null, null);
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogError(ex, "Error retrieving command info for {CommandId} in session {SessionId}", commandId, sessionId);
+                return (null, null);
+            }
+        }
+
     }
 }

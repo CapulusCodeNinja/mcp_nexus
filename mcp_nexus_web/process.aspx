@@ -194,8 +194,8 @@ void ProcessDumpFileSimple(string filePath, string jobId)
         formData.AppendLine("Content-Type: application/octet-stream");
         formData.AppendLine();
         
-        byte[] formDataBytes = System.Text.Encoding.UTF8.GetBytes(formData.ToString());
-        byte[] endBoundaryBytes = System.Text.Encoding.UTF8.GetBytes("\r\n--" + boundary + "--\r\n");
+        byte[] formDataBytes = System.Text.Encoding.Unicode.GetBytes(formData.ToString());
+        byte[] endBoundaryBytes = System.Text.Encoding.Unicode.GetBytes("\r\n--" + boundary + "--\r\n");
         
         // Calculate total content length for streaming
         long totalContentLength = formDataBytes.Length + fileInfo.Length + endBoundaryBytes.Length;

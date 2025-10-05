@@ -119,6 +119,23 @@ namespace mcp_nexus.CommandQueue
         }
 
         /// <summary>
+        /// Gets the cached result with metadata for a command.
+        /// </summary>
+        /// <param name="commandId">The unique identifier of the command.</param>
+        /// <returns>A task that represents the asynchronous operation and contains the cached result with metadata.</returns>
+        public async Task<CachedCommandResult?> GetCachedResultWithMetadata(string commandId)
+        {
+            if (m_disposed)
+                throw new ObjectDisposedException(nameof(CommandQueueService));
+
+            if (string.IsNullOrWhiteSpace(commandId))
+                return null;
+
+            // This implementation doesn't have a cache, so return null
+            return await Task.FromResult<CachedCommandResult?>(null);
+        }
+
+        /// <summary>
         /// Cancels a specific command
         /// </summary>
         /// <param name="commandId">The command ID to cancel</param>

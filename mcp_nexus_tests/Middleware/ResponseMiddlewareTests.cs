@@ -13,13 +13,13 @@ using Microsoft.Extensions.DependencyInjection;
 namespace mcp_nexus_tests.Middleware
 {
     /// <summary>
-    /// Tests for Utf8ResponseMiddleware
+    /// Tests for ResponseMiddleware
     /// </summary>
-    public class Utf8ResponseMiddlewareTests
+    public class ResponseMiddlewareTests
     {
         private readonly Mock<RequestDelegate> m_MockNext;
 
-        public Utf8ResponseMiddlewareTests()
+        public ResponseMiddlewareTests()
         {
             m_MockNext = new Mock<RequestDelegate>();
         }
@@ -28,7 +28,7 @@ namespace mcp_nexus_tests.Middleware
         public void Constructor_WithValidParameters_CreatesInstance()
         {
             // Act
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
 
             // Assert
             Assert.NotNull(middleware);
@@ -38,7 +38,7 @@ namespace mcp_nexus_tests.Middleware
         public void Constructor_WithNullNext_CreatesInstance()
         {
             // Act
-            var middleware = new Utf8ResponseMiddleware(null!);
+            var middleware = new ResponseMiddleware(null!);
 
             // Assert
             Assert.NotNull(middleware);
@@ -48,7 +48,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithNoContentType_DoesNotModifyResponse()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
 
             m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
@@ -66,10 +66,10 @@ namespace mcp_nexus_tests.Middleware
         }
 
         [Fact]
-        public async Task InvokeAsync_WithJsonContentTypeWithoutCharset_AddsUtf8Charset()
+        public async Task InvokeAsync_WithJsonContentTypeWithoutCharset_AddsUnicodeCharset()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
 
             m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
@@ -91,7 +91,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithJsonContentTypeWithCharset_DoesNotModify()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
             var originalContentType = "application/json; charset=utf-8";
 
@@ -113,7 +113,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithTextPlainContentTypeWithoutCharset_DoesNotModifyInUnitTest()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
 
             m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
@@ -135,7 +135,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithTextHtmlContentTypeWithoutCharset_DoesNotModifyInUnitTest()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
 
             m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
@@ -157,7 +157,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithOtherTextContentTypeWithoutCharset_DoesNotModifyInUnitTest()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
             var originalContentType = "text/xml";
 
@@ -180,7 +180,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithNonTextContentType_DoesNotModify()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
             var originalContentType = "application/octet-stream";
 
@@ -202,7 +202,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithEmptyContentType_DoesNotModify()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
 
             m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
@@ -224,7 +224,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithNullContentType_DoesNotModify()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
 
             m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
@@ -245,7 +245,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithCaseInsensitiveContentType_DoesNotModifyInUnitTest()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
 
             m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
@@ -267,7 +267,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithTextContentTypeWithDifferentCharset_DoesNotModify()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
             var originalContentType = "text/plain; charset=iso-8859-1";
 
@@ -289,7 +289,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithJsonContentTypeWithParameters_DoesNotModifyInUnitTest()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
 
             m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
@@ -311,7 +311,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithExceptionInNext_PropagatesException()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
             var expectedException = new InvalidOperationException("Test exception");
 
@@ -327,7 +327,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithWhitespaceContentType_DoesNotModify()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
 
             m_MockNext.Setup(x => x(It.IsAny<HttpContext>()))
@@ -348,7 +348,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithVeryLongContentType_HandlesCorrectly()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
             var longContentType = "application/json" + new string('x', 1000);
 
@@ -370,7 +370,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithContentTypeContainingCharsetInMiddle_DoesNotModify()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
             var contentType = "application/json; charset=utf-8; version=1.0";
 
@@ -392,7 +392,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithContentTypeContainingCharsetCaseInsensitive_DoesNotModify()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
             var contentType = "application/json; CHARSET=utf-8";
 
@@ -414,7 +414,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithTextContentTypeWithSpecialCharacters_DoesNotModifyInUnitTest()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
             var contentType = "text/csv; header=present";
 
@@ -436,7 +436,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithBinaryContentType_DoesNotModify()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
             var contentType = "image/png";
 
@@ -458,7 +458,7 @@ namespace mcp_nexus_tests.Middleware
         public async Task InvokeAsync_WithCustomContentType_DoesNotModify()
         {
             // Arrange
-            var middleware = new Utf8ResponseMiddleware(m_MockNext.Object);
+            var middleware = new ResponseMiddleware(m_MockNext.Object);
             var context = CreateHttpContext();
             var contentType = "application/x-custom";
 
@@ -477,45 +477,45 @@ namespace mcp_nexus_tests.Middleware
         }
 
         [Fact]
-        public void Utf8ResponseMiddleware_Class_Exists()
+        public void ResponseMiddleware_Class_Exists()
         {
             // Assert
-            Assert.True(typeof(Utf8ResponseMiddleware) != null);
+            Assert.True(typeof(ResponseMiddleware) != null);
         }
 
         [Fact]
-        public void Utf8ResponseMiddleware_IsNotStatic()
+        public void ResponseMiddleware_IsNotStatic()
         {
             // Assert
-            Assert.False(typeof(Utf8ResponseMiddleware).IsAbstract);
+            Assert.False(typeof(ResponseMiddleware).IsAbstract);
         }
 
         [Fact]
-        public void Utf8ResponseMiddleware_IsClass()
+        public void ResponseMiddleware_IsClass()
         {
             // Assert
-            Assert.True(typeof(Utf8ResponseMiddleware).IsClass);
+            Assert.True(typeof(ResponseMiddleware).IsClass);
         }
 
         [Fact]
-        public void Utf8ResponseMiddleware_IsNotValueType()
+        public void ResponseMiddleware_IsNotValueType()
         {
             // Assert
-            Assert.False(typeof(Utf8ResponseMiddleware).IsValueType);
+            Assert.False(typeof(ResponseMiddleware).IsValueType);
         }
 
         [Fact]
-        public void Utf8ResponseMiddleware_IsNotSealed()
+        public void ResponseMiddleware_IsNotSealed()
         {
             // Assert
-            Assert.False(typeof(Utf8ResponseMiddleware).IsSealed);
+            Assert.False(typeof(ResponseMiddleware).IsSealed);
         }
 
         [Fact]
-        public void Utf8ResponseMiddleware_HasInvokeAsyncMethod()
+        public void ResponseMiddleware_HasInvokeAsyncMethod()
         {
             // Arrange
-            var middlewareType = typeof(Utf8ResponseMiddleware);
+            var middlewareType = typeof(ResponseMiddleware);
             var method = middlewareType.GetMethod("InvokeAsync");
 
             // Assert
@@ -526,23 +526,23 @@ namespace mcp_nexus_tests.Middleware
         }
 
         [Fact]
-        public void Utf8ResponseMiddleware_Constructor_WithValidNext_CreatesInstance()
+        public void ResponseMiddleware_Constructor_WithValidNext_CreatesInstance()
         {
             // Arrange
             var next = new Mock<RequestDelegate>().Object;
 
             // Act
-            var middleware = new Utf8ResponseMiddleware(next);
+            var middleware = new ResponseMiddleware(next);
 
             // Assert
             Assert.NotNull(middleware);
         }
 
         [Fact]
-        public void Utf8ResponseMiddleware_Constructor_WithNullNext_CreatesInstance()
+        public void ResponseMiddleware_Constructor_WithNullNext_CreatesInstance()
         {
             // Act
-            var middleware = new Utf8ResponseMiddleware(null!);
+            var middleware = new ResponseMiddleware(null!);
 
             // Assert
             Assert.NotNull(middleware);
