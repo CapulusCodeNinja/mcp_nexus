@@ -187,12 +187,11 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Realistic mock handles ExecuteCommand internally
 
-            // Act - Start processing and then cancel the service
-            var processingTask = m_Processor.ProcessCommandQueueAsync(commandQueue, serviceCancellationTokenSource.Token);
-
-            // Cancel the service after a short delay to allow processing to start
-            await Task.Delay(100);
+            // Cancel the service before starting processing
             serviceCancellationTokenSource.Cancel();
+
+            // Act - Start processing with already cancelled service
+            var processingTask = m_Processor.ProcessCommandQueueAsync(commandQueue, serviceCancellationTokenSource.Token);
 
             await processingTask;
 

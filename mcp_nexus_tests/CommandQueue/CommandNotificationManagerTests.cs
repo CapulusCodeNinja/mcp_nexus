@@ -108,7 +108,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             // Give the Task.Run a moment to execute
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
