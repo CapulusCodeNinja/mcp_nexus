@@ -45,6 +45,11 @@ namespace mcp_nexus.Debugger
         public int StartupDelayMs { get; }
 
         /// <summary>
+        /// Gets the output reading timeout in milliseconds.
+        /// </summary>
+        public int OutputReadingTimeoutMs { get; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="CdbSessionConfiguration"/> class.
         /// </summary>
         /// <param name="commandTimeoutMs">The command timeout in milliseconds. Default is 30000ms (30 seconds).</param>
@@ -54,6 +59,7 @@ namespace mcp_nexus.Debugger
         /// <param name="symbolServerMaxRetries">The maximum number of retries for symbol server operations. Default is 1.</param>
         /// <param name="symbolSearchPath">Optional symbol search path for CDB. If null, uses the default path.</param>
         /// <param name="startupDelayMs">The startup delay in milliseconds. Default is 1000ms (1 second).</param>
+        /// <param name="outputReadingTimeoutMs">The output reading timeout in milliseconds. Default is 60000ms (1 minute).</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when any of the timeout or retry parameters are invalid.</exception>
         public CdbSessionConfiguration(
             int commandTimeoutMs = 30000,
@@ -62,9 +68,10 @@ namespace mcp_nexus.Debugger
             int symbolServerTimeoutMs = 30000,
             int symbolServerMaxRetries = 1,
             string? symbolSearchPath = null,
-            int startupDelayMs = 1000)
+            int startupDelayMs = 1000,
+            int outputReadingTimeoutMs = 60000)
         {
-            ValidateParameters(commandTimeoutMs, idleTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs);
+            ValidateParameters(commandTimeoutMs, idleTimeoutMs, symbolServerTimeoutMs, symbolServerMaxRetries, startupDelayMs, outputReadingTimeoutMs);
 
             CommandTimeoutMs = commandTimeoutMs;
             IdleTimeoutMs = idleTimeoutMs;
@@ -73,6 +80,7 @@ namespace mcp_nexus.Debugger
             SymbolServerMaxRetries = symbolServerMaxRetries;
             SymbolSearchPath = symbolSearchPath;
             StartupDelayMs = startupDelayMs;
+            OutputReadingTimeoutMs = outputReadingTimeoutMs;
         }
 
         /// <summary>
@@ -83,13 +91,15 @@ namespace mcp_nexus.Debugger
         /// <param name="symbolServerTimeoutMs">The symbol server timeout in milliseconds.</param>
         /// <param name="symbolServerMaxRetries">The maximum number of retries for symbol server operations.</param>
         /// <param name="startupDelayMs">The startup delay in milliseconds.</param>
+        /// <param name="outputReadingTimeoutMs">The output reading timeout in milliseconds.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when any of the parameters are invalid.</exception>
         public static void ValidateParameters(
             int commandTimeoutMs,
             int idleTimeoutMs,
             int symbolServerTimeoutMs,
             int symbolServerMaxRetries,
-            int startupDelayMs)
+            int startupDelayMs,
+            int outputReadingTimeoutMs)
         {
             if (commandTimeoutMs <= 0)
                 throw new ArgumentOutOfRangeException(nameof(commandTimeoutMs), "Command timeout must be positive");
@@ -105,6 +115,9 @@ namespace mcp_nexus.Debugger
 
             if (startupDelayMs < 0)
                 throw new ArgumentOutOfRangeException(nameof(startupDelayMs), "Startup delay cannot be negative");
+
+            if (outputReadingTimeoutMs <= 0)
+                throw new ArgumentOutOfRangeException(nameof(outputReadingTimeoutMs), "Output reading timeout must be positive");
         }
 
         /// <summary>

@@ -266,8 +266,9 @@ namespace mcp_nexus.Debugger
             {
                 // Wait for both readers to complete concurrently
                 // The semaphore in each reader method prevents stream concurrency issues
-                // Add timeout to prevent infinite waiting
-                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                // Add timeout to prevent infinite waiting - use enhanced timeout configuration
+                var outputReadingTimeoutMs = m_config.OutputReadingTimeoutMs > 0 ? m_config.OutputReadingTimeoutMs : 60000; // Default 60 seconds
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(outputReadingTimeoutMs));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
                 
                 try
@@ -276,7 +277,7 @@ namespace mcp_nexus.Debugger
                 }
                 catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
                 {
-                    m_logger.LogWarning("Command output reading timed out after 30 seconds - forcing completion");
+                    m_logger.LogWarning("Command output reading timed out after {TimeoutMs}ms - forcing completion", outputReadingTimeoutMs);
                     // Force completion of any remaining tasks
                     completionSignal.Cancel();
                 }
