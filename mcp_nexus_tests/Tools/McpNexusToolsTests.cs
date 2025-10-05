@@ -41,125 +41,177 @@ namespace mcp_nexus_tests.Tools
         public async Task nexus_open_dump_analyze_session_WithValidParameters_ReturnsSuccessResponse()
         {
             // Arrange
-            var dumpPath = @"C:\test\dump.dmp";
+            var tempDir = Path.GetTempPath();
+            var dumpPath = Path.Combine(tempDir, "test_dump.dmp");
             var symbolsPath = @"C:\test\symbols";
             var sessionId = "test-session-123";
 
-            var sessionContext = new SessionContext
+            // Create a temporary dump file
+            File.WriteAllText(dumpPath, "fake dump content");
+
+            try
             {
-                SessionId = sessionId,
-                DumpPath = dumpPath,
-                Description = "Test session"
-            };
+                var sessionContext = new SessionContext
+                {
+                    SessionId = sessionId,
+                    DumpPath = dumpPath,
+                    Description = "Test session"
+                };
 
-            m_MockSessionManager
-                .Setup(x => x.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(sessionId);
+                m_MockSessionManager
+                    .Setup(x => x.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(sessionId);
 
-            // Act
-            var result = await McpNexusTools.nexus_open_dump_analyze_session(
-                m_ServiceProvider, dumpPath, symbolsPath);
+                // Act
+                var result = await McpNexusTools.nexus_open_dump_analyze_session(
+                    m_ServiceProvider, dumpPath, symbolsPath);
 
-            // Assert
-            Assert.NotNull(result);
-            var json = JsonSerializer.Serialize(result);
-            var document = JsonDocument.Parse(json);
+                // Assert
+                Assert.NotNull(result);
+                var json = JsonSerializer.Serialize(result);
+                var document = JsonDocument.Parse(json);
 
-            Assert.True(document.RootElement.TryGetProperty("sessionId", out var sessionIdElement));
-            Assert.Equal(sessionId, sessionIdElement.GetString());
+                Assert.True(document.RootElement.TryGetProperty("sessionId", out var sessionIdElement));
+                Assert.Equal(sessionId, sessionIdElement.GetString());
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.True(successElement.GetBoolean());
+                Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
+                Assert.True(successElement.GetBoolean());
 
-            Assert.True(document.RootElement.TryGetProperty("operation", out var operationElement));
-            Assert.Equal("nexus_open_dump_analyze_session", operationElement.GetString());
+                Assert.True(document.RootElement.TryGetProperty("operation", out var operationElement));
+                Assert.Equal("nexus_open_dump_analyze_session", operationElement.GetString());
 
-            Assert.True(document.RootElement.TryGetProperty("dumpFile", out var dumpFileElement));
-            Assert.Equal("dump.dmp", dumpFileElement.GetString());
+                Assert.True(document.RootElement.TryGetProperty("dumpFile", out var dumpFileElement));
+                Assert.Equal("test_dump.dmp", dumpFileElement.GetString());
 
-            // Verify service calls
-            m_MockSessionManager.Verify(x => x.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()), Times.Once);
+                // Verify service calls
+                m_MockSessionManager.Verify(x => x.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()), Times.Once);
+            }
+            finally
+            {
+                // Clean up temporary file
+                if (File.Exists(dumpPath))
+                    File.Delete(dumpPath);
+            }
         }
 
         [Fact]
         public async Task nexus_open_dump_analyze_session_WithNullSymbolsPath_CallsCreateSessionWithNull()
         {
             // Arrange
-            var dumpPath = @"C:\test\dump.dmp";
+            var tempDir = Path.GetTempPath();
+            var dumpPath = Path.Combine(tempDir, "test_dump.dmp");
             var sessionId = "test-session-123";
 
-            m_MockSessionManager
-                .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(sessionId);
+            // Create a temporary dump file
+            File.WriteAllText(dumpPath, "fake dump content");
 
-            m_MockSessionManager
-                .Setup(x => x.GetSessionContext(sessionId))
-                .Returns(new SessionContext { SessionId = sessionId });
+            try
+            {
+                m_MockSessionManager
+                    .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(sessionId);
 
-            // Act
-            await McpNexusTools.nexus_open_dump_analyze_session(m_ServiceProvider, dumpPath);
+                m_MockSessionManager
+                    .Setup(x => x.GetSessionContext(sessionId))
+                    .Returns(new SessionContext { SessionId = sessionId });
 
-            // Assert
-            m_MockSessionManager.Verify(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()), Times.Once);
+                // Act
+                await McpNexusTools.nexus_open_dump_analyze_session(m_ServiceProvider, dumpPath);
+
+                // Assert
+                m_MockSessionManager.Verify(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()), Times.Once);
+            }
+            finally
+            {
+                // Clean up temporary file
+                if (File.Exists(dumpPath))
+                    File.Delete(dumpPath);
+            }
         }
 
         [Fact]
         public async Task nexus_open_dump_analyze_session_WithSessionLimitExceeded_ReturnsErrorResponse()
         {
             // Arrange
-            var dumpPath = @"C:\test\dump.dmp";
+            var tempDir = Path.GetTempPath();
+            var dumpPath = Path.Combine(tempDir, "test_dump.dmp");
             var exception = new SessionLimitExceededException(5, 3);
 
-            m_MockSessionManager
-                .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
-                .ThrowsAsync(exception);
+            // Create a temporary dump file
+            File.WriteAllText(dumpPath, "fake dump content");
 
-            // Act
-            var result = await McpNexusTools.nexus_open_dump_analyze_session(
-                m_ServiceProvider, dumpPath);
+            try
+            {
+                m_MockSessionManager
+                    .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(exception);
 
-            // Assert
-            Assert.NotNull(result);
-            var json = JsonSerializer.Serialize(result);
-            var document = JsonDocument.Parse(json);
+                // Act
+                var result = await McpNexusTools.nexus_open_dump_analyze_session(
+                    m_ServiceProvider, dumpPath);
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.False(successElement.GetBoolean());
+                // Assert
+                Assert.NotNull(result);
+                var json = JsonSerializer.Serialize(result);
+                var document = JsonDocument.Parse(json);
 
-            Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
-            Assert.Contains("Maximum concurrent sessions exceeded", messageElement.GetString());
-            Assert.Contains("5/3", messageElement.GetString());
+                Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
+                Assert.False(successElement.GetBoolean());
+
+                Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
+                Assert.Contains("Maximum concurrent sessions exceeded", messageElement.GetString());
+                Assert.Contains("5/3", messageElement.GetString());
+            }
+            finally
+            {
+                // Clean up temporary file
+                if (File.Exists(dumpPath))
+                    File.Delete(dumpPath);
+            }
         }
 
         [Fact]
         public async Task nexus_open_dump_analyze_session_WithGeneralException_ReturnsErrorResponse()
         {
             // Arrange
-            var dumpPath = @"C:\test\dump.dmp";
+            var tempDir = Path.GetTempPath();
+            var dumpPath = Path.Combine(tempDir, "test_dump.dmp");
             var exception = new InvalidOperationException("Test error");
 
-            m_MockSessionManager
-                .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
-                .ThrowsAsync(exception);
+            // Create a temporary dump file
+            File.WriteAllText(dumpPath, "fake dump content");
 
-            // Act
-            var result = await McpNexusTools.nexus_open_dump_analyze_session(
-                m_ServiceProvider, dumpPath);
+            try
+            {
+                m_MockSessionManager
+                    .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(exception);
 
-            // Assert
-            Assert.NotNull(result);
-            var json = JsonSerializer.Serialize(result);
-            var document = JsonDocument.Parse(json);
+                // Act
+                var result = await McpNexusTools.nexus_open_dump_analyze_session(
+                    m_ServiceProvider, dumpPath);
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.False(successElement.GetBoolean());
+                // Assert
+                Assert.NotNull(result);
+                var json = JsonSerializer.Serialize(result);
+                var document = JsonDocument.Parse(json);
 
-            Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
-            Assert.Contains("Failed to create debugging session", messageElement.GetString());
-            Assert.Contains("Test error", messageElement.GetString());
+                Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
+                Assert.False(successElement.GetBoolean());
 
-            Assert.True(document.RootElement.TryGetProperty("dumpFile", out var dumpFileElement));
-            Assert.Equal("dump.dmp", dumpFileElement.GetString());
+                Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
+                Assert.Contains("Failed to create debugging session", messageElement.GetString());
+                Assert.Contains("Test error", messageElement.GetString());
+
+                Assert.True(document.RootElement.TryGetProperty("dumpFile", out var dumpFileElement));
+                Assert.Equal("test_dump.dmp", dumpFileElement.GetString());
+            }
+            finally
+            {
+                // Clean up temporary file
+                if (File.Exists(dumpPath))
+                    File.Delete(dumpPath);
+            }
         }
 
         #endregion

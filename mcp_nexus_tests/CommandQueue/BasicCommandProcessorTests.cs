@@ -148,18 +148,22 @@ namespace mcp_nexus_tests.CommandQueue
             var cancellationTokenSource = new CancellationTokenSource();
             var commandCancellationTokenSource = new CancellationTokenSource();
             var completionSource = new TaskCompletionSource<string>();
-            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, commandCancellationTokenSource);
+            var queuedCommand = new QueuedCommand("cmd-1", "k", DateTime.UtcNow, completionSource, commandCancellationTokenSource);
 
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();
 
-            // Cancel the command before it starts
+            // Start processing in background
+            var processingTask = Task.Run(() => m_Processor.ProcessCommandQueueAsync(commandQueue, cancellationTokenSource.Token));
+
+            // Wait a bit for the command to start processing
+            await Task.Delay(50);
+
+            // Cancel the command after it starts
             commandCancellationTokenSource.Cancel();
 
-            // Realistic mock handles ExecuteCommand internally
-
-            // Act
-            await m_Processor.ProcessCommandQueueAsync(commandQueue, cancellationTokenSource.Token);
+            // Wait for processing to complete
+            await processingTask;
 
             // Assert
             var stats = m_Processor.GetPerformanceStats();
@@ -176,7 +180,7 @@ namespace mcp_nexus_tests.CommandQueue
             var serviceCancellationTokenSource = new CancellationTokenSource();
             var commandCancellationTokenSource = new CancellationTokenSource();
             var completionSource = new TaskCompletionSource<string>();
-            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, commandCancellationTokenSource);
+            var queuedCommand = new QueuedCommand("cmd-1", "k", DateTime.UtcNow, completionSource, commandCancellationTokenSource);
 
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();

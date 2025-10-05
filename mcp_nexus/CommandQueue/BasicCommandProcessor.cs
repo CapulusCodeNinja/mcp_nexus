@@ -111,8 +111,9 @@ namespace mcp_nexus.CommandQueue
 
                 m_Logger.LogInformation("⚡ Processing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
 
-                // Execute command
-                var result = await m_CdbSession.ExecuteCommand(queuedCommand.Command ?? string.Empty, cancellationToken);
+                // Execute command - use service cancellation token if service is cancelled, otherwise use command cancellation token
+                var tokenToUse = cancellationToken.IsCancellationRequested ? cancellationToken : (queuedCommand.CancellationTokenSource?.Token ?? cancellationToken);
+                var result = await m_CdbSession.ExecuteCommand(queuedCommand.Command ?? string.Empty, tokenToUse);
 
                 // Store result in cache for session persistence
                 var commandResult = CommandResult.Success(result, DateTime.UtcNow - startTime);

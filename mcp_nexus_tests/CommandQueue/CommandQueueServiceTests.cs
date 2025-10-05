@@ -152,7 +152,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Realistic mock will handle exceptions internally
 
             // Act
-            var commandId = m_Service.QueueCommand("test command");
+            var commandId = m_Service.QueueCommand("failing-command");
             await Task.Delay(50); // Allow processing
 
             // Act - Get result to see failure
