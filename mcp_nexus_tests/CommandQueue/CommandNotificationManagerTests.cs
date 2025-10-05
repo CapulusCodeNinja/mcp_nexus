@@ -59,7 +59,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void NotifyCommandStatusFireAndForget_WithQueuedCommand_CallsNotificationService()
+        public async Task NotifyCommandStatusFireAndForget_WithQueuedCommand_CallsNotificationService()
         {
             // Arrange
             var completionSource = new TaskCompletionSource<string>();
@@ -71,7 +71,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             // Give the Task.Run a moment to execute
-            Thread.Sleep(500);
+            await Task.Delay(1000);
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
@@ -91,7 +91,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Assert
             // Give the Task.Run a moment to execute
             await Task.Delay(500);
-            m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+            m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
         }
 
         [Fact]

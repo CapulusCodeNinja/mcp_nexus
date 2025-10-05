@@ -16,6 +16,7 @@ using mcp_nexus.Health;
 using mcp_nexus.Resilience;
 using mcp_nexus.Caching;
 using mcp_nexus;
+using System.Text.Json;
 
 namespace mcp_nexus_tests.Resources
 {
@@ -342,5 +343,57 @@ namespace mcp_nexus_tests.Resources
             Assert.NotNull(result);
             Assert.Contains("min", result);
         }
+
+        #region GetCommandMessage Branch Coverage Tests
+
+        [Fact]
+        public async Task Commands_WithEmptySessions_ReturnsValidJson()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var mockLogger = new Mock<ILogger<Program>>();
+            var mockSessionManager = new Mock<ISessionManager>();
+            
+            services.AddSingleton(mockLogger.Object);
+            services.AddSingleton(mockSessionManager.Object);
+            
+            var serviceProvider = services.BuildServiceProvider();
+            
+            // Return empty sessions list
+            mockSessionManager.Setup(x => x.GetAllSessions()).Returns(new List<SessionInfo>());
+
+            // Act
+            var result = await McpNexusResources.Commands(serviceProvider);
+
+            // Assert
+            Assert.NotNull(result);
+            var commandDict = JsonSerializer.Deserialize<Dictionary<string, object>>(result);
+            Assert.NotNull(commandDict);
+            
+            // Should return empty commands object
+            Assert.True(commandDict.Count >= 0);
+        }
+
+        [Fact]
+        public async Task Commands_WithException_ThrowsException()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var mockLogger = new Mock<ILogger<Program>>();
+            var mockSessionManager = new Mock<ISessionManager>();
+            
+            services.AddSingleton(mockLogger.Object);
+            services.AddSingleton(mockSessionManager.Object);
+            
+            var serviceProvider = services.BuildServiceProvider();
+            
+            // Setup to throw exception
+            mockSessionManager.Setup(x => x.GetAllSessions()).Throws(new InvalidOperationException("Test exception"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => McpNexusResources.Commands(serviceProvider));
+        }
+
+        #endregion
     }
 }

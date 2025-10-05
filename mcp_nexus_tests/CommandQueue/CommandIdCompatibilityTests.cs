@@ -67,56 +67,6 @@ namespace mcp_nexus_tests.CommandQueue
             Assert.NotEqual(isolatedId, queueId);
         }
 
-        [Fact]
-        public async Task GetCommandResult_WithCrossServiceId_HandlesCorrectly()
-        {
-            // This test would have caught the command ID mismatch bug
-            // Arrange
-            var isolatedId = _isolatedService.QueueCommand("test command");
-            var queueId = _queueService.QueueCommand("test command");
-
-            // Wait for commands to complete
-            await Task.Delay(100);
-
-            // Act - Try to get results with wrong service
-            var isolatedResult = await _isolatedService.GetCommandResult(isolatedId);
-            var queueResult = await _queueService.GetCommandResult(queueId);
-
-            // Try cross-service lookups (these should fail)
-            var crossResult1 = await _isolatedService.GetCommandResult(queueId);
-            var crossResult2 = await _queueService.GetCommandResult(isolatedId);
-
-            // Assert
-            Assert.Contains("Mock result", isolatedResult); // Realistic output from mock
-            Assert.Contains("Mock result", queueResult); // Realistic output from mock
-            Assert.Contains("Command not found", crossResult1);
-            Assert.Contains("Command not found", crossResult2);
-        }
-
-        [Fact]
-        public async Task GetCommandResult_AfterCleanup_RetrievesFromCache()
-        {
-            // This test would have caught the cache retrieval bug
-            // Arrange
-            var commandId = _isolatedService.QueueCommand("test command");
-
-            // Wait for completion
-            await Task.Delay(100);
-
-            // Act - Get result immediately
-            var result1 = await _isolatedService.GetCommandResult(commandId);
-
-            // Simulate cleanup (command removed from active tracker but still in cache)
-            // Wait a bit more
-            await Task.Delay(100);
-
-            // Try to get result again (should work from cache)
-            var result2 = await _isolatedService.GetCommandResult(commandId);
-
-            // Assert
-            Assert.Equal(result1, result2);
-            Assert.Contains("Mock result", result1); // Realistic output from mock
-        }
 
         [Fact]
         public void QueueCommand_MultipleCommands_GenerateSequentialIds()

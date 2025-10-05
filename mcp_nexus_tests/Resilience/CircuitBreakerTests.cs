@@ -312,6 +312,7 @@ namespace mcp_nexus_tests.Resilience
             });
 
             // Act & Assert
+            // The CircuitBreaker does implement timeout and should throw TaskCanceledException
             await Assert.ThrowsAsync<TaskCanceledException>(() => m_CircuitBreaker.ExecuteAsync(operation, "test-operation"));
         }
 

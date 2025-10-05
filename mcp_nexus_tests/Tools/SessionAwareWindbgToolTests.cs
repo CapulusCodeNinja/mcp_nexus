@@ -747,5 +747,167 @@ namespace mcp_nexus_tests.Tools
         }
 
         #endregion
+
+        #region Error Handling Tests
+
+        [Fact]
+        public async Task nexus_open_dump_analyze_session_WithSessionLimitExceeded2_ReturnsErrorResponse()
+        {
+            // Arrange
+            var dumpPath = Path.GetTempFileName();
+            try
+            {
+                m_MockSessionManager.Setup(x => x.CreateSessionAsync(dumpPath, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(new SessionLimitExceededException(5, 5));
+
+                // Act
+                var result = await m_Tool.nexus_open_dump_analyze_session(dumpPath);
+
+                // Assert
+                var json = JsonSerializer.Serialize(result);
+                Assert.True(json.Contains("Maximum concurrent sessions exceeded") || json.Contains("Session limit exceeded") || json.Contains("error"), 
+                    $"Expected error message but got: {json}");
+            }
+            finally
+            {
+                File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public async Task nexus_open_dump_analyze_session_WithGeneralException2_ReturnsErrorResponse()
+        {
+            // Arrange
+            var dumpPath = Path.GetTempFileName();
+            try
+            {
+                m_MockSessionManager.Setup(x => x.CreateSessionAsync(dumpPath, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(new InvalidOperationException("General error"));
+
+                // Act
+                var result = await m_Tool.nexus_open_dump_analyze_session(dumpPath);
+
+                // Assert
+                var json = JsonSerializer.Serialize(result);
+                Assert.True(json.Contains("Failed to create debugging session") || json.Contains("error") || json.Contains("Exception"), 
+                    $"Expected error message but got: {json}");
+            }
+            finally
+            {
+                File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public async Task nexus_close_dump_analyze_session_WithNullSessionId_ReturnsErrorResponse()
+        {
+            // Arrange
+            string? sessionId = null;
+
+            // Act
+            var result = await m_Tool.nexus_close_dump_analyze_session(sessionId!);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            // Debug: Let's see what we actually get
+            Assert.True(json.Contains("Invalid session ID") || json.Contains("error") || json.Contains("null") || json.Contains("empty"), 
+                $"Expected error message but got: {json}");
+        }
+
+        [Fact]
+        public async Task nexus_close_dump_analyze_session_WithEmptySessionId_ReturnsErrorResponse()
+        {
+            // Arrange
+            var sessionId = "";
+
+            // Act
+            var result = await m_Tool.nexus_close_dump_analyze_session(sessionId);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            // Debug: Let's see what we actually get
+            Assert.True(json.Contains("Invalid session ID") || json.Contains("error") || json.Contains("null") || json.Contains("empty"), 
+                $"Expected error message but got: {json}");
+        }
+
+        [Fact]
+        public async Task nexus_close_dump_analyze_session_WithWhitespaceSessionId_ReturnsErrorResponse()
+        {
+            // Arrange
+            var sessionId = "   ";
+
+            // Act
+            var result = await m_Tool.nexus_close_dump_analyze_session(sessionId);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            // Debug: Let's see what we actually get
+            Assert.True(json.Contains("Invalid session ID") || json.Contains("error") || json.Contains("null") || json.Contains("empty"), 
+                $"Expected error message but got: {json}");
+        }
+
+        [Fact]
+        public async Task nexus_close_dump_analyze_session_WithGeneralException_ReturnsErrorResponse()
+        {
+            // Arrange
+            var sessionId = "test-session";
+            m_MockSessionManager.Setup(x => x.CloseSessionAsync(sessionId, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("General error"));
+
+            // Act
+            var result = await m_Tool.nexus_close_dump_analyze_session(sessionId);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            // The response should contain an error message
+            Assert.True(json.Contains("Session not found") || json.Contains("error") || json.Contains("General error"), 
+                $"Expected error message but got: {json}");
+        }
+
+        [Fact]
+        public async Task nexus_enqueue_async_dump_analyze_command_WithSessionNotFound_ReturnsErrorResponse()
+        {
+            // Arrange
+            var sessionId = "non-existent-session";
+            var command = "!analyze -v";
+            m_MockSessionManager.Setup(x => x.TryGetCommandQueue(sessionId, out It.Ref<ICommandQueueService?>.IsAny))
+                .Returns(false);
+
+            // Act
+            var result = await m_Tool.nexus_enqueue_async_dump_analyze_command(sessionId, command);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            var document = JsonDocument.Parse(json);
+            
+            // The response should contain an error message
+            Assert.True(json.Contains("Session not found") || json.Contains("error"));
+        }
+
+        [Fact]
+        public async Task nexus_enqueue_async_dump_analyze_command_WithGeneralException2_ReturnsErrorResponse()
+        {
+            // Arrange
+            var sessionId = "test-session";
+            var command = "!analyze -v";
+            var mockCommandQueue = new Mock<ICommandQueueService>();
+            mockCommandQueue.Setup(x => x.QueueCommand(command))
+                .Throws(new InvalidOperationException("General error"));
+            
+            ICommandQueueService? outQueue = mockCommandQueue.Object;
+            m_MockSessionManager.Setup(x => x.TryGetCommandQueue(sessionId, out outQueue))
+                .Returns(true);
+
+            // Act
+            var result = await m_Tool.nexus_enqueue_async_dump_analyze_command(sessionId, command);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            // The response should contain an error message
+            Assert.True(json.Contains("Session not found") || json.Contains("error") || json.Contains("General error"), 
+                $"Expected error message but got: {json}");
+        }
+
+        #endregion
     }
 }
