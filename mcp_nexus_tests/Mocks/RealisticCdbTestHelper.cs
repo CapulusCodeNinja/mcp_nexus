@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using mcp_nexus.Debugger;
-using mcp_nexus_tests.Debugger;
+using mcp_nexus_tests.Mocks;
 
 namespace mcp_nexus_tests.Helpers
 {

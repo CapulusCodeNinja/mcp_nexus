@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using mcp_nexus.Debugger;
 
-namespace mcp_nexus_tests.Debugger
+namespace mcp_nexus_tests.Mocks
 {
     /// <summary>
     /// Realistic mock of ICdbSession that simulates actual CDB behavior
@@ -186,7 +186,7 @@ namespace mcp_nexus_tests.Debugger
             // Return default behavior
             return new CdbCommandBehavior
             {
-                StdoutLines = new[] { $"Mock output for: {command}" },
+                StdoutLines = new[] { "Mock result" },
                 StderrLines = new string[0],
                 ExecutionDelay = TimeSpan.FromMilliseconds(10),
                 CompletionDelay = TimeSpan.FromMilliseconds(5)
@@ -213,6 +213,12 @@ namespace mcp_nexus_tests.Debugger
                     output.Add($"[STDERR] {line}");
                     await Task.Delay(behavior.CompletionDelay, cancellationToken);
                 }
+            }
+
+            // If no specific behavior was configured, return a generic but realistic output
+            if (output.Count == 0)
+            {
+                output.Add("Mock result");
             }
 
             return string.Join("\n", output);

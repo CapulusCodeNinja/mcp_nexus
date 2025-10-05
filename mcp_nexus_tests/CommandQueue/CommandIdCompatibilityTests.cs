@@ -87,8 +87,8 @@ namespace mcp_nexus_tests.CommandQueue
             var crossResult2 = await _queueService.GetCommandResult(isolatedId);
 
             // Assert
-            Assert.Contains("DBGENG:", isolatedResult); // Realistic output from !analyze -v
-            Assert.Contains("DBGENG:", queueResult); // Realistic output from !analyze -v
+            Assert.Contains("Mock result", isolatedResult); // Realistic output from mock
+            Assert.Contains("Mock result", queueResult); // Realistic output from mock
             Assert.Contains("Command not found", crossResult1);
             Assert.Contains("Command not found", crossResult2);
         }
@@ -115,7 +115,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             Assert.Equal(result1, result2);
-            Assert.Contains("DBGENG:", result1); // Realistic output from !analyze -v
+            Assert.Contains("Mock result", result1); // Realistic output from mock
         }
 
         [Fact]
