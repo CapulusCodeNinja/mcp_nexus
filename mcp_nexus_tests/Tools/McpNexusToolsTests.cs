@@ -822,11 +822,11 @@ namespace mcp_nexus_tests.Tools
         }
 
         [Theory]
-        [InlineData(CommandState.Queued, 0, "3-5 seconds")]
-        [InlineData(CommandState.Queued, 1, "5-10 seconds")]
-        [InlineData(CommandState.Queued, 2, "10-15 seconds")]
-        [InlineData(CommandState.Queued, 15, "1-2 minutes")]
-        [InlineData(CommandState.Executing, 0, "10-30 seconds")]
+        [InlineData(CommandState.Queued, 0, "2 seconds")]
+        [InlineData(CommandState.Queued, 1, "5 seconds")]
+        [InlineData(CommandState.Queued, 2, "8 seconds")]
+        [InlineData(CommandState.Queued, 15, "1 minute")]
+        [InlineData(CommandState.Executing, 0, "15 seconds")]
         [InlineData(CommandState.Cancelled, 0, "No need to check")]
         [InlineData(CommandState.Failed, 0, "No need to check")]
         public void GetNextCheckInRecommendation_WithVariousStates_ReturnsExpectedRecommendation(CommandState state, int queuePosition, string expectedContains)

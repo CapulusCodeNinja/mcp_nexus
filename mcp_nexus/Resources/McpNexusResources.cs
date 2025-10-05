@@ -335,6 +335,7 @@ namespace mcp_nexus.Resources
                         progressPercentage = GetProgressPercentageForCommand(cmd, allCommands),
                         elapsed = GetElapsedTimeForCommand(cmd),
                         eta = GetEtaTimeForCommand(cmd),
+                        executionTime = GetExecutionTimeForCommand(cmd),
                         message = GetCommandMessage(cmd, allCommands)
                     }
                 }).ToArray();
@@ -523,6 +524,39 @@ namespace mcp_nexus.Resources
             var remainingSeconds = (int)(remaining.TotalSeconds % 60);
 
             return $"{remainingMinutes}min {remainingSeconds}s";
+        }
+
+        /// <summary>
+        /// Gets execution time for completed commands
+        /// </summary>
+        private static string? GetExecutionTimeForCommand(QueuedCommand cmd)
+        {
+            if (cmd.State != CommandState.Completed)
+                return null;
+
+            var elapsed = DateTime.UtcNow - cmd.QueueTime;
+            return FormatDuration(elapsed);
+        }
+
+        /// <summary>
+        /// Formats a duration for human-readable display
+        /// </summary>
+        private static string FormatDuration(TimeSpan duration)
+        {
+            if (duration.TotalMinutes >= 1)
+            {
+                var minutes = (int)duration.TotalMinutes;
+                var seconds = duration.Seconds;
+                return seconds > 0 ? $"{minutes}m {seconds}s" : $"{minutes}m";
+            }
+            else if (duration.TotalSeconds >= 1)
+            {
+                return $"{duration.TotalSeconds:F1}s";
+            }
+            else
+            {
+                return $"{duration.TotalMilliseconds:F0}ms";
+            }
         }
 
         /// <summary>

@@ -404,8 +404,9 @@ namespace mcp_nexus.Tools
                     {
                         queuePosition = commandInfo.QueuePosition,
                         progressPercentage = progressPercentage,
-                        elapsed = isCompleted ? null : $"{commandInfo.Elapsed.TotalMinutes:F1}min",
+                        elapsed = isCompleted ? null : FormatElapsedTime(commandInfo.Elapsed),
                         eta = isCompleted ? null : GetEtaTime(commandInfo.Remaining),
+                        executionTime = isCompleted ? FormatExecutionTime(commandInfo.Elapsed) : null,
                         checkAgain = isCompleted ? null : nextCheckIn
                     },
                     timeoutMinutes = 10,
@@ -446,6 +447,52 @@ namespace mcp_nexus.Tools
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Formats elapsed time with appropriate precision
+        /// </summary>
+        /// <param name="elapsed">The elapsed time</param>
+        /// <returns>Formatted elapsed time string</returns>
+        private static string FormatElapsedTime(TimeSpan elapsed)
+        {
+            if (elapsed.TotalMinutes >= 1)
+            {
+                var minutes = (int)elapsed.TotalMinutes;
+                var seconds = elapsed.Seconds;
+                return seconds > 0 ? $"{minutes}m {seconds}s" : $"{minutes}m";
+            }
+            else if (elapsed.TotalSeconds >= 1)
+            {
+                return $"{elapsed.TotalSeconds:F1}s";
+            }
+            else
+            {
+                return $"{elapsed.TotalMilliseconds:F0}ms";
+            }
+        }
+
+        /// <summary>
+        /// Formats execution time for completed commands
+        /// </summary>
+        /// <param name="executionTime">The execution time</param>
+        /// <returns>Formatted execution time string</returns>
+        private static string FormatExecutionTime(TimeSpan executionTime)
+        {
+            if (executionTime.TotalMinutes >= 1)
+            {
+                var minutes = (int)executionTime.TotalMinutes;
+                var seconds = executionTime.Seconds;
+                return seconds > 0 ? $"{minutes}m {seconds}s" : $"{minutes}m";
+            }
+            else if (executionTime.TotalSeconds >= 1)
+            {
+                return $"{executionTime.TotalSeconds:F1}s";
+            }
+            else
+            {
+                return $"{executionTime.TotalMilliseconds:F0}ms";
+            }
         }
 
         /// <summary>
@@ -548,60 +595,15 @@ namespace mcp_nexus.Tools
         /// <returns>A base status message describing the command's current state.</returns>
         private static string GetBaseMessage(int queuePosition, TimeSpan elapsed)
         {
-            // Add time-based variations to make messages feel more dynamic
-            var timeVariation = (int)(elapsed.TotalSeconds) % 4;
-
             return queuePosition switch
             {
-                0 => timeVariation switch
-                {
-                    0 => "Command is next in queue - will start executing soon",
-                    1 => "Command is next in queue - preparing to execute",
-                    2 => "Command is next in queue - almost ready to start",
-                    _ => "Command is next in queue - execution imminent"
-                },
-                1 => timeVariation switch
-                {
-                    0 => "Command is 2nd in queue - almost ready to execute",
-                    1 => "Command is 2nd in queue - waiting for 1 command ahead",
-                    2 => "Command is 2nd in queue - will be next soon",
-                    _ => "Command is 2nd in queue - preparing for execution"
-                },
-                2 => timeVariation switch
-                {
-                    0 => "Command is 3rd in queue - waiting for 2 commands ahead",
-                    1 => "Command is 3rd in queue - making progress through queue",
-                    2 => "Command is 3rd in queue - moving up in line",
-                    _ => "Command is 3rd in queue - queue position improving"
-                },
-                3 => timeVariation switch
-                {
-                    0 => "Command is 4th in queue - waiting for 3 commands ahead",
-                    1 => "Command is 4th in queue - progressing through queue",
-                    2 => "Command is 4th in queue - position advancing",
-                    _ => "Command is 4th in queue - queue moving forward"
-                },
-                4 => timeVariation switch
-                {
-                    0 => "Command is 5th in queue - waiting for 4 commands ahead",
-                    1 => "Command is 5th in queue - queue processing actively",
-                    2 => "Command is 5th in queue - position updating",
-                    _ => "Command is 5th in queue - making steady progress"
-                },
-                _ when queuePosition <= 10 => timeVariation switch
-                {
-                    0 => $"Command is {queuePosition + 1}th in queue - waiting for {queuePosition} commands ahead",
-                    1 => $"Command is {queuePosition + 1}th in queue - queue processing normally",
-                    2 => $"Command is {queuePosition + 1}th in queue - position tracking active",
-                    _ => $"Command is {queuePosition + 1}th in queue - progress monitoring"
-                },
-                _ => timeVariation switch
-                {
-                    0 => $"Command is position {queuePosition + 1} in queue - waiting for {queuePosition} commands ahead",
-                    1 => $"Command is position {queuePosition + 1} in queue - queue system active",
-                    2 => $"Command is position {queuePosition + 1} in queue - processing normally",
-                    _ => $"Command is position {queuePosition + 1} in queue - status updating"
-                }
+                0 => "Command is next in queue",
+                1 => "Command is 2nd in queue",
+                2 => "Command is 3rd in queue",
+                3 => "Command is 4th in queue",
+                4 => "Command is 5th in queue",
+                _ when queuePosition <= 10 => $"Command is {queuePosition + 1}th in queue",
+                _ => $"Command is position {queuePosition + 1} in queue"
             };
         }
 
@@ -617,18 +619,18 @@ namespace mcp_nexus.Tools
             {
                 CommandState.Queued => queuePosition switch
                 {
-                    0 => "Check again in 3-5 seconds (next in queue)",
-                    1 => "Check again in 5-10 seconds (2nd in queue)",
-                    2 => "Check again in 10-15 seconds (3rd in queue)",
-                    3 => "Check again in 15-20 seconds (4th in queue)",
-                    4 => "Check again in 20-30 seconds (5th in queue)",
-                    _ when queuePosition <= 10 => "Check again in 30-60 seconds (position in queue)",
-                    _ => "Check again in 1-2 minutes (deep in queue)"
+                    0 => "Check again in 1 seconds",
+                    1 => "Check again in 2 seconds",
+                    2 => "Check again in 4 seconds",
+                    3 => "Check again in 8 seconds",
+                    4 => "Check again in 16 seconds",
+                    _ when queuePosition <= 10 => "Check again in 32 seconds",
+                    _ => "Check again in 1 minute"
                 },
-                CommandState.Executing => "Check again in 10-30 seconds (currently executing)",
-                CommandState.Cancelled => "No need to check again (command was cancelled)",
-                CommandState.Failed => "No need to check again (command failed)",
-                _ => "Check again in 5-10 seconds (unknown state)"
+                CommandState.Executing => "Check again in 15 seconds",
+                CommandState.Cancelled => "No need to check again",
+                CommandState.Failed => "No need to check again",
+                _ => "Check again in 5 seconds"
             };
         }
     }
