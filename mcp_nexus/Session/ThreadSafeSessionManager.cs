@@ -229,7 +229,7 @@ namespace mcp_nexus.Session
 
             if (string.IsNullOrWhiteSpace(sessionId))
             {
-                m_logger.LogTrace("TryGetCommandQueue: SessionId is null or empty");
+                m_logger.LogWarning("TryGetCommandQueue: SessionId is null or empty");
                 return false;
             }
 
@@ -238,25 +238,31 @@ namespace mcp_nexus.Session
                 var isActive = (session.Status == SessionStatus.Active || session.Status == SessionStatus.Initializing) && !session.IsDisposed;
                 var queueExists = session.CommandQueue != null;
 
-                m_logger.LogTrace("TryGetCommandQueue: {SessionId} found - Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}, QueueExists={QueueExists}",
-                    sessionId, session.Status, session.IsDisposed, isActive, queueExists);
-
                 if (isActive)
                 {
                     UpdateActivity(sessionId);
                     commandQueue = session.CommandQueue;
                     var available = commandQueue != null;
-                    m_logger.LogTrace("TryGetCommandQueue: {SessionId} available={Available}", sessionId, available);
+
+                    m_logger.LogInformation("TryGetCommandQueue: {SessionId} found - Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}, QueueExists={QueueExists}",
+                        sessionId, session.Status, session.IsDisposed, isActive, queueExists);
+
                     return available;
+                }
+                else
+                {
+                    m_logger.LogWarning("TryGetCommandQueue: {SessionId} found but not yet active - Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}, QueueExists={QueueExists}",
+                        sessionId, session.Status, session.IsDisposed, isActive, queueExists);
+                    return false;
                 }
             }
             else
             {
-                m_logger.LogTrace("TryGetCommandQueue: {SessionId} not found in sessions dictionary", sessionId);
+                m_logger.LogWarning("TryGetCommandQueue: {SessionId} not found in sessions dictio
+                return false;
             }
 
-            m_logger.LogWarning("TryGetCommandQueue: {SessionId} not ready or missing", sessionId);
-            return false;
+            throw new InvalidOperationException($"TryGetCommandQueue: {sessionId} unknown error");
         }
 
         /// <summary>
