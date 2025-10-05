@@ -637,7 +637,7 @@ namespace mcp_nexus.Tools
                     _ when queuePosition <= 10 => "Check again in 32 seconds",
                     _ => "Check again in 1 minute"
                 },
-                CommandState.Executing => "Check again in 15 seconds",
+                CommandState.Executing => "Check again in 1 seconds",
                 CommandState.Cancelled => "No need to check again",
                 CommandState.Failed => "No need to check again",
                 _ => "Check again in 5 seconds"
