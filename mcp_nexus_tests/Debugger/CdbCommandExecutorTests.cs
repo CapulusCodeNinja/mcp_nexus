@@ -601,7 +601,6 @@ namespace mcp_nexus_tests.Debugger
             var commandTimeout = 30000;
             var idleTimeout = 180000;
             var outputReadingTimeout = 120000;
-            var symbolServerTimeout = 60000;
             var startupDelay = 2000;
 
             // Act
@@ -609,14 +608,12 @@ namespace mcp_nexus_tests.Debugger
                 commandTimeoutMs: commandTimeout,
                 idleTimeoutMs: idleTimeout,
                 outputReadingTimeoutMs: outputReadingTimeout,
-                symbolServerTimeoutMs: symbolServerTimeout,
                 startupDelayMs: startupDelay);
 
             // Assert
             Assert.Equal(commandTimeout, config.CommandTimeoutMs);
             Assert.Equal(idleTimeout, config.IdleTimeoutMs);
             Assert.Equal(outputReadingTimeout, config.OutputReadingTimeoutMs);
-            Assert.Equal(symbolServerTimeout, config.SymbolServerTimeoutMs);
             Assert.Equal(startupDelay, config.StartupDelayMs);
         }
 
@@ -624,14 +621,12 @@ namespace mcp_nexus_tests.Debugger
         /// Tests that CdbSessionConfiguration validation works correctly for all timeout parameters.
         /// </summary>
         [Theory]
-        [InlineData(0, 180000, 60000, 30000, 2000)] // Invalid command timeout
-        [InlineData(30000, 0, 60000, 30000, 2000)] // Invalid idle timeout
-        [InlineData(30000, 180000, 0, 30000, 2000)] // Invalid output reading timeout
-        [InlineData(30000, 180000, 60000, -1, 2000)] // Invalid symbol server timeout
-        [InlineData(30000, 180000, 60000, 30000, -1)] // Invalid startup delay
+        [InlineData(0, 180000, 60000, 2000)] // Invalid command timeout
+        [InlineData(30000, 0, 60000, 2000)] // Invalid idle timeout
+        [InlineData(30000, 180000, 0, 2000)] // Invalid output reading timeout
+        [InlineData(30000, 180000, 60000, -1)] // Invalid startup delay
         public void CdbSessionConfiguration_WithInvalidParameters_ThrowsArgumentOutOfRangeException(
-            int commandTimeout, int idleTimeout, int outputReadingTimeout, 
-            int symbolServerTimeout, int startupDelay)
+            int commandTimeout, int idleTimeout, int outputReadingTimeout, int startupDelay)
         {
             // Act & Assert
             Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -639,7 +634,6 @@ namespace mcp_nexus_tests.Debugger
                     commandTimeoutMs: commandTimeout,
                     idleTimeoutMs: idleTimeout,
                     outputReadingTimeoutMs: outputReadingTimeout,
-                    symbolServerTimeoutMs: symbolServerTimeout,
                     startupDelayMs: startupDelay));
         }
 
@@ -647,19 +641,17 @@ namespace mcp_nexus_tests.Debugger
         /// Tests that CdbSessionConfiguration validation passes for valid parameters.
         /// </summary>
         [Theory]
-        [InlineData(30000, 180000, 60000, 30000, 2000)]
-        [InlineData(600000, 300000, 120000, 60000, 1000)]
-        [InlineData(1000, 5000, 2000, 1000, 500)]
+        [InlineData(30000, 180000, 60000, 2000)]
+        [InlineData(600000, 300000, 120000, 1000)]
+        [InlineData(1000, 5000, 2000, 500)]
         public void CdbSessionConfiguration_WithValidParameters_DoesNotThrowException(
-            int commandTimeout, int idleTimeout, int outputReadingTimeout, 
-            int symbolServerTimeout, int startupDelay)
+            int commandTimeout, int idleTimeout, int outputReadingTimeout, int startupDelay)
         {
             // Act & Assert
             var config = new CdbSessionConfiguration(
                 commandTimeoutMs: commandTimeout,
                 idleTimeoutMs: idleTimeout,
                 outputReadingTimeoutMs: outputReadingTimeout,
-                symbolServerTimeoutMs: symbolServerTimeout,
                 startupDelayMs: startupDelay);
 
             // Assert
@@ -667,7 +659,6 @@ namespace mcp_nexus_tests.Debugger
             Assert.Equal(commandTimeout, config.CommandTimeoutMs);
             Assert.Equal(idleTimeout, config.IdleTimeoutMs);
             Assert.Equal(outputReadingTimeout, config.OutputReadingTimeoutMs);
-            Assert.Equal(symbolServerTimeout, config.SymbolServerTimeoutMs);
             Assert.Equal(startupDelay, config.StartupDelayMs);
         }
 
@@ -684,7 +675,6 @@ namespace mcp_nexus_tests.Debugger
             Assert.Equal(30000, config.CommandTimeoutMs);
             Assert.Equal(180000, config.IdleTimeoutMs);
             Assert.Equal(60000, config.OutputReadingTimeoutMs);
-            Assert.Equal(30000, config.SymbolServerTimeoutMs);
             Assert.Equal(1, config.SymbolServerMaxRetries);
             Assert.Equal(1000, config.StartupDelayMs);
         }

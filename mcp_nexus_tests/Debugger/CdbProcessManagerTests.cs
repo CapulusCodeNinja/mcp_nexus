@@ -409,14 +409,12 @@ namespace mcp_nexus_tests.Debugger
             var config = new CdbSessionConfiguration(
                 commandTimeoutMs: 60000,
                 customCdbPath: "C:\\Test\\cdb.exe",
-                symbolServerTimeoutMs: 15000,
                 symbolServerMaxRetries: 3,
                 symbolSearchPath: "srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols",
                 startupDelayMs: 5000);
 
             Assert.Equal(60000, config.CommandTimeoutMs);
             Assert.Equal("C:\\Test\\cdb.exe", config.CustomCdbPath);
-            Assert.Equal(15000, config.SymbolServerTimeoutMs);
             Assert.Equal(3, config.SymbolServerMaxRetries);
             Assert.Equal("srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols", config.SymbolSearchPath);
             Assert.Equal(5000, config.StartupDelayMs);
@@ -429,7 +427,6 @@ namespace mcp_nexus_tests.Debugger
 
             Assert.Equal(30000, config.CommandTimeoutMs);
             Assert.Null(config.CustomCdbPath);
-            Assert.Equal(30000, config.SymbolServerTimeoutMs);
             Assert.Equal(1, config.SymbolServerMaxRetries);
             Assert.Null(config.SymbolSearchPath);
             Assert.Equal(1000, config.StartupDelayMs);
@@ -439,35 +436,35 @@ namespace mcp_nexus_tests.Debugger
         public void CdbSessionConfiguration_ValidateParameters_WithInvalidCommandTimeout_ThrowsArgumentOutOfRangeException()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() =>
-                CdbSessionConfiguration.ValidateParameters(0, 30000, 30000, 1, 2000, 60000));
+                CdbSessionConfiguration.ValidateParameters(0, 30000, 1, 2000, 60000));
         }
 
         [Fact]
-        public void CdbSessionConfiguration_ValidateParameters_WithNegativeSymbolServerTimeout_ThrowsArgumentOutOfRangeException()
+        public void CdbSessionConfiguration_ValidateParameters_WithNegativeIdleTimeout_ThrowsArgumentOutOfRangeException()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() =>
-                CdbSessionConfiguration.ValidateParameters(30000, 30000, -1, 1, 2000, 60000));
+                CdbSessionConfiguration.ValidateParameters(30000, -1, 1, 2000, 60000));
         }
 
         [Fact]
         public void CdbSessionConfiguration_ValidateParameters_WithNegativeSymbolServerMaxRetries_ThrowsArgumentOutOfRangeException()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() =>
-                CdbSessionConfiguration.ValidateParameters(30000, 30000, 30000, -1, 2000, 60000));
+                CdbSessionConfiguration.ValidateParameters(30000, 30000, -1, 2000, 60000));
         }
 
         [Fact]
         public void CdbSessionConfiguration_ValidateParameters_WithNegativeStartupDelay_ThrowsArgumentOutOfRangeException()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() =>
-                CdbSessionConfiguration.ValidateParameters(30000, 30000, 30000, 1, -1, 60000));
+                CdbSessionConfiguration.ValidateParameters(30000, 30000, 1, -1, 60000));
         }
 
         [Fact]
         public void CdbSessionConfiguration_ValidateParameters_WithValidParameters_DoesNotThrow()
         {
             // Should not throw
-            CdbSessionConfiguration.ValidateParameters(30000, 30000, 30000, 1, 2000, 60000);
+            CdbSessionConfiguration.ValidateParameters(30000, 30000, 1, 2000, 60000);
         }
 
         [Fact]

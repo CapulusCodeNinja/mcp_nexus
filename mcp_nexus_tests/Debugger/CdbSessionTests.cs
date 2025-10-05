@@ -32,7 +32,7 @@ namespace mcp_nexus_tests.Debugger
         public void CdbSession_Constructor_WithValidParameters_Succeeds()
         {
             // Act
-            var session = new CdbSession(m_MockLogger.Object, 5000, 180000, null, 10000, 2, "/test/path", 1000);
+            var session = new CdbSession(m_MockLogger.Object, 5000, 180000, null, 2, "/test/path", 1000);
 
             // Assert
             Assert.NotNull(session);
@@ -52,17 +52,6 @@ namespace mcp_nexus_tests.Debugger
             Assert.Contains(expectedMessage, ex.Message);
         }
 
-        [Theory]
-        [InlineData(-1, "Symbol server timeout cannot be negative")]
-        public void CdbSession_Constructor_InvalidSymbolServerTimeout_ThrowsArgumentOutOfRangeException(int timeout, string expectedMessage)
-        {
-            // Act & Assert
-            var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-                new CdbSession(m_MockLogger.Object, 5000, 180000, null, timeout));
-
-            Assert.Equal("symbolServerTimeoutMs", ex.ParamName);
-            Assert.Contains(expectedMessage, ex.Message);
-        }
 
         [Theory]
         [InlineData(-1, "Symbol server max retries cannot be negative")]
@@ -70,7 +59,7 @@ namespace mcp_nexus_tests.Debugger
         {
             // Act & Assert
             var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-                new CdbSession(m_MockLogger.Object, 5000, 180000, null, 10000, retries));
+                new CdbSession(m_MockLogger.Object, 5000, 180000, null, retries));
 
             Assert.Equal("symbolServerMaxRetries", ex.ParamName);
             Assert.Contains(expectedMessage, ex.Message);
@@ -82,7 +71,7 @@ namespace mcp_nexus_tests.Debugger
         {
             // Act & Assert
             var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-                new CdbSession(m_MockLogger.Object, 5000, 180000, null, 10000, 1, null, delay));
+                new CdbSession(m_MockLogger.Object, 5000, 180000, null, 1, null, delay));
 
             Assert.Equal("startupDelayMs", ex.ParamName);
             Assert.Contains(expectedMessage, ex.Message);
@@ -365,7 +354,7 @@ namespace mcp_nexus_tests.Debugger
             var symbolPath = "C:\\Symbols;C:\\MoreSymbols";
 
             // Act
-            m_CdbSession = new CdbSession(m_MockLogger.Object, 5000, 180000, null, 10000, 1, symbolPath);
+            m_CdbSession = new CdbSession(m_MockLogger.Object, 5000, 180000, null, 1, symbolPath);
 
             // Assert
             Assert.NotNull(m_CdbSession);
@@ -446,7 +435,7 @@ namespace mcp_nexus_tests.Debugger
         public void CdbSession_Constructor_WithValidRetries_Succeeds(int retries)
         {
             // Act
-            m_CdbSession = new CdbSession(m_MockLogger.Object, 5000, 180000, null, 10000, retries);
+            m_CdbSession = new CdbSession(m_MockLogger.Object, 5000, 180000, null, retries);
 
             // Assert
             Assert.NotNull(m_CdbSession);
@@ -459,7 +448,7 @@ namespace mcp_nexus_tests.Debugger
         public void CdbSession_Constructor_WithValidStartupDelay_Succeeds(int delayMs)
         {
             // Act
-            m_CdbSession = new CdbSession(m_MockLogger.Object, 5000, 180000, null, 10000, 1, null, delayMs);
+            m_CdbSession = new CdbSession(m_MockLogger.Object, 5000, 180000, null, 1, null, delayMs);
 
             // Assert
             Assert.NotNull(m_CdbSession);
@@ -614,7 +603,7 @@ namespace mcp_nexus_tests.Debugger
         public async Task CdbSession_StartSession_WithSymbolSearchPath_IncludesSymbolPath()
         {
             // Arrange
-            var session = new CdbSession(m_MockLogger.Object, 100, 180000, "nonexistent_cdb.exe", 10000, 1, "C:\\Symbols");
+            var session = new CdbSession(m_MockLogger.Object, 100, 180000, "nonexistent_cdb.exe", 1, "C:\\Symbols");
             var target = "notepad.exe";
 
             // Act
