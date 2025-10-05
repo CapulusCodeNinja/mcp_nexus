@@ -28,7 +28,6 @@ namespace mcp_nexus.Debugger
         /// <param name="commandTimeoutMs">The timeout in milliseconds for command execution. Default is 30000ms (30 seconds).</param>
         /// <param name="idleTimeoutMs">The timeout in milliseconds for idle operations. Default is 180000ms (3 minutes).</param>
         /// <param name="customCdbPath">Optional custom path to the CDB executable. If null, uses the default path.</param>
-        /// <param name="symbolServerTimeoutMs">The timeout in milliseconds for symbol server operations. Default is 30000ms (30 seconds).</param>
         /// <param name="symbolServerMaxRetries">The maximum number of retries for symbol server operations. Default is 1.</param>
         /// <param name="symbolSearchPath">Optional symbol search path for CDB. If null, uses the default path.</param>
         /// <param name="startupDelayMs">The delay in milliseconds before starting the session. Default is 1000ms (1 second).</param>
@@ -38,7 +37,6 @@ namespace mcp_nexus.Debugger
             int commandTimeoutMs = 30000,
             int idleTimeoutMs = 180000,
             string? customCdbPath = null,
-            int symbolServerTimeoutMs = 30000,
             int symbolServerMaxRetries = 1,
             string? symbolSearchPath = null,
             int startupDelayMs = 1000)
@@ -50,7 +48,6 @@ namespace mcp_nexus.Debugger
                 commandTimeoutMs: commandTimeoutMs,
                 idleTimeoutMs: idleTimeoutMs,
                 customCdbPath: customCdbPath,
-                symbolServerTimeoutMs: symbolServerTimeoutMs,
                 symbolServerMaxRetries: symbolServerMaxRetries,
                 symbolSearchPath: symbolSearchPath,
                 startupDelayMs: startupDelayMs);

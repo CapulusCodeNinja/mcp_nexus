@@ -16,10 +16,6 @@ namespace mcp_nexus.Configuration
         /// </summary>
         public int ComplexCommandTimeoutMs { get; }
 
-        /// <summary>
-        /// Gets the symbol server timeout in milliseconds.
-        /// </summary>
-        public int SymbolServerTimeoutMs { get; }
 
         /// <summary>
         /// Gets the output reading timeout in milliseconds.
@@ -56,7 +52,6 @@ namespace mcp_nexus.Configuration
         /// </summary>
         /// <param name="baseCommandTimeoutMs">The base command timeout in milliseconds. Default is 600000ms (10 minutes).</param>
         /// <param name="complexCommandTimeoutMs">The complex command timeout in milliseconds. Default is 1800000ms (30 minutes).</param>
-        /// <param name="symbolServerTimeoutMs">The symbol server timeout in milliseconds. Default is 600000ms (10 minutes).</param>
         /// <param name="outputReadingTimeoutMs">The output reading timeout in milliseconds. Default is 60000ms (1 minute).</param>
         /// <param name="idleTimeoutMs">The idle timeout in milliseconds. Default is 300000ms (5 minutes).</param>
         /// <param name="startupDelayMs">The startup delay in milliseconds. Default is 2000ms (2 seconds).</param>
@@ -67,7 +62,6 @@ namespace mcp_nexus.Configuration
         public EnhancedTimeoutConfiguration(
             int baseCommandTimeoutMs = 600000,
             int complexCommandTimeoutMs = 1800000,
-            int symbolServerTimeoutMs = 600000,
             int outputReadingTimeoutMs = 60000,
             int idleTimeoutMs = 300000,
             int startupDelayMs = 2000,
@@ -75,12 +69,11 @@ namespace mcp_nexus.Configuration
             bool enableAdaptiveTimeouts = true,
             double performanceMultiplier = 1.0)
         {
-            ValidateParameters(baseCommandTimeoutMs, complexCommandTimeoutMs, symbolServerTimeoutMs, 
+            ValidateParameters(baseCommandTimeoutMs, complexCommandTimeoutMs, 
                 outputReadingTimeoutMs, idleTimeoutMs, startupDelayMs, symbolServerMaxRetries, performanceMultiplier);
 
             BaseCommandTimeoutMs = baseCommandTimeoutMs;
             ComplexCommandTimeoutMs = complexCommandTimeoutMs;
-            SymbolServerTimeoutMs = symbolServerTimeoutMs;
             OutputReadingTimeoutMs = outputReadingTimeoutMs;
             IdleTimeoutMs = idleTimeoutMs;
             StartupDelayMs = startupDelayMs;
@@ -94,7 +87,6 @@ namespace mcp_nexus.Configuration
         /// </summary>
         /// <param name="baseCommandTimeoutMs">The base command timeout in milliseconds.</param>
         /// <param name="complexCommandTimeoutMs">The complex command timeout in milliseconds.</param>
-        /// <param name="symbolServerTimeoutMs">The symbol server timeout in milliseconds.</param>
         /// <param name="outputReadingTimeoutMs">The output reading timeout in milliseconds.</param>
         /// <param name="idleTimeoutMs">The idle timeout in milliseconds.</param>
         /// <param name="startupDelayMs">The startup delay in milliseconds.</param>
@@ -104,7 +96,6 @@ namespace mcp_nexus.Configuration
         public static void ValidateParameters(
             int baseCommandTimeoutMs,
             int complexCommandTimeoutMs,
-            int symbolServerTimeoutMs,
             int outputReadingTimeoutMs,
             int idleTimeoutMs,
             int startupDelayMs,
@@ -117,8 +108,6 @@ namespace mcp_nexus.Configuration
             if (complexCommandTimeoutMs <= 0)
                 throw new ArgumentOutOfRangeException(nameof(complexCommandTimeoutMs), "Complex command timeout must be positive");
 
-            if (symbolServerTimeoutMs < 0)
-                throw new ArgumentOutOfRangeException(nameof(symbolServerTimeoutMs), "Symbol server timeout cannot be negative");
 
             if (outputReadingTimeoutMs <= 0)
                 throw new ArgumentOutOfRangeException(nameof(outputReadingTimeoutMs), "Output reading timeout must be positive");
@@ -192,17 +181,6 @@ namespace mcp_nexus.Configuration
             return (int)(OutputReadingTimeoutMs * PerformanceMultiplier);
         }
 
-        /// <summary>
-        /// Gets the timeout for symbol server operations.
-        /// </summary>
-        /// <returns>The symbol server timeout in milliseconds.</returns>
-        public int GetSymbolServerTimeout()
-        {
-            if (!EnableAdaptiveTimeouts)
-                return SymbolServerTimeoutMs;
-
-            return (int)(SymbolServerTimeoutMs * PerformanceMultiplier);
-        }
 
         /// <summary>
         /// Gets the idle timeout for command execution.

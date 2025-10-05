@@ -76,7 +76,6 @@ namespace mcp_nexus.Configuration
                         commandTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:CommandTimeoutMs"),
                         idleTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:IdleTimeoutMs", 180000),
                         customCdbPath: null, // Force auto-detection
-                        symbolServerTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:SymbolServerTimeoutMs"),
                         symbolServerMaxRetries: configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries"),
                         symbolSearchPath: configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath") ?? "",
                         startupDelayMs: configuration.GetValue<int>("McpNexus:Debugging:StartupDelayMs", 1000)
@@ -104,7 +103,6 @@ namespace mcp_nexus.Configuration
             {
                 options.CommandTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:CommandTimeoutMs");
                 options.IdleTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:IdleTimeoutMs", 180000);
-                options.SymbolServerTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerTimeoutMs");
                 options.SymbolServerMaxRetries = configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries");
                 options.SymbolSearchPath = configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath");
                 options.StartupDelayMs = configuration.GetValue<int>("McpNexus:Debugging:StartupDelayMs", 1000);

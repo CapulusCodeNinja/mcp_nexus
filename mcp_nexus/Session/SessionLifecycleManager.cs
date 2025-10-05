@@ -389,9 +389,9 @@ namespace mcp_nexus.Session
                 m_Config.CdbOptions.CommandTimeoutMs,
                 m_Config.CdbOptions.IdleTimeoutMs,
                 m_Config.CdbOptions.CustomCdbPath,
-                m_Config.CdbOptions.SymbolServerTimeoutMs,
                 m_Config.CdbOptions.SymbolServerMaxRetries,
-                m_Config.CdbOptions.SymbolSearchPath
+                m_Config.CdbOptions.SymbolSearchPath,
+                m_Config.CdbOptions.StartupDelayMs
             );
         }
 
