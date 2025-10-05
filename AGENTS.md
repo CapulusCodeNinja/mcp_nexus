@@ -39,7 +39,7 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 
 1. **✅ ALL TESTS MUST PASS**: Run `dotnet test` - ALL tests must be green before any submission
 2. **✅ VERSION MUST BE UPDATED**: Increment the build version in `mcp_nexus.csproj` (e.g., 1.0.6.12 → 1.0.6.13)
-3. **✅ README.md MUST BE UPDATED**: Update test count and coverage in README.md badges
+3. **✅ README.md MUST BE UPDATED**: Update test count and coverage in README.md badges AND Test Statistics section
 4. **✅ NO COMPILATION ERRORS**: Code must build with zero warnings and zero errors
 5. **✅ NO DEAD CODE**: Remove unused code, methods, or files
 
@@ -65,14 +65,14 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 **❌ DON'T FORGET:**
 - Running tests before submission
 - Updating version numbers
-- Updating README.md with new test counts
+- Updating README.md with new test counts and Test Statistics section
 - Removing dead/unused code
 - Checking for compilation errors
 
 **✅ ALWAYS DO:**
 - Run `dotnet test` and verify all tests pass
 - Update version in `mcp_nexus.csproj`
-- Update test count in README.md
+- Update test count and Test Statistics section in README.md
 - Remove any unused code or files
 - Verify zero compilation warnings/errors
 
@@ -164,6 +164,13 @@ public ReturnType MethodName(ParameterType paramName)
 - **Circuit breakers**: Prevents cascade failures
 
 ## Testing Requirements
+
+### Test File Organization
+- **One-to-One Correspondence**: Every test file MUST correspond to exactly one production source file
+- **Naming Convention**: Test files must follow the pattern `{ProductionFileName}Tests.cs`
+- **No Orphaned Tests**: All tests for a production class must be in the corresponding test file
+- **No Generic Test Files**: Test files with generic names (e.g., `UtilityTests.cs`, `HelperTests.cs`) are prohibited
+- **Consolidation Required**: If multiple test files exist for the same production class, they must be consolidated
 
 ### Unit Tests
 - **Coverage**: Aim for 100% code coverage
