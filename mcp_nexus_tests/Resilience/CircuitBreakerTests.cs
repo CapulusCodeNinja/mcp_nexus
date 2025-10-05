@@ -13,25 +13,25 @@ namespace mcp_nexus_tests.Resilience
     /// </summary>
     public class CircuitBreakerTests : IDisposable
     {
-        private readonly Mock<ILogger<CircuitBreaker>> m_mockLogger;
-        private readonly CircuitBreaker m_circuitBreaker;
+        private readonly Mock<ILogger<CircuitBreaker>> m_MockLogger;
+        private readonly CircuitBreaker m_CircuitBreaker;
 
         public CircuitBreakerTests()
         {
-            m_mockLogger = new Mock<ILogger<CircuitBreaker>>();
-            m_circuitBreaker = new CircuitBreaker(m_mockLogger.Object, failureThreshold: 3, timeout: TimeSpan.FromSeconds(5), retryTimeout: TimeSpan.FromSeconds(10));
+            m_MockLogger = new Mock<ILogger<CircuitBreaker>>();
+            m_CircuitBreaker = new CircuitBreaker(m_MockLogger.Object, failureThreshold: 3, timeout: TimeSpan.FromSeconds(5), retryTimeout: TimeSpan.FromSeconds(10));
         }
 
         public void Dispose()
         {
-            m_circuitBreaker?.Dispose();
+            m_CircuitBreaker?.Dispose();
         }
 
         [Fact]
         public void CircuitBreaker_Constructor_WithValidParameters_InitializesCorrectly()
         {
             // Act
-            var circuitBreaker = new CircuitBreaker(m_mockLogger.Object);
+            var circuitBreaker = new CircuitBreaker(m_MockLogger.Object);
 
             // Assert
             Assert.NotNull(circuitBreaker);
@@ -46,7 +46,7 @@ namespace mcp_nexus_tests.Resilience
             var retryTimeout = TimeSpan.FromMinutes(10);
 
             // Act
-            var circuitBreaker = new CircuitBreaker(m_mockLogger.Object, failureThreshold, timeout, retryTimeout);
+            var circuitBreaker = new CircuitBreaker(m_MockLogger.Object, failureThreshold, timeout, retryTimeout);
 
             // Assert
             Assert.NotNull(circuitBreaker);
@@ -67,7 +67,7 @@ namespace mcp_nexus_tests.Resilience
             var operation = new Func<Task<string>>(() => Task.FromResult(expectedResult));
 
             // Act
-            var result = await m_circuitBreaker.ExecuteAsync(operation, "test-operation");
+            var result = await m_CircuitBreaker.ExecuteAsync(operation, "test-operation");
 
             // Assert
             Assert.Equal(expectedResult, result);
@@ -80,7 +80,7 @@ namespace mcp_nexus_tests.Resilience
             var operation = new Func<Task<string>>(() => throw new InvalidOperationException("Test exception"));
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => m_circuitBreaker.ExecuteAsync(operation, "test-operation"));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => m_CircuitBreaker.ExecuteAsync(operation, "test-operation"));
         }
 
         [Fact]
@@ -95,7 +95,7 @@ namespace mcp_nexus_tests.Resilience
             });
 
             // Act
-            await m_circuitBreaker.ExecuteAsync(operation, "test-operation");
+            await m_CircuitBreaker.ExecuteAsync(operation, "test-operation");
 
             // Assert
             Assert.True(operationExecuted);
@@ -111,11 +111,11 @@ namespace mcp_nexus_tests.Resilience
             // First 3 failures should throw the original exception
             for (int i = 0; i < 3; i++)
             {
-                await Assert.ThrowsAsync<InvalidOperationException>(() => m_circuitBreaker.ExecuteAsync(operation, "test-operation"));
+                await Assert.ThrowsAsync<InvalidOperationException>(() => m_CircuitBreaker.ExecuteAsync(operation, "test-operation"));
             }
 
             // 4th failure should throw CircuitBreakerOpenException
-            await Assert.ThrowsAsync<CircuitBreakerOpenException>(() => m_circuitBreaker.ExecuteAsync(operation, "test-operation"));
+            await Assert.ThrowsAsync<CircuitBreakerOpenException>(() => m_CircuitBreaker.ExecuteAsync(operation, "test-operation"));
         }
 
         [Fact]
@@ -127,11 +127,11 @@ namespace mcp_nexus_tests.Resilience
             // Act - Cause circuit to open
             for (int i = 0; i < 3; i++)
             {
-                try { await m_circuitBreaker.ExecuteAsync(operation, "test-operation"); } catch { }
+                try { await m_CircuitBreaker.ExecuteAsync(operation, "test-operation"); } catch { }
             }
 
             // Assert - Next call should throw CircuitBreakerOpenException
-            await Assert.ThrowsAsync<CircuitBreakerOpenException>(() => m_circuitBreaker.ExecuteAsync(operation, "test-operation"));
+            await Assert.ThrowsAsync<CircuitBreakerOpenException>(() => m_CircuitBreaker.ExecuteAsync(operation, "test-operation"));
         }
 
         [Fact]
@@ -144,18 +144,18 @@ namespace mcp_nexus_tests.Resilience
             // Act - Cause circuit to open
             for (int i = 0; i < 3; i++)
             {
-                try { await m_circuitBreaker.ExecuteAsync(operation, "test-operation"); } catch { }
+                try { await m_CircuitBreaker.ExecuteAsync(operation, "test-operation"); } catch { }
             }
 
             // Wait for retry timeout to pass
             await Task.Delay(11000); // Wait longer than retry timeout (10 seconds)
 
             // Execute successful operation
-            var result = await m_circuitBreaker.ExecuteAsync(successOperation, "test-operation");
+            var result = await m_CircuitBreaker.ExecuteAsync(successOperation, "test-operation");
 
             // Assert
             Assert.Equal("Success", result);
-            Assert.Equal(CircuitState.Closed, m_circuitBreaker.GetState());
+            Assert.Equal(CircuitState.Closed, m_CircuitBreaker.GetState());
         }
 
         [Fact]
@@ -169,14 +169,14 @@ namespace mcp_nexus_tests.Resilience
             });
 
             // Act & Assert
-            await Assert.ThrowsAsync<TaskCanceledException>(() => m_circuitBreaker.ExecuteAsync(operation, "test-operation"));
+            await Assert.ThrowsAsync<TaskCanceledException>(() => m_CircuitBreaker.ExecuteAsync(operation, "test-operation"));
         }
 
         [Fact]
         public void GetState_Initially_ReturnsClosed()
         {
             // Act
-            var state = m_circuitBreaker.GetState();
+            var state = m_CircuitBreaker.GetState();
 
             // Assert
             Assert.Equal(CircuitState.Closed, state);
@@ -191,11 +191,11 @@ namespace mcp_nexus_tests.Resilience
             // Act - Cause circuit to open
             for (int i = 0; i < 3; i++)
             {
-                try { await m_circuitBreaker.ExecuteAsync(operation, "test-operation"); } catch { }
+                try { await m_CircuitBreaker.ExecuteAsync(operation, "test-operation"); } catch { }
             }
 
             // Assert
-            Assert.Equal(CircuitState.Open, m_circuitBreaker.GetState());
+            Assert.Equal(CircuitState.Open, m_CircuitBreaker.GetState());
         }
 
         [Fact]
@@ -207,16 +207,16 @@ namespace mcp_nexus_tests.Resilience
             // Act - Cause circuit to open
             for (int i = 0; i < 3; i++)
             {
-                try { await m_circuitBreaker.ExecuteAsync(operation, "test-operation"); } catch { }
+                try { await m_CircuitBreaker.ExecuteAsync(operation, "test-operation"); } catch { }
             }
 
-            Assert.Equal(CircuitState.Open, m_circuitBreaker.GetState());
+            Assert.Equal(CircuitState.Open, m_CircuitBreaker.GetState());
 
             // Reset circuit
-            m_circuitBreaker.Reset();
+            m_CircuitBreaker.Reset();
 
             // Assert
-            Assert.Equal(CircuitState.Closed, m_circuitBreaker.GetState());
+            Assert.Equal(CircuitState.Closed, m_CircuitBreaker.GetState());
         }
 
         [Fact]
@@ -229,49 +229,49 @@ namespace mcp_nexus_tests.Resilience
             // Act - Cause circuit to open
             for (int i = 0; i < 3; i++)
             {
-                try { await m_circuitBreaker.ExecuteAsync(operation, "test-operation"); } catch { }
+                try { await m_CircuitBreaker.ExecuteAsync(operation, "test-operation"); } catch { }
             }
 
             // Reset circuit
-            m_circuitBreaker.Reset();
+            m_CircuitBreaker.Reset();
 
             // Execute successful operation
-            var result = await m_circuitBreaker.ExecuteAsync(successOperation, "test-operation");
+            var result = await m_CircuitBreaker.ExecuteAsync(successOperation, "test-operation");
 
             // Assert
             Assert.Equal("Success", result);
-            Assert.Equal(CircuitState.Closed, m_circuitBreaker.GetState());
+            Assert.Equal(CircuitState.Closed, m_CircuitBreaker.GetState());
         }
 
         [Fact]
         public void Dispose_DisposesCorrectly()
         {
             // Act
-            m_circuitBreaker.Dispose();
+            m_CircuitBreaker.Dispose();
 
             // Assert - Should not throw when disposed multiple times
-            m_circuitBreaker.Dispose();
+            m_CircuitBreaker.Dispose();
         }
 
         [Fact]
         public async Task ExecuteAsync_AfterDisposal_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_circuitBreaker.Dispose();
+            m_CircuitBreaker.Dispose();
             var operation = new Func<Task<string>>(() => Task.FromResult("Success"));
 
             // Act & Assert
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => m_circuitBreaker.ExecuteAsync(operation, "test-operation"));
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => m_CircuitBreaker.ExecuteAsync(operation, "test-operation"));
         }
 
         [Fact]
         public void GetState_AfterDisposal_ReturnsState()
         {
             // Arrange
-            m_circuitBreaker.Dispose();
+            m_CircuitBreaker.Dispose();
 
             // Act
-            var state = m_circuitBreaker.GetState();
+            var state = m_CircuitBreaker.GetState();
 
             // Assert - Should still return state even after disposal
             Assert.Equal(CircuitState.Closed, state);
@@ -281,10 +281,10 @@ namespace mcp_nexus_tests.Resilience
         public void Reset_AfterDisposal_Works()
         {
             // Arrange
-            m_circuitBreaker.Dispose();
+            m_CircuitBreaker.Dispose();
 
             // Act & Assert - Should not throw
-            m_circuitBreaker.Reset();
+            m_CircuitBreaker.Reset();
         }
 
         [Fact]
@@ -298,7 +298,7 @@ namespace mcp_nexus_tests.Resilience
             });
 
             // Act & Assert
-            await Assert.ThrowsAsync<TaskCanceledException>(() => m_circuitBreaker.ExecuteAsync(operation, "test-operation"));
+            await Assert.ThrowsAsync<TaskCanceledException>(() => m_CircuitBreaker.ExecuteAsync(operation, "test-operation"));
         }
 
         [Fact]
@@ -312,7 +312,7 @@ namespace mcp_nexus_tests.Resilience
             });
 
             // Act & Assert
-            await Assert.ThrowsAsync<TaskCanceledException>(() => m_circuitBreaker.ExecuteAsync(operation, "test-operation"));
+            await Assert.ThrowsAsync<TaskCanceledException>(() => m_CircuitBreaker.ExecuteAsync(operation, "test-operation"));
         }
 
         [Fact]
@@ -323,10 +323,10 @@ namespace mcp_nexus_tests.Resilience
 
             // Act & Assert
             // CircuitBreakerOpenException should not count as a failure
-            await Assert.ThrowsAsync<CircuitBreakerOpenException>(() => m_circuitBreaker.ExecuteAsync(operation, "test-operation"));
+            await Assert.ThrowsAsync<CircuitBreakerOpenException>(() => m_CircuitBreaker.ExecuteAsync(operation, "test-operation"));
 
             // State should still be Closed since CircuitBreakerOpenException doesn't count as failure
-            Assert.Equal(CircuitState.Closed, m_circuitBreaker.GetState());
+            Assert.Equal(CircuitState.Closed, m_CircuitBreaker.GetState());
         }
 
         [Fact]
@@ -339,14 +339,14 @@ namespace mcp_nexus_tests.Resilience
             // Act - Execute multiple operations concurrently
             for (int i = 0; i < 10; i++)
             {
-                operations.Add(m_circuitBreaker.ExecuteAsync(operation, $"operation-{i}"));
+                operations.Add(m_CircuitBreaker.ExecuteAsync(operation, $"operation-{i}"));
             }
 
             var results = await Task.WhenAll(operations);
 
             // Assert
             Assert.All(results, result => Assert.Equal("Success", result));
-            Assert.Equal(CircuitState.Closed, m_circuitBreaker.GetState());
+            Assert.Equal(CircuitState.Closed, m_CircuitBreaker.GetState());
         }
 
         [Fact]
@@ -359,14 +359,14 @@ namespace mcp_nexus_tests.Resilience
             // Act - Execute multiple failing operations concurrently
             for (int i = 0; i < 5; i++)
             {
-                operations.Add(m_circuitBreaker.ExecuteAsync(operation, $"operation-{i}"));
+                operations.Add(m_CircuitBreaker.ExecuteAsync(operation, $"operation-{i}"));
             }
 
             // Assert - All should throw exceptions
             await Assert.ThrowsAsync<InvalidOperationException>(() => Task.WhenAll(operations));
 
             // Circuit should be open after 3 failures
-            Assert.Equal(CircuitState.Open, m_circuitBreaker.GetState());
+            Assert.Equal(CircuitState.Open, m_CircuitBreaker.GetState());
         }
     }
 }

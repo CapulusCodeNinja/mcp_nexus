@@ -14,11 +14,11 @@ namespace mcp_nexus_tests.Infrastructure
     /// </summary>
     public class DependencyInjectionValidatorTests
     {
-        private readonly Mock<ILogger> m_mockLogger;
+        private readonly Mock<ILogger> m_MockLogger;
 
         public DependencyInjectionValidatorTests()
         {
-            m_mockLogger = new Mock<ILogger>();
+            m_MockLogger = new Mock<ILogger>();
         }
 
         [Fact]
@@ -26,7 +26,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                DependencyInjectionValidator.ValidateServiceRegistration(null!, m_mockLogger.Object));
+                DependencyInjectionValidator.ValidateServiceRegistration(null!, m_MockLogger.Object));
         }
 
         [Fact]
@@ -48,7 +48,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_MockLogger.Object);
 
             // Assert
             Assert.True(result);
@@ -64,7 +64,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_MockLogger.Object);
 
             // Assert
             Assert.True(result);
@@ -80,7 +80,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_MockLogger.Object);
 
             // Assert
             Assert.True(result);
@@ -96,7 +96,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_MockLogger.Object);
 
             // Assert
             Assert.True(result);
@@ -112,7 +112,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_MockLogger.Object);
 
             // Assert
             Assert.True(result); // Will return true because GetServiceCollection returns null in tests
@@ -127,7 +127,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_MockLogger.Object);
 
             // Assert
             Assert.True(result); // Will return true because GetServiceCollection returns null in tests
@@ -142,7 +142,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_MockLogger.Object);
 
             // Assert
             Assert.True(result); // Will return true because GetServiceCollection returns null in tests
@@ -153,7 +153,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                DependencyInjectionValidator.ValidateCriticalServices(null!, m_mockLogger.Object));
+                DependencyInjectionValidator.ValidateCriticalServices(null!, m_MockLogger.Object));
         }
 
         [Fact]
@@ -176,7 +176,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_MockLogger.Object);
 
             // Assert
             Assert.True(result.IsValid);
@@ -191,7 +191,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_MockLogger.Object);
 
             // Assert
             Assert.True(result.IsValid); // Will return true because GetServiceCollection returns null in tests
@@ -207,7 +207,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_MockLogger.Object);
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
@@ -223,7 +223,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_MockLogger.Object);
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
@@ -238,7 +238,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_MockLogger.Object);
 
             // Assert
             Assert.True(result.IsValid);
@@ -253,7 +253,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_MockLogger.Object);
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
@@ -269,7 +269,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_MockLogger.Object);
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
@@ -285,7 +285,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_MockLogger.Object);
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
@@ -300,10 +300,10 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
+            DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_MockLogger.Object);
 
             // Assert
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -322,10 +322,10 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_mockLogger.Object);
+            DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_MockLogger.Object);
 
             // Assert
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -345,7 +345,7 @@ namespace mcp_nexus_tests.Infrastructure
                 .Throws(new InvalidOperationException("Test exception"));
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_MockLogger.Object);
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
@@ -361,7 +361,7 @@ namespace mcp_nexus_tests.Infrastructure
                 .Throws(new InvalidOperationException("Test exception"));
 
             // Act
-            var result = DependencyInjectionValidator.ValidateCriticalServices(mockServiceProvider.Object, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateCriticalServices(mockServiceProvider.Object, m_MockLogger.Object);
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
@@ -377,7 +377,7 @@ namespace mcp_nexus_tests.Infrastructure
                 .Returns((object?)null);
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_MockLogger.Object);
 
             // Assert
             // This should return true because GetServiceCollection returns null in test scenarios
@@ -393,7 +393,7 @@ namespace mcp_nexus_tests.Infrastructure
                 .Throws(new InvalidOperationException("A circular dependency was detected"));
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_MockLogger.Object);
 
             // Assert
             // This should return true because GetServiceCollection returns null in test scenarios
@@ -409,7 +409,7 @@ namespace mcp_nexus_tests.Infrastructure
                 .Throws(new InvalidOperationException("No service for type"));
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_MockLogger.Object);
 
             // Assert
             // This should return true because GetServiceCollection returns null in test scenarios
@@ -425,7 +425,7 @@ namespace mcp_nexus_tests.Infrastructure
                 .Throws(new InvalidOperationException("General exception"));
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_MockLogger.Object);
 
             // Assert
             // This should return true because GetServiceCollection returns null in test scenarios
@@ -441,7 +441,7 @@ namespace mcp_nexus_tests.Infrastructure
                 .Throws(new Exception("Validation failed"));
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_MockLogger.Object);
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
@@ -457,7 +457,7 @@ namespace mcp_nexus_tests.Infrastructure
                 .Throws(new Exception("Validation failed"));
 
             // Act
-            var result = DependencyInjectionValidator.ValidateCriticalServices(mockServiceProvider.Object, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateCriticalServices(mockServiceProvider.Object, m_MockLogger.Object);
 
             // Assert
             // The validator returns true when it cannot retrieve the service collection (test compatibility)
@@ -473,10 +473,10 @@ namespace mcp_nexus_tests.Infrastructure
                 .Returns((object?)null);
 
             // Act
-            DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_mockLogger.Object);
+            DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_MockLogger.Object);
 
             // Assert
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
@@ -699,7 +699,7 @@ namespace mcp_nexus_tests.Infrastructure
             // So we need to test the actual behavior
 
             // Act
-            var result = DependencyInjectionValidator.ValidateCriticalServices(mockServiceProvider.Object, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateCriticalServices(mockServiceProvider.Object, m_MockLogger.Object);
 
             // Assert
             // The method always returns true because it doesn't call any methods that could throw
@@ -716,7 +716,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateCriticalServices(serviceProvider, m_MockLogger.Object);
 
             // Assert
             Assert.True(result.IsValid);
@@ -732,7 +732,7 @@ namespace mcp_nexus_tests.Infrastructure
             var serviceProvider = services.BuildServiceProvider();
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(serviceProvider, m_MockLogger.Object);
 
             // Assert
             Assert.True(result);
@@ -747,11 +747,11 @@ namespace mcp_nexus_tests.Infrastructure
                 .Throws(new Exception("Test exception"));
 
             // Act
-            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_mockLogger.Object);
+            var result = DependencyInjectionValidator.ValidateServiceRegistration(mockServiceProvider.Object, m_MockLogger.Object);
 
             // Assert
             Assert.True(result);
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
@@ -1396,26 +1396,26 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class CircularDependencyA : ICircularDependencyA
         {
-            private readonly ICircularDependencyB m_b;
+            private readonly ICircularDependencyB m_B;
 
             public CircularDependencyA(ICircularDependencyB b)
             {
-                m_b = b;
+                m_B = b;
             }
 
-            public ICircularDependencyB GetB() => m_b;
+            public ICircularDependencyB GetB() => m_B;
         }
 
         public class CircularDependencyB : ICircularDependencyB
         {
-            private readonly ICircularDependencyA m_a;
+            private readonly ICircularDependencyA m_A;
 
             public CircularDependencyB(ICircularDependencyA a)
             {
-                m_a = a;
+                m_A = a;
             }
 
-            public ICircularDependencyA GetA() => m_a;
+            public ICircularDependencyA GetA() => m_A;
         }
 
         public interface IUnresolvableService
@@ -1425,11 +1425,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class UnresolvableService : IUnresolvableService
         {
-            private readonly INonExistentService m_nonExistent;
+            private readonly INonExistentService m_NonExistent;
 
             public UnresolvableService(INonExistentService nonExistent)
             {
-                m_nonExistent = nonExistent;
+                m_NonExistent = nonExistent;
             }
 
             public string GetValue() => "Unresolvable";
@@ -1473,13 +1473,13 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class SingletonService : ISingletonService
         {
-            private readonly IScopedService m_scopedService;
-            private readonly ITransientService m_transientService;
+            private readonly IScopedService m_ScopedService;
+            private readonly ITransientService m_TransientService;
 
             public SingletonService(IScopedService scopedService, ITransientService transientService)
             {
-                m_scopedService = scopedService;
-                m_transientService = transientService;
+                m_ScopedService = scopedService;
+                m_TransientService = transientService;
             }
 
             public string GetValue() => "Singleton";
@@ -1492,11 +1492,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ScopedService : IScopedService
         {
-            private readonly ITransientService m_transientService;
+            private readonly ITransientService m_TransientService;
 
             public ScopedService(ITransientService transientService)
             {
-                m_transientService = transientService;
+                m_TransientService = transientService;
             }
 
             public string GetValue() => "Scoped";
@@ -1519,11 +1519,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithMissingDependency : IServiceWithMissingDependency
         {
-            private readonly INonExistentService m_nonExistentService;
+            private readonly INonExistentService m_NonExistentService;
 
             public ServiceWithMissingDependency(INonExistentService nonExistentService)
             {
-                m_nonExistentService = nonExistentService;
+                m_NonExistentService = nonExistentService;
             }
 
             public string GetValue() => "MissingDependency";
@@ -1546,11 +1546,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceB : IServiceB
         {
-            private readonly IServiceA m_serviceA;
+            private readonly IServiceA m_ServiceA;
 
             public ServiceB(IServiceA serviceA)
             {
-                m_serviceA = serviceA;
+                m_ServiceA = serviceA;
             }
 
             public string GetValue() => "B";
@@ -1563,11 +1563,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceC : IServiceC
         {
-            private readonly IServiceB m_serviceB;
+            private readonly IServiceB m_ServiceB;
 
             public ServiceC(IServiceB serviceB)
             {
-                m_serviceB = serviceB;
+                m_ServiceB = serviceB;
             }
 
             public string GetValue() => "C";
@@ -1590,16 +1590,16 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithMultipleConstructors : IServiceWithMultipleConstructors
         {
-            private readonly IServiceA? m_serviceA;
+            private readonly IServiceA? m_ServiceA;
 
             public ServiceWithMultipleConstructors()
             {
-                m_serviceA = null;
+                m_ServiceA = null;
             }
 
             public ServiceWithMultipleConstructors(IServiceA serviceA)
             {
-                m_serviceA = serviceA;
+                m_ServiceA = serviceA;
             }
 
             public string GetValue() => "MultipleConstructors";
@@ -1612,15 +1612,15 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithPrimitiveParameters : IServiceWithPrimitiveParameters
         {
-            private readonly int m_intValue;
-            private readonly string m_stringValue;
-            private readonly bool m_boolValue;
+            private readonly int m_IntValue;
+            private readonly string m_StringValue;
+            private readonly bool m_BoolValue;
 
             public ServiceWithPrimitiveParameters(int intValue, string stringValue, bool boolValue)
             {
-                m_intValue = intValue;
-                m_stringValue = stringValue;
-                m_boolValue = boolValue;
+                m_IntValue = intValue;
+                m_StringValue = stringValue;
+                m_BoolValue = boolValue;
             }
 
             public string GetValue() => "PrimitiveParameters";
@@ -1633,11 +1633,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithOptionalParameters : IServiceWithOptionalParameters
         {
-            private readonly string m_value;
+            private readonly string m_Value;
 
             public ServiceWithOptionalParameters(string value = "default")
             {
-                m_value = value;
+                m_Value = value;
             }
 
             public string GetValue() => "OptionalParameters";
@@ -1650,11 +1650,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithGenericParameters : IServiceWithGenericParameters
         {
-            private readonly IServiceA m_serviceA;
+            private readonly IServiceA m_ServiceA;
 
             public ServiceWithGenericParameters(IServiceA serviceA)
             {
-                m_serviceA = serviceA;
+                m_ServiceA = serviceA;
             }
 
             public string GetValue() => "GenericParameters";
@@ -1667,11 +1667,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithInterfaceParameters : IServiceWithInterfaceParameters
         {
-            private readonly IServiceA m_serviceA;
+            private readonly IServiceA m_ServiceA;
 
             public ServiceWithInterfaceParameters(IServiceA serviceA)
             {
-                m_serviceA = serviceA;
+                m_ServiceA = serviceA;
             }
 
             public string GetValue() => "InterfaceParameters";
@@ -1684,11 +1684,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithAbstractParameters : IServiceWithAbstractParameters
         {
-            private readonly AbstractService m_abstractService;
+            private readonly AbstractService m_AbstractService;
 
             public ServiceWithAbstractParameters(AbstractService abstractService)
             {
-                m_abstractService = abstractService;
+                m_AbstractService = abstractService;
             }
 
             public string GetValue() => "AbstractParameters";
@@ -1706,15 +1706,15 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithValueTypeParameters : IServiceWithValueTypeParameters
         {
-            private readonly int m_intValue;
-            private readonly double m_doubleValue;
-            private readonly decimal m_decimalValue;
+            private readonly int m_IntValue;
+            private readonly double m_DoubleValue;
+            private readonly decimal m_DecimalValue;
 
             public ServiceWithValueTypeParameters(int intValue, double doubleValue, decimal decimalValue)
             {
-                m_intValue = intValue;
-                m_doubleValue = doubleValue;
-                m_decimalValue = decimalValue;
+                m_IntValue = intValue;
+                m_DoubleValue = doubleValue;
+                m_DecimalValue = decimalValue;
             }
 
             public string GetValue() => "ValueTypeParameters";
@@ -1727,13 +1727,13 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableParameters : IServiceWithNullableParameters
         {
-            private readonly int? m_nullableInt;
-            private readonly string? m_nullableString;
+            private readonly int? m_NullableInt;
+            private readonly string? m_NullableString;
 
             public ServiceWithNullableParameters(int? nullableInt, string? nullableString)
             {
-                m_nullableInt = nullableInt;
-                m_nullableString = nullableString;
+                m_NullableInt = nullableInt;
+                m_NullableString = nullableString;
             }
 
             public string GetValue() => "NullableParameters";
@@ -1746,13 +1746,13 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithArrayParameters : IServiceWithArrayParameters
         {
-            private readonly int[] m_intArray;
-            private readonly string[] m_stringArray;
+            private readonly int[] m_IntArray;
+            private readonly string[] m_StringArray;
 
             public ServiceWithArrayParameters(int[] intArray, string[] stringArray)
             {
-                m_intArray = intArray;
-                m_stringArray = stringArray;
+                m_IntArray = intArray;
+                m_StringArray = stringArray;
             }
 
             public string GetValue() => "ArrayParameters";
@@ -1765,13 +1765,13 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithDelegateParameters : IServiceWithDelegateParameters
         {
-            private readonly Func<string> m_func;
-            private readonly Action m_action;
+            private readonly Func<string> m_Func;
+            private readonly Action m_Action;
 
             public ServiceWithDelegateParameters(Func<string> func, Action action)
             {
-                m_func = func;
-                m_action = action;
+                m_Func = func;
+                m_Action = action;
             }
 
             public string GetValue() => "DelegateParameters";
@@ -1784,11 +1784,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithEnumParameters : IServiceWithEnumParameters
         {
-            private readonly ValidationSeverity m_severity;
+            private readonly ValidationSeverity m_Severity;
 
             public ServiceWithEnumParameters(ValidationSeverity severity)
             {
-                m_severity = severity;
+                m_Severity = severity;
             }
 
             public string GetValue() => "EnumParameters";
@@ -1801,13 +1801,13 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithStructParameters : IServiceWithStructParameters
         {
-            private readonly DateTime m_dateTime;
-            private readonly TimeSpan m_timeSpan;
+            private readonly DateTime m_DateTime;
+            private readonly TimeSpan m_TimeSpan;
 
             public ServiceWithStructParameters(DateTime dateTime, TimeSpan timeSpan)
             {
-                m_dateTime = dateTime;
-                m_timeSpan = timeSpan;
+                m_DateTime = dateTime;
+                m_TimeSpan = timeSpan;
             }
 
             public string GetValue() => "StructParameters";
@@ -1820,13 +1820,13 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithGenericTypeParameters : IServiceWithGenericTypeParameters
         {
-            private readonly List<string> m_stringList;
-            private readonly Dictionary<string, int> m_stringIntDict;
+            private readonly List<string> m_StringList;
+            private readonly Dictionary<string, int> m_StringIntDict;
 
             public ServiceWithGenericTypeParameters(List<string> stringList, Dictionary<string, int> stringIntDict)
             {
-                m_stringList = stringList;
-                m_stringIntDict = stringIntDict;
+                m_StringList = stringList;
+                m_StringIntDict = stringIntDict;
             }
 
             public string GetValue() => "GenericTypeParameters";
@@ -1839,13 +1839,13 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNestedGenericParameters : IServiceWithNestedGenericParameters
         {
-            private readonly List<List<string>> m_nestedList;
-            private readonly Dictionary<string, List<int>> m_nestedDict;
+            private readonly List<List<string>> m_NestedList;
+            private readonly Dictionary<string, List<int>> m_NestedDict;
 
             public ServiceWithNestedGenericParameters(List<List<string>> nestedList, Dictionary<string, List<int>> nestedDict)
             {
-                m_nestedList = nestedList;
-                m_nestedDict = nestedDict;
+                m_NestedList = nestedList;
+                m_NestedDict = nestedDict;
             }
 
             public string GetValue() => "NestedGenericParameters";
@@ -1858,11 +1858,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithComplexGenericParameters : IServiceWithComplexGenericParameters
         {
-            private readonly Dictionary<string, Dictionary<int, List<string>>> m_complexDict;
+            private readonly Dictionary<string, Dictionary<int, List<string>>> m_ComplexDict;
 
             public ServiceWithComplexGenericParameters(Dictionary<string, Dictionary<int, List<string>>> complexDict)
             {
-                m_complexDict = complexDict;
+                m_ComplexDict = complexDict;
             }
 
             public string GetValue() => "ComplexGenericParameters";
@@ -1905,11 +1905,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithParamsParameters : IServiceWithParamsParameters
         {
-            private readonly string[] m_params;
+            private readonly string[] m_Params;
 
             public ServiceWithParamsParameters(params string[] @params)
             {
-                m_params = @params;
+                m_Params = @params;
             }
 
             public string GetValue() => "ParamsParameters";
@@ -1922,11 +1922,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithDefaultParameters : IServiceWithDefaultParameters
         {
-            private readonly string m_value;
+            private readonly string m_Value;
 
             public ServiceWithDefaultParameters(string value = "default")
             {
-                m_value = value;
+                m_Value = value;
             }
 
             public string GetValue() => "DefaultParameters";
@@ -1939,11 +1939,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableReferenceParameters : IServiceWithNullableReferenceParameters
         {
-            private readonly string? m_nullableString;
+            private readonly string? m_NullableString;
 
             public ServiceWithNullableReferenceParameters(string? nullableString)
             {
-                m_nullableString = nullableString;
+                m_NullableString = nullableString;
             }
 
             public string GetValue() => "NullableReferenceParameters";
@@ -1956,11 +1956,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableValueParameters : IServiceWithNullableValueParameters
         {
-            private readonly int? m_nullableInt;
+            private readonly int? m_NullableInt;
 
             public ServiceWithNullableValueParameters(int? nullableInt)
             {
-                m_nullableInt = nullableInt;
+                m_NullableInt = nullableInt;
             }
 
             public string GetValue() => "NullableValueParameters";
@@ -1973,11 +1973,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableGenericParameters : IServiceWithNullableGenericParameters
         {
-            private readonly List<string>? m_nullableList;
+            private readonly List<string>? m_NullableList;
 
             public ServiceWithNullableGenericParameters(List<string>? nullableList)
             {
-                m_nullableList = nullableList;
+                m_NullableList = nullableList;
             }
 
             public string GetValue() => "NullableGenericParameters";
@@ -1990,11 +1990,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableArrayParameters : IServiceWithNullableArrayParameters
         {
-            private readonly int[]? m_nullableArray;
+            private readonly int[]? m_NullableArray;
 
             public ServiceWithNullableArrayParameters(int[]? nullableArray)
             {
-                m_nullableArray = nullableArray;
+                m_NullableArray = nullableArray;
             }
 
             public string GetValue() => "NullableArrayParameters";
@@ -2007,11 +2007,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableDelegateParameters : IServiceWithNullableDelegateParameters
         {
-            private readonly Func<string>? m_nullableFunc;
+            private readonly Func<string>? m_NullableFunc;
 
             public ServiceWithNullableDelegateParameters(Func<string>? nullableFunc)
             {
-                m_nullableFunc = nullableFunc;
+                m_NullableFunc = nullableFunc;
             }
 
             public string GetValue() => "NullableDelegateParameters";
@@ -2024,11 +2024,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableEnumParameters : IServiceWithNullableEnumParameters
         {
-            private readonly ValidationSeverity? m_nullableSeverity;
+            private readonly ValidationSeverity? m_NullableSeverity;
 
             public ServiceWithNullableEnumParameters(ValidationSeverity? nullableSeverity)
             {
-                m_nullableSeverity = nullableSeverity;
+                m_NullableSeverity = nullableSeverity;
             }
 
             public string GetValue() => "NullableEnumParameters";
@@ -2041,11 +2041,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableStructParameters : IServiceWithNullableStructParameters
         {
-            private readonly DateTime? m_nullableDateTime;
+            private readonly DateTime? m_NullableDateTime;
 
             public ServiceWithNullableStructParameters(DateTime? nullableDateTime)
             {
-                m_nullableDateTime = nullableDateTime;
+                m_NullableDateTime = nullableDateTime;
             }
 
             public string GetValue() => "NullableStructParameters";
@@ -2058,11 +2058,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableGenericTypeParameters : IServiceWithNullableGenericTypeParameters
         {
-            private readonly List<string>? m_nullableList;
+            private readonly List<string>? m_NullableList;
 
             public ServiceWithNullableGenericTypeParameters(List<string>? nullableList)
             {
-                m_nullableList = nullableList;
+                m_NullableList = nullableList;
             }
 
             public string GetValue() => "NullableGenericTypeParameters";
@@ -2075,11 +2075,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableNestedGenericParameters : IServiceWithNullableNestedGenericParameters
         {
-            private readonly List<List<string>>? m_nullableNestedList;
+            private readonly List<List<string>>? m_NullableNestedList;
 
             public ServiceWithNullableNestedGenericParameters(List<List<string>>? nullableNestedList)
             {
-                m_nullableNestedList = nullableNestedList;
+                m_NullableNestedList = nullableNestedList;
             }
 
             public string GetValue() => "NullableNestedGenericParameters";
@@ -2092,11 +2092,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableComplexGenericParameters : IServiceWithNullableComplexGenericParameters
         {
-            private readonly Dictionary<string, Dictionary<int, List<string>>>? m_nullableComplexDict;
+            private readonly Dictionary<string, Dictionary<int, List<string>>>? m_NullableComplexDict;
 
             public ServiceWithNullableComplexGenericParameters(Dictionary<string, Dictionary<int, List<string>>>? nullableComplexDict)
             {
-                m_nullableComplexDict = nullableComplexDict;
+                m_NullableComplexDict = nullableComplexDict;
             }
 
             public string GetValue() => "NullableComplexGenericParameters";
@@ -2139,11 +2139,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableParamsParameters : IServiceWithNullableParamsParameters
         {
-            private readonly string?[] m_nullableParams;
+            private readonly string?[] m_NullableParams;
 
             public ServiceWithNullableParamsParameters(params string?[] nullableParams)
             {
-                m_nullableParams = nullableParams;
+                m_NullableParams = nullableParams;
             }
 
             public string GetValue() => "NullableParamsParameters";
@@ -2156,11 +2156,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableOptionalParameters : IServiceWithNullableOptionalParameters
         {
-            private readonly string? m_nullableValue;
+            private readonly string? m_NullableValue;
 
             public ServiceWithNullableOptionalParameters(string? nullableValue = null)
             {
-                m_nullableValue = nullableValue;
+                m_NullableValue = nullableValue;
             }
 
             public string GetValue() => "NullableOptionalParameters";
@@ -2173,11 +2173,11 @@ namespace mcp_nexus_tests.Infrastructure
 
         public class ServiceWithNullableDefaultParameters : IServiceWithNullableDefaultParameters
         {
-            private readonly string? m_nullableValue;
+            private readonly string? m_NullableValue;
 
             public ServiceWithNullableDefaultParameters(string? nullableValue = null)
             {
-                m_nullableValue = nullableValue;
+                m_NullableValue = nullableValue;
             }
 
             public string GetValue() => "NullableDefaultParameters";

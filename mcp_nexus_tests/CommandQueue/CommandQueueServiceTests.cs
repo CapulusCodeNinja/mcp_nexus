@@ -18,35 +18,35 @@ namespace mcp_nexus_tests.CommandQueue
 {
     public class CommandQueueServiceTests : IDisposable
     {
-        private readonly ICdbSession m_realisticCdbSession;
-        private readonly Mock<ILogger<CommandQueueService>> m_mockLogger;
-        private readonly Mock<ILoggerFactory> m_mockLoggerFactory;
-        private readonly CommandQueueService m_service;
+        private readonly ICdbSession m_RealisticCdbSession;
+        private readonly Mock<ILogger<CommandQueueService>> m_MockLogger;
+        private readonly Mock<ILoggerFactory> m_MockLoggerFactory;
+        private readonly CommandQueueService m_Service;
 
         public CommandQueueServiceTests()
         {
-            m_mockLogger = new Mock<ILogger<CommandQueueService>>();
-            m_mockLoggerFactory = new Mock<ILoggerFactory>();
+            m_MockLogger = new Mock<ILogger<CommandQueueService>>();
+            m_MockLoggerFactory = new Mock<ILoggerFactory>();
 
             // Setup logger factory to return appropriate loggers
-            m_mockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
+            m_MockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
 
             // Use realistic CDB mock instead of simple mock
-            m_realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
+            m_RealisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
 
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
         }
 
         public void Dispose()
         {
-            m_realisticCdbSession?.Dispose();
+            m_RealisticCdbSession?.Dispose();
         }
 
         [Fact]
         public void QueueCommand_ValidCommand_ReturnsCommandId()
         {
             // Act
-            var commandId = m_service.QueueCommand("test command");
+            var commandId = m_Service.QueueCommand("test command");
 
             // Assert
             Assert.NotNull(commandId);
@@ -57,12 +57,12 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task GetCommandResult_ExistingCommand_ReturnsResult()
         {
             // Arrange - ensure session is started
-            await m_realisticCdbSession.StartSession("test.dmp", null);
-            var commandId = m_service.QueueCommand("!analyze -v");
+            await m_RealisticCdbSession.StartSession("test.dmp", null);
+            var commandId = m_Service.QueueCommand("!analyze -v");
             await Task.Delay(200); // Wait for realistic command execution
 
             // Act
-            var result = await m_service.GetCommandResult(commandId);
+            var result = await m_Service.GetCommandResult(commandId);
 
             // Assert
             Assert.Contains("DBGENG:", result); // Realistic output from !analyze -v
@@ -73,7 +73,7 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task GetCommandResult_NonExistentCommand_ReturnsNotFound()
         {
             // Act
-            var result = await m_service.GetCommandResult("non-existent-id");
+            var result = await m_Service.GetCommandResult("non-existent-id");
 
             // Assert
             Assert.Contains("Command not found", result);
@@ -83,10 +83,10 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_ExistingCommand_ReturnsTrue()
         {
             // Arrange
-            var commandId = m_service.QueueCommand("test command");
+            var commandId = m_Service.QueueCommand("test command");
 
             // Act
-            var result = m_service.CancelCommand(commandId);
+            var result = m_Service.CancelCommand(commandId);
 
             // Assert
             Assert.True(result);
@@ -96,7 +96,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_NonExistentCommand_ReturnsFalse()
         {
             // Act
-            var result = m_service.CancelCommand("non-existent-id");
+            var result = m_Service.CancelCommand("non-existent-id");
 
             // Assert
             Assert.False(result);
@@ -106,11 +106,11 @@ namespace mcp_nexus_tests.CommandQueue
         public void GetQueueStatus_WithCommands_ReturnsAllCommands()
         {
             // Arrange
-            m_service.QueueCommand("command1");
-            m_service.QueueCommand("command2");
+            m_Service.QueueCommand("command1");
+            m_Service.QueueCommand("command2");
 
             // Act
-            var status = m_service.GetQueueStatus();
+            var status = m_Service.GetQueueStatus();
 
             // Assert
             Assert.NotNull(status);
@@ -121,11 +121,11 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelAllCommands_WithCommands_CancelsAll()
         {
             // Arrange
-            m_service.QueueCommand("command1");
-            m_service.QueueCommand("command2");
+            m_Service.QueueCommand("command1");
+            m_Service.QueueCommand("command2");
 
             // Act
-            var cancelledCount = m_service.CancelAllCommands("Test cancellation");
+            var cancelledCount = m_Service.CancelAllCommands("Test cancellation");
 
             // Assert
             Assert.True(cancelledCount >= 0);
@@ -138,7 +138,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Realistic mock doesn't need setup - it handles IsActive internally
 
             // Act - CommandQueueService doesn't check IsActive during queueing
-            var commandId = m_service.QueueCommand("test command");
+            var commandId = m_Service.QueueCommand("test command");
 
             // Assert
             Assert.NotNull(commandId);
@@ -152,11 +152,11 @@ namespace mcp_nexus_tests.CommandQueue
             // Realistic mock will handle exceptions internally
 
             // Act
-            var commandId = m_service.QueueCommand("test command");
+            var commandId = m_Service.QueueCommand("test command");
             await Task.Delay(50); // Allow processing
 
             // Act - Get result to see failure
-            var result = await m_service.GetCommandResult(commandId);
+            var result = await m_Service.GetCommandResult(commandId);
 
             // Assert - Command should return an error result
             Assert.NotNull(result);
@@ -170,7 +170,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() => 
-                new CommandQueueService(null!, m_mockLogger.Object, m_mockLoggerFactory.Object));
+                new CommandQueueService(null!, m_MockLogger.Object, m_MockLoggerFactory.Object));
             Assert.Equal("cdbSession", exception.ParamName);
         }
 
@@ -179,7 +179,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() => 
-                new CommandQueueService(m_realisticCdbSession, null!, m_mockLoggerFactory.Object));
+                new CommandQueueService(m_RealisticCdbSession, null!, m_MockLoggerFactory.Object));
             Assert.Equal("logger", exception.ParamName);
         }
 
@@ -188,7 +188,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() => 
-                new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, null!));
+                new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, null!));
             Assert.Equal("factory", exception.ParamName);
         }
 
@@ -196,7 +196,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void QueueCommand_WithNullCommand_ThrowsArgumentException()
         {
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => m_service.QueueCommand(null!));
+            var exception = Assert.Throws<ArgumentException>(() => m_Service.QueueCommand(null!));
             Assert.Contains("not be null or empty", exception.Message);
             Assert.Equal("command", exception.ParamName);
         }
@@ -205,7 +205,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void QueueCommand_WithEmptyCommand_ThrowsArgumentException()
         {
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => m_service.QueueCommand(""));
+            var exception = Assert.Throws<ArgumentException>(() => m_Service.QueueCommand(""));
             Assert.Contains("not be null or empty", exception.Message);
             Assert.Equal("command", exception.ParamName);
         }
@@ -214,7 +214,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void QueueCommand_WithWhitespaceCommand_ThrowsArgumentException()
         {
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => m_service.QueueCommand("   "));
+            var exception = Assert.Throws<ArgumentException>(() => m_Service.QueueCommand("   "));
             Assert.Contains("not be null or empty", exception.Message);
             Assert.Equal("command", exception.ParamName);
         }
@@ -223,7 +223,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_WithNullCommandId_ReturnsFalse()
         {
             // Act
-            var result = m_service.CancelCommand(null!);
+            var result = m_Service.CancelCommand(null!);
 
             // Assert
             Assert.False(result);
@@ -233,7 +233,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_WithEmptyCommandId_ReturnsFalse()
         {
             // Act
-            var result = m_service.CancelCommand("");
+            var result = m_Service.CancelCommand("");
 
             // Assert
             Assert.False(result);
@@ -243,7 +243,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_WithWhitespaceCommandId_ReturnsFalse()
         {
             // Act
-            var result = m_service.CancelCommand("   ");
+            var result = m_Service.CancelCommand("   ");
 
             // Assert
             Assert.False(result);
@@ -253,7 +253,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelAllCommands_WithNoActiveCommands_ReturnsZero()
         {
             // Act
-            var result = m_service.CancelAllCommands();
+            var result = m_Service.CancelAllCommands();
 
             // Assert
             Assert.Equal(0, result);
@@ -263,11 +263,11 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelAllCommands_WithActiveCommands_ReturnsCorrectCount()
         {
             // Arrange
-            var commandId1 = m_service.QueueCommand("test command 1");
-            var commandId2 = m_service.QueueCommand("test command 2");
+            var commandId1 = m_Service.QueueCommand("test command 1");
+            var commandId2 = m_Service.QueueCommand("test command 2");
 
             // Act
-            var result = m_service.CancelAllCommands("Test cancellation");
+            var result = m_Service.CancelAllCommands("Test cancellation");
 
             // Assert
             Assert.Equal(2, result);
@@ -277,15 +277,15 @@ namespace mcp_nexus_tests.CommandQueue
         public void TriggerCleanup_DoesNotThrow()
         {
             // Act & Assert - Should not throw
-            m_service.TriggerCleanup();
+            m_Service.TriggerCleanup();
         }
 
         [Fact]
         public void Dispose_WhenCalledMultipleTimes_DoesNotThrow()
         {
             // Act & Assert - Should not throw
-            m_service.Dispose();
-            m_service.Dispose();
+            m_Service.Dispose();
+            m_Service.Dispose();
         }
 
         #endregion

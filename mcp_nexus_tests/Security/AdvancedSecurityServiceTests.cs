@@ -10,13 +10,13 @@ namespace mcp_nexus_tests.Security
 {
     public class AdvancedSecurityServiceTests
     {
-        private readonly Mock<ILogger<AdvancedSecurityService>> m_mockLogger;
-        private readonly AdvancedSecurityService m_securityService;
+        private readonly Mock<ILogger<AdvancedSecurityService>> m_MockLogger;
+        private readonly AdvancedSecurityService m_SecurityService;
 
         public AdvancedSecurityServiceTests()
         {
-            m_mockLogger = new Mock<ILogger<AdvancedSecurityService>>();
-            m_securityService = new AdvancedSecurityService(m_mockLogger.Object);
+            m_MockLogger = new Mock<ILogger<AdvancedSecurityService>>();
+            m_SecurityService = new AdvancedSecurityService(m_MockLogger.Object);
         }
 
         [Fact]
@@ -52,7 +52,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateCommand_WithNullCommand_ReturnsInvalid()
         {
             // Act
-            var result = m_securityService.ValidateCommand(null!);
+            var result = m_SecurityService.ValidateCommand(null!);
 
             // Assert
             Assert.False(result.IsValid);
@@ -63,7 +63,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateCommand_WithEmptyCommand_ReturnsInvalid()
         {
             // Act
-            var result = m_securityService.ValidateCommand("");
+            var result = m_SecurityService.ValidateCommand("");
 
             // Assert
             Assert.False(result.IsValid);
@@ -74,7 +74,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateCommand_WithWhitespaceCommand_ReturnsInvalid()
         {
             // Act
-            var result = m_securityService.ValidateCommand("   ");
+            var result = m_SecurityService.ValidateCommand("   ");
 
             // Assert
             Assert.False(result.IsValid);
@@ -88,12 +88,12 @@ namespace mcp_nexus_tests.Security
             const string command = "version";
 
             // Act
-            var result = m_securityService.ValidateCommand(command);
+            var result = m_SecurityService.ValidateCommand(command);
 
             // Assert
             Assert.True(result.IsValid);
             Assert.Null(result.ErrorMessage);
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Trace,
                     It.IsAny<EventId>(),
@@ -126,12 +126,12 @@ namespace mcp_nexus_tests.Security
         public void ValidateCommand_WithDangerousCommands_ReturnsInvalid(string command)
         {
             // Act
-            var result = m_securityService.ValidateCommand(command);
+            var result = m_SecurityService.ValidateCommand(command);
 
             // Assert
             Assert.False(result.IsValid);
             Assert.Contains("Potentially dangerous command detected", result.ErrorMessage);
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
@@ -149,7 +149,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateCommand_WithPathTraversal_ReturnsInvalid(string command)
         {
             // Act
-            var result = m_securityService.ValidateCommand(command);
+            var result = m_SecurityService.ValidateCommand(command);
 
             // Assert
             Assert.False(result.IsValid);
@@ -170,7 +170,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateCommand_WithSqlInjection_ReturnsInvalid(string command)
         {
             // Act
-            var result = m_securityService.ValidateCommand(command);
+            var result = m_SecurityService.ValidateCommand(command);
 
             // Assert
             Assert.False(result.IsValid);
@@ -184,7 +184,7 @@ namespace mcp_nexus_tests.Security
             var longCommand = new string('a', 1001); // 1001 characters
 
             // Act
-            var result = m_securityService.ValidateCommand(longCommand);
+            var result = m_SecurityService.ValidateCommand(longCommand);
 
             // Assert
             Assert.False(result.IsValid);
@@ -198,7 +198,7 @@ namespace mcp_nexus_tests.Security
             const string command = "format c: ../etc/passwd SELECT * FROM users";
 
             // Act
-            var result = m_securityService.ValidateCommand(command);
+            var result = m_SecurityService.ValidateCommand(command);
 
             // Assert
             Assert.False(result.IsValid);
@@ -214,7 +214,7 @@ namespace mcp_nexus_tests.Security
             const string command = "  version  ";
 
             // Act
-            var result = m_securityService.ValidateCommand(command);
+            var result = m_SecurityService.ValidateCommand(command);
 
             // Assert
             Assert.True(result.IsValid);
@@ -229,7 +229,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateFilePath_WithNullPath_ReturnsInvalid()
         {
             // Act
-            var result = m_securityService.ValidateFilePath(null!);
+            var result = m_SecurityService.ValidateFilePath(null!);
 
             // Assert
             Assert.False(result.IsValid);
@@ -240,7 +240,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateFilePath_WithEmptyPath_ReturnsInvalid()
         {
             // Act
-            var result = m_securityService.ValidateFilePath("");
+            var result = m_SecurityService.ValidateFilePath("");
 
             // Assert
             Assert.False(result.IsValid);
@@ -251,7 +251,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateFilePath_WithWhitespacePath_ReturnsInvalid()
         {
             // Act
-            var result = m_securityService.ValidateFilePath("   ");
+            var result = m_SecurityService.ValidateFilePath("   ");
 
             // Assert
             Assert.False(result.IsValid);
@@ -267,7 +267,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateFilePath_WithValidPaths_ReturnsValid(string filePath)
         {
             // Act
-            var result = m_securityService.ValidateFilePath(filePath);
+            var result = m_SecurityService.ValidateFilePath(filePath);
 
             // Assert
             Assert.True(result.IsValid);
@@ -282,7 +282,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateFilePath_WithPathTraversal_ReturnsInvalid(string filePath)
         {
             // Act
-            var result = m_securityService.ValidateFilePath(filePath);
+            var result = m_SecurityService.ValidateFilePath(filePath);
 
             // Assert
             Assert.False(result.IsValid);
@@ -296,7 +296,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateFilePath_WithDisallowedRoots_ReturnsInvalid(string filePath)
         {
             // Act
-            var result = m_securityService.ValidateFilePath(filePath);
+            var result = m_SecurityService.ValidateFilePath(filePath);
 
             // Assert
             Assert.False(result.IsValid);
@@ -311,7 +311,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateFilePath_WithDisallowedExtensions_ReturnsInvalid(string filePath)
         {
             // Act
-            var result = m_securityService.ValidateFilePath(filePath);
+            var result = m_SecurityService.ValidateFilePath(filePath);
 
             // Assert
             Assert.False(result.IsValid);
@@ -325,7 +325,7 @@ namespace mcp_nexus_tests.Security
             const string filePath = "testfile";
 
             // Act
-            var result = m_securityService.ValidateFilePath(filePath);
+            var result = m_SecurityService.ValidateFilePath(filePath);
 
             // Assert
             Assert.True(result.IsValid);
@@ -339,7 +339,7 @@ namespace mcp_nexus_tests.Security
             const string filePath = "F:\\test.txt ../etc/passwd.txt";
 
             // Act
-            var result = m_securityService.ValidateFilePath(filePath);
+            var result = m_SecurityService.ValidateFilePath(filePath);
 
             // Assert
             Assert.False(result.IsValid);
@@ -355,11 +355,11 @@ namespace mcp_nexus_tests.Security
             const string filePath = "F:\\test.txt";
 
             // Act
-            var result = m_securityService.ValidateFilePath(filePath);
+            var result = m_SecurityService.ValidateFilePath(filePath);
 
             // Assert
             Assert.False(result.IsValid);
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
@@ -377,7 +377,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateSessionId_WithNullId_ReturnsInvalid()
         {
             // Act
-            var result = m_securityService.ValidateSessionId(null!);
+            var result = m_SecurityService.ValidateSessionId(null!);
 
             // Assert
             Assert.False(result.IsValid);
@@ -388,7 +388,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateSessionId_WithEmptyId_ReturnsInvalid()
         {
             // Act
-            var result = m_securityService.ValidateSessionId("");
+            var result = m_SecurityService.ValidateSessionId("");
 
             // Assert
             Assert.False(result.IsValid);
@@ -399,7 +399,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateSessionId_WithWhitespaceId_ReturnsInvalid()
         {
             // Act
-            var result = m_securityService.ValidateSessionId("   ");
+            var result = m_SecurityService.ValidateSessionId("   ");
 
             // Assert
             Assert.False(result.IsValid);
@@ -413,7 +413,7 @@ namespace mcp_nexus_tests.Security
         public void ValidateSessionId_WithValidFormat_ReturnsValid(string sessionId)
         {
             // Act
-            var result = m_securityService.ValidateSessionId(sessionId);
+            var result = m_SecurityService.ValidateSessionId(sessionId);
 
             // Assert
             Assert.True(result.IsValid);
@@ -437,12 +437,12 @@ namespace mcp_nexus_tests.Security
         public void ValidateSessionId_WithInvalidFormat_ReturnsInvalid(string sessionId)
         {
             // Act
-            var result = m_securityService.ValidateSessionId(sessionId);
+            var result = m_SecurityService.ValidateSessionId(sessionId);
 
             // Assert
             Assert.False(result.IsValid);
             Assert.Equal("Invalid session ID format", result.ErrorMessage);
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),

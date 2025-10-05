@@ -13,18 +13,18 @@ namespace mcp_nexus_tests.Tools
 {
     public class McpNexusToolsTests
     {
-        private readonly IServiceProvider m_serviceProvider;
-        private readonly Mock<ILogger> m_mockLogger;
-        private readonly Mock<ISessionManager> m_mockSessionManager;
+        private readonly IServiceProvider m_ServiceProvider;
+        private readonly Mock<ILogger> m_MockLogger;
+        private readonly Mock<ISessionManager> m_MockSessionManager;
 
         public McpNexusToolsTests()
         {
-            m_mockLogger = new Mock<ILogger>();
-            m_mockSessionManager = new Mock<ISessionManager>();
+            m_MockLogger = new Mock<ILogger>();
+            m_MockSessionManager = new Mock<ISessionManager>();
 
             // Create a real service provider with mocked services
             var services = new ServiceCollection();
-            services.AddSingleton(m_mockSessionManager.Object);
+            services.AddSingleton(m_MockSessionManager.Object);
 
             // Add logging services
             services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
@@ -32,7 +32,7 @@ namespace mcp_nexus_tests.Tools
             // Use NullLogger to avoid the internal Program class issue
             services.AddSingleton<ILogger<mcp_nexus.Program>>(NullLogger<mcp_nexus.Program>.Instance);
 
-            m_serviceProvider = services.BuildServiceProvider();
+            m_ServiceProvider = services.BuildServiceProvider();
         }
 
         #region nexus_open_dump_analyze_session Tests
@@ -52,13 +52,13 @@ namespace mcp_nexus_tests.Tools
                 Description = "Test session"
             };
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sessionId);
 
             // Act
             var result = await McpNexusTools.nexus_open_dump_analyze_session(
-                m_serviceProvider, dumpPath, symbolsPath);
+                m_ServiceProvider, dumpPath, symbolsPath);
 
             // Assert
             Assert.NotNull(result);
@@ -78,7 +78,7 @@ namespace mcp_nexus_tests.Tools
             Assert.Equal("dump.dmp", dumpFileElement.GetString());
 
             // Verify service calls
-            m_mockSessionManager.Verify(x => x.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()), Times.Once);
+            m_MockSessionManager.Verify(x => x.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -88,19 +88,19 @@ namespace mcp_nexus_tests.Tools
             var dumpPath = @"C:\test\dump.dmp";
             var sessionId = "test-session-123";
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sessionId);
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.GetSessionContext(sessionId))
                 .Returns(new SessionContext { SessionId = sessionId });
 
             // Act
-            await McpNexusTools.nexus_open_dump_analyze_session(m_serviceProvider, dumpPath);
+            await McpNexusTools.nexus_open_dump_analyze_session(m_ServiceProvider, dumpPath);
 
             // Assert
-            m_mockSessionManager.Verify(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()), Times.Once);
+            m_MockSessionManager.Verify(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -110,13 +110,13 @@ namespace mcp_nexus_tests.Tools
             var dumpPath = @"C:\test\dump.dmp";
             var exception = new SessionLimitExceededException(5, 3);
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(exception);
 
             // Act
             var result = await McpNexusTools.nexus_open_dump_analyze_session(
-                m_serviceProvider, dumpPath);
+                m_ServiceProvider, dumpPath);
 
             // Assert
             Assert.NotNull(result);
@@ -138,13 +138,13 @@ namespace mcp_nexus_tests.Tools
             var dumpPath = @"C:\test\dump.dmp";
             var exception = new InvalidOperationException("Test error");
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(exception);
 
             // Act
             var result = await McpNexusTools.nexus_open_dump_analyze_session(
-                m_serviceProvider, dumpPath);
+                m_ServiceProvider, dumpPath);
 
             // Assert
             Assert.NotNull(result);
@@ -172,17 +172,17 @@ namespace mcp_nexus_tests.Tools
             // Arrange
             var sessionId = "test-session-123";
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.SessionExists(sessionId))
                 .Returns(true);
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.CloseSessionAsync(sessionId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
             // Act
             var result = await McpNexusTools.nexus_close_dump_analyze_session(
-                m_serviceProvider, sessionId);
+                m_ServiceProvider, sessionId);
 
             // Assert
             Assert.NotNull(result);
@@ -202,8 +202,8 @@ namespace mcp_nexus_tests.Tools
             Assert.Contains("closed successfully", messageElement.GetString());
 
             // Verify service calls
-            m_mockSessionManager.Verify(x => x.SessionExists(sessionId), Times.Once);
-            m_mockSessionManager.Verify(x => x.CloseSessionAsync(sessionId, It.IsAny<CancellationToken>()), Times.Once);
+            m_MockSessionManager.Verify(x => x.SessionExists(sessionId), Times.Once);
+            m_MockSessionManager.Verify(x => x.CloseSessionAsync(sessionId, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -212,13 +212,13 @@ namespace mcp_nexus_tests.Tools
             // Arrange
             var sessionId = "non-existent-session";
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.SessionExists(sessionId))
                 .Returns(false);
 
             // Act
             var result = await McpNexusTools.nexus_close_dump_analyze_session(
-                m_serviceProvider, sessionId);
+                m_ServiceProvider, sessionId);
 
             // Assert
             Assert.NotNull(result);
@@ -235,7 +235,7 @@ namespace mcp_nexus_tests.Tools
             Assert.Contains("not found", messageElement.GetString());
 
             // Verify that CloseSessionAsync was not called
-            m_mockSessionManager.Verify(x => x.CloseSessionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            m_MockSessionManager.Verify(x => x.CloseSessionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -245,13 +245,13 @@ namespace mcp_nexus_tests.Tools
             var sessionId = "test-session-123";
             var exception = new InvalidOperationException("Test error");
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.SessionExists(sessionId))
                 .Throws(exception);
 
             // Act
             var result = await McpNexusTools.nexus_close_dump_analyze_session(
-                m_serviceProvider, sessionId);
+                m_ServiceProvider, sessionId);
 
             // Assert
             Assert.NotNull(result);
@@ -292,22 +292,22 @@ namespace mcp_nexus_tests.Tools
                 DumpPath = @"C:\test\dump.dmp"
             };
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.SessionExists(sessionId))
                 .Returns(true);
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.GetSessionContext(sessionId))
                 .Returns(sessionContext);
 
             ICommandQueueService? outQueue = mockCommandQueue.Object;
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.TryGetCommandQueue(sessionId, out outQueue))
                 .Returns(true);
 
             // Act
             var result = await McpNexusTools.nexus_enqueue_async_dump_analyze_command(
-                m_serviceProvider, sessionId, command);
+                m_ServiceProvider, sessionId, command);
 
             // Assert
             Assert.NotNull(result);
@@ -336,7 +336,7 @@ namespace mcp_nexus_tests.Tools
             Assert.Equal(10, timeoutElement.GetInt32());
 
             // Verify service calls
-            m_mockSessionManager.Verify(x => x.TryGetCommandQueue(sessionId, out It.Ref<ICommandQueueService?>.IsAny), Times.Once);
+            m_MockSessionManager.Verify(x => x.TryGetCommandQueue(sessionId, out It.Ref<ICommandQueueService?>.IsAny), Times.Once);
             mockCommandQueue.Verify(x => x.QueueCommand(command), Times.Once);
         }
 
@@ -347,13 +347,13 @@ namespace mcp_nexus_tests.Tools
             var sessionId = "non-existent-session";
             var command = "!analyze -v";
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.TryGetCommandQueue(sessionId, out It.Ref<ICommandQueueService?>.IsAny))
                 .Returns(false);
 
             // Act
             var result = await McpNexusTools.nexus_enqueue_async_dump_analyze_command(
-                m_serviceProvider, sessionId, command);
+                m_ServiceProvider, sessionId, command);
 
             // Assert
             Assert.NotNull(result);
@@ -380,13 +380,13 @@ namespace mcp_nexus_tests.Tools
             var sessionId = "test-session-123";
             var command = "!analyze -v";
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.TryGetCommandQueue(sessionId, out It.Ref<ICommandQueueService?>.IsAny))
                 .Returns(false);
 
             // Act
             var result = await McpNexusTools.nexus_enqueue_async_dump_analyze_command(
-                m_serviceProvider, sessionId, command);
+                m_ServiceProvider, sessionId, command);
 
             // Assert
             Assert.NotNull(result);
@@ -412,13 +412,13 @@ namespace mcp_nexus_tests.Tools
             var command = "!analyze -v";
             var exception = new InvalidOperationException("Test error");
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.TryGetCommandQueue(sessionId, out It.Ref<ICommandQueueService?>.IsAny))
                 .Throws(exception);
 
             // Act
             var result = await McpNexusTools.nexus_enqueue_async_dump_analyze_command(
-                m_serviceProvider, sessionId, command);
+                m_ServiceProvider, sessionId, command);
 
             // Assert
             Assert.NotNull(result);
@@ -467,17 +467,17 @@ namespace mcp_nexus_tests.Tools
                 .Setup(x => x.GetCommandResult(commandId))
                 .ReturnsAsync(commandResult);
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.SessionExists(sessionId))
                 .Returns(true);
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.GetCommandQueue(sessionId))
                 .Returns(mockCommandQueue.Object);
 
             // Act
             var result = await McpNexusTools.nexus_read_dump_analyze_command_result(
-                m_serviceProvider, sessionId, commandId);
+                m_ServiceProvider, sessionId, commandId);
 
             // Assert
             Assert.NotNull(result);
@@ -529,17 +529,17 @@ namespace mcp_nexus_tests.Tools
                 .Setup(x => x.GetCommandInfo(commandId))
                 .Returns(commandInfo);
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.SessionExists(sessionId))
                 .Returns(true);
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.GetCommandQueue(sessionId))
                 .Returns(mockCommandQueue.Object);
 
             // Act
             var result = await McpNexusTools.nexus_read_dump_analyze_command_result(
-                m_serviceProvider, sessionId, commandId);
+                m_ServiceProvider, sessionId, commandId);
 
             // Assert
             Assert.NotNull(result);
@@ -579,13 +579,13 @@ namespace mcp_nexus_tests.Tools
             var sessionId = "non-existent-session";
             var commandId = "cmd-123";
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.SessionExists(sessionId))
                 .Returns(false);
 
             // Act
             var result = await McpNexusTools.nexus_read_dump_analyze_command_result(
-                m_serviceProvider, sessionId, commandId);
+                m_ServiceProvider, sessionId, commandId);
 
             // Assert
             Assert.NotNull(result);
@@ -620,17 +620,17 @@ namespace mcp_nexus_tests.Tools
                 .Setup(x => x.GetCommandInfo(commandId))
                 .Returns((CommandInfo?)null);
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.SessionExists(sessionId))
                 .Returns(true);
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.GetCommandQueue(sessionId))
                 .Returns(mockCommandQueue.Object);
 
             // Act
             var result = await McpNexusTools.nexus_read_dump_analyze_command_result(
-                m_serviceProvider, sessionId, commandId);
+                m_ServiceProvider, sessionId, commandId);
 
             // Assert
             Assert.NotNull(result);
@@ -653,13 +653,13 @@ namespace mcp_nexus_tests.Tools
             var commandId = "cmd-123";
             var exception = new InvalidOperationException("Test error");
 
-            m_mockSessionManager
+            m_MockSessionManager
                 .Setup(x => x.SessionExists(sessionId))
                 .Throws(exception);
 
             // Act
             var result = await McpNexusTools.nexus_read_dump_analyze_command_result(
-                m_serviceProvider, sessionId, commandId);
+                m_ServiceProvider, sessionId, commandId);
 
             // Assert
             Assert.NotNull(result);

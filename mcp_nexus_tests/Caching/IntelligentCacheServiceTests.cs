@@ -6,18 +6,18 @@ namespace mcp_nexus_tests.Caching
 {
     public class IntelligentCacheServiceTests : IDisposable
     {
-        private readonly Mock<ILogger<IntelligentCacheService<string, string>>> m_mockLogger;
-        private readonly IntelligentCacheService<string, string> m_cacheService;
+        private readonly Mock<ILogger<IntelligentCacheService<string, string>>> m_MockLogger;
+        private readonly IntelligentCacheService<string, string> m_CacheService;
 
         public IntelligentCacheServiceTests()
         {
-            m_mockLogger = new Mock<ILogger<IntelligentCacheService<string, string>>>();
-            m_cacheService = new IntelligentCacheService<string, string>(m_mockLogger.Object);
+            m_MockLogger = new Mock<ILogger<IntelligentCacheService<string, string>>>();
+            m_CacheService = new IntelligentCacheService<string, string>(m_MockLogger.Object);
         }
 
         public void Dispose()
         {
-            m_cacheService?.Dispose();
+            m_CacheService?.Dispose();
         }
 
         #region Constructor Tests
@@ -33,7 +33,7 @@ namespace mcp_nexus_tests.Caching
         public void Constructor_WithValidLogger_InitializesCorrectly()
         {
             // Act
-            using var service = new IntelligentCacheService<string, string>(m_mockLogger.Object);
+            using var service = new IntelligentCacheService<string, string>(m_MockLogger.Object);
 
             // Assert
             Assert.NotNull(service);
@@ -46,7 +46,7 @@ namespace mcp_nexus_tests.Caching
             var maxMemoryBytes = 50 * 1024 * 1024; // 50MB
 
             // Act
-            using var service = new IntelligentCacheService<string, string>(m_mockLogger.Object, maxMemoryBytes);
+            using var service = new IntelligentCacheService<string, string>(m_MockLogger.Object, maxMemoryBytes);
 
             // Assert
             Assert.NotNull(service);
@@ -59,7 +59,7 @@ namespace mcp_nexus_tests.Caching
             var customTtl = TimeSpan.FromMinutes(60);
 
             // Act
-            using var service = new IntelligentCacheService<string, string>(m_mockLogger.Object, defaultTtl: customTtl);
+            using var service = new IntelligentCacheService<string, string>(m_MockLogger.Object, defaultTtl: customTtl);
 
             // Assert
             Assert.NotNull(service);
@@ -76,7 +76,7 @@ namespace mcp_nexus_tests.Caching
             var key = "non-existent";
 
             // Act
-            var result = m_cacheService.TryGet(key, out var value);
+            var result = m_CacheService.TryGet(key, out var value);
 
             // Assert
             Assert.False(result);
@@ -89,10 +89,10 @@ namespace mcp_nexus_tests.Caching
             // Arrange
             var key = "test-key";
             var value = "test-value";
-            m_cacheService.Set(key, value);
+            m_CacheService.Set(key, value);
 
             // Act
-            var result = m_cacheService.TryGet(key, out var retrievedValue);
+            var result = m_CacheService.TryGet(key, out var retrievedValue);
 
             // Assert
             Assert.True(result);
@@ -105,13 +105,13 @@ namespace mcp_nexus_tests.Caching
             // Arrange
             var key = "expired-key";
             var value = "test-value";
-            m_cacheService.Set(key, value, TimeSpan.FromMilliseconds(1));
+            m_CacheService.Set(key, value, TimeSpan.FromMilliseconds(1));
 
             // Wait for expiration
             Thread.Sleep(10);
 
             // Act
-            var result = m_cacheService.TryGet(key, out var retrievedValue);
+            var result = m_CacheService.TryGet(key, out var retrievedValue);
 
             // Assert
             Assert.False(result);
@@ -124,11 +124,11 @@ namespace mcp_nexus_tests.Caching
             // Arrange
             var key = "test-key";
             var value = "test-value";
-            m_cacheService.Set(key, value);
-            m_cacheService.Dispose();
+            m_CacheService.Set(key, value);
+            m_CacheService.Dispose();
 
             // Act
-            var result = m_cacheService.TryGet(key, out var retrievedValue);
+            var result = m_CacheService.TryGet(key, out var retrievedValue);
 
             // Assert
             Assert.False(result);
@@ -141,14 +141,14 @@ namespace mcp_nexus_tests.Caching
             // Arrange
             var key = "test-key";
             var value = "test-value";
-            m_cacheService.Set(key, value);
+            m_CacheService.Set(key, value);
 
             // Act
-            m_cacheService.TryGet(key, out _);
-            m_cacheService.TryGet(key, out _);
+            m_CacheService.TryGet(key, out _);
+            m_CacheService.TryGet(key, out _);
 
             // Assert
-            var stats = m_cacheService.GetStatistics();
+            var stats = m_CacheService.GetStatistics();
             Assert.Equal(2, stats.TotalAccesses);
         }
 
@@ -164,10 +164,10 @@ namespace mcp_nexus_tests.Caching
             var value = "test-value";
 
             // Act
-            m_cacheService.Set(key, value);
+            m_CacheService.Set(key, value);
 
             // Assert
-            var result = m_cacheService.TryGet(key, out var retrievedValue);
+            var result = m_CacheService.TryGet(key, out var retrievedValue);
             Assert.True(result);
             Assert.Equal(value, retrievedValue);
         }
@@ -181,17 +181,17 @@ namespace mcp_nexus_tests.Caching
             var ttl = TimeSpan.FromMilliseconds(50);
 
             // Act
-            m_cacheService.Set(key, value, ttl);
+            m_CacheService.Set(key, value, ttl);
 
             // Assert
-            var result = m_cacheService.TryGet(key, out var retrievedValue);
+            var result = m_CacheService.TryGet(key, out var retrievedValue);
             Assert.True(result);
             Assert.Equal(value, retrievedValue);
 
             // Wait for expiration
             Thread.Sleep(60);
 
-            result = m_cacheService.TryGet(key, out retrievedValue);
+            result = m_CacheService.TryGet(key, out retrievedValue);
             Assert.False(result);
             Assert.Null(retrievedValue);
         }
@@ -205,11 +205,11 @@ namespace mcp_nexus_tests.Caching
             var newValue = "new-value";
 
             // Act
-            m_cacheService.Set(key, originalValue);
-            m_cacheService.Set(key, newValue);
+            m_CacheService.Set(key, originalValue);
+            m_CacheService.Set(key, newValue);
 
             // Assert
-            var result = m_cacheService.TryGet(key, out var retrievedValue);
+            var result = m_CacheService.TryGet(key, out var retrievedValue);
             Assert.True(result);
             Assert.Equal(newValue, retrievedValue);
         }
@@ -220,13 +220,13 @@ namespace mcp_nexus_tests.Caching
             // Arrange
             var key = "test-key";
             var value = "test-value";
-            m_cacheService.Dispose();
+            m_CacheService.Dispose();
 
             // Act
-            m_cacheService.Set(key, value);
+            m_CacheService.Set(key, value);
 
             // Assert
-            var result = m_cacheService.TryGet(key, out var retrievedValue);
+            var result = m_CacheService.TryGet(key, out var retrievedValue);
             Assert.False(result);
             Assert.Null(retrievedValue);
         }
@@ -239,10 +239,10 @@ namespace mcp_nexus_tests.Caching
             string? value = null;
 
             // Act
-            m_cacheService.Set(key, value!);
+            m_CacheService.Set(key, value!);
 
             // Assert
-            var result = m_cacheService.TryGet(key, out var retrievedValue);
+            var result = m_CacheService.TryGet(key, out var retrievedValue);
             Assert.True(result);
             Assert.Null(retrievedValue);
         }
@@ -258,7 +258,7 @@ namespace mcp_nexus_tests.Caching
             var key = "non-existent";
 
             // Act
-            var result = m_cacheService.TryRemove(key);
+            var result = m_CacheService.TryRemove(key);
 
             // Assert
             Assert.False(result);
@@ -270,16 +270,16 @@ namespace mcp_nexus_tests.Caching
             // Arrange
             var key = "test-key";
             var value = "test-value";
-            m_cacheService.Set(key, value);
+            m_CacheService.Set(key, value);
 
             // Act
-            var result = m_cacheService.TryRemove(key);
+            var result = m_CacheService.TryRemove(key);
 
             // Assert
             Assert.True(result);
 
             // Verify it's actually removed
-            var getResult = m_cacheService.TryGet(key, out _);
+            var getResult = m_CacheService.TryGet(key, out _);
             Assert.False(getResult);
         }
 
@@ -289,11 +289,11 @@ namespace mcp_nexus_tests.Caching
             // Arrange
             var key = "test-key";
             var value = "test-value";
-            m_cacheService.Set(key, value);
-            m_cacheService.Dispose();
+            m_CacheService.Set(key, value);
+            m_CacheService.Dispose();
 
             // Act
-            var result = m_cacheService.TryRemove(key);
+            var result = m_CacheService.TryRemove(key);
 
             // Assert
             Assert.False(result);
@@ -307,10 +307,10 @@ namespace mcp_nexus_tests.Caching
         public void Clear_WithEmptyCache_DoesNothing()
         {
             // Act
-            m_cacheService.Clear();
+            m_CacheService.Clear();
 
             // Assert
-            var stats = m_cacheService.GetStatistics();
+            var stats = m_CacheService.GetStatistics();
             Assert.Equal(0, stats.TotalEntries);
         }
 
@@ -318,31 +318,31 @@ namespace mcp_nexus_tests.Caching
         public void Clear_WithPopulatedCache_RemovesAllEntries()
         {
             // Arrange
-            m_cacheService.Set("key1", "value1");
-            m_cacheService.Set("key2", "value2");
-            m_cacheService.Set("key3", "value3");
+            m_CacheService.Set("key1", "value1");
+            m_CacheService.Set("key2", "value2");
+            m_CacheService.Set("key3", "value3");
 
             // Act
-            m_cacheService.Clear();
+            m_CacheService.Clear();
 
             // Assert
-            var stats = m_cacheService.GetStatistics();
+            var stats = m_CacheService.GetStatistics();
             Assert.Equal(0, stats.TotalEntries);
 
-            Assert.False(m_cacheService.TryGet("key1", out _));
-            Assert.False(m_cacheService.TryGet("key2", out _));
-            Assert.False(m_cacheService.TryGet("key3", out _));
+            Assert.False(m_CacheService.TryGet("key1", out _));
+            Assert.False(m_CacheService.TryGet("key2", out _));
+            Assert.False(m_CacheService.TryGet("key3", out _));
         }
 
         [Fact]
         public void Clear_AfterDisposal_DoesNothing()
         {
             // Arrange
-            m_cacheService.Set("key1", "value1");
-            m_cacheService.Dispose();
+            m_CacheService.Set("key1", "value1");
+            m_CacheService.Dispose();
 
             // Act
-            m_cacheService.Clear();
+            m_CacheService.Clear();
 
             // Assert - should not throw
         }
@@ -355,7 +355,7 @@ namespace mcp_nexus_tests.Caching
         public void GetStatistics_WithEmptyCache_ReturnsEmptyStats()
         {
             // Act
-            var stats = m_cacheService.GetStatistics();
+            var stats = m_CacheService.GetStatistics();
 
             // Assert
             Assert.Equal(0, stats.TotalEntries);
@@ -370,13 +370,13 @@ namespace mcp_nexus_tests.Caching
         public void GetStatistics_WithPopulatedCache_ReturnsCorrectStats()
         {
             // Arrange
-            m_cacheService.Set("key1", "value1");
-            m_cacheService.Set("key2", "value2");
-            m_cacheService.TryGet("key1", out _); // Access once
-            m_cacheService.TryGet("key1", out _); // Access twice
+            m_CacheService.Set("key1", "value1");
+            m_CacheService.Set("key2", "value2");
+            m_CacheService.TryGet("key1", out _); // Access once
+            m_CacheService.TryGet("key1", out _); // Access twice
 
             // Act
-            var stats = m_cacheService.GetStatistics();
+            var stats = m_CacheService.GetStatistics();
 
             // Assert
             Assert.Equal(2, stats.TotalEntries);
@@ -391,14 +391,14 @@ namespace mcp_nexus_tests.Caching
         public void GetStatistics_WithExpiredEntries_CountsExpired()
         {
             // Arrange
-            m_cacheService.Set("key1", "value1", TimeSpan.FromMilliseconds(1));
-            m_cacheService.Set("key2", "value2", TimeSpan.FromMinutes(30));
+            m_CacheService.Set("key1", "value1", TimeSpan.FromMilliseconds(1));
+            m_CacheService.Set("key2", "value2", TimeSpan.FromMinutes(30));
 
             // Wait for first key to expire
             Thread.Sleep(10);
 
             // Act
-            var stats = m_cacheService.GetStatistics();
+            var stats = m_CacheService.GetStatistics();
 
             // Assert
             Assert.Equal(2, stats.TotalEntries);
@@ -409,11 +409,11 @@ namespace mcp_nexus_tests.Caching
         public void GetStatistics_AfterDisposal_ReturnsEmptyStats()
         {
             // Arrange
-            m_cacheService.Set("key1", "value1");
-            m_cacheService.Dispose();
+            m_CacheService.Set("key1", "value1");
+            m_CacheService.Dispose();
 
             // Act
-            var stats = m_cacheService.GetStatistics();
+            var stats = m_CacheService.GetStatistics();
 
             // Assert
             Assert.Equal(0, stats.TotalEntries);
@@ -433,7 +433,7 @@ namespace mcp_nexus_tests.Caching
         {
             // Arrange - Create a cache with very small memory limit
             using var smallCache = new IntelligentCacheService<string, string>(
-                m_mockLogger.Object,
+                m_MockLogger.Object,
                 maxMemoryBytes: 1000); // 1KB limit
 
             // Act - Add many entries to trigger memory pressure
@@ -459,10 +459,10 @@ namespace mcp_nexus_tests.Caching
             var value = "hello world"; // 11 characters * 2 = 22 bytes
 
             // Act
-            m_cacheService.Set(key, value);
+            m_CacheService.Set(key, value);
 
             // Assert
-            var stats = m_cacheService.GetStatistics();
+            var stats = m_CacheService.GetStatistics();
             Assert.True(stats.TotalSizeBytes >= 22);
         }
 
@@ -569,10 +569,10 @@ namespace mcp_nexus_tests.Caching
             var largeString = new string('A', 1000); // 1000 characters = 2000 bytes
 
             // Act
-            m_cacheService.Set(key, largeString);
+            m_CacheService.Set(key, largeString);
 
             // Assert
-            var stats = m_cacheService.GetStatistics();
+            var stats = m_CacheService.GetStatistics();
             Assert.True(stats.TotalSizeBytes >= 2000); // Should be at least 2000 bytes
             Assert.True(stats.TotalSizeBytes <= 2100); // Small overhead for cache entry
         }
@@ -585,22 +585,22 @@ namespace mcp_nexus_tests.Caching
         public void Dispose_WhenCalledMultipleTimes_DoesNotThrow()
         {
             // Act & Assert
-            m_cacheService.Dispose();
-            m_cacheService.Dispose(); // Should not throw
+            m_CacheService.Dispose();
+            m_CacheService.Dispose(); // Should not throw
         }
 
         [Fact]
         public void Dispose_ClearsCache()
         {
             // Arrange
-            m_cacheService.Set("key1", "value1");
-            m_cacheService.Set("key2", "value2");
+            m_CacheService.Set("key1", "value1");
+            m_CacheService.Set("key2", "value2");
 
             // Act
-            m_cacheService.Dispose();
+            m_CacheService.Dispose();
 
             // Assert
-            var stats = m_cacheService.GetStatistics();
+            var stats = m_CacheService.GetStatistics();
             Assert.Equal(0, stats.TotalEntries);
         }
 
@@ -628,11 +628,11 @@ namespace mcp_nexus_tests.Caching
 
                         if (random.Next(2) == 0)
                         {
-                            m_cacheService.Set(key, value);
+                            m_CacheService.Set(key, value);
                         }
                         else
                         {
-                            m_cacheService.TryGet(key, out _);
+                            m_CacheService.TryGet(key, out _);
                         }
                     }
                 }));
@@ -641,7 +641,7 @@ namespace mcp_nexus_tests.Caching
             await Task.WhenAll(tasks);
 
             // Assert - Should not throw exceptions and cache should be in valid state
-            var stats = m_cacheService.GetStatistics();
+            var stats = m_CacheService.GetStatistics();
             Assert.True(stats.TotalEntries >= 0);
         }
 
@@ -653,7 +653,7 @@ namespace mcp_nexus_tests.Caching
         public void TryGet_WithNullKey_ThrowsArgumentNullException()
         {
             // Act & Assert
-            var exception = Assert.Throws<ArgumentNullException>(() => m_cacheService.TryGet(null!, out _));
+            var exception = Assert.Throws<ArgumentNullException>(() => m_CacheService.TryGet(null!, out _));
             Assert.Equal("key", exception.ParamName);
         }
 
@@ -661,7 +661,7 @@ namespace mcp_nexus_tests.Caching
         public void TryGet_WithEmptyKey_ReturnsFalse()
         {
             // Act
-            var result = m_cacheService.TryGet("", out var value);
+            var result = m_CacheService.TryGet("", out var value);
 
             // Assert
             Assert.False(result);
@@ -672,7 +672,7 @@ namespace mcp_nexus_tests.Caching
         public void TryGet_WithWhitespaceKey_ReturnsFalse()
         {
             // Act
-            var result = m_cacheService.TryGet("   ", out var value);
+            var result = m_CacheService.TryGet("   ", out var value);
 
             // Assert
             Assert.False(result);
@@ -683,7 +683,7 @@ namespace mcp_nexus_tests.Caching
         public void Set_WithNullKey_ThrowsArgumentNullException()
         {
             // Act & Assert
-            var exception = Assert.Throws<ArgumentNullException>(() => m_cacheService.Set(null!, "test-value"));
+            var exception = Assert.Throws<ArgumentNullException>(() => m_CacheService.Set(null!, "test-value"));
             Assert.Equal("key", exception.ParamName);
         }
 
@@ -691,10 +691,10 @@ namespace mcp_nexus_tests.Caching
         public void Set_WithEmptyKey_StoresValue()
         {
             // Act
-            m_cacheService.Set("", "test-value");
+            m_CacheService.Set("", "test-value");
 
             // Assert - Should store the value
-            Assert.True(m_cacheService.TryGet("", out var value));
+            Assert.True(m_CacheService.TryGet("", out var value));
             Assert.Equal("test-value", value);
         }
 
@@ -702,10 +702,10 @@ namespace mcp_nexus_tests.Caching
         public void Set_WithWhitespaceKey_StoresValue()
         {
             // Act
-            m_cacheService.Set("   ", "test-value");
+            m_CacheService.Set("   ", "test-value");
 
             // Assert - Should store the value
-            Assert.True(m_cacheService.TryGet("   ", out var value));
+            Assert.True(m_CacheService.TryGet("   ", out var value));
             Assert.Equal("test-value", value);
         }
 
@@ -713,7 +713,7 @@ namespace mcp_nexus_tests.Caching
         public void TryRemove_WithNullKey_ThrowsArgumentNullException()
         {
             // Act & Assert
-            var exception = Assert.Throws<ArgumentNullException>(() => m_cacheService.TryRemove(null!));
+            var exception = Assert.Throws<ArgumentNullException>(() => m_CacheService.TryRemove(null!));
             Assert.Equal("key", exception.ParamName);
         }
 
@@ -721,7 +721,7 @@ namespace mcp_nexus_tests.Caching
         public void TryRemove_WithEmptyKey_ReturnsFalse()
         {
             // Act
-            var result = m_cacheService.TryRemove("");
+            var result = m_CacheService.TryRemove("");
 
             // Assert
             Assert.False(result);
@@ -731,7 +731,7 @@ namespace mcp_nexus_tests.Caching
         public void TryRemove_WithWhitespaceKey_ReturnsFalse()
         {
             // Act
-            var result = m_cacheService.TryRemove("   ");
+            var result = m_CacheService.TryRemove("   ");
 
             // Assert
             Assert.False(result);

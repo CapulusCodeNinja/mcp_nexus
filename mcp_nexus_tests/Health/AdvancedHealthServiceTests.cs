@@ -7,18 +7,18 @@ namespace mcp_nexus_tests.Health
 {
     public class AdvancedHealthServiceTests : IDisposable
     {
-        private readonly Mock<ILogger<AdvancedHealthService>> m_mockLogger;
-        private readonly AdvancedHealthService m_healthService;
+        private readonly Mock<ILogger<AdvancedHealthService>> m_MockLogger;
+        private readonly AdvancedHealthService m_HealthService;
 
         public AdvancedHealthServiceTests()
         {
-            m_mockLogger = new Mock<ILogger<AdvancedHealthService>>();
-            m_healthService = new AdvancedHealthService(m_mockLogger.Object);
+            m_MockLogger = new Mock<ILogger<AdvancedHealthService>>();
+            m_HealthService = new AdvancedHealthService(m_MockLogger.Object);
         }
 
         public void Dispose()
         {
-            m_healthService?.Dispose();
+            m_HealthService?.Dispose();
         }
 
         #region Constructor Tests
@@ -59,7 +59,7 @@ namespace mcp_nexus_tests.Health
         public void GetHealthStatus_WhenNotDisposed_ReturnsHealthStatus()
         {
             // Act
-            var status = m_healthService.GetHealthStatus();
+            var status = m_HealthService.GetHealthStatus();
 
             // Assert
             Assert.NotNull(status);
@@ -75,10 +75,10 @@ namespace mcp_nexus_tests.Health
         public void GetHealthStatus_WhenDisposed_ReturnsUnhealthyStatus()
         {
             // Arrange
-            m_healthService.Dispose();
+            m_HealthService.Dispose();
 
             // Act
-            var status = m_healthService.GetHealthStatus();
+            var status = m_HealthService.GetHealthStatus();
 
             // Assert
             Assert.NotNull(status);
@@ -90,7 +90,7 @@ namespace mcp_nexus_tests.Health
         public void GetHealthStatus_WithHealthySystem_ReturnsHealthyStatus()
         {
             // Act
-            var status = m_healthService.GetHealthStatus();
+            var status = m_HealthService.GetHealthStatus();
 
             // Assert
             Assert.NotNull(status);
@@ -108,7 +108,7 @@ namespace mcp_nexus_tests.Health
         public void GetHealthStatus_IncludesAllHealthComponents()
         {
             // Act
-            var status = m_healthService.GetHealthStatus();
+            var status = m_HealthService.GetHealthStatus();
 
             // Assert
             Assert.NotNull(status);
@@ -154,7 +154,7 @@ namespace mcp_nexus_tests.Health
         public void CheckMemoryHealth_ReturnsValidMemoryHealth()
         {
             // Act
-            var status = m_healthService.GetHealthStatus();
+            var status = m_HealthService.GetHealthStatus();
 
             // Assert
             Assert.NotNull(status.MemoryUsage);
@@ -174,7 +174,7 @@ namespace mcp_nexus_tests.Health
         public void CheckCpuHealth_ReturnsValidCpuHealth()
         {
             // Act
-            var status = m_healthService.GetHealthStatus();
+            var status = m_HealthService.GetHealthStatus();
 
             // Assert
             Assert.NotNull(status.CpuUsage);
@@ -193,7 +193,7 @@ namespace mcp_nexus_tests.Health
         public void CheckDiskHealth_ReturnsValidDiskHealth()
         {
             // Act
-            var status = m_healthService.GetHealthStatus();
+            var status = m_HealthService.GetHealthStatus();
 
             // Assert
             Assert.NotNull(status.DiskUsage);
@@ -210,7 +210,7 @@ namespace mcp_nexus_tests.Health
         public void CheckThreadHealth_ReturnsValidThreadHealth()
         {
             // Act
-            var status = m_healthService.GetHealthStatus();
+            var status = m_HealthService.GetHealthStatus();
 
             // Assert
             Assert.NotNull(status.ThreadCount);
@@ -227,7 +227,7 @@ namespace mcp_nexus_tests.Health
         public void CheckGcHealth_ReturnsValidGcHealth()
         {
             // Act
-            var status = m_healthService.GetHealthStatus();
+            var status = m_HealthService.GetHealthStatus();
 
             // Assert
             Assert.NotNull(status.GcStatus);
@@ -248,7 +248,7 @@ namespace mcp_nexus_tests.Health
         public void Constructor_StartsHealthTimer()
         {
             // Act
-            using var service = new AdvancedHealthService(m_mockLogger.Object);
+            using var service = new AdvancedHealthService(m_MockLogger.Object);
 
             // Assert - Timer should be running (we can't directly test this, but we can verify no exceptions)
             Assert.NotNull(service);
@@ -262,10 +262,10 @@ namespace mcp_nexus_tests.Health
         public void Dispose_WhenNotDisposed_DisposesCorrectly()
         {
             // Act
-            m_healthService.Dispose();
+            m_HealthService.Dispose();
 
             // Assert
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -279,10 +279,10 @@ namespace mcp_nexus_tests.Health
         public void Dispose_WhenAlreadyDisposed_DoesNotThrow()
         {
             // Arrange
-            m_healthService.Dispose();
+            m_HealthService.Dispose();
 
             // Act & Assert
-            var exception = Record.Exception(() => m_healthService.Dispose());
+            var exception = Record.Exception(() => m_HealthService.Dispose());
             Assert.Null(exception);
         }
 
@@ -290,7 +290,7 @@ namespace mcp_nexus_tests.Health
         public void Dispose_StopsHealthTimer()
         {
             // Arrange
-            using var service = new AdvancedHealthService(m_mockLogger.Object);
+            using var service = new AdvancedHealthService(m_MockLogger.Object);
 
             // Act
             service.Dispose();
@@ -311,7 +311,7 @@ namespace mcp_nexus_tests.Health
             // but for now, we'll just verify the method doesn't throw
 
             // Act & Assert
-            var exception = Record.Exception(() => m_healthService.GetHealthStatus());
+            var exception = Record.Exception(() => m_HealthService.GetHealthStatus());
             Assert.Null(exception);
         }
 
@@ -449,7 +449,7 @@ namespace mcp_nexus_tests.Health
             var customPressureThreshold = 0.7;
 
             // Act
-            using var service = new AdvancedHealthService(m_mockLogger.Object, customWorkingSet, customPrivateMemory, customPressureThreshold);
+            using var service = new AdvancedHealthService(m_MockLogger.Object, customWorkingSet, customPrivateMemory, customPressureThreshold);
 
             // Assert
             // We can't directly test the private fields, but we can verify the service works
@@ -461,7 +461,7 @@ namespace mcp_nexus_tests.Health
         public void Constructor_WithZeroThresholds_UsesAutoDetection()
         {
             // Arrange & Act
-            using var service = new AdvancedHealthService(m_mockLogger.Object, 0, 0, 0.8);
+            using var service = new AdvancedHealthService(m_MockLogger.Object, 0, 0, 0.8);
 
             // Assert
             // Verify the service initializes successfully with auto-detection
@@ -473,8 +473,8 @@ namespace mcp_nexus_tests.Health
         public void Constructor_WithInvalidPressureThreshold_ClampsToValidRange()
         {
             // Arrange & Act
-            using var service1 = new AdvancedHealthService(m_mockLogger.Object, 0, 0, -0.1); // Below minimum
-            using var service2 = new AdvancedHealthService(m_mockLogger.Object, 0, 0, 1.5); // Above maximum
+            using var service1 = new AdvancedHealthService(m_MockLogger.Object, 0, 0, -0.1); // Below minimum
+            using var service2 = new AdvancedHealthService(m_MockLogger.Object, 0, 0, 1.5); // Above maximum
 
             // Assert
             // Both should initialize successfully with clamped values

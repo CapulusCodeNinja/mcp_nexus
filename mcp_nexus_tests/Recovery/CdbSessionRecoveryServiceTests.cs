@@ -16,40 +16,40 @@ namespace mcp_nexus_tests.Recovery
     /// </summary>
     public class CdbSessionRecoveryServiceTests : IDisposable
     {
-        private readonly ICdbSession m_realisticCdbSession;
-        private readonly Mock<ILogger<CdbSessionRecoveryService>> m_mockLogger;
-        private readonly Mock<IMcpNotificationService> m_mockNotificationService;
-        private readonly Func<string, int> m_cancelAllCommandsCallback;
-        private CdbSessionRecoveryService? m_service;
+        private readonly ICdbSession m_RealisticCdbSession;
+        private readonly Mock<ILogger<CdbSessionRecoveryService>> m_MockLogger;
+        private readonly Mock<IMcpNotificationService> m_MockNotificationService;
+        private readonly Func<string, int> m_CancelAllCommandsCallback;
+        private CdbSessionRecoveryService? m_Service;
 
         public CdbSessionRecoveryServiceTests()
         {
-            m_realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
-            m_mockLogger = new Mock<ILogger<CdbSessionRecoveryService>>();
-            m_mockNotificationService = new Mock<IMcpNotificationService>();
-            m_cancelAllCommandsCallback = new Func<string, int>(reason => 5); // Mock callback returns 5 cancelled commands
+            m_RealisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
+            m_MockLogger = new Mock<ILogger<CdbSessionRecoveryService>>();
+            m_MockNotificationService = new Mock<IMcpNotificationService>();
+            m_CancelAllCommandsCallback = new Func<string, int>(reason => 5); // Mock callback returns 5 cancelled commands
 
             // Realistic mock handles IsActive, StopSession, and StartSession internally
         }
 
         public void Dispose()
         {
-            m_service?.Dispose();
-            m_realisticCdbSession?.Dispose();
+            m_Service?.Dispose();
+            m_RealisticCdbSession?.Dispose();
         }
 
         [Fact]
         public void Constructor_WithValidParameters_CreatesService()
         {
             // Act
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback,
-                m_mockNotificationService.Object);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback,
+                m_MockNotificationService.Object);
 
             // Assert
-            Assert.NotNull(m_service);
+            Assert.NotNull(m_Service);
         }
 
         [Fact]
@@ -57,7 +57,7 @@ namespace mcp_nexus_tests.Recovery
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new CdbSessionRecoveryService(
-                null!, m_mockLogger.Object, m_cancelAllCommandsCallback, m_mockNotificationService.Object));
+                null!, m_MockLogger.Object, m_CancelAllCommandsCallback, m_MockNotificationService.Object));
         }
 
         [Fact]
@@ -65,7 +65,7 @@ namespace mcp_nexus_tests.Recovery
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new CdbSessionRecoveryService(
-                m_realisticCdbSession, null!, m_cancelAllCommandsCallback, m_mockNotificationService.Object));
+                m_RealisticCdbSession, null!, m_CancelAllCommandsCallback, m_MockNotificationService.Object));
         }
 
         [Fact]
@@ -73,33 +73,33 @@ namespace mcp_nexus_tests.Recovery
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new CdbSessionRecoveryService(
-                m_realisticCdbSession, m_mockLogger.Object, null!, m_mockNotificationService.Object));
+                m_RealisticCdbSession, m_MockLogger.Object, null!, m_MockNotificationService.Object));
         }
 
         [Fact]
         public void Constructor_WithNullNotificationService_DoesNotThrow()
         {
             // Act & Assert - Should not throw
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback,
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback,
                 null);
-            Assert.NotNull(m_service);
+            Assert.NotNull(m_Service);
         }
 
         [Fact]
         public async Task RecoverStuckSession_WhenDisposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
-            m_service.Dispose();
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
+            m_Service.Dispose();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => m_service.RecoverStuckSession("test"));
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => m_Service.RecoverStuckSession("test"));
         }
 
         [Theory]
@@ -108,26 +108,26 @@ namespace mcp_nexus_tests.Recovery
         public async Task RecoverStuckSession_InvalidReason_ThrowsArgumentException(string invalidReason)
         {
             // Arrange
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => m_service.RecoverStuckSession(invalidReason));
+            await Assert.ThrowsAsync<ArgumentException>(() => m_Service.RecoverStuckSession(invalidReason));
         }
 
         [Fact]
         public async Task RecoverStuckSession_NullReason_ThrowsArgumentNullException()
         {
             // Arrange
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => m_service.RecoverStuckSession(null!));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => m_Service.RecoverStuckSession(null!));
         }
 
         [Fact]
@@ -135,13 +135,13 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             var inactiveSession = RealisticCdbTestHelper.CreateRecoveryCdbSession(Mock.Of<ILogger>(), false);
-            m_service = new CdbSessionRecoveryService(
+            m_Service = new CdbSessionRecoveryService(
                 inactiveSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act
-            var result = await m_service.RecoverStuckSession("test reason");
+            var result = await m_Service.RecoverStuckSession("test reason");
 
             // Assert
             Assert.False(result);
@@ -152,13 +152,13 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             var activeSession = RealisticCdbTestHelper.CreateRecoveryCdbSession(Mock.Of<ILogger>(), true);
-            m_service = new CdbSessionRecoveryService(
+            m_Service = new CdbSessionRecoveryService(
                 activeSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act
-            var result = await m_service.RecoverStuckSession("test reason");
+            var result = await m_Service.RecoverStuckSession("test reason");
 
             // Assert
             Assert.True(result);
@@ -177,13 +177,13 @@ namespace mcp_nexus_tests.Recovery
                 return 3;
             });
 
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
                 mockCallback);
 
             // Act
-            await m_service.RecoverStuckSession("test reason");
+            await m_Service.RecoverStuckSession("test reason");
 
             // Assert
             Assert.True(callbackCalled);
@@ -194,20 +194,20 @@ namespace mcp_nexus_tests.Recovery
         public async Task RecoverStuckSession_WithNotificationService_SendsNotification()
         {
             // Arrange
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback,
-                m_mockNotificationService.Object);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback,
+                m_MockNotificationService.Object);
 
             // Act
-            await m_service.RecoverStuckSession("test reason");
+            await m_Service.RecoverStuckSession("test reason");
 
             // Wait for notification to be sent
             await Task.Delay(500);
 
             // Assert - Expect the 4-parameter version (without affectedCommands array)
-            m_mockNotificationService.Verify(
+            m_MockNotificationService.Verify(
                 x => x.NotifySessionRecoveryAsync(
                     "test reason",
                     "Recovery Started",
@@ -221,13 +221,13 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             var failingSession = RealisticCdbTestHelper.CreateFailingCdbSession(Mock.Of<ILogger>(), shouldThrowOnCancel: true);
-            m_service = new CdbSessionRecoveryService(
+            m_Service = new CdbSessionRecoveryService(
                 failingSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act
-            var result = await m_service.RecoverStuckSession("test reason");
+            var result = await m_Service.RecoverStuckSession("test reason");
 
             // Assert
             Assert.True(result); // Should still succeed despite CDB cancel failure
@@ -238,14 +238,14 @@ namespace mcp_nexus_tests.Recovery
         public async Task ForceRestartSession_WhenDisposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
-            m_service.Dispose();
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
+            m_Service.Dispose();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => m_service.ForceRestartSession("test"));
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => m_Service.ForceRestartSession("test"));
         }
 
         [Theory]
@@ -254,26 +254,26 @@ namespace mcp_nexus_tests.Recovery
         public async Task ForceRestartSession_InvalidReason_ThrowsArgumentException(string invalidReason)
         {
             // Arrange
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => m_service.ForceRestartSession(invalidReason));
+            await Assert.ThrowsAsync<ArgumentException>(() => m_Service.ForceRestartSession(invalidReason));
         }
 
         [Fact]
         public async Task ForceRestartSession_NullReason_ThrowsArgumentNullException()
         {
             // Arrange
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => m_service.ForceRestartSession(null!));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => m_Service.ForceRestartSession(null!));
         }
 
         [Fact]
@@ -283,13 +283,13 @@ namespace mcp_nexus_tests.Recovery
             // Setup the session to be inactive after stopping
             var sessionWithSequence = RealisticCdbTestHelper.CreateRecoveryCdbSession(Mock.Of<ILogger>(), true, false, true);
 
-            m_service = new CdbSessionRecoveryService(
+            m_Service = new CdbSessionRecoveryService(
                 sessionWithSequence,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act
-            var result = await m_service.ForceRestartSession("test reason");
+            var result = await m_Service.ForceRestartSession("test reason");
 
             // Assert
             Assert.True(result);
@@ -300,13 +300,13 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             var failingSession = RealisticCdbTestHelper.CreateFailingCdbSession(Mock.Of<ILogger>(), shouldFailStopSession: true);
-            m_service = new CdbSessionRecoveryService(
+            m_Service = new CdbSessionRecoveryService(
                 failingSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act
-            var result = await m_service.ForceRestartSession("test reason");
+            var result = await m_Service.ForceRestartSession("test reason");
 
             // Assert
             Assert.False(result);
@@ -317,13 +317,13 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             var failingSession = RealisticCdbTestHelper.CreateFailingCdbSession(Mock.Of<ILogger>(), shouldFailStartSession: true);
-            m_service = new CdbSessionRecoveryService(
+            m_Service = new CdbSessionRecoveryService(
                 failingSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act
-            var result = await m_service.ForceRestartSession("test reason");
+            var result = await m_Service.ForceRestartSession("test reason");
 
             // Assert
             Assert.False(result);
@@ -333,20 +333,20 @@ namespace mcp_nexus_tests.Recovery
         public async Task ForceRestartSession_WithNotificationService_SendsNotification()
         {
             // Arrange
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback,
-                m_mockNotificationService.Object);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback,
+                m_MockNotificationService.Object);
 
             // Act
-            await m_service.ForceRestartSession("test reason");
+            await m_Service.ForceRestartSession("test reason");
 
             // Wait for notification to be sent
             await Task.Delay(500);
 
             // Assert - Check for the notification that was actually sent (4-parameter version)
-            m_mockNotificationService.Verify(
+            m_MockNotificationService.Verify(
                 x => x.NotifySessionRecoveryAsync(
                     "test reason",
                     "Force Restart Started",
@@ -360,13 +360,13 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             // Realistic mock handles IsActive internally
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act
-            var result = m_service.IsSessionHealthy();
+            var result = m_Service.IsSessionHealthy();
 
             // Assert
             Assert.True(result);
@@ -377,13 +377,13 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             var inactiveSession = RealisticCdbTestHelper.CreateRecoveryCdbSession(Mock.Of<ILogger>(), false);
-            m_service = new CdbSessionRecoveryService(
+            m_Service = new CdbSessionRecoveryService(
                 inactiveSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act - First call will return true due to cooldown, but we can verify the method works
-            var result = m_service.IsSessionHealthy();
+            var result = m_Service.IsSessionHealthy();
 
             // Assert - The method has a 30-second cooldown, so it returns true initially
             // This test verifies the method doesn't throw and behaves as designed
@@ -395,15 +395,15 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             // Realistic mock handles IsActive internally
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act - Call multiple times within cooldown period
-            var result1 = m_service.IsSessionHealthy();
-            var result2 = m_service.IsSessionHealthy();
-            var result3 = m_service.IsSessionHealthy();
+            var result1 = m_Service.IsSessionHealthy();
+            var result2 = m_Service.IsSessionHealthy();
+            var result3 = m_Service.IsSessionHealthy();
 
             // Assert - All calls should return the same result due to cooldown
             Assert.True(result1);
@@ -419,46 +419,46 @@ namespace mcp_nexus_tests.Recovery
         public void IsSessionHealthy_WhenDisposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
-            m_service.Dispose();
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
+            m_Service.Dispose();
 
             // Act & Assert
-            Assert.Throws<ObjectDisposedException>(() => m_service.IsSessionHealthy());
+            Assert.Throws<ObjectDisposedException>(() => m_Service.IsSessionHealthy());
         }
 
         [Fact]
         public void Dispose_MultipleTimes_DoesNotThrow()
         {
             // Arrange
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act & Assert - Should not throw
-            m_service.Dispose();
-            m_service.Dispose();
+            m_Service.Dispose();
+            m_Service.Dispose();
         }
 
         [Fact]
         public async Task RecoverStuckSession_MultipleCalls_ResetsCounterAfterSuccess()
         {
             // Arrange
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act
-            await m_service.RecoverStuckSession("reason 1");
-            await m_service.RecoverStuckSession("reason 2");
-            await m_service.RecoverStuckSession("reason 3");
+            await m_Service.RecoverStuckSession("reason 1");
+            await m_Service.RecoverStuckSession("reason 2");
+            await m_Service.RecoverStuckSession("reason 3");
 
             // Assert - Verify that recovery attempts are logged (counter resets after each success)
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
@@ -472,18 +472,18 @@ namespace mcp_nexus_tests.Recovery
         public async Task RecoverStuckSession_WhenNotificationFails_ContinuesRecovery()
         {
             // Arrange
-            m_mockNotificationService.Setup(x => x.NotifySessionRecoveryAsync(
+            m_MockNotificationService.Setup(x => x.NotifySessionRecoveryAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<string[]>()))
                 .ThrowsAsync(new InvalidOperationException("Notification failed"));
 
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback,
-                m_mockNotificationService.Object);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback,
+                m_MockNotificationService.Object);
 
             // Act
-            var result = await m_service.RecoverStuckSession("test reason");
+            var result = await m_Service.RecoverStuckSession("test reason");
 
             // Assert
             Assert.True(result); // Should still succeed despite notification failure
@@ -496,18 +496,18 @@ namespace mcp_nexus_tests.Recovery
             // Setup the session to be inactive after stopping
             var sessionWithSequence = RealisticCdbTestHelper.CreateRecoveryCdbSession(Mock.Of<ILogger>(), true, false, true);
 
-            m_mockNotificationService.Setup(x => x.NotifySessionRecoveryAsync(
+            m_MockNotificationService.Setup(x => x.NotifySessionRecoveryAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<string[]>()))
                 .ThrowsAsync(new InvalidOperationException("Notification failed"));
 
-            m_service = new CdbSessionRecoveryService(
+            m_Service = new CdbSessionRecoveryService(
                 sessionWithSequence,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback,
-                m_mockNotificationService.Object);
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback,
+                m_MockNotificationService.Object);
 
             // Act
-            var result = await m_service.ForceRestartSession("test reason");
+            var result = await m_Service.ForceRestartSession("test reason");
 
             // Assert
             Assert.True(result); // Should still succeed despite notification failure
@@ -518,13 +518,13 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             // Realistic mock handles StopSession and IsActive internally
-            m_service = new CdbSessionRecoveryService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_cancelAllCommandsCallback);
+            m_Service = new CdbSessionRecoveryService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_CancelAllCommandsCallback);
 
             // Act
-            var result = await m_service.ForceRestartSession("test reason");
+            var result = await m_Service.ForceRestartSession("test reason");
 
             // Assert
             Assert.False(result);

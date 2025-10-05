@@ -16,11 +16,11 @@ namespace mcp_nexus_tests.Infrastructure
     [SupportedOSPlatform("windows")]
     public class WindowsServiceInstallerTests
     {
-        private readonly Mock<ILogger> m_mockLogger;
+        private readonly Mock<ILogger> m_MockLogger;
 
         public WindowsServiceInstallerTests()
         {
-            m_mockLogger = new Mock<ILogger>();
+            m_MockLogger = new Mock<ILogger>();
         }
 
         [Fact]
@@ -76,7 +76,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void WindowsServiceInstaller_InstallServiceAsync_WithLogger_DoesNotThrow()
         {
             // Act & Assert - Should not throw
-            var task = WindowsServiceInstaller.InstallServiceAsync(m_mockLogger.Object);
+            var task = WindowsServiceInstaller.InstallServiceAsync(m_MockLogger.Object);
             Assert.NotNull(task);
         }
 
@@ -92,7 +92,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void WindowsServiceInstaller_UninstallServiceAsync_WithLogger_DoesNotThrow()
         {
             // Act & Assert - Should not throw
-            var task = WindowsServiceInstaller.UninstallServiceAsync(m_mockLogger.Object);
+            var task = WindowsServiceInstaller.UninstallServiceAsync(m_MockLogger.Object);
             Assert.NotNull(task);
         }
 
@@ -110,7 +110,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void WindowsServiceInstaller_UpdateServiceAsync_WithLogger_DoesNotThrow()
         {
             // Act & Assert - Should not throw
-            var task = WindowsServiceInstaller.UpdateServiceAsync(m_mockLogger.Object);
+            var task = WindowsServiceInstaller.UpdateServiceAsync(m_MockLogger.Object);
             Assert.NotNull(task);
         }
 
@@ -128,7 +128,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void InstallServiceAsync_WithLogger_ReturnsTaskOfBool()
         {
             // Act
-            var result = WindowsServiceInstaller.InstallServiceAsync(m_mockLogger.Object);
+            var result = WindowsServiceInstaller.InstallServiceAsync(m_MockLogger.Object);
 
             // Assert
             Assert.True(result is Task<bool>);
@@ -148,7 +148,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void UninstallServiceAsync_WithLogger_ReturnsTaskOfBool()
         {
             // Act
-            var result = WindowsServiceInstaller.UninstallServiceAsync(m_mockLogger.Object);
+            var result = WindowsServiceInstaller.UninstallServiceAsync(m_MockLogger.Object);
 
             // Assert
             Assert.True(result is Task<bool>);
@@ -170,7 +170,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void UpdateServiceAsync_WithLogger_ReturnsTaskOfBool()
         {
             // Act
-            var result = WindowsServiceInstaller.UpdateServiceAsync(m_mockLogger.Object);
+            var result = WindowsServiceInstaller.UpdateServiceAsync(m_MockLogger.Object);
 
             // Assert
             Assert.True(result is Task<bool>);

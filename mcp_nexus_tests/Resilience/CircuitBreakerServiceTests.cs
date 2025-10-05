@@ -14,25 +14,25 @@ namespace mcp_nexus_tests.Resilience
     /// </summary>
     public class CircuitBreakerServiceTests : IDisposable
     {
-        private readonly Mock<ILogger<CircuitBreakerService>> m_mockLogger;
-        private readonly CircuitBreakerService m_circuitBreakerService;
+        private readonly Mock<ILogger<CircuitBreakerService>> m_MockLogger;
+        private readonly CircuitBreakerService m_CircuitBreakerService;
 
         public CircuitBreakerServiceTests()
         {
-            m_mockLogger = new Mock<ILogger<CircuitBreakerService>>();
-            m_circuitBreakerService = new CircuitBreakerService(m_mockLogger.Object);
+            m_MockLogger = new Mock<ILogger<CircuitBreakerService>>();
+            m_CircuitBreakerService = new CircuitBreakerService(m_MockLogger.Object);
         }
 
         public void Dispose()
         {
-            m_circuitBreakerService?.Dispose();
+            m_CircuitBreakerService?.Dispose();
         }
 
         [Fact]
         public void CircuitBreakerService_Constructor_WithValidLogger_InitializesCorrectly()
         {
             // Act
-            var service = new CircuitBreakerService(m_mockLogger.Object);
+            var service = new CircuitBreakerService(m_MockLogger.Object);
 
             // Assert
             Assert.NotNull(service);
@@ -54,7 +54,7 @@ namespace mcp_nexus_tests.Resilience
             const string circuitName = "test-circuit";
 
             // Act
-            var result = await m_circuitBreakerService.ExecuteAsync(circuitName, operation);
+            var result = await m_CircuitBreakerService.ExecuteAsync(circuitName, operation);
 
             // Assert
             Assert.Equal(expectedResult, result);
@@ -68,7 +68,7 @@ namespace mcp_nexus_tests.Resilience
             const string circuitName = "test-circuit";
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => m_circuitBreakerService.ExecuteAsync(circuitName, operation));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => m_CircuitBreakerService.ExecuteAsync(circuitName, operation));
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace mcp_nexus_tests.Resilience
             const string circuitName = "test-circuit";
 
             // Act
-            await m_circuitBreakerService.ExecuteAsync(circuitName, operation);
+            await m_CircuitBreakerService.ExecuteAsync(circuitName, operation);
 
             // Assert
             Assert.True(operationExecuted);
@@ -102,7 +102,7 @@ namespace mcp_nexus_tests.Resilience
             var recoveryTimeout = TimeSpan.FromSeconds(5);
 
             // Act
-            var result = await m_circuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold, timeout, recoveryTimeout);
+            var result = await m_CircuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold, timeout, recoveryTimeout);
 
             // Assert
             Assert.Equal(expectedResult, result);
@@ -120,11 +120,11 @@ namespace mcp_nexus_tests.Resilience
             // First 3 failures should throw the original exception
             for (int i = 0; i < 3; i++)
             {
-                await Assert.ThrowsAsync<InvalidOperationException>(() => m_circuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold));
+                await Assert.ThrowsAsync<InvalidOperationException>(() => m_CircuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold));
             }
 
             // 4th failure should throw AdvancedCircuitBreakerOpenException
-            await Assert.ThrowsAsync<AdvancedCircuitBreakerOpenException>(() => m_circuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold));
+            await Assert.ThrowsAsync<AdvancedCircuitBreakerOpenException>(() => m_CircuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold));
         }
 
         [Fact]
@@ -138,11 +138,11 @@ namespace mcp_nexus_tests.Resilience
             // Act - Cause circuit to open
             for (int i = 0; i < 2; i++)
             {
-                try { await m_circuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold); } catch { }
+                try { await m_CircuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold); } catch { }
             }
 
             // Assert - Next call should throw AdvancedCircuitBreakerOpenException
-            await Assert.ThrowsAsync<AdvancedCircuitBreakerOpenException>(() => m_circuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold));
+            await Assert.ThrowsAsync<AdvancedCircuitBreakerOpenException>(() => m_CircuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold));
         }
 
         [Fact]
@@ -158,14 +158,14 @@ namespace mcp_nexus_tests.Resilience
             // Act - Cause circuit to open
             for (int i = 0; i < 2; i++)
             {
-                try { await m_circuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold, recoveryTimeout: recoveryTimeout); } catch { }
+                try { await m_CircuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold, recoveryTimeout: recoveryTimeout); } catch { }
             }
 
             // Wait for recovery timeout to pass
             await Task.Delay(200);
 
             // Execute successful operation
-            var result = await m_circuitBreakerService.ExecuteAsync(circuitName, successOperation, failureThreshold, recoveryTimeout: recoveryTimeout);
+            var result = await m_CircuitBreakerService.ExecuteAsync(circuitName, successOperation, failureThreshold, recoveryTimeout: recoveryTimeout);
 
             // Assert
             Assert.Equal("Success", result);
@@ -184,7 +184,7 @@ namespace mcp_nexus_tests.Resilience
             var timeout = TimeSpan.FromMilliseconds(50); // Very short timeout (not enforced in current implementation)
 
             // Act
-            var result = await m_circuitBreakerService.ExecuteAsync(circuitName, operation, timeout: timeout);
+            var result = await m_CircuitBreakerService.ExecuteAsync(circuitName, operation, timeout: timeout);
 
             // Assert
             Assert.Equal("Success", result);
@@ -198,8 +198,8 @@ namespace mcp_nexus_tests.Resilience
             var operation = new Func<Task<string>>(() => Task.FromResult("Success"));
 
             // Act - Execute operation to create circuit
-            await m_circuitBreakerService.ExecuteAsync(circuitName, operation);
-            var status = m_circuitBreakerService.GetCircuitStatus(circuitName);
+            await m_CircuitBreakerService.ExecuteAsync(circuitName, operation);
+            var status = m_CircuitBreakerService.GetCircuitStatus(circuitName);
 
             // Assert
             Assert.NotNull(status);
@@ -215,7 +215,7 @@ namespace mcp_nexus_tests.Resilience
             const string circuitName = "non-existent-circuit";
 
             // Act
-            var status = m_circuitBreakerService.GetCircuitStatus(circuitName);
+            var status = m_CircuitBreakerService.GetCircuitStatus(circuitName);
 
             // Assert
             Assert.NotNull(status);
@@ -232,9 +232,9 @@ namespace mcp_nexus_tests.Resilience
             var operation2 = new Func<Task<string>>(() => Task.FromResult("Success2"));
 
             // Act - Execute operations to create circuits
-            await m_circuitBreakerService.ExecuteAsync("circuit1", operation1);
-            await m_circuitBreakerService.ExecuteAsync("circuit2", operation2);
-            var statuses = m_circuitBreakerService.GetAllCircuitStatuses();
+            await m_CircuitBreakerService.ExecuteAsync("circuit1", operation1);
+            await m_CircuitBreakerService.ExecuteAsync("circuit2", operation2);
+            var statuses = m_CircuitBreakerService.GetAllCircuitStatuses();
 
             // Assert
             Assert.NotNull(statuses);
@@ -247,22 +247,22 @@ namespace mcp_nexus_tests.Resilience
         public async Task ExecuteAsync_WithDisposedService_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_circuitBreakerService.Dispose();
+            m_CircuitBreakerService.Dispose();
             var operation = new Func<Task<string>>(() => Task.FromResult("Success"));
             const string circuitName = "test-circuit";
 
             // Act & Assert
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => m_circuitBreakerService.ExecuteAsync(circuitName, operation));
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => m_CircuitBreakerService.ExecuteAsync(circuitName, operation));
         }
 
         [Fact]
         public void Dispose_DisposesCorrectly()
         {
             // Act
-            m_circuitBreakerService.Dispose();
+            m_CircuitBreakerService.Dispose();
 
             // Assert - Should not throw when disposed multiple times
-            m_circuitBreakerService.Dispose();
+            m_CircuitBreakerService.Dispose();
         }
 
         [Fact]
@@ -278,18 +278,18 @@ namespace mcp_nexus_tests.Resilience
             // Act - Cause circuit1 to open
             for (int i = 0; i < 2; i++)
             {
-                try { await m_circuitBreakerService.ExecuteAsync(circuitName1, operation1, failureThreshold); } catch { }
+                try { await m_CircuitBreakerService.ExecuteAsync(circuitName1, operation1, failureThreshold); } catch { }
             }
 
             // Execute operation on circuit2 (should work)
-            var result = await m_circuitBreakerService.ExecuteAsync(circuitName2, operation2, failureThreshold);
+            var result = await m_CircuitBreakerService.ExecuteAsync(circuitName2, operation2, failureThreshold);
 
             // Assert
             Assert.Equal("Success", result);
 
             // Circuit1 should be open, circuit2 should be closed
-            var status1 = m_circuitBreakerService.GetCircuitStatus(circuitName1);
-            var status2 = m_circuitBreakerService.GetCircuitStatus(circuitName2);
+            var status1 = m_CircuitBreakerService.GetCircuitStatus(circuitName1);
+            var status2 = m_CircuitBreakerService.GetCircuitStatus(circuitName2);
 
             Assert.Equal(AdvancedCircuitState.Open, status1.State);
             Assert.Equal(AdvancedCircuitState.Closed, status2.State);
@@ -306,7 +306,7 @@ namespace mcp_nexus_tests.Resilience
             // Act - Execute multiple operations concurrently
             for (int i = 0; i < 10; i++)
             {
-                operations.Add(m_circuitBreakerService.ExecuteAsync(circuitName, operation));
+                operations.Add(m_CircuitBreakerService.ExecuteAsync(circuitName, operation));
             }
 
             var results = await Task.WhenAll(operations);
@@ -327,7 +327,7 @@ namespace mcp_nexus_tests.Resilience
             // Act - Execute multiple failing operations concurrently
             for (int i = 0; i < 10; i++)
             {
-                operations.Add(m_circuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold));
+                operations.Add(m_CircuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold));
             }
 
             // Assert - All should throw exceptions
@@ -347,14 +347,14 @@ namespace mcp_nexus_tests.Resilience
             // Act - Cause circuit to open
             for (int i = 0; i < 2; i++)
             {
-                try { await m_circuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold, recoveryTimeout: recoveryTimeout); } catch { }
+                try { await m_CircuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold, recoveryTimeout: recoveryTimeout); } catch { }
             }
 
             // Wait for recovery timeout to pass
             await Task.Delay(200);
 
             // Execute successful operation
-            var result = await m_circuitBreakerService.ExecuteAsync(circuitName, successOperation, failureThreshold, recoveryTimeout: recoveryTimeout);
+            var result = await m_CircuitBreakerService.ExecuteAsync(circuitName, successOperation, failureThreshold, recoveryTimeout: recoveryTimeout);
 
             // Assert
             Assert.Equal("Success", result);
@@ -373,7 +373,7 @@ namespace mcp_nexus_tests.Resilience
             var timeout = TimeSpan.FromMilliseconds(50); // Very short timeout (not enforced in current implementation)
 
             // Act
-            var result = await m_circuitBreakerService.ExecuteAsync(circuitName, operation, timeout: timeout);
+            var result = await m_CircuitBreakerService.ExecuteAsync(circuitName, operation, timeout: timeout);
 
             // Assert
             Assert.Equal("Success", result);
@@ -390,10 +390,10 @@ namespace mcp_nexus_tests.Resilience
             // Act - Cause circuit to open
             for (int i = 0; i < 2; i++)
             {
-                try { await m_circuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold); } catch { }
+                try { await m_CircuitBreakerService.ExecuteAsync(circuitName, operation, failureThreshold); } catch { }
             }
 
-            var status = m_circuitBreakerService.GetCircuitStatus(circuitName);
+            var status = m_CircuitBreakerService.GetCircuitStatus(circuitName);
 
             // Assert
             Assert.NotNull(status);
@@ -416,11 +416,11 @@ namespace mcp_nexus_tests.Resilience
             // Act - Cause circuit1 to open, circuit2 to remain closed
             for (int i = 0; i < 2; i++)
             {
-                try { await m_circuitBreakerService.ExecuteAsync(circuitName1, operation1, failureThreshold); } catch { }
+                try { await m_CircuitBreakerService.ExecuteAsync(circuitName1, operation1, failureThreshold); } catch { }
             }
-            await m_circuitBreakerService.ExecuteAsync(circuitName2, operation2, failureThreshold);
+            await m_CircuitBreakerService.ExecuteAsync(circuitName2, operation2, failureThreshold);
 
-            var statuses = m_circuitBreakerService.GetAllCircuitStatuses();
+            var statuses = m_CircuitBreakerService.GetAllCircuitStatuses();
 
             // Assert
             Assert.NotNull(statuses);

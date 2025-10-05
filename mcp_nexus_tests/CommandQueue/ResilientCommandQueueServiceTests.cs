@@ -18,11 +18,11 @@ namespace mcp_nexus_tests.CommandQueue
     /// </summary>
     public class ResilientCommandQueueServiceTests
     {
-        private readonly Mock<ICommandQueueService> m_mockService;
+        private readonly Mock<ICommandQueueService> m_MockService;
 
         public ResilientCommandQueueServiceTests()
         {
-            m_mockService = new Mock<ICommandQueueService>();
+            m_MockService = new Mock<ICommandQueueService>();
         }
 
         [Fact]
@@ -31,14 +31,14 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var command = "version";
             var expectedId = "cmd-123";
-            m_mockService.Setup(s => s.QueueCommand(command)).Returns(expectedId);
+            m_MockService.Setup(s => s.QueueCommand(command)).Returns(expectedId);
 
             // Act
-            var result = m_mockService.Object.QueueCommand(command);
+            var result = m_MockService.Object.QueueCommand(command);
 
             // Assert
             Assert.Equal(expectedId, result);
-            m_mockService.Verify(s => s.QueueCommand(command), Times.Once);
+            m_MockService.Verify(s => s.QueueCommand(command), Times.Once);
         }
 
         [Theory]
@@ -47,22 +47,22 @@ namespace mcp_nexus_tests.CommandQueue
         public void QueueCommand_InvalidCommand_ThrowsArgumentException(string invalidCommand)
         {
             // Arrange
-            m_mockService.Setup(s => s.QueueCommand(invalidCommand))
+            m_MockService.Setup(s => s.QueueCommand(invalidCommand))
                          .Throws(new ArgumentException("Command cannot be empty"));
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => m_mockService.Object.QueueCommand(invalidCommand));
+            Assert.Throws<ArgumentException>(() => m_MockService.Object.QueueCommand(invalidCommand));
         }
 
         [Fact]
         public void QueueCommand_NullCommand_ThrowsArgumentException()
         {
             // Arrange
-            m_mockService.Setup(s => s.QueueCommand(null!))
+            m_MockService.Setup(s => s.QueueCommand(null!))
                          .Throws(new ArgumentException("Command cannot be null"));
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => m_mockService.Object.QueueCommand(null!));
+            Assert.Throws<ArgumentException>(() => m_MockService.Object.QueueCommand(null!));
         }
 
         [Fact]
@@ -71,14 +71,14 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var commandId = "cmd-456";
             var expectedResult = "Command completed successfully";
-            m_mockService.Setup(s => s.GetCommandResult(commandId)).ReturnsAsync(expectedResult);
+            m_MockService.Setup(s => s.GetCommandResult(commandId)).ReturnsAsync(expectedResult);
 
             // Act
-            var result = await m_mockService.Object.GetCommandResult(commandId);
+            var result = await m_MockService.Object.GetCommandResult(commandId);
 
             // Assert
             Assert.Equal(expectedResult, result);
-            m_mockService.Verify(s => s.GetCommandResult(commandId), Times.Once);
+            m_MockService.Verify(s => s.GetCommandResult(commandId), Times.Once);
         }
 
         [Fact]
@@ -87,10 +87,10 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var commandId = "non-existent";
             var expectedResult = "Command not found";
-            m_mockService.Setup(s => s.GetCommandResult(commandId)).ReturnsAsync(expectedResult);
+            m_MockService.Setup(s => s.GetCommandResult(commandId)).ReturnsAsync(expectedResult);
 
             // Act
-            var result = await m_mockService.Object.GetCommandResult(commandId);
+            var result = await m_MockService.Object.GetCommandResult(commandId);
 
             // Assert
             Assert.Equal(expectedResult, result);
@@ -101,14 +101,14 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Arrange
             var commandId = "cmd-789";
-            m_mockService.Setup(s => s.CancelCommand(commandId)).Returns(true);
+            m_MockService.Setup(s => s.CancelCommand(commandId)).Returns(true);
 
             // Act
-            var result = m_mockService.Object.CancelCommand(commandId);
+            var result = m_MockService.Object.CancelCommand(commandId);
 
             // Assert
             Assert.True(result);
-            m_mockService.Verify(s => s.CancelCommand(commandId), Times.Once);
+            m_MockService.Verify(s => s.CancelCommand(commandId), Times.Once);
         }
 
         [Theory]
@@ -117,10 +117,10 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_InvalidCommandId_ReturnsFalse(string invalidId)
         {
             // Arrange
-            m_mockService.Setup(s => s.CancelCommand(invalidId)).Returns(false);
+            m_MockService.Setup(s => s.CancelCommand(invalidId)).Returns(false);
 
             // Act
-            var result = m_mockService.Object.CancelCommand(invalidId);
+            var result = m_MockService.Object.CancelCommand(invalidId);
 
             // Assert
             Assert.False(result);
@@ -132,14 +132,14 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var reason = "Test cancellation";
             var expectedCount = 3;
-            m_mockService.Setup(s => s.CancelAllCommands(reason)).Returns(expectedCount);
+            m_MockService.Setup(s => s.CancelAllCommands(reason)).Returns(expectedCount);
 
             // Act
-            var result = m_mockService.Object.CancelAllCommands(reason);
+            var result = m_MockService.Object.CancelAllCommands(reason);
 
             // Assert
             Assert.Equal(expectedCount, result);
-            m_mockService.Verify(s => s.CancelAllCommands(reason), Times.Once);
+            m_MockService.Verify(s => s.CancelAllCommands(reason), Times.Once);
         }
 
         [Fact]
@@ -147,10 +147,10 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Arrange
             var expectedStatus = Array.Empty<(string Id, string Command, DateTime QueueTime, string Status)>();
-            m_mockService.Setup(s => s.GetQueueStatus()).Returns(expectedStatus);
+            m_MockService.Setup(s => s.GetQueueStatus()).Returns(expectedStatus);
 
             // Act
-            var result = m_mockService.Object.GetQueueStatus();
+            var result = m_MockService.Object.GetQueueStatus();
 
             // Assert
             Assert.Empty(result);
@@ -165,10 +165,10 @@ namespace mcp_nexus_tests.CommandQueue
                 ("cmd-1", "version", DateTime.UtcNow, "Executing"),
                 ("cmd-2", "analyze", DateTime.UtcNow, "Queued")
             };
-            m_mockService.Setup(s => s.GetQueueStatus()).Returns(expectedStatus);
+            m_MockService.Setup(s => s.GetQueueStatus()).Returns(expectedStatus);
 
             // Act
-            var result = m_mockService.Object.GetQueueStatus().ToArray();
+            var result = m_MockService.Object.GetQueueStatus().ToArray();
 
             // Assert
             Assert.Equal(2, result.Length);
@@ -180,10 +180,10 @@ namespace mcp_nexus_tests.CommandQueue
         public void GetCurrentCommand_NoCommandExecuting_ReturnsNull()
         {
             // Arrange
-            m_mockService.Setup(s => s.GetCurrentCommand()).Returns((QueuedCommand?)null);
+            m_MockService.Setup(s => s.GetCurrentCommand()).Returns((QueuedCommand?)null);
 
             // Act
-            var result = m_mockService.Object.GetCurrentCommand();
+            var result = m_MockService.Object.GetCurrentCommand();
 
             // Assert
             Assert.Null(result);
@@ -199,10 +199,10 @@ namespace mcp_nexus_tests.CommandQueue
                 DateTime.UtcNow,
                 new TaskCompletionSource<string>(),
                 new CancellationTokenSource());
-            m_mockService.Setup(s => s.GetCurrentCommand()).Returns(expectedCommand);
+            m_MockService.Setup(s => s.GetCurrentCommand()).Returns(expectedCommand);
 
             // Act
-            var result = m_mockService.Object.GetCurrentCommand();
+            var result = m_MockService.Object.GetCurrentCommand();
 
             // Assert
             Assert.NotNull(result);

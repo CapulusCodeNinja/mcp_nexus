@@ -10,22 +10,22 @@ namespace mcp_nexus_tests.CommandQueue
     /// </summary>
     public class SessionCommandResultCacheTests : IDisposable
     {
-        private readonly Mock<ILogger<SessionCommandResultCache>> m_mockLogger;
-        private readonly SessionCommandResultCache m_cache;
+        private readonly Mock<ILogger<SessionCommandResultCache>> m_MockLogger;
+        private readonly SessionCommandResultCache m_Cache;
 
         public SessionCommandResultCacheTests()
         {
-            m_mockLogger = new Mock<ILogger<SessionCommandResultCache>>();
-            m_cache = new SessionCommandResultCache(
+            m_MockLogger = new Mock<ILogger<SessionCommandResultCache>>();
+            m_Cache = new SessionCommandResultCache(
                 maxMemoryBytes: 1024 * 1024, // 1MB for testing
                 maxResults: 10,
                 memoryPressureThreshold: 0.8,
-                logger: m_mockLogger.Object);
+                logger: m_MockLogger.Object);
         }
 
         public void Dispose()
         {
-            m_cache?.Dispose();
+            m_Cache?.Dispose();
         }
 
         #region Constructor Tests
@@ -81,11 +81,11 @@ namespace mcp_nexus_tests.CommandQueue
             var result = CommandResult.Success("Test output");
 
             // Act
-            m_cache.StoreResult(commandId, result);
+            m_Cache.StoreResult(commandId, result);
 
             // Assert
-            Assert.True(m_cache.HasResult(commandId));
-            var retrievedResult = m_cache.GetResult(commandId);
+            Assert.True(m_Cache.HasResult(commandId));
+            var retrievedResult = m_Cache.GetResult(commandId);
             Assert.NotNull(retrievedResult);
             Assert.Equal("Test output", retrievedResult.Output);
             Assert.True(retrievedResult.IsSuccess);
@@ -98,12 +98,12 @@ namespace mcp_nexus_tests.CommandQueue
             var result = CommandResult.Success("Test output");
 
             // Act
-            m_cache.StoreResult(string.Empty, result);
-            m_cache.StoreResult(null!, result);
+            m_Cache.StoreResult(string.Empty, result);
+            m_Cache.StoreResult(null!, result);
 
             // Assert
-            Assert.False(m_cache.HasResult(string.Empty));
-            Assert.False(m_cache.HasResult(null!));
+            Assert.False(m_Cache.HasResult(string.Empty));
+            Assert.False(m_Cache.HasResult(null!));
         }
 
         [Fact]
@@ -115,11 +115,11 @@ namespace mcp_nexus_tests.CommandQueue
             var result2 = CommandResult.Success("Second output");
 
             // Act
-            m_cache.StoreResult(commandId, result1);
-            m_cache.StoreResult(commandId, result2);
+            m_Cache.StoreResult(commandId, result1);
+            m_Cache.StoreResult(commandId, result2);
 
             // Assert
-            var retrievedResult = m_cache.GetResult(commandId);
+            var retrievedResult = m_Cache.GetResult(commandId);
             Assert.NotNull(retrievedResult);
             Assert.Equal("Second output", retrievedResult.Output);
         }
@@ -132,10 +132,10 @@ namespace mcp_nexus_tests.CommandQueue
             var result = CommandResult.Failure("Test error");
 
             // Act
-            m_cache.StoreResult(commandId, result);
+            m_Cache.StoreResult(commandId, result);
 
             // Assert
-            var retrievedResult = m_cache.GetResult(commandId);
+            var retrievedResult = m_Cache.GetResult(commandId);
             Assert.NotNull(retrievedResult);
             Assert.False(retrievedResult.IsSuccess);
             Assert.Equal("Test error", retrievedResult.ErrorMessage);
@@ -151,10 +151,10 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var commandId = "test-command-1";
             var result = CommandResult.Success("Test output");
-            m_cache.StoreResult(commandId, result);
+            m_Cache.StoreResult(commandId, result);
 
             // Act
-            var retrievedResult = m_cache.GetResult(commandId);
+            var retrievedResult = m_Cache.GetResult(commandId);
 
             // Assert
             Assert.NotNull(retrievedResult);
@@ -165,7 +165,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void GetResult_WithNonExistentCommandId_ReturnsNull()
         {
             // Act
-            var result = m_cache.GetResult("non-existent-command");
+            var result = m_Cache.GetResult("non-existent-command");
 
             // Assert
             Assert.Null(result);
@@ -175,7 +175,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void GetResult_WithEmptyCommandId_ReturnsNull()
         {
             // Act
-            var result = m_cache.GetResult(string.Empty);
+            var result = m_Cache.GetResult(string.Empty);
 
             // Assert
             Assert.Null(result);
@@ -191,10 +191,10 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var commandId = "test-command-1";
             var result = CommandResult.Success("Test output");
-            m_cache.StoreResult(commandId, result);
+            m_Cache.StoreResult(commandId, result);
 
             // Act
-            var hasResult = m_cache.HasResult(commandId);
+            var hasResult = m_Cache.HasResult(commandId);
 
             // Assert
             Assert.True(hasResult);
@@ -204,7 +204,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void HasResult_WithNonExistentCommandId_ReturnsFalse()
         {
             // Act
-            var hasResult = m_cache.HasResult("non-existent-command");
+            var hasResult = m_Cache.HasResult("non-existent-command");
 
             // Assert
             Assert.False(hasResult);
@@ -220,22 +220,22 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var commandId = "test-command-1";
             var result = CommandResult.Success("Test output");
-            m_cache.StoreResult(commandId, result);
+            m_Cache.StoreResult(commandId, result);
 
             // Act
-            var removed = m_cache.RemoveResult(commandId);
+            var removed = m_Cache.RemoveResult(commandId);
 
             // Assert
             Assert.True(removed);
-            Assert.False(m_cache.HasResult(commandId));
-            Assert.Null(m_cache.GetResult(commandId));
+            Assert.False(m_Cache.HasResult(commandId));
+            Assert.Null(m_Cache.GetResult(commandId));
         }
 
         [Fact]
         public void RemoveResult_WithNonExistentCommandId_ReturnsFalse()
         {
             // Act
-            var removed = m_cache.RemoveResult("non-existent-command");
+            var removed = m_Cache.RemoveResult("non-existent-command");
 
             // Assert
             Assert.False(removed);
@@ -249,19 +249,19 @@ namespace mcp_nexus_tests.CommandQueue
         public void ClearAll_WithStoredResults_ClearsAllResults()
         {
             // Arrange
-            m_cache.StoreResult("command-1", CommandResult.Success("Output 1"));
-            m_cache.StoreResult("command-2", CommandResult.Success("Output 2"));
-            m_cache.StoreResult("command-3", CommandResult.Success("Output 3"));
+            m_Cache.StoreResult("command-1", CommandResult.Success("Output 1"));
+            m_Cache.StoreResult("command-2", CommandResult.Success("Output 2"));
+            m_Cache.StoreResult("command-3", CommandResult.Success("Output 3"));
 
             // Act
-            m_cache.ClearAll();
+            m_Cache.ClearAll();
 
             // Assert
-            Assert.False(m_cache.HasResult("command-1"));
-            Assert.False(m_cache.HasResult("command-2"));
-            Assert.False(m_cache.HasResult("command-3"));
+            Assert.False(m_Cache.HasResult("command-1"));
+            Assert.False(m_Cache.HasResult("command-2"));
+            Assert.False(m_Cache.HasResult("command-3"));
             
-            var stats = m_cache.GetStatistics();
+            var stats = m_Cache.GetStatistics();
             Assert.Equal(0, stats.TotalResults);
         }
 
@@ -319,7 +319,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void GetStatistics_WithEmptyCache_ReturnsZeroValues()
         {
             // Act
-            var stats = m_cache.GetStatistics();
+            var stats = m_Cache.GetStatistics();
 
             // Assert
             Assert.Equal(0, stats.TotalResults);
@@ -331,11 +331,11 @@ namespace mcp_nexus_tests.CommandQueue
         public void GetStatistics_WithStoredResults_ReturnsCorrectValues()
         {
             // Arrange
-            m_cache.StoreResult("command-1", CommandResult.Success("Output 1"));
-            m_cache.StoreResult("command-2", CommandResult.Success("Output 2"));
+            m_Cache.StoreResult("command-1", CommandResult.Success("Output 1"));
+            m_Cache.StoreResult("command-2", CommandResult.Success("Output 2"));
 
             // Act
-            var stats = m_cache.GetStatistics();
+            var stats = m_Cache.GetStatistics();
 
             // Assert
             Assert.Equal(2, stats.TotalResults);
@@ -351,36 +351,36 @@ namespace mcp_nexus_tests.CommandQueue
         public void Dispose_WhenCalled_ClearsAllResults()
         {
             // Arrange
-            m_cache.StoreResult("command-1", CommandResult.Success("Output 1"));
-            m_cache.StoreResult("command-2", CommandResult.Success("Output 2"));
+            m_Cache.StoreResult("command-1", CommandResult.Success("Output 1"));
+            m_Cache.StoreResult("command-2", CommandResult.Success("Output 2"));
 
             // Act
-            m_cache.Dispose();
+            m_Cache.Dispose();
 
             // Assert
-            Assert.False(m_cache.HasResult("command-1"));
-            Assert.False(m_cache.HasResult("command-2"));
+            Assert.False(m_Cache.HasResult("command-1"));
+            Assert.False(m_Cache.HasResult("command-2"));
         }
 
         [Fact]
         public void Dispose_WhenAlreadyDisposed_DoesNotThrow()
         {
             // Act & Assert - Should not throw
-            m_cache.Dispose();
-            m_cache.Dispose();
+            m_Cache.Dispose();
+            m_Cache.Dispose();
         }
 
         [Fact]
         public void StoreResult_AfterDisposal_DoesNotStore()
         {
             // Arrange
-            m_cache.Dispose();
+            m_Cache.Dispose();
 
             // Act
-            m_cache.StoreResult("command-1", CommandResult.Success("Output 1"));
+            m_Cache.StoreResult("command-1", CommandResult.Success("Output 1"));
 
             // Assert
-            Assert.False(m_cache.HasResult("command-1"));
+            Assert.False(m_Cache.HasResult("command-1"));
         }
 
         #endregion

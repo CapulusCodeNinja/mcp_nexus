@@ -14,25 +14,25 @@ namespace mcp_nexus_tests.Metrics
     /// </summary>
     public class MetricsCollectorTests : IDisposable
     {
-        private readonly Mock<ILogger<MetricsCollector>> m_mockLogger;
-        private readonly MetricsCollector m_metricsCollector;
+        private readonly Mock<ILogger<MetricsCollector>> m_MockLogger;
+        private readonly MetricsCollector m_MetricsCollector;
 
         public MetricsCollectorTests()
         {
-            m_mockLogger = new Mock<ILogger<MetricsCollector>>();
-            m_metricsCollector = new MetricsCollector(m_mockLogger.Object);
+            m_MockLogger = new Mock<ILogger<MetricsCollector>>();
+            m_MetricsCollector = new MetricsCollector(m_MockLogger.Object);
         }
 
         public void Dispose()
         {
-            m_metricsCollector?.Dispose();
+            m_MetricsCollector?.Dispose();
         }
 
         [Fact]
         public void MetricsCollector_Constructor_WithValidLogger_InitializesCorrectly()
         {
             // Act
-            var collector = new MetricsCollector(m_mockLogger.Object);
+            var collector = new MetricsCollector(m_MockLogger.Object);
 
             // Assert
             Assert.NotNull(collector);
@@ -49,10 +49,10 @@ namespace mcp_nexus_tests.Metrics
         public void IncrementCounter_WithDefaultValue_IncrementsByOne()
         {
             // Act
-            m_metricsCollector.IncrementCounter("test_counter");
+            m_MetricsCollector.IncrementCounter("test_counter");
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var counter = snapshot.Counters.FirstOrDefault(c => c.Name == "test_counter");
             Assert.NotNull(counter);
             Assert.Equal(1.0, counter.Value);
@@ -65,10 +65,10 @@ namespace mcp_nexus_tests.Metrics
             const double incrementValue = 5.5;
 
             // Act
-            m_metricsCollector.IncrementCounter("test_counter", incrementValue);
+            m_MetricsCollector.IncrementCounter("test_counter", incrementValue);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var counter = snapshot.Counters.FirstOrDefault(c => c.Name == "test_counter");
             Assert.NotNull(counter);
             Assert.Equal(incrementValue, counter.Value);
@@ -85,10 +85,10 @@ namespace mcp_nexus_tests.Metrics
             };
 
             // Act
-            m_metricsCollector.IncrementCounter("test_counter", 1.0, tags);
+            m_MetricsCollector.IncrementCounter("test_counter", 1.0, tags);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var counter = snapshot.Counters.FirstOrDefault(c => c.Name == "test_counter");
             Assert.NotNull(counter);
             Assert.Equal(tags, counter.Tags);
@@ -98,12 +98,12 @@ namespace mcp_nexus_tests.Metrics
         public void IncrementCounter_MultipleTimes_AccumulatesValues()
         {
             // Act
-            m_metricsCollector.IncrementCounter("test_counter", 1.0);
-            m_metricsCollector.IncrementCounter("test_counter", 2.0);
-            m_metricsCollector.IncrementCounter("test_counter", 3.0);
+            m_MetricsCollector.IncrementCounter("test_counter", 1.0);
+            m_MetricsCollector.IncrementCounter("test_counter", 2.0);
+            m_MetricsCollector.IncrementCounter("test_counter", 3.0);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var counter = snapshot.Counters.FirstOrDefault(c => c.Name == "test_counter");
             Assert.NotNull(counter);
             Assert.Equal(6.0, counter.Value);
@@ -116,10 +116,10 @@ namespace mcp_nexus_tests.Metrics
             const double value = 42.5;
 
             // Act
-            m_metricsCollector.RecordHistogram("test_histogram", value);
+            m_MetricsCollector.RecordHistogram("test_histogram", value);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var histogram = snapshot.Histograms.FirstOrDefault(h => h.Name == "test_histogram");
             Assert.NotNull(histogram);
             Assert.Equal(1, histogram.Count);
@@ -138,11 +138,11 @@ namespace mcp_nexus_tests.Metrics
             // Act
             foreach (var value in values)
             {
-                m_metricsCollector.RecordHistogram("test_histogram", value);
+                m_MetricsCollector.RecordHistogram("test_histogram", value);
             }
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var histogram = snapshot.Histograms.FirstOrDefault(h => h.Name == "test_histogram");
             Assert.NotNull(histogram);
             Assert.Equal(5, histogram.Count);
@@ -163,10 +163,10 @@ namespace mcp_nexus_tests.Metrics
             };
 
             // Act
-            m_metricsCollector.RecordHistogram("test_histogram", 42.0, tags);
+            m_MetricsCollector.RecordHistogram("test_histogram", 42.0, tags);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var histogram = snapshot.Histograms.FirstOrDefault(h => h.Name == "test_histogram");
             Assert.NotNull(histogram);
             Assert.Equal(tags, histogram.Tags);
@@ -179,10 +179,10 @@ namespace mcp_nexus_tests.Metrics
             const double value = 99.9;
 
             // Act
-            m_metricsCollector.SetGauge("test_gauge", value);
+            m_MetricsCollector.SetGauge("test_gauge", value);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var gauge = snapshot.Gauges.FirstOrDefault(g => g.Name == "test_gauge");
             Assert.NotNull(gauge);
             Assert.Equal(value, gauge.Value);
@@ -192,12 +192,12 @@ namespace mcp_nexus_tests.Metrics
         public void SetGauge_WithMultipleValues_OverwritesValue()
         {
             // Act
-            m_metricsCollector.SetGauge("test_gauge", 10.0);
-            m_metricsCollector.SetGauge("test_gauge", 20.0);
-            m_metricsCollector.SetGauge("test_gauge", 30.0);
+            m_MetricsCollector.SetGauge("test_gauge", 10.0);
+            m_MetricsCollector.SetGauge("test_gauge", 20.0);
+            m_MetricsCollector.SetGauge("test_gauge", 30.0);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var gauge = snapshot.Gauges.FirstOrDefault(g => g.Name == "test_gauge");
             Assert.NotNull(gauge);
             Assert.Equal(30.0, gauge.Value); // Should be the last value set
@@ -214,10 +214,10 @@ namespace mcp_nexus_tests.Metrics
             };
 
             // Act
-            m_metricsCollector.SetGauge("test_gauge", 100.0, tags);
+            m_MetricsCollector.SetGauge("test_gauge", 100.0, tags);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var gauge = snapshot.Gauges.FirstOrDefault(g => g.Name == "test_gauge");
             Assert.NotNull(gauge);
             Assert.Equal(tags, gauge.Tags);
@@ -230,10 +230,10 @@ namespace mcp_nexus_tests.Metrics
             var duration = TimeSpan.FromMilliseconds(150.5);
 
             // Act
-            m_metricsCollector.RecordExecutionTime("test_operation", duration);
+            m_MetricsCollector.RecordExecutionTime("test_operation", duration);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var histogram = snapshot.Histograms.FirstOrDefault(h => h.Name == "test_operation_duration_ms");
             Assert.NotNull(histogram);
             Assert.Equal(1, histogram.Count);
@@ -251,10 +251,10 @@ namespace mcp_nexus_tests.Metrics
             };
 
             // Act
-            m_metricsCollector.RecordExecutionTime("test_operation", duration, tags);
+            m_MetricsCollector.RecordExecutionTime("test_operation", duration, tags);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var histogram = snapshot.Histograms.FirstOrDefault(h => h.Name == "test_operation_duration_ms");
             Assert.NotNull(histogram);
             Assert.Equal(tags, histogram.Tags);
@@ -268,10 +268,10 @@ namespace mcp_nexus_tests.Metrics
             const string commandType = "test_command";
 
             // Act
-            m_metricsCollector.RecordCommandExecution(commandType, duration, true);
+            m_MetricsCollector.RecordCommandExecution(commandType, duration, true);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
 
             // Check execution time histogram
             var executionHistogram = snapshot.Histograms.FirstOrDefault(h => h.Name == "command_execution_duration_ms");
@@ -300,10 +300,10 @@ namespace mcp_nexus_tests.Metrics
             const string commandType = "failing_command";
 
             // Act
-            m_metricsCollector.RecordCommandExecution(commandType, duration, false);
+            m_MetricsCollector.RecordCommandExecution(commandType, duration, false);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
 
             // Check execution time histogram
             var executionHistogram = snapshot.Histograms.FirstOrDefault(h => h.Name == "command_execution_duration_ms");
@@ -334,10 +334,10 @@ namespace mcp_nexus_tests.Metrics
             const string eventType = "session_created";
 
             // Act
-            m_metricsCollector.RecordSessionEvent(eventType);
+            m_MetricsCollector.RecordSessionEvent(eventType);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var counter = snapshot.Counters.FirstOrDefault(c => c.Name == "session_events_total");
             Assert.NotNull(counter);
             Assert.Equal(1.0, counter.Value);
@@ -356,10 +356,10 @@ namespace mcp_nexus_tests.Metrics
             };
 
             // Act
-            m_metricsCollector.RecordSessionEvent(eventType, additionalTags);
+            m_MetricsCollector.RecordSessionEvent(eventType, additionalTags);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var counter = snapshot.Counters.FirstOrDefault(c => c.Name == "session_events_total");
             Assert.NotNull(counter);
             Assert.Equal(1.0, counter.Value);
@@ -372,12 +372,12 @@ namespace mcp_nexus_tests.Metrics
         public void GetSnapshot_ReturnsValidSnapshot()
         {
             // Arrange
-            m_metricsCollector.IncrementCounter("test_counter", 5.0);
-            m_metricsCollector.RecordHistogram("test_histogram", 10.0);
-            m_metricsCollector.SetGauge("test_gauge", 15.0);
+            m_MetricsCollector.IncrementCounter("test_counter", 5.0);
+            m_MetricsCollector.RecordHistogram("test_histogram", 10.0);
+            m_MetricsCollector.SetGauge("test_gauge", 15.0);
 
             // Act
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
 
             // Assert
             Assert.NotNull(snapshot);
@@ -392,7 +392,7 @@ namespace mcp_nexus_tests.Metrics
         public void GetSnapshot_WithEmptyMetrics_ReturnsEmptySnapshot()
         {
             // Act
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
 
             // Assert
             Assert.NotNull(snapshot);
@@ -405,11 +405,11 @@ namespace mcp_nexus_tests.Metrics
         public void GetSnapshot_MultipleCalls_ReturnConsistentResults()
         {
             // Arrange
-            m_metricsCollector.IncrementCounter("test_counter", 1.0);
+            m_MetricsCollector.IncrementCounter("test_counter", 1.0);
 
             // Act
-            var snapshot1 = m_metricsCollector.GetSnapshot();
-            var snapshot2 = m_metricsCollector.GetSnapshot();
+            var snapshot1 = m_MetricsCollector.GetSnapshot();
+            var snapshot2 = m_MetricsCollector.GetSnapshot();
 
             // Assert
             Assert.Equal(snapshot1.Counters.Count, snapshot2.Counters.Count);
@@ -421,7 +421,7 @@ namespace mcp_nexus_tests.Metrics
         public void Dispose_DisposesCorrectly()
         {
             // Arrange
-            var collector = new MetricsCollector(m_mockLogger.Object);
+            var collector = new MetricsCollector(m_MockLogger.Object);
 
             // Act
             collector.Dispose();
@@ -435,7 +435,7 @@ namespace mcp_nexus_tests.Metrics
         public void Dispose_MultipleTimes_HandlesGracefully()
         {
             // Arrange
-            var collector = new MetricsCollector(m_mockLogger.Object);
+            var collector = new MetricsCollector(m_MockLogger.Object);
 
             // Act & Assert
             collector.Dispose();
@@ -451,11 +451,11 @@ namespace mcp_nexus_tests.Metrics
             // Act
             for (int i = 0; i < valueCount; i++)
             {
-                m_metricsCollector.RecordHistogram("test_histogram", i);
+                m_MetricsCollector.RecordHistogram("test_histogram", i);
             }
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var histogram = snapshot.Histograms.FirstOrDefault(h => h.Name == "test_histogram");
             Assert.NotNull(histogram);
             Assert.Equal(1000, histogram.Count); // Should be limited to 1000
@@ -465,7 +465,7 @@ namespace mcp_nexus_tests.Metrics
         public void Histogram_WithEmptyValues_ReturnsZeroStatistics()
         {
             // Act
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var histogram = snapshot.Histograms.FirstOrDefault(h => h.Name == "empty_histogram");
 
             // Assert
@@ -477,10 +477,10 @@ namespace mcp_nexus_tests.Metrics
         public void Counter_WithNegativeValue_HandlesCorrectly()
         {
             // Act
-            m_metricsCollector.IncrementCounter("test_counter", -5.0);
+            m_MetricsCollector.IncrementCounter("test_counter", -5.0);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var counter = snapshot.Counters.FirstOrDefault(c => c.Name == "test_counter");
             Assert.NotNull(counter);
             Assert.Equal(-5.0, counter.Value);
@@ -490,10 +490,10 @@ namespace mcp_nexus_tests.Metrics
         public void Gauge_WithNegativeValue_HandlesCorrectly()
         {
             // Act
-            m_metricsCollector.SetGauge("test_gauge", -10.0);
+            m_MetricsCollector.SetGauge("test_gauge", -10.0);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var gauge = snapshot.Gauges.FirstOrDefault(g => g.Name == "test_gauge");
             Assert.NotNull(gauge);
             Assert.Equal(-10.0, gauge.Value);
@@ -503,11 +503,11 @@ namespace mcp_nexus_tests.Metrics
         public void Histogram_WithNegativeValues_HandlesCorrectly()
         {
             // Act
-            m_metricsCollector.RecordHistogram("test_histogram", -1.0);
-            m_metricsCollector.RecordHistogram("test_histogram", -2.0);
+            m_MetricsCollector.RecordHistogram("test_histogram", -1.0);
+            m_MetricsCollector.RecordHistogram("test_histogram", -2.0);
 
             // Assert
-            var snapshot = m_metricsCollector.GetSnapshot();
+            var snapshot = m_MetricsCollector.GetSnapshot();
             var histogram = snapshot.Histograms.FirstOrDefault(h => h.Name == "test_histogram");
             Assert.NotNull(histogram);
             Assert.Equal(2, histogram.Count);

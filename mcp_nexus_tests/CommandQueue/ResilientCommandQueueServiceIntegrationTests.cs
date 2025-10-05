@@ -18,53 +18,53 @@ namespace mcp_nexus_tests.CommandQueue
     /// </summary>
     public class ResilientCommandQueueServiceIntegrationTests : IDisposable
     {
-        private readonly ICdbSession m_realisticCdbSession;
-        private readonly Mock<ILogger<ResilientCommandQueueService>> m_mockLogger;
-        private readonly Mock<ILoggerFactory> m_mockLoggerFactory;
-        private readonly Mock<ICommandTimeoutService> m_mockTimeoutService;
-        private readonly Mock<ICdbSessionRecoveryService> m_mockRecoveryService;
-        private readonly Mock<IMcpNotificationService> m_mockNotificationService;
-        private ResilientCommandQueueService? m_service;
+        private readonly ICdbSession m_RealisticCdbSession;
+        private readonly Mock<ILogger<ResilientCommandQueueService>> m_MockLogger;
+        private readonly Mock<ILoggerFactory> m_MockLoggerFactory;
+        private readonly Mock<ICommandTimeoutService> m_MockTimeoutService;
+        private readonly Mock<ICdbSessionRecoveryService> m_MockRecoveryService;
+        private readonly Mock<IMcpNotificationService> m_MockNotificationService;
+        private ResilientCommandQueueService? m_Service;
 
         public ResilientCommandQueueServiceIntegrationTests()
         {
-            m_realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
-            m_mockLogger = new Mock<ILogger<ResilientCommandQueueService>>();
-            m_mockLoggerFactory = new Mock<ILoggerFactory>();
-            m_mockTimeoutService = new Mock<ICommandTimeoutService>();
-            m_mockRecoveryService = new Mock<ICdbSessionRecoveryService>();
-            m_mockNotificationService = new Mock<IMcpNotificationService>();
+            m_RealisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
+            m_MockLogger = new Mock<ILogger<ResilientCommandQueueService>>();
+            m_MockLoggerFactory = new Mock<ILoggerFactory>();
+            m_MockTimeoutService = new Mock<ICommandTimeoutService>();
+            m_MockRecoveryService = new Mock<ICdbSessionRecoveryService>();
+            m_MockNotificationService = new Mock<IMcpNotificationService>();
 
             // Setup logger factory to return appropriate loggers
-            m_mockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
+            m_MockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
 
             // Setup default mock behavior
             // Realistic mock handles IsActive and ExecuteCommand internally
 
             // Setup recovery service to succeed
-            m_mockRecoveryService.Setup(x => x.RecoverStuckSession(It.IsAny<string>()))
+            m_MockRecoveryService.Setup(x => x.RecoverStuckSession(It.IsAny<string>()))
                 .ReturnsAsync(true);
         }
 
         public void Dispose()
         {
-            m_service?.Dispose();
+            m_Service?.Dispose();
         }
 
         [Fact]
         public void Constructor_WithValidParameters_CreatesService()
         {
             // Act
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object,
-                m_mockNotificationService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object,
+                m_MockNotificationService.Object);
 
             // Assert
-            Assert.NotNull(m_service);
+            Assert.NotNull(m_Service);
         }
 
         [Fact]
@@ -72,7 +72,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ResilientCommandQueueService(
-                null!, m_mockLogger.Object, m_mockLoggerFactory.Object, m_mockTimeoutService.Object, m_mockRecoveryService.Object));
+                null!, m_MockLogger.Object, m_MockLoggerFactory.Object, m_MockTimeoutService.Object, m_MockRecoveryService.Object));
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ResilientCommandQueueService(
-                m_realisticCdbSession, null!, m_mockLoggerFactory.Object, m_mockTimeoutService.Object, m_mockRecoveryService.Object));
+                m_RealisticCdbSession, null!, m_MockLoggerFactory.Object, m_MockTimeoutService.Object, m_MockRecoveryService.Object));
         }
 
         [Fact]
@@ -88,7 +88,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ResilientCommandQueueService(
-                m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object, null!, m_mockRecoveryService.Object));
+                m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object, null!, m_MockRecoveryService.Object));
         }
 
         [Fact]
@@ -96,23 +96,23 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ResilientCommandQueueService(
-                m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object, m_mockTimeoutService.Object, null!));
+                m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object, m_MockTimeoutService.Object, null!));
         }
 
         [Fact]
         public void QueueCommand_ValidCommand_ReturnsCommandId()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object,
-                m_mockNotificationService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object,
+                m_MockNotificationService.Object);
 
             // Act
-            var commandId = m_service.QueueCommand("version");
+            var commandId = m_Service.QueueCommand("version");
 
             // Assert
             Assert.NotNull(commandId);
@@ -123,16 +123,16 @@ namespace mcp_nexus_tests.CommandQueue
         public void QueueCommand_WhenDisposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
-            m_service.Dispose();
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
+            m_Service.Dispose();
 
             // Act & Assert
-            Assert.Throws<ObjectDisposedException>(() => m_service.QueueCommand("version"));
+            Assert.Throws<ObjectDisposedException>(() => m_Service.QueueCommand("version"));
         }
 
         [Theory]
@@ -141,50 +141,50 @@ namespace mcp_nexus_tests.CommandQueue
         public void QueueCommand_InvalidCommand_ThrowsArgumentException(string invalidCommand)
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => m_service.QueueCommand(invalidCommand));
+            Assert.Throws<ArgumentException>(() => m_Service.QueueCommand(invalidCommand));
         }
 
         [Fact]
         public void QueueCommand_NullCommand_ThrowsArgumentException()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => m_service.QueueCommand(null!));
+            Assert.Throws<ArgumentException>(() => m_Service.QueueCommand(null!));
         }
 
         [Fact]
         public async Task GetCommandResult_ValidCommandId_ReturnsResult()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
-            var commandId = m_service.QueueCommand("version");
+            var commandId = m_Service.QueueCommand("version");
 
             // Wait for command to complete
             await Task.Delay(1000);
 
             // Act
-            var result = await m_service.GetCommandResult(commandId);
+            var result = await m_Service.GetCommandResult(commandId);
 
             // Assert
             Assert.Contains("Mock result", result);
@@ -194,15 +194,15 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task GetCommandResult_NonExistentCommandId_ReturnsNotFoundMessage()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Act
-            var result = await m_service.GetCommandResult("non-existent-id");
+            var result = await m_Service.GetCommandResult("non-existent-id");
 
             // Assert
             Assert.Equal("Command not found: non-existent-id", result);
@@ -212,16 +212,16 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task GetCommandResult_WhenDisposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
-            m_service.Dispose();
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
+            m_Service.Dispose();
 
             // Act & Assert
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => m_service.GetCommandResult("test"));
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => m_Service.GetCommandResult("test"));
         }
 
         [Fact]
@@ -230,17 +230,17 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange - Setup delayed execution to allow cancellation
             // Realistic mock handles ExecuteCommand internally
 
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
-            var commandId = m_service.QueueCommand("version");
+            var commandId = m_Service.QueueCommand("version");
 
             // Act - Cancel immediately after queueing
-            var result = m_service.CancelCommand(commandId);
+            var result = m_Service.CancelCommand(commandId);
 
             // Assert
             Assert.True(result);
@@ -250,15 +250,15 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_NonExistentCommandId_ReturnsFalse()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Act
-            var result = m_service.CancelCommand("non-existent-id");
+            var result = m_Service.CancelCommand("non-existent-id");
 
             // Assert
             Assert.False(result);
@@ -268,31 +268,31 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_WhenDisposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
-            m_service.Dispose();
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
+            m_Service.Dispose();
 
             // Act & Assert
-            Assert.Throws<ObjectDisposedException>(() => m_service.CancelCommand("test"));
+            Assert.Throws<ObjectDisposedException>(() => m_Service.CancelCommand("test"));
         }
 
         [Fact]
         public void CancelCommand_EmptyCommandId_ReturnsFalse()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Act
-            var result = m_service.CancelCommand("");
+            var result = m_Service.CancelCommand("");
 
             // Assert
             Assert.False(result);
@@ -302,15 +302,15 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_NullCommandId_ReturnsFalse()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Act
-            var result = m_service.CancelCommand(null!);
+            var result = m_Service.CancelCommand(null!);
 
             // Assert
             Assert.False(result);
@@ -320,22 +320,22 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task QueueCommand_WithNotificationService_SendsNotification()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object,
-                m_mockNotificationService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object,
+                m_MockNotificationService.Object);
 
             // Act
-            var commandId = m_service.QueueCommand("version");
+            var commandId = m_Service.QueueCommand("version");
 
             // Wait for notification to be sent
             await Task.Delay(100);
 
             // Assert - The actual call uses the commandId, command, status, progress, message, result, error order
-            m_mockNotificationService.Verify(
+            m_MockNotificationService.Verify(
                 x => x.NotifyCommandStatusAsync(
                     commandId, // commandId
                     "version", // command
@@ -351,16 +351,16 @@ namespace mcp_nexus_tests.CommandQueue
         public void QueueCommand_WithoutNotificationService_DoesNotThrow()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object,
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object,
                 null); // No notification service
 
             // Act & Assert - Should not throw
-            var commandId = m_service.QueueCommand("version");
+            var commandId = m_Service.QueueCommand("version");
             Assert.NotNull(commandId);
         }
 
@@ -368,17 +368,17 @@ namespace mcp_nexus_tests.CommandQueue
         public void Dispose_CancelsAllActiveCommands()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
-            var commandId = m_service.QueueCommand("version");
+            var commandId = m_Service.QueueCommand("version");
 
             // Act
-            m_service.Dispose();
+            m_Service.Dispose();
 
             // Assert - Should not throw when disposing
             Assert.True(true);
@@ -388,34 +388,34 @@ namespace mcp_nexus_tests.CommandQueue
         public void Dispose_MultipleTimes_DoesNotThrow()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Act & Assert - Should not throw
-            m_service.Dispose();
-            m_service.Dispose();
-            m_service.Dispose();
+            m_Service.Dispose();
+            m_Service.Dispose();
+            m_Service.Dispose();
         }
 
         [Fact]
         public void QueueCommand_MultipleCommands_ProcessesSequentially()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Act
-            var commandId1 = m_service.QueueCommand("version");
-            var commandId2 = m_service.QueueCommand("help");
-            var commandId3 = m_service.QueueCommand("info");
+            var commandId1 = m_Service.QueueCommand("version");
+            var commandId2 = m_Service.QueueCommand("help");
+            var commandId3 = m_Service.QueueCommand("info");
 
             // Assert
             Assert.NotNull(commandId1);
@@ -431,17 +431,17 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange - Setup delayed execution to allow state checking
             // Realistic mock handles ExecuteCommand internally
 
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
-            var commandId = m_service.QueueCommand("version");
+            var commandId = m_Service.QueueCommand("version");
 
             // Act - Check state immediately after queueing
-            var state = m_service.GetCommandState(commandId);
+            var state = m_Service.GetCommandState(commandId);
 
             // Assert
             Assert.NotNull(state);
@@ -452,15 +452,15 @@ namespace mcp_nexus_tests.CommandQueue
         public void GetCommandState_WithNonExistentCommandId_ReturnsNull()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Act
-            var state = m_service.GetCommandState("non-existent-id");
+            var state = m_Service.GetCommandState("non-existent-id");
 
             // Assert
             Assert.Null(state);
@@ -472,17 +472,17 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange - Setup delayed execution to allow info checking
             // Realistic mock handles ExecuteCommand internally
 
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
-            var commandId = m_service.QueueCommand("version");
+            var commandId = m_Service.QueueCommand("version");
 
             // Act - Check info immediately after queueing
-            var info = m_service.GetCommandInfo(commandId);
+            var info = m_Service.GetCommandInfo(commandId);
 
             // Assert
             Assert.NotNull(info);
@@ -495,15 +495,15 @@ namespace mcp_nexus_tests.CommandQueue
         public void GetCommandInfo_WithNonExistentCommandId_ReturnsNull()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Act
-            var info = m_service.GetCommandInfo("non-existent-id");
+            var info = m_Service.GetCommandInfo("non-existent-id");
 
             // Assert
             Assert.Null(info);
@@ -513,20 +513,20 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task GetCommandResult_CommandStillExecuting_ReturnsPendingMessage()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Setup a long-running command
             // Realistic mock handles ExecuteCommand internally
 
-            var commandId = m_service.QueueCommand("long-command");
+            var commandId = m_Service.QueueCommand("long-command");
 
             // Act - Check immediately
-            var result = await m_service.GetCommandResult(commandId);
+            var result = await m_Service.GetCommandResult(commandId);
 
             // Assert
             Assert.Contains("Command is still executing", result);
@@ -537,23 +537,23 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task GetCommandResult_CommandFails_ReturnsErrorMessage()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Setup a failing command
             // Realistic mock handles ExecuteCommand internally
 
-            var commandId = m_service.QueueCommand("failing-command");
+            var commandId = m_Service.QueueCommand("failing-command");
 
             // Wait for command to complete
             await Task.Delay(100);
 
             // Act
-            var result = await m_service.GetCommandResult(commandId);
+            var result = await m_Service.GetCommandResult(commandId);
 
             // Assert
             Assert.Contains("Command execution failed: Command failed", result);
@@ -563,15 +563,15 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task QueueCommand_WithComplexCommand_StartsTimeout()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Act
-            var commandId = m_service.QueueCommand("complex-command");
+            var commandId = m_Service.QueueCommand("complex-command");
 
             // Wait for timeout to be started
             await Task.Delay(100);
@@ -586,21 +586,21 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task QueueCommand_WithSimpleCommand_StartsDefaultTimeout()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
             // Act
-            var commandId = m_service.QueueCommand("version");
+            var commandId = m_Service.QueueCommand("version");
 
             // Wait for timeout to be started
             await Task.Delay(50);
 
             // Assert - "version" is a simple command, so it gets 2 minutes timeout
-            m_mockTimeoutService.Verify(
+            m_MockTimeoutService.Verify(
                 x => x.StartCommandTimeout(
                     commandId,
                     TimeSpan.FromMinutes(2),
@@ -612,20 +612,20 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_CallsTimeoutService()
         {
             // Arrange
-            m_service = new ResilientCommandQueueService(
-                m_realisticCdbSession,
-                m_mockLogger.Object,
-                m_mockLoggerFactory.Object,
-                m_mockTimeoutService.Object,
-                m_mockRecoveryService.Object);
+            m_Service = new ResilientCommandQueueService(
+                m_RealisticCdbSession,
+                m_MockLogger.Object,
+                m_MockLoggerFactory.Object,
+                m_MockTimeoutService.Object,
+                m_MockRecoveryService.Object);
 
-            var commandId = m_service.QueueCommand("version");
+            var commandId = m_Service.QueueCommand("version");
 
             // Act
-            m_service.CancelCommand(commandId);
+            m_Service.CancelCommand(commandId);
 
             // Assert - CancelCommandTimeout may be called multiple times (normal cancellation + cleanup)
-            m_mockTimeoutService.Verify(
+            m_MockTimeoutService.Verify(
                 x => x.CancelCommandTimeout(commandId),
                 Times.AtLeastOnce);
         }

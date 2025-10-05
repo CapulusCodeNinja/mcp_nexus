@@ -18,40 +18,40 @@ namespace mcp_nexus_tests.Notifications
     [Collection("NotificationTestCollection")]
     public class StdioNotificationBridgeTests : IDisposable
     {
-        private readonly Mock<ILogger<StdioNotificationBridge>> m_mockLogger;
-        private readonly Mock<IMcpNotificationService> m_mockNotificationService;
-        private readonly StdioNotificationBridge m_bridge;
-        private readonly StringWriter m_stringWriter;
-        private readonly TextWriter m_originalOut;
+        private readonly Mock<ILogger<StdioNotificationBridge>> m_MockLogger;
+        private readonly Mock<IMcpNotificationService> m_MockNotificationService;
+        private readonly StdioNotificationBridge m_Bridge;
+        private readonly StringWriter m_StringWriter;
+        private readonly TextWriter m_OriginalOut;
 
         public StdioNotificationBridgeTests()
         {
-            m_mockLogger = new Mock<ILogger<StdioNotificationBridge>>();
-            m_mockNotificationService = new Mock<IMcpNotificationService>();
+            m_MockLogger = new Mock<ILogger<StdioNotificationBridge>>();
+            m_MockNotificationService = new Mock<IMcpNotificationService>();
 
             // Capture stdout for testing
-            m_originalOut = Console.Out;
-            m_stringWriter = new StringWriter();
-            Console.SetOut(m_stringWriter);
+            m_OriginalOut = Console.Out;
+            m_StringWriter = new StringWriter();
+            Console.SetOut(m_StringWriter);
 
-            m_bridge = new StdioNotificationBridge(m_mockLogger.Object, m_mockNotificationService.Object);
+            m_Bridge = new StdioNotificationBridge(m_MockLogger.Object, m_MockNotificationService.Object);
         }
 
         public void Dispose()
         {
-            Console.SetOut(m_originalOut);
-            m_stringWriter?.Dispose();
-            m_bridge?.Dispose();
+            Console.SetOut(m_OriginalOut);
+            m_StringWriter?.Dispose();
+            m_Bridge?.Dispose();
         }
 
         [Fact]
         public async Task InitializeAsync_RegistersNotificationHandler()
         {
             // Act
-            await m_bridge.InitializeAsync();
+            await m_Bridge.InitializeAsync();
 
             // Assert
-            m_mockNotificationService.Verify(
+            m_MockNotificationService.Verify(
                 x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<object, Task>>()),
                 Times.AtLeast(6)); // Now subscribing to 6 different event types
         }
@@ -60,11 +60,11 @@ namespace mcp_nexus_tests.Notifications
         public async Task InitializeAsync_CalledTwice_RegistersOnlyOnce()
         {
             // Act
-            await m_bridge.InitializeAsync();
-            await m_bridge.InitializeAsync();
+            await m_Bridge.InitializeAsync();
+            await m_Bridge.InitializeAsync();
 
             // Assert
-            m_mockNotificationService.Verify(
+            m_MockNotificationService.Verify(
                 x => x.Subscribe(It.IsAny<string>(), It.IsAny<Func<object, Task>>()),
                 Times.AtLeast(6)); // Now subscribing to 6 different event types, but only once per type
         }
@@ -88,13 +88,13 @@ namespace mcp_nexus_tests.Notifications
 
             // Get the registered handler for CommandStatus specifically
             Func<object, Task>? registeredHandler = null;
-            m_mockNotificationService.Setup(x => x.Subscribe("CommandStatus", It.IsAny<Func<object, Task>>()))
+            m_MockNotificationService.Setup(x => x.Subscribe("CommandStatus", It.IsAny<Func<object, Task>>()))
                 .Callback<string, Func<object, Task>>((eventType, handler) => registeredHandler = handler);
 
-            await m_bridge.InitializeAsync();
+            await m_Bridge.InitializeAsync();
 
             // Clear any existing output and add stabilization delays
-            m_stringWriter.GetStringBuilder().Clear();
+            m_StringWriter.GetStringBuilder().Clear();
             await Task.Delay(50);
 
             // Act
@@ -102,7 +102,7 @@ namespace mcp_nexus_tests.Notifications
             await Task.Delay(50);
 
             // Assert
-            var output = m_stringWriter.ToString();
+            var output = m_StringWriter.ToString();
 
             // Debug output if empty
             if (string.IsNullOrEmpty(output))
@@ -141,16 +141,16 @@ namespace mcp_nexus_tests.Notifications
             };
 
             Func<object, Task>? registeredHandler = null;
-            m_mockNotificationService.Setup(x => x.Subscribe("ToolsListChanged", It.IsAny<Func<object, Task>>()))
+            m_MockNotificationService.Setup(x => x.Subscribe("ToolsListChanged", It.IsAny<Func<object, Task>>()))
                 .Callback<string, Func<object, Task>>((eventType, handler) => registeredHandler = handler);
 
-            await m_bridge.InitializeAsync();
+            await m_Bridge.InitializeAsync();
 
             // Act
             await registeredHandler!((object)notification);
 
             // Assert
-            var output = m_stringWriter.ToString();
+            var output = m_StringWriter.ToString();
             var parsed = JsonDocument.Parse(output.Trim());
             var root = parsed.RootElement;
 
@@ -164,10 +164,10 @@ namespace mcp_nexus_tests.Notifications
         {
             // Arrange
             Func<object, Task>? registeredHandler = null;
-            m_mockNotificationService.Setup(x => x.Subscribe("CommandStatus", It.IsAny<Func<object, Task>>()))
+            m_MockNotificationService.Setup(x => x.Subscribe("CommandStatus", It.IsAny<Func<object, Task>>()))
                 .Callback<string, Func<object, Task>>((eventType, handler) => registeredHandler = handler);
 
-            await m_bridge.InitializeAsync();
+            await m_Bridge.InitializeAsync();
 
             var notification = new McpNotification
             {
@@ -176,11 +176,11 @@ namespace mcp_nexus_tests.Notifications
             };
 
             // Act
-            m_bridge.Dispose();
+            m_Bridge.Dispose();
             await registeredHandler!((object)notification);
 
             // Assert
-            var output = m_stringWriter.ToString();
+            var output = m_StringWriter.ToString();
             Assert.Empty(output);
         }
 
@@ -189,10 +189,10 @@ namespace mcp_nexus_tests.Notifications
         {
             // Arrange
             Func<object, Task>? registeredHandler = null;
-            m_mockNotificationService.Setup(x => x.Subscribe("CommandStatus", It.IsAny<Func<object, Task>>()))
+            m_MockNotificationService.Setup(x => x.Subscribe("CommandStatus", It.IsAny<Func<object, Task>>()))
                 .Callback<string, Func<object, Task>>((eventType, handler) => registeredHandler = handler);
 
-            await m_bridge.InitializeAsync();
+            await m_Bridge.InitializeAsync();
 
             // Act & Assert - should not throw and should handle gracefully
             var exception = await Record.ExceptionAsync(async () =>
@@ -210,8 +210,8 @@ namespace mcp_nexus_tests.Notifications
             // Act & Assert
             var exception = Record.Exception(() =>
             {
-                m_bridge.Dispose();
-                m_bridge.Dispose();
+                m_Bridge.Dispose();
+                m_Bridge.Dispose();
             });
 
             Assert.Null(exception);

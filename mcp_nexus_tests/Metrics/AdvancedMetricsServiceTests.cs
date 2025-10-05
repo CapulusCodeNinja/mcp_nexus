@@ -6,18 +6,18 @@ namespace mcp_nexus_tests.Metrics
 {
     public class AdvancedMetricsServiceTests : IDisposable
     {
-        private readonly Mock<ILogger<AdvancedMetricsService>> m_mockLogger;
-        private readonly AdvancedMetricsService m_metricsService;
+        private readonly Mock<ILogger<AdvancedMetricsService>> m_MockLogger;
+        private readonly AdvancedMetricsService m_MetricsService;
 
         public AdvancedMetricsServiceTests()
         {
-            m_mockLogger = new Mock<ILogger<AdvancedMetricsService>>();
-            m_metricsService = new AdvancedMetricsService(m_mockLogger.Object);
+            m_MockLogger = new Mock<ILogger<AdvancedMetricsService>>();
+            m_MetricsService = new AdvancedMetricsService(m_MockLogger.Object);
         }
 
         public void Dispose()
         {
-            m_metricsService?.Dispose();
+            m_MetricsService?.Dispose();
         }
 
         #region Constructor Tests
@@ -64,10 +64,10 @@ namespace mcp_nexus_tests.Metrics
             var success = true;
 
             // Act
-            m_metricsService.RecordCommandExecution(sessionId, command, duration, success);
+            m_MetricsService.RecordCommandExecution(sessionId, command, duration, success);
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             Assert.NotNull(snapshot);
             Assert.True(snapshot.Counters.ContainsKey($"commands.{sessionId}"));
             Assert.True(snapshot.Histograms.ContainsKey("command_duration_all_sessions")); // Aggregate histogram
@@ -92,10 +92,10 @@ namespace mcp_nexus_tests.Metrics
             var success = false;
 
             // Act
-            m_metricsService.RecordCommandExecution(sessionId, command, duration, success);
+            m_MetricsService.RecordCommandExecution(sessionId, command, duration, success);
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             var counter = snapshot.Counters[$"commands.{sessionId}"];
             Assert.Equal(1, counter.Total);
             Assert.Equal(0, counter.Successful);
@@ -109,12 +109,12 @@ namespace mcp_nexus_tests.Metrics
             var sessionId = "test-session";
 
             // Act
-            m_metricsService.RecordCommandExecution(sessionId, "cmd1", TimeSpan.FromMilliseconds(100), true);
-            m_metricsService.RecordCommandExecution(sessionId, "cmd2", TimeSpan.FromMilliseconds(200), true);
-            m_metricsService.RecordCommandExecution(sessionId, "cmd3", TimeSpan.FromMilliseconds(50), false);
+            m_MetricsService.RecordCommandExecution(sessionId, "cmd1", TimeSpan.FromMilliseconds(100), true);
+            m_MetricsService.RecordCommandExecution(sessionId, "cmd2", TimeSpan.FromMilliseconds(200), true);
+            m_MetricsService.RecordCommandExecution(sessionId, "cmd3", TimeSpan.FromMilliseconds(50), false);
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             var counter = snapshot.Counters[$"commands.{sessionId}"];
             Assert.Equal(3, counter.Total);
             Assert.Equal(2, counter.Successful);
@@ -131,14 +131,14 @@ namespace mcp_nexus_tests.Metrics
         public void RecordCommandExecution_WhenDisposed_DoesNotRecord()
         {
             // Arrange
-            m_metricsService.Dispose();
+            m_MetricsService.Dispose();
             var sessionId = "test-session";
 
             // Act
-            m_metricsService.RecordCommandExecution(sessionId, "version", TimeSpan.FromMilliseconds(100), true);
+            m_MetricsService.RecordCommandExecution(sessionId, "version", TimeSpan.FromMilliseconds(100), true);
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             Assert.Empty(snapshot.Counters);
             Assert.Empty(snapshot.Histograms);
         }
@@ -153,10 +153,10 @@ namespace mcp_nexus_tests.Metrics
             var success = true;
 
             // Act
-            m_metricsService.RecordCommandExecution(sessionId, command, duration, success);
+            m_MetricsService.RecordCommandExecution(sessionId, command, duration, success);
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             var histogram = snapshot.Histograms["command_duration_all_sessions"];
             Assert.Single(histogram.Values);
             Assert.Equal(300000.0, histogram.Values[0]); // 5 minutes in milliseconds
@@ -175,10 +175,10 @@ namespace mcp_nexus_tests.Metrics
             var duration = TimeSpan.FromMilliseconds(250);
 
             // Act
-            m_metricsService.RecordSessionEvent(sessionId, eventType, duration);
+            m_MetricsService.RecordSessionEvent(sessionId, eventType, duration);
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             Assert.True(snapshot.Counters.ContainsKey($"sessions.{eventType}"));
             Assert.True(snapshot.Histograms.ContainsKey($"session_{eventType}_duration_all_sessions"));
 
@@ -200,10 +200,10 @@ namespace mcp_nexus_tests.Metrics
             var eventType = "SESSION_CLOSED";
 
             // Act
-            m_metricsService.RecordSessionEvent(sessionId, eventType);
+            m_MetricsService.RecordSessionEvent(sessionId, eventType);
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             Assert.True(snapshot.Counters.ContainsKey($"sessions.{eventType}"));
             Assert.False(snapshot.Histograms.ContainsKey($"session_{eventType}_duration_all_sessions"));
 
@@ -220,12 +220,12 @@ namespace mcp_nexus_tests.Metrics
             var sessionId = "test-session";
 
             // Act
-            m_metricsService.RecordSessionEvent(sessionId, "SESSION_CREATED", TimeSpan.FromMilliseconds(100));
-            m_metricsService.RecordSessionEvent(sessionId, "SESSION_CREATED", TimeSpan.FromMilliseconds(150));
-            m_metricsService.RecordSessionEvent(sessionId, "SESSION_CLOSED");
+            m_MetricsService.RecordSessionEvent(sessionId, "SESSION_CREATED", TimeSpan.FromMilliseconds(100));
+            m_MetricsService.RecordSessionEvent(sessionId, "SESSION_CREATED", TimeSpan.FromMilliseconds(150));
+            m_MetricsService.RecordSessionEvent(sessionId, "SESSION_CLOSED");
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
 
             var createdCounter = snapshot.Counters["sessions.SESSION_CREATED"];
             Assert.Equal(2, createdCounter.Total);
@@ -245,14 +245,14 @@ namespace mcp_nexus_tests.Metrics
         public void RecordSessionEvent_WhenDisposed_DoesNotRecord()
         {
             // Arrange
-            m_metricsService.Dispose();
+            m_MetricsService.Dispose();
             var sessionId = "test-session";
 
             // Act
-            m_metricsService.RecordSessionEvent(sessionId, "SESSION_CREATED", TimeSpan.FromMilliseconds(100));
+            m_MetricsService.RecordSessionEvent(sessionId, "SESSION_CREATED", TimeSpan.FromMilliseconds(100));
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             Assert.Empty(snapshot.Counters);
             Assert.Empty(snapshot.Histograms);
         }
@@ -265,7 +265,7 @@ namespace mcp_nexus_tests.Metrics
         public void GetMetricsSnapshot_WhenNoData_ReturnsEmptySnapshot()
         {
             // Act
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
 
             // Assert
             Assert.NotNull(snapshot);
@@ -278,11 +278,11 @@ namespace mcp_nexus_tests.Metrics
         public void GetMetricsSnapshot_WithData_ReturnsCorrectSnapshot()
         {
             // Arrange
-            m_metricsService.RecordCommandExecution("session1", "cmd1", TimeSpan.FromMilliseconds(100), true);
-            m_metricsService.RecordSessionEvent("session1", "SESSION_CREATED", TimeSpan.FromMilliseconds(200));
+            m_MetricsService.RecordCommandExecution("session1", "cmd1", TimeSpan.FromMilliseconds(100), true);
+            m_MetricsService.RecordSessionEvent("session1", "SESSION_CREATED", TimeSpan.FromMilliseconds(200));
 
             // Act
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
 
             // Assert
             Assert.NotNull(snapshot);
@@ -299,11 +299,11 @@ namespace mcp_nexus_tests.Metrics
         public void GetMetricsSnapshot_WhenDisposed_ReturnsEmptySnapshot()
         {
             // Arrange
-            m_metricsService.RecordCommandExecution("session1", "cmd1", TimeSpan.FromMilliseconds(100), true);
-            m_metricsService.Dispose();
+            m_MetricsService.RecordCommandExecution("session1", "cmd1", TimeSpan.FromMilliseconds(100), true);
+            m_MetricsService.Dispose();
 
             // Act
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
 
             // Assert
             Assert.NotNull(snapshot);
@@ -325,7 +325,7 @@ namespace mcp_nexus_tests.Metrics
                 {
                     for (int j = 0; j < 10; j++)
                     {
-                        m_metricsService.RecordCommandExecution(sessionId, $"cmd{j}", TimeSpan.FromMilliseconds(j * 10), j % 2 == 0);
+                        m_MetricsService.RecordCommandExecution(sessionId, $"cmd{j}", TimeSpan.FromMilliseconds(j * 10), j % 2 == 0);
                     }
                 }));
             }
@@ -333,7 +333,7 @@ namespace mcp_nexus_tests.Metrics
             await Task.WhenAll(tasks);
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             Assert.NotNull(snapshot);
             // Should have 10 sessions with counters and 1 aggregate histogram
             Assert.Equal(10, snapshot.Counters.Count);
@@ -354,11 +354,11 @@ namespace mcp_nexus_tests.Metrics
             // Act - Record more than 5000 values
             for (int i = 0; i < 6000; i++)
             {
-                m_metricsService.RecordCommandExecution(sessionId, "cmd", TimeSpan.FromMilliseconds(i), true);
+                m_MetricsService.RecordCommandExecution(sessionId, "cmd", TimeSpan.FromMilliseconds(i), true);
             }
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             var histogram = snapshot.Histograms["command_duration_all_sessions"];
             Assert.Equal(5000, histogram.Values.Count);
             // Should contain the last 5000 values (1000-5999)
@@ -377,11 +377,11 @@ namespace mcp_nexus_tests.Metrics
             // Act - Record more than 2000 values
             for (int i = 0; i < 2500; i++)
             {
-                m_metricsService.RecordSessionEvent(sessionId, eventType, TimeSpan.FromMilliseconds(i));
+                m_MetricsService.RecordSessionEvent(sessionId, eventType, TimeSpan.FromMilliseconds(i));
             }
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             var histogram = snapshot.Histograms[$"session_{eventType}_duration_all_sessions"];
             Assert.Equal(2000, histogram.Values.Count);
             // Should contain the last 2000 values (500-2499)
@@ -398,10 +398,10 @@ namespace mcp_nexus_tests.Metrics
         public void Dispose_WhenNotDisposed_DisposesCorrectly()
         {
             // Act
-            m_metricsService.Dispose();
+            m_MetricsService.Dispose();
 
             // Assert
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -415,10 +415,10 @@ namespace mcp_nexus_tests.Metrics
         public void Dispose_WhenAlreadyDisposed_DoesNotThrow()
         {
             // Arrange
-            m_metricsService.Dispose();
+            m_MetricsService.Dispose();
 
             // Act & Assert
-            var exception = Record.Exception(() => m_metricsService.Dispose());
+            var exception = Record.Exception(() => m_MetricsService.Dispose());
             Assert.Null(exception);
         }
 
@@ -426,7 +426,7 @@ namespace mcp_nexus_tests.Metrics
         public void Dispose_StopsMetricsTimer()
         {
             // Arrange
-            using var service = new AdvancedMetricsService(m_mockLogger.Object);
+            using var service = new AdvancedMetricsService(m_MockLogger.Object);
 
             // Act
             service.Dispose();
@@ -511,10 +511,10 @@ namespace mcp_nexus_tests.Metrics
             var success = true;
 
             // Act
-            m_metricsService.RecordCommandExecution(sessionId, command, duration, success);
+            m_MetricsService.RecordCommandExecution(sessionId, command, duration, success);
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             var histogram = snapshot.Histograms["command_duration_all_sessions"];
             Assert.Single(histogram.Values);
             Assert.Equal(0.0, histogram.Values[0]);
@@ -530,10 +530,10 @@ namespace mcp_nexus_tests.Metrics
             var success = true;
 
             // Act
-            m_metricsService.RecordCommandExecution(sessionId, command, duration, success);
+            m_MetricsService.RecordCommandExecution(sessionId, command, duration, success);
 
             // Assert
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             var histogram = snapshot.Histograms["command_duration_all_sessions"];
             Assert.Single(histogram.Values);
             Assert.Equal(3600000.0, histogram.Values[0]); // 1 hour in milliseconds
@@ -543,9 +543,9 @@ namespace mcp_nexus_tests.Metrics
         public void RecordSessionEvent_WithNullSessionId_HandlesGracefully()
         {
             // Act & Assert - Should not throw
-            m_metricsService.RecordSessionEvent(null!, "EVENT_TYPE", TimeSpan.FromMilliseconds(100));
+            m_MetricsService.RecordSessionEvent(null!, "EVENT_TYPE", TimeSpan.FromMilliseconds(100));
 
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             Assert.True(snapshot.Counters.ContainsKey("sessions.EVENT_TYPE"));
         }
 
@@ -553,9 +553,9 @@ namespace mcp_nexus_tests.Metrics
         public void RecordSessionEvent_WithEmptyEventType_HandlesGracefully()
         {
             // Act & Assert - Should not throw
-            m_metricsService.RecordSessionEvent("session1", "", TimeSpan.FromMilliseconds(100));
+            m_MetricsService.RecordSessionEvent("session1", "", TimeSpan.FromMilliseconds(100));
 
-            var snapshot = m_metricsService.GetMetricsSnapshot();
+            var snapshot = m_MetricsService.GetMetricsSnapshot();
             Assert.True(snapshot.Counters.ContainsKey("sessions."));
         }
 

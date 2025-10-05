@@ -15,19 +15,19 @@ namespace mcp_nexus_tests.CommandQueue
     /// </summary>
     public class CommandQueueServiceEdgeCaseTests : IDisposable
     {
-        private readonly ICdbSession m_realisticCdbSession;
-        private readonly Mock<ILogger<CommandQueueService>> m_mockLogger;
-        private readonly Mock<ILoggerFactory> m_mockLoggerFactory;
-        private CommandQueueService? m_service;
+        private readonly ICdbSession m_RealisticCdbSession;
+        private readonly Mock<ILogger<CommandQueueService>> m_MockLogger;
+        private readonly Mock<ILoggerFactory> m_MockLoggerFactory;
+        private CommandQueueService? m_Service;
 
         public CommandQueueServiceEdgeCaseTests()
         {
-            m_realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
-            m_mockLogger = new Mock<ILogger<CommandQueueService>>();
-            m_mockLoggerFactory = new Mock<ILoggerFactory>();
+            m_RealisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
+            m_MockLogger = new Mock<ILogger<CommandQueueService>>();
+            m_MockLoggerFactory = new Mock<ILoggerFactory>();
 
             // Setup logger factory to return appropriate loggers
-            m_mockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
+            m_MockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
 
             // Setup default mock behavior
             // Realistic mock handles IsActive and ExecuteCommand internally
@@ -35,8 +35,8 @@ namespace mcp_nexus_tests.CommandQueue
 
         public void Dispose()
         {
-            m_service?.Dispose();
-            m_realisticCdbSession?.Dispose();
+            m_Service?.Dispose();
+            m_RealisticCdbSession?.Dispose();
         }
 
         #region GetCommandResult Edge Cases
@@ -45,11 +45,11 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task GetCommandResult_WhenDisposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            m_service.Dispose();
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
+            m_Service.Dispose();
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<ObjectDisposedException>(() => m_service.GetCommandResult("test-id"));
+            var exception = await Assert.ThrowsAsync<ObjectDisposedException>(() => m_Service.GetCommandResult("test-id"));
             Assert.Equal(nameof(CommandQueueService), exception.ObjectName);
         }
 
@@ -59,10 +59,10 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task GetCommandResult_WithInvalidCommandId_ThrowsArgumentException(string commandId)
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentException>(() => m_service.GetCommandResult(commandId));
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => m_Service.GetCommandResult(commandId));
             Assert.Contains("not be null or empty", exception.Message);
             Assert.Equal("commandId", exception.ParamName);
         }
@@ -71,10 +71,10 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task GetCommandResult_WithNullCommandId_ThrowsArgumentException()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentException>(() => m_service.GetCommandResult(null!));
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => m_Service.GetCommandResult(null!));
             Assert.Contains("not be null or empty", exception.Message);
             Assert.Equal("commandId", exception.ParamName);
         }
@@ -83,10 +83,10 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task GetCommandResult_WithNonExistentCommandId_ReturnsNotFoundMessage()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act
-            var result = await m_service.GetCommandResult("non-existent-id");
+            var result = await m_Service.GetCommandResult("non-existent-id");
 
             // Assert
             Assert.Equal("Command not found: non-existent-id", result);
@@ -96,14 +96,14 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task GetCommandResult_WithCommandThatThrowsException_ReturnsErrorResult()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            var commandId = m_service!.QueueCommand("test command");
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
+            var commandId = m_Service!.QueueCommand("test command");
 
             // Wait for command to be processed
             await Task.Delay(200);
 
             // Act
-            var result = await m_service.GetCommandResult(commandId);
+            var result = await m_Service.GetCommandResult(commandId);
 
             // Assert - Should return the mock result (the exception handling might be different)
             Assert.Equal("Mock result", result);
@@ -113,14 +113,14 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task GetCommandResult_WithNullCompletionSource_ReturnsEmptyString()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            var commandId = m_service!.QueueCommand("test command");
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
+            var commandId = m_Service!.QueueCommand("test command");
 
             // Wait for command to be processed
             await Task.Delay(100);
 
             // Act
-            var result = await m_service.GetCommandResult(commandId);
+            var result = await m_Service.GetCommandResult(commandId);
 
             // Assert
             Assert.Equal("Mock result", result);
@@ -134,11 +134,11 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_WhenDisposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            m_service.Dispose();
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
+            m_Service.Dispose();
 
             // Act & Assert
-            var exception = Assert.Throws<ObjectDisposedException>(() => m_service.CancelCommand("test-id"));
+            var exception = Assert.Throws<ObjectDisposedException>(() => m_Service.CancelCommand("test-id"));
             Assert.Equal(nameof(CommandQueueService), exception.ObjectName);
         }
 
@@ -148,10 +148,10 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_WithInvalidCommandId_ReturnsFalse(string commandId)
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act
-            var result = m_service.CancelCommand(commandId);
+            var result = m_Service.CancelCommand(commandId);
 
             // Assert
             Assert.False(result);
@@ -161,10 +161,10 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_WithNullCommandId_ReturnsFalse()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act
-            var result = m_service.CancelCommand(null!);
+            var result = m_Service.CancelCommand(null!);
 
             // Assert
             Assert.False(result);
@@ -174,10 +174,10 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_WithNonExistentCommandId_ReturnsFalse()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act
-            var result = m_service.CancelCommand("non-existent-id");
+            var result = m_Service.CancelCommand("non-existent-id");
 
             // Assert
             Assert.False(result);
@@ -187,11 +187,11 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelCommand_WithValidCommandId_ReturnsTrue()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            var commandId = m_service!.QueueCommand("test command");
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
+            var commandId = m_Service!.QueueCommand("test command");
 
             // Act
-            var result = m_service.CancelCommand(commandId);
+            var result = m_Service.CancelCommand(commandId);
 
             // Assert
             Assert.True(result);
@@ -205,11 +205,11 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelAllCommands_WhenDisposed_DoesNotThrow()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            m_service.Dispose();
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
+            m_Service.Dispose();
 
             // Act & Assert - Should not throw, just return 0
-            var result = m_service.CancelAllCommands();
+            var result = m_Service.CancelAllCommands();
             Assert.Equal(0, result);
         }
 
@@ -217,10 +217,10 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelAllCommands_WithNoActiveCommands_ReturnsZero()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act
-            var result = m_service.CancelAllCommands();
+            var result = m_Service.CancelAllCommands();
 
             // Assert
             Assert.Equal(0, result);
@@ -230,12 +230,12 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelAllCommands_WithActiveCommands_ReturnsCorrectCount()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            var commandId1 = m_service!.QueueCommand("test command 1");
-            var commandId2 = m_service.QueueCommand("test command 2");
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
+            var commandId1 = m_Service!.QueueCommand("test command 1");
+            var commandId2 = m_Service.QueueCommand("test command 2");
 
             // Act
-            var result = m_service.CancelAllCommands("Test cancellation");
+            var result = m_Service.CancelAllCommands("Test cancellation");
 
             // Assert
             Assert.Equal(2, result);
@@ -245,15 +245,15 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelAllCommands_WithReason_LogsCorrectMessage()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            var commandId = m_service!.QueueCommand("test command");
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
+            var commandId = m_Service!.QueueCommand("test command");
 
             // Act
-            var result = m_service.CancelAllCommands("Test reason");
+            var result = m_Service.CancelAllCommands("Test reason");
 
             // Assert
             Assert.Equal(1, result);
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
@@ -271,11 +271,11 @@ namespace mcp_nexus_tests.CommandQueue
         public void TriggerCleanup_WhenDisposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            m_service.Dispose();
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
+            m_Service.Dispose();
 
             // Act & Assert
-            var exception = Assert.Throws<ObjectDisposedException>(() => m_service.TriggerCleanup());
+            var exception = Assert.Throws<ObjectDisposedException>(() => m_Service.TriggerCleanup());
             Assert.Equal(nameof(CommandQueueService), exception.ObjectName);
         }
 
@@ -283,10 +283,10 @@ namespace mcp_nexus_tests.CommandQueue
         public void TriggerCleanup_WhenNotDisposed_DoesNotThrow()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act & Assert - Should not throw
-            m_service.TriggerCleanup();
+            m_Service.TriggerCleanup();
         }
 
         #endregion
@@ -297,24 +297,24 @@ namespace mcp_nexus_tests.CommandQueue
         public void Dispose_WhenCalledMultipleTimes_DoesNotThrow()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act & Assert - Should not throw
-            m_service.Dispose();
-            m_service.Dispose();
+            m_Service.Dispose();
+            m_Service.Dispose();
         }
 
         [Fact]
         public void Dispose_WhenCalled_StopsProcessingTask()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act
-            m_service.Dispose();
+            m_Service.Dispose();
 
             // Assert - The service should be disposed (test by trying to use it)
-            Assert.Throws<ObjectDisposedException>(() => m_service.QueueCommand("test"));
+            Assert.Throws<ObjectDisposedException>(() => m_Service.QueueCommand("test"));
         }
 
         #endregion
@@ -325,11 +325,11 @@ namespace mcp_nexus_tests.CommandQueue
         public void QueueCommand_WhenDisposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
-            m_service.Dispose();
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
+            m_Service.Dispose();
 
             // Act & Assert
-            var exception = Assert.Throws<ObjectDisposedException>(() => m_service.QueueCommand("test command"));
+            var exception = Assert.Throws<ObjectDisposedException>(() => m_Service.QueueCommand("test command"));
             Assert.Equal(nameof(CommandQueueService), exception.ObjectName);
         }
 
@@ -339,10 +339,10 @@ namespace mcp_nexus_tests.CommandQueue
         public void QueueCommand_WithInvalidCommand_ThrowsArgumentException(string command)
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => m_service.QueueCommand(command));
+            var exception = Assert.Throws<ArgumentException>(() => m_Service.QueueCommand(command));
             Assert.Contains("not be null or empty", exception.Message);
             Assert.Equal("command", exception.ParamName);
         }
@@ -351,10 +351,10 @@ namespace mcp_nexus_tests.CommandQueue
         public void QueueCommand_WithNullCommand_ThrowsArgumentException()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => m_service.QueueCommand(null!));
+            var exception = Assert.Throws<ArgumentException>(() => m_Service.QueueCommand(null!));
             Assert.Contains("not be null or empty", exception.Message);
             Assert.Equal("command", exception.ParamName);
         }
@@ -363,10 +363,10 @@ namespace mcp_nexus_tests.CommandQueue
         public void QueueCommand_WithValidCommand_ReturnsValidId()
         {
             // Arrange
-            m_service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Act
-            var commandId = m_service.QueueCommand("valid command");
+            var commandId = m_Service.QueueCommand("valid command");
 
             // Assert
             Assert.NotNull(commandId);
@@ -382,7 +382,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() => 
-                new CommandQueueService(null!, m_mockLogger.Object, m_mockLoggerFactory.Object));
+                new CommandQueueService(null!, m_MockLogger.Object, m_MockLoggerFactory.Object));
             Assert.Equal("cdbSession", exception.ParamName);
         }
 
@@ -391,7 +391,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() => 
-                new CommandQueueService(m_realisticCdbSession, null!, m_mockLoggerFactory.Object));
+                new CommandQueueService(m_RealisticCdbSession, null!, m_MockLoggerFactory.Object));
             Assert.Equal("logger", exception.ParamName);
         }
 
@@ -400,7 +400,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() => 
-                new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, null!));
+                new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, null!));
             Assert.Equal("factory", exception.ParamName);
         }
 
@@ -411,13 +411,13 @@ namespace mcp_nexus_tests.CommandQueue
             // Realistic mock handles IsActive internally
 
             // Act
-            var service = new CommandQueueService(m_realisticCdbSession, m_mockLogger.Object, m_mockLoggerFactory.Object);
+            var service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
 
             // Assert - The service should still be created successfully
             Assert.NotNull(service);
             
             // Verify that the service was created (it handles the exception gracefully)
-            m_mockLogger.Verify(
+            m_MockLogger.Verify(
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
