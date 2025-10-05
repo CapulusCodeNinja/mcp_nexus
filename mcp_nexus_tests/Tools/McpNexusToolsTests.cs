@@ -822,9 +822,9 @@ namespace mcp_nexus_tests.Tools
         }
 
         [Theory]
-        [InlineData(CommandState.Queued, 0, "2 seconds")]
-        [InlineData(CommandState.Queued, 1, "5 seconds")]
-        [InlineData(CommandState.Queued, 2, "8 seconds")]
+        [InlineData(CommandState.Queued, 0, "1 seconds")]
+        [InlineData(CommandState.Queued, 1, "2 seconds")]
+        [InlineData(CommandState.Queued, 2, "4 seconds")]
         [InlineData(CommandState.Queued, 15, "1 minute")]
         [InlineData(CommandState.Executing, 0, "15 seconds")]
         [InlineData(CommandState.Cancelled, 0, "No need to check")]

@@ -282,6 +282,11 @@ namespace mcp_nexus.Tools
                     sessionId, context.Status, context.LastActivity);
                 var commandId = commandQueue.QueueCommand(command);
 
+                // Get queue position for the newly queued command
+                var queueStatus = commandQueue.GetQueueStatus().ToList();
+                var queuePosition = queueStatus.FindIndex(q => q.Id == commandId);
+                var totalInQueue = queueStatus.Count;
+
                 var response = new
                 {
                     sessionId = sessionId,
@@ -289,8 +294,10 @@ namespace mcp_nexus.Tools
                     command = command,
                     success = true,
                     operation = "nexus_enqueue_async_dump_analyze_command",
-                    message = $"Command queued successfully. Estimated execution time: up to 10 minutes. Use the 'commands' resource to monitor all commands or the 'nexus_read_dump_analyze_command_result' tool to get specific results.",
+                    message = $"Command queued successfully. Queue position: {queuePosition + 1} of {totalInQueue}. Use the 'commands' resource to monitor all commands or the 'nexus_read_dump_analyze_command_result' tool to get specific results.",
                     timeoutMinutes = 10,
+                    queuePosition = queuePosition + 1,
+                    totalInQueue = totalInQueue,
                     status = "queued"
                 };
 
