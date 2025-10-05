@@ -236,7 +236,10 @@ namespace mcp_nexus.Tools
                     // Background processing task needs time to initialize after session creation
                     for (int attempt = 1; attempt <= 20; attempt++)
                     {
-                        await Task.Delay(100); // 100ms delay per attempt
+                        // Use exponential backoff instead of fixed delay
+                        var delayMs = Math.Min(1000, 50 * (int)Math.Pow(1.5, attempt - 1));
+                        await Task.Delay(delayMs);
+                        
                         if (sessionManager.TryGetCommandQueue(sessionId, out commandQueue) && commandQueue != null)
                         {
                             // Additional check: verify the queue is actually ready to accept commands
@@ -248,7 +251,7 @@ namespace mcp_nexus.Tools
                             }
 
                             logger.LogTrace("Command queue became available for {SessionId} after {Attempt} attempts ({Ms}ms)",
-                                sessionId, attempt, attempt * 100);
+                                sessionId, attempt, delayMs);
                             break;
                         }
                     }

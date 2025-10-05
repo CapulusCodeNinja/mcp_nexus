@@ -436,7 +436,6 @@ namespace mcp_nexus.Debugger
             {
                 m_logger.LogTrace("Started reading stderr (channel-based)...");
 
-                int emptySpins = 0;
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     // Check if CDB process has exited unexpectedly
@@ -450,17 +449,12 @@ namespace mcp_nexus.Debugger
 
                     try
                     {
-                        // Short timeout (100ms) per line - if no data, assume done
-                        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-                        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
-                            cancellationToken, timeoutCts.Token);
-
                         // Synchronize stream access to prevent concurrent read operations
                         string? line;
-                        await m_streamAccessSemaphore.WaitAsync(linkedCts.Token).ConfigureAwait(false);
+                        await m_streamAccessSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                         try
                         {
-                            // Use a simple ReadLineAsync without WaitAsync to avoid race conditions
+                            // Use natural async reading without artificial timeouts
                             line = await debuggerError.ReadLineAsync().ConfigureAwait(false);
                         }
                         finally
@@ -470,8 +464,6 @@ namespace mcp_nexus.Debugger
 
                         if (line == null)
                             break; // End of stream
-
-                        emptySpins = 0;
 
                         // Drop markers if they appear on stderr for any reason
                         if (string.Equals(line, CdbSentinels.StartMarker, StringComparison.Ordinal) ||
@@ -487,8 +479,7 @@ namespace mcp_nexus.Debugger
                             // Signal completion when stderr has output (indicates command finished with error)
                             m_logger.LogInformation("✅ Stderr output detected - signaling command completion: '{Line}'", line);
                             
-                            // Give stdout reader a moment to process the signal
-                            await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                            // Signal completion immediately - no artificial delay needed
                             completionSignal.Cancel();
                         }
                         catch (ChannelClosedException)
@@ -498,11 +489,10 @@ namespace mcp_nexus.Debugger
                         }
                         m_logger.LogTrace("stderr: {Line}", line);
                     }
-                    catch (TimeoutException)
+                    catch (OperationCanceledException)
                     {
-                        // No data for 100ms - require two consecutive timeouts to exit
-                        if (++emptySpins >= 2)
-                            break;
+                        // Cancellation requested - exit gracefully
+                        break;
                     }
                 }
 
@@ -569,27 +559,10 @@ namespace mcp_nexus.Debugger
         {
             try
             {
-                // Use 500ms polling to reduce CPU usage (was 100ms)
-                // This is still responsive but much more efficient during idle waits
-                // TRUE ASYNC: No thread pool blocking, proper async/await
-                using var idleCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
-                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, idleCts.Token);
-
-                // No semaphore needed for stdout - it's already isolated from stderr
-                Task<string?> readTask;
-                readTask = debuggerOutput.ReadLineAsync();
-
-                try
-                {
-                    // TRUE ASYNC: Use WaitAsync instead of blocking Wait()
-                    var result = await readTask.WaitAsync(TimeSpan.FromMilliseconds(500), linkedCts.Token).ConfigureAwait(false);
-                    return (result, true);
-                }
-                catch (TimeoutException)
-                {
-                    // No data within 500ms - return null but continue looping
-                    return (null, true);
-                }
+                // TRUE ASYNC: Let StreamReader.ReadLineAsync() work naturally without artificial polling
+                // The method will block until data is available or cancellation is requested
+                var result = await debuggerOutput.ReadLineAsync().ConfigureAwait(false);
+                return (result, true);
             }
             catch (OperationCanceledException)
             {
@@ -599,8 +572,7 @@ namespace mcp_nexus.Debugger
             catch (InvalidOperationException ex) when (ex.Message.Contains("currently in use"))
             {
                 // Concurrent access to stream - this is expected when timeout occurs
-                // Just wait a bit and continue - the idle timeout will eventually trigger
-                await Task.Delay(50, cancellationToken).ConfigureAwait(false);
+                // Let the idle timeout handle this naturally
                 return (null, true);
             }
             catch (Exception ex)
@@ -611,7 +583,7 @@ namespace mcp_nexus.Debugger
             }
         }
 
-        private async Task HandleNullLineAsync(CancellationToken cancellationToken)
+        private Task HandleNullLineAsync(CancellationToken cancellationToken)
         {
             // CRITICAL: null from ReadLine() means no data YET, not end of stream!
             // StreamReader.ReadLine() returns null when:
@@ -619,8 +591,8 @@ namespace mcp_nexus.Debugger
             // 2. No complete line is available yet (this is normal - wait for more data)
             // We rely on idle timeout to detect when CDB has actually stopped outputting
             m_logger.LogTrace("ReadLine() returned null - no data available, waiting for more...");
-            // TRUE ASYNC: Brief delay before next attempt (was blocking Wait())
-            await Task.Delay(10, cancellationToken).ConfigureAwait(false);
+            // No artificial delay needed - let the natural async flow handle timing
+            return Task.CompletedTask;
         }
 
         /// <summary>

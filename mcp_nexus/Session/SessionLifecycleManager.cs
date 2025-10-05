@@ -168,7 +168,10 @@ namespace mcp_nexus.Session
                         break;
                     }
 
-                    await Task.Delay(100); // Wait 100ms before checking again
+                    // Use exponential backoff instead of fixed delay
+                    var elapsed = DateTime.UtcNow - waitStart;
+                    var delayMs = Math.Min(500, 50 * (int)Math.Pow(1.5, elapsed.TotalSeconds));
+                    await Task.Delay(delayMs);
                 }
 
                 // Session is ready for use now
