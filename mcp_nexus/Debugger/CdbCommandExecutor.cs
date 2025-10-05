@@ -343,14 +343,6 @@ namespace mcp_nexus.Debugger
                         break;
                     }
                     
-                    // Additional safety check: if we've been waiting too long with no output,
-                    // and stderr might have signaled completion, break anyway
-                    var elapsedMsSafety = (DateTime.Now - startTime).TotalMilliseconds;
-                    if (elapsedMsSafety > 10000 && linesRead == 0) // 10 seconds with no stdout output
-                    {
-                        break;
-                    }
-
                     // Check timeouts FIRST
                     if (CheckAbsoluteTimeout(startTime))
                     {
@@ -369,20 +361,6 @@ namespace mcp_nexus.Debugger
 
                     if (!readResult.ShouldContinue)
                         break;
-
-                    // Check if we've been waiting long enough for a silent command to complete
-                    // Some CDB commands (like .srcpath) don't produce output but complete quickly
-                    var elapsedMs = (DateTime.Now - startTime).TotalMilliseconds;
-                    if (elapsedMs > 5000 && linesRead == 0) // 5 seconds with no output - increased timeout
-                    {
-                        // Try one more quick read to see if CDB is ready
-                        var quickReadResult = await TryReadLineWithTimeoutAsync(debuggerOutput, cancellationToken).ConfigureAwait(false);
-                        if (quickReadResult.Line != null && CdbCompletionPatterns.IsCdbPrompt(quickReadResult.Line))
-                        {
-                            m_logger.LogInformation("✅ Silent command completion confirmed - CDB prompt detected: '{Line}'", quickReadResult.Line);
-                            break;
-                        }
-                    }
 
                     if (readResult.Line == null)
                     {
