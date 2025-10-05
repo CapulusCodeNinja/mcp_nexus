@@ -619,6 +619,92 @@ namespace mcp_nexus_tests.Session
             }
         }
 
+        [Fact]
+        public async Task GetSessionContext_WithDisposedSession_ThrowsSessionNotFoundException()
+        {
+            // Arrange
+            var dumpPath = Path.GetTempFileName();
+            var sessionManager = CreateTestableSessionManager();
+            string sessionId;
+
+            try
+            {
+                sessionId = await sessionManager.CreateSessionAsync(dumpPath);
+                
+                // Dispose the session
+                await sessionManager.CloseSessionAsync(sessionId);
+
+                // Act & Assert
+                var exception = Assert.Throws<SessionNotFoundException>(() => 
+                    sessionManager.GetSessionContext(sessionId));
+                
+                Assert.Equal(sessionId, exception.SessionId);
+                Assert.Contains("disposed", exception.Message);
+            }
+            finally
+            {
+                sessionManager.Dispose();
+                File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public async Task GetSessionContext_WithDisposedSession2_ThrowsSessionNotFoundException()
+        {
+            // Arrange
+            var dumpPath = Path.GetTempFileName();
+            var sessionManager = CreateTestableSessionManager();
+            string sessionId;
+
+            try
+            {
+                sessionId = await sessionManager.CreateSessionAsync(dumpPath);
+                
+                // Dispose the session to make it disposed
+                await sessionManager.CloseSessionAsync(sessionId);
+
+                // Act & Assert
+                var exception = Assert.Throws<SessionNotFoundException>(() => 
+                    sessionManager.GetSessionContext(sessionId));
+                
+                Assert.Equal(sessionId, exception.SessionId);
+                Assert.Contains("disposed", exception.Message);
+            }
+            finally
+            {
+                sessionManager.Dispose();
+                File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public async Task GetSessionContext_WithValidSession_ReturnsContext()
+        {
+            // Arrange
+            var dumpPath = Path.GetTempFileName();
+            var sessionManager = CreateTestableSessionManager();
+            string sessionId;
+
+            try
+            {
+                sessionId = await sessionManager.CreateSessionAsync(dumpPath);
+
+                // Act
+                var context = sessionManager.GetSessionContext(sessionId);
+
+                // Assert
+                Assert.NotNull(context);
+                Assert.Equal(sessionId, context.SessionId);
+                Assert.Equal(dumpPath, context.DumpPath);
+                Assert.NotNull(context.Status);
+            }
+            finally
+            {
+                sessionManager.Dispose();
+                File.Delete(dumpPath);
+            }
+        }
+
         #endregion
 
         #region UpdateActivity Tests
@@ -991,6 +1077,159 @@ namespace mcp_nexus_tests.Session
             }
         }
 
+        [Fact]
+        public async Task TryGetCommandQueue_WithInactiveSession_ReturnsFalse()
+        {
+            // Arrange
+            var dumpPath = Path.GetTempFileName();
+            var sessionManager = CreateTestableSessionManager();
+            string sessionId;
+
+            try
+            {
+                sessionId = await sessionManager.CreateSessionAsync(dumpPath);
+                
+                // Simulate an inactive session by disposing it
+                await sessionManager.CloseSessionAsync(sessionId);
+
+                // Act
+                var result = sessionManager.TryGetCommandQueue(sessionId, out var commandQueue);
+
+                // Assert
+                Assert.False(result);
+                Assert.Null(commandQueue);
+            }
+            finally
+            {
+                sessionManager.Dispose();
+                File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public async Task TryGetCommandQueue_WithSessionHavingNullCommandQueue_ReturnsFalse()
+        {
+            // Arrange
+            var dumpPath = Path.GetTempFileName();
+            var sessionManager = CreateTestableSessionManager();
+            string sessionId;
+
+            try
+            {
+                sessionId = await sessionManager.CreateSessionAsync(dumpPath);
+                
+                // Use reflection to access the sessions dictionary and modify the CommandQueue
+                var sessionsField = typeof(ThreadSafeSessionManager).GetField("m_sessions", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (sessionsField?.GetValue(sessionManager) is ConcurrentDictionary<string, SessionInfo> sessions)
+                {
+                    if (sessions.TryGetValue(sessionId, out var sessionInfo))
+                    {
+                        // Use reflection to set CommandQueue to null
+                        var commandQueueField = typeof(SessionInfo).GetField("m_commandQueue", 
+                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                        commandQueueField?.SetValue(sessionInfo, null);
+                    }
+                }
+
+                // Act
+                var result = sessionManager.TryGetCommandQueue(sessionId, out var commandQueue);
+
+                // Assert
+                Assert.False(result);
+                Assert.Null(commandQueue);
+            }
+            finally
+            {
+                sessionManager.Dispose();
+                File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public void TryGetCommandQueue_WithNullSessionId2_ReturnsFalse()
+        {
+            // Arrange
+            var sessionManager = CreateTestableSessionManager();
+
+            try
+            {
+                // Act
+                var result = sessionManager.TryGetCommandQueue(null!, out var commandQueue);
+
+                // Assert
+                Assert.False(result);
+                Assert.Null(commandQueue);
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
+        [Fact]
+        public void TryGetCommandQueue_WithEmptySessionId2_ReturnsFalse()
+        {
+            // Arrange
+            var sessionManager = CreateTestableSessionManager();
+
+            try
+            {
+                // Act
+                var result = sessionManager.TryGetCommandQueue("", out var commandQueue);
+
+                // Assert
+                Assert.False(result);
+                Assert.Null(commandQueue);
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
+        [Fact]
+        public void TryGetCommandQueue_WithWhitespaceSessionId2_ReturnsFalse()
+        {
+            // Arrange
+            var sessionManager = CreateTestableSessionManager();
+
+            try
+            {
+                // Act
+                var result = sessionManager.TryGetCommandQueue("   ", out var commandQueue);
+
+                // Assert
+                Assert.False(result);
+                Assert.Null(commandQueue);
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
+        [Fact]
+        public void TryGetCommandQueue_WithNonExistentSessionId_ReturnsFalse()
+        {
+            // Arrange
+            var sessionManager = CreateTestableSessionManager();
+
+            try
+            {
+                // Act
+                var result = sessionManager.TryGetCommandQueue("non-existent-session", out var commandQueue);
+
+                // Assert
+                Assert.False(result);
+                Assert.Null(commandQueue);
+            }
+            finally
+            {
+                sessionManager.Dispose();
+            }
+        }
+
         #endregion
 
         #region SessionLimitExceededException Tests
@@ -1080,31 +1319,6 @@ namespace mcp_nexus_tests.Session
         #endregion
 
         #region GetSessionContext Edge Cases
-
-        [Fact]
-        public async Task GetSessionContext_WithDisposedSession_ThrowsSessionNotFoundException()
-        {
-            // Arrange
-            var sessionManager = CreateTestableSessionManager();
-            var dumpPath = Path.GetTempFileName();
-            string sessionId;
-
-            try
-            {
-                sessionId = await sessionManager.CreateSessionAsync(dumpPath);
-                await sessionManager.CloseSessionAsync(sessionId);
-
-                // Act & Assert
-                var exception = Assert.Throws<SessionNotFoundException>(() =>
-                    sessionManager.GetSessionContext(sessionId));
-                Assert.Contains("disposed", exception.Message.ToLower());
-            }
-            finally
-            {
-                sessionManager.Dispose();
-                File.Delete(dumpPath);
-            }
-        }
 
         [Fact]
         public void GetSessionContext_WithWhitespaceSessionId_ThrowsSessionNotFoundException()

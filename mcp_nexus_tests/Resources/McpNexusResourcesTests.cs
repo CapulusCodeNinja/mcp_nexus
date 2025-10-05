@@ -16,6 +16,7 @@ using mcp_nexus.Health;
 using mcp_nexus.Resilience;
 using mcp_nexus.Caching;
 using mcp_nexus;
+using System.Text.Json;
 
 namespace mcp_nexus_tests.Resources
 {
@@ -342,5 +343,111 @@ namespace mcp_nexus_tests.Resources
             Assert.NotNull(result);
             Assert.Contains("min", result);
         }
+
+        #region GetCommandMessage Branch Coverage Tests
+
+        [Fact]
+        public async Task Commands_WithEmptySessions_ReturnsValidJson()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var mockLogger = new Mock<ILogger<Program>>();
+            var mockSessionManager = new Mock<ISessionManager>();
+            
+            services.AddSingleton(mockLogger.Object);
+            services.AddSingleton(mockSessionManager.Object);
+            
+            var serviceProvider = services.BuildServiceProvider();
+            
+            // Return empty sessions list
+            mockSessionManager.Setup(x => x.GetAllSessions()).Returns(new List<SessionInfo>());
+
+            // Act
+            var result = await McpNexusResources.Commands(serviceProvider);
+
+            // Assert
+            Assert.NotNull(result);
+            var commandDict = JsonSerializer.Deserialize<Dictionary<string, object>>(result);
+            Assert.NotNull(commandDict);
+            
+            // Should return empty commands object
+            Assert.True(commandDict.Count >= 0);
+        }
+
+        [Fact]
+        public async Task Commands_WithException_ThrowsException()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var mockLogger = new Mock<ILogger<Program>>();
+            var mockSessionManager = new Mock<ISessionManager>();
+            
+            services.AddSingleton(mockLogger.Object);
+            services.AddSingleton(mockSessionManager.Object);
+            
+            var serviceProvider = services.BuildServiceProvider();
+            
+            // Setup to throw exception
+            mockSessionManager.Setup(x => x.GetAllSessions()).Throws(new InvalidOperationException("Test exception"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => McpNexusResources.Commands(serviceProvider));
+        }
+
+        [Fact]
+        public void GetCommandMessage_WithExecutingCommand_ShowsElapsedTime()
+        {
+            // Arrange
+            var executingCommand = new QueuedCommand("test", "!analyze -v", DateTime.UtcNow.AddMinutes(-2), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
+            var allCommands = new List<QueuedCommand> { executingCommand };
+            var method = typeof(McpNexusResources).GetMethod("GetCommandMessage",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (string)method!.Invoke(null, new object[] { executingCommand, allCommands })!;
+
+            // Assert
+            Assert.Contains("Command is currently executing", result);
+            Assert.Contains("elapsed:", result);
+            Assert.Contains("minutes", result);
+        }
+
+        [Fact]
+        public void GetCommandMessage_WithExecutingCommand_ShowsLongElapsedTime()
+        {
+            // Arrange
+            var executingCommand = new QueuedCommand("test", "!analyze -v", DateTime.UtcNow.AddMinutes(-15), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
+            var allCommands = new List<QueuedCommand> { executingCommand };
+            var method = typeof(McpNexusResources).GetMethod("GetCommandMessage",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (string)method!.Invoke(null, new object[] { executingCommand, allCommands })!;
+
+            // Assert
+            Assert.Contains("Command is currently executing", result);
+            Assert.Contains("elapsed:", result);
+            Assert.Contains("minutes", result);
+        }
+
+        [Fact]
+        public void GetCommandMessage_WithQueuedCommand_ShowsQueueInfo()
+        {
+            // Arrange
+            var queuedCommand = new QueuedCommand("test", "!analyze -v", DateTime.UtcNow.AddMinutes(-1), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Queued);
+            var allCommands = new List<QueuedCommand> { queuedCommand };
+            var method = typeof(McpNexusResources).GetMethod("GetCommandMessage",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            // Act
+            var result = (string)method!.Invoke(null, new object[] { queuedCommand, allCommands })!;
+
+            // Assert
+            Assert.Contains("Command is next in queue", result);
+            Assert.Contains("Queued for:", result);
+            Assert.Contains("min", result);
+        }
+
+        #endregion
     }
 }

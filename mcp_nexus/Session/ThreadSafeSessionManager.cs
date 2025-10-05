@@ -261,8 +261,6 @@ namespace mcp_nexus.Session
                 m_logger.LogWarning("TryGetCommandQueue: {SessionId} not found in sessions dictionary", sessionId);
                 return false;
             }
-
-            throw new InvalidOperationException($"TryGetCommandQueue: {sessionId} unknown error");
         }
 
         /// <summary>

@@ -186,7 +186,7 @@ namespace mcp_nexus.Session
                 m_Logger.LogInformation("✅ Session {SessionId} created successfully in {Elapsed}ms",
                     sessionId, stopwatch.ElapsedMilliseconds);
 
-                // Send creation notification
+                // Send creaoktion notification
                 await m_NotificationService.NotifySessionEventAsync(sessionId, "created",
                     $"Session created for {Path.GetFileName(dumpPath)}", GetSessionContext(sessionInfo));
 
