@@ -127,11 +127,6 @@ namespace mcp_nexus_tests.Configuration
                 Assert.Contains("Registering services...", output);
                 Assert.Contains("All services registered successfully", output);
                 Assert.Contains("Registered core services (CDB, Session, Notifications, Protocol)", output);
-                Assert.Contains("Registered AdvancedMetricsService for comprehensive performance monitoring", output);
-                Assert.Contains("Registered CircuitBreakerService for advanced fault tolerance", output);
-                Assert.Contains("Registered IntelligentCacheService for memory optimization", output);
-                Assert.Contains("Registered AdvancedSecurityService for input validation and threat detection", output);
-                Assert.Contains("Registered AdvancedHealthService for comprehensive system monitoring", output);
                 Assert.Contains("Registered CommandTimeoutService for automated timeouts", output);
                 Assert.Contains("Registered recovery services", output);
                 Assert.Contains("Registered command queue services", output);
@@ -196,21 +191,7 @@ namespace mcp_nexus_tests.Configuration
             // Assert
             var serviceProvider = services.BuildServiceProvider();
 
-            // Verify advanced services are registered
-            var metricsService = serviceProvider.GetService<mcp_nexus.Metrics.AdvancedMetricsService>();
-            Assert.NotNull(metricsService);
-
-            var circuitBreakerService = serviceProvider.GetService<mcp_nexus.Resilience.CircuitBreakerService>();
-            Assert.NotNull(circuitBreakerService);
-
-            var cacheService = serviceProvider.GetService<mcp_nexus.Caching.IntelligentCacheService<string, object>>();
-            Assert.NotNull(cacheService);
-
-            var securityService = serviceProvider.GetService<mcp_nexus.Security.AdvancedSecurityService>();
-            Assert.NotNull(securityService);
-
-            var healthService = serviceProvider.GetService<mcp_nexus.Health.AdvancedHealthService>();
-            Assert.NotNull(healthService);
+            // Verify advanced services are registered (dead enterprise services removed)
         }
 
         [Fact]

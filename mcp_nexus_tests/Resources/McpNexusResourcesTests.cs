@@ -11,10 +11,6 @@ using mcp_nexus.Resources;
 using mcp_nexus.Session;
 using mcp_nexus.Session.Models;
 using mcp_nexus.CommandQueue;
-using mcp_nexus.Metrics;
-using mcp_nexus.Health;
-using mcp_nexus.Resilience;
-using mcp_nexus.Caching;
 using mcp_nexus;
 using System.Text.Json;
 
@@ -48,10 +44,6 @@ namespace mcp_nexus_tests.Resources
             Assert.Contains("Commands", methodNames);
             Assert.Contains("Workflows", methodNames);
             Assert.Contains("Usage", methodNames);
-            Assert.Contains("Metrics", methodNames);
-            Assert.Contains("Circuits", methodNames);
-            Assert.Contains("Health", methodNames);
-            Assert.Contains("Cache", methodNames);
         }
 
         [Fact]
@@ -120,10 +112,6 @@ namespace mcp_nexus_tests.Resources
             await Assert.ThrowsAsync<ArgumentNullException>(() => McpNexusResources.Sessions(null!));
             await Assert.ThrowsAsync<ArgumentNullException>(() => McpNexusResources.Commands(null!));
             // Workflows and Usage methods don't require services, so they won't throw
-            await Assert.ThrowsAsync<ArgumentNullException>(() => McpNexusResources.Metrics(null!));
-            await Assert.ThrowsAsync<ArgumentNullException>(() => McpNexusResources.Circuits(null!));
-            await Assert.ThrowsAsync<ArgumentNullException>(() => McpNexusResources.Health(null!));
-            await Assert.ThrowsAsync<ArgumentNullException>(() => McpNexusResources.Cache(null!));
         }
 
         [Fact]

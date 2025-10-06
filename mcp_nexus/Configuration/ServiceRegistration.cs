@@ -30,7 +30,6 @@ namespace mcp_nexus.Configuration
             Console.Error.WriteLine("Registering services...");
 
             RegisterCoreServices(services, configuration, customCdbPath, serviceMode);
-            RegisterAdvancedServices(services);
             RegisterRecoveryServices(services);
             RegisterToolsAndProtocol(services);
 
@@ -133,27 +132,6 @@ namespace mcp_nexus.Configuration
             Console.Error.WriteLine("Registered core services (CDB, Session, Notifications, Protocol)");
         }
 
-        /// <summary>
-        /// Registers advanced services for performance and reliability.
-        /// </summary>
-        /// <param name="services">The service collection to register services with.</param>
-        private static void RegisterAdvancedServices(IServiceCollection services)
-        {
-            services.AddSingleton<mcp_nexus.Metrics.AdvancedMetricsService>();
-            Console.Error.WriteLine("Registered AdvancedMetricsService for comprehensive performance monitoring");
-
-            services.AddSingleton<mcp_nexus.Resilience.CircuitBreakerService>();
-            Console.Error.WriteLine("Registered CircuitBreakerService for advanced fault tolerance");
-
-            services.AddSingleton<mcp_nexus.Caching.IntelligentCacheService<string, object>>();
-            Console.Error.WriteLine("Registered IntelligentCacheService for memory optimization");
-
-            services.AddSingleton<mcp_nexus.Security.AdvancedSecurityService>();
-            Console.Error.WriteLine("Registered AdvancedSecurityService for input validation and threat detection");
-
-            services.AddSingleton<mcp_nexus.Health.AdvancedHealthService>();
-            Console.Error.WriteLine("Registered AdvancedHealthService for comprehensive system monitoring");
-        }
 
         /// <summary>
         /// Registers recovery and timeout services.

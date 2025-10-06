@@ -265,24 +265,19 @@ namespace mcp_nexus.Recovery
         /// <returns>
         /// A <see cref="Task"/> representing the asynchronous operation.
         /// </returns>
-        private Task SendRecoveryNotificationAsync(string reason, string step, bool success, string message)
+        private async Task SendRecoveryNotificationAsync(string reason, string step, bool success, string message)
         {
             if (m_notificationService == null)
-                return Task.CompletedTask;
+                return;
 
-            _ = Task.Run(async () =>
+            try
             {
-                try
-                {
-                    await m_notificationService.NotifySessionRecoveryAsync(reason, step, success, message);
-                }
-                catch (Exception ex)
-                {
-                    m_logger.LogWarning(ex, "Failed to send recovery notification");
-                }
-            });
-
-            return Task.CompletedTask;
+                await m_notificationService.NotifySessionRecoveryAsync(reason, step, success, message);
+            }
+            catch (Exception ex)
+            {
+                m_logger.LogWarning(ex, "Failed to send recovery notification");
+            }
         }
 
         /// <summary>

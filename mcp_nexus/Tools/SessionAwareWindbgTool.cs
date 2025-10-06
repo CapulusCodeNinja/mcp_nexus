@@ -124,38 +124,6 @@ namespace mcp_nexus.Tools
                         input = (object?)null,
                         note = (string?)"Use: commands resource (no parameters - returns all commands)"
                     },
-                    new
-                    {
-                        uri = "metrics",
-                        name = "Performance Metrics",
-                        description = "Get comprehensive performance metrics and statistics",
-                        input = (object?)null,
-                        note = (string?)"Use: metrics resource (no parameters - returns performance data)"
-                    },
-                    new
-                    {
-                        uri = "circuits",
-                        name = "Circuit Breaker Status",
-                        description = "Get circuit breaker status and health information",
-                        input = (object?)null,
-                        note = (string?)"Use: circuits resource (no parameters - returns circuit status)"
-                    },
-                    new
-                    {
-                        uri = "health",
-                        name = "System Health",
-                        description = "Get comprehensive system health status",
-                        input = (object?)null,
-                        note = (string?)"Use: health resource (no parameters - returns health status)"
-                    },
-                    new
-                    {
-                        uri = "cache",
-                        name = "Cache Statistics",
-                        description = "Get cache statistics and memory usage information",
-                        input = (object?)null,
-                        note = (string?)"Use: cache resource (no parameters - returns cache stats)"
-                    }
                 }
             }
         };
