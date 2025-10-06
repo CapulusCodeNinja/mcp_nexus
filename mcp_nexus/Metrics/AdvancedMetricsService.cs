@@ -191,13 +191,26 @@ namespace mcp_nexus.Metrics
         /// <param name="snapshot">The metrics snapshot to log.</param>
         private void LogMetricsSummary(AdvancedMetricsSnapshot snapshot)
         {
+            // Only log if there's actual metrics data to show
+            bool hasCounters = snapshot.Counters.Any(c => c.Value.Total > 0);
+            bool hasHistograms = snapshot.Histograms.Any(h => h.Value.Values.Count > 0);
+
+            if (!hasCounters && !hasHistograms)
+            {
+                // No data to log, skip the summary
+                return;
+            }
+
             m_logger.LogInformation("📊 METRICS SUMMARY - {Timestamp}", snapshot.Timestamp);
 
             foreach (var counter in snapshot.Counters)
             {
-                var successRate = counter.Value.Total > 0 ? (double)counter.Value.Successful / counter.Value.Total * 100 : 0;
-                m_logger.LogInformation("  {Key}: Total={Total}, Success={Success}, Failed={Failed}, SuccessRate={SuccessRate:F1}%",
-                    counter.Key, counter.Value.Total, counter.Value.Successful, counter.Value.Failed, successRate);
+                if (counter.Value.Total > 0)
+                {
+                    var successRate = (double)counter.Value.Successful / counter.Value.Total * 100;
+                    m_logger.LogInformation("  {Key}: Total={Total}, Success={Success}, Failed={Failed}, SuccessRate={SuccessRate:F1}%",
+                        counter.Key, counter.Value.Total, counter.Value.Successful, counter.Value.Failed, successRate);
+                }
             }
 
             foreach (var histogram in snapshot.Histograms)
