@@ -69,7 +69,7 @@ The following steps must be performed sequentially. Ensure all mandatory rules a
 
 1. **Initialize Analysis:** Open the analyze session for the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`. Feel free to run multiple sessions in parallel if it helps to make the **analysis** faster, the system **resources** allow that and the commands are independent
 2. **Source Code Retrieval:**
-    * Set the source server path (**IMPORTANT** Use the command exactly like shown here): `.srcpath "srv\*[workingdir]\source"`
+    * Set the source server path (**IMPORTANT** Use the command exactly like shown here): `.srcpath "srv*;C:\inetpub\wwwroot\workingdir\Sources"`
     * Enable source verbosity: `.srcnoisy 3`
     * Enable the source server: `.srcfix+`
     * Attempt to get the source for the analysis: `lsa .`
