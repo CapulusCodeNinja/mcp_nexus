@@ -164,7 +164,7 @@ namespace mcp_nexus_tests.Debugger
         public async Task ExecuteCommandAsync_WithInactiveProcessManager_ThrowsInvalidOperationException()
         {
             // Arrange
-            var mockProcessManager = new Mock<CdbProcessManager>(m_MockLogger.Object, m_Config);
+            var mockProcessManager = CreateMockProcessManager();
             mockProcessManager.Setup(x => x.IsActive).Returns(false);
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
 
@@ -192,9 +192,8 @@ namespace mcp_nexus_tests.Debugger
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
 
             // Act & Assert
-            // With the new architecture, commands will timeout if no output is produced
-            // This is expected behavior for mocked streams that don't produce sentinels
-            await Assert.ThrowsAsync<TimeoutException>(() =>
+            // With null DebuggerInput, commands should throw InvalidOperationException
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object, CancellationToken.None));
         }
 
@@ -220,8 +219,8 @@ namespace mcp_nexus_tests.Debugger
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
 
             // Act & Assert
-            // Should timeout since no output is produced by mocked streams
-            await Assert.ThrowsAsync<TimeoutException>(() =>
+            // With null DebuggerInput, commands should throw InvalidOperationException
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object));
         }
 
@@ -229,8 +228,7 @@ namespace mcp_nexus_tests.Debugger
         public async Task ExecuteCommandAsync_WithException_HandlesCorrectly()
         {
             // Arrange
-            var mockProcessManager = new Mock<CdbProcessManager>(m_MockLogger.Object, m_Config);
-            mockProcessManager.Setup(x => x.IsActive).Returns(true);
+            var mockProcessManager = CreateMockProcessManager();
             mockProcessManager.Setup(x => x.DebuggerInput).Throws(new InvalidOperationException("Test exception"));
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
 
@@ -275,14 +273,10 @@ namespace mcp_nexus_tests.Debugger
 
             // Process properties are not virtual and cannot be mocked
             // Instead, we'll mock the CdbProcessManager properties directly
-            
-            // Create a real StreamWriter for tests that need it
-            var testStream = new MemoryStream();
-            var testWriter = new StreamWriter(testStream);
-            
+
             mockProcessManager.Setup(pm => pm.IsActive).Returns(true);
             mockProcessManager.Setup(pm => pm.DebuggerProcess).Returns((Process?)null); // No process needed for basic tests
-            mockProcessManager.Setup(pm => pm.DebuggerInput).Returns(testWriter);
+            mockProcessManager.Setup(pm => pm.DebuggerInput).Returns((StreamWriter?)null); // No input stream for basic tests
 
             return mockProcessManager;
         }

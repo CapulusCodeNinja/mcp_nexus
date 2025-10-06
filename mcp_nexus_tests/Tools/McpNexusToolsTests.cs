@@ -74,8 +74,8 @@ namespace mcp_nexus_tests.Tools
                 Assert.True(document.RootElement.TryGetProperty("sessionId", out var sessionIdElement));
                 Assert.Equal(sessionId, sessionIdElement.GetString());
 
-                Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-                Assert.True(successElement.GetBoolean());
+                Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+                Assert.Equal("Success", statusElement.GetString());
 
                 Assert.True(document.RootElement.TryGetProperty("operation", out var operationElement));
                 Assert.Equal("nexus_open_dump_analyze_session", operationElement.GetString());
@@ -155,8 +155,8 @@ namespace mcp_nexus_tests.Tools
                 var json = JsonSerializer.Serialize(result);
                 var document = JsonDocument.Parse(json);
 
-                Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-                Assert.False(successElement.GetBoolean());
+                Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+                Assert.Equal("Failed", statusElement.GetString());
 
                 Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
                 Assert.Contains("Maximum concurrent sessions exceeded", messageElement.GetString());
@@ -196,8 +196,8 @@ namespace mcp_nexus_tests.Tools
                 var json = JsonSerializer.Serialize(result);
                 var document = JsonDocument.Parse(json);
 
-                Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-                Assert.False(successElement.GetBoolean());
+                Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+                Assert.Equal("Failed", statusElement.GetString());
 
                 Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
                 Assert.Contains("Failed to create debugging session", messageElement.GetString());
@@ -244,8 +244,8 @@ namespace mcp_nexus_tests.Tools
             Assert.True(document.RootElement.TryGetProperty("sessionId", out var sessionIdElement));
             Assert.Equal(sessionId, sessionIdElement.GetString());
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.True(successElement.GetBoolean());
+                Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+                Assert.Equal("Success", statusElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("operation", out var operationElement));
             Assert.Equal("nexus_close_dump_analyze_session", operationElement.GetString());
@@ -280,8 +280,8 @@ namespace mcp_nexus_tests.Tools
             Assert.True(document.RootElement.TryGetProperty("sessionId", out var sessionIdElement));
             Assert.Equal(sessionId, sessionIdElement.GetString());
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.False(successElement.GetBoolean());
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Failed", statusElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
             Assert.Contains("not found", messageElement.GetString());
@@ -313,8 +313,8 @@ namespace mcp_nexus_tests.Tools
             Assert.True(document.RootElement.TryGetProperty("sessionId", out var sessionIdElement));
             Assert.Equal(sessionId, sessionIdElement.GetString());
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.False(successElement.GetBoolean());
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Failed", statusElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
             Assert.Contains("Failed to close session", messageElement.GetString());
@@ -375,14 +375,11 @@ namespace mcp_nexus_tests.Tools
             Assert.True(document.RootElement.TryGetProperty("command", out var commandElement));
             Assert.Equal(command, commandElement.GetString());
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.True(successElement.GetBoolean());
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Queued", statusElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("operation", out var operationElement));
             Assert.Equal("nexus_enqueue_async_dump_analyze_command", operationElement.GetString());
-
-            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
-            Assert.Equal("queued", statusElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("timeoutMinutes", out var timeoutElement));
             Assert.Equal(10, timeoutElement.GetInt32());
@@ -420,7 +417,7 @@ namespace mcp_nexus_tests.Tools
             dynamic dynamicResult = result;
 
             Assert.Equal(sessionId, dynamicResult.sessionId);
-            Assert.False(dynamicResult.success);
+            Assert.Equal("Failed", dynamicResult.status);
             Assert.Contains("not ready", (string)dynamicResult.message);
             Assert.Null(dynamicResult.commandId);
         }
@@ -452,7 +449,7 @@ namespace mcp_nexus_tests.Tools
             // Use dynamic to access anonymous type properties
             dynamic dynamicResult = result;
 
-            Assert.False(dynamicResult.success);
+            Assert.Equal("Failed", dynamicResult.status);
             Assert.Contains("not ready", (string)dynamicResult.message);
         }
 
@@ -477,8 +474,8 @@ namespace mcp_nexus_tests.Tools
             var json = JsonSerializer.Serialize(result);
             var document = JsonDocument.Parse(json);
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.False(successElement.GetBoolean());
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Failed", statusElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
             Assert.Contains("Failed to queue command", messageElement.GetString());
@@ -536,11 +533,11 @@ namespace mcp_nexus_tests.Tools
             Assert.True(document.RootElement.TryGetProperty("commandId", out var commandIdElement));
             Assert.Equal(commandId, commandIdElement.GetString());
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.True(successElement.GetBoolean());
+                Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+                Assert.Equal("Success", statusElement.GetString());
 
-            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
-            Assert.Equal("Completed", statusElement.GetString());
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement3));
+            Assert.Equal("Success", statusElement3.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("result", out var resultElement));
             // Result is now an object (ICommandResult), not a string
@@ -596,11 +593,8 @@ namespace mcp_nexus_tests.Tools
             Assert.True(document.RootElement.TryGetProperty("commandId", out var commandIdElement));
             Assert.Equal(commandId, commandIdElement.GetString());
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.True(successElement.GetBoolean()); // Queued commands are not failures - they're running normally
-
             Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
-            Assert.Equal("Queued", statusElement.GetString());
+            Assert.Equal("Queued", statusElement.GetString()); // Queued commands are not failures - they're running normally
 
             Assert.True(document.RootElement.TryGetProperty("result", out var resultElement));
             Assert.Equal(JsonValueKind.Null, resultElement.ValueKind);
@@ -642,8 +636,8 @@ namespace mcp_nexus_tests.Tools
             Assert.True(document.RootElement.TryGetProperty("commandId", out var commandIdElement));
             Assert.Equal(commandId, commandIdElement.GetString());
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.False(successElement.GetBoolean());
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Failed", statusElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("error", out var errorElement));
             Assert.Contains("Session", errorElement.GetString());
@@ -681,8 +675,8 @@ namespace mcp_nexus_tests.Tools
             var json = JsonSerializer.Serialize(result);
             var document = JsonDocument.Parse(json);
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.False(successElement.GetBoolean());
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Failed", statusElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("error", out var errorElement));
             Assert.Contains("Command", errorElement.GetString());
@@ -710,8 +704,8 @@ namespace mcp_nexus_tests.Tools
             var json = JsonSerializer.Serialize(result);
             var document = JsonDocument.Parse(json);
 
-            Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.False(successElement.GetBoolean());
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Failed", statusElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("error", out var errorElement));
             Assert.Contains("Failed to get command result", errorElement.GetString());
@@ -814,11 +808,11 @@ namespace mcp_nexus_tests.Tools
         }
 
         [Theory]
-        [InlineData(CommandState.Queued, 0, "1 seconds")]
-        [InlineData(CommandState.Queued, 1, "2 seconds")]
-        [InlineData(CommandState.Queued, 2, "4 seconds")]
-        [InlineData(CommandState.Queued, 15, "1 minute")]
-        [InlineData(CommandState.Executing, 0, "1 seconds")]
+        [InlineData(CommandState.Queued, 0, "1-3 seconds")]
+        [InlineData(CommandState.Queued, 1, "3-5 seconds")]
+        [InlineData(CommandState.Queued, 2, "5-7 seconds")]
+        [InlineData(CommandState.Queued, 15, "15-30 seconds")]
+        [InlineData(CommandState.Executing, 0, "1-3 seconds")]
         [InlineData(CommandState.Cancelled, 0, "No need to check")]
         [InlineData(CommandState.Failed, 0, "No need to check")]
         public void GetNextCheckInRecommendation_WithVariousStates_ReturnsExpectedRecommendation(CommandState state, int queuePosition, string expectedContains)

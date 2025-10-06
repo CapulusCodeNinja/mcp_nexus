@@ -99,7 +99,7 @@ namespace mcp_nexus_tests.Middleware
             // Assert
             m_MockNext.Verify(next => next(context), Times.Never);
             Assert.Equal(400, context.Response.StatusCode);
-            Assert.Equal("application/json; charset=utf-16", context.Response.ContentType);
+            Assert.Equal("application/json; charset=utf-8", context.Response.ContentType);
         }
 
         [Fact]
@@ -115,7 +115,7 @@ namespace mcp_nexus_tests.Middleware
             // Assert
             m_MockNext.Verify(next => next(context), Times.Never);
             Assert.Equal(400, context.Response.StatusCode);
-            Assert.Equal("application/json; charset=utf-16", context.Response.ContentType);
+            Assert.Equal("application/json; charset=utf-8", context.Response.ContentType);
         }
 
         [Fact]
@@ -131,7 +131,7 @@ namespace mcp_nexus_tests.Middleware
             // Assert
             m_MockNext.Verify(next => next(context), Times.Never);
             Assert.Equal(400, context.Response.StatusCode);
-            Assert.Equal("application/json; charset=utf-16", context.Response.ContentType);
+            Assert.Equal("application/json; charset=utf-8", context.Response.ContentType);
         }
 
         [Fact]

@@ -63,7 +63,7 @@ namespace mcp_nexus.Tools
                         sessionId = (string?)null,
                         dumpFile = Path.GetFileName(dumpPath),
                         commandId = (string?)null,
-                        success = false,
+                        status = "Failed",
                         operation = "nexus_open_dump_analyze_session",
                         message = $"Dump file does not exist: {dumpPath}"
                     };
@@ -79,7 +79,7 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     dumpFile = Path.GetFileName(dumpPath),
                     commandId = (string?)null,
-                    success = true,
+                    status = "Success",
                     operation = "nexus_open_dump_analyze_session",
                     message = $"Session created successfully: {sessionId}. Use 'sessions' resource to manage sessions."
                 };
@@ -96,7 +96,7 @@ namespace mcp_nexus.Tools
                     sessionId = (string?)null,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_open_dump_analyze_session",
                     message = $"Maximum concurrent sessions exceeded: {ex.CurrentSessions}/{ex.MaxSessions}"
                 };
@@ -112,7 +112,7 @@ namespace mcp_nexus.Tools
                     sessionId = (string?)null,
                     dumpFile = Path.GetFileName(dumpPath),
                     commandId = (string?)null,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_open_dump_analyze_session",
                     message = $"Failed to create debugging session: {ex.Message}"
                 };
@@ -146,7 +146,7 @@ namespace mcp_nexus.Tools
                     var notFoundResponse = new
                     {
                         sessionId = sessionId,
-                        success = false,
+                        status = "Failed",
                         operation = "nexus_close_dump_analyze_session",
                         message = $"Session {sessionId} not found. Use 'sessions' resource to see available sessions."
                     };
@@ -160,7 +160,7 @@ namespace mcp_nexus.Tools
                 var response = new
                 {
                     sessionId = sessionId,
-                    success = true,
+                    status = "Success",
                     operation = "nexus_close_dump_analyze_session",
                     message = $"Session {sessionId} closed successfully"
                 };
@@ -174,7 +174,7 @@ namespace mcp_nexus.Tools
                 var errorResponse = new
                 {
                     sessionId = sessionId,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_close_dump_analyze_session",
                     message = "Session ID cannot be null"
                 };
@@ -186,7 +186,7 @@ namespace mcp_nexus.Tools
                 var errorResponse = new
                 {
                     sessionId = sessionId,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_close_dump_analyze_session",
                     message = "Session ID cannot be empty or whitespace"
                 };
@@ -199,7 +199,7 @@ namespace mcp_nexus.Tools
                 var errorResponse = new
                 {
                     sessionId = sessionId,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_close_dump_analyze_session",
                     message = $"Failed to close session: {ex.Message}"
                 };
@@ -262,7 +262,7 @@ namespace mcp_nexus.Tools
                         {
                             sessionId = sessionId,
                             commandId = (string?)null,
-                            success = false,
+                            status = "Failed",
                             operation = "nexus_enqueue_async_dump_analyze_command",
                             message = $"Session {sessionId} is not ready to accept commands (queue unavailable). Please retry shortly."
                         };
@@ -295,13 +295,12 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     commandId = commandId,
                     command = command,
-                    success = true,
+                    status = "Queued",
                     operation = "nexus_enqueue_async_dump_analyze_command",
                     message = $"Command queued successfully. Queue position: {queuePosition + 1} of {totalInQueue}. Use the 'commands' resource to monitor all commands or the 'nexus_read_dump_analyze_command_result' tool to get specific results.",
                     timeoutMinutes = 10,
                     queuePosition = queuePosition + 1,
-                    totalInQueue = totalInQueue,
-                    status = "queued"
+                    totalInQueue = totalInQueue
                 };
 
                 logger.LogInformation("Command {CommandId} queued successfully for session {SessionId}", commandId, sessionId);
@@ -316,7 +315,7 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     commandId = (string?)null,
                     command = command,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_enqueue_async_dump_analyze_command",
                     message = $"Failed to queue command: {ex.Message}"
                 };
@@ -349,7 +348,7 @@ namespace mcp_nexus.Tools
                     {
                         sessionId = sessionId,
                         commandId = commandId,
-                        success = false,
+                        status = "Failed",
                         error = $"Session {sessionId} not found. Use nexus_list_sessions to see available sessions.",
                         operation = "nexus_read_dump_analyze_command_result",
                         usage = SessionAwareWindbgTool.USAGE_EXPLANATION
@@ -364,7 +363,7 @@ namespace mcp_nexus.Tools
                     {
                         sessionId = sessionId,
                         commandId = commandId,
-                        success = false,
+                        status = "Failed",
                         error = $"Command {commandId} not found. Use nexus_list_commands to see available commands.",
                         operation = "nexus_read_dump_analyze_command_result",
                         usage = SessionAwareWindbgTool.USAGE_EXPLANATION
@@ -394,17 +393,19 @@ namespace mcp_nexus.Tools
                 var isExecuting = commandInfo.State == CommandState.Executing;
                 var isQueued = commandInfo.State == CommandState.Queued;
 
-                // Success should be true for completed commands that didn't fail, AND for commands that are still executing normally
-                // Only false for actual failures or cancellations
-                var success = (isCompleted && !(isFailed || isCancelled)) || (isExecuting || isQueued);
+                // Create a more descriptive status that combines state and completion info
+                var status = commandInfo.State switch
+                {
+                    CommandState.Completed => "Success",
+                    _ => commandInfo.State.ToString()
+                };
 
                 var result = new
                 {
                     sessionId = sessionId,
                     commandId = commandId,
-                    success = success,
                     operation = "nexus_read_dump_analyze_command_result",
-                    status = commandInfo.State.ToString(),
+                    status = status,
                     result = isCompleted ? commandResult : null,
                     error = (isFailed || isCancelled) ? (commandResult?.ErrorMessage ?? commandInfo.State.ToString()) : null,
                     completedAt = isCompleted ? DateTimeOffset.Now : (DateTimeOffset?)null,
@@ -424,27 +425,18 @@ namespace mcp_nexus.Tools
                         nextSteps = isCompleted ? new[]
                         {
                             "Analyze the command output for debugging insights",
-                            "Execute follow-up commands based on results",
-                            "Use output to guide next debugging steps",
+                            "Execute follow-up commands based on results and use output to guide next for analysis commands",
                             "⚠️ IMPORTANT: Call 'nexus_close_dump_analyze_session' when analysis is complete"
                         } : (isFailed || isCancelled) ? new[]
                         {
                             "Command encountered an issue - check the error details",
-                            "Consider retrying with a different approach",
-                            "Use simpler commands if complex ones are failing"
+                            "Consider retrying with a different approach using simpler commands if complex ones are failing"
                         } : new[]
                         {
                             "Command is running normally - this is expected for complex operations",
-                            "Wait for completion - no action needed",
-                            "Check status again in a few seconds if needed"
+                            "Wait for completion - no action needed check status again later please"
                         },
                         statusExplanation = GetStatusExplanation(commandInfo.State.ToString()),
-                        sessionManagement = new
-                        {
-                            commandLimit = "Unlimited commands per session",
-                            timeoutInfo = "Commands have 10 minutes to complete",
-                            bestPractice = "⚠️ Call 'nexus_close_dump_analyze_session' when done to free resources immediately"
-                        }
                     },
                     timeoutMinutes = 10,
                     usage = SessionAwareWindbgTool.USAGE_EXPLANATION
@@ -460,7 +452,7 @@ namespace mcp_nexus.Tools
                 {
                     sessionId = sessionId,
                     commandId = commandId,
-                    success = false,
+                    status = "Failed",
                     error = $"Failed to get command result: {ex.Message}",
                     operation = "nexus_read_dump_analyze_command_result",
                     usage = SessionAwareWindbgTool.USAGE_EXPLANATION

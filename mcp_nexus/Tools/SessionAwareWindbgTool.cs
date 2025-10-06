@@ -236,7 +236,7 @@ namespace mcp_nexus.Tools
                         sessionId = (string?)null,
                         dumpFile = Path.GetFileName(dumpPath),
                         commandId = (string?)null,
-                        success = false,
+                        status = "Failed",
                         operation = "nexus_open_dump_analyze_session",
                         message = $"Dump file does not exist: {dumpPath}",
                         usage = USAGE_EXPLANATION
@@ -255,7 +255,7 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     dumpFile = Path.GetFileName(dumpPath),
                     commandId = (string?)null,
-                    success = true,
+                    status = "Success",
                     operation = "nexus_open_dump_analyze_session",
                     message = $"Session created successfully: {sessionId}. Use 'sessions' resource to manage sessions.",
                     sessionInfo = new
@@ -280,7 +280,7 @@ namespace mcp_nexus.Tools
                     sessionId = (string?)null,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_open_dump_analyze_session",
                     message = $"Maximum concurrent sessions exceeded: {ex.CurrentSessions}/{ex.MaxSessions}"
                 };
@@ -296,7 +296,7 @@ namespace mcp_nexus.Tools
                     sessionId = (string?)null,
                     dumpFile = Path.GetFileName(dumpPath),
                     commandId = (string?)null,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_open_dump_analyze_session",
                     message = $"Failed to create debugging session: {ex.Message}",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
@@ -325,7 +325,7 @@ namespace mcp_nexus.Tools
                         sessionId = sessionId,
                         dumpFile = (string?)null,
                         commandId = (string?)null,
-                        success = false,
+                        status = "Failed",
                         operation = "nexus_close_dump_analyze_session",
                         message = $"Session not found or already closed: {sessionId}. Use 'sessions' resource to see available sessions.",
                         usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
@@ -343,7 +343,7 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
-                    success = closed,
+                    status = closed ? "Success" : "Failed",
                     operation = "nexus_close_dump_analyze_session",
                     message = closed
                         ? $"Session closed successfully: {sessionId}"
@@ -362,7 +362,7 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_close_dump_analyze_session",
                     message = "Session ID cannot be null",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
@@ -377,7 +377,7 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_close_dump_analyze_session",
                     message = "Session ID cannot be empty or whitespace",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
@@ -393,7 +393,7 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_close_dump_analyze_session",
                     message = $"Error closing session: {ex.Message}",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
@@ -438,7 +438,7 @@ namespace mcp_nexus.Tools
                         sessionId = sessionId,
                         dumpFile = (string?)null,
                         commandId = (string?)null,
-                        success = false,
+                        status = "Failed",
                         operation = "nexus_enqueue_async_dump_analyze_command",
                         message = $"Session not found or expired: {sessionId}. Use 'sessions' resource to see available sessions.",
                         usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
@@ -458,7 +458,7 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     dumpFile = context?.DumpPath != null ? Path.GetFileName(context.DumpPath) : null,
                     commandId = commandId,
-                    success = true,
+                    status = "Success",
                     operation = "nexus_enqueue_async_dump_analyze_command",
                     message = $"Command queued successfully: {commandId}. Use the resource 'commands' to observe the status and the 'nexus_read_dump_analyze_command_result' tool to get results.",
                     commandInfo = new
@@ -490,7 +490,7 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_enqueue_async_dump_analyze_command",
                     message = $"Session not found: {ex.Message}",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
@@ -507,7 +507,7 @@ namespace mcp_nexus.Tools
                     sessionId = sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
-                    success = false,
+                    status = "Failed",
                     operation = "nexus_enqueue_async_dump_analyze_command",
                     message = $"Error executing command: {ex.Message}",
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
