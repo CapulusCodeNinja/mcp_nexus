@@ -143,7 +143,8 @@ namespace mcp_nexus.Debugger
             ThrowIfDisposed();
 
             m_logger.LogWarning("Cancelling current operation");
-            m_commandExecutor.CancelCurrentOperation();
+            // Note: With the new architecture, cancellation is handled at the session level
+            // Individual command cancellation is managed through CancellationToken
         }
 
         /// <summary>
@@ -158,7 +159,7 @@ namespace mcp_nexus.Debugger
         /// </returns>
         /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
         /// <exception cref="ArgumentException">Thrown when <paramref name="target"/> is null or empty.</exception>
-        public Task<bool> StartSession(string target, string? arguments = null)
+        public async Task<bool> StartSession(string target, string? arguments = null)
         {
             ThrowIfDisposed();
 
@@ -173,17 +174,26 @@ namespace mcp_nexus.Debugger
                 m_logger.LogInformation("🔧 About to call StartProcess directly");
                 var result = m_processManager?.StartProcess(target, m_config.CustomCdbPath) ?? throw new InvalidOperationException("Process manager not initialized");
                 m_logger.LogInformation("🔧 StartProcess returned: {Result}", result);
-                return Task.FromResult(result);
+                
+                if (result)
+                {
+                    // Initialize the session-scoped producer-consumer architecture
+                    m_logger.LogInformation("🔧 Initializing session-scoped architecture");
+                    await m_commandExecutor.InitializeSessionAsync(m_processManager).ConfigureAwait(false);
+                    m_logger.LogInformation("🔧 Session-scoped architecture initialized successfully");
+                }
+                
+                return result;
             }
             catch (OperationCanceledException)
             {
                 m_logger.LogError("❌ StartSession timed out after {TimeoutMs}ms for target: {Target}", m_config.CommandTimeoutMs, target);
-                return Task.FromResult(false);
+                return false;
             }
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "❌ Failed to start CDB session with target: {Target}", target);
-                return Task.FromResult(false);
+                return false;
             }
         }
 

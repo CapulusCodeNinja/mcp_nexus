@@ -5,7 +5,7 @@ namespace mcp_nexus.Debugger
 {
     /// <summary>
     /// Handles command execution and output reading for CDB debugger sessions.
-    /// Provides thread-safe, asynchronous command execution with proper timeout handling and output parsing.
+    /// Uses a producer-consumer architecture with session-scoped stream readers.
     /// </summary>
     public class CdbCommandExecutor : IDisposable
     {
@@ -13,9 +13,17 @@ namespace mcp_nexus.Debugger
         private readonly CdbSessionConfiguration m_config;
         private readonly CdbOutputParser m_outputParser;
         private readonly object m_cancellationLock = new();
-        private readonly SemaphoreSlim m_commandExecutionSemaphore = new(1, 1); // Ensure only one command executes at a time
-        private readonly SemaphoreSlim m_streamAccessSemaphore = new(1, 1); // Add stream access synchronization for async operations
-        private CancellationTokenSource? m_currentOperationCts;
+        private readonly SemaphoreSlim m_commandExecutionSemaphore = new(1, 1);
+        private readonly SemaphoreSlim m_streamAccessSemaphore = new(1, 1);
+
+        // Session-scoped architecture components
+        private Channel<(string Line, bool IsStderr, DateTime Timestamp)>? m_sessionChannel;
+        private Task? m_stdoutProducer;
+        private Task? m_stderrProducer;
+        private Task? m_consumer;
+        private CancellationTokenSource? m_sessionCancellation;
+        private readonly Dictionary<string, TaskCompletionSource<string>> m_pendingCommands = new();
+        private readonly object m_pendingCommandsLock = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CdbCommandExecutor"/> class.
@@ -35,428 +43,247 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Executes a command in the CDB session and returns the output asynchronously.
-        /// This method ensures thread-safe execution by using semaphores and proper timeout handling.
+        /// Initializes the session-scoped producer-consumer architecture.
+        /// Must be called before executing any commands.
         /// </summary>
-        /// <param name="command">The CDB command to execute. Cannot be null or empty.</param>
+        /// <param name="processManager">The CDB process manager providing access to streams.</param>
+        /// <param name="cancellationToken">Cancellation token for the session.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="processManager"/> is null.</exception>
+        public Task InitializeSessionAsync(CdbProcessManager processManager, CancellationToken cancellationToken = default)
+        {
+            if (m_sessionChannel != null)
+            {
+                m_logger.LogWarning("Session already initialized");
+                return Task.CompletedTask;
+            }
+
+            m_logger.LogInformation("🚀 Initializing session-scoped producer-consumer architecture");
+
+            // Create session-scoped channel
+            m_sessionChannel = Channel.CreateUnbounded<(string Line, bool IsStderr, DateTime Timestamp)>(new UnboundedChannelOptions
+            {
+                SingleReader = true,  // Only consumer reads
+                SingleWriter = false  // Both stdout and stderr producers write
+            });
+
+            // Create session cancellation token
+            m_sessionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+            // Start session-scoped producers (they run for the entire session lifetime)
+            m_stdoutProducer = StartStdoutProducerAsync(processManager, m_sessionCancellation.Token);
+            m_stderrProducer = StartStderrProducerAsync(processManager, m_sessionCancellation.Token);
+
+            // Start consumer (handles all parsing and command completion logic)
+            m_consumer = StartConsumerAsync(m_sessionCancellation.Token);
+
+            m_logger.LogInformation("✅ Session-scoped architecture initialized successfully");
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Executes a command in the CDB session and returns the output asynchronously.
+        /// </summary>
+        /// <param name="command">The CDB command to execute.</param>
         /// <param name="processManager">The CDB process manager providing access to the debugger process streams.</param>
         /// <param name="externalCancellationToken">Optional cancellation token for external cancellation.</param>
-        /// <returns>
-        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
-        /// Returns the command output as a string, or an error message if execution fails.
-        /// </returns>
+        /// <returns>The command output as a string.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="command"/> is null or empty.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when no active debugging session is available.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="processManager"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no active debugging session is available or session is not initialized.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
         public async Task<string> ExecuteCommandAsync(
             string command,
             CdbProcessManager processManager,
             CancellationToken externalCancellationToken = default)
         {
-            // Ensure only one command executes at a time to prevent stream concurrency issues
-            m_logger.LogDebug("🔒 Waiting for command execution semaphore for command: {Command}", command);
+            if (string.IsNullOrWhiteSpace(command))
+                throw new ArgumentException("Command cannot be null or empty", nameof(command));
+
+            if (!processManager.IsActive)
+                throw new InvalidOperationException("No active debugging session");
+
+            if (m_sessionChannel == null)
+                throw new InvalidOperationException("Session not initialized. Call InitializeSessionAsync first.");
+
+            // Ensure only one command executes at a time
             await m_commandExecutionSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
-            m_logger.LogDebug("🔓 Acquired command execution semaphore for command: {Command}", command);
             try
             {
-                if (string.IsNullOrWhiteSpace(command))
-                    throw new ArgumentException("Command cannot be null or empty", nameof(command));
+                m_logger.LogInformation("🎯 CDB ExecuteCommand START: {Command}", command);
 
-                if (!processManager.IsActive)
-                    throw new InvalidOperationException("No active debugging session");
+                // Create command with sentinels
+                var commandWithSentinels = CreateCommandWithSentinels(command);
+                m_logger.LogDebug("Executing command with sentinels: '{Original}' -> '{WithSentinels}'", 
+                    command, commandWithSentinels);
 
-                m_logger.LogInformation("🎯 CDB ExecuteCommand START (TRUE ASYNC): {Command}", command);
+                // Send command to CDB
+                await SendCommandToCdbAsync(processManager, commandWithSentinels, externalCancellationToken).ConfigureAwait(false);
 
-                // BULLETPROOF: Set command context for stateful parsing
-                m_outputParser.SetCurrentCommand(command);
-
-                // Set up cancellation
-                CancellationTokenSource operationCts;
-                CancellationTokenSource? timeoutCts = null;
-                lock (m_cancellationLock)
+                // Create completion source for this command
+                var commandId = Guid.NewGuid().ToString();
+                var completionSource = new TaskCompletionSource<string>();
+                
+                lock (m_pendingCommandsLock)
                 {
-                    try
-                    {
-                        timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(m_config.CommandTimeoutMs));
-                        operationCts = CancellationTokenSource.CreateLinkedTokenSource(
-                            externalCancellationToken,
-                            timeoutCts.Token);
-                        m_currentOperationCts = operationCts;
-                    }
-                    catch
-                    {
-                        timeoutCts?.Dispose();
-                        throw;
-                    }
+                    m_pendingCommands[commandId] = completionSource;
                 }
+
+                // Wait for command completion with timeout
+                var timeoutMs = m_config.OutputReadingTimeoutMs > 0 ? m_config.OutputReadingTimeoutMs : 300000; // 5 minutes default
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMs));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(externalCancellationToken, timeoutCts.Token);
 
                 try
                 {
-                    // TRUE ASYNC: No blocking, proper async/await all the way through
-                    return await ExecuteCommandInternalAsync(command, processManager, operationCts.Token).ConfigureAwait(false);
+                    var result = await completionSource.Task.WaitAsync(linkedCts.Token).ConfigureAwait(false);
+                    m_logger.LogInformation("✅ CDB ExecuteCommand COMPLETED: {Command}", command);
+                    return result;
+                }
+                catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
+                {
+                    m_logger.LogWarning("⏰ Command timed out after {TimeoutMs}ms: {Command}", timeoutMs, command);
+                    
+                    // Remove from pending commands
+                    lock (m_pendingCommandsLock)
+                    {
+                        m_pendingCommands.Remove(commandId);
+                    }
+                    
+                    return $"Command timed out after {timeoutMs}ms - output may be incomplete.";
                 }
                 finally
                 {
-                    lock (m_cancellationLock)
+                    // Clean up completion source
+                    lock (m_pendingCommandsLock)
                     {
-                        if (m_currentOperationCts == operationCts)
-                            m_currentOperationCts = null;
+                        m_pendingCommands.Remove(commandId);
                     }
-                    operationCts.Dispose();
-                    timeoutCts?.Dispose();
                 }
             }
             finally
             {
-                m_logger.LogDebug("🔓 Releasing command execution semaphore for command: {Command}", command);
                 m_commandExecutionSemaphore.Release();
             }
         }
 
         /// <summary>
-        /// Cancels the currently executing command operation.
-        /// This method is thread-safe and can be called from any thread.
+        /// Starts the stdout producer thread that reads from stdout for the entire session lifetime.
+        /// This is a simple producer that only reads and sends to channel - no logic.
         /// </summary>
-        public void CancelCurrentOperation()
+        /// <param name="processManager">The CDB process manager providing access to the stdout stream.</param>
+        /// <param name="cancellationToken">Cancellation token for the producer thread.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="processManager"/> is null.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the producer is cancelled via the cancellation token.</exception>
+        private async Task StartStdoutProducerAsync(CdbProcessManager processManager, CancellationToken cancellationToken)
         {
-            lock (m_cancellationLock)
-            {
-                if (m_currentOperationCts != null && !m_currentOperationCts.Token.IsCancellationRequested)
-                {
-                    m_logger.LogWarning("Cancelling current CDB command operation");
-                    m_currentOperationCts.Cancel();
-                }
-                else
-                {
-                    m_logger.LogDebug("No active operation to cancel or already cancelled");
-                }
-            }
-        }
-
-        private async Task<string> ExecuteCommandInternalAsync(
-            string command,
-            CdbProcessManager processManager,
-            CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            m_logger.LogDebug("🔓 ExecuteCommand - no session lock needed (queue serializes) - TRUE ASYNC");
-
-            // Validate process state
-            var debuggerProcess = processManager.DebuggerProcess;
-            var debuggerInput = processManager.DebuggerInput;
-
-            if (debuggerProcess?.HasExited == true)
-            {
-                m_logger.LogError("CDB process has exited unexpectedly");
-                return "CDB process has exited unexpectedly. Please restart the session.";
-            }
-
-            if (debuggerInput == null)
-            {
-                m_logger.LogError("No input stream available for CDB process");
-                return "No input stream available for CDB process.";
-            }
-
+            m_logger.LogInformation("📤 Starting stdout producer thread");
+            
             try
             {
-                // Chain start and end markers around the original command. If the echo is suppressed, we fall back to prompt/timeout
-                var chainedCommand = string.IsNullOrWhiteSpace(command)
-                    ? $".echo {CdbSentinels.StartMarker}; .echo {CdbSentinels.EndMarker}"
-                    : $".echo {CdbSentinels.StartMarker}; {command}; .echo {CdbSentinels.EndMarker}";
-
-                m_logger.LogInformation("🔧 Executing command with sentinels: '{Command}' -> '{ChainedCommand}'", 
-                    command, chainedCommand);
-
-                // Send command (TRUE ASYNC)
-                await SendCommandAsync(chainedCommand, debuggerInput, cancellationToken).ConfigureAwait(false);
-
-                // Read response (TRUE ASYNC) with sentinel short-circuit
-                var output = await ReadCommandOutputAsync(processManager, cancellationToken).ConfigureAwait(false);
-
-                m_logger.LogInformation("✅ CDB ExecuteCommand COMPLETED: {Command} (Output length: {Length})", 
-                    command, output?.Length ?? 0);
-                    
-                return output ?? string.Empty;
-            }
-            catch (OperationCanceledException)
-            {
-                m_logger.LogWarning("Command execution cancelled: {Command}", command);
-                return "Command execution was cancelled.";
-            }
-            catch (Exception ex)
-            {
-                m_logger.LogError(ex, "Error executing command: {Command}", command);
-                return $"Error executing command: {ex.Message}";
-            }
-        }
-
-        private async Task SendCommandAsync(string command, StreamWriter debuggerInput, CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            m_logger.LogDebug("Sending command to CDB: {Command}", command);
-            m_logger.LogDebug("Command length: {Length}, Contains newlines: {HasNewlines}", 
-                command.Length, command.Contains('\n') || command.Contains('\r'));
-
-            // TRUE ASYNC: Use WriteLineAsync instead of blocking WriteLine
-            await debuggerInput.WriteLineAsync(command).ConfigureAwait(false);
-            await debuggerInput.FlushAsync().ConfigureAwait(false);
-
-            m_logger.LogDebug("Command sent successfully to CDB");
-        }
-
-        private async Task<string> ReadCommandOutputAsync(CdbProcessManager processManager, CancellationToken cancellationToken)
-        {
-            var debuggerOutput = processManager.DebuggerOutput;
-            var debuggerError = processManager.DebuggerError;
-
-            if (debuggerOutput == null)
-            {
-                m_logger.LogError("No output stream available for reading");
-                return "No output stream available";
-            }
-
-            // Use Channel to merge stdout and stderr without blocking
-            // This prevents stderr from blocking command completion
-            var channel = Channel.CreateUnbounded<(string Line, bool IsStderr)>(new UnboundedChannelOptions
-            {
-                SingleReader = true,
-                SingleWriter = false // Both stdout and stderr write to it
-            });
-
-            // Shared completion signal for stdout and stderr coordination
-            var completionSignal = new CancellationTokenSource();
-
-            // Thread-safe: These collections are only written by consumerTask
-            // and only read after awaiting consumerTask (happens-before relationship)
-            var stderrLines = new List<string>();
-            var stdoutOutput = new StringBuilder();
-
-            // Start readers concurrently but with proper stream synchronization
-            // The semaphore in each reader method will prevent concurrent access to the same stream
-            var stdoutTask = ReadStdoutToChannelAsync(processManager, debuggerOutput, channel.Writer, cancellationToken, completionSignal);
-            var stderrTask = debuggerError != null
-                ? ReadStderrToChannelAsync(processManager, debuggerError, channel.Writer, cancellationToken, completionSignal)
-                : Task.CompletedTask;
-
-            // Consumer: read from channel and build result
-            // CRITICAL: Use CancellationToken.None for consumer to prevent race with writers
-            // We control consumer lifecycle by completing the channel explicitly
-            var consumerTask = Task.Run(async () =>
-            {
-                try
+                var debuggerOutput = processManager.DebuggerOutput;
+                if (debuggerOutput == null)
                 {
-                    await foreach (var (line, isStderr) in channel.Reader.ReadAllAsync(CancellationToken.None).ConfigureAwait(false))
-                    {
-                        if (isStderr)
-                            stderrLines.Add(line);
-                        else
-                            stdoutOutput.AppendLine(line);
-                    }
+                    m_logger.LogError("No stdout stream available");
+                    return;
                 }
-                catch (Exception ex)
-                {
-                    m_logger.LogError(ex, "Error in channel consumer");
-                    throw;
-                }
-            });
-
-            try
-            {
-                // Wait for both readers to complete concurrently
-                // The semaphore in each reader method prevents stream concurrency issues
-                // Add timeout to prevent infinite waiting - use enhanced timeout configuration
-                var outputReadingTimeoutMs = m_config.OutputReadingTimeoutMs > 0 ? m_config.OutputReadingTimeoutMs : throw new InvalidOperationException("Output reading timeout is not configured"); // Default 5 minutes
-                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(outputReadingTimeoutMs));
-                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
-                
-                try
-                {
-                    await Task.WhenAll(stdoutTask, stderrTask).WaitAsync(linkedCts.Token).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
-                {
-                    m_logger.LogWarning("Command output reading timed out after {TimeoutMs}ms - forcing completion", outputReadingTimeoutMs);
-                    // Force completion of any remaining tasks
-                    completionSignal.Cancel();
-                    // Return timeout error message instead of empty string
-                    return $"Command timed out after {outputReadingTimeoutMs}ms - output may be incomplete.";
-                }
-            }
-            finally
-            {
-                // CRITICAL: Always complete channel to unblock consumer
-                // Even if stdout/stderr tasks threw exceptions
-                channel.Writer.TryComplete();
-            }
-
-            // Wait for consumer to finish draining channel
-            // If consumer threw, this will propagate the exception
-            await consumerTask.ConfigureAwait(false);
-
-            // Merge stderr into result if present
-            if (stderrLines.Count > 0)
-            {
-                m_logger.LogWarning("CDB produced stderr output: {LineCount} lines", stderrLines.Count);
-                stdoutOutput.AppendLine();
-                stdoutOutput.AppendLine("[Note: CDB also produced the following diagnostics/warnings on its error stream:]");
-                foreach (var line in stderrLines)
-                    stdoutOutput.AppendLine(line);
-            }
-
-            return stdoutOutput.ToString();
-        }
-
-        /// <summary>
-        /// Reads stdout and writes lines to channel until command completion marker found
-        /// </summary>
-        private async Task ReadStdoutToChannelAsync(
-            CdbProcessManager processManager,
-            StreamReader debuggerOutput,
-            ChannelWriter<(string Line, bool IsStderr)> writer,
-            CancellationToken cancellationToken,
-            CancellationTokenSource completionSignal)
-        {
-            var startTime = DateTime.Now;
-            var lastOutputTime = startTime;
-            var linesRead = 0;
-            var idleTimeoutMs = CalculateIdleTimeout();
-
-            try
-            {
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    // Check if CDB process has exited unexpectedly
-                    var debuggerProcess = processManager.DebuggerProcess;
-                    if (debuggerProcess?.HasExited == true)
-                    {
-                        m_logger.LogError("CDB process has exited unexpectedly during output reading. Exit code: {ExitCode}", 
-                            debuggerProcess.ExitCode);
-                        await writer.WriteAsync(("CDB process has exited unexpectedly. Please restart the session.", false), cancellationToken).ConfigureAwait(false);
-                        break;
-                    }
-
-                    // Check completion signal from stderr
-                    if (completionSignal.Token.IsCancellationRequested)
-                    {
-                        m_logger.LogInformation("✅ Completion signal received from stderr - ending stdout read");
-                        break;
-                    }
-                    
-                    // Check timeouts FIRST
-                    if (CheckAbsoluteTimeout(startTime))
-                    {
-                        await writer.WriteAsync(("Command execution timed out; output may be incomplete.", false), cancellationToken).ConfigureAwait(false);
-                        break;
-                    }
-
-                    if (CheckIdleTimeout(lastOutputTime, idleTimeoutMs))
-                    {
-                        await writer.WriteAsync(("Command idle timed out; output may be incomplete.", false), cancellationToken).ConfigureAwait(false);
-                        break;
-                    }
-
-                    // Try to read a line (with 500ms polling)
-                    var readResult = await TryReadLineWithTimeoutAsync(debuggerOutput, cancellationToken).ConfigureAwait(false);
-
-                    if (!readResult.ShouldContinue)
-                        break;
-
-                    if (readResult.Line == null)
-                    {
-                        await HandleNullLineAsync(cancellationToken).ConfigureAwait(false);
-                        continue;
-                    }
-
-
-                    // Drop start marker from output, if present (handle both standalone and prompt+marker cases)
-                    if (string.Equals(readResult.Line, CdbSentinels.StartMarker, StringComparison.Ordinal) ||
-                        readResult.Line.Contains(CdbSentinels.StartMarker))
-                    {
-                        // Skip writing start marker to output
-                        lastOutputTime = DateTime.Now;
-                        continue;
-                    }
-
-                    // Check end sentinel for short-circuit completion and do not emit it
-                    if (string.Equals(readResult.Line, CdbSentinels.EndMarker, StringComparison.Ordinal) ||
-                        readResult.Line.Contains(CdbSentinels.EndMarker))
-                    {
-                        m_logger.LogInformation("✅ End sentinel detected - completing stdout read early: '{Line}'", readResult.Line);
-                        break; // Do NOT write sentinel to output
-                    }
-
-                    // Write line to channel
-                    await writer.WriteAsync((readResult.Line, false), cancellationToken).ConfigureAwait(false);
-                    linesRead++;
-                    lastOutputTime = DateTime.Now;
-
-                    // Check if command is complete
-                    if (IsCommandComplete(readResult.Line))
-                    {
-                        m_logger.LogInformation("✅ Command completion detected via IsCommandComplete. Total lines: {LinesRead}, Total time: {TotalTime}ms, Line: '{Line}'",
-                            linesRead, (DateTime.Now - startTime).TotalMilliseconds, readResult.Line);
-                        break;
-                    }
-
-                    // Special case: If we get a CDB prompt without any sentinels, the command completed silently
-                    // This handles commands like .srcpath, .lines, etc. that don't produce output
-                    if (CdbCompletionPatterns.IsCdbPrompt(readResult.Line) && linesRead == 0)
-                    {
-                        m_logger.LogInformation("✅ Silent command completion detected (no output produced). CDB prompt: '{Line}'", readResult.Line);
-                        // Don't write the prompt to output since it's not part of the command result
-                        break;
-                    }
-                }
-
-                m_logger.LogTrace("Finished reading stdout");
-            }
-            catch (OperationCanceledException)
-            {
-                m_logger.LogWarning("Stdout reading cancelled");
-            }
-            catch (Exception ex)
-            {
-                m_logger.LogError(ex, "Error reading stdout");
-            }
-        }
-
-        /// <summary>
-        /// Reads stderr and writes lines to channel
-        /// Uses short timeout to detect when no more data is available
-        /// </summary>
-        private async Task ReadStderrToChannelAsync(
-            CdbProcessManager processManager,
-            StreamReader debuggerError,
-            ChannelWriter<(string Line, bool IsStderr)> writer,
-            CancellationToken cancellationToken,
-            CancellationTokenSource completionSignal)
-        {
-            try
-            {
-                m_logger.LogTrace("Started reading stderr (channel-based)...");
-
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    // Check if CDB process has exited unexpectedly
-                    var debuggerProcess = processManager.DebuggerProcess;
-                    if (debuggerProcess?.HasExited == true)
-                    {
-                        m_logger.LogError("CDB process has exited unexpectedly during stderr reading. Exit code: {ExitCode}", 
-                            debuggerProcess.ExitCode);
-                        break;
-                    }
-
                     try
                     {
-                        // Synchronize stream access to prevent concurrent read operations
+                        // Check if CDB process has exited
+                        var debuggerProcess = processManager.DebuggerProcess;
+                        if (debuggerProcess?.HasExited == true)
+                        {
+                            m_logger.LogError("CDB process has exited unexpectedly. Exit code: {ExitCode}", 
+                                debuggerProcess.ExitCode);
+                            break;
+                        }
+
+                        // Read line from stdout
                         string? line;
                         await m_streamAccessSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                         try
                         {
-                            // Use natural async reading without artificial timeouts
+                            line = await debuggerOutput.ReadLineAsync().ConfigureAwait(false);
+                        }
+                        finally
+                        {
+                            m_streamAccessSemaphore.Release();
+                        }
+
+                        if (line == null)
+                        {
+                            m_logger.LogInformation("📤 Stdout stream ended");
+                            break; // End of stream
+                        }
+
+                        // Send to channel - NO LOGIC, just pure data transfer
+                        if (m_sessionChannel != null)
+                        {
+                            await m_sessionChannel.Writer.WriteAsync((line, false, DateTime.Now), cancellationToken).ConfigureAwait(false);
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        m_logger.LogDebug("📤 Stdout producer cancelled");
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogError(ex, "📤 Error in stdout producer");
+                        // Continue reading - don't let one error stop the producer
+                    }
+                }
+            }
+            finally
+            {
+                m_logger.LogInformation("📤 Stdout producer thread ended");
+            }
+        }
+
+        /// <summary>
+        /// Starts the stderr producer thread that reads from stderr for the entire session lifetime.
+        /// This is a simple producer that only reads and sends to channel - no logic.
+        /// </summary>
+        /// <param name="processManager">The CDB process manager providing access to the stderr stream.</param>
+        /// <param name="cancellationToken">Cancellation token for the producer thread.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="processManager"/> is null.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the producer is cancelled via the cancellation token.</exception>
+        private async Task StartStderrProducerAsync(CdbProcessManager processManager, CancellationToken cancellationToken)
+        {
+            m_logger.LogInformation("📤 Starting stderr producer thread");
+            
+            try
+            {
+                var debuggerError = processManager.DebuggerError;
+                if (debuggerError == null)
+                {
+                    m_logger.LogInformation("📤 No stderr stream available");
+                    return;
+                }
+
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        // Check if CDB process has exited
+                        var debuggerProcess = processManager.DebuggerProcess;
+                        if (debuggerProcess?.HasExited == true)
+                        {
+                            m_logger.LogError("CDB process has exited unexpectedly. Exit code: {ExitCode}", 
+                                debuggerProcess.ExitCode);
+                            break;
+                        }
+
+                        // Read line from stderr
+                        string? line;
+                        await m_streamAccessSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                        try
+                        {
                             line = await debuggerError.ReadLineAsync().ConfigureAwait(false);
                         }
                         finally
@@ -465,161 +292,275 @@ namespace mcp_nexus.Debugger
                         }
 
                         if (line == null)
+                        {
+                            m_logger.LogInformation("📤 Stderr stream ended");
                             break; // End of stream
-
-                        // Drop markers if they appear on stderr for any reason
-                        if (string.Equals(line, CdbSentinels.StartMarker, StringComparison.Ordinal) ||
-                            string.Equals(line, CdbSentinels.EndMarker, StringComparison.Ordinal))
-                        {
-                            continue;
                         }
 
-                        try
+                        // Send to channel - NO LOGIC, just pure data transfer
+                        if (m_sessionChannel != null)
                         {
-                            await writer.WriteAsync((line, true), cancellationToken).ConfigureAwait(false);
-                            
-                            // Signal completion when stderr has output (indicates command finished with error)
-                            m_logger.LogInformation("✅ Stderr output detected - signaling command completion: '{Line}'", line);
-                            
-                            // Signal completion immediately - no artificial delay needed
-                            completionSignal.Cancel();
+                            await m_sessionChannel.Writer.WriteAsync((line, true, DateTime.Now), cancellationToken).ConfigureAwait(false);
                         }
-                        catch (ChannelClosedException)
-                        {
-                            // Channel closed after stdout completion; stop quietly
-                            break;
-                        }
-                        m_logger.LogTrace("stderr: {Line}", line);
                     }
                     catch (OperationCanceledException)
                     {
-                        // Cancellation requested - exit gracefully
+                        m_logger.LogDebug("📤 Stderr producer cancelled");
                         break;
                     }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogError(ex, "📤 Error in stderr producer");
+                        // Continue reading - don't let one error stop the producer
+                    }
+                }
+            }
+            finally
+            {
+                m_logger.LogInformation("📤 Stderr producer thread ended");
+            }
+        }
+
+        /// <summary>
+        /// Starts the consumer thread that handles all parsing, sentinel detection, and command completion logic.
+        /// This is the smart component that processes all output and determines when commands are complete.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token for the consumer thread.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="OperationCanceledException">Thrown when the consumer is cancelled via the cancellation token.</exception>
+        private async Task StartConsumerAsync(CancellationToken cancellationToken)
+        {
+            m_logger.LogInformation("🧠 Starting consumer thread");
+            
+            try
+            {
+                if (m_sessionChannel == null)
+                {
+                    m_logger.LogError("Session channel not initialized");
+                    return;
                 }
 
-                m_logger.LogTrace("Finished reading stderr");
+                var currentCommandOutput = new StringBuilder();
+                var currentCommandStderr = new List<string>();
+                var currentCommandId = string.Empty;
+                var inCommand = false;
+
+                await foreach (var (line, isStderr, timestamp) in m_sessionChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    try
+                    {
+                        // Handle start sentinel
+                        if (string.Equals(line, CdbSentinels.StartMarker, StringComparison.Ordinal) ||
+                            line.Contains(CdbSentinels.StartMarker))
+                        {
+                            m_logger.LogDebug("🧠 Start sentinel detected: {Line}", line);
+                            
+                            // Complete previous command if any
+                            if (inCommand && !string.IsNullOrEmpty(currentCommandId))
+                            {
+                                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
+                            }
+                            
+                            // Start new command
+                            currentCommandId = Guid.NewGuid().ToString();
+                            currentCommandOutput.Clear();
+                            currentCommandStderr.Clear();
+                            inCommand = true;
+                            continue;
+                        }
+
+                        // Handle end sentinel
+                        if (string.Equals(line, CdbSentinels.EndMarker, StringComparison.Ordinal) ||
+                            line.Contains(CdbSentinels.EndMarker))
+                        {
+                            m_logger.LogInformation("🧠 End sentinel detected - completing command: {Line}", line);
+                            
+                            if (inCommand && !string.IsNullOrEmpty(currentCommandId))
+                            {
+                                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
+                            }
+                            
+                            // Reset for next command
+                            currentCommandId = string.Empty;
+                            currentCommandOutput.Clear();
+                            currentCommandStderr.Clear();
+                            inCommand = false;
+                            continue;
+                        }
+
+                        // Handle regular output
+                        if (inCommand)
+                        {
+                            if (isStderr)
+                            {
+                                currentCommandStderr.Add(line);
+                            }
+                            else
+                            {
+                                currentCommandOutput.AppendLine(line);
+                            }
+                        }
+                        else
+                        {
+                            // Output outside of command context - could be CDB prompts, etc.
+                            m_logger.LogDebug("🧠 Output outside command context: {Line}", line);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        m_logger.LogError(ex, "🧠 Error processing line in consumer: {Line}", line);
+                    }
+                }
             }
             catch (OperationCanceledException)
             {
-                m_logger.LogTrace("Stderr reading cancelled");
+                m_logger.LogDebug("🧠 Consumer cancelled");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error reading stderr: {Message}", ex.Message);
+                m_logger.LogError(ex, "🧠 Error in consumer thread");
             }
-        }
-
-        /// <summary>
-        /// Calculates the idle timeout based on configuration.
-        /// </summary>
-        /// <returns>The idle timeout in milliseconds.</returns>
-        private int CalculateIdleTimeout()
-        {
-            // Use configured idle timeout to allow symbol server downloads to complete
-            // Symbol servers can be slow, especially on first download or with proxies
-            // Default: 180000ms (3 minutes)
-            return m_config.IdleTimeoutMs;
-        }
-
-        /// <summary>
-        /// Checks if the absolute timeout has been exceeded.
-        /// </summary>
-        /// <param name="startTime">The time when the command execution started.</param>
-        /// <returns><c>true</c> if the absolute timeout has been exceeded; otherwise, <c>false</c>.</returns>
-        private bool CheckAbsoluteTimeout(DateTime startTime)
-        {
-            var currentElapsed = DateTime.Now - startTime;
-            if (currentElapsed.TotalMilliseconds >= m_config.CommandTimeoutMs)
+            finally
             {
-                m_logger.LogWarning("⏰ Command execution timed out after {ElapsedMs}ms (timeout: {TimeoutMs}ms), forcing completion",
-                    currentElapsed.TotalMilliseconds, m_config.CommandTimeoutMs);
-                return true;
+                m_logger.LogInformation("🧠 Consumer thread ended");
             }
-            return false;
         }
 
         /// <summary>
-        /// Checks if the idle timeout has been exceeded.
+        /// Completes a command by setting the result in the pending commands dictionary.
         /// </summary>
-        /// <param name="lastOutputTime">The time when the last output was received.</param>
-        /// <param name="idleTimeoutMs">The idle timeout in milliseconds.</param>
-        /// <returns><c>true</c> if the idle timeout has been exceeded; otherwise, <c>false</c>.</returns>
-        private bool CheckIdleTimeout(DateTime lastOutputTime, int idleTimeoutMs)
-        {
-            var idleElapsed = (DateTime.Now - lastOutputTime).TotalMilliseconds;
-            if (idleElapsed >= idleTimeoutMs)
-            {
-                m_logger.LogWarning("⏳ Command idle timed out after {IdleElapsedMs}ms (idle timeout: {IdleTimeoutMs}ms), forcing completion",
-                    idleElapsed, idleTimeoutMs);
-                return true;
-            }
-            return false;
-        }
-
-        private async Task<(string? Line, bool ShouldContinue)> TryReadLineWithTimeoutAsync(StreamReader debuggerOutput, CancellationToken cancellationToken)
+        /// <param name="commandId">The unique identifier of the command to complete.</param>
+        /// <param name="output">The stdout output from the command.</param>
+        /// <param name="stderr">The stderr output from the command.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandId"/>, <paramref name="output"/>, or <paramref name="stderr"/> is null.</exception>
+        private Task CompleteCurrentCommandAsync(string commandId, string output, List<string> stderr)
         {
             try
             {
-                // TRUE ASYNC: Let StreamReader.ReadLineAsync() work naturally without artificial polling
-                // The method will block until data is available or cancellation is requested
-                var result = await debuggerOutput.ReadLineAsync().ConfigureAwait(false);
-                return (result, true);
-            }
-            catch (OperationCanceledException)
-            {
-                // External cancellation - continue looping to check which timeout triggered
-                return (null, true);
-            }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("currently in use"))
-            {
-                // Concurrent access to stream - this is expected when timeout occurs
-                // Let the idle timeout handle this naturally
-                return (null, true);
+                // Merge stderr into result if present
+                var result = output;
+                if (stderr.Count > 0)
+                {
+                    result += "\n--- STDERR ---\n" + string.Join("\n", stderr);
+                }
+
+                // Find and complete the pending command
+                TaskCompletionSource<string>? completionSource = null;
+                lock (m_pendingCommandsLock)
+                {
+                    // Find the oldest pending command (FIFO)
+                    var oldestCommand = m_pendingCommands.FirstOrDefault();
+                    if (oldestCommand.Key != null)
+                    {
+                        completionSource = oldestCommand.Value;
+                        m_pendingCommands.Remove(oldestCommand.Key);
+                    }
+                }
+
+                if (completionSource != null)
+                {
+                    m_logger.LogInformation("🧠 Completing command {CommandId} with {OutputLength} chars", commandId, result.Length);
+                    completionSource.SetResult(result);
+                }
+                else
+                {
+                    m_logger.LogWarning("🧠 No pending command found for completion: {CommandId}", commandId);
+                }
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "⚠️ Error reading from StreamReader: {ExType}: {ExMsg}",
-                    ex.GetType().Name, ex.Message);
-                return (null, false); // Stop reading on unexpected errors
+                m_logger.LogError(ex, "🧠 Error completing command: {CommandId}", commandId);
             }
-        }
-
-        private Task HandleNullLineAsync(CancellationToken cancellationToken)
-        {
-            // CRITICAL: null from ReadLine() means no data YET, not end of stream!
-            // StreamReader.ReadLine() returns null when:
-            // 1. Stream is closed/disposed (this is bad - should throw)
-            // 2. No complete line is available yet (this is normal - wait for more data)
-            // We rely on idle timeout to detect when CDB has actually stopped outputting
-            m_logger.LogTrace("ReadLine() returned null - no data available, waiting for more...");
-            // No artificial delay needed - let the natural async flow handle timing
+            
             return Task.CompletedTask;
         }
 
         /// <summary>
-        /// Determines if a command line indicates command completion.
+        /// Creates a command with start and end sentinels for proper output parsing.
         /// </summary>
-        /// <param name="line">The line to check for completion indicators.</param>
-        /// <returns><c>true</c> if the line indicates command completion; otherwise, <c>false</c>.</returns>
-        private bool IsCommandComplete(string line)
+        /// <param name="command">The original command to wrap with sentinels.</param>
+        /// <returns>A command string with start and end sentinels for output parsing.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="command"/> is null.</exception>
+        private string CreateCommandWithSentinels(string command)
         {
-            if (m_outputParser.IsCommandComplete(line))
-            {
-                m_logger.LogTrace("Command completion detected on line: '{Line}'", line);
-                return true;
-            }
-            return false;
+            return $".echo {CdbSentinels.StartMarker}; {command}; .echo {CdbSentinels.EndMarker}";
         }
 
         /// <summary>
-        /// Disposes of the command executor resources.
-        /// This method releases semaphores and other unmanaged resources.
+        /// Sends a command to the CDB process input stream.
+        /// </summary>
+        /// <param name="processManager">The CDB process manager providing access to the input stream.</param>
+        /// <param name="command">The command to send to CDB.</param>
+        /// <param name="cancellationToken">Cancellation token for the operation.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="processManager"/> or <paramref name="command"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no input stream is available for sending commands.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
+        private async Task SendCommandToCdbAsync(CdbProcessManager processManager, string command, CancellationToken cancellationToken)
+        {
+            var debuggerInput = processManager.DebuggerInput;
+            if (debuggerInput == null)
+            {
+                throw new InvalidOperationException("No input stream available for sending command");
+            }
+
+            m_logger.LogDebug("Sending command to CDB: {Command}", command);
+
+            // TRUE ASYNC: Use WriteLineAsync instead of blocking WriteLine
+            await debuggerInput.WriteLineAsync(command).ConfigureAwait(false);
+            await debuggerInput.FlushAsync().ConfigureAwait(false);
+
+            m_logger.LogDebug("Command sent successfully to CDB");
+        }
+
+        /// <summary>
+        /// Disposes of the command executor and cleans up resources.
         /// </summary>
         public void Dispose()
         {
-            m_commandExecutionSemaphore?.Dispose();
-            m_streamAccessSemaphore?.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Disposes of the command executor and cleans up resources.
+        /// </summary>
+        /// <param name="disposing">True if called from Dispose(), false if called from finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                m_logger.LogInformation("🧹 Disposing CdbCommandExecutor");
+
+                // Cancel session
+                m_sessionCancellation?.Cancel();
+
+                // Complete channel to stop consumer
+                m_sessionChannel?.Writer.TryComplete();
+
+                // Wait for all tasks to complete
+                try
+                {
+                    Task.WaitAll(
+                        new[] { m_stdoutProducer, m_stderrProducer, m_consumer }
+                            .Where(t => t != null)
+                            .Cast<Task>()
+                            .ToArray(),
+                        TimeSpan.FromSeconds(5));
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogWarning(ex, "Error waiting for tasks to complete during disposal");
+                }
+
+                // Dispose resources
+                m_sessionCancellation?.Dispose();
+                m_commandExecutionSemaphore?.Dispose();
+                m_streamAccessSemaphore?.Dispose();
+
+                m_logger.LogInformation("✅ CdbCommandExecutor disposed");
+            }
         }
     }
 }
