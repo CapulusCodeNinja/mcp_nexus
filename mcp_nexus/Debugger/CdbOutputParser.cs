@@ -98,13 +98,13 @@ namespace mcp_nexus.Debugger
         private bool IsSentinelDetected(string line)
         {
             // Check for start sentinel
-            if (line.Contains("MCP_NEXUS_SENTINEL_COMMAND_START"))
+            if (line.Contains(CdbSentinels.StartMarker))
             {
                 return false; // Don't complete on start sentinel, wait for end sentinel
             }
 
             // Check for end sentinel
-            if (line.Contains("MCP_NEXUS_SENTINEL_COMMAND_END"))
+            if (line.Contains(CdbSentinels.EndMarker))
             {
                 return true; // Complete when end sentinel is found
             }

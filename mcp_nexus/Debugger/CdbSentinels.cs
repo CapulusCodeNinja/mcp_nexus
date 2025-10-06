@@ -10,7 +10,7 @@ namespace mcp_nexus.Debugger
         /// Start-of-command diagnostic marker. Kept stable for log filtering and tooling.
         /// This marker is placed at the beginning of each command to identify command boundaries.
         /// </summary>
-        public const string StartMarker = "MCP_NEXUS_COMMAND_SENTINEL_START";
+        public const string StartMarker = "MCP_NEXUS_SENTINEL_COMMAND_START";
 
         /// <summary>
         /// End-of-command completion marker. Stable string so consumers can filter.
