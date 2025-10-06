@@ -23,7 +23,7 @@ namespace mcp_nexus.Debugger
         private CancellationTokenSource? m_sessionCancellation;
         private readonly Dictionary<string, TaskCompletionSource<string>> m_pendingCommands = new();
         private readonly object m_pendingCommandsLock = new();
-        private readonly Queue<string> m_commandIdQueue = new();
+        private string? m_currentCommandId = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CdbCommandExecutor"/> class.
@@ -125,6 +125,7 @@ namespace mcp_nexus.Debugger
         /// Executes a command in the CDB session and returns the output asynchronously.
         /// </summary>
         /// <param name="command">The command to execute.</param>
+        /// <param name="commandId">The unique command ID from the command queue.</param>
         /// <param name="processManager">The CDB process manager.</param>
         /// <param name="externalCancellationToken">External cancellation token.</param>
         /// <returns>The command output.</returns>
@@ -134,6 +135,7 @@ namespace mcp_nexus.Debugger
         /// <exception cref="TimeoutException">Thrown when command execution times out.</exception>
         public async Task<string> ExecuteCommandAsync(
             string command,
+            string commandId,
             CdbProcessManager processManager,
             CancellationToken externalCancellationToken = default)
         {
@@ -157,20 +159,19 @@ namespace mcp_nexus.Debugger
                 m_logger.LogDebug("Executing command with sentinels: '{Original}' -> '{WithSentinels}'",
                     command, commandWithSentinels);
 
-                m_logger.LogDebug("🎯 About to call SendCommandToCdbAsync");
-                // Send command to CDB
-                await SendCommandToCdbAsync(processManager, commandWithSentinels, externalCancellationToken).ConfigureAwait(false);
-                m_logger.LogDebug("🎯 SendCommandToCdbAsync completed");
-
-                // Create completion source for this command
-                var commandId = Guid.NewGuid().ToString();
+                // Create completion source for this command using the provided command ID
                 var completionSource = new TaskCompletionSource<string>();
 
                 lock (m_pendingCommandsLock)
                 {
                     m_pendingCommands[commandId] = completionSource;
-                    m_commandIdQueue.Enqueue(commandId); // Add to queue for consumer
+                    m_currentCommandId = commandId; // Set the current command ID for the consumer
                 }
+
+                m_logger.LogDebug("🎯 About to call SendCommandToCdbAsync");
+                // Send command to CDB
+                await SendCommandToCdbAsync(processManager, commandWithSentinels, externalCancellationToken).ConfigureAwait(false);
+                m_logger.LogDebug("🎯 SendCommandToCdbAsync completed");
 
                 // Wait for command completion with timeout
                 // Use CommandTimeoutMs for command execution - must be configured
@@ -245,10 +246,10 @@ namespace mcp_nexus.Debugger
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
 
-                            // Start new command - get the next command ID from the queue
+                            // Start new command - get the current command ID from the executor
                             lock (m_pendingCommandsLock)
                             {
-                                currentCommandId = m_commandIdQueue.Count > 0 ? m_commandIdQueue.Dequeue() : string.Empty;
+                                currentCommandId = m_currentCommandId ?? string.Empty;
                             }
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();
@@ -268,7 +269,10 @@ namespace mcp_nexus.Debugger
                             }
 
                             // Reset for next command
-                            // Command ID is already dequeued, no need to clear anything
+                            lock (m_pendingCommandsLock)
+                            {
+                                m_currentCommandId = null; // Clear the current command ID
+                            }
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();
@@ -287,7 +291,10 @@ namespace mcp_nexus.Debugger
                             }
 
                             // Reset for next command
-                            // Command ID is already dequeued, no need to clear anything
+                            lock (m_pendingCommandsLock)
+                            {
+                                m_currentCommandId = null; // Clear the current command ID
+                            }
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();
@@ -306,7 +313,10 @@ namespace mcp_nexus.Debugger
                             }
 
                             // Reset for next command
-                            // Command ID is already dequeued, no need to clear anything
+                            lock (m_pendingCommandsLock)
+                            {
+                                m_currentCommandId = null; // Clear the current command ID
+                            }
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();

@@ -238,6 +238,26 @@ namespace mcp_nexus.Debugger
         /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
         public async Task<string> ExecuteCommand(string command, CancellationToken externalCancellationToken)
         {
+            return await ExecuteCommand(command, Guid.NewGuid().ToString(), externalCancellationToken);
+        }
+
+        /// <summary>
+        /// Executes a command in the debugging session with cancellation support and command ID.
+        /// This method ensures thread-safe execution by using a semaphore to serialize command execution.
+        /// </summary>
+        /// <param name="command">The CDB command to execute.</param>
+        /// <param name="commandId">The unique command ID from the command queue.</param>
+        /// <param name="externalCancellationToken">The cancellation token for external cancellation.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the command output as a string, or an error message if execution fails.
+        /// </returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="command"/> is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no active debugging session is available.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
+        public async Task<string> ExecuteCommand(string command, string commandId, CancellationToken externalCancellationToken)
+        {
             ThrowIfDisposed();
 
             if (string.IsNullOrWhiteSpace(command))
@@ -266,7 +286,7 @@ namespace mcp_nexus.Debugger
 
                 // TRUE ASYNC: Direct call without Task.Run - proper async all the way through
                 // Semaphore ensures serialization, no need for thread pool wrapper
-                var result = await m_commandExecutor.ExecuteCommandAsync(preprocessedCommand, m_processManager, externalCancellationToken).ConfigureAwait(false);
+                var result = await m_commandExecutor.ExecuteCommandAsync(preprocessedCommand, commandId, m_processManager, externalCancellationToken).ConfigureAwait(false);
 
                 m_logger.LogInformation("🔒 SEMAPHORE: Command '{Command}' completed, result length: {Length}", command, result?.Length ?? 0);
 

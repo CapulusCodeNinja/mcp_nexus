@@ -62,6 +62,18 @@ namespace mcp_nexus.Debugger
         Task<string> ExecuteCommand(string command, CancellationToken externalCancellationToken);
 
         /// <summary>
+        /// Executes a command in the debugging session with cancellation support and command ID.
+        /// </summary>
+        /// <param name="command">The CDB command to execute.</param>
+        /// <param name="commandId">The unique command ID from the command queue.</param>
+        /// <param name="externalCancellationToken">The cancellation token for external cancellation.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the command output as a string, or an error message if execution fails.
+        /// </returns>
+        Task<string> ExecuteCommand(string command, string commandId, CancellationToken externalCancellationToken);
+
+        /// <summary>
         /// Cancels the currently executing command operation.
         /// </summary>
         void CancelCurrentOperation();

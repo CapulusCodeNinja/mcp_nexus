@@ -105,13 +105,18 @@ namespace mcp_nexus_tests.Mocks
 
         public async Task<string> ExecuteCommand(string command, CancellationToken cancellationToken)
         {
+            return await ExecuteCommand(command, Guid.NewGuid().ToString(), cancellationToken);
+        }
+
+        public async Task<string> ExecuteCommand(string command, string commandId, CancellationToken cancellationToken)
+        {
             if (!_isActive)
                 throw new InvalidOperationException("Session is not active");
 
             if (_disposed)
                 throw new ObjectDisposedException(nameof(RealisticCdbSessionMock));
 
-            _logger.LogInformation("Executing realistic command: {Command}", command);
+            _logger.LogInformation("Executing realistic command: {Command} (ID: {CommandId})", command, commandId);
 
             // Check for cancellation before starting
             cancellationToken.ThrowIfCancellationRequested();

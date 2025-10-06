@@ -133,7 +133,7 @@ namespace mcp_nexus_tests.Debugger
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                m_Executor.ExecuteCommandAsync(null!, mockProcessManager.Object));
+                m_Executor.ExecuteCommandAsync(null!, "test-command-id", mockProcessManager.Object));
         }
 
         [Fact]
@@ -145,7 +145,7 @@ namespace mcp_nexus_tests.Debugger
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                m_Executor.ExecuteCommandAsync("", mockProcessManager.Object));
+                m_Executor.ExecuteCommandAsync("", "test-command-id", mockProcessManager.Object));
         }
 
         [Fact]
@@ -157,7 +157,7 @@ namespace mcp_nexus_tests.Debugger
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                m_Executor.ExecuteCommandAsync("   ", mockProcessManager.Object));
+                m_Executor.ExecuteCommandAsync("   ", "test-command-id", mockProcessManager.Object));
         }
 
         [Fact]
@@ -170,7 +170,7 @@ namespace mcp_nexus_tests.Debugger
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object));
+                m_Executor.ExecuteCommandAsync("test command", "test-command-id", mockProcessManager.Object));
         }
 
         [Fact]
@@ -181,7 +181,7 @@ namespace mcp_nexus_tests.Debugger
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object));
+                m_Executor.ExecuteCommandAsync("test command", "test-command-id", mockProcessManager.Object));
         }
 
         [Fact]
@@ -194,7 +194,7 @@ namespace mcp_nexus_tests.Debugger
             // Act & Assert
             // With null DebuggerInput, commands should throw InvalidOperationException
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object, CancellationToken.None));
+                m_Executor.ExecuteCommandAsync("test command", "test-command-id", mockProcessManager.Object, CancellationToken.None));
         }
 
         [Fact]
@@ -208,7 +208,7 @@ namespace mcp_nexus_tests.Debugger
 
             // Act & Assert
             await Assert.ThrowsAsync<TaskCanceledException>(() =>
-                m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object, cts.Token));
+                m_Executor.ExecuteCommandAsync("test command", "test-command-id", mockProcessManager.Object, cts.Token));
         }
 
         [Fact]
@@ -221,7 +221,7 @@ namespace mcp_nexus_tests.Debugger
             // Act & Assert
             // With null DebuggerInput, commands should throw InvalidOperationException
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object));
+                m_Executor.ExecuteCommandAsync("test command", "test-command-id", mockProcessManager.Object));
         }
 
         [Fact]
@@ -234,7 +234,7 @@ namespace mcp_nexus_tests.Debugger
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object));
+                m_Executor.ExecuteCommandAsync("test command", "test-command-id", mockProcessManager.Object));
         }
 
         [Fact]

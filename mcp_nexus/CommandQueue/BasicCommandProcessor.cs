@@ -113,7 +113,7 @@ namespace mcp_nexus.CommandQueue
 
                 // Execute command - use service cancellation token if service is cancelled, otherwise use command cancellation token
                 var tokenToUse = cancellationToken.IsCancellationRequested ? cancellationToken : (queuedCommand.CancellationTokenSource?.Token ?? cancellationToken);
-                var result = await m_CdbSession.ExecuteCommand(queuedCommand.Command ?? string.Empty, tokenToUse);
+                var result = await m_CdbSession.ExecuteCommand(queuedCommand.Command ?? string.Empty, queuedCommand.Id ?? string.Empty, tokenToUse);
 
                 // Store result in cache for session persistence
                 var commandResult = CommandResult.Success(result, DateTime.UtcNow - startTime);
