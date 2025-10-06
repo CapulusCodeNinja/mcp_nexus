@@ -48,8 +48,7 @@ namespace mcp_nexus_tests.Debugger
             Assert.False(m_ProcessManager.IsActive);
             Assert.Null(m_ProcessManager.DebuggerProcess);
             Assert.Null(m_ProcessManager.DebuggerInput);
-            Assert.Null(m_ProcessManager.DebuggerOutput);
-            Assert.Null(m_ProcessManager.DebuggerError);
+            // DebuggerOutput and DebuggerError properties removed - streams are handled internally
         }
 
         [Fact]
@@ -254,17 +253,7 @@ namespace mcp_nexus_tests.Debugger
             Assert.Null(m_ProcessManager.DebuggerInput);
         }
 
-        [Fact]
-        public void DebuggerOutput_WhenNotStarted_ReturnsNull()
-        {
-            Assert.Null(m_ProcessManager.DebuggerOutput);
-        }
-
-        [Fact]
-        public void DebuggerError_WhenNotStarted_ReturnsNull()
-        {
-            Assert.Null(m_ProcessManager.DebuggerError);
-        }
+        // DebuggerOutput and DebuggerError properties removed - streams are handled internally
 
         [Fact]
         public void StartProcess_WithException_LogsErrorAndReturnsFalse()

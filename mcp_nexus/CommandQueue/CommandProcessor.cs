@@ -183,7 +183,7 @@ namespace mcp_nexus.CommandQueue
                     var startTime = endTime.Add(-stopwatch.Elapsed);
                     m_ResultCache?.StoreResult(command.Id ?? string.Empty, cancelledResult,
                         command.Command, command.QueueTime, startTime, endTime);
-                    
+
                     CompleteCommandSafely(command, errorMessage, CommandState.Cancelled);
                     m_Tracker.UpdateState(command.Id ?? string.Empty, CommandState.Cancelled);
                     m_Tracker.IncrementCancelled();
@@ -233,7 +233,7 @@ namespace mcp_nexus.CommandQueue
                 var startTime = endTime.Add(-stopwatch.Elapsed);
                 m_ResultCache?.StoreResult(command.Id ?? string.Empty, failedResult,
                     command.Command, command.QueueTime, startTime, endTime);
-                
+
                 CompleteCommandSafely(command, errorMessage, CommandState.Failed);
                 m_Tracker.UpdateState(command.Id ?? string.Empty, CommandState.Failed);
                 m_Tracker.IncrementFailed();

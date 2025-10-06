@@ -290,8 +290,7 @@ namespace mcp_nexus_tests.Debugger
             mockProcessManager.Setup(pm => pm.IsActive).Returns(true);
             mockProcessManager.Setup(pm => pm.DebuggerProcess).Returns(mockProcess.Object);
             mockProcessManager.Setup(pm => pm.DebuggerInput).Returns(mockInput.Object);
-            mockProcessManager.Setup(pm => pm.DebuggerOutput).Returns(mockOutput.Object);
-            mockProcessManager.Setup(pm => pm.DebuggerError).Returns(mockError.Object);
+            // DebuggerOutput and DebuggerError properties removed - streams are handled internally
 
             // Mock streams to return null (end of stream) to simulate timeout behavior
             mockOutput.Setup(sr => sr.ReadLineAsync()).ReturnsAsync((string?)null);

@@ -137,7 +137,7 @@ namespace mcp_nexus.Session
             {
                 target += $" -y \"{symbolsPath}\"";
             }
-            
+
             var cdbLogFilePath = GetCdbSessionBasedLogPath(sessionId);
             target += $" -lines -logau  \"{cdbLogFilePath}\"";
 

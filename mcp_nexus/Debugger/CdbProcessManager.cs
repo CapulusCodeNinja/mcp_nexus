@@ -247,7 +247,7 @@ namespace mcp_nexus.Debugger
         /// </remarks>
         private ProcessStartInfo CreateProcessStartInfo(string cdbPath, string target)
         {
-            if(!target.StartsWith("-"))
+            if (!target.StartsWith("-"))
             {
                 throw new ArgumentException("Target must start with -");
             }

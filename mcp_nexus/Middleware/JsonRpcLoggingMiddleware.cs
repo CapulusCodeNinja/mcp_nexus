@@ -288,7 +288,7 @@ namespace mcp_nexus.Middleware
                         // Decode the text field content
                         var encodedText = textField.GetString() ?? "";
                         string decodedText;
-                        
+
                         // Unescape the string value of the "text" field, which is often a JSON string within a JSON string.
                         // Json.TextSerializer.Deserialize<string> is the most reliable way to unescape a JSON string.
                         try

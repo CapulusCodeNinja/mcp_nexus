@@ -55,7 +55,7 @@ namespace mcp_nexus.Debugger
             // Split by newlines in case multiple lines arrived together
             // This prevents sentinel detection issues with concatenated output
             var lines = e.Data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            
+
             // Send each line individually to the channel
             if (m_sessionChannel != null)
             {
@@ -132,12 +132,12 @@ namespace mcp_nexus.Debugger
             string command,
             CdbProcessManager processManager,
             CancellationToken externalCancellationToken = default)
-            {
-                if (string.IsNullOrWhiteSpace(command))
-                    throw new ArgumentException("Command cannot be null or empty", nameof(command));
+        {
+            if (string.IsNullOrWhiteSpace(command))
+                throw new ArgumentException("Command cannot be null or empty", nameof(command));
 
-                if (!processManager.IsActive)
-                    throw new InvalidOperationException("No active debugging session");
+            if (!processManager.IsActive)
+                throw new InvalidOperationException("No active debugging session");
 
             if (m_sessionChannel == null)
                 throw new InvalidOperationException("Session not initialized. Call InitializeSessionAsync first.");
@@ -205,7 +205,7 @@ namespace mcp_nexus.Debugger
         private async Task StartConsumerAsync(CancellationToken cancellationToken)
         {
             m_logger.LogInformation("🧠 Starting consumer thread");
-            
+
             try
             {
                 if (m_sessionChannel == null)
@@ -228,13 +228,13 @@ namespace mcp_nexus.Debugger
                             line.Contains(CdbSentinels.StartMarker))
                         {
                             m_logger.LogDebug("🧠 Start sentinel detected: {Line}", line);
-                            
+
                             // Complete previous command if any
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
-                            
+
                             // Start new command
                             currentCommandId = Guid.NewGuid().ToString();
                             currentCommandOutput.Clear();
@@ -248,12 +248,12 @@ namespace mcp_nexus.Debugger
                             line.Contains(CdbSentinels.EndMarker))
                         {
                             m_logger.LogInformation("🧠 End sentinel detected - completing command: {Line}", line);
-                            
+
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
-                            
+
                             // Reset for next command
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
@@ -266,12 +266,12 @@ namespace mcp_nexus.Debugger
                         if (CdbCompletionPatterns.IsCdbPrompt(line))
                         {
                             m_logger.LogInformation("🧠 CDB prompt detected - completing command: {Line}", line);
-                            
+
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
-                            
+
                             // Reset for next command
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
@@ -284,12 +284,12 @@ namespace mcp_nexus.Debugger
                         if (CdbCompletionPatterns.IsUltraSafeCompletion(line))
                         {
                             m_logger.LogInformation("🧠 Ultra-safe completion pattern detected - completing command: {Line}", line);
-                            
+
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
-                            
+
                             // Reset for next command
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
@@ -455,9 +455,9 @@ namespace mcp_nexus.Debugger
                     {
                         Task.WaitAll(new[] { m_consumer }, TimeSpan.FromSeconds(5));
                     }
-            }
-            catch (Exception ex)
-            {
+                }
+                catch (Exception ex)
+                {
 
                     m_logger.LogWarning(ex, "Error waiting for tasks to complete during disposal");
                 }

@@ -530,7 +530,7 @@ namespace mcp_nexus.Tools
         private string GetEstimatedExecutionTime(string command)
         {
             var cmd = command.Trim().ToLowerInvariant();
-            
+
             return cmd switch
             {
                 var c when c.StartsWith("!analyze") => "30-60 seconds (complex analysis)",
