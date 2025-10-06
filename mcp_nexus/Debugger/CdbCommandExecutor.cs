@@ -46,18 +46,24 @@ namespace mcp_nexus.Debugger
         /// <param name="e">The data received event arguments.</param>
         /// <param name="isStderr">True if this is stderr data, false for stdout.</param>
         private void DataReceivedHandler(object sender, DataReceivedEventArgs e, bool isStderr)
-        {            if (string.IsNullOrEmpty(e.Data))
+        {
+            if (string.IsNullOrEmpty(e.Data))
             {
-                // Null means the stream has been closed
-                m_logger.LogInformation("📤 {StreamType} stream received null, likely closed", isStderr ? "Stderr" : "Stdout");
                 return;
             }
 
-            // Send to channel
+            // Split by newlines in case multiple lines arrived together
+            // This prevents sentinel detection issues with concatenated output
+            var lines = e.Data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            
+            // Send each line individually to the channel
             if (m_sessionChannel != null)
             {
-                // Use fire-and-forget approach for event handler
-                _ = m_sessionChannel.Writer.WriteAsync((e.Data, isStderr, DateTime.Now)).AsTask();
+                foreach (var line in lines)
+                {
+                    // Use fire-and-forget approach for event handler
+                    _ = m_sessionChannel.Writer.WriteAsync((line, isStderr, DateTime.Now)).AsTask();
+                }
             }
         }
 

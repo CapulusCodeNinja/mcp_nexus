@@ -139,7 +139,7 @@ namespace mcp_nexus.Session
             }
             
             var cdbLogFilePath = GetCdbSessionBasedLogPath(sessionId);
-            target += $" -logau  \"{cdbLogFilePath}\"";
+            target += $" -lines -logau  \"{cdbLogFilePath}\"";
 
             return target;
         }
