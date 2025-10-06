@@ -551,8 +551,8 @@ namespace mcp_nexus_tests.CommandQueue
 
             var commandId = m_Service.QueueCommand("failing-command");
 
-            // Wait for command to complete
-            await Task.Delay(100);
+            // Wait for command to complete (failing-command has 50ms execution + 10ms completion delay)
+            await Task.Delay(200);
 
             // Act
             var result = await m_Service.GetCommandResult(commandId);

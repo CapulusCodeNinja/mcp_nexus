@@ -61,6 +61,10 @@ namespace mcp_nexus_tests.Tools
                 m_MockSessionManager
                     .Setup(x => x.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(sessionId);
+                
+                m_MockSessionManager
+                    .Setup(x => x.GetSessionContext(sessionId))
+                    .Returns(sessionContext);
 
                 // Act
                 var result = await McpNexusTools.nexus_open_dump_analyze_session(

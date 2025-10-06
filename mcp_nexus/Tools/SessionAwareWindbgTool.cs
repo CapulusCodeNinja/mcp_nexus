@@ -215,7 +215,31 @@ namespace mcp_nexus.Tools
 
                 // Create new session
                 var sessionId = await sessionManager.CreateSessionAsync(dumpPath, symbolsPath);
-                var context = sessionManager.GetSessionContext(sessionId);
+                
+                // CRITICAL: Validate session was actually created and exists
+                if (string.IsNullOrWhiteSpace(sessionId))
+                {
+                    logger.LogError("Session creation returned null or empty session ID");
+                    throw new InvalidOperationException("Session creation failed - no session ID returned");
+                }
+                
+                // Verify session exists in session manager (only if session creation succeeded)
+                try
+                {
+                    var context = sessionManager.GetSessionContext(sessionId);
+                    if (context == null)
+                    {
+                        logger.LogError("Session {SessionId} was created but context is null - session may not exist", sessionId);
+                        throw new InvalidOperationException($"Session {sessionId} was created but context is null");
+                    }
+                    logger.LogInformation("✅ Session {SessionId} created and validated successfully", sessionId);
+                }
+                catch (Exception ex) when (!(ex is InvalidOperationException))
+                {
+                    // If GetSessionContext fails for any reason other than our validation, log but don't fail
+                    logger.LogWarning(ex, "Could not verify session context for {SessionId}, but session creation succeeded", sessionId);
+                    logger.LogInformation("✅ Session {SessionId} created successfully (context verification skipped)", sessionId);
+                }
 
                 // Return standardized response with required fields
                 var response = new
@@ -398,9 +422,25 @@ namespace mcp_nexus.Tools
         {
             try
             {
-                // Validate session
+                // CRITICAL: Validate session ID format and existence
+                if (string.IsNullOrWhiteSpace(sessionId))
+                {
+                    logger.LogError("Command execution failed: Session ID is null or empty");
+                    return new
+                    {
+                        sessionId = sessionId,
+                        commandId = (string?)null,
+                        status = "Failed",
+                        operation = "nexus_enqueue_async_dump_analyze_command",
+                        message = "Session ID cannot be null or empty",
+                        usage = USAGE_EXPLANATION
+                    };
+                }
+                
+                // Validate session exists
                 if (!sessionManager.SessionExists(sessionId))
                 {
+                    logger.LogError("Command execution failed: Session {SessionId} does not exist", sessionId);
                     var sessionNotFoundResponse = new
                     {
                         sessionId = sessionId,

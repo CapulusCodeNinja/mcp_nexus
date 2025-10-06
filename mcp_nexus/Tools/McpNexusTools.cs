@@ -72,7 +72,29 @@ namespace mcp_nexus.Tools
                 }
 
                 var sessionId = await sessionManager.CreateSessionAsync(dumpPath, symbolsPath);
-                // Do not immediately re-query context to avoid race; trust the returned id
+                
+                // CRITICAL: Validate session was actually created and exists
+                if (string.IsNullOrWhiteSpace(sessionId))
+                {
+                    logger.LogError("Session creation returned null or empty session ID");
+                    throw new InvalidOperationException("Session creation failed - no session ID returned");
+                }
+                
+                // Verify session exists in session manager (only if session creation succeeded)
+                try
+                {
+                    var context = sessionManager.GetSessionContext(sessionId);
+                    if (context == null)
+                    {
+                        logger.LogError("Session {SessionId} was created but context is null - session may not exist", sessionId);
+                        throw new InvalidOperationException($"Session {sessionId} was created but context is null");
+                    }
+                }
+                catch (Exception ex) when (!(ex is InvalidOperationException))
+                {
+                    // If GetSessionContext fails for any reason other than our validation, log but don't fail
+                    logger.LogWarning(ex, "Could not verify session context for {SessionId}, but session creation succeeded", sessionId);
+                }
 
                 var response = new
                 {
@@ -84,7 +106,7 @@ namespace mcp_nexus.Tools
                     message = $"Session created successfully: {sessionId}. Use 'sessions' resource to manage sessions."
                 };
 
-                logger.LogInformation("Session {SessionId} created successfully", sessionId);
+                logger.LogInformation("✅ Session {SessionId} created and validated successfully", sessionId);
                 return response;
             }
             catch (SessionLimitExceededException ex)
@@ -342,14 +364,44 @@ namespace mcp_nexus.Tools
 
             try
             {
-                if (!sessionManager.SessionExists(sessionId))
+                // CRITICAL: Validate session ID format and existence
+                if (string.IsNullOrWhiteSpace(sessionId))
                 {
+                    logger.LogError("Command result read failed: Session ID is null or empty");
                     return new
                     {
                         sessionId = sessionId,
                         commandId = commandId,
                         status = "Failed",
-                        error = $"Session {sessionId} not found. Use nexus_list_sessions to see available sessions.",
+                        error = "Session ID cannot be null or empty",
+                        operation = "nexus_read_dump_analyze_command_result",
+                        usage = SessionAwareWindbgTool.USAGE_EXPLANATION
+                    };
+                }
+                
+                if (string.IsNullOrWhiteSpace(commandId))
+                {
+                    logger.LogError("Command result read failed: Command ID is null or empty");
+                    return new
+                    {
+                        sessionId = sessionId,
+                        commandId = commandId,
+                        status = "Failed",
+                        error = "Command ID cannot be null or empty",
+                        operation = "nexus_read_dump_analyze_command_result",
+                        usage = SessionAwareWindbgTool.USAGE_EXPLANATION
+                    };
+                }
+                
+                if (!sessionManager.SessionExists(sessionId))
+                {
+                    logger.LogError("Command result read failed: Session {SessionId} does not exist", sessionId);
+                    return new
+                    {
+                        sessionId = sessionId,
+                        commandId = commandId,
+                        status = "Failed",
+                        error = $"Session {sessionId} not found. Use 'sessions' resource to see available sessions.",
                         operation = "nexus_read_dump_analyze_command_result",
                         usage = SessionAwareWindbgTool.USAGE_EXPLANATION
                     };
