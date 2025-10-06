@@ -57,7 +57,7 @@ namespace mcp_nexus.Tools
                 if (!File.Exists(dumpPath))
                 {
                     logger.LogError("Dump file does not exist: {DumpPath}", dumpPath);
-                    
+
                     var errorResponse = new
                     {
                         sessionId = (string?)null,
@@ -239,7 +239,7 @@ namespace mcp_nexus.Tools
                         // Use exponential backoff instead of fixed delay
                         var delayMs = Math.Min(1000, 50 * (int)Math.Pow(1.5, attempt - 1));
                         await Task.Delay(delayMs);
-                        
+
                         if (sessionManager.TryGetCommandQueue(sessionId, out commandQueue) && commandQueue != null)
                         {
                             // Additional check: verify the queue is actually ready to accept commands

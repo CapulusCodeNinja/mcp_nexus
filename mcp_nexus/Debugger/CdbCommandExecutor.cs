@@ -14,7 +14,6 @@ namespace mcp_nexus.Debugger
         private readonly CdbOutputParser m_outputParser;
         private readonly object m_cancellationLock = new();
         private readonly SemaphoreSlim m_commandExecutionSemaphore = new(1, 1);
-        private readonly SemaphoreSlim m_streamAccessSemaphore = new(1, 1);
 
         // Session-scoped architecture components
         private Channel<(string Line, bool IsStderr, DateTime Timestamp)>? m_sessionChannel;
@@ -114,7 +113,7 @@ namespace mcp_nexus.Debugger
 
                 // Create command with sentinels
                 var commandWithSentinels = CreateCommandWithSentinels(command);
-                m_logger.LogDebug("Executing command with sentinels: '{Original}' -> '{WithSentinels}'", 
+                m_logger.LogDebug("Executing command with sentinels: '{Original}' -> '{WithSentinels}'",
                     command, commandWithSentinels);
 
                 // Send command to CDB
@@ -123,7 +122,7 @@ namespace mcp_nexus.Debugger
                 // Create completion source for this command
                 var commandId = Guid.NewGuid().ToString();
                 var completionSource = new TaskCompletionSource<string>();
-                
+
                 lock (m_pendingCommandsLock)
                 {
                     m_pendingCommands[commandId] = completionSource;
@@ -143,13 +142,13 @@ namespace mcp_nexus.Debugger
                 catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
                 {
                     m_logger.LogWarning("⏰ Command timed out after {TimeoutMs}ms: {Command}", timeoutMs, command);
-                    
+
                     // Remove from pending commands
                     lock (m_pendingCommandsLock)
                     {
                         m_pendingCommands.Remove(commandId);
                     }
-                    
+
                     return $"Command timed out after {timeoutMs}ms - output may be incomplete.";
                 }
                 finally
@@ -179,7 +178,7 @@ namespace mcp_nexus.Debugger
         private async Task StartStdoutProducerAsync(CdbProcessManager processManager, CancellationToken cancellationToken)
         {
             m_logger.LogInformation("📤 Starting stdout producer thread");
-            
+
             try
             {
                 var debuggerOutput = processManager.DebuggerOutput;
@@ -197,22 +196,13 @@ namespace mcp_nexus.Debugger
                         var debuggerProcess = processManager.DebuggerProcess;
                         if (debuggerProcess?.HasExited == true)
                         {
-                            m_logger.LogError("CDB process has exited unexpectedly. Exit code: {ExitCode}", 
+                            m_logger.LogError("CDB process has exited unexpectedly. Exit code: {ExitCode}",
                                 debuggerProcess.ExitCode);
                             break;
                         }
 
                         // Read line from stdout
-                        string? line;
-                        await m_streamAccessSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                        try
-                        {
-                            line = await debuggerOutput.ReadLineAsync().ConfigureAwait(false);
-                        }
-                        finally
-                        {
-                            m_streamAccessSemaphore.Release();
-                        }
+                        string? line = await debuggerOutput.ReadLineAsync().ConfigureAwait(false);
 
                         if (line == null)
                         {
@@ -256,7 +246,7 @@ namespace mcp_nexus.Debugger
         private async Task StartStderrProducerAsync(CdbProcessManager processManager, CancellationToken cancellationToken)
         {
             m_logger.LogInformation("📤 Starting stderr producer thread");
-            
+
             try
             {
                 var debuggerError = processManager.DebuggerError;
@@ -274,22 +264,13 @@ namespace mcp_nexus.Debugger
                         var debuggerProcess = processManager.DebuggerProcess;
                         if (debuggerProcess?.HasExited == true)
                         {
-                            m_logger.LogError("CDB process has exited unexpectedly. Exit code: {ExitCode}", 
-                                debuggerProcess.ExitCode);
+                            m_logger.LogError("CDB process has exited unexpectedly. Exit code: {ExitCode}",
+                            debuggerProcess.ExitCode);
                             break;
                         }
 
                         // Read line from stderr
-                        string? line;
-                        await m_streamAccessSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                        try
-                        {
-                            line = await debuggerError.ReadLineAsync().ConfigureAwait(false);
-                        }
-                        finally
-                        {
-                            m_streamAccessSemaphore.Release();
-                        }
+                        string? line = await debuggerError.ReadLineAsync().ConfigureAwait(false);
 
                         if (line == null)
                         {
@@ -331,7 +312,7 @@ namespace mcp_nexus.Debugger
         private async Task StartConsumerAsync(CancellationToken cancellationToken)
         {
             m_logger.LogInformation("🧠 Starting consumer thread");
-            
+
             try
             {
                 if (m_sessionChannel == null)
@@ -354,13 +335,13 @@ namespace mcp_nexus.Debugger
                             line.Contains(CdbSentinels.StartMarker))
                         {
                             m_logger.LogDebug("🧠 Start sentinel detected: {Line}", line);
-                            
+
                             // Complete previous command if any
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
-                            
+
                             // Start new command
                             currentCommandId = Guid.NewGuid().ToString();
                             currentCommandOutput.Clear();
@@ -374,12 +355,48 @@ namespace mcp_nexus.Debugger
                             line.Contains(CdbSentinels.EndMarker))
                         {
                             m_logger.LogInformation("🧠 End sentinel detected - completing command: {Line}", line);
-                            
+
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
-                            
+
+                            // Reset for next command
+                            currentCommandId = string.Empty;
+                            currentCommandOutput.Clear();
+                            currentCommandStderr.Clear();
+                            inCommand = false;
+                            continue;
+                        }
+
+                        // FALLBACK: Check for CDB prompt patterns (100% reliable)
+                        if (CdbCompletionPatterns.IsCdbPrompt(line))
+                        {
+                            m_logger.LogWarning("🧠 CDB prompt detected - completing command: {Line}", line);
+
+                            if (inCommand && !string.IsNullOrEmpty(currentCommandId))
+                            {
+                                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
+                            }
+
+                            // Reset for next command
+                            currentCommandId = string.Empty;
+                            currentCommandOutput.Clear();
+                            currentCommandStderr.Clear();
+                            inCommand = false;
+                            continue;
+                        }
+
+                        // FALLBACK: Check for ultra-safe completion patterns
+                        if (CdbCompletionPatterns.IsUltraSafeCompletion(line))
+                        {
+                            m_logger.LogWarning("🧠 Ultra-safe completion pattern detected - completing command: {Line}", line);
+
+                            if (inCommand && !string.IsNullOrEmpty(currentCommandId))
+                            {
+                                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
+                            }
+
                             // Reset for next command
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
@@ -472,7 +489,7 @@ namespace mcp_nexus.Debugger
             {
                 m_logger.LogError(ex, "🧠 Error completing command: {CommandId}", commandId);
             }
-            
+
             return Task.CompletedTask;
         }
 
@@ -557,7 +574,6 @@ namespace mcp_nexus.Debugger
                 // Dispose resources
                 m_sessionCancellation?.Dispose();
                 m_commandExecutionSemaphore?.Dispose();
-                m_streamAccessSemaphore?.Dispose();
 
                 m_logger.LogInformation("✅ CdbCommandExecutor disposed");
             }

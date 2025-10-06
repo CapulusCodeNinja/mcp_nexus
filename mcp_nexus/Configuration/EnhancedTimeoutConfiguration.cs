@@ -69,7 +69,7 @@ namespace mcp_nexus.Configuration
             bool enableAdaptiveTimeouts = true,
             double performanceMultiplier = 1.0)
         {
-            ValidateParameters(baseCommandTimeoutMs, complexCommandTimeoutMs, 
+            ValidateParameters(baseCommandTimeoutMs, complexCommandTimeoutMs,
                 outputReadingTimeoutMs, idleTimeoutMs, startupDelayMs, symbolServerMaxRetries, performanceMultiplier);
 
             BaseCommandTimeoutMs = baseCommandTimeoutMs;

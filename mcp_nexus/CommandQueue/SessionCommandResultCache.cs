@@ -59,8 +59,8 @@ namespace mcp_nexus.CommandQueue
         /// <param name="queueTime">When the command was queued</param>
         /// <param name="startTime">When the command started executing</param>
         /// <param name="endTime">When the command finished</param>
-        public void StoreResult(string commandId, ICommandResult result, 
-            string? originalCommand = null, DateTime? queueTime = null, 
+        public void StoreResult(string commandId, ICommandResult result,
+            string? originalCommand = null, DateTime? queueTime = null,
             DateTime? startTime = null, DateTime? endTime = null)
         {
             if (m_Disposed) return;
@@ -68,7 +68,7 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                var cachedResult = new CachedCommandResult(result, DateTime.UtcNow, 
+                var cachedResult = new CachedCommandResult(result, DateTime.UtcNow,
                     originalCommand, queueTime, startTime, endTime);
                 var resultSize = EstimateResultSize(cachedResult);
 
@@ -110,7 +110,7 @@ namespace mcp_nexus.CommandQueue
                 {
                     // Update access time for LRU tracking
                     cachedResult.UpdateAccessTime();
-                    m_Logger?.LogDebug("Cache GetResult: Found command {CommandId}, Output length: {Length}, Output: '{Output}'", 
+                    m_Logger?.LogDebug("Cache GetResult: Found command {CommandId}, Output length: {Length}, Output: '{Output}'",
                         commandId, cachedResult.Result.Output?.Length ?? 0, cachedResult.Result.Output);
                     return cachedResult.Result;
                 }
@@ -304,7 +304,7 @@ namespace mcp_nexus.CommandQueue
                 var outputSize = result.Output?.Length * 2 ?? 0; // UTF-16 encoding
                 var errorSize = result.ErrorMessage?.Length * 2 ?? 0;
                 var dataSize = result.Data?.Count * 50 ?? 0; // Rough estimate for dictionary overhead
-                
+
                 return baseSize + outputSize + errorSize + dataSize;
             }
             catch
@@ -352,8 +352,8 @@ namespace mcp_nexus.CommandQueue
         public DateTime StartTime { get; }
         public DateTime EndTime { get; }
 
-        public CachedCommandResult(ICommandResult result, DateTime createdTime, 
-            string? originalCommand = null, DateTime? queueTime = null, 
+        public CachedCommandResult(ICommandResult result, DateTime createdTime,
+            string? originalCommand = null, DateTime? queueTime = null,
             DateTime? startTime = null, DateTime? endTime = null)
         {
             Result = result ?? throw new ArgumentNullException(nameof(result));

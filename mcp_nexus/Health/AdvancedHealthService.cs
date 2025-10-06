@@ -52,12 +52,12 @@ namespace mcp_nexus.Health
             m_memoryPressureThreshold = Math.Clamp(memoryPressureThreshold, 0.1, 1.0);
 
             // Auto-detect thresholds based on system memory if not specified
-            m_workingSetThresholdMB = workingSetThresholdMB > 0 
-                ? workingSetThresholdMB 
+            m_workingSetThresholdMB = workingSetThresholdMB > 0
+                ? workingSetThresholdMB
                 : Math.Max(512, (long)(m_systemTotalMemoryMB * 0.5)); // 50% of system RAM, min 512MB
 
-            m_privateMemoryThresholdMB = privateMemoryThresholdMB > 0 
-                ? privateMemoryThresholdMB 
+            m_privateMemoryThresholdMB = privateMemoryThresholdMB > 0
+                ? privateMemoryThresholdMB
                 : Math.Max(256, (long)(m_systemTotalMemoryMB * 0.25)); // 25% of system RAM, min 256MB
 
             // Initialize memory history for trend analysis
@@ -144,7 +144,7 @@ namespace mcp_nexus.Health
                 var gcMemory = GC.GetTotalMemory(false);
                 var estimatedSystemMemory = gcMemory * 10; // Rough estimate: GC memory is typically 1/10 of system memory
                 var systemMemoryMB = (long)(estimatedSystemMemory / (1024.0 * 1024.0));
-                
+
                 // Ensure we have a reasonable minimum and maximum
                 return Math.Clamp(systemMemoryMB, 1024, 32768); // Between 1GB and 32GB
             }
@@ -193,7 +193,7 @@ namespace mcp_nexus.Health
                 if (m_memoryHistory.Count < 3) return false;
 
                 var recent = m_memoryHistory.TakeLast(3).ToList();
-                return recent[2].WorkingSetMB > recent[1].WorkingSetMB && 
+                return recent[2].WorkingSetMB > recent[1].WorkingSetMB &&
                        recent[1].WorkingSetMB > recent[0].WorkingSetMB;
             }
         }

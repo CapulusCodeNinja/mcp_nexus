@@ -353,12 +353,12 @@ namespace mcp_nexus_tests.Resources
             var services = new ServiceCollection();
             var mockLogger = new Mock<ILogger<Program>>();
             var mockSessionManager = new Mock<ISessionManager>();
-            
+
             services.AddSingleton(mockLogger.Object);
             services.AddSingleton(mockSessionManager.Object);
-            
+
             var serviceProvider = services.BuildServiceProvider();
-            
+
             // Return empty sessions list
             mockSessionManager.Setup(x => x.GetAllSessions()).Returns(new List<SessionInfo>());
 
@@ -369,7 +369,7 @@ namespace mcp_nexus_tests.Resources
             Assert.NotNull(result);
             var commandDict = JsonSerializer.Deserialize<Dictionary<string, object>>(result);
             Assert.NotNull(commandDict);
-            
+
             // Should return empty commands object
             Assert.True(commandDict.Count >= 0);
         }
@@ -381,12 +381,12 @@ namespace mcp_nexus_tests.Resources
             var services = new ServiceCollection();
             var mockLogger = new Mock<ILogger<Program>>();
             var mockSessionManager = new Mock<ISessionManager>();
-            
+
             services.AddSingleton(mockLogger.Object);
             services.AddSingleton(mockSessionManager.Object);
-            
+
             var serviceProvider = services.BuildServiceProvider();
-            
+
             // Setup to throw exception
             mockSessionManager.Setup(x => x.GetAllSessions()).Throws(new InvalidOperationException("Test exception"));
 

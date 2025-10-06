@@ -765,7 +765,7 @@ namespace mcp_nexus_tests.Tools
 
                 // Assert
                 var json = JsonSerializer.Serialize(result);
-                Assert.True(json.Contains("Maximum concurrent sessions exceeded") || json.Contains("Session limit exceeded") || json.Contains("error"), 
+                Assert.True(json.Contains("Maximum concurrent sessions exceeded") || json.Contains("Session limit exceeded") || json.Contains("error"),
                     $"Expected error message but got: {json}");
             }
             finally
@@ -789,7 +789,7 @@ namespace mcp_nexus_tests.Tools
 
                 // Assert
                 var json = JsonSerializer.Serialize(result);
-                Assert.True(json.Contains("Failed to create debugging session") || json.Contains("error") || json.Contains("Exception"), 
+                Assert.True(json.Contains("Failed to create debugging session") || json.Contains("error") || json.Contains("Exception"),
                     $"Expected error message but got: {json}");
             }
             finally
@@ -810,7 +810,7 @@ namespace mcp_nexus_tests.Tools
             // Assert
             var json = JsonSerializer.Serialize(result);
             // Debug: Let's see what we actually get
-            Assert.True(json.Contains("Invalid session ID") || json.Contains("error") || json.Contains("null") || json.Contains("empty"), 
+            Assert.True(json.Contains("Invalid session ID") || json.Contains("error") || json.Contains("null") || json.Contains("empty"),
                 $"Expected error message but got: {json}");
         }
 
@@ -826,7 +826,7 @@ namespace mcp_nexus_tests.Tools
             // Assert
             var json = JsonSerializer.Serialize(result);
             // Debug: Let's see what we actually get
-            Assert.True(json.Contains("Invalid session ID") || json.Contains("error") || json.Contains("null") || json.Contains("empty"), 
+            Assert.True(json.Contains("Invalid session ID") || json.Contains("error") || json.Contains("null") || json.Contains("empty"),
                 $"Expected error message but got: {json}");
         }
 
@@ -842,7 +842,7 @@ namespace mcp_nexus_tests.Tools
             // Assert
             var json = JsonSerializer.Serialize(result);
             // Debug: Let's see what we actually get
-            Assert.True(json.Contains("Invalid session ID") || json.Contains("error") || json.Contains("null") || json.Contains("empty"), 
+            Assert.True(json.Contains("Invalid session ID") || json.Contains("error") || json.Contains("null") || json.Contains("empty"),
                 $"Expected error message but got: {json}");
         }
 
@@ -860,7 +860,7 @@ namespace mcp_nexus_tests.Tools
             // Assert
             var json = JsonSerializer.Serialize(result);
             // The response should contain an error message
-            Assert.True(json.Contains("Session not found") || json.Contains("error") || json.Contains("General error"), 
+            Assert.True(json.Contains("Session not found") || json.Contains("error") || json.Contains("General error"),
                 $"Expected error message but got: {json}");
         }
 
@@ -879,7 +879,7 @@ namespace mcp_nexus_tests.Tools
             // Assert
             var json = JsonSerializer.Serialize(result);
             var document = JsonDocument.Parse(json);
-            
+
             // The response should contain an error message
             Assert.True(json.Contains("Session not found") || json.Contains("error"));
         }
@@ -893,7 +893,7 @@ namespace mcp_nexus_tests.Tools
             var mockCommandQueue = new Mock<ICommandQueueService>();
             mockCommandQueue.Setup(x => x.QueueCommand(command))
                 .Throws(new InvalidOperationException("General error"));
-            
+
             ICommandQueueService? outQueue = mockCommandQueue.Object;
             m_MockSessionManager.Setup(x => x.TryGetCommandQueue(sessionId, out outQueue))
                 .Returns(true);
@@ -904,7 +904,7 @@ namespace mcp_nexus_tests.Tools
             // Assert
             var json = JsonSerializer.Serialize(result);
             // The response should contain an error message
-            Assert.True(json.Contains("Session not found") || json.Contains("error") || json.Contains("General error"), 
+            Assert.True(json.Contains("Session not found") || json.Contains("error") || json.Contains("General error"),
                 $"Expected error message but got: {json}");
         }
 

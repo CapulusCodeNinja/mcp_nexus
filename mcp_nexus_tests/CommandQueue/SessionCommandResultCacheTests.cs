@@ -63,7 +63,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Act & Assert - Should not throw
             using var cache1 = new SessionCommandResultCache(memoryPressureThreshold: -0.1);
             using var cache2 = new SessionCommandResultCache(memoryPressureThreshold: 1.5);
-            
+
             // Both should initialize successfully with clamped values
             Assert.NotNull(cache1);
             Assert.NotNull(cache2);
@@ -260,7 +260,7 @@ namespace mcp_nexus_tests.CommandQueue
             Assert.False(m_Cache.HasResult("command-1"));
             Assert.False(m_Cache.HasResult("command-2"));
             Assert.False(m_Cache.HasResult("command-3"));
-            
+
             var stats = m_Cache.GetStatistics();
             Assert.Equal(0, stats.TotalResults);
         }

@@ -329,12 +329,12 @@ namespace mcp_nexus.Caching
                     ulong => 8,
                     sbyte => 1,
                     byte => 1,
-                    
+
                     // Common collection types - optimized handlers (order matters!)
                     Array array => EstimateArraySize(array),
                     System.Collections.IDictionary dictionary => EstimateDictionarySize(dictionary),
                     System.Collections.ICollection collection => EstimateCollectionSize(collection),
-                    
+
                     // Fallback to reflection-based estimation
                     _ => EstimateComplexObjectSize(value)
                 };
@@ -358,21 +358,21 @@ namespace mcp_nexus.Caching
                 var baseSize = 24; // Collection object overhead
                 var elementSize = 0L;
                 var count = collection.Count;
-                
+
                 if (count == 0) return baseSize;
-                
+
                 // Sample first few elements to estimate element size
                 var sampleSize = Math.Min(count, 10);
                 var sampleCount = 0;
-                
+
                 foreach (var item in collection)
                 {
                     if (sampleCount >= sampleSize) break;
-                    
+
                     elementSize += EstimateElementSize(item);
                     sampleCount++;
                 }
-                
+
                 // Calculate average element size and multiply by count
                 var avgElementSize = sampleCount > 0 ? elementSize / sampleCount : 8;
                 return baseSize + (avgElementSize * count);
@@ -396,22 +396,22 @@ namespace mcp_nexus.Caching
                 var baseSize = 32; // Dictionary object overhead
                 var keyValueSize = 0L;
                 var count = dictionary.Count;
-                
+
                 if (count == 0) return baseSize;
-                
+
                 // Sample first few key-value pairs
                 var sampleSize = Math.Min(count, 10);
                 var sampleCount = 0;
-                
+
                 foreach (System.Collections.DictionaryEntry entry in dictionary)
                 {
                     if (sampleCount >= sampleSize) break;
-                    
+
                     keyValueSize += EstimateElementSize(entry.Key);
                     keyValueSize += EstimateElementSize(entry.Value);
                     sampleCount++;
                 }
-                
+
                 // Calculate average key-value size and multiply by count
                 var avgKeyValueSize = sampleCount > 0 ? keyValueSize / sampleCount : 16;
                 return baseSize + (avgKeyValueSize * count);
@@ -435,20 +435,20 @@ namespace mcp_nexus.Caching
                 var baseSize = 24; // Array object overhead
                 var elementSize = 0L;
                 var length = array.Length;
-                
+
                 if (length == 0) return baseSize;
-                
+
                 // Sample first few elements
                 var sampleSize = Math.Min(length, 10);
                 var sampleCount = 0;
-                
+
                 for (int i = 0; i < sampleSize; i++)
                 {
                     var item = array.GetValue(i);
                     elementSize += EstimateElementSize(item);
                     sampleCount++;
                 }
-                
+
                 // Calculate average element size and multiply by length
                 var avgElementSize = sampleCount > 0 ? elementSize / sampleCount : 8;
                 return baseSize + (avgElementSize * length);
@@ -468,7 +468,7 @@ namespace mcp_nexus.Caching
         private long EstimateElementSize(object? element)
         {
             if (element == null) return 0;
-            
+
             return element switch
             {
                 string str => str.Length * 2,
@@ -503,15 +503,15 @@ namespace mcp_nexus.Caching
             {
                 var type = obj.GetType();
                 var totalSize = 0L;
-                
+
                 // Object overhead (header + type info)
                 totalSize += 24;
-                
+
                 // Get all fields (including private ones)
-                var fields = type.GetFields(System.Reflection.BindingFlags.Public | 
-                                          System.Reflection.BindingFlags.NonPublic | 
+                var fields = type.GetFields(System.Reflection.BindingFlags.Public |
+                                          System.Reflection.BindingFlags.NonPublic |
                                           System.Reflection.BindingFlags.Instance);
-                
+
                 foreach (var field in fields)
                 {
                     try
@@ -528,11 +528,11 @@ namespace mcp_nexus.Caching
                         totalSize += 8; // Conservative estimate
                     }
                 }
-                
+
                 // Get all properties
-                var properties = type.GetProperties(System.Reflection.BindingFlags.Public | 
+                var properties = type.GetProperties(System.Reflection.BindingFlags.Public |
                                                   System.Reflection.BindingFlags.Instance);
-                
+
                 foreach (var property in properties)
                 {
                     try
@@ -552,7 +552,7 @@ namespace mcp_nexus.Caching
                         totalSize += 8; // Conservative estimate
                     }
                 }
-                
+
                 return totalSize;
             }
             catch

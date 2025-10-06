@@ -25,12 +25,12 @@ namespace mcp_nexus_tests.Mocks
         private bool _shouldFailStopSession;
         private bool _shouldThrowOnCancel;
 
-        public bool IsActive 
-        { 
-            get 
+        public bool IsActive
+        {
+            get
             {
                 if (_disposed) return false;
-                
+
                 // If we have a sequence configured, use it
                 if (_isActiveSequence != null && _sequenceIndex < _isActiveSequence.Length)
                 {
@@ -38,7 +38,7 @@ namespace mcp_nexus_tests.Mocks
                     _sequenceIndex++;
                     return result;
                 }
-                
+
                 return _isActive;
             }
         }
@@ -50,7 +50,7 @@ namespace mcp_nexus_tests.Mocks
             _commandBehaviors = new Dictionary<string, CdbCommandBehavior>();
             _random = new Random();
             _isActive = false;
-            
+
             // Start session by default to simulate real behavior
             _isActive = true;
             _mockProcessId = _random.Next(1000, 9999);
@@ -61,19 +61,19 @@ namespace mcp_nexus_tests.Mocks
             if (_disposed) return false;
 
             _logger.LogInformation("Starting realistic CDB session for dump: {DumpPath}", dumpPath);
-            
+
             // Simulate session startup delay
             await Task.Delay(100);
-            
+
             if (_shouldFailStartSession)
             {
                 _logger.LogWarning("Simulating StartSession failure");
                 return false;
             }
-            
+
             _isActive = true;
             _mockProcessId = _random.Next(1000, 9999);
-            
+
             return true;
         }
 
@@ -82,19 +82,19 @@ namespace mcp_nexus_tests.Mocks
             if (!_isActive) return false;
 
             _logger.LogInformation("Stopping realistic CDB session");
-            
+
             // Simulate session shutdown delay
             await Task.Delay(50);
-            
+
             if (_shouldFailStopSession)
             {
                 _logger.LogWarning("Simulating StopSession failure");
                 return false;
             }
-            
+
             _isActive = false;
             _mockProcessId = null;
-            
+
             return true;
         }
 
@@ -118,10 +118,10 @@ namespace mcp_nexus_tests.Mocks
 
             // Find matching behavior or use default
             var behavior = FindMatchingBehavior(command);
-            
+
             // Simulate command execution delay
             await Task.Delay(behavior.ExecutionDelay, cancellationToken);
-            
+
             if (behavior.ShouldFail)
             {
                 throw new InvalidOperationException($"Command failed: {command}");
@@ -129,20 +129,20 @@ namespace mcp_nexus_tests.Mocks
 
             // Simulate realistic output with stderr/stdout coordination
             var result = await SimulateRealisticOutput(behavior, cancellationToken);
-            
+
             return result;
         }
 
         public void CancelCurrentOperation()
         {
             _logger.LogInformation("Cancelling current CDB operation");
-            
+
             if (_shouldThrowOnCancel)
             {
                 _logger.LogError("Simulating CancelCurrentOperation failure");
                 throw new InvalidOperationException("CDB cancel failed");
             }
-            
+
             // In a real implementation, this would cancel the current command
         }
 

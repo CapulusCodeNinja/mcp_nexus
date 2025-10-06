@@ -230,7 +230,7 @@ namespace mcp_nexus.Tools
                 if (!File.Exists(dumpPath))
                 {
                     logger.LogError("Dump file does not exist: {DumpPath}", dumpPath);
-                    
+
                     var errorResponse = new
                     {
                         sessionId = (string?)null,

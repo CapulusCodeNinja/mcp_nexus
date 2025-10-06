@@ -65,18 +65,18 @@ namespace mcp_nexus.Debugger
                 return false;
 
             var trimmedLine = line.Trim();
-            
+
             // Check primary patterns first
             if (CdbPromptPattern.IsMatch(trimmedLine) || CdbPromptEndPattern.IsMatch(line))
                 return true;
-            
+
             // Check additional patterns for edge cases
             foreach (var pattern in AdditionalPromptPatterns)
             {
                 if (pattern.IsMatch(line))
                     return true;
             }
-            
+
             return false;
         }
 

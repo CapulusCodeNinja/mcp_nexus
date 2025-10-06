@@ -75,7 +75,7 @@ namespace mcp_nexus.Resources
         {
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
             var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
-            
+
 
             try
             {

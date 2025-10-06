@@ -407,7 +407,7 @@ namespace mcp_nexus.Session
         {
             // Get or create the session cache
             var sessionCache = GetOrCreateSessionCache(sessionId);
-            
+
             return new IsolatedCommandQueueService(
                 cdbSession,
                 m_LoggerFactory.CreateLogger<IsolatedCommandQueueService>(),

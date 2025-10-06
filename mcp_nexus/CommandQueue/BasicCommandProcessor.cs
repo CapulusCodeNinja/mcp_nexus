@@ -46,7 +46,7 @@ namespace mcp_nexus.CommandQueue
             m_ActiveCommands = activeCommands ?? throw new ArgumentNullException(nameof(activeCommands));
 
             // Use provided cache or create a default one if memory optimization is enabled
-            m_ResultCache = resultCache ?? (m_Config.EnableMemoryOptimization 
+            m_ResultCache = resultCache ?? (m_Config.EnableMemoryOptimization
                 ? new SessionCommandResultCache(
                     m_Config.MaxCommandMemoryBytes,
                     m_Config.MaxCommandsInMemory,
@@ -132,11 +132,11 @@ namespace mcp_nexus.CommandQueue
                 // Command was specifically cancelled
                 var errorMessage = "Command was cancelled";
                 var elapsed = DateTime.UtcNow - startTime;
-                
+
                 // Store cancelled result in cache
                 var cancelledResult = CommandResult.Failure(errorMessage, elapsed);
                 m_ResultCache?.StoreResult(queuedCommand.Id ?? string.Empty, cancelledResult);
-                
+
                 CompleteCommand(queuedCommand, errorMessage, CommandState.Cancelled);
                 Interlocked.Increment(ref m_CommandsCancelled);
 
@@ -148,11 +148,11 @@ namespace mcp_nexus.CommandQueue
                 // Service shutdown
                 var errorMessage = "Service is shutting down";
                 var elapsed = DateTime.UtcNow - startTime;
-                
+
                 // Store cancelled result in cache
                 var cancelledResult = CommandResult.Failure(errorMessage, elapsed);
                 m_ResultCache?.StoreResult(queuedCommand.Id ?? string.Empty, cancelledResult);
-                
+
                 CompleteCommand(queuedCommand, errorMessage, CommandState.Cancelled);
                 m_Logger.LogInformation("🛑 Command {CommandId} cancelled due to service shutdown", queuedCommand.Id);
             }
@@ -161,11 +161,11 @@ namespace mcp_nexus.CommandQueue
                 // Command failed
                 var errorMessage = $"Command execution failed: {ex.Message}";
                 var elapsed = DateTime.UtcNow - startTime;
-                
+
                 // Store failed result in cache
                 var failedResult = CommandResult.Failure(errorMessage, elapsed);
                 m_ResultCache?.StoreResult(queuedCommand.Id ?? string.Empty, failedResult);
-                
+
                 CompleteCommand(queuedCommand, errorMessage, CommandState.Failed);
                 Interlocked.Increment(ref m_CommandsFailed);
 

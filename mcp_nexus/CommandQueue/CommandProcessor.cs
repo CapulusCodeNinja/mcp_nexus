@@ -149,7 +149,7 @@ namespace mcp_nexus.CommandQueue
                     var endTime = DateTime.UtcNow;
                     var startTime = endTime.Add(-stopwatch.Elapsed);
                     m_Logger.LogDebug("Storing result in cache for command {CommandId}", command.Id);
-                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, commandResult, 
+                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, commandResult,
                         command.Command, command.QueueTime, startTime, endTime);
                     m_Logger.LogDebug("Result stored in cache for command {CommandId}", command.Id);
 
@@ -181,9 +181,9 @@ namespace mcp_nexus.CommandQueue
                     var cancelledResult = CommandResult.Failure(errorMessage, stopwatch.Elapsed);
                     var endTime = DateTime.UtcNow;
                     var startTime = endTime.Add(-stopwatch.Elapsed);
-                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, cancelledResult, 
+                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, cancelledResult,
                         command.Command, command.QueueTime, startTime, endTime);
-                    
+
                     CompleteCommandSafely(command, errorMessage, CommandState.Cancelled);
                     m_Tracker.UpdateState(command.Id ?? string.Empty, CommandState.Cancelled);
                     m_Tracker.IncrementCancelled();
@@ -204,7 +204,7 @@ namespace mcp_nexus.CommandQueue
                     var failedResult = CommandResult.Failure(message, stopwatch.Elapsed);
                     var endTime = DateTime.UtcNow;
                     var startTime = endTime.Add(-stopwatch.Elapsed);
-                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, failedResult, 
+                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, failedResult,
                         command.Command, command.QueueTime, startTime, endTime);
 
                     CompleteCommandSafely(command, message, CommandState.Failed);
@@ -231,9 +231,9 @@ namespace mcp_nexus.CommandQueue
                 var failedResult = CommandResult.Failure(errorMessage, stopwatch.Elapsed);
                 var endTime = DateTime.UtcNow;
                 var startTime = endTime.Add(-stopwatch.Elapsed);
-                m_ResultCache?.StoreResult(command.Id ?? string.Empty, failedResult, 
+                m_ResultCache?.StoreResult(command.Id ?? string.Empty, failedResult,
                     command.Command, command.QueueTime, startTime, endTime);
-                
+
                 CompleteCommandSafely(command, errorMessage, CommandState.Failed);
                 m_Tracker.UpdateState(command.Id ?? string.Empty, CommandState.Failed);
                 m_Tracker.IncrementFailed();

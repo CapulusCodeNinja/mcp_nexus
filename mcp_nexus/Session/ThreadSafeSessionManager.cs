@@ -446,26 +446,26 @@ namespace mcp_nexus.Session
                 if (cachedResultWithMetadata != null)
                 {
                     m_logger.LogDebug("Command {CommandId} found in cache for session {SessionId}", commandId, sessionId);
-                    
+
                     // Use real metadata from cache
                     var elapsed = cachedResultWithMetadata.EndTime - cachedResultWithMetadata.QueueTime;
-                        
-                        // Create CommandInfo with real data from cache
-                        var cachedCommandInfo = new CommandInfo(
-                            commandId,
-                            cachedResultWithMetadata.OriginalCommand ?? "Unknown Command",
-                            cachedResultWithMetadata.Result.IsSuccess ? CommandState.Completed : CommandState.Failed,
-                            cachedResultWithMetadata.QueueTime,
-                            0 // Queue position 0 for completed commands
-                        )
-                        {
-                            Elapsed = elapsed,
-                            Remaining = TimeSpan.Zero,
-                            IsCompleted = true
-                        };
-                        
-                        return (cachedCommandInfo, cachedResultWithMetadata.Result);
-                    }
+
+                    // Create CommandInfo with real data from cache
+                    var cachedCommandInfo = new CommandInfo(
+                        commandId,
+                        cachedResultWithMetadata.OriginalCommand ?? "Unknown Command",
+                        cachedResultWithMetadata.Result.IsSuccess ? CommandState.Completed : CommandState.Failed,
+                        cachedResultWithMetadata.QueueTime,
+                        0 // Queue position 0 for completed commands
+                    )
+                    {
+                        Elapsed = elapsed,
+                        Remaining = TimeSpan.Zero,
+                        IsCompleted = true
+                    };
+
+                    return (cachedCommandInfo, cachedResultWithMetadata.Result);
+                }
 
                 // Fallback: Check tracker (for active/queued commands)
                 var commandInfo = commandQueue.GetCommandInfo(commandId);

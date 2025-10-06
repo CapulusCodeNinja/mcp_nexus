@@ -20,9 +20,9 @@ namespace mcp_nexus_tests.Mocks
         public static ICdbSession CreateRealisticCdbSession(ILogger logger)
         {
             var mock = new RealisticCdbSessionMock(logger);
-            
+
             // Session is started automatically in constructor
-            
+
             return mock;
         }
 
@@ -32,12 +32,12 @@ namespace mcp_nexus_tests.Mocks
         public static ICdbSession CreateRealisticCdbSession(ILogger logger, Action<RealisticCdbSessionMock> configure)
         {
             var mock = new RealisticCdbSessionMock(logger);
-            
+
             // Apply custom configuration
             configure(mock);
-            
+
             // Session is started automatically in constructor
-            
+
             return mock;
         }
 
@@ -48,9 +48,9 @@ namespace mcp_nexus_tests.Mocks
         {
             var mock = new RealisticCdbSessionMock(logger);
             mock.ConfigureBehavior(shouldFailStartSession, shouldFailStopSession, shouldThrowOnCancel);
-            
+
             // Session is started automatically in constructor
-            
+
             return mock;
         }
 
@@ -61,9 +61,9 @@ namespace mcp_nexus_tests.Mocks
         {
             var mock = new RealisticCdbSessionMock(logger);
             mock.SetIsActiveSequence(isActiveSequence);
-            
+
             // Session is started automatically in constructor
-            
+
             return mock;
         }
 
@@ -73,7 +73,7 @@ namespace mcp_nexus_tests.Mocks
         public static ICdbSession CreateBugSimulatingCdbSession(ILogger logger)
         {
             var mock = new RealisticCdbSessionMock(logger);
-            
+
             // Add behaviors that simulate the bugs we found
             mock.AddCommandBehavior("!analyze -v", new CdbCommandBehavior
             {
@@ -142,7 +142,7 @@ namespace mcp_nexus_tests.Mocks
             });
 
             // Session is started automatically in constructor
-            
+
             return mock;
         }
 
@@ -152,7 +152,7 @@ namespace mcp_nexus_tests.Mocks
         public static ICdbSession CreateTimeoutSimulatingCdbSession(ILogger logger)
         {
             var mock = new RealisticCdbSessionMock(logger);
-            
+
             // Add behaviors that simulate timeout scenarios
             mock.AddCommandBehavior("long-running-command", new CdbCommandBehavior
             {
@@ -181,7 +181,7 @@ namespace mcp_nexus_tests.Mocks
             });
 
             // Session is started automatically in constructor
-            
+
             return mock;
         }
 
@@ -191,7 +191,7 @@ namespace mcp_nexus_tests.Mocks
         public static ICdbSession CreateErrorSimulatingCdbSession(ILogger logger)
         {
             var mock = new RealisticCdbSessionMock(logger);
-            
+
             // Add behaviors that simulate error scenarios
             mock.AddCommandBehavior("failing-command", new CdbCommandBehavior
             {
@@ -211,7 +211,7 @@ namespace mcp_nexus_tests.Mocks
             });
 
             // Session is started automatically in constructor
-            
+
             return mock;
         }
     }

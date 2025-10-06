@@ -46,7 +46,7 @@ namespace mcp_nexus_tests.Middleware
 
             var json = System.Text.Json.JsonSerializer.Serialize(response);
             var bytes = Encoding.Unicode.GetBytes(json);
-            
+
             context.Response.Body.Write(bytes, 0, bytes.Length);
             context.Response.ContentType = "application/json";
             return Task.CompletedTask;
@@ -79,7 +79,7 @@ namespace mcp_nexus_tests.Middleware
             var context = new DefaultHttpContext();
             context.Request.Path = "/";
             context.Request.Method = "POST";
-            
+
             var requestJson = "{\"method\":\"nexus_read_dump_analyze_command_result\",\"params\":{\"sessionId\":\"sess-123\",\"commandId\":\"cmd-456\"}}";
             context.Request.Body = new MemoryStream(Encoding.Unicode.GetBytes(requestJson));
 
@@ -99,7 +99,7 @@ namespace mcp_nexus_tests.Middleware
             var context = new DefaultHttpContext();
             context.Request.Path = "/";
             context.Request.Method = "POST";
-            
+
             var requestJson = "{\"method\":\"test\",\"params\":{\"text\":\"Hello \\u0022World\\u0022\"}}";
             context.Request.Body = new MemoryStream(Encoding.Unicode.GetBytes(requestJson));
 
@@ -121,7 +121,7 @@ namespace mcp_nexus_tests.Middleware
             context.Request.Path = "/";
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{}"));
-            
+
             // Set up response with empty body
             context.Response.Body = new MemoryStream();
             var responseBytes = Encoding.UTF8.GetBytes("");
@@ -144,7 +144,7 @@ namespace mcp_nexus_tests.Middleware
             context.Request.Path = "/";
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{}"));
-            
+
             // Set up response with whitespace only
             context.Response.Body = new MemoryStream();
             var responseBytes = Encoding.UTF8.GetBytes("   \n\t  ");
@@ -167,7 +167,7 @@ namespace mcp_nexus_tests.Middleware
             context.Request.Path = "/";
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{}"));
-            
+
             // Set up response with SSE format
             var sseResponse = "data: {\"result\":{\"content\":[{\"text\":\"{\\\"key\\\":\\\"value\\\"}\"}]}}\n\n";
             context.Response.Body = new MemoryStream();
@@ -191,7 +191,7 @@ namespace mcp_nexus_tests.Middleware
             context.Request.Path = "/";
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{}"));
-            
+
             // Set up response with invalid JSON
             var invalidJson = "{\"result\":{\"content\":[{\"text\":\"invalid json here\"}]}";
             context.Response.Body = new MemoryStream();
@@ -215,7 +215,7 @@ namespace mcp_nexus_tests.Middleware
             context.Request.Path = "/";
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{}"));
-            
+
             // Set up response without result property
             var responseWithoutResult = "{\"error\":{\"message\":\"test error\"}}";
             context.Response.Body = new MemoryStream();
@@ -239,7 +239,7 @@ namespace mcp_nexus_tests.Middleware
             context.Request.Path = "/";
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{}"));
-            
+
             // Set up response with empty content array
             var responseWithEmptyArray = "{\"result\":{\"content\":[]}}";
             context.Response.Body = new MemoryStream();
@@ -263,7 +263,7 @@ namespace mcp_nexus_tests.Middleware
             context.Request.Path = "/";
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{}"));
-            
+
             // Set up response with content but no text property
             var responseWithoutText = "{\"result\":{\"content\":[{\"other\":\"value\"}]}}";
             context.Response.Body = new MemoryStream();
@@ -287,7 +287,7 @@ namespace mcp_nexus_tests.Middleware
             context.Request.Path = "/";
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{}"));
-            
+
             // Set up response with double-encoded JSON
             var doubleEncodedJson = "{\"result\":{\"content\":[{\"text\":\"{\\\"key\\\":\\\"value\\\"}\"}]}}";
             context.Response.Body = new MemoryStream();
@@ -311,7 +311,7 @@ namespace mcp_nexus_tests.Middleware
             context.Request.Path = "/";
             context.Request.Method = "POST";
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{}"));
-            
+
             // Set up response with large JSON that should be truncated
             var largeJson = "{\"result\":{\"content\":[{\"text\":\"{\\\"largeField\\\":\\\"" + new string('x', 2000) + "\\\"}\"}]}}";
             context.Response.Body = new MemoryStream();

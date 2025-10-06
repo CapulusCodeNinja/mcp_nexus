@@ -132,7 +132,7 @@ namespace mcp_nexus_tests.Debugger
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_Executor.ExecuteCommandAsync(null!, mockProcessManager.Object));
         }
 
@@ -144,7 +144,7 @@ namespace mcp_nexus_tests.Debugger
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_Executor.ExecuteCommandAsync("", mockProcessManager.Object));
         }
 
@@ -156,7 +156,7 @@ namespace mcp_nexus_tests.Debugger
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 m_Executor.ExecuteCommandAsync("   ", mockProcessManager.Object));
         }
 
@@ -169,7 +169,7 @@ namespace mcp_nexus_tests.Debugger
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object));
         }
 
@@ -180,7 +180,7 @@ namespace mcp_nexus_tests.Debugger
             var mockProcessManager = CreateMockProcessManager();
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object));
         }
 
@@ -210,7 +210,7 @@ namespace mcp_nexus_tests.Debugger
             cts.Cancel();
 
             // Act & Assert
-            await Assert.ThrowsAsync<OperationCanceledException>(() => 
+            await Assert.ThrowsAsync<OperationCanceledException>(() =>
                 m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object, cts.Token));
         }
 
@@ -239,7 +239,7 @@ namespace mcp_nexus_tests.Debugger
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object));
         }
 
@@ -276,7 +276,7 @@ namespace mcp_nexus_tests.Debugger
             var mockLogger = new Mock<ILogger<CdbProcessManager>>();
             var mockConfig = new CdbSessionConfiguration();
             var mockProcessManager = new Mock<CdbProcessManager>(mockLogger.Object, mockConfig);
-            
+
             var mockProcess = new Mock<Process>();
             var mockInput = new Mock<StreamWriter>();
             var mockOutput = new Mock<StreamReader>();

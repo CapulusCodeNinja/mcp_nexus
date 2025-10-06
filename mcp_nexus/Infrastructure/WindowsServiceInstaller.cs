@@ -48,23 +48,23 @@ namespace mcp_nexus.Infrastructure
                 // Install the service using sc command
                 var installCommand = $"create \"{m_ServiceName}\" binPath= \"{Path.Combine(m_InstallFolder, "mcp_nexus.exe")} --service\" start= auto DisplayName= \"{m_DisplayName}\"";
                 var installResult = await RunScCommandAsync(installCommand, logger);
-                
+
                 if (installResult)
                 {
                     logger?.LogInformation("Service installed successfully");
-                    
-                // Start the service using ServiceController API
-                var startResult = await StartServiceAsync(logger);
-                
-                if (startResult)
-                {
-                    logger?.LogInformation("Service started successfully");
-                }
-                else
-                {
-                    logger?.LogWarning("Service installed but failed to start");
-                }
-                    
+
+                    // Start the service using ServiceController API
+                    var startResult = await StartServiceAsync(logger);
+
+                    if (startResult)
+                    {
+                        logger?.LogInformation("Service started successfully");
+                    }
+                    else
+                    {
+                        logger?.LogWarning("Service installed but failed to start");
+                    }
+
                     return true;
                 }
                 else
@@ -105,7 +105,7 @@ namespace mcp_nexus.Infrastructure
                 // Delete the service (with retry for "marked for deletion" state)
                 var deleteCommand = $"delete \"{m_ServiceName}\"";
                 var deleteResult = await RunScCommandAsync(deleteCommand, logger);
-                
+
                 if (deleteResult)
                 {
                     logger?.LogInformation("Service uninstalled successfully");
@@ -116,7 +116,7 @@ namespace mcp_nexus.Infrastructure
                     // If delete failed, wait a bit and try again (handles "marked for deletion" state)
                     logger?.LogWarning("Service delete failed, waiting and retrying...");
                     await Task.Delay(3000);
-                    
+
                     var retryDeleteResult = await RunScCommandAsync(deleteCommand, logger);
                     if (retryDeleteResult)
                     {
@@ -163,7 +163,7 @@ namespace mcp_nexus.Infrastructure
                 {
                     Console.WriteLine("⚠ Service does not exist. Installing service first...");
                     logger?.LogInformation("Service does not exist, installing first");
-                    
+
                     var installResult = await InstallServiceAsync(logger);
                     if (!installResult)
                     {
@@ -178,17 +178,17 @@ namespace mcp_nexus.Infrastructure
                 // Step 1: Check if service is running and stop it if needed
                 Console.WriteLine("Checking if MCP-Nexus service is running...");
                 logger?.LogInformation("Checking if MCP-Nexus service is running");
-                
+
                 var (exists, isRunning) = GetServiceStatus();
                 bool wasRunning = false;
-                
+
                 if (exists)
                 {
                     if (isRunning)
                     {
                         Console.WriteLine("Service is running, stopping it...");
                         logger?.LogInformation("Service is running, stopping it");
-                        
+
                         var stopResult = await StopServiceAsync(logger);
                         if (stopResult)
                         {
@@ -292,7 +292,7 @@ namespace mcp_nexus.Infrastructure
                 logger?.LogDebug("Checking if service '{ServiceName}' exists", m_ServiceName);
 
                 var (exists, _) = GetServiceStatus();
-                
+
                 logger?.LogDebug("Service '{ServiceName}' exists: {Exists}", m_ServiceName, exists);
                 return Task.FromResult(exists);
             }
@@ -335,21 +335,21 @@ namespace mcp_nexus.Infrastructure
                 using var service = new ServiceController(m_ServiceName);
                 if (service.Status == ServiceControllerStatus.Running)
                 {
-                logger?.LogInformation("Service is already running");
+                    logger?.LogInformation("Service is already running");
+                    return Task.FromResult(true);
+                }
+
+                service.Start();
+                service.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
+
+                logger?.LogInformation("Service started successfully");
                 return Task.FromResult(true);
             }
-
-            service.Start();
-            service.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
-            
-            logger?.LogInformation("Service started successfully");
-            return Task.FromResult(true);
-        }
-        catch (Exception ex)
-        {
-            logger?.LogError(ex, "Failed to start service");
-            return Task.FromResult(false);
-        }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "Failed to start service");
+                return Task.FromResult(false);
+            }
         }
 
         /// <summary>
@@ -362,21 +362,21 @@ namespace mcp_nexus.Infrastructure
                 using var service = new ServiceController(m_ServiceName);
                 if (service.Status == ServiceControllerStatus.Stopped)
                 {
-                logger?.LogInformation("Service is already stopped");
+                    logger?.LogInformation("Service is already stopped");
+                    return Task.FromResult(true);
+                }
+
+                service.Stop();
+                service.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
+
+                logger?.LogInformation("Service stopped successfully");
                 return Task.FromResult(true);
             }
-
-            service.Stop();
-            service.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
-            
-            logger?.LogInformation("Service stopped successfully");
-            return Task.FromResult(true);
-        }
-        catch (Exception ex)
-        {
-            logger?.LogError(ex, "Failed to stop service");
-            return Task.FromResult(false);
-        }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "Failed to stop service");
+                return Task.FromResult(false);
+            }
         }
 
 

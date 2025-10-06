@@ -114,11 +114,11 @@ namespace mcp_nexus.Utilities
             }
 
             var pathElements = symbolPath.Split(';', StringSplitOptions.None);
-            
+
             foreach (var element in pathElements)
             {
                 var trimmed = element.Trim();
-                
+
                 // Check for leading whitespace
                 if (element.StartsWith(' ') || element.StartsWith('\t'))
                 {

@@ -58,7 +58,7 @@ namespace mcp_nexus.Debugger
             foreach (var line in lines)
             {
                 var trimmedLine = line.Trim();
-                
+
                 // Check for checksum verification warnings
                 if (trimmedLine.Contains("WARNING: Unable to verify checksum"))
                 {
@@ -91,24 +91,24 @@ namespace mcp_nexus.Debugger
 
             // Extract module name from warning
             var moduleName = ExtractModuleNameFromWarning(warning);
-            
+
             if (string.IsNullOrWhiteSpace(moduleName))
                 return warning; // Return original warning if we can't extract module name
 
             // Check if this is a third-party software module
             if (IsThirdPartyModule(moduleName))
             {
-                m_Logger.LogInformation("🔍 Third-party module symbol warning handled: {ModuleName} - {Warning}", 
+                m_Logger.LogInformation("🔍 Third-party module symbol warning handled: {ModuleName} - {Warning}",
                     moduleName, warning);
-                
+
                 // For third-party software, we can provide a more informative message
                 return $"INFO: Symbol verification warning for third-party module '{moduleName}' - this is normal for non-Microsoft software";
             }
 
             // For Microsoft modules, keep the original warning but add context
-            m_Logger.LogWarning("⚠️ Microsoft module symbol warning: {ModuleName} - {Warning}", 
+            m_Logger.LogWarning("⚠️ Microsoft module symbol warning: {ModuleName} - {Warning}",
                 moduleName, warning);
-            
+
             return $"WARNING: {warning} - Consider updating symbols or checking module integrity";
         }
 
@@ -122,7 +122,7 @@ namespace mcp_nexus.Debugger
             // Pattern to match module names in warnings like "WARNING: Unable to verify checksum for moduleName.dll"
             var pattern = @"WARNING:.*?for\s+([a-zA-Z0-9_.-]+\.(dll|exe|sys))";
             var match = Regex.Match(warning, pattern, RegexOptions.IgnoreCase);
-            
+
             if (match.Success)
                 return match.Groups[1].Value;
 
@@ -174,7 +174,7 @@ namespace mcp_nexus.Debugger
                 return recommendations;
 
             var hasChecksumWarnings = warnings.Any(w => w.Contains("verify checksum"));
-            var hasThirdPartyWarnings = warnings.Any(w => 
+            var hasThirdPartyWarnings = warnings.Any(w =>
             {
                 var moduleName = ExtractModuleNameFromWarning(w);
                 return !string.IsNullOrWhiteSpace(moduleName) && IsThirdPartyModule(moduleName);

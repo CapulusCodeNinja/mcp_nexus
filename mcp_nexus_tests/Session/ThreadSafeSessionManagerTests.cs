@@ -630,14 +630,14 @@ namespace mcp_nexus_tests.Session
             try
             {
                 sessionId = await sessionManager.CreateSessionAsync(dumpPath);
-                
+
                 // Dispose the session
                 await sessionManager.CloseSessionAsync(sessionId);
 
                 // Act & Assert
-                var exception = Assert.Throws<SessionNotFoundException>(() => 
+                var exception = Assert.Throws<SessionNotFoundException>(() =>
                     sessionManager.GetSessionContext(sessionId));
-                
+
                 Assert.Equal(sessionId, exception.SessionId);
                 Assert.Contains("disposed", exception.Message);
             }
@@ -659,14 +659,14 @@ namespace mcp_nexus_tests.Session
             try
             {
                 sessionId = await sessionManager.CreateSessionAsync(dumpPath);
-                
+
                 // Dispose the session to make it disposed
                 await sessionManager.CloseSessionAsync(sessionId);
 
                 // Act & Assert
-                var exception = Assert.Throws<SessionNotFoundException>(() => 
+                var exception = Assert.Throws<SessionNotFoundException>(() =>
                     sessionManager.GetSessionContext(sessionId));
-                
+
                 Assert.Equal(sessionId, exception.SessionId);
                 Assert.Contains("disposed", exception.Message);
             }
@@ -1088,7 +1088,7 @@ namespace mcp_nexus_tests.Session
             try
             {
                 sessionId = await sessionManager.CreateSessionAsync(dumpPath);
-                
+
                 // Simulate an inactive session by disposing it
                 await sessionManager.CloseSessionAsync(sessionId);
 
@@ -1117,16 +1117,16 @@ namespace mcp_nexus_tests.Session
             try
             {
                 sessionId = await sessionManager.CreateSessionAsync(dumpPath);
-                
+
                 // Use reflection to access the sessions dictionary and modify the CommandQueue
-                var sessionsField = typeof(ThreadSafeSessionManager).GetField("m_sessions", 
+                var sessionsField = typeof(ThreadSafeSessionManager).GetField("m_sessions",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 if (sessionsField?.GetValue(sessionManager) is ConcurrentDictionary<string, SessionInfo> sessions)
                 {
                     if (sessions.TryGetValue(sessionId, out var sessionInfo))
                     {
                         // Use reflection to set CommandQueue to null
-                        var commandQueueField = typeof(SessionInfo).GetField("m_commandQueue", 
+                        var commandQueueField = typeof(SessionInfo).GetField("m_commandQueue",
                             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                         commandQueueField?.SetValue(sessionInfo, null);
                     }

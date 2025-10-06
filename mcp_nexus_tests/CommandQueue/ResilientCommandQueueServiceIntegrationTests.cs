@@ -188,7 +188,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             // The result should contain either "Mock result" or execution status
-            Assert.True(result.Contains("Mock result") || result.Contains("executing") || result.Contains("Command is still"), 
+            Assert.True(result.Contains("Mock result") || result.Contains("executing") || result.Contains("Command is still"),
                 $"Expected result to contain 'Mock result' or execution status, but got: {result}");
         }
 

@@ -169,7 +169,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Constructor_WithNullCdbSession_ThrowsArgumentNullException()
         {
             // Act & Assert
-            var exception = Assert.Throws<ArgumentNullException>(() => 
+            var exception = Assert.Throws<ArgumentNullException>(() =>
                 new CommandQueueService(null!, m_MockLogger.Object, m_MockLoggerFactory.Object));
             Assert.Equal("cdbSession", exception.ParamName);
         }
@@ -178,7 +178,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
             // Act & Assert
-            var exception = Assert.Throws<ArgumentNullException>(() => 
+            var exception = Assert.Throws<ArgumentNullException>(() =>
                 new CommandQueueService(m_RealisticCdbSession, null!, m_MockLoggerFactory.Object));
             Assert.Equal("logger", exception.ParamName);
         }
@@ -187,7 +187,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Constructor_WithNullLoggerFactory_ThrowsArgumentNullException()
         {
             // Act & Assert
-            var exception = Assert.Throws<ArgumentNullException>(() => 
+            var exception = Assert.Throws<ArgumentNullException>(() =>
                 new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, null!));
             Assert.Equal("factory", exception.ParamName);
         }
