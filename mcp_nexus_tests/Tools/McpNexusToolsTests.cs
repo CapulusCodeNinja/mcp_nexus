@@ -597,7 +597,7 @@ namespace mcp_nexus_tests.Tools
             Assert.Equal(commandId, commandIdElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("success", out var successElement));
-            Assert.False(successElement.GetBoolean());
+            Assert.True(successElement.GetBoolean()); // Queued commands are not failures - they're running normally
 
             Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
             Assert.Equal("Queued", statusElement.GetString());

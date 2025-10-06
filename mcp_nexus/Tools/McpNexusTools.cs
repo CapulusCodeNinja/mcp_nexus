@@ -378,7 +378,7 @@ namespace mcp_nexus.Tools
                 var baseStatusMessage = commandInfo.State switch
                 {
                     CommandState.Queued => GetQueuedStatusMessage(commandInfo.QueuePosition, commandInfo.Elapsed, commandInfo.Remaining),
-                    CommandState.Executing => $"Command is currently executing (elapsed: {commandInfo.Elapsed.TotalMinutes:F1} minutes)",
+                    CommandState.Executing => $"Command is running normally (elapsed: {commandInfo.Elapsed.TotalMinutes:F1} minutes). This is expected for complex commands.",
                     CommandState.Cancelled => "Command was cancelled",
                     CommandState.Failed => "Command execution failed",
                     _ => "Command status unknown"
@@ -391,7 +391,12 @@ namespace mcp_nexus.Tools
                 var isCompleted = commandInfo.IsCompleted;
                 var isFailed = commandInfo.State == CommandState.Failed;
                 var isCancelled = commandInfo.State == CommandState.Cancelled;
-                var success = isCompleted && !(isFailed || isCancelled);
+                var isExecuting = commandInfo.State == CommandState.Executing;
+                var isQueued = commandInfo.State == CommandState.Queued;
+
+                // Success should be true for completed commands that didn't fail, AND for commands that are still executing normally
+                // Only false for actual failures or cancellations
+                var success = (isCompleted && !(isFailed || isCancelled)) || (isExecuting || isQueued);
 
                 var result = new
                 {
@@ -422,16 +427,22 @@ namespace mcp_nexus.Tools
                             "Execute follow-up commands based on results",
                             "Use output to guide next debugging steps",
                             "⚠️ IMPORTANT: Call 'nexus_close_dump_analyze_session' when analysis is complete"
+                        } : (isFailed || isCancelled) ? new[]
+                        {
+                            "Command encountered an issue - check the error details",
+                            "Consider retrying with a different approach",
+                            "Use simpler commands if complex ones are failing"
                         } : new[]
                         {
-                            "Wait for command completion",
-                            "Check status again in a few seconds",
-                            "Use 'commands' resource to monitor all commands"
+                            "Command is running normally - this is expected for complex operations",
+                            "Wait for completion - no action needed",
+                            "Check status again in a few seconds if needed"
                         },
+                        statusExplanation = GetStatusExplanation(commandInfo.State.ToString()),
                         sessionManagement = new
                         {
                             commandLimit = "Unlimited commands per session",
-                            timeoutInfo = "Commands timeout after 10 minutes if not completed",
+                            timeoutInfo = "Commands have 10 minutes to complete",
                             bestPractice = "⚠️ Call 'nexus_close_dump_analyze_session' when done to free resources immediately"
                         }
                     },
@@ -645,18 +656,36 @@ namespace mcp_nexus.Tools
             {
                 CommandState.Queued => queuePosition switch
                 {
-                    0 => "Check again in 3 seconds",
-                    1 => "Check again in 5 seconds",
-                    2 => "Check again in 7 seconds",
-                    3 => "Check again in 9 seconds",
-                    4 => "Check again in 13 seconds",
-                    _ when queuePosition <= 10 => "Check again in 30 seconds",
-                    _ => "Check again in 1 minute"
+                    0 => "Check again in about 1-3 seconds",
+                    1 => "Check again in about 3-5 seconds",
+                    2 => "Check again in about 5-7 seconds",
+                    3 => "Check again in about 7-9 seconds",
+                    4 => "Check again in about 9-13 seconds",
+                    _ => "Check again in about 15-30 seconds"
                 },
-                CommandState.Executing => "Check again in 3 seconds",
+                CommandState.Executing => "Check again in 1-3 seconds",
                 CommandState.Cancelled => "No need to check again",
                 CommandState.Failed => "No need to check again",
                 _ => "Check again in 5 seconds"
+            };
+        }
+
+        /// <summary>
+        /// Gets a clear explanation of what the command status means
+        /// </summary>
+        /// <param name="status">The command status string</param>
+        /// <returns>A clear explanation of the status</returns>
+        private static string GetStatusExplanation(string status)
+        {
+            return status switch
+            {
+                "Queued" => "Command is waiting in the execution queue",
+                "Executing" => "Command is currently running in the debugger - this is normal",
+                "Completed" => "Command finished successfully and results are available",
+                "Failed" => "Command encountered an error during execution",
+                "Cancelled" => "Command was cancelled before completion",
+                "Timeout" => "Command exceeded maximum execution time",
+                _ => $"Command status: {status}"
             };
         }
     }
