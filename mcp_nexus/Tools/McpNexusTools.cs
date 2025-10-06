@@ -624,15 +624,15 @@ namespace mcp_nexus.Tools
             {
                 CommandState.Queued => queuePosition switch
                 {
-                    0 => "Check again in 1 seconds",
-                    1 => "Check again in 2 seconds",
-                    2 => "Check again in 4 seconds",
-                    3 => "Check again in 8 seconds",
-                    4 => "Check again in 16 seconds",
-                    _ when queuePosition <= 10 => "Check again in 32 seconds",
+                    0 => "Check again in 3 seconds",
+                    1 => "Check again in 5 seconds",
+                    2 => "Check again in 7 seconds",
+                    3 => "Check again in 9 seconds",
+                    4 => "Check again in 13 seconds",
+                    _ when queuePosition <= 10 => "Check again in 30 seconds",
                     _ => "Check again in 1 minute"
                 },
-                CommandState.Executing => "Check again in 1 seconds",
+                CommandState.Executing => "Check again in 3 seconds",
                 CommandState.Cancelled => "No need to check again",
                 CommandState.Failed => "No need to check again",
                 _ => "Check again in 5 seconds"
