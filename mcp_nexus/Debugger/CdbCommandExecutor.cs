@@ -23,6 +23,7 @@ namespace mcp_nexus.Debugger
         private CancellationTokenSource? m_sessionCancellation;
         private readonly Dictionary<string, TaskCompletionSource<string>> m_pendingCommands = new();
         private readonly object m_pendingCommandsLock = new();
+        private string? m_currentCommandId = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CdbCommandExecutor"/> class.
@@ -168,6 +169,7 @@ namespace mcp_nexus.Debugger
                 lock (m_pendingCommandsLock)
                 {
                     m_pendingCommands[commandId] = completionSource;
+                    m_currentCommandId = commandId; // Set the current command ID for the consumer
                 }
 
                 // Wait for command completion with timeout
@@ -243,8 +245,11 @@ namespace mcp_nexus.Debugger
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
 
-                            // Start new command - get the next pending command ID
-                            currentCommandId = GetNextPendingCommandId();
+                            // Start new command - get the current command ID from the executor
+                            lock (m_pendingCommandsLock)
+                            {
+                                currentCommandId = m_currentCommandId ?? string.Empty;
+                            }
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();
                             inCommand = true;
@@ -263,6 +268,10 @@ namespace mcp_nexus.Debugger
                             }
 
                             // Reset for next command
+                            lock (m_pendingCommandsLock)
+                            {
+                                m_currentCommandId = null; // Clear the current command ID
+                            }
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();
@@ -281,6 +290,10 @@ namespace mcp_nexus.Debugger
                             }
 
                             // Reset for next command
+                            lock (m_pendingCommandsLock)
+                            {
+                                m_currentCommandId = null; // Clear the current command ID
+                            }
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();
@@ -299,6 +312,10 @@ namespace mcp_nexus.Debugger
                             }
 
                             // Reset for next command
+                            lock (m_pendingCommandsLock)
+                            {
+                                m_currentCommandId = null; // Clear the current command ID
+                            }
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();
@@ -388,18 +405,6 @@ namespace mcp_nexus.Debugger
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// Gets the next pending command ID from the queue.
-        /// </summary>
-        /// <returns>The next pending command ID, or empty string if none available.</returns>
-        private string GetNextPendingCommandId()
-        {
-            lock (m_pendingCommandsLock)
-            {
-                var nextCommand = m_pendingCommands.FirstOrDefault();
-                return nextCommand.Key ?? string.Empty;
-            }
-        }
 
         /// <summary>
         /// Creates a command with start and end sentinels for proper output parsing.
