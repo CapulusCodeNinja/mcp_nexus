@@ -24,7 +24,8 @@ namespace mcp_nexus.Configuration
         /// <param name="services">The service collection to register services with.</param>
         /// <param name="configuration">The application configuration.</param>
         /// <param name="customCdbPath">Optional custom path to the CDB executable.</param>
-        public static void RegisterServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath)
+        /// <param name="serviceMode">Whether the application is running in service mode.</param>
+        public static void RegisterServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath, bool serviceMode = false)
         {
             Console.Error.WriteLine("Registering services...");
 
@@ -112,7 +113,12 @@ namespace mcp_nexus.Configuration
             });
 
             // Configure session management options
-            services.Configure<SessionConfiguration>(configuration.GetSection("McpNexus:SessionManagement"));
+            var capturedServiceMode = serviceMode;
+            services.Configure<SessionConfiguration>(config =>
+            {
+                configuration.GetSection("McpNexus:SessionManagement").Bind(config);
+                config.ServiceMode = capturedServiceMode;
+            });
 
             // Register core services
             // Shared session store (explicit DI singleton instead of static state)

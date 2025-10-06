@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using mcp_nexus.Session.Models;
+using NLog;
 
 namespace mcp_nexus.Session
 {
@@ -69,12 +70,66 @@ namespace mcp_nexus.Session
         }
 
         /// <summary>
+        /// Generates a session-specific CDB log file path based on the current log configuration and service mode.
+        /// </summary>
+        /// <param name="sessionId">The unique session identifier for the CDB log file.</param>
+        /// <returns>The full path to the session-specific CDB log file.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the NLog file target is not found, the log directory is not set, or the session ID is not provided.
+        /// </exception>
+        private string GetCdbSessionBasedLogPath(string sessionId)
+        {
+            var fileTarget = LogManager.Configuration?.FindTargetByName("file") as NLog.Targets.FileTarget;
+            if (fileTarget == null)
+            {
+                throw new InvalidOperationException("File target not found in NLog configuration");
+            }
+
+            var logEventInfo = new LogEventInfo(NLog.LogLevel.Info, "", "");
+            var originalPath = fileTarget.FileName.Render(logEventInfo);
+
+            string? directory = Path.GetDirectoryName(originalPath);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalPath);
+
+            if (string.IsNullOrEmpty(directory))
+            {
+                throw new InvalidOperationException("Directory is not set");
+            }
+
+            if (string.IsNullOrEmpty(sessionId))
+            {
+                throw new InvalidOperationException("Session ID is not set");
+            }
+
+            string sessionsDirectory;
+            if (Config.ServiceMode)
+            {
+                // Service mode: C:\ProgramData\MCP-Nexus\Sessions\
+                sessionsDirectory = Path.Combine(Path.GetDirectoryName(directory)!, "Sessions");
+            }
+            else
+            {
+                // Other modes: C:\ProgramData\MCP-Nexus\Logs\Sessions\
+                sessionsDirectory = Path.Combine(directory, "Sessions");
+            }
+
+            // Ensure the Sessions directory exists
+            Directory.CreateDirectory(sessionsDirectory);
+
+            var newFileNameWithoutExtension = $"cdb_{sessionId}";
+            var newFileName = Path.ChangeExtension(newFileNameWithoutExtension, ".log");
+            var newPath = Path.Combine(sessionsDirectory, newFileName);
+
+            return newPath;
+        }
+
+        /// <summary>
         /// Constructs the CDB target string from dump and symbols paths
         /// </summary>
         /// <param name="dumpPath">Path to the dump file</param>
         /// <param name="symbolsPath">Optional symbols path</param>
         /// <returns>CDB target string</returns>
-        public string ConstructCdbTarget(string dumpPath, string? symbolsPath = null)
+        public string ConstructCdbTarget(string sessionId, string dumpPath, string? symbolsPath = null)
         {
             var target = $"-z \"{dumpPath}\"";
 
@@ -82,6 +137,9 @@ namespace mcp_nexus.Session
             {
                 target += $" -y \"{symbolsPath}\"";
             }
+            
+            var cdbLogFilePath = GetCdbSessionBasedLogPath(sessionId);
+            target += $" -logau  \"{cdbLogFilePath}\"";
 
             return target;
         }

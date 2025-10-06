@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Runtime.InteropServices;
 using mcp_nexus.Configuration;
+using NLog;
 
 namespace mcp_nexus.Debugger
 {
@@ -14,11 +15,10 @@ namespace mcp_nexus.Debugger
         private readonly ILogger<CdbProcessManager> m_logger;
         private readonly CdbSessionConfiguration m_config;
         private readonly object m_lifecycleLock = new();
+        private string? m_sessionId;
 
         private Process? m_debuggerProcess;
         private StreamWriter? m_debuggerInput;
-        private StreamReader? m_debuggerOutput;
-        private StreamReader? m_debuggerError;
         private volatile bool m_isActive;  // CRITICAL: volatile ensures visibility across threads
         private volatile bool m_disposed;  // CRITICAL: volatile ensures visibility across threads
         private volatile bool m_initOutputConsumed;  // CRITICAL: ensures init output is consumed before commands execute
@@ -35,19 +35,19 @@ namespace mcp_nexus.Debugger
         public virtual StreamWriter? DebuggerInput => m_debuggerInput;
 
         /// <summary>
-        /// Gets the output stream reader for receiving command responses from the CDB process.
-        /// </summary>
-        public virtual StreamReader? DebuggerOutput => m_debuggerOutput;
-
-        /// <summary>
-        /// Gets the error stream reader for receiving error messages from the CDB process.
-        /// </summary>
-        public virtual StreamReader? DebuggerError => m_debuggerError;
-
-        /// <summary>
         /// Gets a value indicating whether the CDB process is active and ready for commands.
         /// </summary>
         public virtual bool IsActive => m_isActive && !m_disposed && m_initOutputConsumed;
+
+        /// <summary>
+        /// Sets the session ID for this process manager instance.
+        /// Used for creating session-specific log files.
+        /// </summary>
+        /// <param name="sessionId">The unique session identifier.</param>
+        public virtual void SetSessionId(string sessionId)
+        {
+            m_sessionId = sessionId;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CdbProcessManager"/> class.
@@ -247,22 +247,18 @@ namespace mcp_nexus.Debugger
         /// </remarks>
         private ProcessStartInfo CreateProcessStartInfo(string cdbPath, string target)
         {
-            // If target already contains flags, use as-is; otherwise treat as dump path
-            var arguments = target.StartsWith("-") ? target : $"-z \"{target}\"";
-
-            if (!string.IsNullOrWhiteSpace(m_config.SymbolSearchPath))
+            if(!target.StartsWith("-"))
             {
-                arguments += $" -y \"{m_config.SymbolSearchPath}\"";
-                m_logger.LogDebug("Using symbol search path: {SymbolSearchPath}", m_config.SymbolSearchPath);
+                throw new ArgumentException("Target must start with -");
             }
 
             // Run from CDB directory to avoid path issues
             var workingDirectory = Path.GetDirectoryName(cdbPath) ?? Environment.CurrentDirectory;
 
-            m_logger.LogDebug("CDB call: {CdbPath} {Arguments}", cdbPath, arguments);
+            m_logger.LogDebug("CDB call: {CdbPath} {Arguments}", cdbPath, target);
 
             // Use centralized UTF-8 encoding configuration for all CDB streams
-            var startInfo = EncodingConfiguration.CreateUnicodeProcessStartInfo(cdbPath, arguments);
+            var startInfo = EncodingConfiguration.CreateUnicodeProcessStartInfo(cdbPath, target);
             startInfo.WorkingDirectory = workingDirectory;
 
             return startInfo;
@@ -292,26 +288,6 @@ namespace mcp_nexus.Debugger
 
             // Set up streams
             m_debuggerInput = m_debuggerProcess.StandardInput;
-
-            // Increase read buffer sizes for stdout/stderr to reduce syscalls and allocations
-            // Wrap the underlying base streams with larger-buffer StreamReaders (leaveOpen=true)
-            var stdoutEncoding = m_debuggerProcess.StandardOutput.CurrentEncoding;
-            var stderrEncoding = m_debuggerProcess.StandardError.CurrentEncoding;
-            const int largeBufferSize = 64 * 1024; // 64KB
-
-            m_debuggerOutput = new StreamReader(
-                m_debuggerProcess.StandardOutput.BaseStream,
-                stdoutEncoding,
-                detectEncodingFromByteOrderMarks: false,
-                bufferSize: largeBufferSize,
-                leaveOpen: true);
-
-            m_debuggerError = new StreamReader(
-                m_debuggerProcess.StandardError.BaseStream,
-                stderrEncoding,
-                detectEncodingFromByteOrderMarks: false,
-                bufferSize: largeBufferSize,
-                leaveOpen: true);
 
             // Configure streams
             m_debuggerInput.AutoFlush = true;
@@ -426,8 +402,6 @@ namespace mcp_nexus.Debugger
             try
             {
                 m_debuggerInput?.Dispose();
-                m_debuggerOutput?.Dispose();
-                m_debuggerError?.Dispose();
                 m_debuggerProcess?.Dispose();
             }
             catch (Exception ex)
@@ -437,8 +411,6 @@ namespace mcp_nexus.Debugger
             finally
             {
                 m_debuggerInput = null;
-                m_debuggerOutput = null;
-                m_debuggerError = null;
                 m_debuggerProcess = null;
             }
         }

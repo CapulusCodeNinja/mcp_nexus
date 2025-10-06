@@ -105,7 +105,7 @@ namespace mcp_nexus.Session
                 }
 
                 // Start CDB session asynchronously
-                var cdbTarget = m_Config.ConstructCdbTarget(dumpPath, symbolsPath);
+                var cdbTarget = m_Config.ConstructCdbTarget(sessionId, dumpPath, symbolsPath);
                 var startSuccess = await cdbSession.StartSession(cdbTarget, null);
 
                 if (!startSuccess)
@@ -392,7 +392,8 @@ namespace mcp_nexus.Session
                 m_Config.CdbOptions.SymbolServerMaxRetries,
                 m_Config.CdbOptions.SymbolSearchPath,
                 m_Config.CdbOptions.StartupDelayMs,
-                m_Config.CdbOptions.OutputReadingTimeoutMs
+                m_Config.CdbOptions.OutputReadingTimeoutMs,
+                sessionId
             );
         }
 

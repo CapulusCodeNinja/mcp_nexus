@@ -740,7 +740,7 @@ namespace mcp_nexus
 
             // Log detailed configuration settings AFTER logging is configured
             LogConfigurationSettings(webBuilder.Configuration, commandLineArgs);
-            ServiceRegistration.RegisterServices(webBuilder.Services, webBuilder.Configuration, commandLineArgs.CustomCdbPath);
+            ServiceRegistration.RegisterServices(webBuilder.Services, webBuilder.Configuration, commandLineArgs.CustomCdbPath, commandLineArgs.ServiceMode);
             HttpServerSetup.ConfigureHttpServices(webBuilder.Services, webBuilder.Configuration);
 
             var app = webBuilder.Build();

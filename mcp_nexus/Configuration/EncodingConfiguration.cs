@@ -15,14 +15,14 @@ namespace mcp_nexus.Configuration
     {
         /// <summary>
         /// The standard encoding for all external text interfaces
-        /// Standard Unicode encoding for maximum compatibility
+        /// UTF-8 without BOM for maximum compatibility with external tools like CDB
         /// </summary>
-        public static Encoding DefaultEncoding { get; } = Encoding.Unicode;
+        public static Encoding DefaultEncoding { get; } = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
         /// <summary>
         /// Content-Type charset parameter for HTTP responses
         /// </summary>
-        public const string HttpCharset = "charset=utf-16";
+        public const string HttpCharset = "charset=utf-8";
 
         /// <summary>
         /// Gets the full Content-Type header value for JSON responses

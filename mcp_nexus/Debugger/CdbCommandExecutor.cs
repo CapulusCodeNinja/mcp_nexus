@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Channels;
 
@@ -5,7 +6,7 @@ namespace mcp_nexus.Debugger
 {
     /// <summary>
     /// Handles command execution and output reading for CDB debugger sessions.
-    /// Uses a producer-consumer architecture with session-scoped stream readers.
+    /// Uses event-based stream reading to avoid deadlocks.
     /// </summary>
     public class CdbCommandExecutor : IDisposable
     {
@@ -13,12 +14,11 @@ namespace mcp_nexus.Debugger
         private readonly CdbSessionConfiguration m_config;
         private readonly CdbOutputParser m_outputParser;
         private readonly object m_cancellationLock = new();
+
         private readonly SemaphoreSlim m_commandExecutionSemaphore = new(1, 1);
 
         // Session-scoped architecture components
         private Channel<(string Line, bool IsStderr, DateTime Timestamp)>? m_sessionChannel;
-        private Task? m_stdoutProducer;
-        private Task? m_stderrProducer;
         private Task? m_consumer;
         private CancellationTokenSource? m_sessionCancellation;
         private readonly Dictionary<string, TaskCompletionSource<string>> m_pendingCommands = new();
@@ -27,14 +27,11 @@ namespace mcp_nexus.Debugger
         /// <summary>
         /// Initializes a new instance of the <see cref="CdbCommandExecutor"/> class.
         /// </summary>
-        /// <param name="logger">The logger instance for recording command execution and errors.</param>
-        /// <param name="config">The CDB session configuration containing timeout and other settings.</param>
-        /// <param name="outputParser">The output parser for analyzing CDB command responses.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
-        public CdbCommandExecutor(
-            ILogger<CdbCommandExecutor> logger,
-            CdbSessionConfiguration config,
-            CdbOutputParser outputParser)
+        /// <param name="logger">The logger instance.</param>
+        /// <param name="config">The CDB session configuration.</param>
+        /// <param name="outputParser">The output parser for processing CDB responses.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
+        public CdbCommandExecutor(ILogger<CdbCommandExecutor> logger, CdbSessionConfiguration config, CdbOutputParser outputParser)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_config = config ?? throw new ArgumentNullException(nameof(config));
@@ -42,7 +39,34 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
-        /// Initializes the session-scoped producer-consumer architecture.
+        /// Event handler for data received from CDB process streams.
+        /// Acts as the producer in the producer-consumer pattern.
+        /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The data received event arguments.</param>
+        /// <param name="isStderr">True if this is stderr data, false for stdout.</param>
+        private void DataReceivedHandler(object sender, DataReceivedEventArgs e, bool isStderr)
+        {
+            m_logger.LogDebug("📤 {StreamType} data received: '{Data}'", isStderr ? "Stderr" : "Stdout", e.Data);
+
+            if (string.IsNullOrEmpty(e.Data))
+            {
+                // Null means the stream has been closed
+                m_logger.LogInformation("📤 {StreamType} stream received null, likely closed", isStderr ? "Stderr" : "Stdout");
+                return;
+            }
+
+            // Send to channel
+            if (m_sessionChannel != null)
+            {
+                // Use fire-and-forget approach for event handler
+                _ = m_sessionChannel.Writer.WriteAsync((e.Data, isStderr, DateTime.Now)).AsTask();
+                m_logger.LogDebug("📤 {StreamType} data written to channel: '{Data}'", isStderr ? "Stderr" : "Stdout", e.Data);
+            }
+        }
+
+        /// <summary>
+        /// Initializes the session-scoped event-based stream reading and consumer thread.
         /// Must be called before executing any commands.
         /// </summary>
         /// <param name="processManager">The CDB process manager providing access to streams.</param>
@@ -57,50 +81,61 @@ namespace mcp_nexus.Debugger
                 return Task.CompletedTask;
             }
 
-            m_logger.LogInformation("🚀 Initializing session-scoped producer-consumer architecture");
+            m_logger.LogInformation("🚀 Initializing session-scoped event-based stream reading");
 
             // Create session-scoped channel
             m_sessionChannel = Channel.CreateUnbounded<(string Line, bool IsStderr, DateTime Timestamp)>(new UnboundedChannelOptions
             {
                 SingleReader = true,  // Only consumer reads
-                SingleWriter = false  // Both stdout and stderr producers write
+                SingleWriter = false  // Event handlers write
             });
 
             // Create session cancellation token
             m_sessionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-            // Start session-scoped producers (they run for the entire session lifetime)
-            m_stdoutProducer = StartStdoutProducerAsync(processManager, m_sessionCancellation.Token);
-            m_stderrProducer = StartStderrProducerAsync(processManager, m_sessionCancellation.Token);
-
             // Start consumer (handles all parsing and command completion logic)
             m_consumer = StartConsumerAsync(m_sessionCancellation.Token);
 
-            m_logger.LogInformation("✅ Session-scoped architecture initialized successfully");
+            // Register event handlers for non-blocking stream reading
+            var debuggerProcess = processManager.DebuggerProcess;
+            if (debuggerProcess != null)
+            {
+                debuggerProcess.OutputDataReceived += (s, e) => DataReceivedHandler(s, e, false);
+                debuggerProcess.ErrorDataReceived += (s, e) => DataReceivedHandler(s, e, true);
+
+                // Start non-blocking reading from streams
+                debuggerProcess.BeginOutputReadLine();
+                debuggerProcess.BeginErrorReadLine();
+
+                m_logger.LogInformation("🚀 Event-based stream reading started");
+            }
+
+
+            m_logger.LogInformation("✅ Session-scoped event-based architecture initialized successfully");
             return Task.CompletedTask;
         }
 
         /// <summary>
         /// Executes a command in the CDB session and returns the output asynchronously.
         /// </summary>
-        /// <param name="command">The CDB command to execute.</param>
-        /// <param name="processManager">The CDB process manager providing access to the debugger process streams.</param>
-        /// <param name="externalCancellationToken">Optional cancellation token for external cancellation.</param>
-        /// <returns>The command output as a string.</returns>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="command"/> is null or empty.</exception>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="processManager"/> is null.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when no active debugging session is available or session is not initialized.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
+        /// <param name="command">The command to execute.</param>
+        /// <param name="processManager">The CDB process manager.</param>
+        /// <param name="externalCancellationToken">External cancellation token.</param>
+        /// <returns>The command output.</returns>
+        /// <exception cref="ArgumentException">Thrown when command is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no active session or session not initialized.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when operation is cancelled.</exception>
+        /// <exception cref="TimeoutException">Thrown when command execution times out.</exception>
         public async Task<string> ExecuteCommandAsync(
             string command,
             CdbProcessManager processManager,
             CancellationToken externalCancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(command))
-                throw new ArgumentException("Command cannot be null or empty", nameof(command));
+            {
+                if (string.IsNullOrWhiteSpace(command))
+                    throw new ArgumentException("Command cannot be null or empty", nameof(command));
 
-            if (!processManager.IsActive)
-                throw new InvalidOperationException("No active debugging session");
+                if (!processManager.IsActive)
+                    throw new InvalidOperationException("No active debugging session");
 
             if (m_sessionChannel == null)
                 throw new InvalidOperationException("Session not initialized. Call InitializeSessionAsync first.");
@@ -116,8 +151,10 @@ namespace mcp_nexus.Debugger
                 m_logger.LogDebug("Executing command with sentinels: '{Original}' -> '{WithSentinels}'",
                     command, commandWithSentinels);
 
+                m_logger.LogDebug("🎯 About to call SendCommandToCdbAsync");
                 // Send command to CDB
                 await SendCommandToCdbAsync(processManager, commandWithSentinels, externalCancellationToken).ConfigureAwait(false);
+                m_logger.LogDebug("🎯 SendCommandToCdbAsync completed");
 
                 // Create completion source for this command
                 var commandId = Guid.NewGuid().ToString();
@@ -141,164 +178,18 @@ namespace mcp_nexus.Debugger
                 }
                 catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
                 {
-                    m_logger.LogWarning("⏰ Command timed out after {TimeoutMs}ms: {Command}", timeoutMs, command);
-
-                    // Remove from pending commands
-                    lock (m_pendingCommandsLock)
-                    {
-                        m_pendingCommands.Remove(commandId);
-                    }
-
-                    return $"Command timed out after {timeoutMs}ms - output may be incomplete.";
+                    m_logger.LogError("⏰ CDB ExecuteCommand TIMEOUT: {Command} (timeout: {TimeoutMs}ms)", command, timeoutMs);
+                    throw new TimeoutException($"Command execution timed out after {timeoutMs}ms");
                 }
-                finally
+                catch (OperationCanceledException)
                 {
-                    // Clean up completion source
-                    lock (m_pendingCommandsLock)
-                    {
-                        m_pendingCommands.Remove(commandId);
-                    }
+                    m_logger.LogInformation("🚫 CDB ExecuteCommand CANCELLED: {Command}", command);
+                    throw;
                 }
             }
             finally
             {
                 m_commandExecutionSemaphore.Release();
-            }
-        }
-
-        /// <summary>
-        /// Starts the stdout producer thread that reads from stdout for the entire session lifetime.
-        /// This is a simple producer that only reads and sends to channel - no logic.
-        /// </summary>
-        /// <param name="processManager">The CDB process manager providing access to the stdout stream.</param>
-        /// <param name="cancellationToken">Cancellation token for the producer thread.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="processManager"/> is null.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the producer is cancelled via the cancellation token.</exception>
-        private async Task StartStdoutProducerAsync(CdbProcessManager processManager, CancellationToken cancellationToken)
-        {
-            m_logger.LogInformation("📤 Starting stdout producer thread");
-
-            try
-            {
-                var debuggerOutput = processManager.DebuggerOutput;
-                if (debuggerOutput == null)
-                {
-                    m_logger.LogError("No stdout stream available");
-                    return;
-                }
-
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    try
-                    {
-                        // Check if CDB process has exited
-                        var debuggerProcess = processManager.DebuggerProcess;
-                        if (debuggerProcess?.HasExited == true)
-                        {
-                            m_logger.LogError("CDB process has exited unexpectedly. Exit code: {ExitCode}",
-                                debuggerProcess.ExitCode);
-                            break;
-                        }
-
-                        // Read line from stdout
-                        string? line = await debuggerOutput.ReadLineAsync().ConfigureAwait(false);
-
-                        if (line == null)
-                        {
-                            m_logger.LogInformation("📤 Stdout stream ended");
-                            break; // End of stream
-                        }
-
-                        // Send to channel - NO LOGIC, just pure data transfer
-                        if (m_sessionChannel != null)
-                        {
-                            await m_sessionChannel.Writer.WriteAsync((line, false, DateTime.Now), cancellationToken).ConfigureAwait(false);
-                        }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        m_logger.LogDebug("📤 Stdout producer cancelled");
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        m_logger.LogError(ex, "📤 Error in stdout producer");
-                        // Continue reading - don't let one error stop the producer
-                    }
-                }
-            }
-            finally
-            {
-                m_logger.LogInformation("📤 Stdout producer thread ended");
-            }
-        }
-
-        /// <summary>
-        /// Starts the stderr producer thread that reads from stderr for the entire session lifetime.
-        /// This is a simple producer that only reads and sends to channel - no logic.
-        /// </summary>
-        /// <param name="processManager">The CDB process manager providing access to the stderr stream.</param>
-        /// <param name="cancellationToken">Cancellation token for the producer thread.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="processManager"/> is null.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the producer is cancelled via the cancellation token.</exception>
-        private async Task StartStderrProducerAsync(CdbProcessManager processManager, CancellationToken cancellationToken)
-        {
-            m_logger.LogInformation("📤 Starting stderr producer thread");
-
-            try
-            {
-                var debuggerError = processManager.DebuggerError;
-                if (debuggerError == null)
-                {
-                    m_logger.LogInformation("📤 No stderr stream available");
-                    return;
-                }
-
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    try
-                    {
-                        // Check if CDB process has exited
-                        var debuggerProcess = processManager.DebuggerProcess;
-                        if (debuggerProcess?.HasExited == true)
-                        {
-                            m_logger.LogError("CDB process has exited unexpectedly. Exit code: {ExitCode}",
-                            debuggerProcess.ExitCode);
-                            break;
-                        }
-
-                        // Read line from stderr
-                        string? line = await debuggerError.ReadLineAsync().ConfigureAwait(false);
-
-                        if (line == null)
-                        {
-                            m_logger.LogInformation("📤 Stderr stream ended");
-                            break; // End of stream
-                        }
-
-                        // Send to channel - NO LOGIC, just pure data transfer
-                        if (m_sessionChannel != null)
-                        {
-                            await m_sessionChannel.Writer.WriteAsync((line, true, DateTime.Now), cancellationToken).ConfigureAwait(false);
-                        }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        m_logger.LogDebug("📤 Stderr producer cancelled");
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        m_logger.LogError(ex, "📤 Error in stderr producer");
-                        // Continue reading - don't let one error stop the producer
-                    }
-                }
-            }
-            finally
-            {
-                m_logger.LogInformation("📤 Stderr producer thread ended");
             }
         }
 
@@ -312,7 +203,7 @@ namespace mcp_nexus.Debugger
         private async Task StartConsumerAsync(CancellationToken cancellationToken)
         {
             m_logger.LogInformation("🧠 Starting consumer thread");
-
+            
             try
             {
                 if (m_sessionChannel == null)
@@ -328,6 +219,7 @@ namespace mcp_nexus.Debugger
 
                 await foreach (var (line, isStderr, timestamp) in m_sessionChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
                 {
+                    m_logger.LogDebug("🧠 Consumer received line: '{Line}' (isStderr: {IsStderr})", line, isStderr);
                     try
                     {
                         // Handle start sentinel
@@ -335,13 +227,13 @@ namespace mcp_nexus.Debugger
                             line.Contains(CdbSentinels.StartMarker))
                         {
                             m_logger.LogDebug("🧠 Start sentinel detected: {Line}", line);
-
+                            
                             // Complete previous command if any
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
-
+                            
                             // Start new command
                             currentCommandId = Guid.NewGuid().ToString();
                             currentCommandOutput.Clear();
@@ -355,12 +247,12 @@ namespace mcp_nexus.Debugger
                             line.Contains(CdbSentinels.EndMarker))
                         {
                             m_logger.LogInformation("🧠 End sentinel detected - completing command: {Line}", line);
-
+                            
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
-
+                            
                             // Reset for next command
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
@@ -372,13 +264,13 @@ namespace mcp_nexus.Debugger
                         // FALLBACK: Check for CDB prompt patterns (100% reliable)
                         if (CdbCompletionPatterns.IsCdbPrompt(line))
                         {
-                            m_logger.LogWarning("🧠 CDB prompt detected - completing command: {Line}", line);
-
+                            m_logger.LogInformation("🧠 CDB prompt detected - completing command: {Line}", line);
+                            
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
-
+                            
                             // Reset for next command
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
@@ -390,13 +282,13 @@ namespace mcp_nexus.Debugger
                         // FALLBACK: Check for ultra-safe completion patterns
                         if (CdbCompletionPatterns.IsUltraSafeCompletion(line))
                         {
-                            m_logger.LogWarning("🧠 Ultra-safe completion pattern detected - completing command: {Line}", line);
-
+                            m_logger.LogInformation("🧠 Ultra-safe completion pattern detected - completing command: {Line}", line);
+                            
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
-
+                            
                             // Reset for next command
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
@@ -409,29 +301,26 @@ namespace mcp_nexus.Debugger
                         if (inCommand)
                         {
                             if (isStderr)
-                            {
                                 currentCommandStderr.Add(line);
-                            }
                             else
-                            {
                                 currentCommandOutput.AppendLine(line);
-                            }
                         }
-                        else
-                        {
-                            // Output outside of command context - could be CDB prompts, etc.
-                            m_logger.LogDebug("🧠 Output outside command context: {Line}", line);
-                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        m_logger.LogDebug("🧠 Consumer processing cancelled for line: {Line}", line);
+                        break;
                     }
                     catch (Exception ex)
                     {
                         m_logger.LogError(ex, "🧠 Error processing line in consumer: {Line}", line);
+                        // Continue processing other lines
                     }
                 }
             }
             catch (OperationCanceledException)
             {
-                m_logger.LogDebug("🧠 Consumer cancelled");
+                m_logger.LogInformation("🧠 Consumer thread cancelled");
             }
             catch (Exception ex)
             {
@@ -497,21 +386,23 @@ namespace mcp_nexus.Debugger
         /// Creates a command with start and end sentinels for proper output parsing.
         /// </summary>
         /// <param name="command">The original command to wrap with sentinels.</param>
-        /// <returns>A command string with start and end sentinels for output parsing.</returns>
+        /// <returns>The command wrapped with start and end sentinels.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="command"/> is null.</exception>
         private string CreateCommandWithSentinels(string command)
         {
+            if (command == null)
+                throw new ArgumentNullException(nameof(command));
+
             return $".echo {CdbSentinels.StartMarker}; {command}; .echo {CdbSentinels.EndMarker}";
         }
 
         /// <summary>
         /// Sends a command to the CDB process input stream.
         /// </summary>
-        /// <param name="processManager">The CDB process manager providing access to the input stream.</param>
-        /// <param name="command">The command to send to CDB.</param>
+        /// <param name="processManager">The CDB process manager.</param>
+        /// <param name="command">The command to send.</param>
         /// <param name="cancellationToken">Cancellation token for the operation.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="processManager"/> or <paramref name="command"/> is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when no input stream is available for sending commands.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
         private async Task SendCommandToCdbAsync(CdbProcessManager processManager, string command, CancellationToken cancellationToken)
@@ -543,7 +434,7 @@ namespace mcp_nexus.Debugger
         /// <summary>
         /// Disposes of the command executor and cleans up resources.
         /// </summary>
-        /// <param name="disposing">True if called from Dispose(), false if called from finalizer.</param>
+        /// <param name="disposing">True if disposing managed resources.</param>
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
@@ -556,26 +447,35 @@ namespace mcp_nexus.Debugger
                 // Complete channel to stop consumer
                 m_sessionChannel?.Writer.TryComplete();
 
-                // Wait for all tasks to complete
+                // Wait for consumer task to complete
                 try
                 {
-                    Task.WaitAll(
-                        new[] { m_stdoutProducer, m_stderrProducer, m_consumer }
-                            .Where(t => t != null)
-                            .Cast<Task>()
-                            .ToArray(),
-                        TimeSpan.FromSeconds(5));
-                }
-                catch (Exception ex)
-                {
+                    if (m_consumer != null)
+                    {
+                        Task.WaitAll(new[] { m_consumer }, TimeSpan.FromSeconds(5));
+                    }
+            }
+            catch (Exception ex)
+            {
+
                     m_logger.LogWarning(ex, "Error waiting for tasks to complete during disposal");
+                }
+
+                // Complete any pending commands with error
+                lock (m_pendingCommandsLock)
+                {
+                    foreach (var kvp in m_pendingCommands)
+                    {
+                        kvp.Value.TrySetCanceled();
+                    }
+                    m_pendingCommands.Clear();
                 }
 
                 // Dispose resources
                 m_sessionCancellation?.Dispose();
                 m_commandExecutionSemaphore?.Dispose();
 
-                m_logger.LogInformation("✅ CdbCommandExecutor disposed");
+                m_logger.LogInformation("🧹 CdbCommandExecutor disposed");
             }
         }
     }

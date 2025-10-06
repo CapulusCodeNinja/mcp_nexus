@@ -22,5 +22,8 @@ namespace mcp_nexus.Session.Models
 
         /// <summary>Memory threshold in bytes for triggering cleanup (default: 1GB)</summary>
         public long MemoryCleanupThresholdBytes { get; set; } = 1_000_000_000; // 1GB
+
+        /// <summary>Whether the application is running in service mode</summary>
+        public bool ServiceMode { get; set; } = false;
     }
 }

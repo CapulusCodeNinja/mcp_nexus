@@ -32,6 +32,7 @@ namespace mcp_nexus.Debugger
         /// <param name="symbolSearchPath">Optional symbol search path for CDB. If null, uses the default path.</param>
         /// <param name="startupDelayMs">The delay in milliseconds before starting the session. Default is 1000ms (1 second).</param>
         /// <param name="outputReadingTimeoutMs">The output reading timeout in milliseconds. Default is 300000ms (5 minutes).</param>
+        /// <param name="sessionId">Optional session ID for creating session-specific log files. If null, uses default naming.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public CdbSession(
             ILogger<CdbSession> logger,
@@ -41,7 +42,8 @@ namespace mcp_nexus.Debugger
             int symbolServerMaxRetries = 1,
             string? symbolSearchPath = null,
             int startupDelayMs = 1000,
-            int outputReadingTimeoutMs = 300000)
+            int outputReadingTimeoutMs = 300000,
+            string? sessionId = null)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -65,6 +67,12 @@ namespace mcp_nexus.Debugger
             m_processManager = new CdbProcessManager(processLogger, m_config);
             m_outputParser = new CdbOutputParser(parserLogger);
             m_commandExecutor = new CdbCommandExecutor(executorLogger, m_config, m_outputParser);
+
+            // Set session ID for session-specific log files
+            if (!string.IsNullOrEmpty(sessionId))
+            {
+                m_processManager.SetSessionId(sessionId);
+            }
 
             m_logger.LogDebug("CdbSession initialized with focused components");
         }
