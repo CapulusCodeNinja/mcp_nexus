@@ -84,8 +84,8 @@ namespace mcp_nexus.CommandQueue
                     m_Results[commandId] = cachedResult;
                     m_CurrentMemoryUsage += resultSize;
 
-                    m_Logger?.LogTrace("💾 Stored result with metadata for command {CommandId} - Size: {SizeKB}KB, TotalMemory: {TotalMB}MB",
-                        commandId, resultSize / 1024.0, m_CurrentMemoryUsage / (1024.0 * 1024.0));
+                    m_Logger?.LogDebug("Cache StoreResult: Stored command {CommandId}, Output length: {Length}, Output: '{Output}' - Size: {SizeKB}KB, TotalMemory: {TotalMB}MB",
+                        commandId, result.Output?.Length ?? 0, result.Output, resultSize / 1024.0, m_CurrentMemoryUsage / (1024.0 * 1024.0));
                 }
             }
             catch (Exception ex)
@@ -110,7 +110,13 @@ namespace mcp_nexus.CommandQueue
                 {
                     // Update access time for LRU tracking
                     cachedResult.UpdateAccessTime();
+                    m_Logger?.LogDebug("Cache GetResult: Found command {CommandId}, Output length: {Length}, Output: '{Output}'", 
+                        commandId, cachedResult.Result.Output?.Length ?? 0, cachedResult.Result.Output);
                     return cachedResult.Result;
+                }
+                else
+                {
+                    m_Logger?.LogDebug("Cache GetResult: Command {CommandId} not found in cache", commandId);
                 }
             }
             catch (Exception ex)

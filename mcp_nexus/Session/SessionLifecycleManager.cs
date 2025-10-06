@@ -391,7 +391,8 @@ namespace mcp_nexus.Session
                 m_Config.CdbOptions.CustomCdbPath,
                 m_Config.CdbOptions.SymbolServerMaxRetries,
                 m_Config.CdbOptions.SymbolSearchPath,
-                m_Config.CdbOptions.StartupDelayMs
+                m_Config.CdbOptions.StartupDelayMs,
+                m_Config.CdbOptions.OutputReadingTimeoutMs
             );
         }
 

@@ -31,6 +31,7 @@ namespace mcp_nexus.Debugger
         /// <param name="symbolServerMaxRetries">The maximum number of retries for symbol server operations. Default is 1.</param>
         /// <param name="symbolSearchPath">Optional symbol search path for CDB. If null, uses the default path.</param>
         /// <param name="startupDelayMs">The delay in milliseconds before starting the session. Default is 1000ms (1 second).</param>
+        /// <param name="outputReadingTimeoutMs">The output reading timeout in milliseconds. Default is 300000ms (5 minutes).</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public CdbSession(
             ILogger<CdbSession> logger,
@@ -39,7 +40,8 @@ namespace mcp_nexus.Debugger
             string? customCdbPath = null,
             int symbolServerMaxRetries = 1,
             string? symbolSearchPath = null,
-            int startupDelayMs = 1000)
+            int startupDelayMs = 1000,
+            int outputReadingTimeoutMs = 300000)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -50,7 +52,8 @@ namespace mcp_nexus.Debugger
                 customCdbPath: customCdbPath,
                 symbolServerMaxRetries: symbolServerMaxRetries,
                 symbolSearchPath: symbolSearchPath,
-                startupDelayMs: startupDelayMs);
+                startupDelayMs: startupDelayMs,
+                outputReadingTimeoutMs: outputReadingTimeoutMs);
 
             // CRITICAL FIX: Logger casting was failing, causing NullLogger to be used!
             // This resulted in zero visibility into CdbProcessManager init consumer

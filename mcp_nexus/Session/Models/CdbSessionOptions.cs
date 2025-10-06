@@ -23,6 +23,9 @@ namespace mcp_nexus.Session.Models
         /// <summary>Startup delay in milliseconds (how long to wait after CDB starts before reading output)</summary>
         public int StartupDelayMs { get; set; } = 1000;
 
+        /// <summary>Output reading timeout in milliseconds (how long to wait for command output)</summary>
+        public int OutputReadingTimeoutMs { get; set; } = 300000;
+
         /// <summary>Custom CDB executable path</summary>
         public string? CustomCdbPath { get; set; }
     }

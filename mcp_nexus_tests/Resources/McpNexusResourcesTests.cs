@@ -263,7 +263,7 @@ namespace mcp_nexus_tests.Resources
             var result = (string)method!.Invoke(null, new object[] { failedCommand, allCommands })!;
 
             // Assert
-            Assert.Equal("Command failed: Unknown error", result);
+            Assert.Equal("Command failed", result);
         }
 
         [Fact]

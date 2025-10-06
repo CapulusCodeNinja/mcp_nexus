@@ -280,6 +280,8 @@ namespace mcp_nexus.Debugger
                     m_logger.LogWarning("Command output reading timed out after {TimeoutMs}ms - forcing completion", outputReadingTimeoutMs);
                     // Force completion of any remaining tasks
                     completionSignal.Cancel();
+                    // Return timeout error message instead of empty string
+                    return $"Command timed out after {outputReadingTimeoutMs}ms - output may be incomplete.";
                 }
             }
             finally

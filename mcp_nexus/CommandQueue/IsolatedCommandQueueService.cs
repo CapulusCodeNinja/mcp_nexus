@@ -168,8 +168,9 @@ namespace mcp_nexus.CommandQueue
             var cachedResult = m_Processor.GetCommandResult(commandId);
             if (cachedResult != null)
             {
-                m_Logger.LogTrace("✅ Command {CommandId} result retrieved from cache for session {SessionId}", commandId, m_Config.SessionId);
-                return cachedResult.IsSuccess ? cachedResult.Output : $"Command failed: {cachedResult.ErrorMessage}";
+                m_Logger.LogDebug("IsolatedCommandQueueService.GetCommandResult: Found in cache - Command {CommandId}, Output length: {Length}, Output: '{Output}', IsSuccess: {IsSuccess}", 
+                    commandId, cachedResult.Output?.Length ?? 0, cachedResult.Output, cachedResult.IsSuccess);
+                return cachedResult.IsSuccess ? (cachedResult.Output ?? string.Empty) : $"Command failed: {cachedResult.ErrorMessage}";
             }
 
             // If not in cache, check if command is still active in tracker

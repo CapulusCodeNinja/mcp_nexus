@@ -148,8 +148,10 @@ namespace mcp_nexus.CommandQueue
                     var commandResult = CommandResult.Success(result ?? string.Empty, stopwatch.Elapsed);
                     var endTime = DateTime.UtcNow;
                     var startTime = endTime.Add(-stopwatch.Elapsed);
+                    m_Logger.LogDebug("Storing result in cache for command {CommandId}", command.Id);
                     m_ResultCache?.StoreResult(command.Id ?? string.Empty, commandResult, 
                         command.Command, command.QueueTime, startTime, endTime);
+                    m_Logger.LogDebug("Result stored in cache for command {CommandId}", command.Id);
 
                     // Complete successfully
                     // Log small preview of result for diagnostics
@@ -380,7 +382,10 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The cached command result, or null if not found</returns>
         public ICommandResult? GetCommandResult(string commandId)
         {
-            return m_ResultCache?.GetResult(commandId);
+            m_Logger.LogDebug("Getting result from cache for command {CommandId}", commandId);
+            var result = m_ResultCache?.GetResult(commandId);
+            m_Logger.LogDebug("Cache lookup for command {CommandId}: found={Found}", commandId, result != null);
+            return result;
         }
 
         /// <summary>

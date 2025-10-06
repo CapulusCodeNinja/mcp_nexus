@@ -440,17 +440,15 @@ namespace mcp_nexus.Session
                 }
 
                 // Check cache first (for completed commands) - reduces pressure on queue
-                var cachedResultString = await commandQueue!.GetCommandResult(commandId);
-                if (!string.IsNullOrEmpty(cachedResultString) && !cachedResultString.Contains("not found"))
+                // Use non-blocking cache check instead of GetCommandResult which can block
+                var cachedResultWithMetadata = await commandQueue!.GetCachedResultWithMetadata(commandId);
+                m_logger.LogDebug("Cache lookup for command {CommandId}: found={Found}", commandId, cachedResultWithMetadata != null);
+                if (cachedResultWithMetadata != null)
                 {
-                    m_logger.LogTrace("Command {CommandId} found in cache for session {SessionId}", commandId, sessionId);
+                    m_logger.LogDebug("Command {CommandId} found in cache for session {SessionId}", commandId, sessionId);
                     
-                    // Get the cached result with metadata
-                    var cachedResultWithMetadata = await commandQueue.GetCachedResultWithMetadata(commandId);
-                    if (cachedResultWithMetadata != null)
-                    {
-                        // Use real metadata from cache
-                        var elapsed = cachedResultWithMetadata.EndTime - cachedResultWithMetadata.QueueTime;
+                    // Use real metadata from cache
+                    var elapsed = cachedResultWithMetadata.EndTime - cachedResultWithMetadata.QueueTime;
                         
                         // Create CommandInfo with real data from cache
                         var cachedCommandInfo = new CommandInfo(
@@ -468,47 +466,22 @@ namespace mcp_nexus.Session
                         
                         return (cachedCommandInfo, cachedResultWithMetadata.Result);
                     }
-                    else
-                    {
-                        // Fallback to calculated timing if metadata not available
-                        var endTime = DateTime.UtcNow;
-                        var queueTime = endTime.AddMinutes(-1);
-                        var elapsed = endTime - queueTime;
-                        
-                        var fallbackCommandInfo = new CommandInfo(
-                            commandId,
-                            "Completed Command", // Fallback
-                            CommandState.Completed, // Assume success if we have a result
-                            queueTime,
-                            0
-                        )
-                        {
-                            Elapsed = elapsed,
-                            Remaining = TimeSpan.Zero,
-                            IsCompleted = true
-                        };
-                        
-                        // Create a simple result from the string
-                        var simpleResult = CommandResult.Success(cachedResultString, elapsed);
-                        return (fallbackCommandInfo, simpleResult);
-                    }
-                }
 
                 // Fallback: Check tracker (for active/queued commands)
                 var commandInfo = commandQueue.GetCommandInfo(commandId);
                 if (commandInfo != null)
                 {
-                    m_logger.LogTrace("Command {CommandId} found in tracker for session {SessionId}", commandId, sessionId);
+                    m_logger.LogDebug("Command {CommandId} found in tracker for session {SessionId}", commandId, sessionId);
                     // For active commands, we don't have the result yet
                     return (commandInfo, null);
                 }
 
-                m_logger.LogTrace("Command {CommandId} not found in tracker or cache for session {SessionId}", commandId, sessionId);
+                m_logger.LogDebug("Command {CommandId} not found in tracker or cache for session {SessionId}", commandId, sessionId);
                 return (null, null);
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error retrieving command info for {CommandId} in session {SessionId}", commandId, sessionId);
+                m_logger.LogWarning(ex, "Error retrieving command info for {CommandId} in session {SessionId}", commandId, sessionId);
                 return (null, null);
             }
         }
