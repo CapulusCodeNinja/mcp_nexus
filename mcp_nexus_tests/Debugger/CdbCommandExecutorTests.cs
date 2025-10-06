@@ -25,7 +25,7 @@ namespace mcp_nexus_tests.Debugger
         {
             m_MockLogger = new Mock<ILogger<CdbCommandExecutor>>();
             m_MockOutputParserLogger = new Mock<ILogger<CdbOutputParser>>();
-            m_Config = new CdbSessionConfiguration();
+            m_Config = new CdbSessionConfiguration(commandTimeoutMs: 600000); // 10 minutes for tests
             m_OutputParser = new CdbOutputParser(m_MockOutputParserLogger.Object);
             m_Executor = new CdbCommandExecutor(m_MockLogger.Object, m_Config, m_OutputParser);
         }
@@ -191,13 +191,11 @@ namespace mcp_nexus_tests.Debugger
             var mockProcessManager = CreateMockProcessManager();
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
 
-            // Act
-            var result = await m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object, CancellationToken.None);
-
-            // Assert
+            // Act & Assert
             // With the new architecture, commands will timeout if no output is produced
             // This is expected behavior for mocked streams that don't produce sentinels
-            Assert.Contains("timed out", result);
+            await Assert.ThrowsAsync<TimeoutException>(() =>
+                m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object, CancellationToken.None));
         }
 
         [Fact]
@@ -210,7 +208,7 @@ namespace mcp_nexus_tests.Debugger
             cts.Cancel();
 
             // Act & Assert
-            await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            await Assert.ThrowsAsync<TaskCanceledException>(() =>
                 m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object, cts.Token));
         }
 
@@ -221,12 +219,10 @@ namespace mcp_nexus_tests.Debugger
             var mockProcessManager = CreateMockProcessManager();
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
 
-            // Act
-            var result = await m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object);
-
-            // Assert
+            // Act & Assert
             // Should timeout since no output is produced by mocked streams
-            Assert.Contains("timed out", result);
+            await Assert.ThrowsAsync<TimeoutException>(() =>
+                m_Executor.ExecuteCommandAsync("test command", mockProcessManager.Object));
         }
 
         [Fact]
@@ -274,27 +270,19 @@ namespace mcp_nexus_tests.Debugger
         private Mock<CdbProcessManager> CreateMockProcessManager()
         {
             var mockLogger = new Mock<ILogger<CdbProcessManager>>();
-            var mockConfig = new CdbSessionConfiguration();
+            var mockConfig = new CdbSessionConfiguration(commandTimeoutMs: 600000); // 10 minutes for tests
             var mockProcessManager = new Mock<CdbProcessManager>(mockLogger.Object, mockConfig);
 
-            var mockProcess = new Mock<Process>();
-            var mockInput = new Mock<StreamWriter>();
-            var mockOutput = new Mock<StreamReader>();
-            var mockError = new Mock<StreamReader>();
-
-            mockProcess.Setup(p => p.HasExited).Returns(false);
-            mockProcess.Setup(p => p.StandardInput).Returns(mockInput.Object);
-            mockProcess.Setup(p => p.StandardOutput).Returns(mockOutput.Object);
-            mockProcess.Setup(p => p.StandardError).Returns(mockError.Object);
-
+            // Process properties are not virtual and cannot be mocked
+            // Instead, we'll mock the CdbProcessManager properties directly
+            
+            // Create a real StreamWriter for tests that need it
+            var testStream = new MemoryStream();
+            var testWriter = new StreamWriter(testStream);
+            
             mockProcessManager.Setup(pm => pm.IsActive).Returns(true);
-            mockProcessManager.Setup(pm => pm.DebuggerProcess).Returns(mockProcess.Object);
-            mockProcessManager.Setup(pm => pm.DebuggerInput).Returns(mockInput.Object);
-            // DebuggerOutput and DebuggerError properties removed - streams are handled internally
-
-            // Mock streams to return null (end of stream) to simulate timeout behavior
-            mockOutput.Setup(sr => sr.ReadLineAsync()).ReturnsAsync((string?)null);
-            mockError.Setup(sr => sr.ReadLineAsync()).ReturnsAsync((string?)null);
+            mockProcessManager.Setup(pm => pm.DebuggerProcess).Returns((Process?)null); // No process needed for basic tests
+            mockProcessManager.Setup(pm => pm.DebuggerInput).Returns(testWriter);
 
             return mockProcessManager;
         }

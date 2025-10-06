@@ -77,6 +77,9 @@ namespace mcp_nexus.Debugger
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="processManager"/> is null.</exception>
         public Task InitializeSessionAsync(CdbProcessManager processManager, CancellationToken cancellationToken = default)
         {
+            if (processManager == null)
+                throw new ArgumentNullException(nameof(processManager));
+
             if (m_sessionChannel != null)
             {
                 m_logger.LogWarning("Session already initialized");
@@ -168,7 +171,12 @@ namespace mcp_nexus.Debugger
                 }
 
                 // Wait for command completion with timeout
-                var timeoutMs = m_config.OutputReadingTimeoutMs > 0 ? m_config.OutputReadingTimeoutMs : 300000; // 5 minutes default
+                // Use CommandTimeoutMs for command execution - must be configured
+                if (m_config.CommandTimeoutMs <= 0)
+                {
+                    throw new InvalidOperationException("CommandTimeoutMs must be configured and greater than 0. Current value: " + m_config.CommandTimeoutMs);
+                }
+                var timeoutMs = m_config.CommandTimeoutMs;
                 using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMs));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(externalCancellationToken, timeoutCts.Token);
 
@@ -235,8 +243,8 @@ namespace mcp_nexus.Debugger
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
 
-                            // Start new command
-                            currentCommandId = Guid.NewGuid().ToString();
+                            // Start new command - get the next pending command ID
+                            currentCommandId = GetNextPendingCommandId();
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();
                             inCommand = true;
@@ -352,16 +360,13 @@ namespace mcp_nexus.Debugger
                     result += "\n--- STDERR ---\n" + string.Join("\n", stderr);
                 }
 
-                // Find and complete the pending command
+                // Find and complete the pending command by ID
                 TaskCompletionSource<string>? completionSource = null;
                 lock (m_pendingCommandsLock)
                 {
-                    // Find the oldest pending command (FIFO)
-                    var oldestCommand = m_pendingCommands.FirstOrDefault();
-                    if (oldestCommand.Key != null)
+                    if (m_pendingCommands.TryGetValue(commandId, out completionSource))
                     {
-                        completionSource = oldestCommand.Value;
-                        m_pendingCommands.Remove(oldestCommand.Key);
+                        m_pendingCommands.Remove(commandId);
                     }
                 }
 
@@ -381,6 +386,19 @@ namespace mcp_nexus.Debugger
             }
 
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Gets the next pending command ID from the queue.
+        /// </summary>
+        /// <returns>The next pending command ID, or empty string if none available.</returns>
+        private string GetNextPendingCommandId()
+        {
+            lock (m_pendingCommandsLock)
+            {
+                var nextCommand = m_pendingCommands.FirstOrDefault();
+                return nextCommand.Key ?? string.Empty;
+            }
         }
 
         /// <summary>
