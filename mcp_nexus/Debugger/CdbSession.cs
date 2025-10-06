@@ -257,9 +257,16 @@ namespace mcp_nexus.Debugger
 
                 m_logger.LogInformation("🔒 SEMAPHORE: About to execute command '{Command}' (TRUE ASYNC)", command);
 
+                // Preprocess the command to fix common issues (e.g., .srcpath path conversion and directory creation)
+                var preprocessedCommand = mcp_nexus.Utilities.CommandPreprocessor.PreprocessCommand(command);
+                if (preprocessedCommand != command)
+                {
+                    m_logger.LogInformation("🔧 Command preprocessed: '{Original}' -> '{Preprocessed}'", command, preprocessedCommand);
+                }
+
                 // TRUE ASYNC: Direct call without Task.Run - proper async all the way through
                 // Semaphore ensures serialization, no need for thread pool wrapper
-                var result = await m_commandExecutor.ExecuteCommandAsync(command, m_processManager, externalCancellationToken).ConfigureAwait(false);
+                var result = await m_commandExecutor.ExecuteCommandAsync(preprocessedCommand, m_processManager, externalCancellationToken).ConfigureAwait(false);
 
                 m_logger.LogInformation("🔒 SEMAPHORE: Command '{Command}' completed, result length: {Length}", command, result?.Length ?? 0);
 
