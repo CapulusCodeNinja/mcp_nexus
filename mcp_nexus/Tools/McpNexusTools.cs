@@ -414,6 +414,27 @@ namespace mcp_nexus.Tools
                         executionTime = isCompleted ? FormatExecutionTime(commandInfo.Elapsed) : null,
                         checkAgain = isCompleted ? null : nextCheckIn
                     },
+                    aiGuidance = new
+                    {
+                        nextSteps = isCompleted ? new[]
+                        {
+                            "Analyze the command output for debugging insights",
+                            "Execute follow-up commands based on results",
+                            "Use output to guide next debugging steps",
+                            "⚠️ IMPORTANT: Call 'nexus_close_dump_analyze_session' when analysis is complete"
+                        } : new[]
+                        {
+                            "Wait for command completion",
+                            "Check status again in a few seconds",
+                            "Use 'commands' resource to monitor all commands"
+                        },
+                        sessionManagement = new
+                        {
+                            commandLimit = "Unlimited commands per session",
+                            timeoutInfo = "Commands timeout after 10 minutes if not completed",
+                            bestPractice = "⚠️ Call 'nexus_close_dump_analyze_session' when done to free resources immediately"
+                        }
+                    },
                     timeoutMinutes = 10,
                     usage = SessionAwareWindbgTool.USAGE_EXPLANATION
                 };

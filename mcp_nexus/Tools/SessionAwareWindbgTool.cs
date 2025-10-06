@@ -258,6 +258,12 @@ namespace mcp_nexus.Tools
                     success = true,
                     operation = "nexus_open_dump_analyze_session",
                     message = $"Session created successfully: {sessionId}. Use 'sessions' resource to manage sessions.",
+                    sessionInfo = new
+                    {
+                        maxCommands = "Unlimited commands per session",
+                        status = "Active and ready for commands",
+                        important = "⚠️ IMPORTANT: Call 'nexus_close_dump_analyze_session' when done to free resources immediately"
+                    },
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
@@ -455,6 +461,20 @@ namespace mcp_nexus.Tools
                     success = true,
                     operation = "nexus_enqueue_async_dump_analyze_command",
                     message = $"Command queued successfully: {commandId}. Use the resource 'commands' to observe the status and the 'nexus_read_dump_analyze_command_result' tool to get results.",
+                    commandInfo = new
+                    {
+                        command = command,
+                        queuePosition = 0, // Will be updated by queue service
+                        estimatedExecutionTime = GetEstimatedExecutionTime(command),
+                        status = "Queued",
+                        nextSteps = new[]
+                        {
+                            "Command will execute automatically",
+                            "Use 'nexus_read_dump_analyze_command_result' to get results",
+                            "Use 'commands' resource to monitor all commands",
+                            "⚠️ IMPORTANT: Call 'nexus_close_dump_analyze_session' when analysis is complete"
+                        }
+                    },
                     usage = USAGE_EXPLANATION // IMPORTANT: usage field must always be the last entry in responses
                 };
 
@@ -501,6 +521,29 @@ namespace mcp_nexus.Tools
         #endregion
 
         #region Utility Methods
+
+        /// <summary>
+        /// Estimates execution time for a command based on command type
+        /// </summary>
+        /// <param name="command">The command to estimate</param>
+        /// <returns>Estimated execution time description</returns>
+        private string GetEstimatedExecutionTime(string command)
+        {
+            var cmd = command.Trim().ToLowerInvariant();
+            
+            return cmd switch
+            {
+                var c when c.StartsWith("!analyze") => "30-60 seconds (complex analysis)",
+                var c when c.StartsWith("lm") => "1-3 seconds (module listing)",
+                var c when c.StartsWith("!peb") => "1-2 seconds (process environment)",
+                var c when c.StartsWith("k") || c.StartsWith("!k") => "1-2 seconds (stack trace)",
+                var c when c.StartsWith("!threads") => "2-5 seconds (thread listing)",
+                var c when c.StartsWith("!heap") => "5-15 seconds (heap analysis)",
+                var c when c.StartsWith("!gchandles") => "3-8 seconds (GC handles)",
+                var c when c.StartsWith("!dump") => "5-30 seconds (memory dumps)",
+                _ => "1-10 seconds (varies by command complexity)"
+            };
+        }
 
         /// <summary>
         /// Generates AI guidance based on command status and results.
