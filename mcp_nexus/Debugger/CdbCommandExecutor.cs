@@ -46,10 +46,7 @@ namespace mcp_nexus.Debugger
         /// <param name="e">The data received event arguments.</param>
         /// <param name="isStderr">True if this is stderr data, false for stdout.</param>
         private void DataReceivedHandler(object sender, DataReceivedEventArgs e, bool isStderr)
-        {
-            m_logger.LogDebug("📤 {StreamType} data received: '{Data}'", isStderr ? "Stderr" : "Stdout", e.Data);
-
-            if (string.IsNullOrEmpty(e.Data))
+        {            if (string.IsNullOrEmpty(e.Data))
             {
                 // Null means the stream has been closed
                 m_logger.LogInformation("📤 {StreamType} stream received null, likely closed", isStderr ? "Stderr" : "Stdout");
@@ -61,7 +58,6 @@ namespace mcp_nexus.Debugger
             {
                 // Use fire-and-forget approach for event handler
                 _ = m_sessionChannel.Writer.WriteAsync((e.Data, isStderr, DateTime.Now)).AsTask();
-                m_logger.LogDebug("📤 {StreamType} data written to channel: '{Data}'", isStderr ? "Stderr" : "Stdout", e.Data);
             }
         }
 
@@ -219,7 +215,6 @@ namespace mcp_nexus.Debugger
 
                 await foreach (var (line, isStderr, timestamp) in m_sessionChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
                 {
-                    m_logger.LogDebug("🧠 Consumer received line: '{Line}' (isStderr: {IsStderr})", line, isStderr);
                     try
                     {
                         // Handle start sentinel

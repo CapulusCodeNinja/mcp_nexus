@@ -79,7 +79,7 @@ namespace mcp_nexus.Session
         /// </exception>
         private string GetCdbSessionBasedLogPath(string sessionId)
         {
-            var fileTarget = LogManager.Configuration?.FindTargetByName("file") as NLog.Targets.FileTarget;
+            var fileTarget = LogManager.Configuration?.FindTargetByName("mainFile") as NLog.Targets.FileTarget;
             if (fileTarget == null)
             {
                 throw new InvalidOperationException("File target not found in NLog configuration");

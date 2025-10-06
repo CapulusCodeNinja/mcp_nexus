@@ -29,7 +29,7 @@ namespace mcp_nexus.Configuration
         {
             Console.Error.WriteLine("Registering services...");
 
-            RegisterCoreServices(services, configuration, customCdbPath);
+            RegisterCoreServices(services, configuration, customCdbPath, serviceMode);
             RegisterAdvancedServices(services);
             RegisterRecoveryServices(services);
             RegisterToolsAndProtocol(services);
@@ -43,7 +43,8 @@ namespace mcp_nexus.Configuration
         /// <param name="services">The service collection to register services with.</param>
         /// <param name="configuration">The application configuration.</param>
         /// <param name="customCdbPath">Optional custom path to the CDB executable.</param>
-        private static void RegisterCoreServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath)
+        /// <param name="serviceMode">Whether the application is running in service mode.</param>
+        private static void RegisterCoreServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath, bool serviceMode)
         {
             // Get NLog logger for service registration
             var logger = LogManager.GetCurrentClassLogger();
