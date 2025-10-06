@@ -124,10 +124,10 @@ namespace mcp_nexus.Utilities
                         // We need to split it properly
                         var convertedPath = PathHandler.ConvertToWindowsPath(afterSrv);
                         var normalizedPath = convertedPath.Replace('/', '\\');
-                        
+
                         // Ensure the directory exists
                         EnsureDirectoryExists(normalizedPath);
-                        
+
                         return $"srv*;{normalizedPath}";
                     }
                     return "srv*"; // Just srv\* without additional path

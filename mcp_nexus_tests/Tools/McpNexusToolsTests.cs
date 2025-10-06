@@ -244,8 +244,8 @@ namespace mcp_nexus_tests.Tools
             Assert.True(document.RootElement.TryGetProperty("sessionId", out var sessionIdElement));
             Assert.Equal(sessionId, sessionIdElement.GetString());
 
-                Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
-                Assert.Equal("Success", statusElement.GetString());
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Success", statusElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("operation", out var operationElement));
             Assert.Equal("nexus_close_dump_analyze_session", operationElement.GetString());
@@ -533,8 +533,8 @@ namespace mcp_nexus_tests.Tools
             Assert.True(document.RootElement.TryGetProperty("commandId", out var commandIdElement));
             Assert.Equal(commandId, commandIdElement.GetString());
 
-                Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
-                Assert.Equal("Success", statusElement.GetString());
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Success", statusElement.GetString());
 
             Assert.True(document.RootElement.TryGetProperty("status", out var statusElement3));
             Assert.Equal("Success", statusElement3.GetString());
