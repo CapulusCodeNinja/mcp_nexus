@@ -80,7 +80,8 @@ namespace mcp_nexus.Configuration
                         symbolServerMaxRetries: configuration.GetValue<int>("McpNexus:Debugging:SymbolServerMaxRetries"),
                         symbolSearchPath: configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath") ?? "",
                         startupDelayMs: configuration.GetValue<int>("McpNexus:Debugging:StartupDelayMs", 1000),
-                        outputReadingTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:OutputReadingTimeoutMs", 300000)
+                        outputReadingTimeoutMs: configuration.GetValue<int>("McpNexus:Debugging:OutputReadingTimeoutMs", 300000),
+                        enableCommandPreprocessing: configuration.GetValue<bool>("McpNexus:Debugging:EnableCommandPreprocessing", true)
                     );
                     resolvedCdbPath = cdbConfig.FindCdbPath();
 
@@ -109,6 +110,7 @@ namespace mcp_nexus.Configuration
                 options.SymbolSearchPath = configuration.GetValue<string>("McpNexus:Debugging:SymbolSearchPath");
                 options.StartupDelayMs = configuration.GetValue<int>("McpNexus:Debugging:StartupDelayMs", 1000);
                 options.OutputReadingTimeoutMs = configuration.GetValue<int>("McpNexus:Debugging:OutputReadingTimeoutMs", 300000);
+                options.EnableCommandPreprocessing = configuration.GetValue<bool>("McpNexus:Debugging:EnableCommandPreprocessing", true);
                 options.CustomCdbPath = resolvedCdbPath; // Use pre-resolved path
             });
 

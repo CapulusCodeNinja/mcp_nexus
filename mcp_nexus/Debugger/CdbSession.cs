@@ -32,6 +32,7 @@ namespace mcp_nexus.Debugger
         /// <param name="symbolSearchPath">Optional symbol search path for CDB. If null, uses the default path.</param>
         /// <param name="startupDelayMs">The delay in milliseconds before starting the session. Default is 1000ms (1 second).</param>
         /// <param name="outputReadingTimeoutMs">The output reading timeout in milliseconds. Default is 300000ms (5 minutes).</param>
+        /// <param name="enableCommandPreprocessing">Whether to enable command preprocessing (path conversion and directory creation). Default is true.</param>
         /// <param name="sessionId">Optional session ID for creating session-specific log files. If null, uses default naming.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public CdbSession(
@@ -43,6 +44,7 @@ namespace mcp_nexus.Debugger
             string? symbolSearchPath = null,
             int startupDelayMs = 1000,
             int outputReadingTimeoutMs = 300000,
+            bool enableCommandPreprocessing = true,
             string? sessionId = null)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -55,7 +57,8 @@ namespace mcp_nexus.Debugger
                 symbolServerMaxRetries: symbolServerMaxRetries,
                 symbolSearchPath: symbolSearchPath,
                 startupDelayMs: startupDelayMs,
-                outputReadingTimeoutMs: outputReadingTimeoutMs);
+                outputReadingTimeoutMs: outputReadingTimeoutMs,
+                enableCommandPreprocessing: enableCommandPreprocessing);
 
             // CRITICAL FIX: Logger casting was failing, causing NullLogger to be used!
             // This resulted in zero visibility into CdbProcessManager init consumer

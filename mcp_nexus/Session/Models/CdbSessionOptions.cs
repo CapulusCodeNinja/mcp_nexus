@@ -26,6 +26,9 @@ namespace mcp_nexus.Session.Models
         /// <summary>Output reading timeout in milliseconds (how long to wait for command output)</summary>
         public int OutputReadingTimeoutMs { get; set; } = 300000;
 
+        /// <summary>Whether to enable command preprocessing (path conversion and directory creation)</summary>
+        public bool EnableCommandPreprocessing { get; set; } = true;
+
         /// <summary>Custom CDB executable path</summary>
         public string? CustomCdbPath { get; set; }
     }

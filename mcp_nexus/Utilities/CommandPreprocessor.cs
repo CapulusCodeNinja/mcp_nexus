@@ -3,21 +3,22 @@ using System.Text.RegularExpressions;
 namespace mcp_nexus.Utilities
 {
     /// <summary>
-    /// Preprocesses WinDBG commands to fix common syntax issues and path problems.
-    /// This class handles command-specific fixes like .srcpath path conversion and syntax correction.
+    /// Preprocesses WinDBG commands for path conversion and directory creation only.
+    /// This class ONLY handles WSL to Windows path conversion and ensures directories exist.
+    /// NO syntax fixing, NO adding quotes, NO adding semicolons.
     /// </summary>
     public static class CommandPreprocessor
     {
-        private static readonly Regex SrcPathCommandRegex = new(
-            @"^\.srcpath\s*(?:\+)?\s*(.*)$",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex PathPattern = new(
+            @"/mnt/[a-zA-Z]/[^\s;""]+",
+            RegexOptions.Compiled);
 
         /// <summary>
-        /// Preprocesses a WinDBG command to fix common issues.
-        /// Currently handles .srcpath command path conversion and syntax fixes.
+        /// Preprocesses a WinDBG command to convert WSL paths to Windows paths and ensure directories exist.
+        /// ONLY does path conversion - NO syntax changes.
         /// </summary>
         /// <param name="command">The original command</param>
-        /// <returns>The preprocessed command with fixes applied</returns>
+        /// <returns>The command with paths converted</returns>
         public static string PreprocessCommand(string command)
         {
             if (string.IsNullOrWhiteSpace(command))
@@ -25,147 +26,41 @@ namespace mcp_nexus.Utilities
                 return command;
             }
 
-            var trimmedCommand = command.Trim();
-
-            // Handle .srcpath commands
-            if (trimmedCommand.StartsWith(".srcpath", StringComparison.OrdinalIgnoreCase))
+            // Find and convert all WSL paths in the command
+            var result = PathPattern.Replace(command, match =>
             {
-                return PreprocessSrcPathCommand(trimmedCommand);
-            }
+                var wslPath = match.Value;
+                var windowsPath = PathHandler.ConvertToWindowsPath(wslPath);
+                
+                // Ensure directory exists
+                EnsureDirectoryExists(windowsPath);
+                
+                return windowsPath;
+            });
 
-            // Return original command if no preprocessing needed
-            return command;
-        }
-
-        /// <summary>
-        /// Preprocesses .srcpath commands to fix path issues and syntax problems.
-        /// </summary>
-        /// <param name="command">The .srcpath command</param>
-        /// <returns>The fixed .srcpath command</returns>
-        private static string PreprocessSrcPathCommand(string command)
-        {
-            var match = SrcPathCommandRegex.Match(command);
-            if (!match.Success)
+            // Also ensure any Windows paths that are directory arguments exist
+            // Look for .srcpath commands and create the target directory
+            if (result.StartsWith(".srcpath", StringComparison.OrdinalIgnoreCase))
             {
-                return command; // Return original if we can't parse it
-            }
-
-            var pathArgument = match.Groups[1].Value.Trim();
-            if (string.IsNullOrEmpty(pathArgument))
-            {
-                return command; // No paths to process
-            }
-
-            // Parse and fix the paths
-            var fixedPaths = ParseAndFixSrcPathArgument(pathArgument);
-
-            // Reconstruct the command
-            var commandPrefix = command.Substring(0, match.Groups[1].Index).TrimEnd();
-            return $"{commandPrefix} {fixedPaths}";
-        }
-
-        /// <summary>
-        /// Parses the .srcpath argument and fixes path issues.
-        /// </summary>
-        /// <param name="pathArgument">The path argument from .srcpath command</param>
-        /// <returns>The fixed path argument</returns>
-        private static string ParseAndFixSrcPathArgument(string pathArgument)
-        {
-            // Remove outer quotes if present
-            var unquoted = pathArgument.Trim();
-            if ((unquoted.StartsWith('"') && unquoted.EndsWith('"')) ||
-                (unquoted.StartsWith('\'') && unquoted.EndsWith('\'')))
-            {
-                unquoted = unquoted.Substring(1, unquoted.Length - 2);
-            }
-
-            // Split by semicolon to handle multiple paths
-            var pathParts = unquoted.Split(';', StringSplitOptions.RemoveEmptyEntries);
-            var fixedParts = new List<string>();
-
-            foreach (var part in pathParts)
-            {
-                var trimmedPart = part.Trim();
-                if (string.IsNullOrEmpty(trimmedPart))
-                    continue;
-
-                var fixedPart = FixSrcPathPart(trimmedPart);
-                if (!string.IsNullOrEmpty(fixedPart))
+                var match = Regex.Match(result, @"^\.srcpath\+?\s+(.+)$", RegexOptions.IgnoreCase);
+                if (match.Success)
                 {
-                    fixedParts.Add(fixedPart);
-                }
-            }
-
-            // Join with semicolons and quote the entire argument
-            var result = string.Join(";", fixedParts);
-            return $"\"{result}\"";
-        }
-
-        /// <summary>
-        /// Fixes individual path parts in .srcpath commands.
-        /// </summary>
-        /// <param name="pathPart">The individual path part</param>
-        /// <returns>The fixed path part</returns>
-        private static string FixSrcPathPart(string pathPart)
-        {
-            var trimmed = pathPart.Trim();
-
-            // Handle source server paths (srv*)
-            if (trimmed.StartsWith("srv", StringComparison.OrdinalIgnoreCase))
-            {
-                // Fix common issues with srv* paths
-                if (trimmed.StartsWith("srv\\*", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Check if there's more content after srv\*
-                    var afterSrv = trimmed.Substring(5); // Remove "srv\*"
-                    if (!string.IsNullOrEmpty(afterSrv))
+                    var pathArg = match.Groups[1].Value;
+                    // Extract potential paths from the argument (handle semicolon-separated lists)
+                    var paths = pathArg.Split(new[] { ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var path in paths)
                     {
-                        // This is actually a malformed path like "srv\*/mnt/c/..." 
-                        // We need to split it properly
-                        var convertedPath = PathHandler.ConvertToWindowsPath(afterSrv);
-                        var normalizedPath = convertedPath.Replace('/', '\\');
-
-                        // Ensure the directory exists
-                        EnsureDirectoryExists(normalizedPath);
-
-                        return $"srv*;{normalizedPath}";
+                        var cleanPath = path.Trim().Trim('"').Trim('\'');
+                        // Skip srv* and similar special paths
+                        if (!cleanPath.StartsWith("srv", StringComparison.OrdinalIgnoreCase))
+                        {
+                            EnsureDirectoryExists(cleanPath);
+                        }
                     }
-                    return "srv*"; // Just srv\* without additional path
-                }
-                else if (trimmed.StartsWith("srv*", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Check if there's more content after srv*
-                    var afterSrv = trimmed.Substring(4); // Remove "srv*"
-                    if (!string.IsNullOrEmpty(afterSrv))
-                    {
-                        // This is actually a concatenated path like "srv*Q:\..." 
-                        // We need to split it properly
-                        var convertedPath = PathHandler.ConvertToWindowsPath(afterSrv);
-                        var normalizedPath = convertedPath.Replace('/', '\\');
-
-                        // Ensure the directory exists
-                        EnsureDirectoryExists(normalizedPath);
-
-                        return $"srv*;{normalizedPath}";
-                    }
-                    return "srv*"; // Just srv* without additional path
-                }
-                else if (trimmed.StartsWith("srv", StringComparison.OrdinalIgnoreCase))
-                {
-                    return "srv*"; // Add missing asterisk
                 }
             }
 
-            // Handle regular file paths - use existing PathHandler for conversion
-            var windowsPath = PathHandler.ConvertToWindowsPath(trimmed);
-
-            // Normalize path separators to Windows style
-            windowsPath = windowsPath.Replace('/', '\\');
-
-            // Ensure the directory exists
-            EnsureDirectoryExists(windowsPath);
-
-            return windowsPath;
+            return result;
         }
 
         /// <summary>

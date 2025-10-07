@@ -9,25 +9,21 @@ namespace mcp_nexus_tests.Utilities
     public class CommandPreprocessorTests
     {
         [Theory]
-        [InlineData(".srcpath \"srv\\*/mnt/c/inetpub/wwwroot/workingdir/work_20251006_185410_082\\source\"",
-                    ".srcpath \"srv*;C:\\inetpub\\wwwroot\\workingdir\\work_20251006_185410_082\\source\"")]
-        [InlineData(".srcpath srv\\*/mnt/c/inetpub/wwwroot/workingdir/work_20251006_185410_082\\source",
-                    ".srcpath \"srv*;C:\\inetpub\\wwwroot\\workingdir\\work_20251006_185410_082\\source\"")]
-        [InlineData(".srcpath \"srv*;C:\\inetpub\\wwwroot\\workingdir\\Sources\"",
-                    ".srcpath \"srv*;C:\\inetpub\\wwwroot\\workingdir\\Sources\"")]
+        [InlineData(".srcpath /mnt/c/inetpub/wwwroot/workingdir/work_20251006_185410_082/source",
+                    ".srcpath C:\\inetpub\\wwwroot\\workingdir\\work_20251006_185410_082\\source")]
+        [InlineData(".srcpath srv*/mnt/c/inetpub/wwwroot/workingdir/Sources",
+                    ".srcpath srv*C:\\inetpub\\wwwroot\\workingdir\\Sources")]
         [InlineData(".srcpath \"srv*;/mnt/c/inetpub/wwwroot/workingdir/Sources\"",
                     ".srcpath \"srv*;C:\\inetpub\\wwwroot\\workingdir\\Sources\"")]
         [InlineData(".srcpath \"C:\\already\\windows\\path\"",
                     ".srcpath \"C:\\already\\windows\\path\"")]
-        [InlineData(".srcpath+ \"srv*;C:\\additional\\path\"",
-                    ".srcpath+ \"srv*;C:\\additional\\path\"")]
         [InlineData(".srcpath srv*Q:\\Workbench\\Analyses\\test-dmp_src",
-                    ".srcpath \"srv*;Q:\\Workbench\\Analyses\\test-dmp_src\"")]
-        [InlineData(".srcpath \"srv*Q:\\Workbench\\Analyses\\test-dmp_src\"",
-                    ".srcpath \"srv*;Q:\\Workbench\\Analyses\\test-dmp_src\"")]
+                    ".srcpath srv*Q:\\Workbench\\Analyses\\test-dmp_src")]
         [InlineData(".srcpath srv*C:\\symbols",
-                    ".srcpath \"srv*;C:\\symbols\"")]
-        public void PreprocessCommand_WithSrcPathCommands_FixesSyntaxAndPaths(string input, string expected)
+                    ".srcpath srv*C:\\symbols")]
+        [InlineData("!analyze -v",
+                    "!analyze -v")]
+        public void PreprocessCommand_WithPathConversion_ConvertsWSLPaths(string input, string expected)
         {
             // Act
             var result = CommandPreprocessor.PreprocessCommand(input);
@@ -38,10 +34,9 @@ namespace mcp_nexus_tests.Utilities
 
         [Theory]
         [InlineData("lm")]
-        [InlineData("!analyze -v")]
         [InlineData(".echo test")]
         [InlineData("k")]
-        public void PreprocessCommand_WithNonSrcPathCommands_ReturnsUnchanged(string input)
+        public void PreprocessCommand_WithNonPathCommands_ReturnsUnchanged(string input)
         {
             // Act
             var result = CommandPreprocessor.PreprocessCommand(input);
@@ -81,29 +76,16 @@ namespace mcp_nexus_tests.Utilities
         }
 
         [Fact]
-        public void PreprocessCommand_WithMultiplePaths_FixesAllPaths()
+        public void PreprocessCommand_WithMultipleWSLPaths_ConvertsAll()
         {
             // Arrange
-            var input = ".srcpath \"srv\\*;/mnt/c/path1;C:\\path2;/mnt/d/path3\"";
+            var input = ".srcpath \"/mnt/c/path1;C:\\path2;/mnt/d/path3\"";
 
             // Act
             var result = CommandPreprocessor.PreprocessCommand(input);
 
             // Assert
-            Assert.Equal(".srcpath \"srv*;C:\\path1;C:\\path2;D:\\path3\"", result);
-        }
-
-        [Fact]
-        public void PreprocessCommand_WithUnquotedPaths_AddsQuotes()
-        {
-            // Arrange
-            var input = ".srcpath srv*;C:\\path1;C:\\path2";
-
-            // Act
-            var result = CommandPreprocessor.PreprocessCommand(input);
-
-            // Assert
-            Assert.Equal(".srcpath \"srv*;C:\\path1;C:\\path2\"", result);
+            Assert.Equal(".srcpath \"C:\\path1;C:\\path2;D:\\path3\"", result);
         }
 
         [Fact]

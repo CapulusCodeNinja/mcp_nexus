@@ -380,6 +380,7 @@ namespace mcp_nexus.Session
                 m_Config.CdbOptions.SymbolSearchPath,
                 m_Config.CdbOptions.StartupDelayMs,
                 m_Config.CdbOptions.OutputReadingTimeoutMs,
+                m_Config.CdbOptions.EnableCommandPreprocessing,
                 sessionId
             );
         }
