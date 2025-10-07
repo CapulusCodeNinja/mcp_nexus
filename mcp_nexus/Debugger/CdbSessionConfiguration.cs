@@ -46,6 +46,13 @@ namespace mcp_nexus.Debugger
         public int OutputReadingTimeoutMs { get; }
 
         /// <summary>
+        /// Gets a value indicating whether command preprocessing is enabled.
+        /// When enabled, commands like .srcpath will be automatically fixed and paths will be normalized.
+        /// When disabled, commands are sent to CDB as-is without any preprocessing.
+        /// </summary>
+        public bool EnableCommandPreprocessing { get; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="CdbSessionConfiguration"/> class.
         /// </summary>
         /// <param name="commandTimeoutMs">The command timeout in milliseconds. Default is 30000ms (30 seconds).</param>
@@ -55,6 +62,7 @@ namespace mcp_nexus.Debugger
         /// <param name="symbolSearchPath">Optional symbol search path for CDB. If null, uses the default path.</param>
         /// <param name="startupDelayMs">The startup delay in milliseconds. Default is 1000ms (1 second).</param>
         /// <param name="outputReadingTimeoutMs">The output reading timeout in milliseconds. Default is 60000ms (1 minute).</param>
+        /// <param name="enableCommandPreprocessing">Whether to enable command preprocessing. Default is true.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when any of the timeout or retry parameters are invalid.</exception>
         public CdbSessionConfiguration(
             int commandTimeoutMs = 30000,
@@ -63,7 +71,8 @@ namespace mcp_nexus.Debugger
             int symbolServerMaxRetries = 1,
             string? symbolSearchPath = null,
             int startupDelayMs = 1000,
-            int outputReadingTimeoutMs = 60000)
+            int outputReadingTimeoutMs = 60000,
+            bool enableCommandPreprocessing = true)
         {
             ValidateParameters(commandTimeoutMs, idleTimeoutMs, symbolServerMaxRetries, startupDelayMs, outputReadingTimeoutMs);
 
@@ -74,6 +83,7 @@ namespace mcp_nexus.Debugger
             SymbolSearchPath = symbolSearchPath;
             StartupDelayMs = startupDelayMs;
             OutputReadingTimeoutMs = outputReadingTimeoutMs;
+            EnableCommandPreprocessing = enableCommandPreprocessing;
         }
 
         /// <summary>

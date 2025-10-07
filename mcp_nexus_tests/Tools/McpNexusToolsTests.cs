@@ -42,7 +42,8 @@ namespace mcp_nexus_tests.Tools
         {
             // Arrange
             var tempDir = Path.GetTempPath();
-            var dumpPath = Path.Combine(tempDir, "test_dump.dmp");
+            var uniqueFileName = $"test_dump_{Guid.NewGuid():N}.dmp";
+            var dumpPath = Path.Combine(tempDir, uniqueFileName);
             var symbolsPath = @"C:\test\symbols";
             var sessionId = "test-session-123";
 
@@ -85,7 +86,7 @@ namespace mcp_nexus_tests.Tools
                 Assert.Equal("nexus_open_dump_analyze_session", operationElement.GetString());
 
                 Assert.True(document.RootElement.TryGetProperty("dumpFile", out var dumpFileElement));
-                Assert.Equal("test_dump.dmp", dumpFileElement.GetString());
+                Assert.Equal(uniqueFileName, dumpFileElement.GetString());
 
                 // Verify service calls
                 m_MockSessionManager.Verify(x => x.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()), Times.Once);
@@ -103,7 +104,8 @@ namespace mcp_nexus_tests.Tools
         {
             // Arrange
             var tempDir = Path.GetTempPath();
-            var dumpPath = Path.Combine(tempDir, "test_dump.dmp");
+            var uniqueFileName = $"test_dump_{Guid.NewGuid():N}.dmp";
+            var dumpPath = Path.Combine(tempDir, uniqueFileName);
             var sessionId = "test-session-123";
 
             // Create a temporary dump file
@@ -138,7 +140,8 @@ namespace mcp_nexus_tests.Tools
         {
             // Arrange
             var tempDir = Path.GetTempPath();
-            var dumpPath = Path.Combine(tempDir, "test_dump.dmp");
+            var uniqueFileName = $"test_dump_{Guid.NewGuid():N}.dmp";
+            var dumpPath = Path.Combine(tempDir, uniqueFileName);
             var exception = new SessionLimitExceededException(5, 3);
 
             // Create a temporary dump file
@@ -179,7 +182,8 @@ namespace mcp_nexus_tests.Tools
         {
             // Arrange
             var tempDir = Path.GetTempPath();
-            var dumpPath = Path.Combine(tempDir, "test_dump.dmp");
+            var uniqueFileName = $"test_dump_{Guid.NewGuid():N}.dmp";
+            var dumpPath = Path.Combine(tempDir, uniqueFileName);
             var exception = new InvalidOperationException("Test error");
 
             // Create a temporary dump file
@@ -208,7 +212,7 @@ namespace mcp_nexus_tests.Tools
                 Assert.Contains("Test error", messageElement.GetString());
 
                 Assert.True(document.RootElement.TryGetProperty("dumpFile", out var dumpFileElement));
-                Assert.Equal("test_dump.dmp", dumpFileElement.GetString());
+                Assert.Equal(uniqueFileName, dumpFileElement.GetString());
             }
             finally
             {

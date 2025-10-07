@@ -78,6 +78,41 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="CdbSession"/> class with a pre-configured <see cref="CdbSessionConfiguration"/>.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording session operations and errors.</param>
+        /// <param name="config">The CDB session configuration object.</param>
+        /// <param name="sessionId">Optional session ID for creating session-specific log files. If null, uses default naming.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> or <paramref name="config"/> is null.</exception>
+        public CdbSession(
+            ILogger<CdbSession> logger,
+            CdbSessionConfiguration config,
+            string? sessionId = null)
+        {
+            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_config = config ?? throw new ArgumentNullException(nameof(config));
+
+            // CRITICAL FIX: Logger casting was failing, causing NullLogger to be used!
+            // This resulted in zero visibility into CdbProcessManager init consumer
+            // Instead of casting (which fails), create simple wrapper loggers
+            var processLogger = new LoggerWrapper<CdbProcessManager>(logger);
+            var parserLogger = new LoggerWrapper<CdbOutputParser>(logger);
+            var executorLogger = new LoggerWrapper<CdbCommandExecutor>(logger);
+
+            m_processManager = new CdbProcessManager(processLogger, m_config);
+            m_outputParser = new CdbOutputParser(parserLogger);
+            m_commandExecutor = new CdbCommandExecutor(executorLogger, m_config, m_outputParser);
+
+            // Set session ID for session-specific log files
+            if (!string.IsNullOrEmpty(sessionId))
+            {
+                m_processManager.SetSessionId(sessionId);
+            }
+
+            m_logger.LogDebug("CdbSession initialized with focused components and configuration object");
+        }
+
+        /// <summary>
         /// Simple logger wrapper that implements ILogger&lt;T&gt; by forwarding to an untyped logger
         /// This fixes the NullLogger issue when logger casting fails
         /// </summary>
@@ -278,10 +313,19 @@ namespace mcp_nexus.Debugger
                 m_logger.LogInformation("🔒 SEMAPHORE: About to execute command '{Command}' (TRUE ASYNC)", command);
 
                 // Preprocess the command to fix common issues (e.g., .srcpath path conversion and directory creation)
-                var preprocessedCommand = mcp_nexus.Utilities.CommandPreprocessor.PreprocessCommand(command);
-                if (preprocessedCommand != command)
+                // Only if preprocessing is enabled in configuration
+                var preprocessedCommand = command;
+                if (m_config.EnableCommandPreprocessing)
                 {
-                    m_logger.LogInformation("🔧 Command preprocessed: '{Original}' -> '{Preprocessed}'", command, preprocessedCommand);
+                    preprocessedCommand = mcp_nexus.Utilities.CommandPreprocessor.PreprocessCommand(command);
+                    if (preprocessedCommand != command)
+                    {
+                        m_logger.LogInformation("🔧 Command preprocessed: '{Original}' -> '{Preprocessed}'", command, preprocessedCommand);
+                    }
+                }
+                else
+                {
+                    m_logger.LogDebug("⚠️ Command preprocessing is DISABLED - sending command as-is: '{Command}'", command);
                 }
 
                 // TRUE ASYNC: Direct call without Task.Run - proper async all the way through

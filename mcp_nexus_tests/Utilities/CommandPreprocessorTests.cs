@@ -21,6 +21,12 @@ namespace mcp_nexus_tests.Utilities
                     ".srcpath \"C:\\already\\windows\\path\"")]
         [InlineData(".srcpath+ \"srv*;C:\\additional\\path\"",
                     ".srcpath+ \"srv*;C:\\additional\\path\"")]
+        [InlineData(".srcpath srv*Q:\\Workbench\\Analyses\\test-dmp_src",
+                    ".srcpath \"srv*;Q:\\Workbench\\Analyses\\test-dmp_src\"")]
+        [InlineData(".srcpath \"srv*Q:\\Workbench\\Analyses\\test-dmp_src\"",
+                    ".srcpath \"srv*;Q:\\Workbench\\Analyses\\test-dmp_src\"")]
+        [InlineData(".srcpath srv*C:\\symbols",
+                    ".srcpath \"srv*;C:\\symbols\"")]
         public void PreprocessCommand_WithSrcPathCommands_FixesSyntaxAndPaths(string input, string expected)
         {
             // Act

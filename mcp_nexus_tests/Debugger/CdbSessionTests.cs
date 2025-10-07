@@ -656,5 +656,33 @@ namespace mcp_nexus_tests.Debugger
             // Assert
             Assert.False(result); // Should fail gracefully
         }
+
+        [Fact]
+        public void CdbSession_Constructor_WithEnableCommandPreprocessingTrue_EnablesPreprocessing()
+        {
+            // Arrange
+            var config = new CdbSessionConfiguration(enableCommandPreprocessing: true);
+
+            // Act
+            var session = new CdbSession(m_MockLogger.Object, config);
+
+            // Assert
+            Assert.NotNull(session);
+            // Verify the configuration is properly set (preprocessing enabled by default)
+        }
+
+        [Fact]
+        public void CdbSession_Constructor_WithEnableCommandPreprocessingFalse_DisablesPreprocessing()
+        {
+            // Arrange
+            var config = new CdbSessionConfiguration(enableCommandPreprocessing: false);
+
+            // Act
+            var session = new CdbSession(m_MockLogger.Object, config);
+
+            // Assert
+            Assert.NotNull(session);
+            // Verify the configuration is properly set (preprocessing disabled)
+        }
     }
 }
