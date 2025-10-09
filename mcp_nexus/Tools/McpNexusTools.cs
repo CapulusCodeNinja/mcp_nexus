@@ -8,6 +8,7 @@ using mcp_nexus.Infrastructure;
 using mcp_nexus.Utilities;
 using mcp_nexus.Constants;
 using mcp_nexus.Models;
+using mcp_nexus.Extensions;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text;
@@ -407,6 +408,58 @@ namespace mcp_nexus.Tools
                     };
                 }
 
+                // Check if this is an extension command (starts with "ext-")
+                if (commandId.StartsWith("ext-"))
+                {
+                    var extensionTracker = serviceProvider.GetService<IExtensionCommandTracker>();
+                    if (extensionTracker != null)
+                    {
+                        var extInfo = extensionTracker.GetCommandInfo(commandId);
+                        var extResult = extensionTracker.GetCommandResult(commandId);
+                        
+                        if (extInfo != null)
+                        {
+                            // Return extension command result
+                            var extIsCompleted = extInfo.IsCompleted;
+                            var extProgressPercentage = extIsCompleted ? 100 : Math.Min(95, (int)(extInfo.Elapsed.TotalSeconds * 0.5));
+                            
+                            return new
+                            {
+                                sessionId = sessionId,
+                                commandId = commandId,
+                                operation = "nexus_read_dump_analyze_command_result",
+                                status = extInfo.State.ToString(),
+                                extensionName = extInfo.ExtensionName,
+                                result = extIsCompleted ? extResult?.Output : null,
+                                error = extResult?.ErrorMessage,
+                                completedAt = extInfo.CompletedAt,
+                                timestamp = DateTimeOffset.Now,
+                                message = extIsCompleted ? "Extension completed" : extInfo.ProgressMessage ?? "Extension is running",
+                                progress = new
+                                {
+                                    progressPercentage = extProgressPercentage,
+                                    elapsed = FormatElapsedTime(extInfo.Elapsed),
+                                    callbackCount = extInfo.CallbackCount,
+                                    executionTime = extIsCompleted ? FormatExecutionTime(extInfo.Elapsed) : null
+                                },
+                                aiGuidance = new
+                                {
+                                    nextSteps = extIsCompleted ? new[]
+                                    {
+                                        "Review the extension output for analysis results",
+                                        "Extension output is typically structured JSON with multiple command results"
+                                    } : new[]
+                                    {
+                                        "Extension is running normally - extensions execute multiple commands",
+                                        "Wait for completion - extensions may take several minutes"
+                                    }
+                                },
+                                usage = SessionAwareWindbgTool.USAGE_EXPLANATION
+                            };
+                        }
+                    }
+                }
+
                 // Get command information and result by checking both tracker and cache
                 var (commandInfo, commandResult) = await sessionManager.GetCommandInfoAndResultAsync(sessionId, commandId);
                 if (commandInfo == null)
@@ -731,6 +784,151 @@ namespace mcp_nexus.Tools
                 "Timeout" => "Command exceeded maximum execution time",
                 _ => $"Command status: {status}"
             };
+        }
+
+        /// <summary>
+        /// Executes an extension script for complex workflows.
+        /// Extensions are PowerShell scripts that can execute multiple commands and implement sophisticated analysis patterns.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
+        /// <param name="extensionName">Name of the extension to execute (e.g., 'stack_with_sources', 'basic_crash_analysis').</param>
+        /// <param name="parameters">Optional JSON parameters to pass to the extension.</param>
+        /// <returns>An object containing extension execution information including commandId.</returns>
+        [McpServerTool, Description("🔧 EXECUTE EXTENSION: Run an extension script for complex workflows. Returns commandId for tracking. Extensions can execute multiple commands and implement sophisticated analysis patterns.")]
+        public static async Task<object> nexus_execute_extension(
+            IServiceProvider serviceProvider,
+            [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
+            [Description("Extension name (e.g., 'stack_with_sources', 'basic_crash_analysis', 'memory_corruption_analysis', 'thread_deadlock_investigation')")] string extensionName,
+            [Description("Optional JSON parameters for the extension")] object? parameters = null)
+        {
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("McpNexusTools");
+            var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
+            var extensionManager = serviceProvider.GetService<IExtensionManager>();
+            var extensionExecutor = serviceProvider.GetService<IExtensionExecutor>();
+            var extensionTracker = serviceProvider.GetService<IExtensionCommandTracker>();
+            var tokenValidator = serviceProvider.GetService<IExtensionTokenValidator>();
+
+            logger.LogInformation("⚡ Executing extension '{Extension}' for session: {SessionId}", extensionName, sessionId);
+
+            // Check if extensions are available
+            if (extensionManager == null || extensionExecutor == null || extensionTracker == null || tokenValidator == null)
+            {
+                return new
+                {
+                    sessionId = sessionId,
+                    commandId = (string?)null,
+                    extensionName = extensionName,
+                    status = "Failed",
+                    operation = "nexus_execute_extension",
+                    message = "Extension system is not enabled or not properly configured"
+                };
+            }
+
+            try
+            {
+                // Validate session exists
+                if (!sessionManager.SessionExists(sessionId))
+                {
+                    return new
+                    {
+                        sessionId = sessionId,
+                        commandId = (string?)null,
+                        extensionName = extensionName,
+                        status = "Failed",
+                        operation = "nexus_execute_extension",
+                        message = $"Session {sessionId} not found"
+                    };
+                }
+
+                // Validate extension exists
+                if (!extensionManager.ExtensionExists(extensionName))
+                {
+                    var availableExtensions = extensionManager.GetAllExtensions().Select(e => e.Name).ToList();
+                    return new
+                    {
+                        sessionId = sessionId,
+                        commandId = (string?)null,
+                        extensionName = extensionName,
+                        status = "Failed",
+                        operation = "nexus_execute_extension",
+                        message = $"Extension '{extensionName}' not found",
+                        availableExtensions = availableExtensions
+                    };
+                }
+
+                // Generate command ID for this extension execution
+                var commandId = $"ext-{Guid.NewGuid()}";
+
+                // Track the extension command
+                extensionTracker.TrackExtension(commandId, sessionId, extensionName, parameters);
+
+                // Create callback token
+                var callbackToken = tokenValidator.CreateToken(sessionId, commandId);
+
+                // Start extension execution asynchronously (don't wait)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        extensionTracker.UpdateState(commandId, CommandState.Executing);
+
+                        var result = await extensionExecutor.ExecuteAsync(
+                            extensionName,
+                            sessionId,
+                            parameters,
+                            commandId,
+                            progressMessage => extensionTracker.UpdateProgress(commandId, progressMessage));
+
+                        extensionTracker.StoreResult(commandId, result);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Extension {Extension} failed for session {SessionId}", extensionName, sessionId);
+                        extensionTracker.StoreResult(commandId, new ExtensionResult
+                        {
+                            Success = false,
+                            Error = ex.Message,
+                            ExitCode = -1
+                        });
+                    }
+                    finally
+                    {
+                        // Revoke token after extension completes
+                        tokenValidator.RevokeToken(callbackToken);
+                    }
+                });
+
+                var response = new
+                {
+                    sessionId = sessionId,
+                    commandId = commandId,
+                    extensionName = extensionName,
+                    status = "Queued",
+                    operation = "nexus_execute_extension",
+                    message = $"Extension '{extensionName}' started. Use 'nexus_read_dump_analyze_command_result' to check status and get results.",
+                    note = "Extensions may take several minutes to complete as they execute multiple debugging commands"
+                };
+
+                logger.LogInformation("Extension {Extension} queued successfully with command ID {CommandId}", extensionName, commandId);
+                return await Task.FromResult((object)response);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to execute extension for session: {SessionId}", sessionId);
+
+                var errorResponse = new
+                {
+                    sessionId = sessionId,
+                    commandId = (string?)null,
+                    extensionName = extensionName,
+                    status = "Failed",
+                    operation = "nexus_execute_extension",
+                    message = $"Failed to execute extension: {ex.Message}"
+                };
+
+                return await Task.FromResult((object)errorResponse);
+            }
         }
     }
 }

@@ -1,0 +1,12 @@
+{
+  "name": "thread_deadlock_investigation",
+  "description": "Analyzes thread synchronization issues and deadlocks: !threads, !locks, !cs -l, ~*k, !runaway",
+  "version": "1.0.0",
+  "author": "MCP Nexus Team",
+  "scriptType": "powershell",
+  "scriptFile": "thread_deadlock_investigation.ps1",
+  "timeout": 1800000,
+  "requires": ["McpNexusExtensions"],
+  "parameters": []
+}
+

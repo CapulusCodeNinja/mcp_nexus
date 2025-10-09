@@ -6,9 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
-    <Version>1.0.6.64</Version>
-    <AssemblyVersion>1.0.6.64</AssemblyVersion>
-    <FileVersion>1.0.6.64</FileVersion>
+    <Version>1.0.6.65</Version>
+    <AssemblyVersion>1.0.6.65</AssemblyVersion>
+    <FileVersion>1.0.6.65</FileVersion>
     <Product>MCP Nexus</Product>
     <Description>Model Context Protocol Server for Windows Debugging Tools</Description>
     <Company>CapulusCodeNinja</Company>
@@ -39,6 +39,16 @@
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Exclude extensions from default Content items to avoid duplicates -->
+    <Content Remove="extensions\**\*" />
+    
+    <!-- Copy extension scripts and modules to output directory -->
+    <None Include="extensions\**\*.ps1" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="extensions\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="extensions\**\*.psm1" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

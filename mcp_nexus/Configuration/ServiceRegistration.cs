@@ -7,6 +7,7 @@ using mcp_nexus.Session;
 using mcp_nexus.Session.Models;
 using mcp_nexus.Protocol;
 using mcp_nexus.Tools;
+using mcp_nexus.Extensions;
 using NLog;
 using System.Collections.Concurrent;
 
@@ -32,6 +33,7 @@ namespace mcp_nexus.Configuration
             RegisterCoreServices(services, configuration, customCdbPath, serviceMode);
             RegisterRecoveryServices(services);
             RegisterToolsAndProtocol(services);
+            RegisterExtensionServices(services, configuration);
 
             Console.Error.WriteLine("All services registered successfully");
         }
@@ -194,6 +196,61 @@ namespace mcp_nexus.Configuration
             // Note: IsolatedCommandQueueService is created per session, not registered as singleton
 
             Console.Error.WriteLine("Registered command queue services");
+        }
+
+        /// <summary>
+        /// Registers extension services for script-based workflows
+        /// </summary>
+        /// <param name="services">The service collection to register services with</param>
+        /// <param name="configuration">The application configuration</param>
+        private static void RegisterExtensionServices(IServiceCollection services, IConfiguration configuration)
+        {
+            // Get extensions configuration
+            var extensionsEnabled = configuration.GetValue<bool>("McpNexus:Extensions:Enabled", true);
+            var extensionsPath = configuration.GetValue<string>("McpNexus:Extensions:ExtensionsPath") ?? "extensions";
+            var callbackPort = configuration.GetValue<int>("McpNexus:Extensions:CallbackPort", 0); // 0 = use MCP server port
+            
+            if (!extensionsEnabled)
+            {
+                Console.Error.WriteLine("Extensions are disabled in configuration");
+                return;
+            }
+
+            // Make extensions path absolute if relative
+            if (!Path.IsPathRooted(extensionsPath))
+            {
+                extensionsPath = Path.Combine(AppContext.BaseDirectory, extensionsPath);
+            }
+
+            // Determine callback URL based on MCP server configuration
+            var mcpServerHost = configuration.GetValue<string>("McpServer:Host") ?? "localhost";
+            var mcpServerPort = configuration.GetValue<int>("McpServer:Port", 3000);
+            var actualCallbackPort = callbackPort > 0 ? callbackPort : mcpServerPort;
+            var callbackUrl = $"http://127.0.0.1:{actualCallbackPort}/extension-callback";
+
+            // Register extension services
+            services.AddSingleton<IExtensionManager>(serviceProvider =>
+            {
+                var logger = serviceProvider.GetRequiredService<ILogger<ExtensionManager>>();
+                return new ExtensionManager(logger, extensionsPath);
+            });
+
+            services.AddSingleton<IExtensionExecutor>(serviceProvider =>
+            {
+                var logger = serviceProvider.GetRequiredService<ILogger<ExtensionExecutor>>();
+                var extensionManager = serviceProvider.GetRequiredService<IExtensionManager>();
+                return new ExtensionExecutor(logger, extensionManager, callbackUrl);
+            });
+
+            services.AddSingleton<IExtensionTokenValidator, ExtensionTokenValidator>();
+            services.AddSingleton<IExtensionCommandTracker, ExtensionCommandTracker>();
+
+            // Add controller
+            services.AddControllers()
+                .AddApplicationPart(typeof(ExtensionCallbackController).Assembly)
+                .AddControllersAsServices();
+
+            Console.Error.WriteLine($"Registered extension services (Path: {extensionsPath}, Callback: {callbackUrl})");
         }
     }
 }
