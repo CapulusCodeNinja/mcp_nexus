@@ -816,7 +816,7 @@ namespace mcp_nexus.Tools
         public static async Task<object> nexus_enqueue_async_extension_command(
             IServiceProvider serviceProvider,
             [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
-            [Description("Extension name (e.g., 'stack_with_sources', 'basic_crash_analysis', 'memory_corruption_analysis', 'thread_deadlock_investigation')")] string extensionName,
+            [Description("Extension name - if invalid, error response includes list of available extensions")] string extensionName,
             [Description("Optional JSON parameters for the extension")] object? parameters = null)
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("McpNexusTools");

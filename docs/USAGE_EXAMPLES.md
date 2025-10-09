@@ -223,6 +223,141 @@ This document provides comprehensive, real-world examples of using MCP Nexus for
 }
 ```
 
+## 🚀 Using Extensions for Automated Workflows
+
+### Overview
+
+Extensions are pre-built PowerShell scripts that execute multiple debugging commands and implement sophisticated analysis patterns. They are ideal for complex workflows that require parsing output and making decisions based on intermediate results.
+
+**Discovering Available Extensions**:
+Extensions are dynamically discovered from the server. If you attempt to execute a non-existent extension, the error response will include a list of all currently available extensions.
+
+### Scenario: Quick Crash Analysis with Extension
+
+**Problem**: You need to quickly analyze a crash dump with standard diagnostic commands.
+
+### Step 1: Open the Crash Dump
+
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_open_dump_analyze_session",
+    "arguments": {
+      "dumpPath": "C:\\crashes\\application.dmp",
+      "symbolsPath": "C:\\Symbols"
+    }
+  },
+  "id": 1
+}
+```
+
+### Step 2: Queue the Basic Crash Analysis Extension
+
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_enqueue_async_extension_command",
+    "arguments": {
+      "sessionId": "sess-000001-abc12345-12345678-0001",
+      "extensionName": "basic_crash_analysis"
+    }
+  },
+  "id": 2
+}
+```
+
+**Response**:
+```json
+{
+  "sessionId": "sess-000001-abc12345-12345678-0001",
+  "commandId": "ext-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "extensionName": "basic_crash_analysis",
+  "status": "Queued",
+  "message": "Extension 'basic_crash_analysis' queued successfully...",
+  "timeoutMinutes": 30
+}
+```
+
+### Step 3: Get Extension Results
+
+Poll for results using the extension commandId (prefixed with "ext-"):
+
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_read_dump_analyze_command_result",
+    "arguments": {
+      "sessionId": "sess-000001-abc12345-12345678-0001",
+      "commandId": "ext-a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    }
+  },
+  "id": 3
+}
+```
+
+**Note**: Extensions may take several minutes as they execute multiple debugging commands internally. The extension will:
+1. Run `!analyze -v` for crash analysis
+2. Run `!threads` to list all threads
+3. Run `~*k` for all thread stacks
+4. Run `!locks` to check for lock contention
+5. Run `!runaway` to identify resource-hogging threads
+
+### Scenario: Stack with Source Code
+
+**Problem**: You need to get the stack trace with source code for better analysis.
+
+### Step 1: Queue the Stack with Sources Extension
+
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_enqueue_async_extension_command",
+    "arguments": {
+      "sessionId": "sess-000001-abc12345-12345678-0001",
+      "extensionName": "stack_with_sources",
+      "parameters": {
+        "threadId": "."
+      }
+    }
+  },
+  "id": 1
+}
+```
+
+**Response**:
+```json
+{
+  "commandId": "ext-b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "extensionName": "stack_with_sources",
+  "status": "Queued"
+}
+```
+
+This extension will:
+1. Get the stack trace with `kL` command
+2. Extract return addresses from each frame
+3. Run `lsa` on each address to download source files
+4. Aggregate all results into structured JSON
+
+### Step 2: Monitor Progress
+
+Extensions can be monitored using the `commands` resource:
+
+```json
+{
+  "method": "resources/read",
+  "params": {
+    "uri": "commands"
+  }
+}
+```
+
+This will show all commands including extensions (with "ext-" prefix) and their progress.
+
 ## 🧵 Thread Deadlock Analysis Workflow
 
 ### Scenario: Multi-threaded Application Deadlock

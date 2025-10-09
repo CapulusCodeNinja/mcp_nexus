@@ -77,7 +77,16 @@ namespace mcp_nexus.Tools
                         action = "Get status and results of a specific async command that was previously queued.",
                         input = new { sessionId = "string (required)", commandId = "string (required)" },
                         output = (string?)"command result and status",
-                        note = (string?)"Use this tool to retrieve results from commands executed with nexus_enqueue_async_dump_analyze_command"
+                        note = (string?)"Use this tool to retrieve results from commands executed with nexus_enqueue_async_dump_analyze_command or nexus_enqueue_async_extension_command"
+                    },
+                    new
+                    {
+                        step_title = "Tooling - Queue Extension",
+                        tool_name = "nexus_enqueue_async_extension_command",
+                        action = "Queue an extension script for complex workflows. Extensions execute multiple commands and implement sophisticated analysis patterns.",
+                        input = new { sessionId = "string (required)", extensionName = "string (required)", parameters = "object (optional)" },
+                        output = (string?)"commandId (prefixed with 'ext-')",
+                        note = (string?)"Extensions are dynamically discovered. If an invalid extension name is provided, the error response includes a list of available extensions. Use nexus_read_dump_analyze_command_result to get results. Extensions may take several minutes as they execute multiple debugging commands."
                     }
                 }
             },

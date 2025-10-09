@@ -132,13 +132,13 @@
 ```
 
 #### `nexus_read_dump_analyze_command_result`
-**Purpose**: Get the result of a completed command
+**Purpose**: Get the result of a completed command or extension
 **Category**: Command Execution
 **Real-time**: ❌ Synchronous operation
 
 **Parameters**:
 - `sessionId` (string, required): Active session ID
-- `commandId` (string, required): Command ID to get results for
+- `commandId` (string, required): Command ID or extension command ID (prefixed with "ext-")
 
 **Example**:
 ```json
@@ -149,6 +149,82 @@
     "arguments": {
       "sessionId": "sess-000001-abc12345-12345678-0001",
       "commandId": "cmd-000001-abc12345-12345678-0001"
+    }
+  }
+}
+```
+
+**Note**: This tool also retrieves results from extension commands (commandId starting with "ext-").
+
+### Extension Execution
+
+#### `nexus_enqueue_async_extension_command`
+**Purpose**: Queue an extension script for complex multi-command workflows
+**Category**: Extension Execution
+**Real-time**: ✅ Provides live progress updates
+
+**Description**: Extensions are PowerShell scripts that execute multiple debugging commands and implement sophisticated analysis patterns. They are ideal for workflows that require parsing output and making decisions based on intermediate results.
+
+**Parameters**:
+- `sessionId` (string, required): Active session ID
+- `extensionName` (string, required): Name of the extension to execute
+- `parameters` (object, optional): JSON parameters to pass to the extension
+
+**Discovering Available Extensions**:
+If you attempt to execute a non-existent extension, the error response will include a list of all available extensions. Extensions are dynamically discovered from the server's extensions directory.
+
+**Example**:
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_enqueue_async_extension_command",
+    "arguments": {
+      "sessionId": "sess-000001-abc12345-12345678-0001",
+      "extensionName": "example_extension_name",
+      "parameters": {
+        "param1": "value1"
+      }
+    }
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "sessionId": "sess-000001-abc12345-12345678-0001",
+  "commandId": "ext-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "extensionName": "example_extension_name",
+  "status": "Queued",
+  "message": "Extension 'example_extension_name' queued successfully. Use the 'commands' resource to monitor all commands or the 'nexus_read_dump_analyze_command_result' tool to get results.",
+  "note": "Extensions may take several minutes to complete as they execute multiple debugging commands",
+  "timeoutMinutes": 30
+}
+```
+
+**Error Response (Extension Not Found)**:
+```json
+{
+  "sessionId": "sess-000001-abc12345-12345678-0001",
+  "commandId": null,
+  "extensionName": "invalid_extension",
+  "status": "Failed",
+  "message": "Extension 'invalid_extension' not found. Available extensions: basic_crash_analysis, stack_with_sources, memory_corruption_analysis, thread_deadlock_investigation",
+  "availableExtensions": ["basic_crash_analysis", "stack_with_sources", "memory_corruption_analysis", "thread_deadlock_investigation"]
+}
+```
+
+**Getting Results**:
+Use `nexus_read_dump_analyze_command_result` with the returned `commandId` (prefixed with "ext-"):
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_read_dump_analyze_command_result",
+    "arguments": {
+      "sessionId": "sess-000001-abc12345-12345678-0001",
+      "commandId": "ext-a1b2c3d4-e5f6-7890-abcd-ef1234567890"
     }
   }
 }
