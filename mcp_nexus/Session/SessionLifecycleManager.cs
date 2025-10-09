@@ -4,6 +4,7 @@ using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Session.Models;
 using mcp_nexus.Notifications;
+using mcp_nexus.Extensions;
 
 namespace mcp_nexus.Session
 {
@@ -20,6 +21,8 @@ namespace mcp_nexus.Session
         private readonly SessionManagerConfiguration m_Config;
         private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions;
         private readonly ConcurrentDictionary<string, SessionCommandResultCache> m_SessionCaches;
+        private readonly IExtensionCommandTracker? m_ExtensionTracker;
+        private readonly IExtensionExecutor? m_ExtensionExecutor;
 
         // Thread-safe counters
         private long m_TotalSessionsCreated = 0;
@@ -52,6 +55,9 @@ namespace mcp_nexus.Session
             m_Sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
             m_SessionCaches = new ConcurrentDictionary<string, SessionCommandResultCache>();
 
+            // Optional extension services (may be null if extensions are disabled)
+            m_ExtensionTracker = serviceProvider.GetService<IExtensionCommandTracker>();
+            m_ExtensionExecutor = serviceProvider.GetService<IExtensionExecutor>();
         }
 
         /// <summary>
@@ -230,6 +236,47 @@ namespace mcp_nexus.Session
                 else
                 {
                     m_Logger.LogTrace("No command queue to cancel for session {SessionId}", sessionId);
+                }
+
+                // Cancel and kill any running extensions for this session
+                if (m_ExtensionTracker != null && m_ExtensionExecutor != null)
+                {
+                    var runningExtensions = m_ExtensionTracker.GetSessionCommands(sessionId)
+                        .Where(cmd => !cmd.IsCompleted)
+                        .ToList();
+
+                    if (runningExtensions.Any())
+                    {
+                        m_Logger.LogInformation("Cancelling {Count} running extensions for session {SessionId}",
+                            runningExtensions.Count, sessionId);
+
+                        foreach (var extCmd in runningExtensions)
+                        {
+                            try
+                            {
+                                // Kill the extension process
+                                var killed = m_ExtensionExecutor.KillExtension(extCmd.CommandId);
+                                if (killed)
+                                {
+                                    m_Logger.LogDebug("Killed extension {CommandId} for session {SessionId}",
+                                        extCmd.CommandId, sessionId);
+                                }
+                                else
+                                {
+                                    m_Logger.LogDebug("Extension {CommandId} already completed for session {SessionId}",
+                                        extCmd.CommandId, sessionId);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                m_Logger.LogWarning(ex, "Failed to kill extension {CommandId} for session {SessionId}",
+                                    extCmd.CommandId, sessionId);
+                            }
+                        }
+
+                        // Clean up extension tracking for this session
+                        m_ExtensionTracker.RemoveSessionCommands(sessionId);
+                    }
                 }
 
                 // Cleanup components (includes stopping CDB session)

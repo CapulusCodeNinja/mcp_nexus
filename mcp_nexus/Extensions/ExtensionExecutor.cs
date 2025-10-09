@@ -14,8 +14,9 @@ namespace mcp_nexus.Extensions
         private readonly ILogger<ExtensionExecutor> m_Logger;
         private readonly IExtensionManager m_ExtensionManager;
         private readonly string m_CallbackUrl;
+        private readonly IProcessWrapper m_ProcessWrapper;
         private readonly ConcurrentDictionary<string, ExtensionProcessInfo> m_RunningExtensions = new();
-        private readonly ConcurrentDictionary<string, Process> m_Processes = new();
+        private readonly ConcurrentDictionary<string, IProcessHandle> m_Processes = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExtensionExecutor"/> class.
@@ -23,12 +24,14 @@ namespace mcp_nexus.Extensions
         /// <param name="logger">The logger instance for recording execution operations.</param>
         /// <param name="extensionManager">The extension manager for retrieving extension metadata.</param>
         /// <param name="callbackUrl">The base URL for extension callbacks.</param>
+        /// <param name="processWrapper">Optional process wrapper for testing (defaults to real Process).</param>
         /// <exception cref="ArgumentNullException">Thrown when logger or extensionManager is null.</exception>
         /// <exception cref="ArgumentException">Thrown when callbackUrl is null or empty.</exception>
         public ExtensionExecutor(
             ILogger<ExtensionExecutor> logger,
             IExtensionManager extensionManager,
-            string callbackUrl)
+            string callbackUrl,
+            IProcessWrapper? processWrapper = null)
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_ExtensionManager = extensionManager ?? throw new ArgumentNullException(nameof(extensionManager));
@@ -37,6 +40,7 @@ namespace mcp_nexus.Extensions
                 throw new ArgumentException("Callback URL cannot be null or empty", nameof(callbackUrl));
 
             m_CallbackUrl = callbackUrl;
+            m_ProcessWrapper = processWrapper ?? new ProcessWrapper();
         }
 
         /// <summary>
@@ -108,10 +112,12 @@ namespace mcp_nexus.Extensions
                 // Generate callback token
                 var callbackToken = GenerateCallbackToken(sessionId, commandId);
 
+                // Get process info for error messages (before creating process)
+                string processDescription = $"{metadata.ScriptType} extension: {extensionName}";
+
                 // Create process
                 var process = CreateProcess(metadata, sessionId, commandId, callbackToken, parameters);
                 m_Processes[commandId] = process;
-                processInfo.ProcessId = process.Id;
 
                 // Set up output handlers
                 process.OutputDataReceived += (sender, e) =>
@@ -146,12 +152,25 @@ namespace mcp_nexus.Extensions
                 };
 
                 // Start process
-                process.Start();
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
+                try
+                {
+                    process.Start();
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
 
-                m_Logger.LogInformation("Extension {Extension} started with PID {ProcessId}",
-                    extensionName, process.Id);
+                    // Set process ID after successful start
+                    processInfo.ProcessId = process.Id;
+
+                    m_Logger.LogInformation("Extension {Extension} started with PID {ProcessId}",
+                        extensionName, process.Id);
+                }
+                catch (Exception startEx)
+                {
+                    m_Logger.LogError(startEx, "Failed to start extension process for {ProcessDescription}",
+                        processDescription);
+                    throw new InvalidOperationException(
+                        $"Failed to start extension process for '{processDescription}': {startEx.Message}", startEx);
+                }
 
                 // Wait for completion with timeout
                 var timeout = metadata.Timeout > 0 ? metadata.Timeout : Timeout.Infinite;
@@ -163,7 +182,9 @@ namespace mcp_nexus.Extensions
 
                 try
                 {
+                    m_Logger.LogDebug("Waiting for extension {Extension} to exit...", extensionName);
                     await process.WaitForExitAsync(cts.Token);
+                    m_Logger.LogDebug("Extension {Extension} WaitForExitAsync completed", extensionName);
                 }
                 catch (OperationCanceledException)
                 {
@@ -186,10 +207,36 @@ namespace mcp_nexus.Extensions
                         $"Extension '{extensionName}' was cancelled or timed out after {stopwatch.Elapsed.TotalSeconds:F1} seconds");
                 }
 
+                // CRITICAL: Call synchronous WaitForExit() to ensure all output is flushed
+                // This is required after WaitForExitAsync() when using redirected streams
+                try
+                {
+                    m_Logger.LogDebug("Calling WaitForExit() for extension {Extension}...", extensionName);
+                    process.WaitForExit();
+                    m_Logger.LogDebug("WaitForExit() completed for extension {Extension}", extensionName);
+                }
+                catch (Exception waitEx)
+                {
+                    m_Logger.LogError(waitEx, "WaitForExit() failed for extension {Extension}", extensionName);
+                    throw new InvalidOperationException($"Failed to wait for extension to complete: {waitEx.Message}", waitEx);
+                }
+
                 stopwatch.Stop();
                 processInfo.IsRunning = false;
 
-                var exitCode = process.ExitCode;
+                int exitCode;
+                try
+                {
+                    m_Logger.LogDebug("Getting exit code for extension {Extension}...", extensionName);
+                    exitCode = process.ExitCode;
+                    m_Logger.LogDebug("Exit code for extension {Extension}: {ExitCode}", extensionName, exitCode);
+                }
+                catch (Exception exCodeEx)
+                {
+                    m_Logger.LogError(exCodeEx, "Failed to get ExitCode for extension {Extension}", extensionName);
+                    throw new InvalidOperationException($"Failed to get exit code: {exCodeEx.Message}", exCodeEx);
+                }
+                
                 var output = outputBuilder.ToString();
                 var standardError = errorBuilder.ToString();
 
@@ -250,51 +297,99 @@ namespace mcp_nexus.Extensions
         /// <param name="parameters">Parameters to pass to the extension.</param>
         /// <returns>A configured process ready to start.</returns>
         /// <exception cref="InvalidOperationException">Thrown when script type is unsupported.</exception>
-        private Process CreateProcess(
+        private IProcessHandle CreateProcess(
             ExtensionMetadata metadata,
             string sessionId,
             string commandId,
             string callbackToken,
             object? parameters)
         {
-            var process = new Process();
-            var startInfo = process.StartInfo;
-
-            startInfo.UseShellExecute = false;
-            startInfo.RedirectStandardOutput = true;
-            startInfo.RedirectStandardError = true;
-            startInfo.RedirectStandardInput = true;
-            startInfo.CreateNoWindow = true;
-
-            // Set environment variables
-            startInfo.Environment["MCP_NEXUS_SESSION_ID"] = sessionId;
-            startInfo.Environment["MCP_NEXUS_COMMAND_ID"] = commandId;
-            startInfo.Environment["MCP_NEXUS_CALLBACK_URL"] = m_CallbackUrl;
-            startInfo.Environment["MCP_NEXUS_CALLBACK_TOKEN"] = callbackToken;
+            // Build environment variables dictionary
+            var environmentVariables = new Dictionary<string, string>
+            {
+                ["MCP_NEXUS_SESSION_ID"] = sessionId,
+                ["MCP_NEXUS_COMMAND_ID"] = commandId,
+                ["MCP_NEXUS_CALLBACK_URL"] = m_CallbackUrl,
+                ["MCP_NEXUS_CALLBACK_TOKEN"] = callbackToken
+            };
 
             // Add extension parameters as JSON
             if (parameters != null)
             {
                 var parametersJson = JsonSerializer.Serialize(parameters);
-                startInfo.Environment["MCP_NEXUS_PARAMETERS"] = parametersJson;
+                environmentVariables["MCP_NEXUS_PARAMETERS"] = parametersJson;
             }
 
             // Configure based on script type (only PowerShell supported)
             var scriptType = metadata.ScriptType.ToLowerInvariant();
+            string fileName;
+            string arguments;
+
             if (scriptType == "powershell")
             {
-                startInfo.FileName = "pwsh.exe";
-                startInfo.Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{metadata.FullScriptPath}\"";
+                // Try to find PowerShell - prefer pwsh (PowerShell 7+), fall back to powershell (5.1)
+                string? powershellPath = FindPowerShell();
+                if (powershellPath == null)
+                {
+                    throw new InvalidOperationException("PowerShell not found. Please ensure pwsh.exe or powershell.exe is in PATH or installed.");
+                }
+                
+                fileName = powershellPath;
+                arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{metadata.FullScriptPath}\"";
             }
             else
             {
                 throw new InvalidOperationException($"Unsupported script type: {metadata.ScriptType}. Only 'powershell' is supported at the moment.");
             }
 
-            m_Logger.LogDebug("Extension process: {FileName} {Arguments}",
-                startInfo.FileName, startInfo.Arguments);
+            m_Logger.LogDebug("Extension process: {FileName} {Arguments}", fileName, arguments);
 
-            return process;
+            return m_ProcessWrapper.CreateProcess(fileName, arguments, environmentVariables);
+        }
+
+        /// <summary>
+        /// Finds PowerShell executable on the system.
+        /// Prefers pwsh.exe (PowerShell 7+), falls back to powershell.exe (Windows PowerShell 5.1).
+        /// </summary>
+        /// <returns>Path to PowerShell executable, or null if not found.</returns>
+        private string? FindPowerShell()
+        {
+            // Try pwsh first (PowerShell 7+), then fall back to Windows PowerShell 5.1
+            var paths = new[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "PowerShell", "7", "pwsh.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "PowerShell", "6", "pwsh.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "WindowsPowerShell", "v1.0", "powershell.exe"),
+                "pwsh.exe", // Try simple names last (in PATH)
+                "powershell.exe"
+            };
+
+            foreach (var path in paths)
+            {
+                try
+                {
+                    // Check if full path exists
+                    if (Path.IsPathRooted(path) && File.Exists(path))
+                    {
+                        m_Logger.LogDebug("Found PowerShell at: {Path}", path);
+                        return path;
+                    }
+                    
+                    // For simple names, just return them and let Process.Start handle PATH lookup
+                    if (!Path.IsPathRooted(path))
+                    {
+                        m_Logger.LogDebug("Trying PowerShell from PATH: {Path}", path);
+                        return path;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.LogDebug(ex, "Error checking PowerShell path: {Path}", path);
+                }
+            }
+
+            m_Logger.LogError("PowerShell not found. Tried: {Paths}", string.Join(", ", paths));
+            return null;
         }
 
         /// <summary>

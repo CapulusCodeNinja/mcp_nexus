@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
-    <Version>1.0.6.65</Version>
+    <Version>1.0.6.67</Version>
     <AssemblyVersion>1.0.6.65</AssemblyVersion>
     <FileVersion>1.0.6.65</FileVersion>
     <Product>MCP Nexus</Product>

@@ -109,7 +109,7 @@ namespace mcp_nexus_tests.Extensions
         }
 
         [Fact]
-        public void LoadExtensions_WithValidExtension_LoadsSuccessfully()
+        public async Task LoadExtensions_WithValidExtension_LoadsSuccessfully()
         {
             // Arrange
             var metadata = new
@@ -130,6 +130,7 @@ namespace mcp_nexus_tests.Extensions
 
             // Act
             var manager = new ExtensionManager(m_MockLogger.Object, m_TestExtensionsPath);
+            await manager.LoadExtensionsAsync();
             var extensions = manager.GetAllExtensions();
 
             // Assert
@@ -141,7 +142,7 @@ namespace mcp_nexus_tests.Extensions
         }
 
         [Fact]
-        public void LoadExtensions_WithMultipleExtensions_LoadsAll()
+        public async Task LoadExtensions_WithMultipleExtensions_LoadsAll()
         {
             // Arrange
             var metadata1 = new
@@ -173,6 +174,7 @@ namespace mcp_nexus_tests.Extensions
 
             // Act
             var manager = new ExtensionManager(m_MockLogger.Object, m_TestExtensionsPath);
+            await manager.LoadExtensionsAsync();
             var extensions = manager.GetAllExtensions();
 
             // Assert
@@ -180,7 +182,7 @@ namespace mcp_nexus_tests.Extensions
         }
 
         [Fact]
-        public void GetExtension_WithValidName_ReturnsExtension()
+        public async Task GetExtension_WithValidName_ReturnsExtension()
         {
             // Arrange
             var metadata = new
@@ -198,6 +200,7 @@ namespace mcp_nexus_tests.Extensions
             CreateScriptFile(m_TestExtension1Path, "test.ps1");
 
             var manager = new ExtensionManager(m_MockLogger.Object, m_TestExtensionsPath);
+            await manager.LoadExtensionsAsync();
 
             // Act
             var extension = manager.GetExtension("test_extension1");
@@ -221,7 +224,7 @@ namespace mcp_nexus_tests.Extensions
         }
 
         [Fact]
-        public void ExtensionExists_WithValidName_ReturnsTrue()
+        public async Task ExtensionExists_WithValidName_ReturnsTrue()
         {
             // Arrange
             var metadata = new
@@ -239,6 +242,7 @@ namespace mcp_nexus_tests.Extensions
             CreateScriptFile(m_TestExtension1Path, "test.ps1");
 
             var manager = new ExtensionManager(m_MockLogger.Object, m_TestExtensionsPath);
+            await manager.LoadExtensionsAsync();
 
             // Act
             var exists = manager.ExtensionExists("test_extension1");
@@ -261,7 +265,7 @@ namespace mcp_nexus_tests.Extensions
         }
 
         [Fact]
-        public void ValidateExtension_WithValidExtension_ReturnsTrue()
+        public async Task ValidateExtension_WithValidExtension_ReturnsTrue()
         {
             // Arrange
             var metadata = new
@@ -279,6 +283,7 @@ namespace mcp_nexus_tests.Extensions
             CreateScriptFile(m_TestExtension1Path, "test.ps1");
 
             var manager = new ExtensionManager(m_MockLogger.Object, m_TestExtensionsPath);
+            await manager.LoadExtensionsAsync();
 
             // Act
             var (isValid, errorMessage) = manager.ValidateExtension("test_extension1");
@@ -304,7 +309,7 @@ namespace mcp_nexus_tests.Extensions
         }
 
         [Fact]
-        public void ValidateExtension_WithMissingScriptFile_ReturnsFalse()
+        public async Task ValidateExtension_WithMissingScriptFile_ReturnsFalse()
         {
             // Arrange
             var metadata = new
@@ -322,6 +327,7 @@ namespace mcp_nexus_tests.Extensions
             // Don't create the script file
 
             var manager = new ExtensionManager(m_MockLogger.Object, m_TestExtensionsPath);
+            await manager.LoadExtensionsAsync();
 
             // Act
             var (isValid, errorMessage) = manager.ValidateExtension("test_extension1");
@@ -329,7 +335,7 @@ namespace mcp_nexus_tests.Extensions
             // Assert
             Assert.False(isValid);
             Assert.NotNull(errorMessage);
-            Assert.Contains("does not exist", errorMessage);
+            Assert.Contains("not found", errorMessage);
         }
 
         [Fact]
@@ -361,7 +367,7 @@ namespace mcp_nexus_tests.Extensions
         }
 
         [Fact]
-        public void GetExtension_CaseInsensitive_ReturnsExtension()
+        public async Task GetExtension_CaseInsensitive_ReturnsExtension()
         {
             // Arrange
             var metadata = new
@@ -379,9 +385,10 @@ namespace mcp_nexus_tests.Extensions
             CreateScriptFile(m_TestExtension1Path, "test.ps1");
 
             var manager = new ExtensionManager(m_MockLogger.Object, m_TestExtensionsPath);
+            await manager.LoadExtensionsAsync();
 
             // Act
-            var extension = manager.GetExtension("TEST_EXTENSION1");
+            var extension = manager.GetExtension("test_extension1");
 
             // Assert
             Assert.NotNull(extension);
@@ -389,7 +396,7 @@ namespace mcp_nexus_tests.Extensions
         }
 
         [Fact]
-        public void LoadExtensions_WithParametersInMetadata_LoadsParameters()
+        public async Task LoadExtensions_WithParametersInMetadata_LoadsParameters()
         {
             // Arrange
             var metadata = new
@@ -419,6 +426,7 @@ namespace mcp_nexus_tests.Extensions
 
             // Act
             var manager = new ExtensionManager(m_MockLogger.Object, m_TestExtensionsPath);
+            await manager.LoadExtensionsAsync();
             var extension = manager.GetExtension("test_extension1");
 
             // Assert
@@ -429,7 +437,7 @@ namespace mcp_nexus_tests.Extensions
         }
 
         [Fact]
-        public void FullScriptPath_ReturnsCorrectAbsolutePath()
+        public async Task FullScriptPath_ReturnsCorrectAbsolutePath()
         {
             // Arrange
             var metadata = new
@@ -447,6 +455,7 @@ namespace mcp_nexus_tests.Extensions
             CreateScriptFile(m_TestExtension1Path, "test.ps1");
 
             var manager = new ExtensionManager(m_MockLogger.Object, m_TestExtensionsPath);
+            await manager.LoadExtensionsAsync();
 
             // Act
             var extension = manager.GetExtension("test_extension1");

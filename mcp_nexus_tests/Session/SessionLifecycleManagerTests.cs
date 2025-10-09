@@ -10,6 +10,7 @@ using mcp_nexus.Notifications;
 using mcp_nexus.Session.Models;
 using System.Collections.Concurrent;
 using mcp_nexus_tests.Mocks;
+using mcp_nexus.Extensions;
 
 namespace mcp_nexus_tests.Session
 {
@@ -288,6 +289,86 @@ namespace mcp_nexus_tests.Session
         {
             // This test verifies that the SessionLifecycleManager class exists and can be instantiated
             Assert.True(typeof(SessionLifecycleManager) != null);
+        }
+
+        [Fact]
+        public async Task CloseSessionAsync_WithRunningExtensions_KillsExtensionsAndCleansUpTracking()
+        {
+            // Arrange
+            var sessionId = "test-session-ext";
+            var commandId1 = "ext-001";
+            var commandId2 = "ext-002";
+
+            // Create mock extension services
+            var mockExtensionTracker = new Mock<IExtensionCommandTracker>();
+            var mockExtensionExecutor = new Mock<IExtensionExecutor>();
+
+            // Setup service provider to return extension mocks
+            m_MockServiceProvider.Setup(x => x.GetService(typeof(IExtensionCommandTracker)))
+                .Returns(mockExtensionTracker.Object);
+            m_MockServiceProvider.Setup(x => x.GetService(typeof(IExtensionExecutor)))
+                .Returns(mockExtensionExecutor.Object);
+
+            // Create manager with extension support
+            var managerWithExt = new SessionLifecycleManager(
+                m_MockLogger.Object,
+                m_MockServiceProvider.Object,
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions
+            );
+
+            // Add session
+            var sessionInfo = new SessionInfo
+            {
+                SessionId = sessionId,
+                DumpPath = "C:\\Test\\dump.dmp",
+                CdbSession = m_RealisticCdbSession,
+                CommandQueue = m_MockCommandQueue.Object,
+                CreatedAt = DateTime.UtcNow,
+                LastActivity = DateTime.UtcNow,
+                Status = SessionStatus.Active
+            };
+            m_Sessions[sessionId] = sessionInfo;
+
+            // Setup running extensions
+            var runningExtension1 = new ExtensionCommandInfo
+            {
+                Id = commandId1,
+                SessionId = sessionId,
+                ExtensionName = "test_extension_1",
+                State = CommandState.Executing
+            };
+            var runningExtension2 = new ExtensionCommandInfo
+            {
+                Id = commandId2,
+                SessionId = sessionId,
+                ExtensionName = "test_extension_2",
+                State = CommandState.Executing
+            };
+
+            mockExtensionTracker.Setup(x => x.GetSessionCommands(sessionId))
+                .Returns(new[] { runningExtension1, runningExtension2 });
+
+            mockExtensionExecutor.Setup(x => x.KillExtension(commandId1)).Returns(true);
+            mockExtensionExecutor.Setup(x => x.KillExtension(commandId2)).Returns(true);
+
+            m_MockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(0);
+
+            // Act
+            var result = await managerWithExt.CloseSessionAsync(sessionId);
+
+            // Assert
+            Assert.True(result);
+            Assert.False(m_Sessions.ContainsKey(sessionId));
+
+            // Verify extensions were killed
+            mockExtensionExecutor.Verify(x => x.KillExtension(commandId1), Times.Once);
+            mockExtensionExecutor.Verify(x => x.KillExtension(commandId2), Times.Once);
+
+            // Verify tracking was cleaned up
+            mockExtensionTracker.Verify(x => x.RemoveSessionCommands(sessionId), Times.Once);
         }
 
         public void Dispose()

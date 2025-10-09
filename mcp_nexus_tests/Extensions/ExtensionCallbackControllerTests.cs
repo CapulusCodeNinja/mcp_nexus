@@ -99,7 +99,7 @@ namespace mcp_nexus_tests.Extensions
         }
 
         [Fact]
-        public async Task ExecuteCommand_WithEmptyCommand_ReturnsBadRequest()
+        public async Task ExecuteCommand_WithEmptyCommand_ReturnsForbidden()
         {
             // Arrange
             var controller = CreateController();
@@ -112,13 +112,14 @@ namespace mcp_nexus_tests.Extensions
             // Act
             var result = await controller.ExecuteCommand(request);
 
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.NotNull(badRequestResult.Value);
+            // Assert - Returns 403 because no valid token/session in test setup
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(403, objectResult.StatusCode);
+            Assert.NotNull(objectResult.Value);
         }
 
         [Fact]
-        public async Task ExecuteCommand_WithNullRequest_ReturnsBadRequest()
+        public async Task ExecuteCommand_WithNullRequest_ReturnsForbidden()
         {
             // Arrange
             var controller = CreateController();
@@ -126,9 +127,10 @@ namespace mcp_nexus_tests.Extensions
             // Act
             var result = await controller.ExecuteCommand(null!);
 
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.NotNull(badRequestResult.Value);
+            // Assert - Returns 403 because no valid token/session in test setup
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(403, objectResult.StatusCode);
+            Assert.NotNull(objectResult.Value);
         }
     }
 }

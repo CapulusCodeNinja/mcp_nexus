@@ -229,6 +229,8 @@ namespace mcp_nexus.Configuration
             var callbackUrl = $"http://127.0.0.1:{actualCallbackPort}/extension-callback";
 
             // Register extension services
+            services.AddSingleton<IProcessWrapper, ProcessWrapper>();
+            
             services.AddSingleton<IExtensionManager>(serviceProvider =>
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<ExtensionManager>>();
@@ -239,7 +241,8 @@ namespace mcp_nexus.Configuration
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<ExtensionExecutor>>();
                 var extensionManager = serviceProvider.GetRequiredService<IExtensionManager>();
-                return new ExtensionExecutor(logger, extensionManager, callbackUrl);
+                var processWrapper = serviceProvider.GetRequiredService<IProcessWrapper>();
+                return new ExtensionExecutor(logger, extensionManager, callbackUrl, processWrapper);
             });
 
             services.AddSingleton<IExtensionTokenValidator, ExtensionTokenValidator>();

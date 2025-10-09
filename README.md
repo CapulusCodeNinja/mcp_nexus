@@ -2,8 +2,8 @@
 
 **AI-Powered Windows Crash Dump Analysis Platform**
 
-[![Tests](https://img.shields.io/badge/tests-1,763%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
-[![Coverage](https://img.shields.io/badge/coverage-89.71%25-excellent?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Tests](https://img.shields.io/badge/tests-1,841%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Coverage](https://img.shields.io/badge/coverage-86.76%25-excellent?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Build](https://img.shields.io/badge/build-0%20warnings-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
 
@@ -317,10 +317,12 @@ dotnet test --filter "Notification"
 
 ### Test Statistics
 
-- ✅ **1,840 total tests** (1,823 passing, 17 in development)
+- ✅ **1,841 total tests** (1,840 passing, 1 flaky integration test*)
 - ✅ **86.76% line coverage** with comprehensive analysis testing
 - ✅ **0 warnings** in build (clean codebase)
-- ✅ **16+ test categories** covering all major functionality
+- ✅ **17+ test categories** covering all major functionality including Extensions
+
+*Note: `ResilientCommandQueueServiceIntegrationTests.GetCommandResult_CommandFails_ReturnsErrorMessage` is a timing-sensitive integration test that occasionally fails due to test timing issues, not production code defects.
 - ✅ **Fast execution** (~58 seconds for full suite)
 - ✅ **Comprehensive mocking** for reliable testing
 
