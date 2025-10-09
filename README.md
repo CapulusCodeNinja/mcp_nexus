@@ -2,7 +2,7 @@
 
 **AI-Powered Windows Crash Dump Analysis Platform**
 
-[![Tests](https://img.shields.io/badge/tests-1,841%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Tests](https://img.shields.io/badge/tests-1,842%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Coverage](https://img.shields.io/badge/coverage-86.76%25-excellent?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Build](https://img.shields.io/badge/build-0%20warnings-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
@@ -238,7 +238,7 @@ MCP Nexus provides live updates during analysis:
 ### MCP Resources
 - **`sessions`**: List all active analysis sessions
 - **`commands`**: List commands with filtering options
-- **`workflows`**: Access analysis workflows and patterns
+- **`extensions`**: List available extension scripts with metadata
 - **`usage`**: Complete usage guide and examples
 - **`metrics`**: Performance metrics and statistics
 - **`health`**: System health status
@@ -317,12 +317,10 @@ dotnet test --filter "Notification"
 
 ### Test Statistics
 
-- ✅ **1,841 total tests** (1,840 passing, 1 flaky integration test*)
+- ✅ **1,842 total tests** (1,842 passing)
 - ✅ **86.76% line coverage** with comprehensive analysis testing
 - ✅ **0 warnings** in build (clean codebase)
 - ✅ **17+ test categories** covering all major functionality including Extensions
-
-*Note: `ResilientCommandQueueServiceIntegrationTests.GetCommandResult_CommandFails_ReturnsErrorMessage` is a timing-sensitive integration test that occasionally fails due to test timing issues, not production code defects.
 - ✅ **Fast execution** (~58 seconds for full suite)
 - ✅ **Comprehensive mocking** for reliable testing
 
@@ -333,7 +331,7 @@ dotnet test --filter "Notification"
 | **Session Management** | ~300+ tests | Session lifecycle and resource management |
 | **Command Queue** | ~200+ tests | Async command execution and queuing |
 | **Notifications** | ~150+ tests | Real-time notification system |
-| **Extensions** | 116 tests | Extension system for complex workflows |
+| **Extensions** | 117 tests | Extension system for complex workflows |
 | **Infrastructure** | ~100+ tests | Windows service and infrastructure |
 | **Security** | ~80+ tests | Security validation and access control |
 | **Health & Metrics** | ~70+ tests | System health monitoring and metrics |

@@ -12,6 +12,7 @@ using mcp_nexus.Session;
 using mcp_nexus.Session.Models;
 using mcp_nexus.CommandQueue;
 using mcp_nexus;
+using mcp_nexus.Extensions;
 using System.Text.Json;
 
 namespace mcp_nexus_tests.Resources
@@ -42,7 +43,7 @@ namespace mcp_nexus_tests.Resources
             // Assert
             Assert.Contains("Sessions", methodNames);
             Assert.Contains("Commands", methodNames);
-            Assert.Contains("Workflows", methodNames);
+            Assert.Contains("Extensions", methodNames);
             Assert.Contains("Usage", methodNames);
         }
 
@@ -129,21 +130,63 @@ namespace mcp_nexus_tests.Resources
         }
 
         [Fact]
-        public async Task McpNexusResources_WorkflowsWithValidServiceProvider_ReturnsWorkflowsData()
+        public async Task McpNexusResources_ExtensionsWithValidServiceProvider_ReturnsExtensionsData()
         {
             // Arrange
-            var mockServiceProvider = new Mock<IServiceProvider>();
+            var services = new ServiceCollection();
+            var mockLogger = new Mock<ILogger<Program>>();
+            var mockExtensionManager = new Mock<IExtensionManager>();
+
+            services.AddSingleton(mockLogger.Object);
+            services.AddSingleton(mockExtensionManager.Object);
+
+            var serviceProvider = services.BuildServiceProvider();
+
+            // Setup mock extension data
+            var mockExtensions = new List<ExtensionMetadata>
+            {
+                new ExtensionMetadata
+                {
+                    Name = "basic_crash_analysis",
+                    Description = "Essential commands for initial crash investigation",
+                    Version = "1.0.0",
+                    Author = "MCP Nexus Team",
+                    ScriptType = "powershell",
+                    Timeout = 1800000
+                }
+            };
+
+            mockExtensionManager.Setup(x => x.GetAllExtensions()).Returns(mockExtensions);
 
             // Act
-            var result = await McpNexusResources.Workflows(mockServiceProvider.Object);
+            var result = await McpNexusResources.Extensions(serviceProvider);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Contains("Crash Analysis Workflows", result);
-            Assert.Contains("Basic Crash Analysis", result);
-            Assert.Contains("Memory Corruption Analysis", result);
-            Assert.Contains("Thread Deadlock Investigation", result);
-            Assert.Contains("!analyze -v", result);
+            Assert.Contains("basic_crash_analysis", result);
+            Assert.Contains("Essential commands for initial crash investigation", result);
+            Assert.Contains("nexus_enqueue_async_extension_command", result);
+        }
+
+        [Fact]
+        public async Task McpNexusResources_ExtensionsWithDisabledSystem_ReturnsDisabledMessage()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var mockLogger = new Mock<ILogger<Program>>();
+
+            services.AddSingleton(mockLogger.Object);
+            // Don't register IExtensionManager - simulates disabled extension system
+
+            var serviceProvider = services.BuildServiceProvider();
+
+            // Act
+            var result = await McpNexusResources.Extensions(serviceProvider);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("Extension system is not enabled or not properly configured", result);
+            Assert.Contains("\"enabled\": false", result);
         }
 
         [Fact]

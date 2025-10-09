@@ -416,23 +416,32 @@ Would you like me to examine any specific aspects of this analysis in more detai
 
 ## 🔧 Advanced Integration Features
 
-### Custom Analysis Workflows
+### Custom Analysis Extensions
 
-**Define Custom Workflows**:
+**Discover Available Extensions**:
+Use the `extensions` resource to list all available extension scripts:
 ```json
 {
-  "workflows": {
-    "custom-memory-analysis": {
-      "name": "Custom Memory Analysis",
-      "description": "Comprehensive memory analysis workflow",
-      "commands": [
-        "!analyze -v",
-        "!heap -p -a",
-        "!memusage",
-        "~*k",
-        "!locks"
-      ],
-      "timeout": 30
+  "jsonrpc": "2.0",
+  "method": "resources/read",
+  "params": {
+    "uri": "extensions"
+  }
+}
+```
+
+**Execute Extensions**:
+Use the `nexus_enqueue_async_extension_command` tool to execute extensions:
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_enqueue_async_extension_command",
+    "arguments": {
+      "sessionId": "sess-000001-abc12345-12345678-0001",
+      "extensionName": "memory_corruption_analysis",
+      "parameters": {}
     }
   }
 }
