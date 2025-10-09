@@ -18,6 +18,7 @@ param(
 Import-Module "$PSScriptRoot\..\modules\McpNexusExtensions.psm1" -Force
 
 Write-NexusProgress "Starting stack analysis with source download for thread $ThreadId"
+Write-NexusLog "Starting stack_with_sources extension for thread: $ThreadId" -Level Information
 
 try {
     # Step 1: Get stack with line numbers
@@ -26,6 +27,7 @@ try {
     $stackOutput = Invoke-NexusCommand $stackCommand
 
     if ([string]::IsNullOrWhiteSpace($stackOutput)) {
+        Write-NexusLog "Failed to retrieve stack trace - output was empty" -Level Error
         Write-Error "Failed to get stack trace - output was empty"
         exit 1
     }
@@ -51,6 +53,7 @@ try {
     }
 
     if ($addresses.Count -eq 0) {
+        Write-NexusLog "No valid return addresses found in stack trace" -Level Warning
         Write-Warning "No valid return addresses found in stack trace"
         $result = @{
             success = $false
@@ -64,6 +67,7 @@ try {
         exit 0
     }
 
+    Write-NexusLog "Found $($addresses.Count) return addresses to process" -Level Information
     Write-NexusProgress "Found $($addresses.Count) return addresses to process"
 
     # Step 3: Download sources for each address
@@ -94,6 +98,13 @@ try {
     }
 
     Write-NexusProgress "Source download complete: $downloadedCount of $($addresses.Count) sources downloaded"
+    
+    $successRate = [math]::Round(($downloadedCount / $addresses.Count) * 100, 2)
+    Write-NexusLog "Source download completed: $downloadedCount/$($addresses.Count) sources ($successRate% success rate)" -Level Information
+    
+    if ($failedAddresses.Count -gt 0) {
+        Write-NexusLog "Failed to download sources for $($failedAddresses.Count) addresses" -Level Warning
+    }
 
     # Return structured result
     $result = @{
@@ -102,7 +113,7 @@ try {
         totalFrames = $addresses.Count
         sourcesDownloaded = $downloadedCount
         sourcesMissing = $failedAddresses.Count
-        successRate = [math]::Round(($downloadedCount / $addresses.Count) * 100, 2)
+        successRate = $successRate
         addresses = $addresses
         failedAddresses = $failedAddresses
         message = "Successfully downloaded $downloadedCount of $($addresses.Count) source files"
@@ -112,6 +123,7 @@ try {
     exit 0
 }
 catch {
+    Write-NexusLog "Extension failed with exception: $($_.Exception.Message)" -Level Error
     Write-Error "Extension failed: $_"
     $errorResult = @{
         success = $false

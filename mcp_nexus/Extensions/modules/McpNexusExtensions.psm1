@@ -155,6 +155,80 @@ function Write-NexusProgress {
 
 <#
 .SYNOPSIS
+Writes a log message to the MCP Nexus server log file.
+
+.DESCRIPTION
+Sends a log message to the MCP Nexus server where it will be written to the server's log file.
+This allows extensions to provide diagnostic information that can be reviewed in the server logs.
+
+.PARAMETER Message
+The log message to write.
+
+.PARAMETER Level
+The log level: Debug, Information, Warning, or Error. Defaults to Information.
+
+.EXAMPLE
+Write-NexusLog "Processing address 0x12345678"
+
+.EXAMPLE
+Write-NexusLog "Failed to download source file" -Level Error
+
+.EXAMPLE
+Write-NexusLog "Starting memory corruption analysis" -Level Information
+
+.NOTES
+Use appropriate log levels:
+- Debug: Detailed diagnostic information (verbose, not normally needed)
+- Information: General informational messages about extension progress
+- Warning: Recoverable issues or unexpected situations
+- Error: Errors that prevent part of the extension from completing
+
+Avoid log spam - log only significant events, not every iteration of a loop.
+#>
+function Write-NexusLog {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, Position=0)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Message,
+
+        [Parameter(Mandatory=$false)]
+        [ValidateSet('Debug', 'Information', 'Warning', 'Error')]
+        [string]$Level = 'Information'
+    )
+
+    if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
+        Initialize-McpNexusExtension
+    }
+
+    try {
+        $body = @{
+            message = $Message
+            level = $Level
+        } | ConvertTo-Json
+
+        $headers = @{
+            "Authorization" = "Bearer $script:CallbackToken"
+            "Content-Type" = "application/json"
+        }
+
+        # Use fire-and-forget pattern for logging (don't wait for response)
+        $null = Invoke-RestMethod `
+            -Uri "$script:CallbackUrl/log" `
+            -Method POST `
+            -Headers $headers `
+            -Body $body `
+            -TimeoutSec 5 `
+            -ErrorAction SilentlyContinue
+    }
+    catch {
+        # Silently ignore logging errors to avoid breaking extension execution
+        Write-Verbose "Failed to send log to server: $_"
+    }
+}
+
+<#
+.SYNOPSIS
 Gets the session ID for the current extension execution.
 
 .OUTPUTS
@@ -194,6 +268,7 @@ catch {
 Export-ModuleMember -Function @(
     'Invoke-NexusCommand',
     'Write-NexusProgress',
+    'Write-NexusLog',
     'Get-NexusSessionId',
     'Get-NexusCommandId'
 )

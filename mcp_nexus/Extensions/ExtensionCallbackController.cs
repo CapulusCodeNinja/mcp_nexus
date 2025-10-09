@@ -282,6 +282,104 @@ namespace mcp_nexus.Extensions
         }
 
         /// <summary>
+        /// Writes a log message from an extension script to the server log.
+        /// Extensions use this endpoint to log diagnostic information during execution.
+        /// </summary>
+        /// <param name="request">The log request.</param>
+        /// <returns>HTTP 200 OK on success, error code otherwise.</returns>
+        [HttpPost("log")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ExtensionCallbackErrorResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ExtensionCallbackErrorResponse), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ExtensionCallbackErrorResponse), StatusCodes.Status400BadRequest)]
+        public IActionResult WriteLog([FromBody] ExtensionCallbackLogRequest request)
+        {
+            // Validate request is from localhost
+            if (!IsLocalhost())
+            {
+                m_Logger.LogWarning("Extension log callback denied from non-localhost IP: {IP}",
+                    HttpContext.Connection.RemoteIpAddress);
+                return StatusCode(403, new ExtensionCallbackErrorResponse
+                {
+                    Error = "Forbidden",
+                    Message = "Extension callbacks must originate from localhost"
+                });
+            }
+
+            // Validate token
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return StatusCode(401, new ExtensionCallbackErrorResponse
+                {
+                    Error = "Unauthorized",
+                    Message = "Missing authorization token"
+                });
+            }
+
+            var (isValid, sessionId, commandId) = m_TokenValidator.ValidateToken(token);
+            if (!isValid || string.IsNullOrWhiteSpace(sessionId))
+            {
+                return StatusCode(401, new ExtensionCallbackErrorResponse
+                {
+                    Error = "Unauthorized",
+                    Message = "Invalid extension token"
+                });
+            }
+
+            if (request == null || string.IsNullOrWhiteSpace(request.Message))
+            {
+                return BadRequest(new ExtensionCallbackErrorResponse
+                {
+                    Error = "Bad Request",
+                    Message = "Log message cannot be null or empty"
+                });
+            }
+
+            try
+            {
+                // Get extension info for context
+                var extInfo = m_ExtensionTracker.GetCommandInfo(commandId ?? string.Empty);
+                var extensionName = extInfo?.ExtensionName ?? "unknown";
+
+                // Write log message with appropriate severity
+                var logMessage = $"[Extension: {extensionName}] {request.Message}";
+                
+                switch (request.Level?.ToLowerInvariant())
+                {
+                    case "debug":
+                        m_Logger.LogDebug("{LogMessage}", logMessage);
+                        break;
+                    case "information":
+                    case "info":
+                        m_Logger.LogInformation("{LogMessage}", logMessage);
+                        break;
+                    case "warning":
+                    case "warn":
+                        m_Logger.LogWarning("{LogMessage}", logMessage);
+                        break;
+                    case "error":
+                        m_Logger.LogError("{LogMessage}", logMessage);
+                        break;
+                    default:
+                        m_Logger.LogInformation("{LogMessage}", logMessage);
+                        break;
+                }
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogError(ex, "Failed to process extension log request");
+                return StatusCode(500, new ExtensionCallbackErrorResponse
+                {
+                    Error = "Internal Server Error",
+                    Message = $"Failed to write log: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
         /// Checks if the request is from localhost.
         /// </summary>
         /// <returns>True if the request is from localhost, false otherwise.</returns>
@@ -395,6 +493,22 @@ namespace mcp_nexus.Extensions
         /// Error message if the command failed.
         /// </summary>
         public string? Error { get; set; }
+    }
+
+    /// <summary>
+    /// Request model for logging from extension scripts.
+    /// </summary>
+    public class ExtensionCallbackLogRequest
+    {
+        /// <summary>
+        /// The log message.
+        /// </summary>
+        public string Message { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The log level (Debug, Information, Warning, Error). Defaults to Information.
+        /// </summary>
+        public string? Level { get; set; }
     }
 
     /// <summary>

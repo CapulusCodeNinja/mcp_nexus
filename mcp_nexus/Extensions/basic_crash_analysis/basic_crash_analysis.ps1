@@ -14,12 +14,14 @@ Essential commands for initial crash investigation:
 Import-Module "$PSScriptRoot\..\modules\McpNexusExtensions.psm1" -Force
 
 Write-NexusProgress "Starting basic crash analysis workflow"
+Write-NexusLog "Starting basic_crash_analysis extension" -Level Information
 
 try {
     $results = @{}
 
     # Step 1: Automatic analysis
     Write-NexusProgress "Running automatic crash analysis (!analyze -v)..."
+    Write-NexusLog "Executing automatic crash analysis (!analyze -v)" -Level Information
     $results["analyze"] = Invoke-NexusCommand "!analyze -v"
 
     # Step 2: Thread information
@@ -39,6 +41,7 @@ try {
     $results["runaway"] = Invoke-NexusCommand "!runaway"
 
     Write-NexusProgress "Basic crash analysis complete"
+    Write-NexusLog "Basic crash analysis completed successfully (5 commands executed)" -Level Information
 
     # Return structured result
     $result = @{
@@ -73,6 +76,7 @@ try {
     exit 0
 }
 catch {
+    Write-NexusLog "Extension failed with exception: $($_.Exception.Message)" -Level Error
     Write-Error "Extension failed: $_"
     $errorResult = @{
         success = $false
