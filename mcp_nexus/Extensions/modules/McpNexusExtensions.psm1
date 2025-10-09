@@ -161,6 +161,11 @@ Writes a log message to the MCP Nexus server log file.
 Sends a log message to the MCP Nexus server where it will be written to the server's log file.
 This allows extensions to provide diagnostic information that can be reviewed in the server logs.
 
+The server automatically prefixes all log messages with the extension name and command ID for 
+tracking purposes, which is essential when multiple extension scripts are running concurrently.
+
+Log format in server: [Extension: extension_name | ext-xxxxx] Your message
+
 .PARAMETER Message
 The log message to write.
 
@@ -169,12 +174,15 @@ The log level: Debug, Information, Warning, or Error. Defaults to Information.
 
 .EXAMPLE
 Write-NexusLog "Processing address 0x12345678"
+# Server logs: [Extension: stack_with_sources | ext-abc123] Processing address 0x12345678
 
 .EXAMPLE
 Write-NexusLog "Failed to download source file" -Level Error
+# Server logs: [Extension: stack_with_sources | ext-abc123] Failed to download source file
 
 .EXAMPLE
 Write-NexusLog "Starting memory corruption analysis" -Level Information
+# Server logs: [Extension: memory_corruption_analysis | ext-xyz789] Starting memory corruption analysis
 
 .NOTES
 Use appropriate log levels:
@@ -184,6 +192,10 @@ Use appropriate log levels:
 - Error: Errors that prevent part of the extension from completing
 
 Avoid log spam - log only significant events, not every iteration of a loop.
+
+The command ID is automatically included by the server, so you don't need to add it manually.
+This ensures log messages can be correlated when multiple instances of the same extension 
+are running simultaneously for different sessions.
 #>
 function Write-NexusLog {
     [CmdletBinding()]

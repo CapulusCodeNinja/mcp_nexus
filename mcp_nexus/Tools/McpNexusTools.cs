@@ -886,9 +886,13 @@ namespace mcp_nexus.Tools
                 // Start extension execution asynchronously (don't wait)
                 _ = Task.Run(async () =>
                 {
+                    var queueTime = DateTime.UtcNow;
+                    DateTime? startTime = null;
+                    
                     try
                     {
                         extensionTracker.UpdateState(commandId, CommandState.Executing);
+                        startTime = DateTime.UtcNow;
 
                         var result = await extensionExecutor.ExecuteAsync(
                             extensionName,
@@ -897,17 +901,57 @@ namespace mcp_nexus.Tools
                             commandId,
                             progressMessage => extensionTracker.UpdateProgress(commandId, progressMessage));
 
+                        // Store result in both tracker (for state) and session cache (for persistence)
                         extensionTracker.StoreResult(commandId, result);
+                        
+                        // Also store in session's command result cache for consistency with standard commands
+                        var sessionManager = serviceProvider.GetService<ISessionManager>();
+                        if (sessionManager is SessionLifecycleManager lifecycleManager)
+                        {
+                            var cache = lifecycleManager.GetOrCreateSessionCache(sessionId);
+                            var commandResult = new CommandResult(
+                                isSuccess: result.Success,
+                                output: result.Output ?? string.Empty,
+                                errorMessage: result.Error);
+                            
+                            cache.StoreResult(commandId, commandResult, 
+                                originalCommand: $"Extension: {extensionName}",
+                                queueTime: queueTime,
+                                startTime: startTime,
+                                endTime: DateTime.UtcNow);
+                            
+                            logger.LogDebug("📦 Stored extension {Extension} result in session cache for session {SessionId}", extensionName, sessionId);
+                        }
                     }
                     catch (Exception ex)
                     {
                         logger.LogError(ex, "Extension {Extension} failed for session {SessionId}", extensionName, sessionId);
-                        extensionTracker.StoreResult(commandId, new ExtensionResult
+                        
+                        var failureResult = new ExtensionResult
                         {
                             Success = false,
                             Error = ex.Message,
                             ExitCode = -1
-                        });
+                        };
+                        
+                        extensionTracker.StoreResult(commandId, failureResult);
+                        
+                        // Also store failure in session cache
+                        var sessionManager = serviceProvider.GetService<ISessionManager>();
+                        if (sessionManager is SessionLifecycleManager lifecycleManager)
+                        {
+                            var cache = lifecycleManager.GetOrCreateSessionCache(sessionId);
+                            var commandResult = new CommandResult(
+                                isSuccess: false,
+                                output: string.Empty,
+                                errorMessage: ex.Message);
+                            
+                            cache.StoreResult(commandId, commandResult,
+                                originalCommand: $"Extension: {extensionName}",
+                                queueTime: queueTime,
+                                startTime: startTime,
+                                endTime: DateTime.UtcNow);
+                        }
                     }
                     finally
                     {

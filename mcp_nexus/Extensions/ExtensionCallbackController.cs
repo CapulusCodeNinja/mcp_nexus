@@ -342,8 +342,8 @@ namespace mcp_nexus.Extensions
                 var extInfo = m_ExtensionTracker.GetCommandInfo(commandId ?? string.Empty);
                 var extensionName = extInfo?.ExtensionName ?? "unknown";
 
-                // Write log message with appropriate severity
-                var logMessage = $"[Extension: {extensionName}] {request.Message}";
+                // Write log message with commandId prefix for tracking multiple concurrent executions
+                var logMessage = $"[{extensionName}] [{commandId}] {request.Message}";
                 
                 switch (request.Level?.ToLowerInvariant())
                 {

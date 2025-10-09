@@ -309,6 +309,13 @@ The extension system allows complex debugging workflows to be implemented as ext
   3. Extension result is marked as failed with `OperationCanceledException`
 - To disable timeout, set `"timeout": 0` in `metadata.json`
 
+**Result Persistence:**
+- Extension results are stored in the same `SessionCommandResultCache` as standard commands
+- Results persist until the session closes (consistent with standard commands)
+- Automatic cleanup when session ends
+- Same memory management and LRU eviction as standard commands
+- Results are stored in both `ExtensionCommandTracker` (for state/progress) and `SessionCommandResultCache` (for persistence)
+
 ### Key Design Decisions
 
 #### 1. **Extension Scripts Run as Separate Processes (NOT in Command Queue)**
