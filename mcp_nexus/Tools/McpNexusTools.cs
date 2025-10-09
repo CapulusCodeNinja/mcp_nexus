@@ -566,24 +566,6 @@ namespace mcp_nexus.Tools
         }
 
         /// <summary>
-        /// Extracts elapsed time from command result message
-        /// </summary>
-        private static string? GetElapsedTime(string commandResult)
-        {
-            if (string.IsNullOrEmpty(commandResult))
-                return null;
-
-            // Look for "Elapsed: X.Xmin" pattern
-            var elapsedMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"Elapsed: ([\d.]+)min");
-            if (elapsedMatch.Success)
-            {
-                return $"{elapsedMatch.Groups[1].Value}min";
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Formats elapsed time with appropriate precision
         /// </summary>
         /// <param name="elapsed">The elapsed time</param>
@@ -627,6 +609,40 @@ namespace mcp_nexus.Tools
             {
                 return $"{executionTime.TotalMilliseconds:F0}ms";
             }
+        }
+
+        /// <summary>
+        /// Extracts elapsed time from command result message
+        /// </summary>
+        /// <param name="commandResult">The command result message to parse.</param>
+        /// <returns>The extracted elapsed time string, or null if no elapsed time is found.</returns>
+        private static string? GetElapsedTime(string commandResult)
+        {
+            if (string.IsNullOrEmpty(commandResult))
+                return null;
+
+            // Look for "Elapsed: X.Xmin" pattern (with decimal point)
+            var elapsedMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"Elapsed: ([\d]+\.[\d]+min)");
+            if (elapsedMatch.Success)
+            {
+                return elapsedMatch.Groups[1].Value;
+            }
+
+            // Look for "Elapsed: Xmin Ys" pattern
+            var elapsedMinSecMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"Elapsed: ([\d]+min [\d]+s)");
+            if (elapsedMinSecMatch.Success)
+            {
+                return elapsedMinSecMatch.Groups[1].Value;
+            }
+
+            // Look for "Elapsed: Xmin" pattern (without decimal or seconds)
+            var elapsedMinMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"Elapsed: ([\d]+min)");
+            if (elapsedMinMatch.Success)
+            {
+                return elapsedMinMatch.Groups[1].Value;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -787,16 +803,17 @@ namespace mcp_nexus.Tools
         }
 
         /// <summary>
-        /// Executes an extension script for complex workflows.
+        /// Queues an extension script for execution in a debugging session.
         /// Extensions are PowerShell scripts that can execute multiple commands and implement sophisticated analysis patterns.
+        /// Returns commandId for tracking.
         /// </summary>
         /// <param name="serviceProvider">The service provider for dependency injection.</param>
         /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
         /// <param name="extensionName">Name of the extension to execute (e.g., 'stack_with_sources', 'basic_crash_analysis').</param>
         /// <param name="parameters">Optional JSON parameters to pass to the extension.</param>
         /// <returns>An object containing extension execution information including commandId.</returns>
-        [McpServerTool, Description("🔧 EXECUTE EXTENSION: Run an extension script for complex workflows. Returns commandId for tracking. Extensions can execute multiple commands and implement sophisticated analysis patterns.")]
-        public static async Task<object> nexus_execute_extension(
+        [McpServerTool, Description("🔧 QUEUE EXTENSION: Queue an extension script for execution in a debugging session. Returns commandId for tracking. Extensions can execute multiple commands and implement sophisticated analysis patterns.")]
+        public static async Task<object> nexus_enqueue_async_extension_command(
             IServiceProvider serviceProvider,
             [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
             [Description("Extension name (e.g., 'stack_with_sources', 'basic_crash_analysis', 'memory_corruption_analysis', 'thread_deadlock_investigation')")] string extensionName,
@@ -809,9 +826,9 @@ namespace mcp_nexus.Tools
             var extensionTracker = serviceProvider.GetService<IExtensionCommandTracker>();
             var tokenValidator = serviceProvider.GetService<IExtensionTokenValidator>();
 
-            logger.LogInformation("⚡ Executing extension '{Extension}' for session: {SessionId}", extensionName, sessionId);
+            logger.LogInformation("⚡ Queuing extension '{Extension}' for session: {SessionId}", extensionName, sessionId);
 
-            // Check if extensions are available
+            // Check if extensions are available FIRST (before checking session)
             if (extensionManager == null || extensionExecutor == null || extensionTracker == null || tokenValidator == null)
             {
                 return new
@@ -820,28 +837,14 @@ namespace mcp_nexus.Tools
                     commandId = (string?)null,
                     extensionName = extensionName,
                     status = "Failed",
-                    operation = "nexus_execute_extension",
+                    operation = "nexus_enqueue_async_extension_command",
                     message = "Extension system is not enabled or not properly configured"
                 };
             }
 
             try
             {
-                // Validate session exists
-                if (!sessionManager.SessionExists(sessionId))
-                {
-                    return new
-                    {
-                        sessionId = sessionId,
-                        commandId = (string?)null,
-                        extensionName = extensionName,
-                        status = "Failed",
-                        operation = "nexus_execute_extension",
-                        message = $"Session {sessionId} not found"
-                    };
-                }
-
-                // Validate extension exists
+                // Validate extension exists BEFORE validating session (fail fast)
                 if (!extensionManager.ExtensionExists(extensionName))
                 {
                     var availableExtensions = extensionManager.GetAllExtensions().Select(e => e.Name).ToList();
@@ -851,9 +854,23 @@ namespace mcp_nexus.Tools
                         commandId = (string?)null,
                         extensionName = extensionName,
                         status = "Failed",
-                        operation = "nexus_execute_extension",
-                        message = $"Extension '{extensionName}' not found",
+                        operation = "nexus_enqueue_async_extension_command",
+                        message = $"Extension '{extensionName}' not found. Available extensions: {string.Join(", ", availableExtensions)}",
                         availableExtensions = availableExtensions
+                    };
+                }
+
+                // Validate session exists
+                if (!sessionManager.SessionExists(sessionId))
+                {
+                    return new
+                    {
+                        sessionId = sessionId,
+                        commandId = (string?)null,
+                        extensionName = extensionName,
+                        status = "Failed",
+                        operation = "nexus_enqueue_async_extension_command",
+                        message = $"Session {sessionId} not found. Use 'sessions' resource to see available sessions."
                     };
                 }
 
@@ -905,9 +922,10 @@ namespace mcp_nexus.Tools
                     commandId = commandId,
                     extensionName = extensionName,
                     status = "Queued",
-                    operation = "nexus_execute_extension",
-                    message = $"Extension '{extensionName}' started. Use 'nexus_read_dump_analyze_command_result' to check status and get results.",
-                    note = "Extensions may take several minutes to complete as they execute multiple debugging commands"
+                    operation = "nexus_enqueue_async_extension_command",
+                    message = $"Extension '{extensionName}' queued successfully. Use the 'commands' resource to monitor all commands or the 'nexus_read_dump_analyze_command_result' tool to get results.",
+                    note = "Extensions may take several minutes to complete as they execute multiple debugging commands",
+                    timeoutMinutes = 30 // Extensions have longer timeout than regular commands
                 };
 
                 logger.LogInformation("Extension {Extension} queued successfully with command ID {CommandId}", extensionName, commandId);
@@ -915,7 +933,7 @@ namespace mcp_nexus.Tools
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to execute extension for session: {SessionId}", sessionId);
+                logger.LogError(ex, "Failed to queue extension for session: {SessionId}", sessionId);
 
                 var errorResponse = new
                 {
@@ -923,8 +941,8 @@ namespace mcp_nexus.Tools
                     commandId = (string?)null,
                     extensionName = extensionName,
                     status = "Failed",
-                    operation = "nexus_execute_extension",
-                    message = $"Failed to execute extension: {ex.Message}"
+                    operation = "nexus_enqueue_async_extension_command",
+                    message = $"Failed to queue extension: {ex.Message}"
                 };
 
                 return await Task.FromResult((object)errorResponse);
