@@ -258,19 +258,19 @@ namespace mcp_nexus.Session
                                 var killed = m_ExtensionExecutor.KillExtension(extCmd.CommandId);
                                 if (killed)
                                 {
-                                    m_Logger.LogDebug("Killed extension {CommandId} for session {SessionId}",
-                                        extCmd.CommandId, sessionId);
+                                    m_Logger.LogWarning("🔪 Killed extension script command {CommandId} ({ExtensionName}) due to session {SessionId} closure",
+                                        extCmd.CommandId, extCmd.ExtensionName, sessionId);
                                 }
                                 else
                                 {
-                                    m_Logger.LogDebug("Extension {CommandId} already completed for session {SessionId}",
-                                        extCmd.CommandId, sessionId);
+                                    m_Logger.LogInformation("Extension {CommandId} ({ExtensionName}) already completed for session {SessionId}",
+                                        extCmd.CommandId, extCmd.ExtensionName, sessionId);
                                 }
                             }
                             catch (Exception ex)
                             {
-                                m_Logger.LogWarning(ex, "Failed to kill extension {CommandId} for session {SessionId}",
-                                    extCmd.CommandId, sessionId);
+                                m_Logger.LogError(ex, "❌ Failed to kill extension {CommandId} ({ExtensionName}) for session {SessionId}",
+                                    extCmd.CommandId, extCmd.ExtensionName, sessionId);
                             }
                         }
 

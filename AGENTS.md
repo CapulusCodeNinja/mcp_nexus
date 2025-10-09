@@ -290,6 +290,25 @@ The extension system allows complex debugging workflows to be implemented as ext
 
 **After:** These workflows are implemented as extension scripts that handle the orchestration internally while making callbacks to execute individual commands.
 
+### Session Lifecycle Coupling
+
+**Implemented:** Extensions are automatically killed when their session closes.
+
+**Behavior:**
+- When `SessionLifecycleManager.CloseSessionAsync` is called:
+  1. Queries `ExtensionCommandTracker` for all running extensions in the session
+  2. Calls `ExtensionExecutor.KillExtension` for each running extension
+  3. Logs a warning: `🔪 Killed extension script command {CommandId} ({ExtensionName}) due to session {SessionId} closure`
+  4. Cleans up tracking data with `ExtensionCommandTracker.RemoveSessionCommands`
+
+**Timeout Behavior:**
+- Extensions have a configurable timeout (default: 30 minutes, set in `metadata.json`)
+- When timeout expires:
+  1. Extension process is killed with `process.Kill(entireProcessTree: true)`
+  2. Logs a warning: `🔪 Killed extension script '{Extension}' (command {CommandId}) due to timeout after X seconds (timeout: Yms)`
+  3. Extension result is marked as failed with `OperationCanceledException`
+- To disable timeout, set `"timeout": 0` in `metadata.json`
+
 ### Key Design Decisions
 
 #### 1. **Extension Scripts Run as Separate Processes (NOT in Command Queue)**
@@ -656,7 +675,6 @@ $output2 = Invoke-NexusCommand "lm"
 
 ### Future Enhancements (Not Yet Implemented)
 
-- **Session lifecycle coupling:** Kill extension if session closes
 - **Dynamic timeout:** Extend based on callback activity
 - **Progress streaming:** Real-time progress to AI
 - **Extension hot-reload:** Discover new extensions without restart

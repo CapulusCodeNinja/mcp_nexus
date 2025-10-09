@@ -194,13 +194,13 @@ namespace mcp_nexus.Extensions
                         if (!process.HasExited)
                         {
                             process.Kill(entireProcessTree: true);
-                            m_Logger.LogWarning("Extension {Extension} killed due to cancellation/timeout",
-                                extensionName);
+                            m_Logger.LogWarning("🔪 Killed extension script '{Extension}' (command {CommandId}) due to timeout after {Elapsed:F1} seconds (timeout: {Timeout}ms)",
+                                extensionName, commandId, stopwatch.Elapsed.TotalSeconds, metadata.Timeout);
                         }
                     }
                     catch (Exception ex)
                     {
-                        m_Logger.LogError(ex, "Failed to kill extension {Extension}", extensionName);
+                        m_Logger.LogError(ex, "❌ Failed to kill extension {Extension} (command {CommandId})", extensionName, commandId);
                     }
 
                     throw new OperationCanceledException(
