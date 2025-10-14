@@ -205,6 +205,9 @@ namespace mcp_nexus_tests.Utilities
         [InlineData("!homedir C:\\my\\home\\dir", "!homedir C:\\my\\home\\dir")]
         [InlineData("!homedir \"C:\\my\\home\\dir\"", "!homedir \"C:\\my\\home\\dir\"")]
         [InlineData("!homedir /mnt/c/my/home/dir", "!homedir C:\\my\\home\\dir")]
+        [InlineData("!homedir /mnt/analysis/test-path", "!homedir C:\\analysis\\test-path")]
+        [InlineData("!homedir /mnt/share/folder", "!homedir C:\\share\\folder")]
+        [InlineData("!homedir \"/mnt/share/folder\"", "!homedir \"C:\\share\\folder\"")]
         [InlineData("!HOMEDIR C:\\test", "!HOMEDIR C:\\test")]
         public void PreprocessCommand_Homedir_ConvertsWslPaths(string input, string expected)
         {

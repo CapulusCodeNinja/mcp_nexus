@@ -179,7 +179,7 @@ namespace mcp_nexus.Utilities
             return false;
         }
 
-        [GeneratedRegex(@"/mnt/[a-zA-Z]/[^\s;""]+", RegexOptions.Compiled)]
+        [GeneratedRegex(@"/mnt/[^/\s;""]+/[^\s;""]*", RegexOptions.Compiled)]
         private static partial Regex MyRegex();
     }
 }

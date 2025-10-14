@@ -42,12 +42,15 @@ namespace mcp_nexus_tests.Mocks
         public Dictionary<string, string> LoadFstabMappings()
         {
             // Return standard /mnt/c -> C:\ and /mnt/d -> D:\ mappings
+            // Also include multi-character mount points for testing
             return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 { "/mnt/c", "C:\\" },
                 { "/mnt/d", "D:\\" },
                 { "/mnt/e", "E:\\" },
-                { "/mnt/f", "F:\\" }
+                { "/mnt/f", "F:\\" },
+                { "/mnt/analysis", "C:\\analysis" },
+                { "/mnt/share", "C:\\share" }
             };
         }
     }
