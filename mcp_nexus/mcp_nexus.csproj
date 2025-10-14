@@ -6,9 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
-    <Version>1.0.6.76</Version>
-    <AssemblyVersion>1.0.6.65</AssemblyVersion>
-    <FileVersion>1.0.6.65</FileVersion>
+    <Version>1.0.6.77</Version>
+    <AssemblyVersion>1.0.6.77</AssemblyVersion>
+    <FileVersion>1.0.6.77</FileVersion>
     <Product>MCP Nexus</Product>
     <Description>Model Context Protocol Server for Windows Debugging Tools</Description>
     <Company>CapulusCodeNinja</Company>

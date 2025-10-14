@@ -39,6 +39,7 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 
 1. **✅ ALL TESTS MUST PASS**: Run `dotnet test` - ALL tests must be green before any submission
 2. **✅ VERSION MUST BE UPDATED**: Increment the build version in `mcp_nexus.csproj` (e.g., 1.0.6.12 → 1.0.6.13)
+   - The following version fields MUST exist and MUST have the same value: `Version`, `AssemblyVersion`, and `FileVersion`. Update all three together.
 3. **✅ README.md MUST BE UPDATED**: Update test count and coverage in README.md badges AND Test Statistics section
 4. **✅ NO COMPILATION ERRORS**: Code must build with zero warnings and zero errors
 5. **✅ NO DEAD CODE**: Remove unused code, methods, or files
@@ -59,6 +60,7 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 
 #### Versioning and Scope
 * **Version Increment:** Only the **build version component** (the last digit/identifier) in the project's versioning scheme must be incremented for this change. (Assuming a **Major.Minor.Patch.Build** semantic versioning standard.)
+* **Version Field Equality:** In `mcp_nexus.csproj`, the `Version`, `AssemblyVersion`, and `FileVersion` values MUST be identical at all times. When bumping the version, update all three fields to the same value.
 
 ### 🎯 COMMON VIOLATIONS TO AVOID
 
