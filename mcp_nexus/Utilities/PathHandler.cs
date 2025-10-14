@@ -127,8 +127,17 @@ namespace mcp_nexus.Utilities
 
                     if (root.Length >= 2 && root[1] == ':' && char.IsLetter(root[0]))
                     {
-                        // Drive letter root like C:
-                        windowsPath = root + (relative.Length > 0 ? relative.Replace('/', '\\') : string.Empty);
+                        // Drive letter root - ensure proper path separator
+                        // If root already ends with backslash, don't add another
+                        if (relative.Length > 0)
+                        {
+                            var separator = root.EndsWith('\\') ? string.Empty : "\\";
+                            windowsPath = root + separator + relative.Replace('/', '\\');
+                        }
+                        else
+                        {
+                            windowsPath = root;
+                        }
                         return true;
                     }
                 }
