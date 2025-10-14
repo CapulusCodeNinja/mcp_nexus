@@ -77,25 +77,31 @@ The following steps must be performed sequentially. Ensure all mandatory rules a
     * Use tool: `nexus_enqueue_async_extension_command` with `sessionId` and `extensionName = "stack_with_sources"`.
     * The tool returns a `commandId` (prefixed with `ext-`)
     * Poll results via `nexus_read_dump_analyze_command_result` using the same `sessionId` and returned `commandId`.
-    * When completed successfully the sources for the faulting frames should be avalible in the filesystem
+    * When completed successfully the sources for the faulting frames should be available on the filesystem
     * If source is not found for the current frame, try `lsa [ADDRESS]` where `ADDRESS` is the instruction address.
     * Note: Source files (if found) will be in `[workingdir]/source`.
-3. **Comprehensive and in-depth Analysis:**
+3. **Standard Analysis:**
+    * Execute the baseline crash analysis extension.
+    * Use tool: `nexus_enqueue_async_extension_command` with `sessionId` and `extensionName = "basic_crash_analysis"`.
+    * The tool returns a `commandId` (prefixed with `ext-`).
+    * Poll for completion via `nexus_read_dump_analyze_command_result` using the same `sessionId` and returned `commandId`.
+    * On success, the result contains outputs from core analysis commands and a concise summary to guide next steps.
+4. **Comprehensive and in-depth Analysis:**
     * Perform a thorough analysis to pinpoint the **exact root cause**.
     * Gather all helpful information from the dump.
     * For exceptions, collect all necessary data, including the type and the `what()` string.
     * For timeouts, execute WinDbg commands in single, sequential steps.
     * Run extended WinDbg commands to gain a more detailed view of the issue.
     * **Consider checking** the `workflows` resource for **helpful** commands for the specific issue.
-4. **Analyze the root cause:**
+5. **Analyze the root cause:**
     * **Summarize** the results from the previous steps.
     * Analyze all the current data in-depth to find the root cause of the crash.
     * Make an internet research for common ways to **analyze** the specific type of crashes.
     * Consider to reiterate and go back and forth between this and the previous step. **Run further needed or more advanced analysis commands to get the full picture.**
-5. **File Generation & Verification:**
+6. **File Generation & Verification:**
     * Generate all required files and ensure they strictly follow all mandatory rules, usability, and style guidelines.
     * Read all generated files to confirm they meet all criteria before finalizing the task.
-6. **CRITICAL EXIT:** You **MUST** immediately exit/terminate after completing the analysis report. Do not wait for additional input.
+7. **CRITICAL EXIT:** You **MUST** immediately exit/terminate after completing the analysis report. Do not wait for additional input.
 
 ***
 
