@@ -201,6 +201,92 @@ namespace mcp_nexus_tests.Utilities
             }
         }
 
+        [Theory]
+        [InlineData("!homedir C:\\my\\home\\dir", "!homedir C:\\my\\home\\dir")]
+        [InlineData("!homedir \"C:\\my\\home\\dir\"", "!homedir \"C:\\my\\home\\dir\"")]
+        [InlineData("!homedir /mnt/c/my/home/dir", "!homedir C:\\my\\home\\dir")]
+        [InlineData("!HOMEDIR C:\\test", "!HOMEDIR C:\\test")]
+        public void PreprocessCommand_Homedir_ConvertsWslPaths(string input, string expected)
+        {
+            // Arrange
+            string result = string.Empty;
+
+            try
+            {
+                // Act
+                result = m_CommandPreprocessor.PreprocessCommand(input);
+
+                // Assert
+                Assert.Equal(expected, result);
+            }
+            finally
+            {
+                // Cleanup - extract path from result for cleanup
+                CleanupHomedirPath(result);
+            }
+        }
+
+        [Fact]
+        public void PreprocessCommand_Homedir_CreatesDirectoryIfNotExists()
+        {
+            // Arrange
+            var tempDir = Path.Combine(Path.GetTempPath(), "test_homedir_" + Guid.NewGuid().ToString("N")[..8]);
+            var input = $"!homedir {tempDir}";
+
+            try
+            {
+                // Ensure directory doesn't exist initially
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, true);
+                }
+
+                // Act
+                var result = m_CommandPreprocessor.PreprocessCommand(input);
+
+                // Assert
+                Assert.Equal($"!homedir {tempDir}", result);
+                Assert.True(Directory.Exists(tempDir), "Directory should be created automatically");
+            }
+            finally
+            {
+                // Cleanup
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, true);
+                }
+            }
+        }
+
+        [Fact]
+        public void PreprocessCommand_Homedir_WithExistingDirectory_DoesNotFail()
+        {
+            // Arrange
+            var tempDir = Path.Combine(Path.GetTempPath(), "test_homedir_existing_" + Guid.NewGuid().ToString("N")[..8]);
+            var input = $"!homedir \"{tempDir}\"";
+
+            try
+            {
+                // Create directory first
+                Directory.CreateDirectory(tempDir);
+
+                // Act
+                var result = m_CommandPreprocessor.PreprocessCommand(input);
+
+                // Assert
+                Assert.Equal($"!homedir \"{tempDir}\"", result);
+                Assert.True(Directory.Exists(tempDir), "Directory should still exist");
+            }
+            finally
+            {
+                // Cleanup
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, true);
+                }
+            }
+        }
+
         /// <summary>
         /// Best-effort cleanup for any directories that may be created by CommandPreprocessor during tests.
         /// Parses .srcpath arguments and removes non-srv, non-UNC directories.
@@ -232,6 +318,36 @@ namespace mcp_nexus_tests.Utilities
                 {
                     // Ignore cleanup errors in tests
                 }
+            }
+        }
+
+        /// <summary>
+        /// Best-effort cleanup for any directories that may be created by CommandPreprocessor during !homedir tests.
+        /// Parses !homedir argument and removes the directory.
+        /// </summary>
+        internal static void CleanupHomedirPath(string command)
+        {
+            if (string.IsNullOrWhiteSpace(command)) return;
+            if (!command.StartsWith("!homedir", StringComparison.OrdinalIgnoreCase)) return;
+
+            // Extract argument after !homedir
+            var firstSpace = command.IndexOf(' ');
+            if (firstSpace < 0 || firstSpace + 1 >= command.Length) return;
+            var path = command[(firstSpace + 1)..].Trim().Trim('"').Trim('\'');
+
+            // Skip UNC paths
+            if (path.StartsWith("\\\\")) return;
+
+            try
+            {
+                if (Directory.Exists(path))
+                {
+                    Directory.Delete(path, true);
+                }
+            }
+            catch
+            {
+                // Ignore cleanup errors in tests
             }
         }
     }

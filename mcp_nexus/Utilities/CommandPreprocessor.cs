@@ -113,6 +113,17 @@ namespace mcp_nexus.Utilities
                 }
             }
 
+            // Handle !homedir (set home directory for extensions and configuration) - ensure directory exists
+            else if (result.StartsWith("!homedir", StringComparison.OrdinalIgnoreCase))
+            {
+                var match = Regex.Match(result, @"^!homedir\s+(.+)$", RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    var path = match.Groups[1].Value.Trim().Trim('"').Trim('\'');
+                    EnsureDirectoryExists(path);
+                }
+            }
+
             return result;
         }
 
