@@ -182,7 +182,6 @@ namespace mcp_nexus.Utilities
                 "~",        // Home directory expansion
                 "%",        // Environment variable expansion
                 "$",        // Variable expansion (Unix/PowerShell)
-                "\0",       // Null byte injection
                 "\r",       // Carriage return
                 "\n"        // Line feed
             ];

@@ -353,7 +353,6 @@ namespace mcp_nexus.Extensions
             return m_ProcessWrapper.CreateProcess(fileName, arguments, environmentVariables);
         }
 
-        
 
         /// <summary>
         /// Finds PowerShell executable on the system.
@@ -399,8 +398,6 @@ namespace mcp_nexus.Extensions
             m_Logger.LogError("PowerShell not found. Tried: {Paths}", string.Join(", ", paths));
             return null;
         }
-
-
 
         /// <summary>
         /// Kills a running extension by command ID.

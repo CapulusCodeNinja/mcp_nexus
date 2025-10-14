@@ -88,7 +88,7 @@ namespace mcp_nexus.CommandQueue
                 commandId,
                 command,
                 DateTime.UtcNow,
-                new TaskCompletionSource<string>(),
+                new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously),
                 new CancellationTokenSource()
             );
 
