@@ -43,7 +43,7 @@ namespace mcp_nexus.Extensions
 
             m_CallbackUrl = callbackUrl;
             m_ProcessWrapper = processWrapper ?? new ProcessWrapper();
-            m_TokenValidator = tokenValidator ?? new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>());
+            m_TokenValidator = tokenValidator ?? throw new ArgumentNullException(nameof(tokenValidator));
         }
 
         /// <summary>
