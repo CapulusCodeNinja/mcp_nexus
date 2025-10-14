@@ -21,6 +21,7 @@ namespace mcp_nexus.Session
     /// <param name="notificationService">The notification service for sending session events.</param>
     /// <param name="config">The session manager configuration.</param>
     /// <param name="sessions">The thread-safe dictionary for storing session information.</param>
+    /// <param name="commandPreprocessor">The command preprocessor for path conversions.</param>
     /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
     public class SessionLifecycleManager(
         ILogger logger,
@@ -28,7 +29,8 @@ namespace mcp_nexus.Session
         ILoggerFactory loggerFactory,
         IMcpNotificationService notificationService,
         SessionManagerConfiguration config,
-        ConcurrentDictionary<string, SessionInfo> sessions)
+        ConcurrentDictionary<string, SessionInfo> sessions,
+        mcp_nexus.Utilities.ICommandPreprocessor commandPreprocessor)
     {
         private readonly ILogger m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly IServiceProvider m_ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
@@ -36,6 +38,7 @@ namespace mcp_nexus.Session
         private readonly IMcpNotificationService m_NotificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         private readonly SessionManagerConfiguration m_Config = config ?? throw new ArgumentNullException(nameof(config));
         private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
+        private readonly mcp_nexus.Utilities.ICommandPreprocessor m_CommandPreprocessor = commandPreprocessor ?? throw new ArgumentNullException(nameof(commandPreprocessor));
         private readonly ConcurrentDictionary<string, SessionCommandResultCache> m_SessionCaches = new ConcurrentDictionary<string, SessionCommandResultCache>();
         private readonly IExtensionCommandTracker? m_ExtensionTracker = serviceProvider.GetService<IExtensionCommandTracker>();
         private readonly IExtensionExecutor? m_ExtensionExecutor = serviceProvider.GetService<IExtensionExecutor>();
@@ -424,7 +427,8 @@ namespace mcp_nexus.Session
                 m_Config.CdbOptions.StartupDelayMs,
                 m_Config.CdbOptions.OutputReadingTimeoutMs,
                 m_Config.CdbOptions.EnableCommandPreprocessing,
-                sessionId
+                sessionId,
+                m_CommandPreprocessor
             );
         }
 

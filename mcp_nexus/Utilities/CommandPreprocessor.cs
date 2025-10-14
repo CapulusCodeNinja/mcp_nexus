@@ -3,13 +3,24 @@ using System.Text.RegularExpressions;
 namespace mcp_nexus.Utilities
 {
     /// <summary>
-    /// Preprocesses WinDBG commands for path conversion and directory creation only.
+    /// Service for preprocessing WinDBG commands for path conversion and directory creation.
     /// This class ONLY handles WSL to Windows path conversion and ensures directories exist.
     /// NO syntax fixing, NO adding quotes, NO adding semicolons.
+    /// Injectable service that supports proper dependency injection and testing.
     /// </summary>
-    public static partial class CommandPreprocessor
+    public partial class CommandPreprocessor : ICommandPreprocessor
     {
-        private static readonly Regex PathPattern = MyRegex();
+        private static readonly Regex s_PathPattern = MyRegex();
+        private readonly IPathHandler m_PathHandler;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandPreprocessor"/> class.
+        /// </summary>
+        /// <param name="pathHandler">The path handler for WSL/Windows path conversions.</param>
+        public CommandPreprocessor(IPathHandler pathHandler)
+        {
+            m_PathHandler = pathHandler ?? throw new ArgumentNullException(nameof(pathHandler));
+        }
 
         /// <summary>
         /// Preprocesses a WinDBG command to convert WSL paths to Windows paths and ensure directories exist.
@@ -17,7 +28,7 @@ namespace mcp_nexus.Utilities
         /// </summary>
         /// <param name="command">The original command</param>
         /// <returns>The command with paths converted</returns>
-        public static string PreprocessCommand(string command)
+        public string PreprocessCommand(string command)
         {
             if (string.IsNullOrWhiteSpace(command))
             {
@@ -25,10 +36,10 @@ namespace mcp_nexus.Utilities
             }
 
             // Find and convert all WSL paths in the command (generic /mnt/<drive>/...)
-            var result = PathPattern.Replace(command, match =>
+            var result = s_PathPattern.Replace(command, match =>
             {
                 var wslPath = match.Value;
-                var windowsPath = PathHandler.ConvertToWindowsPath(wslPath);
+                var windowsPath = m_PathHandler.ConvertToWindowsPath(wslPath);
 
                 // Ensure directory exists
                 EnsureDirectoryExists(windowsPath);
@@ -44,7 +55,7 @@ namespace mcp_nexus.Utilities
                     (Match m) =>
                     {
                         var wsl = m.Groups[1].Value.Replace('\\', '/');
-                        var win = PathHandler.ConvertToWindowsPath(wsl);
+                        var win = m_PathHandler.ConvertToWindowsPath(wsl);
                         return "srv*" + win;
                     },
                     RegexOptions.IgnoreCase);
@@ -109,7 +120,7 @@ namespace mcp_nexus.Utilities
         /// Ensures that a directory exists, creating it if necessary.
         /// </summary>
         /// <param name="path">The directory path to ensure exists</param>
-        private static void EnsureDirectoryExists(string path)
+        private void EnsureDirectoryExists(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
                 return;
@@ -124,14 +135,13 @@ namespace mcp_nexus.Utilities
                 }
 
                 // Check if it's a valid Windows path
-                if (PathHandler.IsWindowsPath(path))
+                if (m_PathHandler.IsWindowsPath(path))
                 {
                     // Create directory if it doesn't exist
                     if (!Directory.Exists(path))
                     {
                         Directory.CreateDirectory(path);
-                        // Note: We can't use ILogger here since this is a static utility class
-                        // Directory creation will be logged at the command execution level
+                        // Directory creation is logged at the command execution level if needed
                     }
                 }
             }

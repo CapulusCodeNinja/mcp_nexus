@@ -13,6 +13,7 @@ namespace mcp_nexus.Debugger
         private readonly CdbProcessManager m_processManager;
         private readonly CdbCommandExecutor m_commandExecutor;
         private readonly CdbOutputParser m_outputParser;
+        private readonly mcp_nexus.Utilities.ICommandPreprocessor? m_commandPreprocessor;
 
         // CRITICAL: Semaphore to ensure only ONE command executes at a time in CDB
         // CDB is single-threaded and cannot handle concurrent commands
@@ -34,6 +35,7 @@ namespace mcp_nexus.Debugger
         /// <param name="outputReadingTimeoutMs">The output reading timeout in milliseconds. Default is 300000ms (5 minutes).</param>
         /// <param name="enableCommandPreprocessing">Whether to enable command preprocessing (path conversion and directory creation). Default is true.</param>
         /// <param name="sessionId">Optional session ID for creating session-specific log files. If null, uses default naming.</param>
+        /// <param name="commandPreprocessor">Optional command preprocessor for path conversion. If null and preprocessing is enabled, preprocessing will be skipped.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public CdbSession(
             ILogger<CdbSession> logger,
@@ -45,9 +47,11 @@ namespace mcp_nexus.Debugger
             int startupDelayMs = 1000,
             int outputReadingTimeoutMs = 300000,
             bool enableCommandPreprocessing = true,
-            string? sessionId = null)
+            string? sessionId = null,
+            mcp_nexus.Utilities.ICommandPreprocessor? commandPreprocessor = null)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_commandPreprocessor = commandPreprocessor;
 
             // Create configuration with validation
             m_config = new CdbSessionConfiguration(
@@ -86,14 +90,17 @@ namespace mcp_nexus.Debugger
         /// <param name="logger">The logger instance for recording session operations and errors.</param>
         /// <param name="config">The CDB session configuration object.</param>
         /// <param name="sessionId">Optional session ID for creating session-specific log files. If null, uses default naming.</param>
+        /// <param name="commandPreprocessor">Optional command preprocessor for path conversion. If null and preprocessing is enabled, preprocessing will be skipped.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> or <paramref name="config"/> is null.</exception>
         public CdbSession(
             ILogger<CdbSession> logger,
             CdbSessionConfiguration config,
-            string? sessionId = null)
+            string? sessionId = null,
+            mcp_nexus.Utilities.ICommandPreprocessor? commandPreprocessor = null)
         {
             m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_config = config ?? throw new ArgumentNullException(nameof(config));
+            m_commandPreprocessor = commandPreprocessor;
 
             // CRITICAL FIX: Logger casting was failing, causing NullLogger to be used!
             // This resulted in zero visibility into CdbProcessManager init consumer
@@ -311,15 +318,19 @@ namespace mcp_nexus.Debugger
                 m_logger.LogInformation("🔒 SEMAPHORE: About to execute command '{Command}' (TRUE ASYNC)", command);
 
                 // Preprocess the command to fix common issues (e.g., .srcpath path conversion and directory creation)
-                // Only if preprocessing is enabled in configuration
+                // Only if preprocessing is enabled in configuration and preprocessor is available
                 var preprocessedCommand = command;
-                if (m_config.EnableCommandPreprocessing)
+                if (m_config.EnableCommandPreprocessing && m_commandPreprocessor != null)
                 {
-                    preprocessedCommand = mcp_nexus.Utilities.CommandPreprocessor.PreprocessCommand(command);
+                    preprocessedCommand = m_commandPreprocessor.PreprocessCommand(command);
                     if (preprocessedCommand != command)
                     {
                         m_logger.LogInformation("🔧 Command preprocessed: '{Original}' -> '{Preprocessed}'", command, preprocessedCommand);
                     }
+                }
+                else if (m_config.EnableCommandPreprocessing && m_commandPreprocessor == null)
+                {
+                    m_logger.LogWarning("⚠️ Command preprocessing is ENABLED but no preprocessor provided - sending command as-is: '{Command}'", command);
                 }
                 else
                 {

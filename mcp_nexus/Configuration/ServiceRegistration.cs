@@ -136,7 +136,12 @@ namespace mcp_nexus.Configuration
             services.AddSingleton<IMcpNotificationService, McpNotificationService>();
             services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
 
-            logger.Info("Registered core services (CDB, Session, Notifications, Protocol)");
+            // Register utility services for path handling and command preprocessing
+            services.AddSingleton<mcp_nexus.Utilities.IWslPathConverter, mcp_nexus.Utilities.WslPathConverter>();
+            services.AddSingleton<mcp_nexus.Utilities.IPathHandler, mcp_nexus.Utilities.PathHandler>();
+            services.AddSingleton<mcp_nexus.Utilities.ICommandPreprocessor, mcp_nexus.Utilities.CommandPreprocessor>();
+
+            logger.Info("Registered core services (CDB, Session, Notifications, Protocol, Utilities)");
         }
 
 

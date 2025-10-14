@@ -5,18 +5,28 @@ using System.Collections.Concurrent;
 namespace mcp_nexus.Utilities
 {
     /// <summary>
-    /// Utility class for handling path conversions between WSL and Windows formats.
+    /// Service for handling path conversions between WSL and Windows formats.
     /// This class provides centralized logic for converting WSL-style paths (like /mnt/c/...)
     /// to Windows-style paths (like C:\...) for use with Windows debugging tools.
+    /// Injectable service that supports proper dependency injection and testing.
     /// </summary>
-    public static partial class PathHandler
+    public class PathHandler : IPathHandler
     {
-        private static readonly ConcurrentDictionary<string, string> s_FstabMountMap = new();
-        private static DateTime s_FstabLastLoadedUtc = DateTime.MinValue;
-        private static readonly object s_FstabLock = new();
-        private const int WslHelperTimeoutMs = 500;
-        private static readonly ConcurrentDictionary<string, (string Converted, DateTime ExpiresUtc)> m_ConversionCache = new();
-        private static readonly TimeSpan ConversionTtl = TimeSpan.FromMinutes(5);
+        private readonly ConcurrentDictionary<string, string> m_FstabMountMap = new();
+        private DateTime m_FstabLastLoadedUtc = DateTime.MinValue;
+        private readonly object m_FstabLock = new();
+        private readonly ConcurrentDictionary<string, (string Converted, DateTime ExpiresUtc)> m_ConversionCache = new();
+        private readonly TimeSpan m_ConversionTtl = TimeSpan.FromMinutes(5);
+        private readonly IWslPathConverter m_WslConverter;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PathHandler"/> class.
+        /// </summary>
+        /// <param name="wslConverter">The WSL path converter to use for path conversions.</param>
+        public PathHandler(IWslPathConverter wslConverter)
+        {
+            m_WslConverter = wslConverter ?? throw new ArgumentNullException(nameof(wslConverter));
+        }
 
         /// <summary>
         /// Converts a WSL-style path to Windows format if needed.
@@ -28,7 +38,7 @@ namespace mcp_nexus.Utilities
         /// </summary>
         /// <param name="path">The input path that may be in WSL format</param>
         /// <returns>Windows-compatible path</returns>
-        public static string ConvertToWindowsPath(string path)
+        public string ConvertToWindowsPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -61,14 +71,14 @@ namespace mcp_nexus.Utilities
                 // Use fstab mapping (cached) before invoking wslpath
                 if (TryConvertWithFstabMapping(path, out var fstabConverted))
                 {
-                    m_ConversionCache[path] = (fstabConverted, DateTime.UtcNow + ConversionTtl);
+                    m_ConversionCache[path] = (fstabConverted, DateTime.UtcNow + m_ConversionTtl);
                     return fstabConverted;
                 }
 
                 // Fallback: wslpath call with short timeout (only for /mnt/<letter>/...)
-                if (path.StartsWith("/mnt/", StringComparison.OrdinalIgnoreCase) && TryConvertWithWslPath(path, out var wslConverted))
+                if (path.StartsWith("/mnt/", StringComparison.OrdinalIgnoreCase) && m_WslConverter.TryConvertToWindowsPath(path, out var wslConverted))
                 {
-                    m_ConversionCache[path] = (wslConverted, DateTime.UtcNow + ConversionTtl);
+                    m_ConversionCache[path] = (wslConverted, DateTime.UtcNow + m_ConversionTtl);
                     return wslConverted;
                 }
 
@@ -84,59 +94,10 @@ namespace mcp_nexus.Utilities
         }
 
         /// <summary>
-        /// Attempts to convert a Linux path to a Windows path using 'wsl.exe wslpath -w'.
-        /// Uses a very short timeout and fails silently to avoid blocking.
-        /// </summary>
-        private static bool TryConvertWithWslPath(string path, out string windowsPath)
-        {
-            windowsPath = path;
-            try
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "wsl.exe",
-                    Arguments = $"-e wslpath -w \"{path.Replace("\"", "\\\"")}\"",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var proc = Process.Start(psi);
-                if (proc == null)
-                {
-                    return false;
-                }
-
-                if (!proc.WaitForExit(WslHelperTimeoutMs))
-                {
-                    try { proc.Kill(entireProcessTree: true); } catch { }
-                    return false;
-                }
-
-                if (proc.ExitCode == 0)
-                {
-                    var output = proc.StandardOutput.ReadToEnd().Trim();
-                    if (!string.IsNullOrWhiteSpace(output))
-                    {
-                        windowsPath = output.Replace('/', '\\');
-                        return true;
-                    }
-                }
-            }
-            catch
-            {
-                // Ignore and fall back
-            }
-
-            return false;
-        }
-
-        /// <summary>
         /// Attempts to convert using a mapping derived from '/etc/fstab' (drvfs entries) via WSL.
         /// This supports custom mount points, e.g. mapping \\server\share to /mnt/share.
         /// </summary>
-        private static bool TryConvertWithFstabMapping(string path, out string windowsPath)
+        private bool TryConvertWithFstabMapping(string path, out string windowsPath)
         {
             windowsPath = path;
 
@@ -144,11 +105,11 @@ namespace mcp_nexus.Utilities
             {
                 EnsureFstabMountMapLoaded();
 
-                if (s_FstabMountMap.Count == 0)
+                if (m_FstabMountMap.Count == 0)
                     return false;
 
                 // Find the longest matching mount prefix
-                var match = s_FstabMountMap
+                var match = m_FstabMountMap
                     .OrderByDescending(kvp => kvp.Key.Length)
                     .FirstOrDefault(kvp => path.StartsWith(kvp.Key, StringComparison.OrdinalIgnoreCase));
 
@@ -180,87 +141,26 @@ namespace mcp_nexus.Utilities
             return false;
         }
 
-        private static void EnsureFstabMountMapLoaded()
+        private void EnsureFstabMountMapLoaded()
         {
             // Refresh map at most every 5 minutes
-            if ((DateTime.UtcNow - s_FstabLastLoadedUtc) < TimeSpan.FromMinutes(5) && s_FstabMountMap.Count > 0)
+            if ((DateTime.UtcNow - m_FstabLastLoadedUtc) < TimeSpan.FromMinutes(5) && m_FstabMountMap.Count > 0)
                 return;
 
-            lock (s_FstabLock)
+            lock (m_FstabLock)
             {
-                if ((DateTime.UtcNow - s_FstabLastLoadedUtc) < TimeSpan.FromMinutes(5) && s_FstabMountMap.Count > 0)
+                if ((DateTime.UtcNow - m_FstabLastLoadedUtc) < TimeSpan.FromMinutes(5) && m_FstabMountMap.Count > 0)
                     return;
 
                 try
                 {
-                    var psi = new ProcessStartInfo
-                    {
-                        FileName = "wsl.exe",
-                        Arguments = "-e cat /etc/fstab",
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    };
+                    var newMappings = m_WslConverter.LoadFstabMappings();
 
-                    using var proc = Process.Start(psi);
-                    if (proc == null)
-                        return;
+                    m_FstabMountMap.Clear();
+                    foreach (var kvp in newMappings)
+                        m_FstabMountMap[kvp.Key] = kvp.Value;
 
-                    if (!proc.WaitForExit(WslHelperTimeoutMs))
-                    {
-                        try { proc.Kill(entireProcessTree: true); } catch { }
-                        return;
-                    }
-
-                    var text = proc.StandardOutput.ReadToEnd();
-                    var newMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-                    foreach (var rawLine in text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
-                    {
-                        var line = rawLine.Trim();
-                        if (line.StartsWith("#")) continue;
-
-                        // fstab format: <src> <mount> <type> <opts> <dump> <pass>
-                        var parts = Regex.Split(line, @"\s+");
-                        if (parts.Length < 3) continue;
-
-                        var src = parts[0];
-                        var mount = parts[1];
-                        var type = parts[2];
-
-                        if (!string.Equals(type, "drvfs", StringComparison.OrdinalIgnoreCase))
-                            continue;
-
-                        // Map mount -> windows root
-                        string? root = null;
-                        if (src.Length >= 2 && src[1] == ':' && char.IsLetter(src[0]))
-                        {
-                            // e.g., C:
-                            root = char.ToUpperInvariant(src[0]) + ":\\";
-                        }
-                        else if (src.StartsWith("//") || src.StartsWith("\\\\"))
-                        {
-                            // UNC like //server/share
-                            var unc = src.Replace('/', '\\');
-                            if (!unc.StartsWith("\\\\")) unc = "\\\\" + unc.TrimStart('\\');
-                            root = unc;
-                        }
-
-                        if (root != null)
-                        {
-                            // Normalize mount key (no trailing slash)
-                            var key = mount.EndsWith('/') ? mount.TrimEnd('/') : mount;
-                            if (!newMap.ContainsKey(key))
-                                newMap[key] = root;
-                        }
-                    }
-
-                    s_FstabMountMap.Clear();
-                    foreach (var kvp in newMap)
-                        s_FstabMountMap[kvp.Key] = kvp.Value;
-
-                    s_FstabLastLoadedUtc = DateTime.UtcNow;
+                    m_FstabLastLoadedUtc = DateTime.UtcNow;
                 }
                 catch
                 {
@@ -278,7 +178,7 @@ namespace mcp_nexus.Utilities
         /// </summary>
         /// <param name="path">The input Windows path</param>
         /// <returns>WSL mount format path</returns>
-        public static string ConvertToWslPath(string path)
+        public string ConvertToWslPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -320,7 +220,7 @@ namespace mcp_nexus.Utilities
         /// </summary>
         /// <param name="path">The path to check</param>
         /// <returns>True if the path is a Windows path, false otherwise</returns>
-        public static bool IsWindowsPath(string path)
+        public bool IsWindowsPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path) || path.Length < 2)
             {
@@ -336,7 +236,7 @@ namespace mcp_nexus.Utilities
         /// </summary>
         /// <param name="path">The input path that may be in various formats</param>
         /// <returns>Windows-compatible path suitable for file operations</returns>
-        public static string NormalizeForWindows(string path)
+        public string NormalizeForWindows(string path)
         {
             return ConvertToWindowsPath(path);
         }
@@ -346,7 +246,7 @@ namespace mcp_nexus.Utilities
         /// </summary>
         /// <param name="paths">Array of paths that may be in various formats</param>
         /// <returns>Array of Windows-compatible paths</returns>
-        public static string[] NormalizeForWindows(params string[] paths)
+        public string[] NormalizeForWindows(params string[] paths)
         {
             if (paths == null)
             {
@@ -357,6 +257,20 @@ namespace mcp_nexus.Utilities
         }
 
         // Intentionally no IsWslMountPath in production to avoid unused public API.
+
+        /// <summary>
+        /// Clears the internal path conversion cache.
+        /// Useful for testing or when mount configuration changes.
+        /// </summary>
+        public void ClearCache()
+        {
+            m_ConversionCache.Clear();
+            lock (m_FstabLock)
+            {
+                m_FstabMountMap.Clear();
+                m_FstabLastLoadedUtc = DateTime.MinValue;
+            }
+        }
 
         /// <summary>
         /// Validates path security to prevent traversal attacks and malicious paths

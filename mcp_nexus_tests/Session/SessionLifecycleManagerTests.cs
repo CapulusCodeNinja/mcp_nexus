@@ -25,6 +25,7 @@ namespace mcp_nexus_tests.Session
         private readonly Mock<IServiceProvider> m_MockServiceProvider;
         private readonly Mock<ILoggerFactory> mm_MockLoggerFactory;
         private readonly Mock<IMcpNotificationService> m_MockNotificationService;
+        private readonly Mock<mcp_nexus.Utilities.ICommandPreprocessor> m_MockCommandPreprocessor;
         private readonly ICdbSession m_RealisticCdbSession;
         private readonly Mock<ICommandQueueService> m_MockCommandQueue;
         private readonly SessionManagerConfiguration m_Config;
@@ -39,6 +40,7 @@ namespace mcp_nexus_tests.Session
             m_MockServiceProvider = new Mock<IServiceProvider>();
             mm_MockLoggerFactory = new Mock<ILoggerFactory>();
             m_MockNotificationService = new Mock<IMcpNotificationService>();
+            m_MockCommandPreprocessor = new Mock<mcp_nexus.Utilities.ICommandPreprocessor>();
             m_RealisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
             m_MockCommandQueue = new Mock<ICommandQueueService>();
             m_Sessions = new ConcurrentDictionary<string, SessionInfo>();
@@ -74,7 +76,8 @@ namespace mcp_nexus_tests.Session
                 mm_MockLoggerFactory.Object,
                 m_MockNotificationService.Object,
                 m_Config,
-                m_Sessions);
+                m_Sessions,
+                m_MockCommandPreprocessor.Object);
         }
 
         [Fact]
@@ -83,7 +86,7 @@ namespace mcp_nexus_tests.Session
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionLifecycleManager(
                 null!, m_MockServiceProvider.Object, mm_MockLoggerFactory.Object,
-                m_MockNotificationService.Object, m_Config, m_Sessions));
+                m_MockNotificationService.Object, m_Config, m_Sessions, m_MockCommandPreprocessor.Object));
         }
 
         [Fact]
@@ -92,7 +95,7 @@ namespace mcp_nexus_tests.Session
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionLifecycleManager(
                 m_MockLogger.Object, null!, mm_MockLoggerFactory.Object,
-                m_MockNotificationService.Object, m_Config, m_Sessions));
+                m_MockNotificationService.Object, m_Config, m_Sessions, m_MockCommandPreprocessor.Object));
         }
 
         [Fact]
@@ -101,7 +104,7 @@ namespace mcp_nexus_tests.Session
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionLifecycleManager(
                 m_MockLogger.Object, m_MockServiceProvider.Object, null!,
-                m_MockNotificationService.Object, m_Config, m_Sessions));
+                m_MockNotificationService.Object, m_Config, m_Sessions, m_MockCommandPreprocessor.Object));
         }
 
         [Fact]
@@ -110,7 +113,7 @@ namespace mcp_nexus_tests.Session
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionLifecycleManager(
                 m_MockLogger.Object, m_MockServiceProvider.Object, mm_MockLoggerFactory.Object,
-                null!, m_Config, m_Sessions));
+                null!, m_Config, m_Sessions, m_MockCommandPreprocessor.Object));
         }
 
         [Fact]
@@ -119,7 +122,7 @@ namespace mcp_nexus_tests.Session
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionLifecycleManager(
                 m_MockLogger.Object, m_MockServiceProvider.Object, mm_MockLoggerFactory.Object,
-                m_MockNotificationService.Object, null!, m_Sessions));
+                m_MockNotificationService.Object, null!, m_Sessions, m_MockCommandPreprocessor.Object));
         }
 
         [Fact]
@@ -128,7 +131,7 @@ namespace mcp_nexus_tests.Session
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SessionLifecycleManager(
                 m_MockLogger.Object, m_MockServiceProvider.Object, mm_MockLoggerFactory.Object,
-                m_MockNotificationService.Object, m_Config, null!));
+                m_MockNotificationService.Object, m_Config, null!, m_MockCommandPreprocessor.Object));
         }
 
         [Fact]
@@ -141,7 +144,8 @@ namespace mcp_nexus_tests.Session
                 mm_MockLoggerFactory.Object,
                 m_MockNotificationService.Object,
                 m_Config,
-                m_Sessions);
+                m_Sessions,
+                m_MockCommandPreprocessor.Object);
 
             // Assert
             Assert.NotNull(manager);
@@ -316,7 +320,8 @@ namespace mcp_nexus_tests.Session
                 mm_MockLoggerFactory.Object,
                 m_MockNotificationService.Object,
                 m_Config,
-                m_Sessions
+                m_Sessions,
+                m_MockCommandPreprocessor.Object
             );
 
             // Add session
@@ -385,7 +390,8 @@ namespace mcp_nexus_tests.Session
                 mm_MockLoggerFactory.Object,
                 m_MockNotificationService.Object,
                 m_Config,
-                m_Sessions);
+                m_Sessions,
+                m_MockCommandPreprocessor.Object);
 
             // Add a minimal session
             var sessionInfo = new SessionInfo

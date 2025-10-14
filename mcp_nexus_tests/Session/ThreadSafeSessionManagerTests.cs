@@ -64,6 +64,11 @@ namespace mcp_nexus_tests.Session
             m_MockServiceProvider.Setup(sp => sp.GetService(typeof(ConcurrentDictionary<string, SessionInfo>)))
                 .Returns(sessions);
 
+            // Setup command preprocessor
+            var mockCommandPreprocessor = new Mock<mcp_nexus.Utilities.ICommandPreprocessor>();
+            m_MockServiceProvider.Setup(sp => sp.GetService(typeof(mcp_nexus.Utilities.ICommandPreprocessor)))
+                .Returns(mockCommandPreprocessor.Object);
+
             mm_MockLoggerFactory.Setup(lf => lf.CreateLogger(It.IsAny<string>()))
                 .Returns(m_MockSessionLogger.Object);
 

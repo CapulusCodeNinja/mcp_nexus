@@ -1,5 +1,6 @@
 using System;
 using mcp_nexus.Utilities;
+using mcp_nexus_tests.Mocks;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -13,6 +14,7 @@ namespace mcp_nexus_tests.Manual
     public class PathConversionDemo(ITestOutputHelper output)
     {
         private readonly ITestOutputHelper output = output;
+        private readonly IPathHandler m_PathHandler = new PathHandler(new MockWslPathConverter());
 
         [Fact]
         public void DemonstratePathConversion()
@@ -37,7 +39,7 @@ namespace mcp_nexus_tests.Manual
                 output.WriteLine($"Test: {testCase.Description}");
                 output.WriteLine($"Input:  {testCase.Input}");
 
-                var converted = PathHandler.NormalizeForWindows(testCase.Input);
+                var converted = m_PathHandler.NormalizeForWindows(testCase.Input);
 
                 if (testCase.Input != converted)
                 {
@@ -66,7 +68,7 @@ namespace mcp_nexus_tests.Manual
 
             // Simulate what happens in NexusOpenDump
             var originalDumpPath = "/mnt/c/inetpub/wwwroot/uploads/dump_20250925_112751.dmp";
-            var dumpPath = PathHandler.NormalizeForWindows(originalDumpPath);
+            var dumpPath = m_PathHandler.NormalizeForWindows(originalDumpPath);
 
             output.WriteLine($"AI calls nexus_open_dump_analyze_session with:");
             output.WriteLine($"  dumpPath: \"{originalDumpPath}\"");
@@ -83,7 +85,7 @@ namespace mcp_nexus_tests.Manual
 
             // Simulate symbols path conversion
             var originalSymbolsPath = "/mnt/d/symbols";
-            var symbolsPath = PathHandler.NormalizeForWindows(originalSymbolsPath);
+            var symbolsPath = m_PathHandler.NormalizeForWindows(originalSymbolsPath);
 
             output.WriteLine($"AI also provides:");
             output.WriteLine($"  symbolsPath: \"{originalSymbolsPath}\"");

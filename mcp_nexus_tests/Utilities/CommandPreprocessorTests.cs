@@ -1,14 +1,26 @@
 using mcp_nexus.Utilities;
+using mcp_nexus_tests.Mocks;
 using System.IO;
 using Xunit;
 
 namespace mcp_nexus_tests.Utilities
 {
     /// <summary>
-    /// Tests for the CommandPreprocessor utility class.
+    /// Tests for the CommandPreprocessor utility class using mocked WSL converter.
+    /// This makes tests portable and deterministic across all systems.
     /// </summary>
     public class CommandPreprocessorTests
     {
+        private readonly ICommandPreprocessor m_CommandPreprocessor;
+
+        public CommandPreprocessorTests()
+        {
+            // Create command preprocessor with mocked path handler
+            var mockWslConverter = new MockWslPathConverter();
+            var pathHandler = new PathHandler(mockWslConverter);
+            m_CommandPreprocessor = new CommandPreprocessor(pathHandler);
+        }
+
         [Theory]
         [InlineData(".srcpath \"C:\\already\\windows\\path\"",
                     ".srcpath \"C:\\already\\windows\\path\"")]
@@ -20,11 +32,10 @@ namespace mcp_nexus_tests.Utilities
                     "!analyze -v")]
         public void PreprocessCommand_WithPathConversion_ConvertsWSLPaths(string input, string expected)
         {
-            string result = string.Empty;
             try
             {
                 // Act
-                result = CommandPreprocessor.PreprocessCommand(input);
+                var result = m_CommandPreprocessor.PreprocessCommand(input);
 
                 // Assert
                 Assert.Equal(expected, result);
@@ -42,7 +53,7 @@ namespace mcp_nexus_tests.Utilities
         public void PreprocessCommand_WithNonPathCommands_ReturnsUnchanged(string input)
         {
             // Act
-            var result = CommandPreprocessor.PreprocessCommand(input);
+            var result = m_CommandPreprocessor.PreprocessCommand(input);
 
             // Assert
             Assert.Equal(input, result);
@@ -52,7 +63,7 @@ namespace mcp_nexus_tests.Utilities
         public void PreprocessCommand_WithEmptyInput_ReturnsUnchanged()
         {
             // Act
-            var result = CommandPreprocessor.PreprocessCommand("");
+            var result = m_CommandPreprocessor.PreprocessCommand("");
 
             // Assert
             Assert.Equal("", result);
@@ -62,7 +73,7 @@ namespace mcp_nexus_tests.Utilities
         public void PreprocessCommand_WithWhitespaceInput_ReturnsUnchanged()
         {
             // Act
-            var result = CommandPreprocessor.PreprocessCommand("   ");
+            var result = m_CommandPreprocessor.PreprocessCommand("   ");
 
             // Assert
             Assert.Equal("   ", result);
@@ -72,7 +83,7 @@ namespace mcp_nexus_tests.Utilities
         public void PreprocessCommand_WithNullInput_ReturnsNull()
         {
             // Act
-            var result = CommandPreprocessor.PreprocessCommand(null!);
+            var result = m_CommandPreprocessor.PreprocessCommand(null!);
 
             // Assert
             Assert.Null(result);
@@ -88,7 +99,7 @@ namespace mcp_nexus_tests.Utilities
             try
             {
                 // Act
-                result = CommandPreprocessor.PreprocessCommand(input);
+                result = m_CommandPreprocessor.PreprocessCommand(input);
 
                 // Assert
                 Assert.Equal(".srcpath \"C:\\path1;C:\\path2;D:\\path3\"", result);
@@ -105,7 +116,10 @@ namespace mcp_nexus_tests.Utilities
         [InlineData(".sympath /mnt/c/symcache;/mnt/d/extra", ".sympath C:\\symcache;D:\\extra")]
         public void PreprocessCommand_Sympath_ConvertsWsl_AndPreservesTokens(string input, string expected)
         {
-            var result = CommandPreprocessor.PreprocessCommand(input);
+            // Act
+            var result = m_CommandPreprocessor.PreprocessCommand(input);
+
+            // Assert
             Assert.Equal(expected, result);
         }
 
@@ -116,7 +130,7 @@ namespace mcp_nexus_tests.Utilities
             try
             {
                 var input = $".symfix {temp}";
-                var result = CommandPreprocessor.PreprocessCommand(input);
+                var result = m_CommandPreprocessor.PreprocessCommand(input);
                 Assert.Equal($".symfix {temp}", result);
                 Assert.True(Directory.Exists(temp));
             }
@@ -142,7 +156,7 @@ namespace mcp_nexus_tests.Utilities
                 }
 
                 // Act
-                var result = CommandPreprocessor.PreprocessCommand(input);
+                var result = m_CommandPreprocessor.PreprocessCommand(input);
 
                 // Assert
                 Assert.Equal($".srcpath \"srv*;{tempDir}\"", result);
@@ -171,7 +185,7 @@ namespace mcp_nexus_tests.Utilities
                 Directory.CreateDirectory(tempDir);
 
                 // Act
-                var result = CommandPreprocessor.PreprocessCommand(input);
+                var result = m_CommandPreprocessor.PreprocessCommand(input);
 
                 // Assert
                 Assert.Equal($".srcpath \"srv*;{tempDir}\"", result);

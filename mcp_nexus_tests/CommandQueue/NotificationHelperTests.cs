@@ -118,10 +118,15 @@ namespace mcp_nexus_tests.CommandQueue
                 elapsed);
 
             // Assert
-            // Wait for the Task.Run to complete
-            await Task.Delay(2000);
+            // Give the fire-and-forget task a moment to execute
+            // Note: This is testing fire-and-forget behavior, so we use a small delay
+            // In production, notifications are sent asynchronously and we don't wait for them
+            await Task.Delay(100);
+
+            // Verify was called at least once (may not be called if system is under heavy load)
+            // This is acceptable for fire-and-forget notifications
             m_MockNotificationService.Verify(x => x.NotifyCommandHeartbeatAsync(
-                sessionId, commandId, elapsed), Times.AtLeastOnce);
+                sessionId, commandId, elapsed), Times.AtLeastOnce());
         }
 
         [Fact]

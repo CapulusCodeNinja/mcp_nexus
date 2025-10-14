@@ -114,6 +114,11 @@ namespace mcp_nexus_tests.Configuration
             // Arrange
             var services = new ServiceCollection();
             var configuration = m_Configuration;
+
+            // Clear any existing NLog configuration from previous tests
+            LogManager.Configuration = null;
+            LogManager.ReconfigExistingLoggers();
+
             var nlogConfig = new NLog.Config.LoggingConfiguration();
             var memory = new NLog.Targets.MemoryTarget("testMemory") { Layout = "${message}" };
             nlogConfig.AddTarget(memory);
@@ -125,6 +130,9 @@ namespace mcp_nexus_tests.Configuration
                 // Act
                 ServiceRegistration.RegisterServices(services, configuration, null);
 
+                // Flush logs to ensure they're captured
+                LogManager.Flush(timeout: TimeSpan.FromSeconds(1));
+
                 // Assert
                 var logs = (memory.Logs ?? []);
                 // When collectors (like coverage) are active, some targets may not capture messages reliably.
@@ -132,7 +140,7 @@ namespace mcp_nexus_tests.Configuration
                 if (logs.Count > 0)
                 {
                     Assert.Contains(logs, m => m.Contains("All services registered successfully"));
-                    Assert.Contains(logs, m => m.Contains("Registered core services (CDB, Session, Notifications, Protocol)"));
+                    Assert.Contains(logs, m => m.Contains("Registered core services (CDB, Session, Notifications, Protocol, Utilities)"));
                     Assert.Contains(logs, m => m.Contains("Registered CommandTimeoutService for automated timeouts"));
                     Assert.Contains(logs, m => m.Contains("Registered recovery services"));
                     Assert.Contains(logs, m => m.Contains("Registered command queue services"));
@@ -141,6 +149,7 @@ namespace mcp_nexus_tests.Configuration
             finally
             {
                 LogManager.Configuration = null;
+                LogManager.ReconfigExistingLoggers();
             }
         }
 

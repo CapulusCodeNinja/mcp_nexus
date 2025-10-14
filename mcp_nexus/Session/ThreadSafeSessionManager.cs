@@ -52,8 +52,9 @@ namespace mcp_nexus.Session
 
             // Create focused components
             m_config = new SessionManagerConfiguration(config, cdbOptions);
+            var commandPreprocessor = serviceProvider.GetRequiredService<mcp_nexus.Utilities.ICommandPreprocessor>();
             m_lifecycleManager = new SessionLifecycleManager(
-                logger, serviceProvider, loggerFactory, notificationService, m_config, m_sessions);
+                logger, serviceProvider, loggerFactory, notificationService, m_config, m_sessions, commandPreprocessor);
             m_monitoringService = new SessionMonitoringService(
                 logger, notificationService, m_config, m_sessions, m_lifecycleManager, m_shutdownCts);
             m_statisticsCollector = new SessionStatisticsCollector(

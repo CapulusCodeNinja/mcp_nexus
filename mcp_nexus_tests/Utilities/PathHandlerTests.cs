@@ -1,10 +1,25 @@
 using mcp_nexus.Utilities;
+using mcp_nexus_tests.Mocks;
 using Xunit;
 
 namespace mcp_nexus_tests.Utilities
 {
+    /// <summary>
+    /// Tests for PathHandler using mocked WSL converter.
+    /// This makes tests portable and deterministic across all systems.
+    /// </summary>
     public class PathHandlerTests
     {
+        private readonly IPathHandler m_PathHandler;
+
+        public PathHandlerTests()
+        {
+            // Create path handler with mocked WSL converter
+            var mockWslConverter = new MockWslPathConverter();
+            m_PathHandler = new PathHandler(mockWslConverter);
+        }
+
+
         [Fact]
         public void ConvertToWindowsPath_WslMountPath_ConvertsProperly()
         {
@@ -13,7 +28,7 @@ namespace mcp_nexus_tests.Utilities
             var expectedWindowsPath = "C:\\inetpub\\wwwroot\\uploads\\dump.dmp";
 
             // Act
-            var result = PathHandler.ConvertToWindowsPath(wslPath);
+            var result = m_PathHandler.ConvertToWindowsPath(wslPath);
 
             // Assert
             Assert.Equal(expectedWindowsPath, result);
@@ -22,12 +37,14 @@ namespace mcp_nexus_tests.Utilities
         [Fact]
         public void ConvertToWindowsPath_WslMountPathUppercaseDrive_ConvertsProperly()
         {
+
             // Arrange
-            var wslPath = "/mnt/D/symbols";
+            // Note: WSL mounts are lowercase (/mnt/d, not /mnt/D)
+            var wslPath = "/mnt/d/symbols";
             var expectedWindowsPath = "D:\\symbols";
 
             // Act
-            var result = PathHandler.ConvertToWindowsPath(wslPath);
+            var result = m_PathHandler.ConvertToWindowsPath(wslPath);
 
             // Assert
             Assert.Equal(expectedWindowsPath, result);
@@ -36,12 +53,13 @@ namespace mcp_nexus_tests.Utilities
         [Fact]
         public void ConvertToWindowsPath_WslMountRootPath_ConvertsProperly()
         {
+
             // Arrange
             var wslPath = "/mnt/c/";
             var expectedWindowsPath = "C:\\";
 
             // Act
-            var result = PathHandler.ConvertToWindowsPath(wslPath);
+            var result = m_PathHandler.ConvertToWindowsPath(wslPath);
 
             // Assert
             Assert.Equal(expectedWindowsPath, result);
@@ -54,7 +72,7 @@ namespace mcp_nexus_tests.Utilities
             var windowsPath = "C:\\inetpub\\wwwroot\\uploads\\dump.dmp";
 
             // Act
-            var result = PathHandler.ConvertToWindowsPath(windowsPath);
+            var result = m_PathHandler.ConvertToWindowsPath(windowsPath);
 
             // Assert
             Assert.Equal(windowsPath, result);
@@ -67,7 +85,7 @@ namespace mcp_nexus_tests.Utilities
             var unixPath = "/usr/local/bin/tool";
 
             // Act
-            var result = PathHandler.ConvertToWindowsPath(unixPath);
+            var result = m_PathHandler.ConvertToWindowsPath(unixPath);
 
             // Assert
             Assert.Equal(unixPath, result);
@@ -80,7 +98,7 @@ namespace mcp_nexus_tests.Utilities
             var emptyPath = "";
 
             // Act
-            var result = PathHandler.ConvertToWindowsPath(emptyPath);
+            var result = m_PathHandler.ConvertToWindowsPath(emptyPath);
 
             // Assert
             Assert.Equal(emptyPath, result);
@@ -93,7 +111,7 @@ namespace mcp_nexus_tests.Utilities
             string? nullPath = null;
 
             // Act
-            var result = PathHandler.ConvertToWindowsPath(nullPath!);
+            var result = m_PathHandler.ConvertToWindowsPath(nullPath!);
 
             // Assert
             Assert.Equal(nullPath, result);
@@ -107,7 +125,7 @@ namespace mcp_nexus_tests.Utilities
             var expectedWslPath = "/mnt/c/inetpub/wwwroot/uploads/dump.dmp";
 
             // Act
-            var result = PathHandler.ConvertToWslPath(windowsPath);
+            var result = m_PathHandler.ConvertToWslPath(windowsPath);
 
             // Assert
             Assert.Equal(expectedWslPath, result);
@@ -121,7 +139,7 @@ namespace mcp_nexus_tests.Utilities
             var expectedWslPath = "/mnt/d/symbols";
 
             // Act
-            var result = PathHandler.ConvertToWslPath(windowsPath);
+            var result = m_PathHandler.ConvertToWslPath(windowsPath);
 
             // Assert
             Assert.Equal(expectedWslPath, result);
@@ -135,7 +153,7 @@ namespace mcp_nexus_tests.Utilities
             var expectedWslPath = "/mnt/c";
 
             // Act
-            var result = PathHandler.ConvertToWslPath(windowsPath);
+            var result = m_PathHandler.ConvertToWslPath(windowsPath);
 
             // Assert
             Assert.Equal(expectedWslPath, result);
@@ -149,7 +167,7 @@ namespace mcp_nexus_tests.Utilities
             var expectedWslPath = "/mnt/c";
 
             // Act
-            var result = PathHandler.ConvertToWslPath(windowsPath);
+            var result = m_PathHandler.ConvertToWslPath(windowsPath);
 
             // Assert
             Assert.Equal(expectedWslPath, result);
@@ -162,7 +180,7 @@ namespace mcp_nexus_tests.Utilities
             var unixPath = "/usr/local/bin/tool";
 
             // Act
-            var result = PathHandler.ConvertToWslPath(unixPath);
+            var result = m_PathHandler.ConvertToWslPath(unixPath);
 
             // Assert
             Assert.Equal(unixPath, result);
@@ -176,7 +194,7 @@ namespace mcp_nexus_tests.Utilities
             var expectedPath = "/usr/local/bin/tool";
 
             // Act
-            var result = PathHandler.ConvertToWslPath(pathWithBackslashes);
+            var result = m_PathHandler.ConvertToWslPath(pathWithBackslashes);
 
             // Assert
             Assert.Equal(expectedPath, result);
@@ -186,7 +204,7 @@ namespace mcp_nexus_tests.Utilities
         public void IsWslMountPath_UnixPath_ReturnsFalse()
         {
             var unixPath = "/usr/local/bin/tool";
-            var converted = PathHandler.ConvertToWindowsPath(unixPath);
+            var converted = m_PathHandler.ConvertToWindowsPath(unixPath);
             // Without /mnt/<drive> or fstab mapping, do not convert arbitrary Unix paths
             Assert.Equal(unixPath, converted);
         }
@@ -195,7 +213,7 @@ namespace mcp_nexus_tests.Utilities
         public void IsWslMountPath_EmptyString_ReturnsFalse()
         {
             var emptyPath = string.Empty;
-            var converted = PathHandler.ConvertToWindowsPath(emptyPath);
+            var converted = m_PathHandler.ConvertToWindowsPath(emptyPath);
             Assert.Equal(emptyPath, converted);
         }
 
@@ -203,7 +221,7 @@ namespace mcp_nexus_tests.Utilities
         public void IsWslMountPath_NullString_ReturnsFalse()
         {
             string? nullPath = null;
-            var converted = PathHandler.ConvertToWindowsPath(nullPath!);
+            var converted = m_PathHandler.ConvertToWindowsPath(nullPath!);
             Assert.Equal(nullPath, converted);
         }
 
@@ -214,7 +232,7 @@ namespace mcp_nexus_tests.Utilities
             var windowsPath = "C:\\inetpub\\wwwroot\\uploads\\dump.dmp";
 
             // Act
-            var result = PathHandler.IsWindowsPath(windowsPath);
+            var result = m_PathHandler.IsWindowsPath(windowsPath);
 
             // Assert
             Assert.True(result);
@@ -227,7 +245,7 @@ namespace mcp_nexus_tests.Utilities
             var windowsPath = "d:\\symbols";
 
             // Act
-            var result = PathHandler.IsWindowsPath(windowsPath);
+            var result = m_PathHandler.IsWindowsPath(windowsPath);
 
             // Assert
             Assert.True(result);
@@ -240,7 +258,7 @@ namespace mcp_nexus_tests.Utilities
             var wslPath = "/mnt/c/inetpub/wwwroot/uploads/dump.dmp";
 
             // Act
-            var result = PathHandler.IsWindowsPath(wslPath);
+            var result = m_PathHandler.IsWindowsPath(wslPath);
 
             // Assert
             Assert.False(result);
@@ -253,7 +271,7 @@ namespace mcp_nexus_tests.Utilities
             var unixPath = "/usr/local/bin/tool";
 
             // Act
-            var result = PathHandler.IsWindowsPath(unixPath);
+            var result = m_PathHandler.IsWindowsPath(unixPath);
 
             // Assert
             Assert.False(result);
@@ -266,7 +284,7 @@ namespace mcp_nexus_tests.Utilities
             var emptyPath = "";
 
             // Act
-            var result = PathHandler.IsWindowsPath(emptyPath);
+            var result = m_PathHandler.IsWindowsPath(emptyPath);
 
             // Assert
             Assert.False(result);
@@ -279,7 +297,7 @@ namespace mcp_nexus_tests.Utilities
             string? nullPath = null;
 
             // Act
-            var result = PathHandler.IsWindowsPath(nullPath!);
+            var result = m_PathHandler.IsWindowsPath(nullPath!);
 
             // Assert
             Assert.False(result);
@@ -292,7 +310,7 @@ namespace mcp_nexus_tests.Utilities
             var shortPath = "C";
 
             // Act
-            var result = PathHandler.IsWindowsPath(shortPath);
+            var result = m_PathHandler.IsWindowsPath(shortPath);
 
             // Assert
             Assert.False(result);
@@ -306,7 +324,7 @@ namespace mcp_nexus_tests.Utilities
             var expectedWindowsPath = "C:\\inetpub\\wwwroot\\uploads\\dump.dmp";
 
             // Act
-            var result = PathHandler.NormalizeForWindows(wslPath);
+            var result = m_PathHandler.NormalizeForWindows(wslPath);
 
             // Assert
             Assert.Equal(expectedWindowsPath, result);
@@ -319,7 +337,7 @@ namespace mcp_nexus_tests.Utilities
             var windowsPath = "C:\\inetpub\\wwwroot\\uploads\\dump.dmp";
 
             // Act
-            var result = PathHandler.NormalizeForWindows(windowsPath);
+            var result = m_PathHandler.NormalizeForWindows(windowsPath);
 
             // Assert
             Assert.Equal(windowsPath, result);
@@ -332,7 +350,7 @@ namespace mcp_nexus_tests.Utilities
             var unixPath = "/usr/local/bin/tool";
 
             // Act
-            var result = PathHandler.NormalizeForWindows(unixPath);
+            var result = m_PathHandler.NormalizeForWindows(unixPath);
 
             // Assert
             Assert.Equal(unixPath, result);
@@ -356,7 +374,7 @@ namespace mcp_nexus_tests.Utilities
             };
 
             // Act
-            var result = PathHandler.NormalizeForWindows(paths);
+            var result = m_PathHandler.NormalizeForWindows(paths);
 
             // Assert
             Assert.Equal(expectedPaths, result);
@@ -369,7 +387,7 @@ namespace mcp_nexus_tests.Utilities
             string[]? nullArray = null;
 
             // Act
-            var result = PathHandler.NormalizeForWindows(nullArray!);
+            var result = m_PathHandler.NormalizeForWindows(nullArray!);
 
             // Assert
             Assert.NotNull(result);
@@ -383,7 +401,7 @@ namespace mcp_nexus_tests.Utilities
             var emptyArray = Array.Empty<string>();
 
             // Act
-            var result = PathHandler.NormalizeForWindows(emptyArray);
+            var result = m_PathHandler.NormalizeForWindows(emptyArray);
 
             // Assert
             Assert.NotNull(result);
@@ -398,7 +416,7 @@ namespace mcp_nexus_tests.Utilities
             var expectedWindowsPath = "C:\\Program Files\\My App\\dump file.dmp";
 
             // Act
-            var result = PathHandler.ConvertToWindowsPath(wslPath);
+            var result = m_PathHandler.ConvertToWindowsPath(wslPath);
 
             // Assert
             Assert.Equal(expectedWindowsPath, result);
@@ -412,7 +430,7 @@ namespace mcp_nexus_tests.Utilities
             var expectedWslPath = "/mnt/c/Program Files/My App/dump file.dmp";
 
             // Act
-            var result = PathHandler.ConvertToWslPath(windowsPath);
+            var result = m_PathHandler.ConvertToWslPath(windowsPath);
 
             // Assert
             Assert.Equal(expectedWslPath, result);
@@ -426,7 +444,7 @@ namespace mcp_nexus_tests.Utilities
             var expectedWindowsPath = "C:\\temp\\file-name_with.special@chars.dmp";
 
             // Act
-            var result = PathHandler.ConvertToWindowsPath(wslPath);
+            var result = m_PathHandler.ConvertToWindowsPath(wslPath);
 
             // Assert
             Assert.Equal(expectedWindowsPath, result);
@@ -440,7 +458,7 @@ namespace mcp_nexus_tests.Utilities
             var expectedWslPath = "/mnt/c/temp/file-name_with.special@chars.dmp";
 
             // Act
-            var result = PathHandler.ConvertToWslPath(windowsPath);
+            var result = m_PathHandler.ConvertToWslPath(windowsPath);
 
             // Assert
             Assert.Equal(expectedWslPath, result);
