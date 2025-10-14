@@ -279,6 +279,17 @@ namespace mcp_nexus.Session
                     }
                 }
 
+                // Revoke all extension tokens for this session
+                try
+                {
+                    var tokenValidator = m_ServiceProvider.GetService<IExtensionTokenValidator>();
+                    tokenValidator?.RevokeSessionTokens(sessionId);
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.LogError(ex, "❌ Failed to revoke extension tokens for session {SessionId}", sessionId);
+                }
+
                 // Cleanup components (includes stopping CDB session)
                 if (sessionInfo?.CdbSession != null && sessionInfo?.CommandQueue != null)
                 {

@@ -15,6 +15,7 @@ namespace mcp_nexus.Extensions
         private readonly IExtensionManager m_ExtensionManager;
         private readonly string m_CallbackUrl;
         private readonly IProcessWrapper m_ProcessWrapper;
+        private readonly IExtensionTokenValidator m_TokenValidator;
         private readonly ConcurrentDictionary<string, ExtensionProcessInfo> m_RunningExtensions = new();
         private readonly ConcurrentDictionary<string, IProcessHandle> m_Processes = new();
 
@@ -31,7 +32,8 @@ namespace mcp_nexus.Extensions
             ILogger<ExtensionExecutor> logger,
             IExtensionManager extensionManager,
             string callbackUrl,
-            IProcessWrapper? processWrapper = null)
+            IProcessWrapper? processWrapper = null,
+            IExtensionTokenValidator? tokenValidator = null)
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_ExtensionManager = extensionManager ?? throw new ArgumentNullException(nameof(extensionManager));
@@ -41,6 +43,7 @@ namespace mcp_nexus.Extensions
 
             m_CallbackUrl = callbackUrl;
             m_ProcessWrapper = processWrapper ?? new ProcessWrapper();
+            m_TokenValidator = tokenValidator ?? new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>());
         }
 
         /// <summary>
@@ -94,6 +97,7 @@ namespace mcp_nexus.Extensions
             var errorBuilder = new StringBuilder();
             var callbackCount = 0;
 
+            string? callbackToken = null;
             try
             {
                 // Create process info
@@ -109,8 +113,8 @@ namespace mcp_nexus.Extensions
 
                 m_RunningExtensions[commandId] = processInfo;
 
-                // Generate callback token
-                var callbackToken = GenerateCallbackToken(sessionId, commandId);
+                // Generate callback token using validator (single source of truth)
+                callbackToken = m_TokenValidator.CreateToken(sessionId, commandId);
 
                 // Get process info for error messages (before creating process)
                 string processDescription = $"{metadata.ScriptType} extension: {extensionName}";
@@ -274,6 +278,11 @@ namespace mcp_nexus.Extensions
             }
             finally
             {
+                // Revoke token when execution ends
+                if (!string.IsNullOrWhiteSpace(callbackToken))
+                {
+                    try { m_TokenValidator.RevokeToken(callbackToken); } catch { }
+                }
                 // Cleanup
                 m_RunningExtensions.TryRemove(commandId, out _);
                 if (m_Processes.TryRemove(commandId, out var process))
@@ -392,22 +401,7 @@ namespace mcp_nexus.Extensions
             return null;
         }
 
-        /// <summary>
-        /// Generates a secure callback token for an extension.
-        /// </summary>
-        /// <param name="sessionId">The session ID.</param>
-        /// <param name="commandId">The command ID.</param>
-        /// <returns>A secure callback token.</returns>
-        private string GenerateCallbackToken(string sessionId, string commandId)
-        {
-            // Generate a secure random token
-            var tokenBytes = new byte[32];
-            System.Security.Cryptography.RandomNumberGenerator.Fill(tokenBytes);
-            var token = Convert.ToBase64String(tokenBytes);
-
-            // Store token for validation (in a real implementation, this would be in a secure token store)
-            return $"ext_{sessionId}_{commandId}_{token}";
-        }
+        
 
         /// <summary>
         /// Kills a running extension by command ID.

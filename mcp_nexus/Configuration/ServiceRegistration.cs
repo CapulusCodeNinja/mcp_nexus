@@ -242,7 +242,8 @@ namespace mcp_nexus.Configuration
                 var logger = serviceProvider.GetRequiredService<ILogger<ExtensionExecutor>>();
                 var extensionManager = serviceProvider.GetRequiredService<IExtensionManager>();
                 var processWrapper = serviceProvider.GetRequiredService<IProcessWrapper>();
-                return new ExtensionExecutor(logger, extensionManager, callbackUrl, processWrapper);
+                var tokenValidator = serviceProvider.GetRequiredService<IExtensionTokenValidator>();
+                return new ExtensionExecutor(logger, extensionManager, callbackUrl, processWrapper, tokenValidator);
             });
 
             services.AddSingleton<IExtensionTokenValidator, ExtensionTokenValidator>();

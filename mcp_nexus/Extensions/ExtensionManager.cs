@@ -194,7 +194,7 @@ namespace mcp_nexus.Extensions
                 return (false, $"Extension '{extensionName}' has no script type specified");
             }
 
-            var supportedScriptTypes = new[] { "powershell", "python", "python3" };
+            var supportedScriptTypes = new[] { "powershell" };
             if (!supportedScriptTypes.Contains(metadata.ScriptType.ToLowerInvariant()))
             {
                 return (false, $"Extension '{extensionName}' has unsupported script type: {metadata.ScriptType}");

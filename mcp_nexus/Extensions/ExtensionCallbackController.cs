@@ -307,13 +307,13 @@ namespace mcp_nexus.Extensions
             }
 
             // Validate token
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var token = ExtractBearerToken();
             if (string.IsNullOrWhiteSpace(token))
             {
                 return StatusCode(401, new ExtensionCallbackErrorResponse
                 {
                     Error = "Unauthorized",
-                    Message = "Missing authorization token"
+                    Message = "Missing or invalid authorization token"
                 });
             }
 
@@ -409,127 +409,6 @@ namespace mcp_nexus.Extensions
 
             return authHeader;
         }
-    }
-
-    /// <summary>
-    /// Request model for extension callback command execution.
-    /// </summary>
-    public class ExtensionCallbackExecuteRequest
-    {
-        /// <summary>
-        /// The WinDBG command to execute.
-        /// </summary>
-        public string Command { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Timeout in seconds (default: 300).
-        /// </summary>
-        public int TimeoutSeconds { get; set; } = 300;
-    }
-
-    /// <summary>
-    /// Response model for extension callback command execution.
-    /// </summary>
-    public class ExtensionCallbackExecuteResponse
-    {
-        /// <summary>
-        /// The command ID assigned to this command.
-        /// </summary>
-        public string CommandId { get; set; } = string.Empty;
-
-        /// <summary>
-        /// The status of the command.
-        /// </summary>
-        public string Status { get; set; } = string.Empty;
-
-        /// <summary>
-        /// The command output.
-        /// </summary>
-        public string? Output { get; set; }
-
-        /// <summary>
-        /// Error message if the command failed.
-        /// </summary>
-        public string? Error { get; set; }
-    }
-
-    /// <summary>
-    /// Request model for reading command result.
-    /// </summary>
-    public class ExtensionCallbackReadRequest
-    {
-        /// <summary>
-        /// The command ID to read.
-        /// </summary>
-        public string CommandId { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// Response model for reading command result.
-    /// </summary>
-    public class ExtensionCallbackReadResponse
-    {
-        /// <summary>
-        /// The command ID.
-        /// </summary>
-        public string CommandId { get; set; } = string.Empty;
-
-        /// <summary>
-        /// The status of the command.
-        /// </summary>
-        public string Status { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Whether the command is completed.
-        /// </summary>
-        public bool IsCompleted { get; set; }
-
-        /// <summary>
-        /// The command output.
-        /// </summary>
-        public string? Output { get; set; }
-
-        /// <summary>
-        /// Error message if the command failed.
-        /// </summary>
-        public string? Error { get; set; }
-    }
-
-    /// <summary>
-    /// Request model for logging from extension scripts.
-    /// </summary>
-    public class ExtensionCallbackLogRequest
-    {
-        /// <summary>
-        /// The log message.
-        /// </summary>
-        public string Message { get; set; } = string.Empty;
-
-        /// <summary>
-        /// The log level (Debug, Information, Warning, Error). Defaults to Information.
-        /// </summary>
-        public string? Level { get; set; }
-    }
-
-    /// <summary>
-    /// Error response model for extension callbacks.
-    /// </summary>
-    public class ExtensionCallbackErrorResponse
-    {
-        /// <summary>
-        /// The error type.
-        /// </summary>
-        public string Error { get; set; } = string.Empty;
-
-        /// <summary>
-        /// The error message.
-        /// </summary>
-        public string Message { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Optional hint for resolving the error.
-        /// </summary>
-        public string? Hint { get; set; }
     }
 }
 

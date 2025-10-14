@@ -880,9 +880,6 @@ namespace mcp_nexus.Tools
                 // Track the extension command
                 extensionTracker.TrackExtension(commandId, sessionId, extensionName, parameters);
 
-                // Create callback token
-                var callbackToken = tokenValidator.CreateToken(sessionId, commandId);
-
                 // Start extension execution asynchronously (don't wait)
                 _ = Task.Run(async () =>
                 {
@@ -955,8 +952,7 @@ namespace mcp_nexus.Tools
                     }
                     finally
                     {
-                        // Revoke token after extension completes
-                        tokenValidator.RevokeToken(callbackToken);
+                        // Token lifecycle handled by executor
                     }
                 });
 
