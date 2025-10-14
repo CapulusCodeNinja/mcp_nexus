@@ -69,12 +69,17 @@ Access data and results using the **`resources/read` method** (**NOT `tools/call
 The following steps must be performed sequentially. Ensure all mandatory rules are followed at each stage.
 
 1. **Initialize Analysis:** Open the analyze session for the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`. Feel free to run multiple sessions in parallel if it helps to make the **analysis** faster, the system **resources** allow that and the commands are independent
-2. **Source Code Retrieval (via Extension `stack_with_sources`):**
+2. **Source Code Retrieval:**    
+    * Set the source server path: `.srcpath "srv*;[workingdir]\source"`
+    * Enable source verbosity: `.srcnoisy 3`
+    * Enable the source server: `.srcfix+`
     * Execute the extension to resolve sources for the current stack and frames.
-    * Use tool: `nexus_enqueue_async_extension_command` with `sessionId` and `extensionName = "stack_with_sources"` (add optional parameters if the extension defines any).
-    * The tool returns a `commandId` (prefixed with `ext-`). Poll results via `nexus_read_dump_analyze_command_result` using the same `sessionId` and returned `commandId`.
-    * The extension orchestrates WinDBG callbacks internally (e.g., `kL`, `lsa`) and aggregates results. It does not block the command queue; each callback is queued and executed sequentially.
-    * When completed, the result contains the collected source references for stack frames. Include these in the report's "Source Code at Faulting Position" section.
+    * Use tool: `nexus_enqueue_async_extension_command` with `sessionId` and `extensionName = "stack_with_sources"`.
+    * The tool returns a `commandId` (prefixed with `ext-`)
+    * Poll results via `nexus_read_dump_analyze_command_result` using the same `sessionId` and returned `commandId`.
+    * When completed successfully the sources for the faulting frames should be avalible in the filesystem
+    * If source is not found for the current frame, try `lsa [ADDRESS]` where `ADDRESS` is the instruction address.
+    * Note: Source files (if found) will be in `[workingdir]/source`.
 3. **Comprehensive and in-depth Analysis:**
     * Perform a thorough analysis to pinpoint the **exact root cause**.
     * Gather all helpful information from the dump.

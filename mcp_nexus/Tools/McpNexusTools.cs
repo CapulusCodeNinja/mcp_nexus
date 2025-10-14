@@ -881,8 +881,8 @@ namespace mcp_nexus.Tools
                 extensionTracker.TrackExtension(commandId, sessionId, extensionName, parameters);
 
                 // Start extension execution asynchronously (don't wait)
-                // Use required services captured now to avoid using disposed serviceProvider later
-                var lifecycleManagerForCache = serviceProvider as IServiceProvider;
+                // CAPTURE required services now (the request scope may be disposed after return)
+                var sessionManagerInstance = serviceProvider.GetService<ISessionManager>();
 
                 _ = Task.Run(async () =>
                 {
@@ -901,26 +901,33 @@ namespace mcp_nexus.Tools
                             commandId,
                             progressMessage => extensionTracker.UpdateProgress(commandId, progressMessage));
 
-                        // Store result in both tracker (for state) and session cache (for persistence)
+                        // First, persist the authoritative extension result in the tracker
                         extensionTracker.StoreResult(commandId, result);
 
-                        // Also store in session's command result cache for consistency with standard commands
-                        var sessionManager = lifecycleManagerForCache?.GetService(typeof(ISessionManager)) as ISessionManager;
-                        if (sessionManager is SessionLifecycleManager lifecycleManager)
+                        // Best-effort: also persist into the session's command result cache
+                        try
                         {
-                            var cache = lifecycleManager.GetOrCreateSessionCache(sessionId);
-                            var commandResult = new CommandResult(
-                                isSuccess: result.Success,
-                                output: result.Output ?? string.Empty,
-                                errorMessage: result.Error);
+                            if (sessionManagerInstance is SessionLifecycleManager lifecycleManager)
+                            {
+                                var cache = lifecycleManager.GetOrCreateSessionCache(sessionId);
+                                var commandResult = new CommandResult(
+                                    isSuccess: result.Success,
+                                    output: result.Output ?? string.Empty,
+                                    errorMessage: result.Error);
 
-                            cache.StoreResult(commandId, commandResult,
-                                originalCommand: $"Extension: {extensionName}",
-                                queueTime: queueTime,
-                                startTime: startTime,
-                                endTime: DateTime.UtcNow);
+                                cache.StoreResult(commandId, commandResult,
+                                    originalCommand: $"Extension: {extensionName}",
+                                    queueTime: queueTime,
+                                    startTime: startTime,
+                                    endTime: DateTime.UtcNow);
 
-                            logger.LogDebug("📦 Stored extension {Extension} result in session cache for session {SessionId}", extensionName, sessionId);
+                                logger.LogDebug("📦 Stored extension {Extension} result in session cache for session {SessionId}", extensionName, sessionId);
+                            }
+                        }
+                        catch (Exception cacheEx)
+                        {
+                            // Do not downgrade a successful extension because cache write failed
+                            logger.LogWarning(cacheEx, "Failed to store extension result in session cache for session {SessionId}", sessionId);
                         }
                     }
                     catch (Exception ex)
@@ -934,23 +941,30 @@ namespace mcp_nexus.Tools
                             ExitCode = -1
                         };
 
+                        // Record failure in the tracker as the source of truth
                         extensionTracker.StoreResult(commandId, failureResult);
 
-                        // Also store failure in session cache
-                        var sessionManager = lifecycleManagerForCache?.GetService(typeof(ISessionManager)) as ISessionManager;
-                        if (sessionManager is SessionLifecycleManager lifecycleManager)
+                        // Best-effort: also reflect failure in the session cache
+                        try
                         {
-                            var cache = lifecycleManager.GetOrCreateSessionCache(sessionId);
-                            var commandResult = new CommandResult(
-                                isSuccess: false,
-                                output: string.Empty,
-                                errorMessage: ex.Message);
+                            if (sessionManagerInstance is SessionLifecycleManager lifecycleManager)
+                            {
+                                var cache = lifecycleManager.GetOrCreateSessionCache(sessionId);
+                                var commandResult = new CommandResult(
+                                    isSuccess: false,
+                                    output: string.Empty,
+                                    errorMessage: ex.Message);
 
-                            cache.StoreResult(commandId, commandResult,
-                                originalCommand: $"Extension: {extensionName}",
-                                queueTime: queueTime,
-                                startTime: startTime,
-                                endTime: DateTime.UtcNow);
+                                cache.StoreResult(commandId, commandResult,
+                                    originalCommand: $"Extension: {extensionName}",
+                                    queueTime: queueTime,
+                                    startTime: startTime,
+                                    endTime: DateTime.UtcNow);
+                            }
+                        }
+                        catch (Exception cacheEx)
+                        {
+                            logger.LogWarning(cacheEx, "Failed to store extension failure in session cache for session {SessionId}", sessionId);
                         }
                     }
                     finally
