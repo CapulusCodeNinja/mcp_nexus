@@ -222,9 +222,9 @@ namespace mcp_nexus.Configuration
                 extensionsPath = Path.Combine(AppContext.BaseDirectory, extensionsPath);
             }
 
-            // Determine callback URL based on MCP server configuration
-            var mcpServerHost = configuration.GetValue<string>("McpServer:Host") ?? "localhost";
-            var mcpServerPort = configuration.GetValue<int>("McpServer:Port", 3000);
+            // Determine callback URL based on MCP server configuration (use McpNexus:Server settings)
+            var mcpServerHost = configuration.GetValue<string>("McpNexus:Server:Host") ?? "localhost";
+            var mcpServerPort = configuration.GetValue<int>("McpNexus:Server:Port", 5000);
             var actualCallbackPort = callbackPort > 0 ? callbackPort : mcpServerPort;
             var callbackUrl = $"http://127.0.0.1:{actualCallbackPort}/extension-callback";
 
@@ -248,6 +248,9 @@ namespace mcp_nexus.Configuration
 
             services.AddSingleton<IExtensionTokenValidator, ExtensionTokenValidator>();
             services.AddSingleton<IExtensionCommandTracker, ExtensionCommandTracker>();
+
+            // Ensure extensions are loaded at startup so tools can find them immediately
+            services.AddHostedService<ExtensionStartupService>();
 
             // Add controller
             services.AddControllers()
