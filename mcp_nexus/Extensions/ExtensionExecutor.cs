@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 
@@ -9,7 +10,7 @@ namespace mcp_nexus.Extensions
     /// <summary>
     /// Executes extension scripts and manages their lifecycle.
     /// </summary>
-    public partial class ExtensionExecutor : IExtensionExecutor
+    public class ExtensionExecutor : IExtensionExecutor
     {
         private readonly ILogger<ExtensionExecutor> m_Logger;
         private readonly IExtensionManager m_ExtensionManager;
@@ -19,11 +20,8 @@ namespace mcp_nexus.Extensions
         private readonly ConcurrentDictionary<string, ExtensionProcessInfo> m_RunningExtensions = new();
         private readonly ConcurrentDictionary<string, IProcessHandle> m_Processes = new();
 
-        /// <summary>
-        /// Regex to strip ANSI escape sequences from process output
-        /// </summary>
-        private static readonly System.Text.RegularExpressions.Regex s_AnsiRegex =
-            MyRegex();
+        // Compiled regex to strip ANSI escape sequences from process output
+        private static readonly Regex s_AnsiRegex = new("\x1B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExtensionExecutor"/> class.
@@ -355,14 +353,7 @@ namespace mcp_nexus.Extensions
             return m_ProcessWrapper.CreateProcess(fileName, arguments, environmentVariables);
         }
 
-        /// <summary>
-        /// Removes ANSI escape sequences from a given string for clean logging.
-        /// </summary>
-        private static string StripAnsi(string input)
-        {
-            if (string.IsNullOrEmpty(input)) return input;
-            try { return s_AnsiRegex.Replace(input, string.Empty); } catch { return input; }
-        }
+        
 
         /// <summary>
         /// Finds PowerShell executable on the system.
@@ -454,8 +445,24 @@ namespace mcp_nexus.Extensions
             return m_RunningExtensions.TryGetValue(commandId, out var info) ? info : null;
         }
 
-        [GeneratedRegexAttribute("\\u001B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled)]
-        private static partial System.Text.RegularExpressions.Regex MyRegex();
+        /// <summary>
+        /// Removes ANSI escape sequences for clean logging/output.
+        /// </summary>
+        private static string StripAnsi(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return input;
+            }
+            try
+            {
+                return s_AnsiRegex.Replace(input, string.Empty);
+            }
+            catch
+            {
+                return input;
+            }
+        }
     }
 }
 
