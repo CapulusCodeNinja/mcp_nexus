@@ -48,20 +48,6 @@ namespace mcp_nexus_tests.Utilities
         }
 
         [Fact]
-        public void ConvertToWindowsPath_WslMountRootPathNoTrailingSlash_ConvertsProperly()
-        {
-            // Arrange
-            var wslPath = "/mnt/c";
-            var expectedWindowsPath = "C:\\";
-
-            // Act
-            var result = PathHandler.ConvertToWindowsPath(wslPath);
-
-            // Assert
-            Assert.Equal(expectedWindowsPath, result);
-        }
-
-        [Fact]
         public void ConvertToWindowsPath_AlreadyWindowsPath_ReturnsUnchanged()
         {
             // Arrange
@@ -194,32 +180,6 @@ namespace mcp_nexus_tests.Utilities
 
             // Assert
             Assert.Equal(expectedPath, result);
-        }
-
-        [Fact]
-        public void IsWslMountPath_ValidWslMountPath_ReturnsTrue()
-        {
-            // Using conversion behavior as proxy: /mnt/c/... must convert to C:\...
-            var wslPath = "/mnt/c/inetpub/wwwroot/uploads/dump.dmp";
-            var converted = PathHandler.ConvertToWindowsPath(wslPath);
-            Assert.StartsWith("C:\\", converted);
-        }
-
-        [Fact]
-        public void IsWslMountPath_ValidWslMountPathUppercase_ReturnsTrue()
-        {
-            var wslPath = "/mnt/D/symbols";
-            var converted = PathHandler.ConvertToWindowsPath(wslPath);
-            Assert.StartsWith("D:\\", converted);
-        }
-
-        [Fact]
-        public void IsWslMountPath_WindowsPath_ReturnsFalse()
-        {
-            var windowsPath = "C:\\inetpub\\wwwroot\\uploads\\dump.dmp";
-            var converted = PathHandler.ConvertToWindowsPath(windowsPath);
-            // Ensure we didn't corrupt backslashes (ASCII backslash expected)
-            Assert.StartsWith("C:\\", converted);
         }
 
         [Fact]

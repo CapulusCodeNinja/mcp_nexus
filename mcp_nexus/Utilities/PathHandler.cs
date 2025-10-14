@@ -58,13 +58,6 @@ namespace mcp_nexus.Utilities
                     return cached.Converted;
                 }
 
-                // Fast-path: /mnt/<drive>/... mapping without external calls
-                if (TryConvertLocalMntMapping(path, out var localConverted))
-                {
-                    m_ConversionCache[path] = (localConverted, DateTime.UtcNow + ConversionTtl);
-                    return localConverted;
-                }
-
                 // Use fstab mapping (cached) before invoking wslpath
                 if (TryConvertWithFstabMapping(path, out var fstabConverted))
                 {
@@ -88,38 +81,6 @@ namespace mcp_nexus.Utilities
                 // This ensures the system remains functional even with unexpected input
                 return path;
             }
-        }
-
-        /// <summary>
-        /// Local, zero-cost conversion for /mnt/<letter> patterns without spawning processes.
-        /// </summary>
-        private static bool TryConvertLocalMntMapping(string path, out string windowsPath)
-        {
-            windowsPath = path;
-            if (!path.StartsWith("/mnt/", StringComparison.OrdinalIgnoreCase) || path.Length < 6)
-            {
-                return false;
-            }
-
-            char letter = path[5];
-            // Expecting /mnt/<letter> or /mnt/<letter>/...
-            if (!char.IsLetter(letter))
-            {
-                return false;
-            }
-
-            string rest = path.Length > 6 ? path.Substring(6) : string.Empty; // skip "/mnt/<l>"
-            // Normalize: if rest starts with '/', drop it for root scenarios
-            if (rest.StartsWith('/')) rest = rest.Substring(1);
-
-            if (string.IsNullOrEmpty(rest))
-            {
-                windowsPath = char.ToUpperInvariant(letter) + ":\\";
-                return true;
-            }
-
-            windowsPath = char.ToUpperInvariant(letter) + ":\\" + rest.Replace('/', '\\');
-            return true;
         }
 
         /// <summary>

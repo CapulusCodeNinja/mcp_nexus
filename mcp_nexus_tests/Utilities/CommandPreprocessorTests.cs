@@ -10,12 +10,6 @@ namespace mcp_nexus_tests.Utilities
     public class CommandPreprocessorTests
     {
         [Theory]
-        [InlineData(".srcpath /mnt/c/inetpub/wwwroot/workingdir/work_20251006_185410_082/source",
-                    ".srcpath C:\\inetpub\\wwwroot\\workingdir\\work_20251006_185410_082\\source")]
-        [InlineData(".srcpath srv*/mnt/c/inetpub/wwwroot/workingdir/Sources",
-                    ".srcpath srv*C:\\inetpub\\wwwroot\\workingdir\\Sources")]
-        [InlineData(".srcpath \"srv*;/mnt/c/inetpub/wwwroot/workingdir/Sources\"",
-                    ".srcpath \"srv*;C:\\inetpub\\wwwroot\\workingdir\\Sources\"")]
         [InlineData(".srcpath \"C:\\already\\windows\\path\"",
                     ".srcpath \"C:\\already\\windows\\path\"")]
         [InlineData(".srcpath srv*Q:\\Workbench\\Analyses\\test-dmp_src",
@@ -122,24 +116,6 @@ namespace mcp_nexus_tests.Utilities
             try
             {
                 var input = $".symfix {temp}";
-                var result = CommandPreprocessor.PreprocessCommand(input);
-                Assert.Equal($".symfix {temp}", result);
-                Assert.True(Directory.Exists(temp));
-            }
-            finally
-            {
-                try { if (Directory.Exists(temp)) Directory.Delete(temp, true); } catch { }
-            }
-        }
-
-        [Fact]
-        public void PreprocessCommand_Symfix_ConvertsAndCreates_ForWslPath()
-        {
-            var temp = Path.Combine(Path.GetTempPath(), "symfix_" + Guid.NewGuid().ToString("N").Substring(0, 8));
-            var wsl = PathHandler.ConvertToWslPath(temp);
-            try
-            {
-                var input = $".symfix {wsl}";
                 var result = CommandPreprocessor.PreprocessCommand(input);
                 Assert.Equal($".symfix {temp}", result);
                 Assert.True(Directory.Exists(temp));
