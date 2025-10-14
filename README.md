@@ -2,7 +2,7 @@
 
 **AI-Powered Windows Crash Dump Analysis Platform**
 
-[![Tests](https://img.shields.io/badge/tests-1,856%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Tests](https://img.shields.io/badge/tests-1,861%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Coverage](https://img.shields.io/badge/coverage-62.62%25-good?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Build](https://img.shields.io/badge/build-0%20warnings-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
@@ -317,7 +317,7 @@ dotnet test --filter "Notification"
 
 ### Test Statistics
 
-- ✅ **1,856 total tests** (1,856 passing)
+- ✅ **1,861 total tests** (1,861 passing)
 - ✅ **62.62% line coverage** with comprehensive analysis testing
 - ✅ **0 warnings** in build (clean codebase)
 - ✅ **17+ test categories** covering all major functionality including Extensions

@@ -51,7 +51,7 @@ namespace mcp_nexus.Utilities
                 {
                     return path;
                 }
-                
+
                 // Cache lookup (only conversions are cached, not passthrough)
                 if (m_ConversionCache.TryGetValue(path, out var cached) && cached.ExpiresUtc > DateTime.UtcNow)
                 {

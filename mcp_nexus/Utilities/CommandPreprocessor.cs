@@ -24,7 +24,7 @@ namespace mcp_nexus.Utilities
                 return command;
             }
 
-            // Find and convert all WSL paths in the command
+            // Find and convert all WSL paths in the command (generic /mnt/<drive>/...)
             var result = PathPattern.Replace(command, match =>
             {
                 var wslPath = match.Value;
@@ -36,20 +36,28 @@ namespace mcp_nexus.Utilities
                 return windowsPath;
             });
 
-            // Also ensure any Windows paths that are directory arguments exist
-            // Look for .srcpath commands and create the target directory
+            // .srcpath: convert embedded srv* /mnt/... tokens and ensure local directories exist
             if (result.StartsWith(".srcpath", StringComparison.OrdinalIgnoreCase))
             {
+                // Convert srv*/mnt/... to srv*<WindowsPath>
+                result = Regex.Replace(result, @"srv\*(/mnt/[^"";\s]+)",
+                    (Match m) =>
+                    {
+                        var wsl = m.Groups[1].Value.Replace('\\', '/');
+                        var win = PathHandler.ConvertToWindowsPath(wsl);
+                        return "srv*" + win;
+                    },
+                    RegexOptions.IgnoreCase);
+
+                // Ensure directories for non-srv tokens
                 var match = Regex.Match(result, @"^\.srcpath\+?\s+(.+)$", RegexOptions.IgnoreCase);
                 if (match.Success)
                 {
                     var pathArg = match.Groups[1].Value;
-                    // Extract potential paths from the argument (handle semicolon-separated lists)
                     var paths = pathArg.Split([';', ' '], StringSplitOptions.RemoveEmptyEntries);
                     foreach (var path in paths)
                     {
                         var cleanPath = path.Trim().Trim('"').Trim('\'');
-                        // Skip srv* and similar special paths
                         if (!cleanPath.StartsWith("srv", StringComparison.OrdinalIgnoreCase))
                         {
                             EnsureDirectoryExists(cleanPath);

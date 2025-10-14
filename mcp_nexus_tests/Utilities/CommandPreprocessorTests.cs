@@ -118,7 +118,7 @@ namespace mcp_nexus_tests.Utilities
         [Fact]
         public void PreprocessCommand_Symfix_CreatesLocalStore_ForWindowsPath()
         {
-            var temp = Path.Combine(Path.GetTempPath(), "symfix_" + Guid.NewGuid().ToString("N").Substring(0,8));
+            var temp = Path.Combine(Path.GetTempPath(), "symfix_" + Guid.NewGuid().ToString("N").Substring(0, 8));
             try
             {
                 var input = $".symfix {temp}";
@@ -135,7 +135,7 @@ namespace mcp_nexus_tests.Utilities
         [Fact]
         public void PreprocessCommand_Symfix_ConvertsAndCreates_ForWslPath()
         {
-            var temp = Path.Combine(Path.GetTempPath(), "symfix_" + Guid.NewGuid().ToString("N").Substring(0,8));
+            var temp = Path.Combine(Path.GetTempPath(), "symfix_" + Guid.NewGuid().ToString("N").Substring(0, 8));
             var wsl = PathHandler.ConvertToWslPath(temp);
             try
             {

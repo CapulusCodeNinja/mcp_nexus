@@ -333,8 +333,8 @@ namespace mcp_nexus_tests.CommandQueue
             // Act
             var commandId = m_Service.QueueCommand("version");
 
-            // Wait for notification to be sent
-            await Task.Delay(100);
+            // Wait briefly for async fire-and-forget notification to complete
+            await Task.Delay(200);
 
             // Assert - The actual call uses the commandId, command, status, progress, message, result, error order
             m_MockNotificationService.Verify(
