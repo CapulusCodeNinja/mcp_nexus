@@ -18,62 +18,16 @@ Analyze the crash dump file specified by `[filename]` to determine the root caus
 
 ***
 
-### **USAGE GUIDE**
-
-#### MCP Tools 🛠️
-
-Core debugging tools for **crash dump analysis**.
-
-* **TOOLS**: Use `tools/call` method to execute debugging operations (**open session**, **run commands**, **close session**).
-* **RESOURCES**: Use `resources/read` method to access data (**command lists**, **session lists**, **documentation**, **metrics**).
-* After opening an analyze session, **WinDBG commands** can be asynchronously executed.
-* Command results can be accessed via the **'nexus_read_dump_analyze_command_result' tool** or **'List Commands' resource**.
-* Opening a session without executing commands will not have any effect.
-
-##### Available Tools
-
-| Step Title | Tool Name | Action | Input | Output | Note |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Tooling - Open Session** | `nexus_open_dump_analyze_session` | Open the analyze session for the dump file with the tool from Nexus MCP server. | `dumpPath` (string, required), `symbolsPath` (string, optional) | `sessionid` | This **EXACT sessionid IS REQUIRED TO BE USED** for all following commands in the session. |
-| **Tooling - Exec Command** | `nexus_enqueue_async_dump_analyze_command` | Use the tool to start asynchronous execution of the WinDBG commands. | `command` (string, required), `sessionId` (string, required) | `commandId` | This **EXACT commandId IS REQUIRED TO BE USED** for the 'nexus_read_dump_analyze_command_result' tool to get the asynchronous result. |
-| **Tooling - Close Session** | `nexus_close_dump_analyze_session` | Use the tool to close the analyze session of the dump file after all commands are executed or the session is not needed anymore. | `sessionId` (string, required) | *(null)* | *(null)* |
-| **Tooling - Get Command Result** | `nexus_read_dump_analyze_command_result` | Get status and results of a specific async command that was previously queued. | `sessionId` (string, required), `commandId` (string, required) | `command result and status` | Use this tool to retrieve results from commands executed with nexus_enqueue_async_dump_analyze_command |
-| **Extensions - Execute** | `nexus_enqueue_async_extension_command` | Execute an extension workflow (e.g., `stack_with_sources`) that orchestrates multiple WinDBG commands. | `sessionId` (string, required), `extensionName` (string, required), `parameters` (object, optional) | `commandId` (prefixed with `ext-`) | Poll results with `nexus_read_dump_analyze_command_result` |
-
----
-
-#### MCP Resources 📚
-
-Access data and results using the **`resources/read` method** (**NOT `tools/call`**).
-
-* Use the `resources/read` method to access these resources.
-* **Resources** provide data access; **tools** provide action execution.
-
-##### Available Resources
-
-| URI | Name | Description | Input | Note/Usage |
-| :--- | :--- | :--- | :--- | :--- |
-| `workflows` | **Crash Analysis Workflows** | Comprehensive step-by-step analysis workflows for Windows crash dump investigation. | *(null)* | Access via `MCP resources/read` method. |
-| `usage` | **Usage** | Essential tool usage information for MCP Nexus server. | *(null)* | Access via `MCP resources/read` method. |
-| `sessions` | **List Sessions** | List all debugging sessions with status and activity information. | *(null)* | Use: `sessions` resource (no parameters - returns all sessions). |
-| `commands` | **List Commands** | List async commands from all sessions with status and timing information. | *(null)* | Use: `commands` resource (no parameters - returns all commands). |
-| `metrics` | **Performance Metrics** | Get comprehensive performance metrics and statistics. | *(null)* | Use: `metrics` resource (no parameters - returns performance data). |
-| `circuits` | **Circuit Breaker Status** | Get circuit breaker status and health information. | *(null)* | Use: `circuits` resource (no parameters - returns circuit status). |
-| `health` | **System Health** | Get comprehensive system health status. | *(null)* | Use: `health` resource (no parameters - returns health status). |
-| `cache` | **Cache Statistics** | Get cache statistics and memory usage information. | *(null)* | Use: `cache` resource (no parameters - returns cache stats). |
-
-***
-
 ### 🔧 **REQUIRED ACTIONS & WORKFLOW**
 
 The following steps must be performed sequentially. Ensure all mandatory rules are followed at each stage.
 
 1. **Initialize Analysis:** Open the analyze session for the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`. Feel free to run multiple sessions in parallel if it helps to make the **analysis** faster, the system **resources** allow that and the commands are independent
 2. **Source Code Retrieval:**    
-    * Enable the source server: `.srcfix+`
     * Enable source verbosity: `.srcnoisy 3`
     * Ensure the folder exists `[workingdir]\source`
-    * Set the source server path: `.srcpath "srv*[workingdir]\source"`
+    * Set the source server path: `!home "[workingdir]\source"`
+    * Enable the source server: `.srcfix+`
     * Execute the extension to resolve sources for the current stack and frames.
     * Use tool: `nexus_enqueue_async_extension_command` with `sessionId` and `extensionName = "stack_with_sources"`.
     * The tool returns a `commandId` (prefixed with `ext-`)
