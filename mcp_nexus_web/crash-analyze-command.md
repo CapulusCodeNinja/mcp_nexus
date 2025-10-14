@@ -38,6 +38,7 @@ Core debugging tools for **crash dump analysis**.
 | **Tooling - Exec Command** | `nexus_enqueue_async_dump_analyze_command` | Use the tool to start asynchronous execution of the WinDBG commands. | `command` (string, required), `sessionId` (string, required) | `commandId` | This **EXACT commandId IS REQUIRED TO BE USED** for the 'nexus_read_dump_analyze_command_result' tool to get the asynchronous result. |
 | **Tooling - Close Session** | `nexus_close_dump_analyze_session` | Use the tool to close the analyze session of the dump file after all commands are executed or the session is not needed anymore. | `sessionId` (string, required) | *(null)* | *(null)* |
 | **Tooling - Get Command Result** | `nexus_read_dump_analyze_command_result` | Get status and results of a specific async command that was previously queued. | `sessionId` (string, required), `commandId` (string, required) | `command result and status` | Use this tool to retrieve results from commands executed with nexus_enqueue_async_dump_analyze_command |
+| **Extensions - Execute** | `nexus_enqueue_async_extension_command` | Execute an extension workflow (e.g., `stack_with_sources`) that orchestrates multiple WinDBG commands. | `sessionId` (string, required), `extensionName` (string, required), `parameters` (object, optional) | `commandId` (prefixed with `ext-`) | Poll results with `nexus_read_dump_analyze_command_result` |
 
 ---
 
@@ -68,13 +69,12 @@ Access data and results using the **`resources/read` method** (**NOT `tools/call
 The following steps must be performed sequentially. Ensure all mandatory rules are followed at each stage.
 
 1. **Initialize Analysis:** Open the analyze session for the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`. Feel free to run multiple sessions in parallel if it helps to make the **analysis** faster, the system **resources** allow that and the commands are independent
-2. **Source Code Retrieval:**
-    * Set the source server path: `.srcpath "srv*;[workingdir]\source"`
-    * Enable source verbosity: `.srcnoisy 3`
-    * Enable the source server: `.srcfix+`
-    * Attempt to get the source for the analysis: `lsa .`
-    * If source is not found, try `lsa [ADDRESS]` where `ADDRESS` is the instruction address.
-    * Note: Source files (if found) will be in `[workingdir]/source`.
+2. **Source Code Retrieval (via Extension `stack_with_sources`):**
+    * Execute the extension to resolve sources for the current stack and frames.
+    * Use tool: `nexus_enqueue_async_extension_command` with `sessionId` and `extensionName = "stack_with_sources"` (add optional parameters if the extension defines any).
+    * The tool returns a `commandId` (prefixed with `ext-`). Poll results via `nexus_read_dump_analyze_command_result` using the same `sessionId` and returned `commandId`.
+    * The extension orchestrates WinDBG callbacks internally (e.g., `kL`, `lsa`) and aggregates results. It does not block the command queue; each callback is queued and executed sequentially.
+    * When completed, the result contains the collected source references for stack frames. Include these in the report's "Source Code at Faulting Position" section.
 3. **Comprehensive and in-depth Analysis:**
     * Perform a thorough analysis to pinpoint the **exact root cause**.
     * Gather all helpful information from the dump.
