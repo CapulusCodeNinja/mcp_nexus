@@ -114,13 +114,32 @@ namespace mcp_nexus.Utilities
             }
 
             // Handle !homedir (set home directory for extensions and configuration) - ensure directory exists
+            // Convert backslashes to forward slashes to work around CDB's path handling quirks
             else if (result.StartsWith("!homedir", StringComparison.OrdinalIgnoreCase))
             {
-                var match = Regex.Match(result, @"^!homedir\s+(.+)$", RegexOptions.IgnoreCase);
+                var match = Regex.Match(result, @"^(!homedir\s+)(.+)$", RegexOptions.IgnoreCase);
                 if (match.Success)
                 {
-                    var path = match.Groups[1].Value.Trim().Trim('"').Trim('\'');
+                    var commandPrefix = match.Groups[1].Value;
+                    var pathArg = match.Groups[2].Value;
+                    var hasQuotes = pathArg.StartsWith('"') && pathArg.EndsWith('"');
+                    var path = pathArg.Trim().Trim('"').Trim('\'');
+
+                    // Ensure directory exists before converting slashes
                     EnsureDirectoryExists(path);
+
+                    // Convert backslashes to forward slashes (CDB handles these better)
+                    var pathWithForwardSlashes = path.Replace('\\', '/');
+
+                    // Reconstruct command with forward slashes
+                    if (hasQuotes)
+                    {
+                        result = $"{commandPrefix}\"{pathWithForwardSlashes}\"";
+                    }
+                    else
+                    {
+                        result = $"{commandPrefix}{pathWithForwardSlashes}";
+                    }
                 }
             }
 

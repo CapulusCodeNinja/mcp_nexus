@@ -202,13 +202,13 @@ namespace mcp_nexus_tests.Utilities
         }
 
         [Theory]
-        [InlineData("!homedir C:\\my\\home\\dir", "!homedir C:\\my\\home\\dir")]
-        [InlineData("!homedir \"C:\\my\\home\\dir\"", "!homedir \"C:\\my\\home\\dir\"")]
-        [InlineData("!homedir /mnt/c/my/home/dir", "!homedir C:\\my\\home\\dir")]
-        [InlineData("!homedir /mnt/analysis/test-path", "!homedir C:\\analysis\\test-path")]
-        [InlineData("!homedir /mnt/share/folder", "!homedir C:\\share\\folder")]
-        [InlineData("!homedir \"/mnt/share/folder\"", "!homedir \"C:\\share\\folder\"")]
-        [InlineData("!HOMEDIR C:\\test", "!HOMEDIR C:\\test")]
+        [InlineData("!homedir C:\\my\\home\\dir", "!homedir C:/my/home/dir")]
+        [InlineData("!homedir \"C:\\my\\home\\dir\"", "!homedir \"C:/my/home/dir\"")]
+        [InlineData("!homedir /mnt/c/my/home/dir", "!homedir C:/my/home/dir")]
+        [InlineData("!homedir /mnt/analysis/test-path", "!homedir C:/analysis/test-path")]
+        [InlineData("!homedir /mnt/share/folder", "!homedir C:/share/folder")]
+        [InlineData("!homedir \"/mnt/share/folder\"", "!homedir \"C:/share/folder\"")]
+        [InlineData("!HOMEDIR C:\\test", "!HOMEDIR C:/test")]
         public void PreprocessCommand_Homedir_ConvertsWslPaths(string input, string expected)
         {
             // Arrange
@@ -235,6 +235,7 @@ namespace mcp_nexus_tests.Utilities
             // Arrange
             var tempDir = Path.Combine(Path.GetTempPath(), "test_homedir_" + Guid.NewGuid().ToString("N")[..8]);
             var input = $"!homedir {tempDir}";
+            var expectedPath = tempDir.Replace('\\', '/');
 
             try
             {
@@ -248,7 +249,7 @@ namespace mcp_nexus_tests.Utilities
                 var result = m_CommandPreprocessor.PreprocessCommand(input);
 
                 // Assert
-                Assert.Equal($"!homedir {tempDir}", result);
+                Assert.Equal($"!homedir {expectedPath}", result);
                 Assert.True(Directory.Exists(tempDir), "Directory should be created automatically");
             }
             finally
@@ -267,6 +268,7 @@ namespace mcp_nexus_tests.Utilities
             // Arrange
             var tempDir = Path.Combine(Path.GetTempPath(), "test_homedir_existing_" + Guid.NewGuid().ToString("N")[..8]);
             var input = $"!homedir \"{tempDir}\"";
+            var expectedPath = tempDir.Replace('\\', '/');
 
             try
             {
@@ -277,7 +279,7 @@ namespace mcp_nexus_tests.Utilities
                 var result = m_CommandPreprocessor.PreprocessCommand(input);
 
                 // Assert
-                Assert.Equal($"!homedir \"{tempDir}\"", result);
+                Assert.Equal($"!homedir \"{expectedPath}\"", result);
                 Assert.True(Directory.Exists(tempDir), "Directory should still exist");
             }
             finally
