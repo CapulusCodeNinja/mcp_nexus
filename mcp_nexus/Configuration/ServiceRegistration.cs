@@ -28,6 +28,9 @@ namespace mcp_nexus.Configuration
         /// <param name="serviceMode">Whether the application is running in service mode.</param>
         public static void RegisterServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath, bool serviceMode = false)
         {
+            // Ensure NLog picks up any test-provided configuration (e.g., memory targets)
+            // When tests inject a temporary NLog configuration (e.g., MemoryTarget), ensure we use it immediately
+            LogManager.ReconfigExistingLoggers();
             var bootstrapLogger = LogManager.GetCurrentClassLogger();
             bootstrapLogger.Info("Registering services...");
 

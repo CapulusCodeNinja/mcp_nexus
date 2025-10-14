@@ -12,6 +12,7 @@ namespace mcp_nexus.Notifications
         private readonly IMcpNotificationService m_notificationService;
         private readonly List<string> m_subscriptionIds = new();
         private bool m_isInitialized = false;
+        private readonly ILogger<StdioNotificationBridge>? m_Logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StdioNotificationBridge"/> class.
@@ -32,7 +33,7 @@ namespace mcp_nexus.Notifications
         public StdioNotificationBridge(ILogger<StdioNotificationBridge> logger, IMcpNotificationService notificationService)
         {
             m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
-            // Logger parameter for compatibility with tests
+            m_Logger = logger;
         }
 
         /// <summary>
@@ -55,7 +56,7 @@ namespace mcp_nexus.Notifications
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error sending notification: {ex.Message}");
+                m_Logger?.LogError(ex, "Error sending notification");
             }
         }
 

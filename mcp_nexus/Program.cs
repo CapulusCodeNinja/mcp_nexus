@@ -107,7 +107,9 @@ namespace mcp_nexus
                     }
                     else
                     {
+                        var logger = NLog.LogManager.GetCurrentClassLogger();
                         await Console.Error.WriteLineAsync("ERROR: Service installation is only supported on Windows.");
+                        logger.Error("Service installation is only supported on Windows");
                         Environment.Exit(1);
                     }
                     return;
@@ -143,7 +145,9 @@ namespace mcp_nexus
                     }
                     else
                     {
+                        var logger = NLog.LogManager.GetCurrentClassLogger();
                         await Console.Error.WriteLineAsync("ERROR: Service uninstallation is only supported on Windows.");
+                        logger.Error("Service uninstallation is only supported on Windows");
                         Environment.Exit(1);
                     }
                     return;
@@ -176,7 +180,9 @@ namespace mcp_nexus
                     }
                     else
                     {
+                        var logger = NLog.LogManager.GetCurrentClassLogger();
                         await Console.Error.WriteLineAsync("ERROR: Service update is only supported on Windows.");
+                        logger.Error("Service update is only supported on Windows");
                     }
                     return;
                 }
@@ -187,7 +193,9 @@ namespace mcp_nexus
                 // Validate service mode is only used on Windows
                 if (commandLineArgs.ServiceMode && !OperatingSystem.IsWindows())
                 {
+                    var logger = NLog.LogManager.GetCurrentClassLogger();
                     await Console.Error.WriteLineAsync("ERROR: Service mode is only supported on Windows.");
+                    logger.Error("Service mode is only supported on Windows");
                     return;
                 }
 
@@ -205,6 +213,7 @@ namespace mcp_nexus
                 // Comprehensive exception logging to help diagnose crashes
                 try
                 {
+                    var logger = NLog.LogManager.GetCurrentClassLogger();
                     await Console.Error.WriteLineAsync("================================================================================");
                     await Console.Error.WriteLineAsync("FATAL UNHANDLED EXCEPTION IN MCP NEXUS");
                     await Console.Error.WriteLineAsync("================================================================================");
@@ -230,6 +239,9 @@ namespace mcp_nexus
                     await Console.Error.WriteLineAsync($".NET Version: {Environment.Version}");
                     await Console.Error.WriteLineAsync($"Working Directory: {Environment.CurrentDirectory}");
                     await Console.Error.WriteLineAsync("================================================================================");
+
+                    // Also log to file for service-mode visibility
+                    logger.Fatal(ex, "FATAL UNHANDLED EXCEPTION IN MCP NEXUS");
                 }
                 catch
                 {
@@ -777,7 +789,8 @@ namespace mcp_nexus
 
             // CRITICAL: In stdio mode, stdout is reserved for MCP protocol
             // All console output must go to stderr
-            await Console.Error.WriteLineAsync("Configuring for stdio transport...");
+            var stdioLogger = NLog.LogManager.GetCurrentClassLogger();
+            stdioLogger.Info("Configuring for stdio transport...");
             var builder = Host.CreateApplicationBuilder(args);
 
             LoggingSetup.ConfigureLogging(builder.Logging, false, builder.Configuration);
@@ -791,7 +804,7 @@ namespace mcp_nexus
             ServiceRegistration.RegisterServices(builder.Services, builder.Configuration, commandLineArgs.CustomCdbPath);
             ConfigureStdioServices(builder.Services);
 
-            await Console.Error.WriteLineAsync("Building application host...");
+            stdioLogger.Info("Building application host...");
             var host = builder.Build();
 
             // CRITICAL FIX: Initialize the notification bridge after host is built
@@ -799,19 +812,18 @@ namespace mcp_nexus
             {
                 var notificationBridge = host.Services.GetRequiredService<IStdioNotificationBridge>();
                 await notificationBridge.InitializeAsync();
-                await Console.Error.WriteLineAsync("Notification bridge initialized for stdio MCP server");
+                stdioLogger.Info("Notification bridge initialized for stdio MCP server");
 
                 // Send standard MCP tools list changed notification on startup
                 var notificationService = host.Services.GetRequiredService<IMcpNotificationService>();
                 await notificationService.NotifyToolsListChangedAsync();
-                await Console.Error.WriteLineAsync("Sent tools list changed notification to MCP clients");
+                stdioLogger.Info("Sent tools list changed notification to MCP clients");
             }
             catch (Exception ex)
             {
-                await Console.Error.WriteLineAsync($"Warning: Failed to initialize notification bridge: {ex.Message}");
+                stdioLogger.Warn(ex, "Failed to initialize notification bridge");
             }
-
-            await Console.Error.WriteLineAsync("Starting MCP Nexus stdio server...");
+            stdioLogger.Info("Starting MCP Nexus stdio server...");
             await host.RunAsync();
         }
 
@@ -824,7 +836,8 @@ namespace mcp_nexus
         /// <param name="services">The service collection to configure.</param>
         private static void ConfigureStdioServices(IServiceCollection services)
         {
-            Console.Error.WriteLine("Configuring MCP server for stdio...");
+            var logger = NLog.LogManager.GetCurrentClassLogger();
+            logger.Info("Configuring MCP server for stdio...");
 
             // Use official SDK for stdio mode
             services.AddMcpServer()
@@ -835,7 +848,7 @@ namespace mcp_nexus
             // CRITICAL FIX: Bridge notification service to stdio MCP server
             services.AddSingleton<IStdioNotificationBridge, StdioNotificationBridge>();
 
-            Console.Error.WriteLine("MCP server configured with stdio transport, tools, and resources from assembly");
+            logger.Info("MCP server configured with stdio transport, tools, and resources from assembly");
         }
 
         /// <summary>
