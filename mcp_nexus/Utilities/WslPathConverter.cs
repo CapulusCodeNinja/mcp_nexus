@@ -111,8 +111,15 @@ namespace mcp_nexus.Utilities
                     string? root = null;
                     if (src.Length >= 2 && src[1] == ':' && char.IsLetter(src[0]))
                     {
-                        // e.g., C:
-                        root = char.ToUpperInvariant(src[0]) + ":\\";
+                        // Handle both "C:" and "C:/some/path"
+                        root = src.Replace('/', '\\');
+                        // Ensure drive letter is uppercase
+                        root = char.ToUpperInvariant(root[0]) + root.Substring(1);
+                        // Ensure backslash after drive letter
+                        if (root.Length == 2 || (root.Length > 2 && root[2] != '\\'))
+                        {
+                            root = root.Substring(0, 2) + '\\' + root.Substring(2).TrimStart('\\');
+                        }
                     }
                     else if (src.StartsWith("//") || src.StartsWith("\\\\"))
                     {
