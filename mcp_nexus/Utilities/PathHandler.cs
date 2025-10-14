@@ -7,9 +7,9 @@ namespace mcp_nexus.Utilities
     /// This class provides centralized logic for converting WSL-style paths (like /mnt/c/...)
     /// to Windows-style paths (like C:\...) for use with Windows debugging tools.
     /// </summary>
-    public static class PathHandler
+    public static partial class PathHandler
     {
-        private static readonly Regex WslPathRegex = new(@"^/mnt/([a-zA-Z])(?:/(.*))?$", RegexOptions.Compiled);
+        private static readonly Regex WslPathRegex = MyRegex();
 
         /// <summary>
         /// Converts a WSL-style path to Windows format if needed.
@@ -85,12 +85,12 @@ namespace mcp_nexus.Utilities
                 if (path.Length >= 2 && path[1] == ':' && char.IsLetter(path[0]))
                 {
                     var driveLetter = char.ToLower(path[0]);
-                    var restOfPath = path.Length > 2 ? path.Substring(2).Replace('\\', '/') : "";
+                    var restOfPath = path.Length > 2 ? path[2..].Replace('\\', '/') : "";
 
                     // Remove leading slash if present (e.g., C:\ -> /mnt/c, not /mnt/c/)
                     if (!string.IsNullOrEmpty(restOfPath) && restOfPath.StartsWith("/"))
                     {
-                        restOfPath = restOfPath.Substring(1);
+                        restOfPath = restOfPath[1..];
                     }
 
                     return string.IsNullOrEmpty(restOfPath) ? $"/mnt/{driveLetter}" : $"/mnt/{driveLetter}/{restOfPath}";
@@ -156,10 +156,10 @@ namespace mcp_nexus.Utilities
         {
             if (paths == null)
             {
-                return Array.Empty<string>();
+                return [];
             }
 
-            return paths.Select(NormalizeForWindows).ToArray();
+            return [.. paths.Select(NormalizeForWindows)];
         }
 
         /// <summary>
@@ -176,7 +176,7 @@ namespace mcp_nexus.Utilities
             var normalizedPath = path.Replace('\\', '/').ToLowerInvariant();
 
             // Dangerous patterns that could be used for path traversal
-            string[] dangerousPatterns = {
+            string[] dangerousPatterns = [
                 "../",      // Parent directory traversal
                 "..\\",     // Windows parent directory traversal
                 "~",        // Home directory expansion
@@ -185,11 +185,11 @@ namespace mcp_nexus.Utilities
                 "\0",       // Null byte injection
                 "\r",       // Carriage return
                 "\n"        // Line feed
-            };
+            ];
 
             foreach (var pattern in dangerousPatterns)
             {
-                if (normalizedPath.Contains(pattern.ToLowerInvariant()))
+                if (normalizedPath.Contains(pattern, StringComparison.InvariantCultureIgnoreCase))
                 {
                     throw new ArgumentException($"Path contains potentially dangerous pattern '{pattern}': {path}", nameof(path));
                 }
@@ -214,6 +214,9 @@ namespace mcp_nexus.Utilities
                 throw new ArgumentException($"Path contains invalid control characters: {path}", nameof(path));
             }
         }
+
+        [GeneratedRegex(@"^/mnt/([a-zA-Z])(?:/(.*))?$", RegexOptions.Compiled)]
+        private static partial Regex MyRegex();
     }
 }
 

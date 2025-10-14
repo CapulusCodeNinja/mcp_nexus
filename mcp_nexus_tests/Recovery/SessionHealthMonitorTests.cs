@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.Recovery
         public void SessionHealthMonitor_Class_Exists()
         {
             // This test verifies that the SessionHealthMonitor class exists and can be instantiated
-            Assert.True(typeof(SessionHealthMonitor) != null);
+            Assert.NotNull(typeof(SessionHealthMonitor));
         }
     }
 }

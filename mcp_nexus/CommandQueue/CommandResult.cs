@@ -3,15 +3,24 @@ namespace mcp_nexus.CommandQueue
     /// <summary>
     /// Implementation of command execution result
     /// </summary>
-    public class CommandResult : ICommandResult
+    /// <remarks>
+    /// Initializes a new command result
+    /// </remarks>
+    /// <param name="isSuccess">Whether the command executed successfully</param>
+    /// <param name="output">Command output</param>
+    /// <param name="errorMessage">Error message if execution failed</param>
+    /// <param name="duration">Execution duration</param>
+    /// <param name="data">Additional result data</param>
+    public class CommandResult(bool isSuccess, string output, string? errorMessage = null,
+        TimeSpan duration = default, Dictionary<string, object>? data = null) : ICommandResult
     {
         #region Private Fields
 
-        private readonly bool m_isSuccess;
-        private readonly string m_output;
-        private readonly string? m_errorMessage;
-        private readonly TimeSpan m_duration;
-        private readonly Dictionary<string, object> m_data;
+        private readonly bool m_isSuccess = isSuccess;
+        private readonly string m_output = output ?? string.Empty;
+        private readonly string? m_errorMessage = errorMessage;
+        private readonly TimeSpan m_duration = duration;
+        private readonly Dictionary<string, object> m_data = data ?? [];
 
         #endregion
 
@@ -33,26 +42,7 @@ namespace mcp_nexus.CommandQueue
         public IReadOnlyDictionary<string, object> Data => m_data.AsReadOnly();
 
         #endregion
-
         #region Constructor
-
-        /// <summary>
-        /// Initializes a new command result
-        /// </summary>
-        /// <param name="isSuccess">Whether the command executed successfully</param>
-        /// <param name="output">Command output</param>
-        /// <param name="errorMessage">Error message if execution failed</param>
-        /// <param name="duration">Execution duration</param>
-        /// <param name="data">Additional result data</param>
-        public CommandResult(bool isSuccess, string output, string? errorMessage = null,
-            TimeSpan duration = default, Dictionary<string, object>? data = null)
-        {
-            m_isSuccess = isSuccess;
-            m_output = output ?? string.Empty;
-            m_errorMessage = errorMessage;
-            m_duration = duration;
-            m_data = data ?? new Dictionary<string, object>();
-        }
 
         #endregion
 

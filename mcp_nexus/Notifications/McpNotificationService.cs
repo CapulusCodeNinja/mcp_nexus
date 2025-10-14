@@ -12,8 +12,8 @@ namespace mcp_nexus.Notifications
     {
         #region Private Fields
 
-        private readonly Dictionary<string, List<Func<object, Task>>> m_handlers = new();
-        private readonly Dictionary<string, string> m_subscriptionIds = new(); // Maps subscription ID to event type
+        private readonly Dictionary<string, List<Func<object, Task>>> m_handlers = [];
+        private readonly Dictionary<string, string> m_subscriptionIds = []; // Maps subscription ID to event type
         private readonly object m_lock = new();
         private readonly ILogger<McpNotificationService>? m_logger;
 
@@ -74,7 +74,7 @@ namespace mcp_nexus.Notifications
                 }
 
                 // Create a copy to avoid issues with handlers being modified during iteration
-                handlers = new List<Func<object, Task>>(handlers!);
+                handlers = [.. handlers!];
             }
 
             // Wrap the data in an McpNotification object for test compatibility
@@ -104,15 +104,14 @@ namespace mcp_nexus.Notifications
             if (string.IsNullOrEmpty(eventType))
                 throw new ArgumentException("Event type cannot be null or empty");
 
-            if (handler == null)
-                throw new ArgumentNullException(nameof(handler));
+            ArgumentNullException.ThrowIfNull(handler);
 
             var subscriptionId = Guid.NewGuid().ToString();
 
             lock (m_lock)
             {
                 if (!m_handlers.ContainsKey(eventType))
-                    m_handlers[eventType] = new List<Func<object, Task>>();
+                    m_handlers[eventType] = [];
 
                 m_handlers[eventType].Add(handler);
                 m_subscriptionIds[subscriptionId] = eventType;
@@ -139,24 +138,23 @@ namespace mcp_nexus.Notifications
             if (string.IsNullOrEmpty(eventType))
                 throw new ArgumentException("Event type cannot be null or empty");
 
-            if (handler == null)
-                throw new ArgumentNullException(nameof(handler));
+            ArgumentNullException.ThrowIfNull(handler);
 
             var subscriptionId = Guid.NewGuid().ToString();
 
             lock (m_lock)
             {
                 if (!m_handlers.ContainsKey(eventType))
-                    m_handlers[eventType] = new List<Func<object, Task>>();
+                    m_handlers[eventType] = [];
 
                 // Convert McpNotification handler to object handler
-                Func<object, Task> objectHandler = async (obj) =>
+                async Task objectHandler(object obj)
                 {
                     if (obj is McpNotification notification)
                     {
                         await handler(notification);
                     }
-                };
+                }
                 m_handlers[eventType].Add(objectHandler);
                 m_subscriptionIds[subscriptionId] = eventType;
 
@@ -781,7 +779,7 @@ namespace mcp_nexus.Notifications
             if (input.Length == 1)
                 return input.ToLowerInvariant();
 
-            return char.ToLowerInvariant(input[0]) + input.Substring(1);
+            return char.ToLowerInvariant(input[0]) + input[1..];
         }
 
         /// <summary>

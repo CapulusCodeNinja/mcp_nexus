@@ -53,13 +53,13 @@ namespace mcp_nexus.Extensions
         /// List of required modules/dependencies.
         /// </summary>
         [JsonPropertyName("requires")]
-        public List<string> Requires { get; set; } = new();
+        public List<string> Requires { get; set; } = [];
 
         /// <summary>
         /// Parameter definitions for the extension.
         /// </summary>
         [JsonPropertyName("parameters")]
-        public List<ExtensionParameter> Parameters { get; set; } = new();
+        public List<ExtensionParameter> Parameters { get; set; } = [];
 
         /// <summary>
         /// Absolute path to the extension directory (set at runtime).

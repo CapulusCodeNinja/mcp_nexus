@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.Session
         public void SessionManagerConfiguration_Class_Exists()
         {
             // This test verifies that the SessionManagerConfiguration class exists and can be instantiated
-            Assert.True(typeof(SessionManagerConfiguration) != null);
+            Assert.NotNull(typeof(SessionManagerConfiguration));
         }
     }
 }

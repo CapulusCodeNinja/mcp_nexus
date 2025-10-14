@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void PrivilegeAnalysisResult_Class_Exists()
         {
             // This test verifies that the PrivilegeAnalysisResult class exists and can be instantiated
-            Assert.True(typeof(PrivilegeAnalysisResult) != null);
+            Assert.NotNull(typeof(PrivilegeAnalysisResult));
         }
 
         [Fact]
@@ -42,10 +42,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void HasRequiredPrivileges_CanBeSetAndRetrieved()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.HasRequiredPrivileges = true;
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                HasRequiredPrivileges = true
+            };
 
             // Assert
             Assert.True(result.HasRequiredPrivileges);
@@ -55,10 +56,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void IsAdministrator_CanBeSetAndRetrieved()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.IsAdministrator = true;
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                IsAdministrator = true
+            };
 
             // Assert
             Assert.True(result.IsAdministrator);
@@ -85,10 +87,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void MissingPrivileges_WithNull_BecomesNull()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.MissingPrivileges = null!;
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                MissingPrivileges = null!
+            };
 
             // Assert
             Assert.Null(result.MissingPrivileges);
@@ -116,10 +119,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void RequiredPrivileges_WithNull_BecomesNull()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.RequiredPrivileges = null!;
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                RequiredPrivileges = null!
+            };
 
             // Assert
             Assert.Null(result.RequiredPrivileges);
@@ -148,10 +152,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void AvailablePrivileges_WithNull_BecomesNull()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.AvailablePrivileges = null!;
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                AvailablePrivileges = null!
+            };
 
             // Assert
             Assert.Null(result.AvailablePrivileges);
@@ -175,10 +180,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void ErrorMessage_WithNull_BecomesNull()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.ErrorMessage = null!;
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                ErrorMessage = null!
+            };
 
             // Assert
             Assert.Null(result.ErrorMessage);
@@ -211,10 +217,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void PrivilegeStatus_WithNull_BecomesNull()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.PrivilegeStatus = null!;
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                PrivilegeStatus = null!
+            };
 
             // Assert
             Assert.Null(result.PrivilegeStatus);
@@ -290,10 +297,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void MissingPrivileges_WithEmptyArray_WorksCorrectly()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.MissingPrivileges = Array.Empty<string>();
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                MissingPrivileges = []
+            };
 
             // Assert
             Assert.NotNull(result.MissingPrivileges);
@@ -304,10 +312,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void RequiredPrivileges_WithEmptyArray_WorksCorrectly()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.RequiredPrivileges = Array.Empty<string>();
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                RequiredPrivileges = []
+            };
 
             // Assert
             Assert.NotNull(result.RequiredPrivileges);
@@ -318,10 +327,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void AvailablePrivileges_WithEmptyArray_WorksCorrectly()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.AvailablePrivileges = Array.Empty<string>();
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                AvailablePrivileges = []
+            };
 
             // Assert
             Assert.NotNull(result.AvailablePrivileges);
@@ -332,10 +342,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void PrivilegeStatus_WithEmptyDictionary_WorksCorrectly()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.PrivilegeStatus = new Dictionary<string, bool>();
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                PrivilegeStatus = []
+            };
 
             // Assert
             Assert.NotNull(result.PrivilegeStatus);
@@ -346,10 +357,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void ErrorMessage_WithEmptyString_WorksCorrectly()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.ErrorMessage = string.Empty;
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                ErrorMessage = string.Empty
+            };
 
             // Assert
             Assert.Equal(string.Empty, result.ErrorMessage);
@@ -411,10 +423,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void AnalysisTime_WithMinValue_WorksCorrectly()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.AnalysisTime = DateTime.MinValue;
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                AnalysisTime = DateTime.MinValue
+            };
 
             // Assert
             Assert.Equal(DateTime.MinValue, result.AnalysisTime);
@@ -424,10 +437,11 @@ namespace mcp_nexus_tests.Infrastructure
         public void AnalysisTime_WithMaxValue_WorksCorrectly()
         {
             // Arrange
-            var result = new PrivilegeAnalysisResult();
-
-            // Act
-            result.AnalysisTime = DateTime.MaxValue;
+            var result = new PrivilegeAnalysisResult
+            {
+                // Act
+                AnalysisTime = DateTime.MaxValue
+            };
 
             // Assert
             Assert.Equal(DateTime.MaxValue, result.AnalysisTime);
@@ -457,12 +471,12 @@ namespace mcp_nexus_tests.Infrastructure
             // Act
             result1.HasRequiredPrivileges = true;
             result1.IsAdministrator = true;
-            result1.MissingPrivileges = new[] { "SeDebugPrivilege" };
+            result1.MissingPrivileges = ["SeDebugPrivilege"];
             result1.ErrorMessage = "Error 1";
 
             result2.HasRequiredPrivileges = false;
             result2.IsAdministrator = false;
-            result2.MissingPrivileges = new[] { "SeLoadDriverPrivilege" };
+            result2.MissingPrivileges = ["SeLoadDriverPrivilege"];
             result2.ErrorMessage = "Error 2";
 
             // Assert

@@ -1,24 +1,15 @@
 using System.CommandLine;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Http.Json;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using NLog.Web;
 using AspNetCoreRateLimit;
 using ModelContextProtocol.Server;
 using ModelContextProtocol.AspNetCore;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using mcp_nexus.Constants;
-using mcp_nexus.Debugger;
-using mcp_nexus.CommandQueue;
 using mcp_nexus.Notifications;
-using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure;
-using mcp_nexus.Session;
-using mcp_nexus.Tools;
 using mcp_nexus.Middleware;
 using mcp_nexus.Configuration;
 
@@ -402,7 +393,7 @@ namespace mcp_nexus
             if (!string.IsNullOrEmpty(args.CustomCdbPath))
             {
                 var cdbPath = args.CustomCdbPath.Length > (contentWidth - 12) ?
-                    ApplicationConstants.PathTruncationPrefix + args.CustomCdbPath.Substring(args.CustomCdbPath.Length - (contentWidth - 15)) :
+                    ApplicationConstants.PathTruncationPrefix + args.CustomCdbPath[^(contentWidth - 15)..] :
                     args.CustomCdbPath;
                 banner.AppendLine(FormatBannerLine("CDB Path:", cdbPath, contentWidth));
             }
@@ -448,7 +439,7 @@ namespace mcp_nexus
             var content = $"{label,-12} {value}";
             if (content.Length > contentWidth)
             {
-                content = content.Substring(0, contentWidth);
+                content = content[..contentWidth];
             }
             return $"* {content.PadRight(contentWidth)} *";
         }
@@ -464,7 +455,7 @@ namespace mcp_nexus
         {
             if (text.Length > contentWidth)
             {
-                text = text.Substring(0, contentWidth);
+                text = text[..contentWidth];
             }
             // Center the text within the content width
             var totalPadding = contentWidth - text.Length;
@@ -868,7 +859,6 @@ namespace mcp_nexus
             app.UseIpRateLimiting();
             app.UseCors();
             app.UseRouting();
-
             // Add logging middleware if debug logging is enabled
             var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
             if (ShouldEnableJsonRpcLogging(loggerFactory))
@@ -880,6 +870,9 @@ namespace mcp_nexus
             {
                 Console.WriteLine("JSON-RPC debug logging middleware disabled (not in debug mode)");
             }
+
+            // Map MVC controllers (e.g., extension-callback endpoints)
+            app.MapControllers();
 
             // Use the official SDK's HTTP transport with MapMcp
             app.MapMcp();
@@ -913,11 +906,11 @@ namespace mcp_nexus
                 {
                     if (line.StartsWith("event: "))
                     {
-                        formattedLines.Add($"event: {line.Substring(7)}");
+                        formattedLines.Add($"event: {line[7..]}");
                     }
                     else if (line.StartsWith("data: "))
                     {
-                        var jsonData = line.Substring(6);
+                        var jsonData = line[6..];
                         var formattedJson = FormatJsonForLogging(jsonData);
                         formattedLines.Add($"data: {formattedJson}");
                     }
@@ -951,13 +944,13 @@ namespace mcp_nexus
             catch (JsonException ex)
             {
                 // Log the parsing error for debugging and return sanitized version
-                var sanitizedJson = json.Length > 1000 ? json.Substring(0, 1000) + "..." : json;
+                var sanitizedJson = json.Length > 1000 ? json[..1000] + "..." : json;
                 return $"[Invalid JSON - {ex.Message}]: {sanitizedJson}";
             }
             catch (Exception ex)
             {
                 // Handle any other exceptions
-                return $"[JSON formatting error - {ex.Message}]: {json.Substring(0, Math.Min(json.Length, 100))}...";
+                return $"[JSON formatting error - {ex.Message}]: {json[..Math.Min(json.Length, 100)]}...";
             }
         }
 

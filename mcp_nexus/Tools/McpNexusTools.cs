@@ -25,7 +25,7 @@ namespace mcp_nexus.Tools
     /// and crash dump analysis capabilities as MCP tools for AI clients to use.
     /// </summary>
     [McpServerToolType]
-    public static class McpNexusTools
+    public static partial class McpNexusTools
     {
         /// <summary>
         /// Creates a new debugging session for a crash dump file.
@@ -73,14 +73,14 @@ namespace mcp_nexus.Tools
                 }
 
                 var sessionId = await sessionManager.CreateSessionAsync(dumpPath, symbolsPath);
-                
+
                 // CRITICAL: Validate session was actually created and exists
                 if (string.IsNullOrWhiteSpace(sessionId))
                 {
                     logger.LogError("Session creation returned null or empty session ID");
                     throw new InvalidOperationException("Session creation failed - no session ID returned");
                 }
-                
+
                 // Verify session exists in session manager (only if session creation succeeded)
                 try
                 {
@@ -91,7 +91,7 @@ namespace mcp_nexus.Tools
                         throw new InvalidOperationException($"Session {sessionId} was created but context is null");
                     }
                 }
-                catch (Exception ex) when (!(ex is InvalidOperationException))
+                catch (Exception ex) when (ex is not InvalidOperationException)
                 {
                     // If GetSessionContext fails for any reason other than our validation, log but don't fail
                     logger.LogWarning(ex, "Could not verify session context for {SessionId}, but session creation succeeded", sessionId);
@@ -99,7 +99,7 @@ namespace mcp_nexus.Tools
 
                 var response = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     dumpFile = Path.GetFileName(dumpPath),
                     commandId = (string?)null,
                     status = "Success",
@@ -168,7 +168,7 @@ namespace mcp_nexus.Tools
                 {
                     var notFoundResponse = new
                     {
-                        sessionId = sessionId,
+                        sessionId,
                         status = "Failed",
                         operation = "nexus_close_dump_analyze_session",
                         message = $"Session {sessionId} not found. Use 'sessions' resource to see available sessions."
@@ -182,7 +182,7 @@ namespace mcp_nexus.Tools
 
                 var response = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     status = "Success",
                     operation = "nexus_close_dump_analyze_session",
                     message = $"Session {sessionId} closed successfully"
@@ -196,7 +196,7 @@ namespace mcp_nexus.Tools
                 logger.LogWarning("Invalid session ID (null): {Message}", ex.Message);
                 var errorResponse = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     status = "Failed",
                     operation = "nexus_close_dump_analyze_session",
                     message = "Session ID cannot be null"
@@ -208,7 +208,7 @@ namespace mcp_nexus.Tools
                 logger.LogWarning("Invalid session ID (empty/whitespace): {Message}", ex.Message);
                 var errorResponse = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     status = "Failed",
                     operation = "nexus_close_dump_analyze_session",
                     message = "Session ID cannot be empty or whitespace"
@@ -221,7 +221,7 @@ namespace mcp_nexus.Tools
 
                 var errorResponse = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     status = "Failed",
                     operation = "nexus_close_dump_analyze_session",
                     message = $"Failed to close session: {ex.Message}"
@@ -283,7 +283,7 @@ namespace mcp_nexus.Tools
                     {
                         var queueMissingResponse = new
                         {
-                            sessionId = sessionId,
+                            sessionId,
                             commandId = (string?)null,
                             status = "Failed",
                             operation = "nexus_enqueue_async_dump_analyze_command",
@@ -315,15 +315,15 @@ namespace mcp_nexus.Tools
 
                 var response = new
                 {
-                    sessionId = sessionId,
-                    commandId = commandId,
-                    command = command,
+                    sessionId,
+                    commandId,
+                    command,
                     status = "Queued",
                     operation = "nexus_enqueue_async_dump_analyze_command",
                     message = $"Command queued successfully. Queue position: {queuePosition + 1} of {totalInQueue}. Use the 'commands' resource to monitor all commands or the 'nexus_read_dump_analyze_command_result' tool to get specific results.",
                     timeoutMinutes = 10,
                     queuePosition = queuePosition + 1,
-                    totalInQueue = totalInQueue
+                    totalInQueue
                 };
 
                 logger.LogInformation("Command {CommandId} queued successfully for session {SessionId}", commandId, sessionId);
@@ -335,9 +335,9 @@ namespace mcp_nexus.Tools
 
                 var errorResponse = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     commandId = (string?)null,
-                    command = command,
+                    command,
                     status = "Failed",
                     operation = "nexus_enqueue_async_dump_analyze_command",
                     message = $"Failed to queue command: {ex.Message}"
@@ -371,36 +371,36 @@ namespace mcp_nexus.Tools
                     logger.LogError("Command result read failed: Session ID is null or empty");
                     return new
                     {
-                        sessionId = sessionId,
-                        commandId = commandId,
+                        sessionId,
+                        commandId,
                         status = "Failed",
                         error = "Session ID cannot be null or empty",
                         operation = "nexus_read_dump_analyze_command_result",
                         usage = SessionAwareWindbgTool.USAGE_EXPLANATION
                     };
                 }
-                
+
                 if (string.IsNullOrWhiteSpace(commandId))
                 {
                     logger.LogError("Command result read failed: Command ID is null or empty");
                     return new
                     {
-                        sessionId = sessionId,
-                        commandId = commandId,
+                        sessionId,
+                        commandId,
                         status = "Failed",
                         error = "Command ID cannot be null or empty",
                         operation = "nexus_read_dump_analyze_command_result",
                         usage = SessionAwareWindbgTool.USAGE_EXPLANATION
                     };
                 }
-                
+
                 if (!sessionManager.SessionExists(sessionId))
                 {
                     logger.LogError("Command result read failed: Session {SessionId} does not exist", sessionId);
                     return new
                     {
-                        sessionId = sessionId,
-                        commandId = commandId,
+                        sessionId,
+                        commandId,
                         status = "Failed",
                         error = $"Session {sessionId} not found. Use 'sessions' resource to see available sessions.",
                         operation = "nexus_read_dump_analyze_command_result",
@@ -416,17 +416,17 @@ namespace mcp_nexus.Tools
                     {
                         var extInfo = extensionTracker.GetCommandInfo(commandId);
                         var extResult = extensionTracker.GetCommandResult(commandId);
-                        
+
                         if (extInfo != null)
                         {
                             // Return extension command result
                             var extIsCompleted = extInfo.IsCompleted;
                             var extProgressPercentage = extIsCompleted ? 100 : Math.Min(95, (int)(extInfo.Elapsed.TotalSeconds * 0.5));
-                            
+
                             return new
                             {
-                                sessionId = sessionId,
-                                commandId = commandId,
+                                sessionId,
+                                commandId,
                                 operation = "nexus_read_dump_analyze_command_result",
                                 status = extInfo.State.ToString(),
                                 extensionName = extInfo.ExtensionName,
@@ -448,11 +448,11 @@ namespace mcp_nexus.Tools
                                     {
                                         "Review the extension output for analysis results",
                                         "Extension output is typically structured JSON with multiple command results"
-                                    } : new[]
-                                    {
+                                    } :
+                                    [
                                         "Extension is running normally - extensions execute multiple commands",
                                         "Wait for completion - extensions may take several minutes"
-                                    }
+                                    ]
                                 },
                                 usage = SessionAwareWindbgTool.USAGE_EXPLANATION
                             };
@@ -466,8 +466,8 @@ namespace mcp_nexus.Tools
                 {
                     return new
                     {
-                        sessionId = sessionId,
-                        commandId = commandId,
+                        sessionId,
+                        commandId,
                         status = "Failed",
                         error = $"Command {commandId} not found. Use nexus_list_commands to see available commands.",
                         operation = "nexus_read_dump_analyze_command_result",
@@ -507,10 +507,10 @@ namespace mcp_nexus.Tools
 
                 var result = new
                 {
-                    sessionId = sessionId,
-                    commandId = commandId,
+                    sessionId,
+                    commandId,
                     operation = "nexus_read_dump_analyze_command_result",
-                    status = status,
+                    status,
                     result = isCompleted ? commandResult : null,
                     error = (isFailed || isCancelled) ? (commandResult?.ErrorMessage ?? commandInfo.State.ToString()) : null,
                     completedAt = isCompleted ? DateTimeOffset.Now : (DateTimeOffset?)null,
@@ -519,7 +519,7 @@ namespace mcp_nexus.Tools
                     progress = new
                     {
                         queuePosition = commandInfo.QueuePosition,
-                        progressPercentage = progressPercentage,
+                        progressPercentage,
                         elapsed = isCompleted ? null : FormatElapsedTime(commandInfo.Elapsed),
                         eta = isCompleted ? null : GetEtaTime(commandInfo.Remaining),
                         executionTime = isCompleted ? FormatExecutionTime(commandInfo.Elapsed) : null,
@@ -532,15 +532,15 @@ namespace mcp_nexus.Tools
                             "Analyze the command output for debugging insights",
                             "Execute follow-up commands based on results and use output to guide next for analysis commands",
                             "⚠️ IMPORTANT: Call 'nexus_close_dump_analyze_session' when analysis is complete"
-                        } : (isFailed || isCancelled) ? new[]
-                        {
+                        } : (isFailed || isCancelled) ?
+                        [
                             "Command encountered an issue - check the error details",
                             "Consider retrying with a different approach using simpler commands if complex ones are failing"
-                        } : new[]
-                        {
+                        ] :
+                        [
                             "Command is running normally - this is expected for complex operations",
                             "Wait for completion - no action needed check status again later please"
-                        },
+                        ],
                         statusExplanation = GetStatusExplanation(commandInfo.State.ToString()),
                     },
                     timeoutMinutes = 10,
@@ -555,8 +555,8 @@ namespace mcp_nexus.Tools
 
                 return new
                 {
-                    sessionId = sessionId,
-                    commandId = commandId,
+                    sessionId,
+                    commandId,
                     status = "Failed",
                     error = $"Failed to get command result: {ex.Message}",
                     operation = "nexus_read_dump_analyze_command_result",
@@ -622,7 +622,7 @@ namespace mcp_nexus.Tools
                 return null;
 
             // Look for "Elapsed: X.Xmin" pattern (with decimal point)
-            var elapsedMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"Elapsed: ([\d]+\.[\d]+min)");
+            var elapsedMatch = MyRegex().Match(commandResult);
             if (elapsedMatch.Success)
             {
                 return elapsedMatch.Groups[1].Value;
@@ -833,9 +833,9 @@ namespace mcp_nexus.Tools
             {
                 return new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     commandId = (string?)null,
-                    extensionName = extensionName,
+                    extensionName,
                     status = "Failed",
                     operation = "nexus_enqueue_async_extension_command",
                     message = "Extension system is not enabled or not properly configured"
@@ -850,13 +850,13 @@ namespace mcp_nexus.Tools
                     var availableExtensions = extensionManager.GetAllExtensions().Select(e => e.Name).ToList();
                     return new
                     {
-                        sessionId = sessionId,
+                        sessionId,
                         commandId = (string?)null,
-                        extensionName = extensionName,
+                        extensionName,
                         status = "Failed",
                         operation = "nexus_enqueue_async_extension_command",
                         message = $"Extension '{extensionName}' not found. Available extensions: {string.Join(", ", availableExtensions)}",
-                        availableExtensions = availableExtensions
+                        availableExtensions
                     };
                 }
 
@@ -865,9 +865,9 @@ namespace mcp_nexus.Tools
                 {
                     return new
                     {
-                        sessionId = sessionId,
+                        sessionId,
                         commandId = (string?)null,
-                        extensionName = extensionName,
+                        extensionName,
                         status = "Failed",
                         operation = "nexus_enqueue_async_extension_command",
                         message = $"Session {sessionId} not found. Use 'sessions' resource to see available sessions."
@@ -881,11 +881,14 @@ namespace mcp_nexus.Tools
                 extensionTracker.TrackExtension(commandId, sessionId, extensionName, parameters);
 
                 // Start extension execution asynchronously (don't wait)
+                // Use required services captured now to avoid using disposed serviceProvider later
+                var lifecycleManagerForCache = serviceProvider as IServiceProvider;
+
                 _ = Task.Run(async () =>
                 {
                     var queueTime = DateTime.UtcNow;
                     DateTime? startTime = null;
-                    
+
                     try
                     {
                         extensionTracker.UpdateState(commandId, CommandState.Executing);
@@ -900,9 +903,9 @@ namespace mcp_nexus.Tools
 
                         // Store result in both tracker (for state) and session cache (for persistence)
                         extensionTracker.StoreResult(commandId, result);
-                        
+
                         // Also store in session's command result cache for consistency with standard commands
-                        var sessionManager = serviceProvider.GetService<ISessionManager>();
+                        var sessionManager = lifecycleManagerForCache?.GetService(typeof(ISessionManager)) as ISessionManager;
                         if (sessionManager is SessionLifecycleManager lifecycleManager)
                         {
                             var cache = lifecycleManager.GetOrCreateSessionCache(sessionId);
@@ -910,31 +913,31 @@ namespace mcp_nexus.Tools
                                 isSuccess: result.Success,
                                 output: result.Output ?? string.Empty,
                                 errorMessage: result.Error);
-                            
-                            cache.StoreResult(commandId, commandResult, 
+
+                            cache.StoreResult(commandId, commandResult,
                                 originalCommand: $"Extension: {extensionName}",
                                 queueTime: queueTime,
                                 startTime: startTime,
                                 endTime: DateTime.UtcNow);
-                            
+
                             logger.LogDebug("📦 Stored extension {Extension} result in session cache for session {SessionId}", extensionName, sessionId);
                         }
                     }
                     catch (Exception ex)
                     {
                         logger.LogError(ex, "Extension {Extension} failed for session {SessionId}", extensionName, sessionId);
-                        
+
                         var failureResult = new ExtensionResult
                         {
                             Success = false,
                             Error = ex.Message,
                             ExitCode = -1
                         };
-                        
+
                         extensionTracker.StoreResult(commandId, failureResult);
-                        
+
                         // Also store failure in session cache
-                        var sessionManager = serviceProvider.GetService<ISessionManager>();
+                        var sessionManager = lifecycleManagerForCache?.GetService(typeof(ISessionManager)) as ISessionManager;
                         if (sessionManager is SessionLifecycleManager lifecycleManager)
                         {
                             var cache = lifecycleManager.GetOrCreateSessionCache(sessionId);
@@ -942,7 +945,7 @@ namespace mcp_nexus.Tools
                                 isSuccess: false,
                                 output: string.Empty,
                                 errorMessage: ex.Message);
-                            
+
                             cache.StoreResult(commandId, commandResult,
                                 originalCommand: $"Extension: {extensionName}",
                                 queueTime: queueTime,
@@ -958,9 +961,9 @@ namespace mcp_nexus.Tools
 
                 var response = new
                 {
-                    sessionId = sessionId,
-                    commandId = commandId,
-                    extensionName = extensionName,
+                    sessionId,
+                    commandId,
+                    extensionName,
                     status = "Queued",
                     operation = "nexus_enqueue_async_extension_command",
                     message = $"Extension '{extensionName}' queued successfully. Use the 'commands' resource to monitor all commands or the 'nexus_read_dump_analyze_command_result' tool to get results.",
@@ -977,9 +980,9 @@ namespace mcp_nexus.Tools
 
                 var errorResponse = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     commandId = (string?)null,
-                    extensionName = extensionName,
+                    extensionName,
                     status = "Failed",
                     operation = "nexus_enqueue_async_extension_command",
                     message = $"Failed to queue extension: {ex.Message}"
@@ -988,5 +991,8 @@ namespace mcp_nexus.Tools
                 return await Task.FromResult((object)errorResponse);
             }
         }
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"Elapsed: ([\d]+\.[\d]+min)")]
+        private static partial System.Text.RegularExpressions.Regex MyRegex();
     }
 }

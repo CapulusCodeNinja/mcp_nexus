@@ -518,7 +518,7 @@ namespace mcp_nexus_tests.Session
         public void SessionMonitoringService_Class_Exists()
         {
             // This test verifies that the SessionMonitoringService class exists and can be instantiated
-            Assert.True(typeof(SessionMonitoringService) != null);
+            Assert.NotNull(typeof(SessionMonitoringService));
         }
 
         public void Dispose()

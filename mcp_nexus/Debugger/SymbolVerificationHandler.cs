@@ -6,19 +6,14 @@ namespace mcp_nexus.Debugger
     /// Handles symbol verification warnings and provides enhanced symbol loading capabilities.
     /// Manages checksum verification warnings and provides fallback mechanisms for third-party software.
     /// </summary>
-    public class SymbolVerificationHandler
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="SymbolVerificationHandler"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance for this handler.</param>
+    /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
+    public class SymbolVerificationHandler(ILogger<SymbolVerificationHandler> logger)
     {
-        private readonly ILogger<SymbolVerificationHandler> m_Logger;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SymbolVerificationHandler"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance for this handler.</param>
-        /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
-        public SymbolVerificationHandler(ILogger<SymbolVerificationHandler> logger)
-        {
-            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
+        private readonly ILogger<SymbolVerificationHandler> m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         /// <summary>
         /// Processes symbol verification warnings and provides appropriate handling.
@@ -117,7 +112,7 @@ namespace mcp_nexus.Debugger
         /// </summary>
         /// <param name="warning">The warning message to analyze.</param>
         /// <returns>The module name if found; otherwise, null.</returns>
-        private string? ExtractModuleNameFromWarning(string warning)
+        private static string? ExtractModuleNameFromWarning(string warning)
         {
             // Pattern to match module names in warnings like "WARNING: Unable to verify checksum for moduleName.dll"
             var pattern = @"WARNING:.*?for\s+([a-zA-Z0-9_.-]+\.(dll|exe|sys))";
@@ -134,7 +129,7 @@ namespace mcp_nexus.Debugger
         /// </summary>
         /// <param name="moduleName">The module name to check.</param>
         /// <returns><c>true</c> if the module is from third-party software; otherwise, <c>false</c>.</returns>
-        private bool IsThirdPartyModule(string moduleName)
+        private static bool IsThirdPartyModule(string moduleName)
         {
             if (string.IsNullOrWhiteSpace(moduleName))
                 return false;
@@ -209,8 +204,8 @@ namespace mcp_nexus.Debugger
             var result = new SymbolServerValidationResult
             {
                 IsValid = true,
-                Recommendations = new List<string>(),
-                Warnings = new List<string>()
+                Recommendations = [],
+                Warnings = []
             };
 
             if (string.IsNullOrWhiteSpace(symbolPath))
@@ -255,11 +250,11 @@ namespace mcp_nexus.Debugger
         /// <summary>
         /// Gets or sets the list of recommendations for improving the configuration.
         /// </summary>
-        public List<string> Recommendations { get; set; } = new();
+        public List<string> Recommendations { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the list of warnings about the configuration.
         /// </summary>
-        public List<string> Warnings { get; set; } = new();
+        public List<string> Warnings { get; set; } = [];
     }
 }

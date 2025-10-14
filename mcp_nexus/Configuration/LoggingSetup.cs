@@ -71,8 +71,7 @@ namespace mcp_nexus.Configuration
             var nlogConfig = LogManager.Configuration ?? new NLog.Config.LoggingConfiguration();
 
             // Ensure main file target exists
-            var fileTarget = nlogConfig.FindTargetByName("mainFile") as NLog.Targets.FileTarget;
-            if (fileTarget == null)
+            if (nlogConfig.FindTargetByName("mainFile") is not NLog.Targets.FileTarget fileTarget)
             {
                 fileTarget = new NLog.Targets.FileTarget("mainFile")
                 {
@@ -91,8 +90,7 @@ namespace mcp_nexus.Configuration
             }
 
             // Ensure stderr console target exists
-            var stderrTarget = nlogConfig.FindTargetByName("stderr") as NLog.Targets.ConsoleTarget;
-            if (stderrTarget == null)
+            if (nlogConfig.FindTargetByName("stderr") is not NLog.Targets.ConsoleTarget stderrTarget)
             {
                 stderrTarget = new NLog.Targets.ConsoleTarget("stderr")
                 {
@@ -128,14 +126,12 @@ namespace mcp_nexus.Configuration
         private static void ConfigureLogPaths(NLog.Config.LoggingConfiguration nlogConfig, bool isServiceMode)
         {
             string logDirectory;
-            string internalLogFile;
-
             if (isServiceMode)
             {
                 // Use ProgramData for service mode
                 var programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
                 logDirectory = Path.Combine(programDataPath, "MCP-Nexus", "Logs");
-                internalLogFile = Path.Combine(logDirectory, "mcp-nexus-internal.log");
+                _ = Path.Combine(logDirectory, "mcp-nexus-internal.log");
 
                 // Ensure ProgramData directories exist
                 try
@@ -152,7 +148,7 @@ namespace mcp_nexus.Configuration
             {
                 // Use application directory for non-service mode
                 logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
-                internalLogFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp-nexus-internal.log");
+                _ = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp-nexus-internal.log");
             }
 
             // Update internal log file path - this needs to be set before applying the configuration

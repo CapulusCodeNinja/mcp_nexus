@@ -46,21 +46,16 @@ namespace mcp_nexus.Recovery
     /// Service for managing command timeouts.
     /// Provides functionality to start, cancel, and extend timeouts for commands.
     /// </summary>
-    public class CommandTimeoutService : ICommandTimeoutService, IDisposable, IAsyncDisposable
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CommandTimeoutService"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance for recording timeout operations and errors.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+    public class CommandTimeoutService(ILogger<CommandTimeoutService> logger) : ICommandTimeoutService, IDisposable, IAsyncDisposable
     {
-        private readonly ILogger<CommandTimeoutService> m_logger;
+        private readonly ILogger<CommandTimeoutService> m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly ConcurrentDictionary<string, TimeoutInfo> m_timeouts = new();
         private bool m_disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CommandTimeoutService"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance for recording timeout operations and errors.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-        public CommandTimeoutService(ILogger<CommandTimeoutService> logger)
-        {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
 
         /// <summary>
         /// Starts a timeout for a command.
@@ -76,14 +71,12 @@ namespace mcp_nexus.Recovery
             if (m_disposed) return;
 
             // Validate parameters
-            if (commandId == null)
-                throw new ArgumentNullException(nameof(commandId));
+            ArgumentNullException.ThrowIfNull(commandId);
             if (commandId.Length == 0)
                 throw new ArgumentException("Command ID cannot be empty", nameof(commandId));
             if (timeout < TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException(nameof(timeout), "Timeout cannot be negative");
-            if (onTimeout == null)
-                throw new ArgumentNullException(nameof(onTimeout));
+            ArgumentNullException.ThrowIfNull(onTimeout);
 
             // Cancel existing timeout if it exists
             if (m_timeouts.TryRemove(commandId, out var existingInfo))
@@ -142,8 +135,7 @@ namespace mcp_nexus.Recovery
         /// <exception cref="ArgumentException">Thrown when <paramref name="commandId"/> is empty.</exception>
         public void CancelCommandTimeout(string commandId)
         {
-            if (commandId == null)
-                throw new ArgumentNullException(nameof(commandId));
+            ArgumentNullException.ThrowIfNull(commandId);
             if (commandId.Length == 0)
                 throw new ArgumentException("Command ID cannot be empty", nameof(commandId));
 
@@ -165,8 +157,7 @@ namespace mcp_nexus.Recovery
         /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="additionalTime"/> is negative.</exception>
         public void ExtendCommandTimeout(string commandId, TimeSpan additionalTime)
         {
-            if (commandId == null)
-                throw new ArgumentNullException(nameof(commandId));
+            ArgumentNullException.ThrowIfNull(commandId);
             if (commandId.Length == 0)
                 throw new ArgumentException("Command ID cannot be empty", nameof(commandId));
             if (additionalTime < TimeSpan.Zero)

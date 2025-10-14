@@ -20,7 +20,7 @@ namespace mcp_nexus_tests.Configuration
         public void LoggingSetup_Class_Exists()
         {
             // This test verifies that the LoggingSetup class exists and can be instantiated
-            Assert.True(typeof(LoggingSetup) != null);
+            Assert.NotNull(typeof(LoggingSetup));
         }
 
         [Fact]
@@ -35,7 +35,7 @@ namespace mcp_nexus_tests.Configuration
         public void ConfigureLogging_WithServiceMode_LogsToConsole()
         {
             // Arrange
-            var configuration = new ConfigurationBuilder()
+            _ = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["Logging:LogLevel"] = "Information"
@@ -53,8 +53,8 @@ namespace mcp_nexus_tests.Configuration
                 var logCompleteMethod = typeof(LoggingSetup).GetMethod("LogConfigurationComplete",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
-                logStartMethod!.Invoke(null, new object[] { true });
-                logCompleteMethod!.Invoke(null, new object[] { true, Microsoft.Extensions.Logging.LogLevel.Information });
+                logStartMethod!.Invoke(null, [true]);
+                logCompleteMethod!.Invoke(null, [true, Microsoft.Extensions.Logging.LogLevel.Information]);
 
                 // Assert
                 var output = consoleOutput.ToString();
@@ -83,8 +83,8 @@ namespace mcp_nexus_tests.Configuration
                 var logCompleteMethod = typeof(LoggingSetup).GetMethod("LogConfigurationComplete",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
-                logStartMethod!.Invoke(null, new object[] { false });
-                logCompleteMethod!.Invoke(null, new object[] { false, Microsoft.Extensions.Logging.LogLevel.Information });
+                logStartMethod!.Invoke(null, [false]);
+                logCompleteMethod!.Invoke(null, [false, Microsoft.Extensions.Logging.LogLevel.Information]);
 
                 // Assert
                 var output = consoleError.ToString();
@@ -116,7 +116,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = parseMethod!.Invoke(null, new object[] { logLevelString });
+            var result = parseMethod!.Invoke(null, [logLevelString]);
 
             // Assert
             Assert.Equal(expectedLogLevel, result);
@@ -137,7 +137,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getLogLevelMethod!.Invoke(null, new object[] { configuration });
+            var result = getLogLevelMethod!.Invoke(null, [configuration]);
 
             // Assert
             Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Debug, result);
@@ -153,7 +153,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getLogLevelMethod!.Invoke(null, new object[] { configuration });
+            var result = getLogLevelMethod!.Invoke(null, [configuration]);
 
             // Assert
             Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Information, result);
@@ -170,7 +170,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+            var result = getNLogLevelMethod!.Invoke(null, [microsoftLevel]);
 
             // Assert
             Assert.Equal(expectedNLogLevel, result);
@@ -187,7 +187,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+            var result = getNLogLevelMethod!.Invoke(null, [microsoftLevel]);
 
             // Assert
             Assert.Equal(expectedNLogLevel, result);
@@ -204,7 +204,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+            var result = getNLogLevelMethod!.Invoke(null, [microsoftLevel]);
 
             // Assert
             Assert.Equal(expectedNLogLevel, result);
@@ -232,7 +232,7 @@ namespace mcp_nexus_tests.Configuration
 
                 // Act & Assert
                 var exception = Record.Exception(() =>
-                    configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Debug, false }));
+                    configureNLogMethod!.Invoke(null, [configuration, Microsoft.Extensions.Logging.LogLevel.Debug, false]));
                 Assert.Null(exception);
             }
             finally
@@ -256,7 +256,7 @@ namespace mcp_nexus_tests.Configuration
 
                 // Act & Assert
                 var exception = Record.Exception(() =>
-                    configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Information, false }));
+                    configureNLogMethod!.Invoke(null, [configuration, Microsoft.Extensions.Logging.LogLevel.Information, false]));
                 Assert.Null(exception);
             }
             finally
@@ -292,7 +292,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = parseMethod!.Invoke(null, new object[] { logLevelString });
+            var result = parseMethod!.Invoke(null, [logLevelString]);
 
             // Assert
             Assert.Equal(expectedLogLevel, result);
@@ -318,7 +318,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = parseMethod!.Invoke(null, new object[] { logLevelString });
+            var result = parseMethod!.Invoke(null, [logLevelString]);
 
             // Assert
             Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Information, result);
@@ -341,7 +341,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = parseMethod!.Invoke(null, new object[] { logLevelString });
+            var result = parseMethod!.Invoke(null, [logLevelString]);
 
             // Assert
             Assert.NotNull(result);
@@ -358,7 +358,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+            var result = getNLogLevelMethod!.Invoke(null, [microsoftLevel]);
 
             // Assert
             Assert.Equal(expectedNLogLevel, result);
@@ -374,7 +374,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+            var result = getNLogLevelMethod!.Invoke(null, [microsoftLevel]);
 
             // Assert
             Assert.Equal(expectedNLogLevel, result);
@@ -390,7 +390,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+            var result = getNLogLevelMethod!.Invoke(null, [microsoftLevel]);
 
             // Assert
             Assert.Equal(expectedNLogLevel, result);
@@ -406,7 +406,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+            var result = getNLogLevelMethod!.Invoke(null, [microsoftLevel]);
 
             // Assert
             Assert.Equal(expectedNLogLevel, result);
@@ -422,7 +422,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+            var result = getNLogLevelMethod!.Invoke(null, [microsoftLevel]);
 
             // Assert
             Assert.Equal(expectedNLogLevel, result);
@@ -438,7 +438,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+            var result = getNLogLevelMethod!.Invoke(null, [microsoftLevel]);
 
             // Assert
             Assert.Equal(expectedNLogLevel, result);
@@ -454,7 +454,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getNLogLevelMethod!.Invoke(null, new object[] { microsoftLevel });
+            var result = getNLogLevelMethod!.Invoke(null, [microsoftLevel]);
 
             // Assert
             Assert.Equal(expectedNLogLevel, result);
@@ -469,7 +469,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getNLogLevelMethod!.Invoke(null, new object[] { invalidLevel });
+            var result = getNLogLevelMethod!.Invoke(null, [invalidLevel]);
 
             // Assert
             Assert.Equal(NLog.LogLevel.Info, result);
@@ -483,7 +483,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getLogLevelMethod!.Invoke(null, new object[] { null! });
+            var result = getLogLevelMethod!.Invoke(null, [null!]);
 
             // Assert
             Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Information, result);
@@ -508,7 +508,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getLogLevelMethod!.Invoke(null, new object[] { configuration });
+            var result = getLogLevelMethod!.Invoke(null, [configuration]);
 
             // Assert
             Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Information, result);
@@ -527,7 +527,7 @@ namespace mcp_nexus_tests.Configuration
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
                 // Act
-                logStartMethod!.Invoke(null, new object[] { true });
+                logStartMethod!.Invoke(null, [true]);
 
                 // Assert
                 var output = consoleOutput.ToString();
@@ -552,7 +552,7 @@ namespace mcp_nexus_tests.Configuration
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
                 // Act
-                logStartMethod!.Invoke(null, new object[] { false });
+                logStartMethod!.Invoke(null, [false]);
 
                 // Assert
                 var output = consoleError.ToString();
@@ -584,7 +584,7 @@ namespace mcp_nexus_tests.Configuration
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
                 // Act
-                logCompleteMethod!.Invoke(null, new object[] { true, logLevel });
+                logCompleteMethod!.Invoke(null, [true, logLevel]);
 
                 // Assert
                 var output = consoleOutput.ToString();
@@ -616,7 +616,7 @@ namespace mcp_nexus_tests.Configuration
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
                 // Act
-                logCompleteMethod!.Invoke(null, new object[] { false, logLevel });
+                logCompleteMethod!.Invoke(null, [false, logLevel]);
 
                 // Assert
                 var output = consoleError.ToString();
@@ -644,7 +644,7 @@ namespace mcp_nexus_tests.Configuration
 
                 // Act & Assert
                 var exception = Record.Exception(() =>
-                    configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Information, false }));
+                    configureNLogMethod!.Invoke(null, [configuration, Microsoft.Extensions.Logging.LogLevel.Information, false]));
                 Assert.Null(exception);
             }
             finally
@@ -671,7 +671,7 @@ namespace mcp_nexus_tests.Configuration
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
                 // Act
-                configureNLogMethod!.Invoke(null, new object[] { configuration, Microsoft.Extensions.Logging.LogLevel.Warning, false });
+                configureNLogMethod!.Invoke(null, [configuration, Microsoft.Extensions.Logging.LogLevel.Warning, false]);
 
                 // Assert - The rule should have been updated (we can't easily verify the internal state)
                 // but we can verify no exception was thrown
@@ -765,7 +765,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = parseMethod!.Invoke(null, new object[] { null! });
+            var result = parseMethod!.Invoke(null, [null!]);
 
             // Assert
             Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Information, result);
@@ -784,7 +784,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = parseMethod!.Invoke(null, new object[] { logLevelString });
+            var result = parseMethod!.Invoke(null, [logLevelString]);
 
             // Assert
             // The method uses ToLowerInvariant() so whitespace should be preserved
@@ -809,7 +809,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = getLogLevelMethod!.Invoke(null, new object[] { configuration });
+            var result = getLogLevelMethod!.Invoke(null, [configuration]);
 
             // Assert
             Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Error, result);
@@ -832,7 +832,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            configureLogPathsMethod!.Invoke(null, new object[] { nlogConfig, true });
+            configureLogPathsMethod!.Invoke(null, [nlogConfig, true]);
 
             // Assert
             var programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
@@ -861,7 +861,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            configureLogPathsMethod!.Invoke(null, new object[] { nlogConfig, false });
+            configureLogPathsMethod!.Invoke(null, [nlogConfig, false]);
 
             // Assert
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -897,7 +897,7 @@ namespace mcp_nexus_tests.Configuration
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            configureLogPathsMethod!.Invoke(null, new object[] { nlogConfig, true });
+            configureLogPathsMethod!.Invoke(null, [nlogConfig, true]);
 
             // Assert
             var programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
@@ -925,7 +925,7 @@ namespace mcp_nexus_tests.Configuration
 
             // Act & Assert
             var exception = Record.Exception(() =>
-                configureLogPathsMethod!.Invoke(null, new object[] { nlogConfig, true }));
+                configureLogPathsMethod!.Invoke(null, [nlogConfig, true]));
 
             Assert.Null(exception);
         }

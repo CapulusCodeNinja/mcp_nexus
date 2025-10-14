@@ -125,7 +125,7 @@ namespace mcp_nexus_tests.Middleware
             // Set up response with empty body
             context.Response.Body = new MemoryStream();
             var responseBytes = Encoding.UTF8.GetBytes("");
-            await context.Response.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
+            await context.Response.Body.WriteAsync(responseBytes);
             context.Response.Body.Position = 0;
 
             // Act
@@ -148,7 +148,7 @@ namespace mcp_nexus_tests.Middleware
             // Set up response with whitespace only
             context.Response.Body = new MemoryStream();
             var responseBytes = Encoding.UTF8.GetBytes("   \n\t  ");
-            await context.Response.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
+            await context.Response.Body.WriteAsync(responseBytes);
             context.Response.Body.Position = 0;
 
             // Act
@@ -172,7 +172,7 @@ namespace mcp_nexus_tests.Middleware
             var sseResponse = "data: {\"result\":{\"content\":[{\"text\":\"{\\\"key\\\":\\\"value\\\"}\"}]}}\n\n";
             context.Response.Body = new MemoryStream();
             var responseBytes = Encoding.UTF8.GetBytes(sseResponse);
-            await context.Response.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
+            await context.Response.Body.WriteAsync(responseBytes);
             context.Response.Body.Position = 0;
 
             // Act
@@ -196,7 +196,7 @@ namespace mcp_nexus_tests.Middleware
             var invalidJson = "{\"result\":{\"content\":[{\"text\":\"invalid json here\"}]}";
             context.Response.Body = new MemoryStream();
             var responseBytes = Encoding.UTF8.GetBytes(invalidJson);
-            await context.Response.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
+            await context.Response.Body.WriteAsync(responseBytes);
             context.Response.Body.Position = 0;
 
             // Act
@@ -220,7 +220,7 @@ namespace mcp_nexus_tests.Middleware
             var responseWithoutResult = "{\"error\":{\"message\":\"test error\"}}";
             context.Response.Body = new MemoryStream();
             var responseBytes = Encoding.UTF8.GetBytes(responseWithoutResult);
-            await context.Response.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
+            await context.Response.Body.WriteAsync(responseBytes);
             context.Response.Body.Position = 0;
 
             // Act
@@ -244,7 +244,7 @@ namespace mcp_nexus_tests.Middleware
             var responseWithEmptyArray = "{\"result\":{\"content\":[]}}";
             context.Response.Body = new MemoryStream();
             var responseBytes = Encoding.UTF8.GetBytes(responseWithEmptyArray);
-            await context.Response.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
+            await context.Response.Body.WriteAsync(responseBytes);
             context.Response.Body.Position = 0;
 
             // Act
@@ -268,7 +268,7 @@ namespace mcp_nexus_tests.Middleware
             var responseWithoutText = "{\"result\":{\"content\":[{\"other\":\"value\"}]}}";
             context.Response.Body = new MemoryStream();
             var responseBytes = Encoding.UTF8.GetBytes(responseWithoutText);
-            await context.Response.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
+            await context.Response.Body.WriteAsync(responseBytes);
             context.Response.Body.Position = 0;
 
             // Act
@@ -292,7 +292,7 @@ namespace mcp_nexus_tests.Middleware
             var doubleEncodedJson = "{\"result\":{\"content\":[{\"text\":\"{\\\"key\\\":\\\"value\\\"}\"}]}}";
             context.Response.Body = new MemoryStream();
             var responseBytes = Encoding.UTF8.GetBytes(doubleEncodedJson);
-            await context.Response.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
+            await context.Response.Body.WriteAsync(responseBytes);
             context.Response.Body.Position = 0;
 
             // Act
@@ -316,7 +316,7 @@ namespace mcp_nexus_tests.Middleware
             var largeJson = "{\"result\":{\"content\":[{\"text\":\"{\\\"largeField\\\":\\\"" + new string('x', 2000) + "\\\"}\"}]}}";
             context.Response.Body = new MemoryStream();
             var responseBytes = Encoding.UTF8.GetBytes(largeJson);
-            await context.Response.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
+            await context.Response.Body.WriteAsync(responseBytes);
             context.Response.Body.Position = 0;
 
             // Act

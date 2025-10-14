@@ -181,7 +181,7 @@ namespace mcp_nexus.Models
         /// Gets or sets the array of content items returned by the tool.
         /// </summary>
         [JsonPropertyName("content")]
-        public McpContent[] Content { get; set; } = Array.Empty<McpContent>();
+        public McpContent[] Content { get; set; } = [];
     }
 
     /// <summary>
@@ -238,7 +238,7 @@ namespace mcp_nexus.Models
         /// Gets or sets the array of available tool schemas.
         /// </summary>
         [JsonPropertyName("tools")]
-        public McpToolSchema[] Tools { get; set; } = Array.Empty<McpToolSchema>();
+        public McpToolSchema[] Tools { get; set; } = [];
     }
 
     // ===== MCP RESOURCE MODELS =====
@@ -290,7 +290,7 @@ namespace mcp_nexus.Models
         /// Gets or sets the array of available resources.
         /// </summary>
         [JsonPropertyName("resources")]
-        public McpResource[] Resources { get; set; } = Array.Empty<McpResource>();
+        public McpResource[] Resources { get; set; } = [];
     }
 
     /// <summary>
@@ -334,7 +334,7 @@ namespace mcp_nexus.Models
         /// Gets or sets the array of resource content items.
         /// </summary>
         [JsonPropertyName("contents")]
-        public McpResourceContent[] Contents { get; set; } = Array.Empty<McpResourceContent>();
+        public McpResourceContent[] Contents { get; set; } = [];
     }
 
     /// <summary>

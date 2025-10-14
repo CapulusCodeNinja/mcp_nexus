@@ -178,8 +178,8 @@ namespace mcp_nexus_tests.Utilities
             // Extract argument after .srcpath/.srcpath+
             var firstSpace = command.IndexOf(' ');
             if (firstSpace < 0 || firstSpace + 1 >= command.Length) return;
-            var arg = command.Substring(firstSpace + 1).Trim().Trim('"');
-            var tokens = arg.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var arg = command[(firstSpace + 1)..].Trim().Trim('"');
+            var tokens = arg.Split([';'], StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var token in tokens)
             {

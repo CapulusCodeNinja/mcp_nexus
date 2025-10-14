@@ -108,10 +108,10 @@ namespace mcp_nexus_tests.CommandQueue
             // Assert
             // Realistic mock verification - methods are called internally
             Assert.True(completionSource.Task.IsCompleted);
-            var stats = m_Processor.GetPerformanceStats();
-            Assert.Equal(1, stats.Processed);
-            Assert.Equal(0, stats.Failed);
-            Assert.Equal(0, stats.Cancelled);
+            var (Processed, Failed, Cancelled) = m_Processor.GetPerformanceStats();
+            Assert.Equal(1, Processed);
+            Assert.Equal(0, Failed);
+            Assert.Equal(0, Cancelled);
         }
 
         [Fact]
@@ -134,10 +134,10 @@ namespace mcp_nexus_tests.CommandQueue
             // Assert
             // Realistic mock verification - methods are called internally
             Assert.True(completionSource.Task.IsCompleted);
-            var stats = m_Processor.GetPerformanceStats();
-            Assert.Equal(0, stats.Processed);
-            Assert.Equal(1, stats.Failed);
-            Assert.Equal(0, stats.Cancelled);
+            var (Processed, Failed, Cancelled) = m_Processor.GetPerformanceStats();
+            Assert.Equal(0, Processed);
+            Assert.Equal(1, Failed);
+            Assert.Equal(0, Cancelled);
         }
 
         [Fact]
@@ -166,10 +166,10 @@ namespace mcp_nexus_tests.CommandQueue
             await processingTask;
 
             // Assert
-            var stats = m_Processor.GetPerformanceStats();
-            Assert.Equal(0, stats.Processed);
-            Assert.Equal(0, stats.Failed);
-            Assert.Equal(1, stats.Cancelled);
+            var (Processed, Failed, Cancelled) = m_Processor.GetPerformanceStats();
+            Assert.Equal(0, Processed);
+            Assert.Equal(0, Failed);
+            Assert.Equal(1, Cancelled);
         }
 
         [Fact]
@@ -196,12 +196,12 @@ namespace mcp_nexus_tests.CommandQueue
             await processingTask;
 
             // Assert
-            var stats = m_Processor.GetPerformanceStats();
+            var (Processed, Failed, Cancelled) = m_Processor.GetPerformanceStats();
             // The command should be cancelled due to service shutdown
             // Note: Service shutdown cancellation doesn't increment the cancelled counter in the production code
-            Assert.Equal(0, stats.Processed);
-            Assert.Equal(0, stats.Failed);
-            Assert.Equal(0, stats.Cancelled); // Service shutdown doesn't increment this counter
+            Assert.Equal(0, Processed);
+            Assert.Equal(0, Failed);
+            Assert.Equal(0, Cancelled); // Service shutdown doesn't increment this counter
         }
 
         [Fact]
@@ -218,12 +218,12 @@ namespace mcp_nexus_tests.CommandQueue
         public void GetPerformanceStats_Initially_ReturnsZeroStats()
         {
             // Act
-            var stats = m_Processor.GetPerformanceStats();
+            var (Processed, Failed, Cancelled) = m_Processor.GetPerformanceStats();
 
             // Assert
-            Assert.Equal(0, stats.Processed);
-            Assert.Equal(0, stats.Failed);
-            Assert.Equal(0, stats.Cancelled);
+            Assert.Equal(0, Processed);
+            Assert.Equal(0, Failed);
+            Assert.Equal(0, Cancelled);
         }
 
         [Fact]

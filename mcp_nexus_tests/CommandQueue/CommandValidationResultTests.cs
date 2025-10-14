@@ -431,7 +431,7 @@ namespace mcp_nexus_tests.CommandQueue
             var result = new CommandValidationResult(false, errors);
 
             // Act & Assert
-            Assert.True(result.Errors is IReadOnlyList<string>);
+            Assert.True(result.Errors is not null);
         }
 
         [Fact]
@@ -442,7 +442,7 @@ namespace mcp_nexus_tests.CommandQueue
             var result = new CommandValidationResult(true, warnings: warnings);
 
             // Act & Assert
-            Assert.True(result.Warnings is IReadOnlyList<string>);
+            Assert.True(result.Warnings is not null);
         }
 
         #endregion

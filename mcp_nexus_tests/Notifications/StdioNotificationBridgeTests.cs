@@ -156,7 +156,7 @@ namespace mcp_nexus_tests.Notifications
 
             Assert.Equal("notifications/toolsListChanged", root.GetProperty("method").GetString());
             // params should be null for standard tools notification
-            Assert.True(root.GetProperty("params").ValueKind == JsonValueKind.Null);
+            Assert.Equal(JsonValueKind.Null, root.GetProperty("params").ValueKind);
         }
 
         [Fact]

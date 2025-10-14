@@ -36,7 +36,7 @@ namespace mcp_nexus.Infrastructure
         /// <summary>
         /// Gets or sets the list of files included in the backup.
         /// </summary>
-        public string[] Files { get; set; } = Array.Empty<string>();
+        public string[] Files { get; set; } = [];
 
         /// <summary>
         /// Gets or sets any error message associated with the backup operation.

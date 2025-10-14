@@ -10,10 +10,16 @@ namespace mcp_nexus.Debugger
     /// Manages the CDB debugger process lifecycle including starting, stopping, and monitoring.
     /// Provides thread-safe access to process streams and handles process cleanup.
     /// </summary>
-    public class CdbProcessManager : IDisposable
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CdbProcessManager"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance for recording process operations and errors.</param>
+    /// <param name="config">The CDB session configuration containing process settings.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> or <paramref name="config"/> is null.</exception>
+    public class CdbProcessManager(ILogger<CdbProcessManager> logger, CdbSessionConfiguration config) : IDisposable
     {
-        private readonly ILogger<CdbProcessManager> m_logger;
-        private readonly CdbSessionConfiguration m_config;
+        private readonly ILogger<CdbProcessManager> m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly CdbSessionConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
         private readonly object m_lifecycleLock = new();
         private string? m_sessionId;
 
@@ -47,18 +53,6 @@ namespace mcp_nexus.Debugger
         public virtual void SetSessionId(string sessionId)
         {
             m_sessionId = sessionId;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CdbProcessManager"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance for recording process operations and errors.</param>
-        /// <param name="config">The CDB session configuration containing process settings.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> or <paramref name="config"/> is null.</exception>
-        public CdbProcessManager(ILogger<CdbProcessManager> logger, CdbSessionConfiguration config)
-        {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_config = config ?? throw new ArgumentNullException(nameof(config));
         }
 
         /// <summary>

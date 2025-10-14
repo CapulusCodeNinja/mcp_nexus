@@ -39,22 +39,17 @@ namespace mcp_nexus.Extensions
     /// <summary>
     /// Implementation of extension token validator.
     /// </summary>
-    public class ExtensionTokenValidator : IExtensionTokenValidator
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="ExtensionTokenValidator"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance.</param>
+    /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
+    public class ExtensionTokenValidator(ILogger<ExtensionTokenValidator> logger) : IExtensionTokenValidator
     {
-        private readonly ILogger<ExtensionTokenValidator> m_Logger;
+        private readonly ILogger<ExtensionTokenValidator> m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly ConcurrentDictionary<string, ExtensionTokenInfo> m_Tokens = new();
         private readonly object m_CleanupLock = new();
         private DateTime m_LastCleanup = DateTime.UtcNow;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExtensionTokenValidator"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance.</param>
-        /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
-        public ExtensionTokenValidator(ILogger<ExtensionTokenValidator> logger)
-        {
-            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
 
         /// <summary>
         /// Creates and registers a new extension token.

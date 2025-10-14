@@ -1394,26 +1394,16 @@ namespace mcp_nexus_tests.Infrastructure
             ICircularDependencyA GetA();
         }
 
-        public class CircularDependencyA : ICircularDependencyA
+        public class CircularDependencyA(DependencyInjectionValidatorTests.ICircularDependencyB b) : ICircularDependencyA
         {
-            private readonly ICircularDependencyB m_B;
-
-            public CircularDependencyA(ICircularDependencyB b)
-            {
-                m_B = b;
-            }
+            private readonly ICircularDependencyB m_B = b;
 
             public ICircularDependencyB GetB() => m_B;
         }
 
-        public class CircularDependencyB : ICircularDependencyB
+        public class CircularDependencyB(DependencyInjectionValidatorTests.ICircularDependencyA a) : ICircularDependencyB
         {
-            private readonly ICircularDependencyA m_A;
-
-            public CircularDependencyB(ICircularDependencyA a)
-            {
-                m_A = a;
-            }
+            private readonly ICircularDependencyA m_A = a;
 
             public ICircularDependencyA GetA() => m_A;
         }
@@ -1423,14 +1413,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class UnresolvableService : IUnresolvableService
+        public class UnresolvableService(DependencyInjectionValidatorTests.INonExistentService nonExistent) : IUnresolvableService
         {
-            private readonly INonExistentService m_NonExistent;
-
-            public UnresolvableService(INonExistentService nonExistent)
-            {
-                m_NonExistent = nonExistent;
-            }
+            private readonly INonExistentService m_NonExistent = nonExistent;
 
             public string GetValue() => "Unresolvable";
         }
@@ -1471,16 +1456,10 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class SingletonService : ISingletonService
+        public class SingletonService(DependencyInjectionValidatorTests.IScopedService scopedService, DependencyInjectionValidatorTests.ITransientService transientService) : ISingletonService
         {
-            private readonly IScopedService m_ScopedService;
-            private readonly ITransientService m_TransientService;
-
-            public SingletonService(IScopedService scopedService, ITransientService transientService)
-            {
-                m_ScopedService = scopedService;
-                m_TransientService = transientService;
-            }
+            private readonly IScopedService m_ScopedService = scopedService;
+            private readonly ITransientService m_TransientService = transientService;
 
             public string GetValue() => "Singleton";
         }
@@ -1490,14 +1469,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ScopedService : IScopedService
+        public class ScopedService(DependencyInjectionValidatorTests.ITransientService transientService) : IScopedService
         {
-            private readonly ITransientService m_TransientService;
-
-            public ScopedService(ITransientService transientService)
-            {
-                m_TransientService = transientService;
-            }
+            private readonly ITransientService m_TransientService = transientService;
 
             public string GetValue() => "Scoped";
         }
@@ -1517,14 +1491,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithMissingDependency : IServiceWithMissingDependency
+        public class ServiceWithMissingDependency(DependencyInjectionValidatorTests.INonExistentService nonExistentService) : IServiceWithMissingDependency
         {
-            private readonly INonExistentService m_NonExistentService;
-
-            public ServiceWithMissingDependency(INonExistentService nonExistentService)
-            {
-                m_NonExistentService = nonExistentService;
-            }
+            private readonly INonExistentService m_NonExistentService = nonExistentService;
 
             public string GetValue() => "MissingDependency";
         }
@@ -1544,14 +1513,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceB : IServiceB
+        public class ServiceB(DependencyInjectionValidatorTests.IServiceA serviceA) : IServiceB
         {
-            private readonly IServiceA m_ServiceA;
-
-            public ServiceB(IServiceA serviceA)
-            {
-                m_ServiceA = serviceA;
-            }
+            private readonly IServiceA m_ServiceA = serviceA;
 
             public string GetValue() => "B";
         }
@@ -1561,14 +1525,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceC : IServiceC
+        public class ServiceC(DependencyInjectionValidatorTests.IServiceB serviceB) : IServiceC
         {
-            private readonly IServiceB m_ServiceB;
-
-            public ServiceC(IServiceB serviceB)
-            {
-                m_ServiceB = serviceB;
-            }
+            private readonly IServiceB m_ServiceB = serviceB;
 
             public string GetValue() => "C";
         }
@@ -1610,18 +1569,11 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithPrimitiveParameters : IServiceWithPrimitiveParameters
+        public class ServiceWithPrimitiveParameters(int intValue, string stringValue, bool boolValue) : IServiceWithPrimitiveParameters
         {
-            private readonly int m_IntValue;
-            private readonly string m_StringValue;
-            private readonly bool m_BoolValue;
-
-            public ServiceWithPrimitiveParameters(int intValue, string stringValue, bool boolValue)
-            {
-                m_IntValue = intValue;
-                m_StringValue = stringValue;
-                m_BoolValue = boolValue;
-            }
+            private readonly int m_IntValue = intValue;
+            private readonly string m_StringValue = stringValue;
+            private readonly bool m_BoolValue = boolValue;
 
             public string GetValue() => "PrimitiveParameters";
         }
@@ -1631,14 +1583,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithOptionalParameters : IServiceWithOptionalParameters
+        public class ServiceWithOptionalParameters(string value = "default") : IServiceWithOptionalParameters
         {
-            private readonly string m_Value;
-
-            public ServiceWithOptionalParameters(string value = "default")
-            {
-                m_Value = value;
-            }
+            private readonly string m_Value = value;
 
             public string GetValue() => "OptionalParameters";
         }
@@ -1648,14 +1595,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithGenericParameters : IServiceWithGenericParameters
+        public class ServiceWithGenericParameters(DependencyInjectionValidatorTests.IServiceA serviceA) : IServiceWithGenericParameters
         {
-            private readonly IServiceA m_ServiceA;
-
-            public ServiceWithGenericParameters(IServiceA serviceA)
-            {
-                m_ServiceA = serviceA;
-            }
+            private readonly IServiceA m_ServiceA = serviceA;
 
             public string GetValue() => "GenericParameters";
         }
@@ -1665,14 +1607,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithInterfaceParameters : IServiceWithInterfaceParameters
+        public class ServiceWithInterfaceParameters(DependencyInjectionValidatorTests.IServiceA serviceA) : IServiceWithInterfaceParameters
         {
-            private readonly IServiceA m_ServiceA;
-
-            public ServiceWithInterfaceParameters(IServiceA serviceA)
-            {
-                m_ServiceA = serviceA;
-            }
+            private readonly IServiceA m_ServiceA = serviceA;
 
             public string GetValue() => "InterfaceParameters";
         }
@@ -1682,14 +1619,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithAbstractParameters : IServiceWithAbstractParameters
+        public class ServiceWithAbstractParameters(DependencyInjectionValidatorTests.AbstractService abstractService) : IServiceWithAbstractParameters
         {
-            private readonly AbstractService m_AbstractService;
-
-            public ServiceWithAbstractParameters(AbstractService abstractService)
-            {
-                m_AbstractService = abstractService;
-            }
+            private readonly AbstractService m_AbstractService = abstractService;
 
             public string GetValue() => "AbstractParameters";
         }
@@ -1704,18 +1636,11 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithValueTypeParameters : IServiceWithValueTypeParameters
+        public class ServiceWithValueTypeParameters(int intValue, double doubleValue, decimal decimalValue) : IServiceWithValueTypeParameters
         {
-            private readonly int m_IntValue;
-            private readonly double m_DoubleValue;
-            private readonly decimal m_DecimalValue;
-
-            public ServiceWithValueTypeParameters(int intValue, double doubleValue, decimal decimalValue)
-            {
-                m_IntValue = intValue;
-                m_DoubleValue = doubleValue;
-                m_DecimalValue = decimalValue;
-            }
+            private readonly int m_IntValue = intValue;
+            private readonly double m_DoubleValue = doubleValue;
+            private readonly decimal m_DecimalValue = decimalValue;
 
             public string GetValue() => "ValueTypeParameters";
         }
@@ -1725,16 +1650,10 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableParameters : IServiceWithNullableParameters
+        public class ServiceWithNullableParameters(int? nullableInt, string? nullableString) : IServiceWithNullableParameters
         {
-            private readonly int? m_NullableInt;
-            private readonly string? m_NullableString;
-
-            public ServiceWithNullableParameters(int? nullableInt, string? nullableString)
-            {
-                m_NullableInt = nullableInt;
-                m_NullableString = nullableString;
-            }
+            private readonly int? m_NullableInt = nullableInt;
+            private readonly string? m_NullableString = nullableString;
 
             public string GetValue() => "NullableParameters";
         }
@@ -1744,16 +1663,10 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithArrayParameters : IServiceWithArrayParameters
+        public class ServiceWithArrayParameters(int[] intArray, string[] stringArray) : IServiceWithArrayParameters
         {
-            private readonly int[] m_IntArray;
-            private readonly string[] m_StringArray;
-
-            public ServiceWithArrayParameters(int[] intArray, string[] stringArray)
-            {
-                m_IntArray = intArray;
-                m_StringArray = stringArray;
-            }
+            private readonly int[] m_IntArray = intArray;
+            private readonly string[] m_StringArray = stringArray;
 
             public string GetValue() => "ArrayParameters";
         }
@@ -1763,16 +1676,10 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithDelegateParameters : IServiceWithDelegateParameters
+        public class ServiceWithDelegateParameters(Func<string> func, Action action) : IServiceWithDelegateParameters
         {
-            private readonly Func<string> m_Func;
-            private readonly Action m_Action;
-
-            public ServiceWithDelegateParameters(Func<string> func, Action action)
-            {
-                m_Func = func;
-                m_Action = action;
-            }
+            private readonly Func<string> m_Func = func;
+            private readonly Action m_Action = action;
 
             public string GetValue() => "DelegateParameters";
         }
@@ -1782,14 +1689,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithEnumParameters : IServiceWithEnumParameters
+        public class ServiceWithEnumParameters(ValidationSeverity severity) : IServiceWithEnumParameters
         {
-            private readonly ValidationSeverity m_Severity;
-
-            public ServiceWithEnumParameters(ValidationSeverity severity)
-            {
-                m_Severity = severity;
-            }
+            private readonly ValidationSeverity m_Severity = severity;
 
             public string GetValue() => "EnumParameters";
         }
@@ -1799,16 +1701,10 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithStructParameters : IServiceWithStructParameters
+        public class ServiceWithStructParameters(DateTime dateTime, TimeSpan timeSpan) : IServiceWithStructParameters
         {
-            private readonly DateTime m_DateTime;
-            private readonly TimeSpan m_TimeSpan;
-
-            public ServiceWithStructParameters(DateTime dateTime, TimeSpan timeSpan)
-            {
-                m_DateTime = dateTime;
-                m_TimeSpan = timeSpan;
-            }
+            private readonly DateTime m_DateTime = dateTime;
+            private readonly TimeSpan m_TimeSpan = timeSpan;
 
             public string GetValue() => "StructParameters";
         }
@@ -1818,16 +1714,10 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithGenericTypeParameters : IServiceWithGenericTypeParameters
+        public class ServiceWithGenericTypeParameters(List<string> stringList, Dictionary<string, int> stringIntDict) : IServiceWithGenericTypeParameters
         {
-            private readonly List<string> m_StringList;
-            private readonly Dictionary<string, int> m_StringIntDict;
-
-            public ServiceWithGenericTypeParameters(List<string> stringList, Dictionary<string, int> stringIntDict)
-            {
-                m_StringList = stringList;
-                m_StringIntDict = stringIntDict;
-            }
+            private readonly List<string> m_StringList = stringList;
+            private readonly Dictionary<string, int> m_StringIntDict = stringIntDict;
 
             public string GetValue() => "GenericTypeParameters";
         }
@@ -1837,16 +1727,10 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNestedGenericParameters : IServiceWithNestedGenericParameters
+        public class ServiceWithNestedGenericParameters(List<List<string>> nestedList, Dictionary<string, List<int>> nestedDict) : IServiceWithNestedGenericParameters
         {
-            private readonly List<List<string>> m_NestedList;
-            private readonly Dictionary<string, List<int>> m_NestedDict;
-
-            public ServiceWithNestedGenericParameters(List<List<string>> nestedList, Dictionary<string, List<int>> nestedDict)
-            {
-                m_NestedList = nestedList;
-                m_NestedDict = nestedDict;
-            }
+            private readonly List<List<string>> m_NestedList = nestedList;
+            private readonly Dictionary<string, List<int>> m_NestedDict = nestedDict;
 
             public string GetValue() => "NestedGenericParameters";
         }
@@ -1856,14 +1740,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithComplexGenericParameters : IServiceWithComplexGenericParameters
+        public class ServiceWithComplexGenericParameters(Dictionary<string, Dictionary<int, List<string>>> complexDict) : IServiceWithComplexGenericParameters
         {
-            private readonly Dictionary<string, Dictionary<int, List<string>>> m_ComplexDict;
-
-            public ServiceWithComplexGenericParameters(Dictionary<string, Dictionary<int, List<string>>> complexDict)
-            {
-                m_ComplexDict = complexDict;
-            }
+            private readonly Dictionary<string, Dictionary<int, List<string>>> m_ComplexDict = complexDict;
 
             public string GetValue() => "ComplexGenericParameters";
         }
@@ -1903,14 +1782,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithParamsParameters : IServiceWithParamsParameters
+        public class ServiceWithParamsParameters(params string[] @params) : IServiceWithParamsParameters
         {
-            private readonly string[] m_Params;
-
-            public ServiceWithParamsParameters(params string[] @params)
-            {
-                m_Params = @params;
-            }
+            private readonly string[] m_Params = @params;
 
             public string GetValue() => "ParamsParameters";
         }
@@ -1920,14 +1794,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithDefaultParameters : IServiceWithDefaultParameters
+        public class ServiceWithDefaultParameters(string value = "default") : IServiceWithDefaultParameters
         {
-            private readonly string m_Value;
-
-            public ServiceWithDefaultParameters(string value = "default")
-            {
-                m_Value = value;
-            }
+            private readonly string m_Value = value;
 
             public string GetValue() => "DefaultParameters";
         }
@@ -1937,14 +1806,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableReferenceParameters : IServiceWithNullableReferenceParameters
+        public class ServiceWithNullableReferenceParameters(string? nullableString) : IServiceWithNullableReferenceParameters
         {
-            private readonly string? m_NullableString;
-
-            public ServiceWithNullableReferenceParameters(string? nullableString)
-            {
-                m_NullableString = nullableString;
-            }
+            private readonly string? m_NullableString = nullableString;
 
             public string GetValue() => "NullableReferenceParameters";
         }
@@ -1954,14 +1818,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableValueParameters : IServiceWithNullableValueParameters
+        public class ServiceWithNullableValueParameters(int? nullableInt) : IServiceWithNullableValueParameters
         {
-            private readonly int? m_NullableInt;
-
-            public ServiceWithNullableValueParameters(int? nullableInt)
-            {
-                m_NullableInt = nullableInt;
-            }
+            private readonly int? m_NullableInt = nullableInt;
 
             public string GetValue() => "NullableValueParameters";
         }
@@ -1971,14 +1830,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableGenericParameters : IServiceWithNullableGenericParameters
+        public class ServiceWithNullableGenericParameters(List<string>? nullableList) : IServiceWithNullableGenericParameters
         {
-            private readonly List<string>? m_NullableList;
-
-            public ServiceWithNullableGenericParameters(List<string>? nullableList)
-            {
-                m_NullableList = nullableList;
-            }
+            private readonly List<string>? m_NullableList = nullableList;
 
             public string GetValue() => "NullableGenericParameters";
         }
@@ -1988,14 +1842,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableArrayParameters : IServiceWithNullableArrayParameters
+        public class ServiceWithNullableArrayParameters(int[]? nullableArray) : IServiceWithNullableArrayParameters
         {
-            private readonly int[]? m_NullableArray;
-
-            public ServiceWithNullableArrayParameters(int[]? nullableArray)
-            {
-                m_NullableArray = nullableArray;
-            }
+            private readonly int[]? m_NullableArray = nullableArray;
 
             public string GetValue() => "NullableArrayParameters";
         }
@@ -2005,14 +1854,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableDelegateParameters : IServiceWithNullableDelegateParameters
+        public class ServiceWithNullableDelegateParameters(Func<string>? nullableFunc) : IServiceWithNullableDelegateParameters
         {
-            private readonly Func<string>? m_NullableFunc;
-
-            public ServiceWithNullableDelegateParameters(Func<string>? nullableFunc)
-            {
-                m_NullableFunc = nullableFunc;
-            }
+            private readonly Func<string>? m_NullableFunc = nullableFunc;
 
             public string GetValue() => "NullableDelegateParameters";
         }
@@ -2022,14 +1866,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableEnumParameters : IServiceWithNullableEnumParameters
+        public class ServiceWithNullableEnumParameters(ValidationSeverity? nullableSeverity) : IServiceWithNullableEnumParameters
         {
-            private readonly ValidationSeverity? m_NullableSeverity;
-
-            public ServiceWithNullableEnumParameters(ValidationSeverity? nullableSeverity)
-            {
-                m_NullableSeverity = nullableSeverity;
-            }
+            private readonly ValidationSeverity? m_NullableSeverity = nullableSeverity;
 
             public string GetValue() => "NullableEnumParameters";
         }
@@ -2039,14 +1878,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableStructParameters : IServiceWithNullableStructParameters
+        public class ServiceWithNullableStructParameters(DateTime? nullableDateTime) : IServiceWithNullableStructParameters
         {
-            private readonly DateTime? m_NullableDateTime;
-
-            public ServiceWithNullableStructParameters(DateTime? nullableDateTime)
-            {
-                m_NullableDateTime = nullableDateTime;
-            }
+            private readonly DateTime? m_NullableDateTime = nullableDateTime;
 
             public string GetValue() => "NullableStructParameters";
         }
@@ -2056,14 +1890,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableGenericTypeParameters : IServiceWithNullableGenericTypeParameters
+        public class ServiceWithNullableGenericTypeParameters(List<string>? nullableList) : IServiceWithNullableGenericTypeParameters
         {
-            private readonly List<string>? m_NullableList;
-
-            public ServiceWithNullableGenericTypeParameters(List<string>? nullableList)
-            {
-                m_NullableList = nullableList;
-            }
+            private readonly List<string>? m_NullableList = nullableList;
 
             public string GetValue() => "NullableGenericTypeParameters";
         }
@@ -2073,14 +1902,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableNestedGenericParameters : IServiceWithNullableNestedGenericParameters
+        public class ServiceWithNullableNestedGenericParameters(List<List<string>>? nullableNestedList) : IServiceWithNullableNestedGenericParameters
         {
-            private readonly List<List<string>>? m_NullableNestedList;
-
-            public ServiceWithNullableNestedGenericParameters(List<List<string>>? nullableNestedList)
-            {
-                m_NullableNestedList = nullableNestedList;
-            }
+            private readonly List<List<string>>? m_NullableNestedList = nullableNestedList;
 
             public string GetValue() => "NullableNestedGenericParameters";
         }
@@ -2090,14 +1914,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableComplexGenericParameters : IServiceWithNullableComplexGenericParameters
+        public class ServiceWithNullableComplexGenericParameters(Dictionary<string, Dictionary<int, List<string>>>? nullableComplexDict) : IServiceWithNullableComplexGenericParameters
         {
-            private readonly Dictionary<string, Dictionary<int, List<string>>>? m_NullableComplexDict;
-
-            public ServiceWithNullableComplexGenericParameters(Dictionary<string, Dictionary<int, List<string>>>? nullableComplexDict)
-            {
-                m_NullableComplexDict = nullableComplexDict;
-            }
+            private readonly Dictionary<string, Dictionary<int, List<string>>>? m_NullableComplexDict = nullableComplexDict;
 
             public string GetValue() => "NullableComplexGenericParameters";
         }
@@ -2137,14 +1956,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableParamsParameters : IServiceWithNullableParamsParameters
+        public class ServiceWithNullableParamsParameters(params string?[] nullableParams) : IServiceWithNullableParamsParameters
         {
-            private readonly string?[] m_NullableParams;
-
-            public ServiceWithNullableParamsParameters(params string?[] nullableParams)
-            {
-                m_NullableParams = nullableParams;
-            }
+            private readonly string?[] m_NullableParams = nullableParams;
 
             public string GetValue() => "NullableParamsParameters";
         }
@@ -2154,14 +1968,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableOptionalParameters : IServiceWithNullableOptionalParameters
+        public class ServiceWithNullableOptionalParameters(string? nullableValue = null) : IServiceWithNullableOptionalParameters
         {
-            private readonly string? m_NullableValue;
-
-            public ServiceWithNullableOptionalParameters(string? nullableValue = null)
-            {
-                m_NullableValue = nullableValue;
-            }
+            private readonly string? m_NullableValue = nullableValue;
 
             public string GetValue() => "NullableOptionalParameters";
         }
@@ -2171,14 +1980,9 @@ namespace mcp_nexus_tests.Infrastructure
             string GetValue();
         }
 
-        public class ServiceWithNullableDefaultParameters : IServiceWithNullableDefaultParameters
+        public class ServiceWithNullableDefaultParameters(string? nullableValue = null) : IServiceWithNullableDefaultParameters
         {
-            private readonly string? m_NullableValue;
-
-            public ServiceWithNullableDefaultParameters(string? nullableValue = null)
-            {
-                m_NullableValue = nullableValue;
-            }
+            private readonly string? m_NullableValue = nullableValue;
 
             public string GetValue() => "NullableDefaultParameters";
         }

@@ -452,9 +452,9 @@ namespace mcp_nexus.CommandQueue
             var now = DateTime.UtcNow;
             if (now - m_lastStatsLog >= TimeSpan.FromMinutes(5))
             {
-                var stats = GetPerformanceStats();
+                var (Processed, Failed, Cancelled) = GetPerformanceStats();
                 m_logger.LogInformation("📊 Command stats - Processed: {Processed}, Failed: {Failed}, Cancelled: {Cancelled}, Active: {Active}",
-                    stats.Processed, stats.Failed, stats.Cancelled, m_activeCommands.Count);
+                    Processed, Failed, Cancelled, m_activeCommands.Count);
                 m_lastStatsLog = now;
             }
         }

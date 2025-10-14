@@ -139,7 +139,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void Properties_AreReadOnly()
         {
             // Arrange
-            var config = new BasicQueueConfiguration();
+            _ = new BasicQueueConfiguration();
 
             // Act & Assert
             // Properties should be read-only (no setters)

@@ -5,21 +5,15 @@ namespace mcp_nexus.Middleware
     /// <summary>
     /// Middleware that logs JSON-RPC requests and responses for debugging purposes
     /// </summary>
-    public class JsonRpcLoggingMiddleware
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="JsonRpcLoggingMiddleware"/> class.
+    /// </remarks>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    /// <param name="logger">The logger instance for recording JSON-RPC operations.</param>
+    public class JsonRpcLoggingMiddleware(RequestDelegate next, ILogger<JsonRpcLoggingMiddleware> logger)
     {
-        private readonly RequestDelegate m_next;
-        private readonly ILogger<JsonRpcLoggingMiddleware> m_logger;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="JsonRpcLoggingMiddleware"/> class.
-        /// </summary>
-        /// <param name="next">The next middleware in the pipeline.</param>
-        /// <param name="logger">The logger instance for recording JSON-RPC operations.</param>
-        public JsonRpcLoggingMiddleware(RequestDelegate next, ILogger<JsonRpcLoggingMiddleware> logger)
-        {
-            m_next = next;
-            m_logger = logger;
-        }
+        private readonly RequestDelegate m_next = next;
+        private readonly ILogger<JsonRpcLoggingMiddleware> m_logger = logger;
 
         /// <summary>
         /// Invokes the middleware to log JSON-RPC requests and responses.
@@ -115,7 +109,7 @@ namespace mcp_nexus.Middleware
 
             // Try to decode the text for easier debugging
             // For Info level, don't truncate; for Debug and higher, truncate large fields
-            var (decodedText, decodeSuccess) = DecodeJsonText(responseBodyText, shouldTruncate: false); // Info level - no truncation
+            var (_, decodeSuccess) = DecodeJsonText(responseBodyText, shouldTruncate: false); // Info level - no truncation
             if (decodeSuccess)
             {
                 // DecodeJsonText succeeded - use Info for main response, Debug for decoded text
@@ -178,7 +172,7 @@ namespace mcp_nexus.Middleware
                 {
                     if (line.StartsWith("data: "))
                     {
-                        var jsonPart = line.Substring(6).Trim();
+                        var jsonPart = line[6..].Trim();
                         return FormatJsonForLogging(jsonPart);
                     }
                 }
@@ -216,7 +210,7 @@ namespace mcp_nexus.Middleware
                         if (property.Value.ValueKind == JsonValueKind.String && property.Value.GetString()?.Length > maxFieldLength)
                         {
                             var originalValue = property.Value.GetString() ?? "";
-                            truncatedObject[property.Name] = originalValue.Substring(0, maxFieldLength) + $"...(truncated {originalValue.Length - maxFieldLength} chars)";
+                            truncatedObject[property.Name] = originalValue[..maxFieldLength] + $"...(truncated {originalValue.Length - maxFieldLength} chars)";
                         }
                         else
                         {
@@ -237,7 +231,7 @@ namespace mcp_nexus.Middleware
                     var stringValue = element.GetString() ?? "";
                     if (stringValue.Length > maxFieldLength)
                     {
-                        return JsonDocument.Parse($"\"{stringValue.Substring(0, maxFieldLength)}...(truncated {stringValue.Length - maxFieldLength} chars)\"").RootElement;
+                        return JsonDocument.Parse($"\"{stringValue[..maxFieldLength]}...(truncated {stringValue.Length - maxFieldLength} chars)\"").RootElement;
                     }
                     return element;
 
@@ -270,7 +264,7 @@ namespace mcp_nexus.Middleware
                 {
                     if (line.StartsWith("data: "))
                     {
-                        jsonContent = line.Substring(6).Trim();
+                        jsonContent = line[6..].Trim();
                         break;
                     }
                 }

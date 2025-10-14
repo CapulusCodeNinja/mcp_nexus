@@ -62,7 +62,7 @@ namespace mcp_nexus_tests.Tools
                 m_MockSessionManager
                     .Setup(x => x.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(sessionId);
-                
+
                 m_MockSessionManager
                     .Setup(x => x.GetSessionContext(sessionId))
                     .Returns(sessionContext);
@@ -738,7 +738,7 @@ namespace mcp_nexus_tests.Tools
             Assert.NotNull(method);
 
             // Act
-            var result = method.Invoke(null, new object[] { input });
+            var result = method.Invoke(null, [input]);
 
             // Assert
             Assert.Equal(expected, result);
@@ -759,7 +759,7 @@ namespace mcp_nexus_tests.Tools
             Assert.NotNull(method);
 
             // Act
-            var result = method.Invoke(null, new object[] { input });
+            var result = method.Invoke(null, [input]);
 
             // Assert
             Assert.Equal(expected, result);
@@ -782,7 +782,7 @@ namespace mcp_nexus_tests.Tools
             var timeSpan = new TimeSpan(hours, minutes, seconds);
 
             // Act
-            var result = method.Invoke(null, new object[] { timeSpan });
+            var result = method.Invoke(null, [timeSpan]);
 
             // Assert
             Assert.Equal(expected, result);
@@ -806,7 +806,7 @@ namespace mcp_nexus_tests.Tools
             var elapsed = TimeSpan.FromMinutes(elapsedMinutes);
 
             // Act
-            var result = method.Invoke(null, new object[] { queuePosition, elapsed });
+            var result = method.Invoke(null, [queuePosition, elapsed]);
 
             // Assert
             Assert.IsType<int>(result);
@@ -831,7 +831,7 @@ namespace mcp_nexus_tests.Tools
             Assert.NotNull(method);
 
             // Act
-            var result = method.Invoke(null, new object[] { state, queuePosition });
+            var result = method.Invoke(null, [state, queuePosition]);
 
             // Assert
             Assert.IsType<string>(result);
@@ -856,7 +856,7 @@ namespace mcp_nexus_tests.Tools
             var elapsed = TimeSpan.FromSeconds(elapsedSeconds);
 
             // Act
-            var result = method.Invoke(null, new object[] { queuePosition, elapsed });
+            var result = method.Invoke(null, [queuePosition, elapsed]);
 
             // Assert
             Assert.IsType<string>(result);
@@ -877,7 +877,7 @@ namespace mcp_nexus_tests.Tools
             var remaining = TimeSpan.FromMinutes(8.5);
 
             // Act
-            var result = method.Invoke(null, new object[] { queuePosition, elapsed, remaining });
+            var result = method.Invoke(null, [queuePosition, elapsed, remaining]);
 
             // Assert
             Assert.IsType<string>(result);

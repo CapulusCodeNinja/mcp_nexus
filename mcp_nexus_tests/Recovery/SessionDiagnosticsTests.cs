@@ -39,10 +39,11 @@ namespace mcp_nexus_tests.Recovery
         public void IsActive_CanBeSetAndRetrieved()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.IsActive = true;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                IsActive = true
+            };
 
             // Assert
             Assert.True(diagnostics.IsActive);
@@ -52,10 +53,11 @@ namespace mcp_nexus_tests.Recovery
         public void IsActive_WithFalseValue_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.IsActive = false;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                IsActive = false
+            };
 
             // Assert
             Assert.False(diagnostics.IsActive);
@@ -79,10 +81,11 @@ namespace mcp_nexus_tests.Recovery
         public void LastHealthCheck_WithMinValue_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.LastHealthCheck = DateTime.MinValue;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                LastHealthCheck = DateTime.MinValue
+            };
 
             // Assert
             Assert.Equal(DateTime.MinValue, diagnostics.LastHealthCheck);
@@ -92,10 +95,11 @@ namespace mcp_nexus_tests.Recovery
         public void LastHealthCheck_WithMaxValue_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.LastHealthCheck = DateTime.MaxValue;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                LastHealthCheck = DateTime.MaxValue
+            };
 
             // Assert
             Assert.Equal(DateTime.MaxValue, diagnostics.LastHealthCheck);
@@ -147,10 +151,11 @@ namespace mcp_nexus_tests.Recovery
         public void TimeSinceLastCheck_WithZeroValue_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.TimeSinceLastCheck = TimeSpan.Zero;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                TimeSinceLastCheck = TimeSpan.Zero
+            };
 
             // Assert
             Assert.Equal(TimeSpan.Zero, diagnostics.TimeSinceLastCheck);
@@ -160,10 +165,11 @@ namespace mcp_nexus_tests.Recovery
         public void TimeSinceLastCheck_WithNegativeValue_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.TimeSinceLastCheck = TimeSpan.FromMinutes(-5);
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                TimeSinceLastCheck = TimeSpan.FromMinutes(-5)
+            };
 
             // Assert
             Assert.Equal(TimeSpan.FromMinutes(-5), diagnostics.TimeSinceLastCheck);
@@ -173,10 +179,11 @@ namespace mcp_nexus_tests.Recovery
         public void TimeSinceLastCheck_WithMaxValue_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.TimeSinceLastCheck = TimeSpan.MaxValue;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                TimeSinceLastCheck = TimeSpan.MaxValue
+            };
 
             // Assert
             Assert.Equal(TimeSpan.MaxValue, diagnostics.TimeSinceLastCheck);
@@ -186,10 +193,11 @@ namespace mcp_nexus_tests.Recovery
         public void TimeSinceLastCheck_WithMinValue_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.TimeSinceLastCheck = TimeSpan.MinValue;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                TimeSinceLastCheck = TimeSpan.MinValue
+            };
 
             // Assert
             Assert.Equal(TimeSpan.MinValue, diagnostics.TimeSinceLastCheck);
@@ -221,10 +229,11 @@ namespace mcp_nexus_tests.Recovery
         public void IsHealthCheckDue_CanBeSetAndRetrieved()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.IsHealthCheckDue = true;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                IsHealthCheckDue = true
+            };
 
             // Assert
             Assert.True(diagnostics.IsHealthCheckDue);
@@ -234,10 +243,11 @@ namespace mcp_nexus_tests.Recovery
         public void IsHealthCheckDue_WithFalseValue_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.IsHealthCheckDue = false;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                IsHealthCheckDue = false
+            };
 
             // Assert
             Assert.False(diagnostics.IsHealthCheckDue);
@@ -261,10 +271,11 @@ namespace mcp_nexus_tests.Recovery
         public void ErrorMessage_WithNullValue_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.ErrorMessage = null;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                ErrorMessage = null
+            };
 
             // Assert
             Assert.Null(diagnostics.ErrorMessage);
@@ -274,10 +285,11 @@ namespace mcp_nexus_tests.Recovery
         public void ErrorMessage_WithEmptyString_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.ErrorMessage = string.Empty;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                ErrorMessage = string.Empty
+            };
 
             // Assert
             Assert.Equal(string.Empty, diagnostics.ErrorMessage);
@@ -287,10 +299,11 @@ namespace mcp_nexus_tests.Recovery
         public void ErrorMessage_WithWhitespace_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.ErrorMessage = "   ";
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                ErrorMessage = "   "
+            };
 
             // Assert
             Assert.Equal("   ", diagnostics.ErrorMessage);
@@ -351,10 +364,11 @@ namespace mcp_nexus_tests.Recovery
         public void AdditionalInfo_WithEmptyDictionary_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.AdditionalInfo = new Dictionary<string, object>();
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                AdditionalInfo = []
+            };
 
             // Assert
             Assert.NotNull(diagnostics.AdditionalInfo);
@@ -365,14 +379,16 @@ namespace mcp_nexus_tests.Recovery
         public void AdditionalInfo_WithNullValue_HandlesCorrectly()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.AdditionalInfo = null!;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                AdditionalInfo = null!
+            };
 
             // Assert
             Assert.Null(diagnostics.AdditionalInfo);
         }
+        private static readonly int[] value = new[] { 1, 2, 3 };
 
         [Fact]
         public void AdditionalInfo_WithComplexObjects_HandlesCorrectly()
@@ -385,7 +401,7 @@ namespace mcp_nexus_tests.Recovery
                 { "int", 123 },
                 { "double", 45.67 },
                 { "bool", true },
-                { "array", new[] { 1, 2, 3 } },
+                { "array", value },
                 { "nested", new Dictionary<string, object> { { "inner", "value" } } }
             };
 
@@ -421,15 +437,16 @@ namespace mcp_nexus_tests.Recovery
         public void AllProperties_CanBeSetIndependently()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act
-            diagnostics.IsActive = true;
-            diagnostics.LastHealthCheck = DateTime.UtcNow;
-            diagnostics.TimeSinceLastCheck = TimeSpan.FromMinutes(5);
-            diagnostics.IsHealthCheckDue = true;
-            diagnostics.ErrorMessage = "Test error";
-            diagnostics.AdditionalInfo = new Dictionary<string, object> { { "test", "value" } };
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act
+                IsActive = true,
+                LastHealthCheck = DateTime.UtcNow,
+                TimeSinceLastCheck = TimeSpan.FromMinutes(5),
+                IsHealthCheckDue = true,
+                ErrorMessage = "Test error",
+                AdditionalInfo = new Dictionary<string, object> { { "test", "value" } }
+            };
 
             // Assert
             Assert.True(diagnostics.IsActive);
@@ -444,10 +461,11 @@ namespace mcp_nexus_tests.Recovery
         public void AllProperties_CanBeSetMultipleTimes()
         {
             // Arrange
-            var diagnostics = new SessionDiagnostics();
-
-            // Act & Assert
-            diagnostics.IsActive = true;
+            var diagnostics = new SessionDiagnostics
+            {
+                // Act & Assert
+                IsActive = true
+            };
             Assert.True(diagnostics.IsActive);
             diagnostics.IsActive = false;
             Assert.False(diagnostics.IsActive);

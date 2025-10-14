@@ -69,7 +69,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert - We only test the method signature, NOT actual execution
             // This test verifies the method exists and has the correct return type
-            var method = typeof(WindowsServiceInstaller).GetMethod("InstallServiceAsync", new[] { typeof(ILogger) });
+            var method = typeof(WindowsServiceInstaller).GetMethod("InstallServiceAsync", [typeof(ILogger)]);
             Assert.NotNull(method);
             Assert.Equal(typeof(Task<bool>), method.ReturnType);
         }
@@ -79,7 +79,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert - We only test the method signature, NOT actual execution
             // This test verifies the method exists and has the correct return type
-            var method = typeof(WindowsServiceInstaller).GetMethod("InstallServiceAsync", new[] { typeof(ILogger) });
+            var method = typeof(WindowsServiceInstaller).GetMethod("InstallServiceAsync", [typeof(ILogger)]);
             Assert.NotNull(method);
             Assert.Equal(typeof(Task<bool>), method.ReturnType);
         }
@@ -89,7 +89,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert - We only test the method signature, NOT actual execution
             // This test verifies the method exists and has the correct return type
-            var method = typeof(WindowsServiceInstaller).GetMethod("UninstallServiceAsync", new[] { typeof(ILogger) });
+            var method = typeof(WindowsServiceInstaller).GetMethod("UninstallServiceAsync", [typeof(ILogger)]);
             Assert.NotNull(method);
             Assert.Equal(typeof(Task<bool>), method.ReturnType);
         }
@@ -99,7 +99,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert - We only test the method signature, NOT actual execution
             // This test verifies the method exists and has the correct return type
-            var method = typeof(WindowsServiceInstaller).GetMethod("UninstallServiceAsync", new[] { typeof(ILogger) });
+            var method = typeof(WindowsServiceInstaller).GetMethod("UninstallServiceAsync", [typeof(ILogger)]);
             Assert.NotNull(method);
             Assert.Equal(typeof(Task<bool>), method.ReturnType);
         }
@@ -111,7 +111,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert - We only test the method signature, NOT actual execution
             // This test verifies the method exists and has the correct return type
-            var method = typeof(WindowsServiceInstaller).GetMethod("UpdateServiceAsync", new[] { typeof(ILogger) });
+            var method = typeof(WindowsServiceInstaller).GetMethod("UpdateServiceAsync", [typeof(ILogger)]);
             Assert.NotNull(method);
             Assert.Equal(typeof(Task<bool>), method.ReturnType);
         }
@@ -121,7 +121,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Act & Assert - We only test the method signature, NOT actual execution
             // This test verifies the method exists and has the correct return type
-            var method = typeof(WindowsServiceInstaller).GetMethod("UpdateServiceAsync", new[] { typeof(ILogger) });
+            var method = typeof(WindowsServiceInstaller).GetMethod("UpdateServiceAsync", [typeof(ILogger)]);
             Assert.NotNull(method);
             Assert.Equal(typeof(Task<bool>), method.ReturnType);
         }
@@ -130,7 +130,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void InstallServiceAsync_WithNullLogger_ReturnsTaskOfBool()
         {
             // Act & Assert - We only test the method signature, NOT actual execution
-            var method = typeof(WindowsServiceInstaller).GetMethod("InstallServiceAsync", new[] { typeof(ILogger) });
+            var method = typeof(WindowsServiceInstaller).GetMethod("InstallServiceAsync", [typeof(ILogger)]);
             Assert.NotNull(method);
             Assert.Equal(typeof(Task<bool>), method.ReturnType);
         }
@@ -139,7 +139,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void InstallServiceAsync_WithLogger_ReturnsTaskOfBool()
         {
             // Act & Assert - We only test the method signature, NOT actual execution
-            var method = typeof(WindowsServiceInstaller).GetMethod("InstallServiceAsync", new[] { typeof(ILogger) });
+            var method = typeof(WindowsServiceInstaller).GetMethod("InstallServiceAsync", [typeof(ILogger)]);
             Assert.NotNull(method);
             Assert.Equal(typeof(Task<bool>), method.ReturnType);
         }
@@ -148,7 +148,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void UninstallServiceAsync_WithNullLogger_ReturnsTaskOfBool()
         {
             // Act & Assert - We only test the method signature, NOT actual execution
-            var method = typeof(WindowsServiceInstaller).GetMethod("UninstallServiceAsync", new[] { typeof(ILogger) });
+            var method = typeof(WindowsServiceInstaller).GetMethod("UninstallServiceAsync", [typeof(ILogger)]);
             Assert.NotNull(method);
             Assert.Equal(typeof(Task<bool>), method.ReturnType);
         }
@@ -157,7 +157,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void UninstallServiceAsync_WithLogger_ReturnsTaskOfBool()
         {
             // Act & Assert - We only test the method signature, NOT actual execution
-            var method = typeof(WindowsServiceInstaller).GetMethod("UninstallServiceAsync", new[] { typeof(ILogger) });
+            var method = typeof(WindowsServiceInstaller).GetMethod("UninstallServiceAsync", [typeof(ILogger)]);
             Assert.NotNull(method);
             Assert.Equal(typeof(Task<bool>), method.ReturnType);
         }
@@ -168,7 +168,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void UpdateServiceAsync_WithNullLogger_ReturnsTaskOfBool()
         {
             // Act & Assert - We only test the method signature, NOT actual execution
-            var method = typeof(WindowsServiceInstaller).GetMethod("UpdateServiceAsync", new[] { typeof(ILogger) });
+            var method = typeof(WindowsServiceInstaller).GetMethod("UpdateServiceAsync", [typeof(ILogger)]);
             Assert.NotNull(method);
             Assert.Equal(typeof(Task<bool>), method.ReturnType);
         }
@@ -177,7 +177,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void UpdateServiceAsync_WithLogger_ReturnsTaskOfBool()
         {
             // Act & Assert - We only test the method signature, NOT actual execution
-            var method = typeof(WindowsServiceInstaller).GetMethod("UpdateServiceAsync", new[] { typeof(ILogger) });
+            var method = typeof(WindowsServiceInstaller).GetMethod("UpdateServiceAsync", [typeof(ILogger)]);
             Assert.NotNull(method);
             Assert.Equal(typeof(Task<bool>), method.ReturnType);
         }

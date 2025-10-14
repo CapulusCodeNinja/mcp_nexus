@@ -5,28 +5,21 @@ namespace mcp_nexus.CommandQueue
     /// <summary>
     /// Manages notifications and heartbeat for command queue operations
     /// </summary>
-    public class CommandNotificationManager
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CommandNotificationManager"/> class.
+    /// </remarks>
+    /// <param name="notificationService">The notification service for sending notifications.</param>
+    /// <param name="logger">The logger instance for recording notification operations.</param>
+    /// <param name="config">The command queue configuration settings.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
+    public class CommandNotificationManager(
+        IMcpNotificationService notificationService,
+        ILogger logger,
+        CommandQueueConfiguration config)
     {
-        private readonly IMcpNotificationService m_notificationService;
-        private readonly ILogger m_logger;
-        private readonly CommandQueueConfiguration m_config;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CommandNotificationManager"/> class.
-        /// </summary>
-        /// <param name="notificationService">The notification service for sending notifications.</param>
-        /// <param name="logger">The logger instance for recording notification operations.</param>
-        /// <param name="config">The command queue configuration settings.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
-        public CommandNotificationManager(
-            IMcpNotificationService notificationService,
-            ILogger logger,
-            CommandQueueConfiguration config)
-        {
-            m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_config = config ?? throw new ArgumentNullException(nameof(config));
-        }
+        private readonly IMcpNotificationService m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+        private readonly ILogger m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly CommandQueueConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
 
         /// <summary>
         /// Sends a command status notification (fire and forget).

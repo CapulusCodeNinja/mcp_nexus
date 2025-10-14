@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void ResilientCommandProcessor_Class_Exists()
         {
             // This test verifies that the ResilientCommandProcessor class exists and can be instantiated
-            Assert.True(typeof(ResilientCommandProcessor) != null);
+            Assert.NotNull(typeof(ResilientCommandProcessor));
         }
     }
 }

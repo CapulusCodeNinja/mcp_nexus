@@ -51,7 +51,7 @@ namespace mcp_nexus_tests.Session.Models
             // Arrange
             var realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
             var mockCommandQueue = new Mock<ICommandQueueService>();
-            var createdAt = DateTime.UtcNow;
+            _ = DateTime.UtcNow;
             const string sessionId = "test-session-123";
             const string dumpPath = "C:\\test.dmp";
             const string symbolsPath = "C:\\symbols";

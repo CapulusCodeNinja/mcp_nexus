@@ -6,7 +6,7 @@ namespace mcp_nexus.Utilities
     /// Provides utilities for validating and cleaning symbol search paths to prevent warnings.
     /// Handles whitespace cleanup, path validation, and symbol server configuration.
     /// </summary>
-    public static class SymbolPathValidator
+    public static partial class SymbolPathValidator
     {
         /// <summary>
         /// Cleans and validates a symbol search path by removing leading/trailing whitespace and normalizing separators.
@@ -55,7 +55,7 @@ namespace mcp_nexus.Utilities
             if (cleaned.Contains('\\'))
             {
                 // Windows path - normalize backslashes
-                cleaned = Regex.Replace(cleaned, @"[\\]+", "\\");
+                cleaned = MyRegex().Replace(cleaned, "\\");
             }
             else if (cleaned.Contains("://"))
             {
@@ -66,7 +66,7 @@ namespace mcp_nexus.Utilities
             {
                 // Symbol path - convert to Windows format with backslashes
                 cleaned = cleaned.Replace('/', '\\');
-                cleaned = Regex.Replace(cleaned, @"[\\]+", "\\");
+                cleaned = MyRegex().Replace(cleaned, "\\");
             }
             else
             {
@@ -166,5 +166,8 @@ namespace mcp_nexus.Utilities
                 return symbolPath ?? string.Empty;
             }
         }
+
+        [GeneratedRegex(@"[\\]+")]
+        private static partial Regex MyRegex();
     }
 }

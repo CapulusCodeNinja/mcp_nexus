@@ -37,7 +37,7 @@ namespace mcp_nexus.Metrics
         /// <param name="tags">Optional tags to associate with the metric.</param>
         public void IncrementCounter(string name, double value = 1.0, Dictionary<string, string>? tags = null)
         {
-            var counter = m_counters.GetOrAdd(name, _ => new Counter(name, tags ?? new Dictionary<string, string>()));
+            var counter = m_counters.GetOrAdd(name, _ => new Counter(name, tags ?? []));
             counter.Increment(value);
         }
 
@@ -49,7 +49,7 @@ namespace mcp_nexus.Metrics
         /// <param name="tags">Optional tags to associate with the metric.</param>
         public void RecordHistogram(string name, double value, Dictionary<string, string>? tags = null)
         {
-            var histogram = m_histograms.GetOrAdd(name, _ => new Histogram(name, tags ?? new Dictionary<string, string>()));
+            var histogram = m_histograms.GetOrAdd(name, _ => new Histogram(name, tags ?? []));
             histogram.Record(value);
         }
 
@@ -61,7 +61,7 @@ namespace mcp_nexus.Metrics
         /// <param name="tags">Optional tags to associate with the metric.</param>
         public void SetGauge(string name, double value, Dictionary<string, string>? tags = null)
         {
-            var gauge = m_gauges.GetOrAdd(name, _ => new Gauge(name, tags ?? new Dictionary<string, string>()));
+            var gauge = m_gauges.GetOrAdd(name, _ => new Gauge(name, tags ?? []));
             gauge.Set(value);
         }
 
@@ -199,10 +199,10 @@ namespace mcp_nexus.Metrics
     {
         #region Private Fields
 
-        private DateTime m_timestamp;
-        private readonly List<CounterSnapshot> m_counters = new();
-        private readonly List<HistogramSnapshot> m_histograms = new();
-        private readonly List<GaugeSnapshot> m_gauges = new();
+        private readonly DateTime m_timestamp;
+        private readonly List<CounterSnapshot> m_counters = [];
+        private readonly List<HistogramSnapshot> m_histograms = [];
+        private readonly List<GaugeSnapshot> m_gauges = [];
 
         #endregion
 
@@ -242,9 +242,9 @@ namespace mcp_nexus.Metrics
         public MetricsSnapshot(DateTime timestamp, List<CounterSnapshot> counters, List<HistogramSnapshot> histograms, List<GaugeSnapshot> gauges)
         {
             m_timestamp = timestamp;
-            m_counters = counters ?? new List<CounterSnapshot>();
-            m_histograms = histograms ?? new List<HistogramSnapshot>();
-            m_gauges = gauges ?? new List<GaugeSnapshot>();
+            m_counters = counters ?? [];
+            m_histograms = histograms ?? [];
+            m_gauges = gauges ?? [];
         }
 
         #endregion
@@ -297,30 +297,24 @@ namespace mcp_nexus.Metrics
     /// <summary>
     /// Thread-safe counter metric for counting events.
     /// </summary>
-    public class Counter
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="Counter"/> class.
+    /// </remarks>
+    /// <param name="name">The name of the counter.</param>
+    /// <param name="tags">The tags to associate with the counter.</param>
+    public class Counter(string name, Dictionary<string, string> tags)
     {
         private long m_valueBits = 0; // Store double as long for Interlocked operations
 
         /// <summary>
         /// Gets the name of the counter.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; } = name;
 
         /// <summary>
         /// Gets the tags associated with the counter.
         /// </summary>
-        public Dictionary<string, string> Tags { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Counter"/> class.
-        /// </summary>
-        /// <param name="name">The name of the counter.</param>
-        /// <param name="tags">The tags to associate with the counter.</param>
-        public Counter(string name, Dictionary<string, string> tags)
-        {
-            Name = name;
-            Tags = tags;
-        }
+        public Dictionary<string, string> Tags { get; } = tags;
 
         /// <summary>
         /// Increments the counter by the specified value.
@@ -357,31 +351,25 @@ namespace mcp_nexus.Metrics
     /// <summary>
     /// Thread-safe histogram metric for recording value distributions.
     /// </summary>
-    public class Histogram
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="Histogram"/> class.
+    /// </remarks>
+    /// <param name="name">The name of the histogram.</param>
+    /// <param name="tags">The tags to associate with the histogram.</param>
+    public class Histogram(string name, Dictionary<string, string> tags)
     {
-        private readonly List<double> m_values = new();
+        private readonly List<double> m_values = [];
         private readonly object m_lock = new();
 
         /// <summary>
         /// Gets the name of the histogram.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; } = name;
 
         /// <summary>
         /// Gets the tags associated with the histogram.
         /// </summary>
-        public Dictionary<string, string> Tags { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Histogram"/> class.
-        /// </summary>
-        /// <param name="name">The name of the histogram.</param>
-        /// <param name="tags">The tags to associate with the histogram.</param>
-        public Histogram(string name, Dictionary<string, string> tags)
-        {
-            Name = name;
-            Tags = tags;
-        }
+        public Dictionary<string, string> Tags { get; } = tags;
 
         /// <summary>
         /// Records a value in the histogram.
@@ -432,7 +420,12 @@ namespace mcp_nexus.Metrics
     /// <summary>
     /// Thread-safe gauge metric for recording current values.
     /// </summary>
-    public class Gauge
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="Gauge"/> class.
+    /// </remarks>
+    /// <param name="name">The name of the gauge.</param>
+    /// <param name="tags">The tags to associate with the gauge.</param>
+    public class Gauge(string name, Dictionary<string, string> tags)
     {
         private double m_value = 0;
         private readonly object m_lock = new();
@@ -440,23 +433,12 @@ namespace mcp_nexus.Metrics
         /// <summary>
         /// Gets the name of the gauge.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; } = name;
 
         /// <summary>
         /// Gets the tags associated with the gauge.
         /// </summary>
-        public Dictionary<string, string> Tags { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Gauge"/> class.
-        /// </summary>
-        /// <param name="name">The name of the gauge.</param>
-        /// <param name="tags">The tags to associate with the gauge.</param>
-        public Gauge(string name, Dictionary<string, string> tags)
-        {
-            Name = name;
-            Tags = tags;
-        }
+        public Dictionary<string, string> Tags { get; } = tags;
 
         /// <summary>
         /// Sets the current value of the gauge.
@@ -524,7 +506,7 @@ namespace mcp_nexus.Metrics
         {
             m_name = string.Empty;
             m_value = 0;
-            m_tags = new Dictionary<string, string>();
+            m_tags = [];
         }
 
         /// <summary>
@@ -537,7 +519,7 @@ namespace mcp_nexus.Metrics
         {
             m_name = name ?? string.Empty;
             m_value = value;
-            m_tags = tags ?? new Dictionary<string, string>();
+            m_tags = tags ?? [];
         }
 
         #endregion
@@ -546,17 +528,28 @@ namespace mcp_nexus.Metrics
     /// <summary>
     /// Represents a histogram snapshot - properly encapsulated
     /// </summary>
-    public class HistogramSnapshot
+    /// <remarks>
+    /// Initializes a new histogram snapshot
+    /// </remarks>
+    /// <param name="name">Histogram name</param>
+    /// <param name="count">Count of values</param>
+    /// <param name="sum">Sum of values</param>
+    /// <param name="min">Minimum value</param>
+    /// <param name="max">Maximum value</param>
+    /// <param name="average">Average value</param>
+    /// <param name="tags">Histogram tags</param>
+    public class HistogramSnapshot(string name, int count, double sum, double min, double max, double average,
+        Dictionary<string, string>? tags = null)
     {
         #region Private Fields
 
-        private string m_name;
-        private int m_count;
-        private double m_sum;
-        private double m_min;
-        private double m_max;
-        private double m_average;
-        private Dictionary<string, string> m_tags;
+        private string m_name = name ?? string.Empty;
+        private int m_count = count;
+        private double m_sum = sum;
+        private double m_min = min;
+        private double m_max = max;
+        private double m_average = average;
+        private Dictionary<string, string> m_tags = tags ?? [];
 
         #endregion
 
@@ -584,30 +577,7 @@ namespace mcp_nexus.Metrics
         public IReadOnlyDictionary<string, string> Tags { get => m_tags.AsReadOnly(); set => m_tags = new Dictionary<string, string>(value); }
 
         #endregion
-
         #region Constructor
-
-        /// <summary>
-        /// Initializes a new histogram snapshot
-        /// </summary>
-        /// <param name="name">Histogram name</param>
-        /// <param name="count">Count of values</param>
-        /// <param name="sum">Sum of values</param>
-        /// <param name="min">Minimum value</param>
-        /// <param name="max">Maximum value</param>
-        /// <param name="average">Average value</param>
-        /// <param name="tags">Histogram tags</param>
-        public HistogramSnapshot(string name, int count, double sum, double min, double max, double average,
-            Dictionary<string, string>? tags = null)
-        {
-            m_name = name ?? string.Empty;
-            m_count = count;
-            m_sum = sum;
-            m_min = min;
-            m_max = max;
-            m_average = average;
-            m_tags = tags ?? new Dictionary<string, string>();
-        }
 
         #endregion
     }
@@ -615,13 +585,19 @@ namespace mcp_nexus.Metrics
     /// <summary>
     /// Represents a gauge snapshot - properly encapsulated
     /// </summary>
-    public class GaugeSnapshot
+    /// <remarks>
+    /// Initializes a new gauge snapshot with specific values.
+    /// </remarks>
+    /// <param name="name">The gauge name.</param>
+    /// <param name="value">The gauge value.</param>
+    /// <param name="tags">The gauge tags.</param>
+    public class GaugeSnapshot(string name, double value, Dictionary<string, string>? tags = null)
     {
         #region Private Fields
 
-        private string m_name;
-        private double m_value;
-        private Dictionary<string, string> m_tags;
+        private string m_name = name ?? string.Empty;
+        private double m_value = value;
+        private Dictionary<string, string> m_tags = tags ?? [];
 
         #endregion
 
@@ -637,21 +613,7 @@ namespace mcp_nexus.Metrics
         public IReadOnlyDictionary<string, string> Tags { get => m_tags.AsReadOnly(); set => m_tags = new Dictionary<string, string>(value); }
 
         #endregion
-
         #region Constructor
-
-        /// <summary>
-        /// Initializes a new gauge snapshot with specific values.
-        /// </summary>
-        /// <param name="name">The gauge name.</param>
-        /// <param name="value">The gauge value.</param>
-        /// <param name="tags">The gauge tags.</param>
-        public GaugeSnapshot(string name, double value, Dictionary<string, string>? tags = null)
-        {
-            m_name = name ?? string.Empty;
-            m_value = value;
-            m_tags = tags ?? new Dictionary<string, string>();
-        }
 
         #endregion
     }

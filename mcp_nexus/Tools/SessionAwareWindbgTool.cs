@@ -164,13 +164,13 @@ namespace mcp_nexus.Tools
         public class AIGuidance
         {
             [JsonPropertyName("nextSteps")]
-            public List<string> NextSteps { get; set; } = new();
+            public List<string> NextSteps { get; set; } = [];
 
             [JsonPropertyName("usageHints")]
-            public List<string> UsageHints { get; set; } = new();
+            public List<string> UsageHints { get; set; } = [];
 
             [JsonPropertyName("commonErrors")]
-            public List<string> CommonErrors { get; set; } = new();
+            public List<string> CommonErrors { get; set; } = [];
         }
 
         /// <summary>
@@ -182,7 +182,7 @@ namespace mcp_nexus.Tools
             public string CurrentStep { get; set; } = string.Empty;
 
             [JsonPropertyName("suggestedNextCommands")]
-            public List<string> SuggestedNextCommands { get; set; } = new();
+            public List<string> SuggestedNextCommands { get; set; } = [];
 
             [JsonPropertyName("sessionState")]
             public string SessionState { get; set; } = string.Empty;
@@ -224,14 +224,14 @@ namespace mcp_nexus.Tools
 
                 // Create new session
                 var sessionId = await sessionManager.CreateSessionAsync(dumpPath, symbolsPath);
-                
+
                 // CRITICAL: Validate session was actually created and exists
                 if (string.IsNullOrWhiteSpace(sessionId))
                 {
                     logger.LogError("Session creation returned null or empty session ID");
                     throw new InvalidOperationException("Session creation failed - no session ID returned");
                 }
-                
+
                 // Verify session exists in session manager (only if session creation succeeded)
                 try
                 {
@@ -243,7 +243,7 @@ namespace mcp_nexus.Tools
                     }
                     logger.LogInformation("✅ Session {SessionId} created and validated successfully", sessionId);
                 }
-                catch (Exception ex) when (!(ex is InvalidOperationException))
+                catch (Exception ex) when (ex is not InvalidOperationException)
                 {
                     // If GetSessionContext fails for any reason other than our validation, log but don't fail
                     logger.LogWarning(ex, "Could not verify session context for {SessionId}, but session creation succeeded", sessionId);
@@ -253,7 +253,7 @@ namespace mcp_nexus.Tools
                 // Return standardized response with required fields
                 var response = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     dumpFile = Path.GetFileName(dumpPath),
                     commandId = (string?)null,
                     status = "Success",
@@ -323,7 +323,7 @@ namespace mcp_nexus.Tools
                 {
                     var notFoundResponse = new
                     {
-                        sessionId = sessionId,
+                        sessionId,
                         dumpFile = (string?)null,
                         commandId = (string?)null,
                         status = "Failed",
@@ -341,7 +341,7 @@ namespace mcp_nexus.Tools
                 // Return standardized response with required fields
                 var response = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
                     status = closed ? "Success" : "Failed",
@@ -360,7 +360,7 @@ namespace mcp_nexus.Tools
                 logger.LogWarning("Invalid session ID (null): {Message}", ex.Message);
                 var errorResponse = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
                     status = "Failed",
@@ -375,7 +375,7 @@ namespace mcp_nexus.Tools
                 logger.LogWarning("Invalid session ID (empty/whitespace): {Message}", ex.Message);
                 var errorResponse = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
                     status = "Failed",
@@ -391,7 +391,7 @@ namespace mcp_nexus.Tools
 
                 var errorResponse = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
                     status = "Failed",
@@ -437,7 +437,7 @@ namespace mcp_nexus.Tools
                     logger.LogError("Command execution failed: Session ID is null or empty");
                     return new
                     {
-                        sessionId = sessionId,
+                        sessionId,
                         commandId = (string?)null,
                         status = "Failed",
                         operation = "nexus_enqueue_async_dump_analyze_command",
@@ -445,14 +445,14 @@ namespace mcp_nexus.Tools
                         usage = USAGE_EXPLANATION
                     };
                 }
-                
+
                 // Validate session exists
                 if (!sessionManager.SessionExists(sessionId))
                 {
                     logger.LogError("Command execution failed: Session {SessionId} does not exist", sessionId);
                     var sessionNotFoundResponse = new
                     {
-                        sessionId = sessionId,
+                        sessionId,
                         dumpFile = (string?)null,
                         commandId = (string?)null,
                         status = "Failed",
@@ -472,15 +472,15 @@ namespace mcp_nexus.Tools
                 // Return standardized response with required fields
                 var response = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     dumpFile = context?.DumpPath != null ? Path.GetFileName(context.DumpPath) : null,
-                    commandId = commandId,
+                    commandId,
                     status = "Success",
                     operation = "nexus_enqueue_async_dump_analyze_command",
                     message = $"Command queued successfully: {commandId}. Use the resource 'commands' to observe the status and the 'nexus_read_dump_analyze_command_result' tool to get results.",
                     commandInfo = new
                     {
-                        command = command,
+                        command,
                         queuePosition = 0, // Will be updated by queue service
                         estimatedExecutionTime = GetEstimatedExecutionTime(command),
                         status = "Queued",
@@ -504,7 +504,7 @@ namespace mcp_nexus.Tools
 
                 var errorResponse = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
                     status = "Failed",
@@ -521,7 +521,7 @@ namespace mcp_nexus.Tools
 
                 var errorResponse = new
                 {
-                    sessionId = sessionId,
+                    sessionId,
                     dumpFile = (string?)null,
                     commandId = (string?)null,
                     status = "Failed",
@@ -544,7 +544,7 @@ namespace mcp_nexus.Tools
         /// </summary>
         /// <param name="command">The command to estimate</param>
         /// <returns>Estimated execution time description</returns>
-        private string GetEstimatedExecutionTime(string command)
+        private static string GetEstimatedExecutionTime(string command)
         {
             var cmd = command.Trim().ToLowerInvariant();
 
@@ -569,62 +569,62 @@ namespace mcp_nexus.Tools
         /// <param name="commandId">The ID of the command.</param>
         /// <param name="result">The result of the command execution.</param>
         /// <returns>AI guidance information for the user.</returns>
-        private AIGuidance GenerateStatusGuidance(string status, string commandId, string result)
+        private static AIGuidance GenerateStatusGuidance(string status, string commandId, string result)
         {
             return status switch
             {
                 "queued" => new AIGuidance
                 {
-                    NextSteps = new List<string>
-                    {
+                    NextSteps =
+                    [
                         "Wait a moment and check status again",
                         "Use 'commands' resource to monitor execution status",
                         "Commands execute sequentially in session queue"
-                    },
-                    UsageHints = new List<string>
-                    {
+                    ],
+                    UsageHints =
+                    [
                         "Command is waiting in queue",
                         "Check 'commands' resource for status updates",
                         "Execution order is first-in-first-out per session"
-                    }
+                    ]
                 },
                 "completed" => new AIGuidance
                 {
-                    NextSteps = new List<string>
-                    {
+                    NextSteps =
+                    [
                         "Analyze the command output",
                         "Execute follow-up commands based on results",
                         "Use output for next debugging steps"
-                    },
-                    UsageHints = new List<string>
-                    {
+                    ],
+                    UsageHints =
+                    [
                         "Command completed successfully",
                         "Full output is available in the result",
                         "Use results to guide next debugging steps"
-                    }
+                    ]
                 },
                 "failed" => new AIGuidance
                 {
-                    NextSteps = new List<string>
-                    {
+                    NextSteps =
+                    [
                         "Check command syntax and try again",
                         "Verify debugging context is correct",
                         "Try alternative command approaches"
-                    },
-                    CommonErrors = new List<string>
-                    {
+                    ],
+                    CommonErrors =
+                    [
                         "Invalid command syntax",
                         "Command not applicable to current context",
                         "Missing required debugging symbols"
-                    }
+                    ]
                 },
                 _ => new AIGuidance
                 {
-                    NextSteps = new List<string>
-                    {
+                    NextSteps =
+                    [
                         "Check result details for more information",
                         "Consider re-executing if needed"
-                    }
+                    ]
                 }
             };
         }

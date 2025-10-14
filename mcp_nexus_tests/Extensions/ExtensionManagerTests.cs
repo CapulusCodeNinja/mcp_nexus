@@ -23,14 +23,14 @@ namespace mcp_nexus_tests.Extensions
         public ExtensionManagerTests()
         {
             m_MockLogger = new Mock<ILogger<ExtensionManager>>();
-            
+
             // Create temporary test directory
             m_TestExtensionsPath = Path.Combine(Path.GetTempPath(), $"mcp_nexus_test_extensions_{Guid.NewGuid()}");
             Directory.CreateDirectory(m_TestExtensionsPath);
 
             m_TestExtension1Path = Path.Combine(m_TestExtensionsPath, "test_extension1");
             m_TestExtension2Path = Path.Combine(m_TestExtensionsPath, "test_extension2");
-            
+
             Directory.CreateDirectory(m_TestExtension1Path);
             Directory.CreateDirectory(m_TestExtension2Path);
         }
@@ -58,7 +58,7 @@ namespace mcp_nexus_tests.Extensions
         /// </summary>
         /// <param name="path">The directory path.</param>
         /// <param name="metadata">The metadata object.</param>
-        private void CreateMetadataFile(string path, object metadata)
+        private static void CreateMetadataFile(string path, object metadata)
         {
             var json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(Path.Combine(path, "metadata.json"), json);
@@ -69,7 +69,7 @@ namespace mcp_nexus_tests.Extensions
         /// </summary>
         /// <param name="path">The directory path.</param>
         /// <param name="scriptName">The script file name.</param>
-        private void CreateScriptFile(string path, string scriptName)
+        private static void CreateScriptFile(string path, string scriptName)
         {
             File.WriteAllText(Path.Combine(path, scriptName), "# Test script");
         }
@@ -88,7 +88,7 @@ namespace mcp_nexus_tests.Extensions
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new ExtensionManager(null!, m_TestExtensionsPath));
         }
 
@@ -96,7 +96,7 @@ namespace mcp_nexus_tests.Extensions
         public void Constructor_WithNullPath_ThrowsArgumentException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => 
+            Assert.Throws<ArgumentException>(() =>
                 new ExtensionManager(m_MockLogger.Object, null!));
         }
 
@@ -104,7 +104,7 @@ namespace mcp_nexus_tests.Extensions
         public void Constructor_WithEmptyPath_ThrowsArgumentException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => 
+            Assert.Throws<ArgumentException>(() =>
                 new ExtensionManager(m_MockLogger.Object, string.Empty));
         }
 
@@ -122,7 +122,7 @@ namespace mcp_nexus_tests.Extensions
                 scriptFile = "test.ps1",
                 timeout = 300000,
                 requires = new[] { "McpNexusExtensions" },
-                parameters = new object[] { }
+                parameters = Array.Empty<object>()
             };
 
             CreateMetadataFile(m_TestExtension1Path, metadata);

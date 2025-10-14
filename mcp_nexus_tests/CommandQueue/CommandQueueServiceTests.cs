@@ -263,8 +263,8 @@ namespace mcp_nexus_tests.CommandQueue
         public void CancelAllCommands_WithActiveCommands_ReturnsCorrectCount()
         {
             // Arrange
-            var commandId1 = m_Service.QueueCommand("test command 1");
-            var commandId2 = m_Service.QueueCommand("test command 2");
+            _ = m_Service.QueueCommand("test command 1");
+            _ = m_Service.QueueCommand("test command 2");
 
             // Act
             var result = m_Service.CancelAllCommands("Test cancellation");

@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void CommandTracker_Class_Exists()
         {
             // This test verifies that the CommandTracker class exists and can be instantiated
-            Assert.True(typeof(CommandTracker) != null);
+            Assert.NotNull(typeof(CommandTracker));
         }
     }
 }

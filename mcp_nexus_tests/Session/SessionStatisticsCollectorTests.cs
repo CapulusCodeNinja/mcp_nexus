@@ -332,7 +332,7 @@ namespace mcp_nexus_tests.Session
                 Times.Once);
         }
 
-        private SessionInfo CreateMockSessionInfo(string sessionId, string dumpPath, SessionStatus status = SessionStatus.Active)
+        private static SessionInfo CreateMockSessionInfo(string sessionId, string dumpPath, SessionStatus status = SessionStatus.Active)
         {
             var realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
             var mockCommandQueue = new Mock<ICommandQueueService>();
@@ -346,9 +346,11 @@ namespace mcp_nexus_tests.Session
             };
             mockCommandQueue.Setup(x => x.GetQueueStatus()).Returns(queueStatus);
 
-            var sessionInfo = new SessionInfo(sessionId, realisticCdbSession, mockCommandQueue.Object, dumpPath);
-            sessionInfo.LastActivity = DateTime.UtcNow.AddMinutes(-5);
-            sessionInfo.Status = status;
+            var sessionInfo = new SessionInfo(sessionId, realisticCdbSession, mockCommandQueue.Object, dumpPath)
+            {
+                LastActivity = DateTime.UtcNow.AddMinutes(-5),
+                Status = status
+            };
             return sessionInfo;
         }
 

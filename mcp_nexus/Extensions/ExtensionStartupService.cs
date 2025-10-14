@@ -7,23 +7,17 @@ namespace mcp_nexus.Extensions
     /// Hosted service that ensures extensions are discovered and loaded during application startup.
     /// This guarantees that tools can enumerate and execute extensions immediately after the server starts.
     /// </summary>
-    public sealed class ExtensionStartupService : IHostedService
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="ExtensionStartupService"/> class.
+    /// </remarks>
+    /// <param name="logger">Logger for startup diagnostics.</param>
+    /// <param name="extensionManager">The extension manager responsible for discovery and validation.</param>
+    public sealed class ExtensionStartupService(
+        ILogger<ExtensionStartupService> logger,
+        IExtensionManager extensionManager) : IHostedService
     {
-        private readonly ILogger<ExtensionStartupService> m_Logger;
-        private readonly IExtensionManager m_ExtensionManager;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExtensionStartupService"/> class.
-        /// </summary>
-        /// <param name="logger">Logger for startup diagnostics.</param>
-        /// <param name="extensionManager">The extension manager responsible for discovery and validation.</param>
-        public ExtensionStartupService(
-            ILogger<ExtensionStartupService> logger,
-            IExtensionManager extensionManager)
-        {
-            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_ExtensionManager = extensionManager ?? throw new ArgumentNullException(nameof(extensionManager));
-        }
+        private readonly ILogger<ExtensionStartupService> m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly IExtensionManager m_ExtensionManager = extensionManager ?? throw new ArgumentNullException(nameof(extensionManager));
 
         /// <summary>
         /// Triggers extension discovery and loading on application start.

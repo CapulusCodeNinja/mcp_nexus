@@ -5,78 +5,66 @@ namespace mcp_nexus.CommandQueue
     /// <summary>
     /// Configuration settings and timeout management for resilient command queue operations
     /// </summary>
-    public class ResilientQueueConfiguration
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="ResilientQueueConfiguration"/> class.
+    /// </remarks>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="defaultCommandTimeout">The default timeout for command execution.</param>
+    /// <param name="complexCommandTimeout">The timeout for complex commands.</param>
+    /// <param name="maxCommandTimeout">The maximum allowed timeout for any command.</param>
+    /// <param name="cleanupInterval">The cleanup interval for expired commands.</param>
+    /// <param name="commandRetentionTime">The retention time for completed commands.</param>
+    /// <param name="heartbeatInterval">The interval for sending heartbeat notifications.</param>
+    /// <param name="recoveryCheckInterval">The interval for checking recovery status.</param>
+    public class ResilientQueueConfiguration(
+        string sessionId = "unknown",
+        TimeSpan? defaultCommandTimeout = null,
+        TimeSpan? complexCommandTimeout = null,
+        TimeSpan? maxCommandTimeout = null,
+        TimeSpan? cleanupInterval = null,
+        TimeSpan? commandRetentionTime = null,
+        TimeSpan? heartbeatInterval = null,
+        TimeSpan? recoveryCheckInterval = null)
     {
         /// <summary>
         /// Gets the session identifier.
         /// </summary>
-        public string SessionId { get; }
+        public string SessionId { get; } = sessionId ?? "unknown";
 
         /// <summary>
         /// Gets the default timeout for command execution.
         /// </summary>
-        public TimeSpan DefaultCommandTimeout { get; }
+        public TimeSpan DefaultCommandTimeout { get; } = defaultCommandTimeout ?? ApplicationConstants.DefaultCommandTimeout;
 
         /// <summary>
         /// Gets the timeout for complex commands.
         /// </summary>
-        public TimeSpan ComplexCommandTimeout { get; }
+        public TimeSpan ComplexCommandTimeout { get; } = complexCommandTimeout ?? ApplicationConstants.MaxCommandTimeout;
 
         /// <summary>
         /// Gets the maximum allowed timeout for any command.
         /// </summary>
-        public TimeSpan MaxCommandTimeout { get; }
+        public TimeSpan MaxCommandTimeout { get; } = maxCommandTimeout ?? ApplicationConstants.LongRunningCommandTimeout;
 
         /// <summary>
         /// Gets the cleanup interval for expired commands.
         /// </summary>
-        public TimeSpan CleanupInterval { get; }
+        public TimeSpan CleanupInterval { get; } = cleanupInterval ?? ApplicationConstants.CleanupInterval;
 
         /// <summary>
         /// Gets the retention time for completed commands.
         /// </summary>
-        public TimeSpan CommandRetentionTime { get; }
+        public TimeSpan CommandRetentionTime { get; } = commandRetentionTime ?? ApplicationConstants.CommandRetentionTime;
 
         /// <summary>
         /// Gets the interval for sending heartbeat notifications.
         /// </summary>
-        public TimeSpan HeartbeatInterval { get; }
+        public TimeSpan HeartbeatInterval { get; } = heartbeatInterval ?? TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Gets the interval for checking recovery status.
         /// </summary>
-        public TimeSpan RecoveryCheckInterval { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ResilientQueueConfiguration"/> class.
-        /// </summary>
-        /// <param name="sessionId">The session identifier.</param>
-        /// <param name="defaultCommandTimeout">The default timeout for command execution.</param>
-        /// <param name="complexCommandTimeout">The timeout for complex commands.</param>
-        /// <param name="maxCommandTimeout">The maximum allowed timeout for any command.</param>
-        /// <param name="cleanupInterval">The cleanup interval for expired commands.</param>
-        /// <param name="commandRetentionTime">The retention time for completed commands.</param>
-        /// <param name="heartbeatInterval">The interval for sending heartbeat notifications.</param>
-        /// <param name="recoveryCheckInterval">The interval for checking recovery status.</param>
-        public ResilientQueueConfiguration(
-            string sessionId = "unknown",
-            TimeSpan? defaultCommandTimeout = null,
-            TimeSpan? complexCommandTimeout = null,
-            TimeSpan? maxCommandTimeout = null,
-            TimeSpan? cleanupInterval = null,
-            TimeSpan? commandRetentionTime = null,
-            TimeSpan? heartbeatInterval = null,
-            TimeSpan? recoveryCheckInterval = null)
-        {
-            SessionId = sessionId ?? "unknown";
-            DefaultCommandTimeout = defaultCommandTimeout ?? ApplicationConstants.DefaultCommandTimeout;
-            ComplexCommandTimeout = complexCommandTimeout ?? ApplicationConstants.MaxCommandTimeout;
-            MaxCommandTimeout = maxCommandTimeout ?? ApplicationConstants.LongRunningCommandTimeout;
-            CleanupInterval = cleanupInterval ?? ApplicationConstants.CleanupInterval;
-            CommandRetentionTime = commandRetentionTime ?? ApplicationConstants.CommandRetentionTime;
-            HeartbeatInterval = heartbeatInterval ?? TimeSpan.FromSeconds(30);
-            RecoveryCheckInterval = recoveryCheckInterval ?? TimeSpan.FromMinutes(1);
-        }
+        public TimeSpan RecoveryCheckInterval { get; } = recoveryCheckInterval ?? TimeSpan.FromMinutes(1);
 
         /// <summary>
         /// Determines the appropriate timeout for a command based on its complexity.

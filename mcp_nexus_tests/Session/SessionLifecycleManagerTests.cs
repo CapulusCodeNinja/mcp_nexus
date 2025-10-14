@@ -276,19 +276,19 @@ namespace mcp_nexus_tests.Session
         public void GetLifecycleStats_WithNoActivity_ReturnsZeroStats()
         {
             // Act
-            var stats = m_Manager.GetLifecycleStats();
+            var (Created, Closed, Expired) = m_Manager.GetLifecycleStats();
 
             // Assert
-            Assert.Equal(0, stats.Created);
-            Assert.Equal(0, stats.Closed);
-            Assert.Equal(0, stats.Expired);
+            Assert.Equal(0, Created);
+            Assert.Equal(0, Closed);
+            Assert.Equal(0, Expired);
         }
 
         [Fact]
         public void SessionLifecycleManager_Class_Exists()
         {
             // This test verifies that the SessionLifecycleManager class exists and can be instantiated
-            Assert.True(typeof(SessionLifecycleManager) != null);
+            Assert.NotNull(typeof(SessionLifecycleManager));
         }
 
         [Fact]

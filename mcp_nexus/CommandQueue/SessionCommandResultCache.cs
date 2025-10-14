@@ -16,7 +16,7 @@ namespace mcp_nexus.CommandQueue
         private readonly double m_MemoryPressureThreshold;
         private readonly ILogger<SessionCommandResultCache>? m_Logger;
         private long m_CurrentMemoryUsage = 0;
-        private readonly object m_MemoryLock = new object();
+        private readonly object m_MemoryLock = new();
         private volatile bool m_Disposed = false;
 
         #endregion
@@ -295,7 +295,7 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         /// <param name="cachedResult">The cached result to estimate</param>
         /// <returns>Estimated size in bytes</returns>
-        private long EstimateResultSize(CachedCommandResult cachedResult)
+        private static long EstimateResultSize(CachedCommandResult cachedResult)
         {
             try
             {
@@ -342,28 +342,17 @@ namespace mcp_nexus.CommandQueue
     /// <summary>
     /// Represents a cached command result with access tracking
     /// </summary>
-    public class CachedCommandResult
+    public class CachedCommandResult(ICommandResult result, DateTime createdTime,
+        string? originalCommand = null, DateTime? queueTime = null,
+        DateTime? startTime = null, DateTime? endTime = null)
     {
-        public ICommandResult Result { get; }
-        public DateTime CreatedTime { get; }
-        public DateTime LastAccessTime { get; private set; }
-        public string? OriginalCommand { get; }
-        public DateTime QueueTime { get; }
-        public DateTime StartTime { get; }
-        public DateTime EndTime { get; }
-
-        public CachedCommandResult(ICommandResult result, DateTime createdTime,
-            string? originalCommand = null, DateTime? queueTime = null,
-            DateTime? startTime = null, DateTime? endTime = null)
-        {
-            Result = result ?? throw new ArgumentNullException(nameof(result));
-            CreatedTime = createdTime;
-            LastAccessTime = createdTime;
-            OriginalCommand = originalCommand;
-            QueueTime = queueTime ?? createdTime.AddMinutes(-1);
-            StartTime = startTime ?? createdTime.Add(-result.Duration);
-            EndTime = endTime ?? createdTime;
-        }
+        public ICommandResult Result { get; } = result ?? throw new ArgumentNullException(nameof(result));
+        public DateTime CreatedTime { get; } = createdTime;
+        public DateTime LastAccessTime { get; private set; } = createdTime;
+        public string? OriginalCommand { get; } = originalCommand;
+        public DateTime QueueTime { get; } = queueTime ?? createdTime.AddMinutes(-1);
+        public DateTime StartTime { get; } = startTime ?? createdTime.Add(-result.Duration);
+        public DateTime EndTime { get; } = endTime ?? createdTime;
 
         public void UpdateAccessTime()
         {

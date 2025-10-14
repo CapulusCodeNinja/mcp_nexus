@@ -18,8 +18,8 @@ namespace mcp_nexus_tests.Session
     {
         private readonly ICdbSession m_RealisticCdbSession;
         private readonly Mock<ICommandQueueService> m_MockCommandQueue;
-        private readonly Dictionary<string, SessionInfo> m_MockSessionInfos = new();
-        private readonly Dictionary<string, SessionContext> m_MockSessionContexts = new();
+        private readonly Dictionary<string, SessionInfo> m_MockSessionInfos = [];
+        private readonly Dictionary<string, SessionContext> m_MockSessionContexts = [];
         private readonly SessionManagerConfiguration m_Config;
         private int _sessionCounter = 0;
 
@@ -47,8 +47,7 @@ namespace mcp_nexus_tests.Session
         public override async Task<string> CreateSessionAsync(string dumpPath, string? symbolsPath = null, CancellationToken cancellationToken = default)
         {
             // Validate parameters like the base class would
-            if (dumpPath == null)
-                throw new ArgumentNullException(nameof(dumpPath));
+            ArgumentNullException.ThrowIfNull(dumpPath);
 
             if (string.IsNullOrWhiteSpace(dumpPath))
                 throw new ArgumentException("Dump path cannot be empty", nameof(dumpPath));
@@ -143,8 +142,7 @@ namespace mcp_nexus_tests.Session
         public override async Task<bool> CloseSessionAsync(string sessionId, CancellationToken cancellationToken = default)
         {
             // Validate parameters like the base class would
-            if (sessionId == null)
-                throw new ArgumentNullException(nameof(sessionId));
+            ArgumentNullException.ThrowIfNull(sessionId);
 
             if (string.IsNullOrWhiteSpace(sessionId))
                 throw new ArgumentException("Session ID cannot be empty or whitespace", nameof(sessionId));

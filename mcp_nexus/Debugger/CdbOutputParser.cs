@@ -7,23 +7,18 @@ namespace mcp_nexus.Debugger
     /// Prioritizes ultra-safe patterns over risky string matching to prevent brittleness.
     /// Provides command completion detection, output analysis, and context-aware parsing.
     /// </summary>
-    public class CdbOutputParser
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CdbOutputParser"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance for recording parsing operations and errors.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+    public partial class CdbOutputParser(ILogger<CdbOutputParser> logger)
     {
-        private readonly ILogger<CdbOutputParser> m_logger;
+        private readonly ILogger<CdbOutputParser> m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         // State tracking for context-aware parsing
         private string? m_currentCommand;
-        private readonly List<string> m_outputBuffer = new();
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CdbOutputParser"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance for recording parsing operations and errors.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-        public CdbOutputParser(ILogger<CdbOutputParser> logger)
-        {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
+        private readonly List<string> m_outputBuffer = [];
 
         /// <summary>
         /// Sets the current command context for stateful parsing.
@@ -95,7 +90,7 @@ namespace mcp_nexus.Debugger
         /// <summary>
         /// Detects sentinel markers for command completion
         /// </summary>
-        private bool IsSentinelDetected(string line)
+        private static bool IsSentinelDetected(string line)
         {
             // Check for start sentinel
             if (line.Contains(CdbSentinels.StartMarker))
@@ -115,7 +110,7 @@ namespace mcp_nexus.Debugger
         /// <summary>
         /// Detects CDB prompt patterns using ultra-reliable regex
         /// </summary>
-        private bool IsCdbPromptDetected(string line)
+        private static bool IsCdbPromptDetected(string line)
         {
             return CdbCompletionPatterns.IsCdbPrompt(line);
         }
@@ -123,7 +118,7 @@ namespace mcp_nexus.Debugger
         /// <summary>
         /// Detects ultra-safe completion patterns that are guaranteed stable
         /// </summary>
-        private bool IsUltraSafeCompletionDetected(string line)
+        private static bool IsUltraSafeCompletionDetected(string line)
         {
             return CdbCompletionPatterns.IsUltraSafeCompletion(line);
         }
@@ -245,7 +240,7 @@ namespace mcp_nexus.Debugger
             if (sanitized.Length <= maxLength)
                 return sanitized;
 
-            return sanitized.Substring(0, maxLength) + "... [truncated]";
+            return sanitized[..maxLength] + "... [truncated]";
         }
 
         /// <summary>
@@ -283,10 +278,13 @@ namespace mcp_nexus.Debugger
                                           output.Contains("Complete");
 
             // Check for prompts
-            analysis.HasPrompt = Regex.IsMatch(output, @"\d+:\d+>");
+            analysis.HasPrompt = MyRegex().IsMatch(output);
 
             return analysis;
         }
+
+        [GeneratedRegex(@"\d+:\d+>")]
+        private static partial Regex MyRegex();
     }
 
     /// <summary>

@@ -7,11 +7,9 @@ namespace mcp_nexus.Utilities
     /// This class ONLY handles WSL to Windows path conversion and ensures directories exist.
     /// NO syntax fixing, NO adding quotes, NO adding semicolons.
     /// </summary>
-    public static class CommandPreprocessor
+    public static partial class CommandPreprocessor
     {
-        private static readonly Regex PathPattern = new(
-            @"/mnt/[a-zA-Z]/[^\s;""]+",
-            RegexOptions.Compiled);
+        private static readonly Regex PathPattern = MyRegex();
 
         /// <summary>
         /// Preprocesses a WinDBG command to convert WSL paths to Windows paths and ensure directories exist.
@@ -31,10 +29,10 @@ namespace mcp_nexus.Utilities
             {
                 var wslPath = match.Value;
                 var windowsPath = PathHandler.ConvertToWindowsPath(wslPath);
-                
+
                 // Ensure directory exists
                 EnsureDirectoryExists(windowsPath);
-                
+
                 return windowsPath;
             });
 
@@ -47,7 +45,7 @@ namespace mcp_nexus.Utilities
                 {
                     var pathArg = match.Groups[1].Value;
                     // Extract potential paths from the argument (handle semicolon-separated lists)
-                    var paths = pathArg.Split(new[] { ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    var paths = pathArg.Split([';', ' '], StringSplitOptions.RemoveEmptyEntries);
                     foreach (var path in paths)
                     {
                         var cleanPath = path.Trim().Trim('"').Trim('\'');
@@ -99,5 +97,8 @@ namespace mcp_nexus.Utilities
                 // The .srcpath command will handle the error appropriately
             }
         }
+
+        [GeneratedRegex(@"/mnt/[a-zA-Z]/[^\s;""]+", RegexOptions.Compiled)]
+        private static partial Regex MyRegex();
     }
 }

@@ -5,14 +5,21 @@ namespace mcp_nexus.CommandQueue
     /// <summary>
     /// Manages command tracking, status, and performance metrics
     /// </summary>
-    public class CommandTracker
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CommandTracker"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance for recording tracking operations.</param>
+    /// <param name="config">The command queue configuration settings.</param>
+    /// <param name="commandQueue">The blocking collection for queued commands.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
+    public class CommandTracker(ILogger logger, CommandQueueConfiguration config, BlockingCollection<QueuedCommand> commandQueue)
     {
-        private readonly ILogger m_logger;
-        private readonly CommandQueueConfiguration m_config;
+        private readonly ILogger m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly CommandQueueConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
 
         // Thread-safe collections and counters
         private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands = new();
-        private readonly BlockingCollection<QueuedCommand> m_commandQueue;
+        private readonly BlockingCollection<QueuedCommand> m_commandQueue = commandQueue ?? throw new ArgumentNullException(nameof(commandQueue));
         private volatile QueuedCommand? m_currentCommand;
 
         // Performance counters
@@ -20,20 +27,6 @@ namespace mcp_nexus.CommandQueue
         private long m_completedCommands = 0;
         private long m_failedCommands = 0;
         private long m_cancelledCommands = 0;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CommandTracker"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance for recording tracking operations.</param>
-        /// <param name="config">The command queue configuration settings.</param>
-        /// <param name="commandQueue">The blocking collection for queued commands.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
-        public CommandTracker(ILogger logger, CommandQueueConfiguration config, BlockingCollection<QueuedCommand> commandQueue)
-        {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_config = config ?? throw new ArgumentNullException(nameof(config));
-            m_commandQueue = commandQueue ?? throw new ArgumentNullException(nameof(commandQueue));
-        }
 
         /// <summary>
         /// Gets the current command being executed
@@ -283,7 +276,7 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         /// <param name="queuePosition">The position of the command in the queue.</param>
         /// <returns>An estimated time remaining for the command to be processed.</returns>
-        private TimeSpan CalculateRemainingTime(int queuePosition)
+        private static TimeSpan CalculateRemainingTime(int queuePosition)
         {
             if (queuePosition <= 0) return TimeSpan.Zero;
 

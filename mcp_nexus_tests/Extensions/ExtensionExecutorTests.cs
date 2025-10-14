@@ -61,11 +61,11 @@ namespace mcp_nexus_tests.Extensions
             // Create a realistic metadata object
             // Note: ExtensionMetadata computes FullScriptPath from the metadata file location
             var metadataFilePath = Path.Combine(m_TestExtensionPath, "metadata.json");
-            var scriptPath = Path.Combine(m_TestExtensionPath, scriptFile);
-            
+            _ = Path.Combine(m_TestExtensionPath, scriptFile);
+
             // Mock the metadata loading by creating the files
             Directory.CreateDirectory(Path.GetDirectoryName(metadataFilePath)!);
-            
+
             var metadata = new ExtensionMetadata
             {
                 Name = name,
@@ -77,7 +77,7 @@ namespace mcp_nexus_tests.Extensions
                 Timeout = 60000,
                 ExtensionPath = m_TestExtensionPath  // CRITICAL: Set the path so FullScriptPath is computed correctly
             };
-            
+
             return metadata;
         }
 
@@ -94,35 +94,35 @@ namespace mcp_nexus_tests.Extensions
         /// Note: Output simulation is simplified since DataReceivedEventArgs cannot be instantiated directly.
         /// Tests verify exit codes and success states instead of output content.
         /// </summary>
-        private Mock<IProcessHandle> CreateMockProcess(int exitCode, string output, string errorOutput, TimeSpan simulateDelay)
+        private static Mock<IProcessHandle> CreateMockProcess(int exitCode, string output, string errorOutput, TimeSpan simulateDelay)
         {
             var mockProcess = new Mock<IProcessHandle>();
-            
+
             mockProcess.Setup(p => p.Id).Returns(12345);
             mockProcess.Setup(p => p.ExitCode).Returns(exitCode);
             mockProcess.Setup(p => p.HasExited).Returns(false); // Initially running
-            
+
             mockProcess.Setup(p => p.Start()).Callback(() =>
             {
                 // Process started successfully
             });
-            
+
             mockProcess.Setup(p => p.BeginOutputReadLine()).Callback(() =>
             {
                 // Output reading started (event simulation omitted - DataReceivedEventArgs not publicly constructible)
             });
-            
+
             mockProcess.Setup(p => p.BeginErrorReadLine()).Callback(() =>
             {
                 // Error reading started (event simulation omitted)
             });
-            
+
             mockProcess.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>())).Returns(async () =>
             {
                 await Task.Delay(simulateDelay);
                 mockProcess.Setup(p => p.HasExited).Returns(true);
             });
-            
+
             mockProcess.Setup(p => p.WaitForExit()).Callback(() =>
             {
                 // Synchronous wait after async wait completes

@@ -369,13 +369,13 @@ namespace mcp_nexus_tests.Infrastructure
         public void Apply_DoesNotAffectCurrentThread()
         {
             // Arrange
-            var currentThreadId = Thread.CurrentThread.ManagedThreadId;
+            var currentThreadId = Environment.CurrentManagedThreadId;
 
             // Act
             ThreadPoolTuning.Apply();
 
             // Assert
-            Assert.Equal(currentThreadId, Thread.CurrentThread.ManagedThreadId);
+            Assert.Equal(currentThreadId, Environment.CurrentManagedThreadId);
         }
 
         [Fact]

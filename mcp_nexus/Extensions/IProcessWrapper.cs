@@ -114,14 +114,9 @@ namespace mcp_nexus.Extensions
         /// <summary>
         /// Wrapper around System.Diagnostics.Process.
         /// </summary>
-        private class ProcessHandle : IProcessHandle
+        private class ProcessHandle(Process process) : IProcessHandle
         {
-            private readonly Process m_Process;
-
-            public ProcessHandle(Process process)
-            {
-                m_Process = process ?? throw new ArgumentNullException(nameof(process));
-            }
+            private readonly Process m_Process = process ?? throw new ArgumentNullException(nameof(process));
 
             public event DataReceivedEventHandler? OutputDataReceived
             {

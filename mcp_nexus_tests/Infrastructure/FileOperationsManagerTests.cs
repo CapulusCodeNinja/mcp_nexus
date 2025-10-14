@@ -24,7 +24,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void FileOperationsManager_Class_Exists()
         {
             // This test verifies that the FileOperationsManager class exists and can be instantiated
-            Assert.True(typeof(FileOperationsManager) != null);
+            Assert.NotNull(typeof(FileOperationsManager));
         }
 
         [Fact]

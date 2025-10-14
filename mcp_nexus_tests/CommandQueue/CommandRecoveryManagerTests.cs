@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void CommandRecoveryManager_Class_Exists()
         {
             // This test verifies that the CommandRecoveryManager class exists and can be instantiated
-            Assert.True(typeof(CommandRecoveryManager) != null);
+            Assert.NotNull(typeof(CommandRecoveryManager));
         }
     }
 }

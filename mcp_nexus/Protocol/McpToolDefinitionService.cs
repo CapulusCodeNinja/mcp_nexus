@@ -8,18 +8,13 @@ namespace mcp_nexus.Protocol
     /// Service for providing MCP tool definitions.
     /// Manages the collection and retrieval of available MCP tools for the server.
     /// </summary>
-    public class McpToolDefinitionService : IMcpToolDefinitionService
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="McpToolDefinitionService"/> class.
+    /// </remarks>
+    /// <param name="notificationService">Optional notification service for publishing tool events.</param>
+    public class McpToolDefinitionService(IMcpNotificationService? notificationService = null) : IMcpToolDefinitionService
     {
-        private readonly IMcpNotificationService? m_notificationService;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="McpToolDefinitionService"/> class.
-        /// </summary>
-        /// <param name="notificationService">Optional notification service for publishing tool events.</param>
-        public McpToolDefinitionService(IMcpNotificationService? notificationService = null)
-        {
-            m_notificationService = notificationService;
-        }
+        private readonly IMcpNotificationService? m_notificationService = notificationService;
 
         /// <summary>
         /// Gets all available MCP tools.

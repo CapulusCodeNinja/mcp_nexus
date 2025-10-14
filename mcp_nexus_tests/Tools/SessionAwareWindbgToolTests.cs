@@ -696,9 +696,9 @@ namespace mcp_nexus_tests.Tools
             // Arrange
             var guidance = new SessionAwareWindbgTool.AIGuidance
             {
-                NextSteps = new List<string> { "Step 1", "Step 2" },
-                UsageHints = new List<string> { "Hint 1" },
-                CommonErrors = new List<string> { "Error 1" }
+                NextSteps = ["Step 1", "Step 2"],
+                UsageHints = ["Hint 1"],
+                CommonErrors = ["Error 1"]
             };
 
             // Act
@@ -726,7 +726,7 @@ namespace mcp_nexus_tests.Tools
             var context = new SessionAwareWindbgTool.WorkflowContext
             {
                 CurrentStep = "analysis",
-                SuggestedNextCommands = new List<string> { "!analyze -v" },
+                SuggestedNextCommands = ["!analyze -v"],
                 SessionState = "active"
             };
 

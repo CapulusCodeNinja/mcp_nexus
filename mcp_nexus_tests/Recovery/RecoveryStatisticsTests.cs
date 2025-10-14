@@ -58,10 +58,11 @@ namespace mcp_nexus_tests.Recovery
         public void RecoveryAttempts_WithZeroValue_HandlesCorrectly()
         {
             // Arrange
-            var stats = new RecoveryStatistics();
-
-            // Act
-            stats.RecoveryAttempts = 0;
+            var stats = new RecoveryStatistics
+            {
+                // Act
+                RecoveryAttempts = 0
+            };
 
             // Assert
             Assert.Equal(0, stats.RecoveryAttempts);
@@ -169,10 +170,11 @@ namespace mcp_nexus_tests.Recovery
         public void TimeSinceLastAttempt_WithZeroValue_HandlesCorrectly()
         {
             // Arrange
-            var stats = new RecoveryStatistics();
-
-            // Act
-            stats.TimeSinceLastAttempt = TimeSpan.Zero;
+            var stats = new RecoveryStatistics
+            {
+                // Act
+                TimeSinceLastAttempt = TimeSpan.Zero
+            };
 
             // Assert
             Assert.Equal(TimeSpan.Zero, stats.TimeSinceLastAttempt);
@@ -233,10 +235,11 @@ namespace mcp_nexus_tests.Recovery
         public void CanAttemptRecovery_CanBeSetAndRetrieved()
         {
             // Arrange
-            var stats = new RecoveryStatistics();
-
-            // Act
-            stats.CanAttemptRecovery = true;
+            var stats = new RecoveryStatistics
+            {
+                // Act
+                CanAttemptRecovery = true
+            };
 
             // Assert
             Assert.True(stats.CanAttemptRecovery);
@@ -246,10 +249,11 @@ namespace mcp_nexus_tests.Recovery
         public void CanAttemptRecovery_WithFalseValue_HandlesCorrectly()
         {
             // Arrange
-            var stats = new RecoveryStatistics();
-
-            // Act
-            stats.CanAttemptRecovery = false;
+            var stats = new RecoveryStatistics
+            {
+                // Act
+                CanAttemptRecovery = false
+            };
 
             // Assert
             Assert.False(stats.CanAttemptRecovery);
@@ -259,10 +263,11 @@ namespace mcp_nexus_tests.Recovery
         public void CanAttemptRecovery_CanBeToggled_HandlesCorrectly()
         {
             // Arrange
-            var stats = new RecoveryStatistics();
-
-            // Act & Assert
-            stats.CanAttemptRecovery = true;
+            var stats = new RecoveryStatistics
+            {
+                // Act & Assert
+                CanAttemptRecovery = true
+            };
             Assert.True(stats.CanAttemptRecovery);
 
             stats.CanAttemptRecovery = false;
@@ -299,13 +304,14 @@ namespace mcp_nexus_tests.Recovery
         public void AllProperties_CanBeSetMultipleTimes()
         {
             // Arrange
-            var stats = new RecoveryStatistics();
-
-            // Act & Assert - First set
-            stats.RecoveryAttempts = 1;
-            stats.LastRecoveryAttempt = DateTime.UtcNow.AddMinutes(-5);
-            stats.TimeSinceLastAttempt = TimeSpan.FromMinutes(5);
-            stats.CanAttemptRecovery = true;
+            var stats = new RecoveryStatistics
+            {
+                // Act & Assert - First set
+                RecoveryAttempts = 1,
+                LastRecoveryAttempt = DateTime.UtcNow.AddMinutes(-5),
+                TimeSinceLastAttempt = TimeSpan.FromMinutes(5),
+                CanAttemptRecovery = true
+            };
 
             Assert.Equal(1, stats.RecoveryAttempts);
             Assert.True(stats.CanAttemptRecovery);

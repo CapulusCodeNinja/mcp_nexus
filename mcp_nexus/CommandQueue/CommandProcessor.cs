@@ -7,44 +7,33 @@ namespace mcp_nexus.CommandQueue
     /// <summary>
     /// Handles the core command processing logic for the isolated command queue
     /// </summary>
-    public class CommandProcessor
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CommandProcessor"/> class.
+    /// </remarks>
+    /// <param name="cdbSession">The CDB session for executing commands.</param>
+    /// <param name="logger">The logger instance for recording processing operations.</param>
+    /// <param name="config">The command queue configuration settings.</param>
+    /// <param name="tracker">The command tracker for monitoring command status.</param>
+    /// <param name="commandQueue">The blocking collection for queued commands.</param>
+    /// <param name="processingCts">The cancellation token source for processing operations.</param>
+    /// <param name="resultCache">Optional session command result cache for storing results.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
+    public class CommandProcessor(
+        ICdbSession cdbSession,
+        ILogger logger,
+        CommandQueueConfiguration config,
+        CommandTracker tracker,
+        BlockingCollection<QueuedCommand> commandQueue,
+        CancellationTokenSource processingCts,
+        SessionCommandResultCache? resultCache = null)
     {
-        private readonly ICdbSession m_CdbSession;
-        private readonly ILogger m_Logger;
-        private readonly CommandQueueConfiguration m_Config;
-        private readonly CommandTracker m_Tracker;
-        private readonly BlockingCollection<QueuedCommand> m_CommandQueue;
-        private readonly CancellationTokenSource m_ProcessingCts;
-        private readonly SessionCommandResultCache? m_ResultCache;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CommandProcessor"/> class.
-        /// </summary>
-        /// <param name="cdbSession">The CDB session for executing commands.</param>
-        /// <param name="logger">The logger instance for recording processing operations.</param>
-        /// <param name="config">The command queue configuration settings.</param>
-        /// <param name="tracker">The command tracker for monitoring command status.</param>
-        /// <param name="commandQueue">The blocking collection for queued commands.</param>
-        /// <param name="processingCts">The cancellation token source for processing operations.</param>
-        /// <param name="resultCache">Optional session command result cache for storing results.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
-        public CommandProcessor(
-            ICdbSession cdbSession,
-            ILogger logger,
-            CommandQueueConfiguration config,
-            CommandTracker tracker,
-            BlockingCollection<QueuedCommand> commandQueue,
-            CancellationTokenSource processingCts,
-            SessionCommandResultCache? resultCache = null)
-        {
-            m_CdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
-            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_Config = config ?? throw new ArgumentNullException(nameof(config));
-            m_Tracker = tracker ?? throw new ArgumentNullException(nameof(tracker));
-            m_CommandQueue = commandQueue ?? throw new ArgumentNullException(nameof(commandQueue));
-            m_ProcessingCts = processingCts ?? throw new ArgumentNullException(nameof(processingCts));
-            m_ResultCache = resultCache;
-        }
+        private readonly ICdbSession m_CdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
+        private readonly ILogger m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly CommandQueueConfiguration m_Config = config ?? throw new ArgumentNullException(nameof(config));
+        private readonly CommandTracker m_Tracker = tracker ?? throw new ArgumentNullException(nameof(tracker));
+        private readonly BlockingCollection<QueuedCommand> m_CommandQueue = commandQueue ?? throw new ArgumentNullException(nameof(commandQueue));
+        private readonly CancellationTokenSource m_ProcessingCts = processingCts ?? throw new ArgumentNullException(nameof(processingCts));
+        private readonly SessionCommandResultCache? m_ResultCache = resultCache;
 
         /// <summary>
         /// Main processing loop for the command queue
@@ -157,7 +146,7 @@ namespace mcp_nexus.CommandQueue
                     // Log small preview of result for diagnostics
                     try
                     {
-                        var preview = result?.Length > 300 ? result.Substring(0, 300) + "..." : result;
+                        var preview = result?.Length > 300 ? result[..300] + "..." : result;
                         m_Logger.LogTrace("Command {CommandId} result preview: {Preview}", command.Id, preview);
                     }
                     catch { }

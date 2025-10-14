@@ -447,7 +447,7 @@ namespace mcp_nexus_tests.Utilities
         public void NormalizeForWindows_EmptyArray_ReturnsEmptyArray()
         {
             // Arrange
-            var emptyArray = new string[0];
+            var emptyArray = Array.Empty<string>();
 
             // Act
             var result = PathHandler.NormalizeForWindows(emptyArray);

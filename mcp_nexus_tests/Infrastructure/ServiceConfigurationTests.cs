@@ -12,12 +12,12 @@ namespace mcp_nexus_tests.Infrastructure
     [SupportedOSPlatform("windows")]
     public class ServiceConfigurationTests
     {
-        private readonly ServiceConfiguration m_Config = new ServiceConfiguration();
+        private readonly ServiceConfiguration m_Config = new();
         [Fact]
         public void ServiceName_ReturnsExpectedValue()
         {
             // Arrange
-            var config = new ServiceConfiguration();
+            _ = new ServiceConfiguration();
 
             // Act & Assert
             Assert.Equal("MCP-Nexus", m_Config.ServiceName);

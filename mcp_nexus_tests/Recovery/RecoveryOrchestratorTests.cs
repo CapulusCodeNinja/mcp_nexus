@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.Recovery
         public void RecoveryOrchestrator_Class_Exists()
         {
             // This test verifies that the RecoveryOrchestrator class exists and can be instantiated
-            Assert.True(typeof(RecoveryOrchestrator) != null);
+            Assert.NotNull(typeof(RecoveryOrchestrator));
         }
     }
 }

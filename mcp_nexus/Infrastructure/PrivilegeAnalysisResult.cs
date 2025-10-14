@@ -22,17 +22,17 @@ namespace mcp_nexus.Infrastructure
         /// <summary>
         /// Gets or sets the list of privileges that are missing for service installation.
         /// </summary>
-        public string[] MissingPrivileges { get; set; } = Array.Empty<string>();
+        public string[] MissingPrivileges { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the list of privileges required for service installation.
         /// </summary>
-        public string[] RequiredPrivileges { get; set; } = Array.Empty<string>();
+        public string[] RequiredPrivileges { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the list of privileges currently available to the user.
         /// </summary>
-        public string[] AvailablePrivileges { get; set; } = Array.Empty<string>();
+        public string[] AvailablePrivileges { get; set; } = [];
 
         /// <summary>
         /// Gets or sets any error message that occurred during privilege analysis.
@@ -42,7 +42,7 @@ namespace mcp_nexus.Infrastructure
         /// <summary>
         /// Gets or sets a dictionary mapping privilege names to their availability status.
         /// </summary>
-        public Dictionary<string, bool> PrivilegeStatus { get; set; } = new Dictionary<string, bool>();
+        public Dictionary<string, bool> PrivilegeStatus { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the date and time when the privilege analysis was performed.

@@ -25,7 +25,7 @@ namespace mcp_nexus_tests.Middleware
         public void ContentTypeValidationMiddleware_Class_Exists()
         {
             // This test verifies that the ContentTypeValidationMiddleware class exists and can be instantiated
-            Assert.True(typeof(ContentTypeValidationMiddleware) != null);
+            Assert.NotNull(typeof(ContentTypeValidationMiddleware));
         }
 
         [Fact]

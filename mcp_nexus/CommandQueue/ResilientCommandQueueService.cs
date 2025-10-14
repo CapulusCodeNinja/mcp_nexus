@@ -53,7 +53,7 @@ namespace mcp_nexus.CommandQueue
                 loggerFactory.CreateLogger<ResilientCommandProcessor>(), m_recoveryManager, m_config, notificationService);
 
             // Initialize command queue
-            m_commandQueue = new BlockingCollection<QueuedCommand>();
+            m_commandQueue = [];
 
             m_logger.LogInformation("🚀 Starting resilient command queue with automated recovery");
 
@@ -206,7 +206,7 @@ namespace mcp_nexus.CommandQueue
         public IEnumerable<(string Id, string Command, DateTime QueueTime, string Status)> GetQueueStatus()
         {
             if (m_disposed)
-                return Enumerable.Empty<(string, string, DateTime, string)>();
+                return [];
 
             return m_processor.GetQueueStatus();
         }

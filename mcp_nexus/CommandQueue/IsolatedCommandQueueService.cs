@@ -50,7 +50,7 @@ namespace mcp_nexus.CommandQueue
             m_Config = new CommandQueueConfiguration(sessionId);
 
             // Create command queue
-            m_CommandQueue = new BlockingCollection<QueuedCommand>();
+            m_CommandQueue = [];
 
             // Create focused components
             m_Tracker = new CommandTracker(m_Logger, m_Config, m_CommandQueue);
@@ -273,7 +273,7 @@ namespace mcp_nexus.CommandQueue
         public IEnumerable<(string Id, string Command, DateTime QueueTime, string Status)> GetQueueStatus()
         {
             if (m_Disposed)
-                return Enumerable.Empty<(string, string, DateTime, string)>();
+                return [];
 
             return m_Tracker.GetQueueStatus();
         }

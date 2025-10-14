@@ -43,14 +43,23 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 3. **✅ README.md MUST BE UPDATED**: Update test count and coverage in README.md badges AND Test Statistics section
 4. **✅ NO COMPILATION ERRORS**: Code must build with zero warnings and zero errors
 5. **✅ NO DEAD CODE**: Remove unused code, methods, or files
+6. **✅ FORMATTING & HYGIENE VERIFIED (SOLUTION-WIDE)**:
+   - Run repository-wide formatting and style enforcement before submitting any change:
+     - `dotnet format style`
+     - `dotnet format analyzers`
+     - `dotnet format whitespace`
+   - There MUST be no formatting diffs left. Use `--verify-no-changes` in CI.
+   - Absolutely NO commented-out code or commented-out `using` directives anywhere.
+   - Absolutely NO unused `using` directives. Remove them.
+   - This rule applies to ALL files in the repository, not just edited ones.
 
 ### 📋 DETAILED GROUND RULES
 
 #### Code Structure and Quality
 * **Atomicity and Clarity:** Methods must be **atomic, focused, and build successfully with zero warnings** in all configurations.
-* **Code Cleanliness:** There must be **no unused code**, **dead code**, or **unused import/using directives** within any file.
+* **Code Cleanliness:** There must be **no unused code**, **dead code**, **commented-out code**, or **unused import/using directives** within any file.
 * **File-Class Parity:** Each **top-level class or interface must reside in its own dedicated file**, with the filename matching the class/interface name.
-* **Standardized Formatting:** All code must be **perfectly formatted and aligned** according to the project's established standards (enforced by `dotnet format` or equivalent tooling).
+* **Standardized Formatting:** All code must be **perfectly formatted and aligned** according to the project's established standards (enforced by `dotnet format` or equivalent tooling). Apply this across the entire solution for every change.
 * **Concurrency and Performance Integrity:** As this is a **server application**, code must adhere to **proper concurrency practices**. Introduction of **blocking operations, excessive/long `Thread.Sleep` calls, or potential deadlocks/livelocks is strictly prohibited**. The code must be performant and thread-safe.
 
 #### Testing and Documentation
@@ -251,6 +260,7 @@ public ReturnType MethodName(ParameterType paramName)
 3. Add new tests for new functionality
 4. Check for memory leaks
 5. Verify session isolation is maintained
+6. Run `dotnet format` (style, analyzers, whitespace) solution-wide and ensure no changes remain (`--verify-no-changes`).
 
 ## Special Considerations
 

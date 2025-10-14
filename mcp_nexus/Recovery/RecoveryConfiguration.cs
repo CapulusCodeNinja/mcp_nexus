@@ -3,54 +3,45 @@ namespace mcp_nexus.Recovery
     /// <summary>
     /// Configuration settings for CDB session recovery operations
     /// </summary>
-    public class RecoveryConfiguration
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="RecoveryConfiguration"/> class.
+    /// </remarks>
+    /// <param name="cancellationTimeout">The timeout for command cancellation operations.</param>
+    /// <param name="restartDelay">The delay before restarting a CDB session.</param>
+    /// <param name="healthCheckInterval">The interval between health checks.</param>
+    /// <param name="maxRecoveryAttempts">The maximum number of recovery attempts.</param>
+    /// <param name="recoveryAttemptCooldown">The cooldown period between recovery attempts.</param>
+    public class RecoveryConfiguration(
+        TimeSpan? cancellationTimeout = null,
+        TimeSpan? restartDelay = null,
+        TimeSpan? healthCheckInterval = null,
+        int maxRecoveryAttempts = 3,
+        TimeSpan? recoveryAttemptCooldown = null)
     {
         /// <summary>
         /// Gets the timeout for command cancellation operations.
         /// </summary>
-        public TimeSpan CancellationTimeout { get; }
+        public TimeSpan CancellationTimeout { get; } = cancellationTimeout ?? TimeSpan.FromSeconds(5);
 
         /// <summary>
         /// Gets the delay before restarting a CDB session.
         /// </summary>
-        public TimeSpan RestartDelay { get; }
+        public TimeSpan RestartDelay { get; } = restartDelay ?? TimeSpan.FromSeconds(2);
 
         /// <summary>
         /// Gets the interval between health checks.
         /// </summary>
-        public TimeSpan HealthCheckInterval { get; }
+        public TimeSpan HealthCheckInterval { get; } = healthCheckInterval ?? TimeSpan.FromMinutes(1);
 
         /// <summary>
         /// Gets the maximum number of recovery attempts.
         /// </summary>
-        public int MaxRecoveryAttempts { get; }
+        public int MaxRecoveryAttempts { get; } = maxRecoveryAttempts;
 
         /// <summary>
         /// Gets the cooldown period between recovery attempts.
         /// </summary>
-        public TimeSpan RecoveryAttemptCooldown { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RecoveryConfiguration"/> class.
-        /// </summary>
-        /// <param name="cancellationTimeout">The timeout for command cancellation operations.</param>
-        /// <param name="restartDelay">The delay before restarting a CDB session.</param>
-        /// <param name="healthCheckInterval">The interval between health checks.</param>
-        /// <param name="maxRecoveryAttempts">The maximum number of recovery attempts.</param>
-        /// <param name="recoveryAttemptCooldown">The cooldown period between recovery attempts.</param>
-        public RecoveryConfiguration(
-            TimeSpan? cancellationTimeout = null,
-            TimeSpan? restartDelay = null,
-            TimeSpan? healthCheckInterval = null,
-            int maxRecoveryAttempts = 3,
-            TimeSpan? recoveryAttemptCooldown = null)
-        {
-            CancellationTimeout = cancellationTimeout ?? TimeSpan.FromSeconds(5);
-            RestartDelay = restartDelay ?? TimeSpan.FromSeconds(2);
-            HealthCheckInterval = healthCheckInterval ?? TimeSpan.FromMinutes(1);
-            MaxRecoveryAttempts = maxRecoveryAttempts;
-            RecoveryAttemptCooldown = recoveryAttemptCooldown ?? TimeSpan.FromMinutes(5);
-        }
+        public TimeSpan RecoveryAttemptCooldown { get; } = recoveryAttemptCooldown ?? TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// Determines if recovery should be attempted based on attempt count and timing

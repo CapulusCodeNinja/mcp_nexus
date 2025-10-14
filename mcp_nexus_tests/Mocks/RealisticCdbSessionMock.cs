@@ -47,7 +47,7 @@ namespace mcp_nexus_tests.Mocks
         public RealisticCdbSessionMock(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _commandBehaviors = new Dictionary<string, CdbCommandBehavior>();
+            _commandBehaviors = [];
             _random = new Random();
             _isActive = false;
 
@@ -194,14 +194,14 @@ namespace mcp_nexus_tests.Mocks
             // Return default behavior
             return new CdbCommandBehavior
             {
-                StdoutLines = new[] { "Mock result" },
-                StderrLines = new string[0],
+                StdoutLines = ["Mock result"],
+                StderrLines = [],
                 ExecutionDelay = TimeSpan.FromMilliseconds(10),
                 CompletionDelay = TimeSpan.FromMilliseconds(5)
             };
         }
 
-        private async Task<string> SimulateRealisticOutput(CdbCommandBehavior behavior, CancellationToken cancellationToken)
+        private static async Task<string> SimulateRealisticOutput(CdbCommandBehavior behavior, CancellationToken cancellationToken)
         {
             var output = new List<string>();
 
@@ -247,8 +247,8 @@ namespace mcp_nexus_tests.Mocks
     /// </summary>
     public class CdbCommandBehavior
     {
-        public string[] StdoutLines { get; set; } = Array.Empty<string>();
-        public string[] StderrLines { get; set; } = Array.Empty<string>();
+        public string[] StdoutLines { get; set; } = [];
+        public string[] StderrLines { get; set; } = [];
         public TimeSpan ExecutionDelay { get; set; } = TimeSpan.FromMilliseconds(10);
         public TimeSpan CompletionDelay { get; set; } = TimeSpan.FromMilliseconds(5);
         public bool ShouldFail { get; set; } = false;

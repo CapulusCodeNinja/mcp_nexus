@@ -10,7 +10,7 @@ namespace mcp_nexus.Extensions
     {
         private readonly ILogger<ExtensionManager> m_Logger;
         private readonly string m_ExtensionsPath;
-        private readonly Dictionary<string, ExtensionMetadata> m_Extensions = new();
+        private readonly Dictionary<string, ExtensionMetadata> m_Extensions = [];
         private readonly object m_Lock = new();
 
         /// <summary>
@@ -23,7 +23,7 @@ namespace mcp_nexus.Extensions
         public ExtensionManager(ILogger<ExtensionManager> logger, string extensionsPath)
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            
+
             if (string.IsNullOrWhiteSpace(extensionsPath))
                 throw new ArgumentException("Extensions path cannot be null or empty", nameof(extensionsPath));
 

@@ -231,8 +231,8 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Arrange
             m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
-            var commandId1 = m_Service!.QueueCommand("test command 1");
-            var commandId2 = m_Service.QueueCommand("test command 2");
+            _ = m_Service!.QueueCommand("test command 1");
+            _ = m_Service.QueueCommand("test command 2");
 
             // Act
             var result = m_Service.CancelAllCommands("Test cancellation");

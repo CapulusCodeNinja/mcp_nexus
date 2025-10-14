@@ -6,18 +6,13 @@ namespace mcp_nexus.Middleware
     /// Middleware that ensures all HTTP responses use proper encoding.
     /// Sets the charset parameter in Content-Type headers for proper text encoding.
     /// </summary>
-    public class ResponseMiddleware
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="ResponseMiddleware"/> class.
+    /// </remarks>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    public class ResponseMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate m_next;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ResponseMiddleware"/> class.
-        /// </summary>
-        /// <param name="next">The next middleware in the pipeline.</param>
-        public ResponseMiddleware(RequestDelegate next)
-        {
-            m_next = next;
-        }
+        private readonly RequestDelegate m_next = next;
 
         /// <summary>
         /// Invokes the middleware to process the HTTP request and ensure UTF-8 encoding.

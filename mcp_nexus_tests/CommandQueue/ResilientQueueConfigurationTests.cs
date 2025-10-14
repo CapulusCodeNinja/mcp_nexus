@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void ResilientQueueConfiguration_Class_Exists()
         {
             // This test verifies that the ResilientQueueConfiguration class exists and can be instantiated
-            Assert.True(typeof(ResilientQueueConfiguration) != null);
+            Assert.NotNull(typeof(ResilientQueueConfiguration));
         }
     }
 }

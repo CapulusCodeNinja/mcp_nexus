@@ -376,8 +376,7 @@ namespace mcp_nexus_tests.CommandQueue
                 m_MockLoggerFactory.Object,
                 m_MockTimeoutService.Object,
                 m_MockRecoveryService.Object);
-
-            var commandId = m_Service.QueueCommand("version");
+            _ = m_Service.QueueCommand("version");
 
             // Act
             m_Service.Dispose();

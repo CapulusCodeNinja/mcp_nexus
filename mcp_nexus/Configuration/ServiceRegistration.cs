@@ -159,7 +159,7 @@ namespace mcp_nexus.Configuration
                 var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
 
                 // Create a callback that works with the session manager to cancel commands
-                Func<string, int> cancelAllCommandsCallback = reason =>
+                int cancelAllCommandsCallback(string reason)
                 {
                     var sessions = sessionManager.GetAllSessions();
                     int totalCancelled = 0;
@@ -181,7 +181,7 @@ namespace mcp_nexus.Configuration
                     }
 
                     return totalCancelled;
-                };
+                }
 
                 return new CdbSessionRecoveryService(cdbSession, logger, cancelAllCommandsCallback, notificationService);
             });
@@ -214,7 +214,7 @@ namespace mcp_nexus.Configuration
             var extensionsEnabled = configuration.GetValue<bool>("McpNexus:Extensions:Enabled", true);
             var extensionsPath = configuration.GetValue<string>("McpNexus:Extensions:ExtensionsPath") ?? "extensions";
             var callbackPort = configuration.GetValue<int>("McpNexus:Extensions:CallbackPort", 0); // 0 = use MCP server port
-            
+
             var logger = LogManager.GetCurrentClassLogger();
             if (!extensionsEnabled)
             {
@@ -236,7 +236,7 @@ namespace mcp_nexus.Configuration
 
             // Register extension services
             services.AddSingleton<IProcessWrapper, ProcessWrapper>();
-            
+
             services.AddSingleton<IExtensionManager>(serviceProvider =>
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<ExtensionManager>>();

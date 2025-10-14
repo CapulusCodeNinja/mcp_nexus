@@ -77,8 +77,8 @@ namespace mcp_nexus_tests.Mocks
             // Add behaviors that simulate the bugs we found
             mock.AddCommandBehavior("!analyze -v", new CdbCommandBehavior
             {
-                StdoutLines = new[]
-                {
+                StdoutLines =
+                [
                     "DBGENG:  Find 'C:\\BUILD\\work\\e0dd96435fde7cb0\\framework\\serviceapp\\src\\serviceapp\\singleservice.cpp'",
                     "DBGENG:  Not using checksum for source file search",
                     "DBGENG:  Scan srcsrv SRV* for:",
@@ -91,41 +91,41 @@ namespace mcp_nexus_tests.Mocks
                     "DBGENG:    'BUILD\\work\\e0dd96435fde7cb0\\framework\\serviceapp\\src\\serviceapp\\singleservice.cpp'",
                     "DBGENG:      check 'srv\\*/mnt/c/inetpub/wwwroot/workingdir/work_20251005_131547_036/source\\BUILD\\work\\e0dd96435fde7cb0\\framework\\serviceapp\\src\\serviceapp\\singleservice.cpp'",
                     "DBGENG:      check ' .echo MCP_NEXUS_SENTINEL_COMMAND_END\\BUILD\\work\\e0dd96435fde7cb0\\framework\\serviceapp\\src\\serviceapp\\singleservice.cpp'"
-                },
-                StderrLines = new[]
-                {
+                ],
+                StderrLines =
+                [
                     "Error: Source file not found",
                     "Warning: Symbol server timeout"
-                },
+                ],
                 ExecutionDelay = TimeSpan.FromMilliseconds(100),
                 CompletionDelay = TimeSpan.FromMilliseconds(50)
             });
 
             mock.AddCommandBehavior(".srcfix+", new CdbCommandBehavior
             {
-                StdoutLines = new[] { "Source server settings updated" },
-                StderrLines = new string[0],
+                StdoutLines = ["Source server settings updated"],
+                StderrLines = [],
                 ExecutionDelay = TimeSpan.FromMilliseconds(10),
                 CompletionDelay = TimeSpan.FromMilliseconds(5)
             });
 
             mock.AddCommandBehavior("k", new CdbCommandBehavior
             {
-                StdoutLines = new[]
-                {
+                StdoutLines =
+                [
                     " # Child-SP          RetAddr           Call Site",
                     "00 00000000`00000000 00000000`00000000 0x00000000`00000000",
                     "01 00000000`00000000 00000000`00000000 0x00000000`00000000"
-                },
-                StderrLines = new string[0],
+                ],
+                StderrLines = [],
                 ExecutionDelay = TimeSpan.FromSeconds(30), // Long execution
                 CompletionDelay = TimeSpan.FromMilliseconds(100)
             });
 
             mock.AddCommandBehavior("!invalid", new CdbCommandBehavior
             {
-                StdoutLines = new string[0],
-                StderrLines = new[] { "Unknown command: !invalid" },
+                StdoutLines = [],
+                StderrLines = ["Unknown command: !invalid"],
                 ExecutionDelay = TimeSpan.FromMilliseconds(50),
                 CompletionDelay = TimeSpan.FromMilliseconds(10),
                 ShouldFail = true
@@ -134,8 +134,8 @@ namespace mcp_nexus_tests.Mocks
             // Add failing command behavior for error testing
             mock.AddCommandBehavior("failing-command", new CdbCommandBehavior
             {
-                StdoutLines = new string[0],
-                StderrLines = new[] { "Command failed with error" },
+                StdoutLines = [],
+                StderrLines = ["Command failed with error"],
                 ExecutionDelay = TimeSpan.FromMilliseconds(50),
                 CompletionDelay = TimeSpan.FromMilliseconds(10),
                 ShouldFail = true
@@ -156,16 +156,16 @@ namespace mcp_nexus_tests.Mocks
             // Add behaviors that simulate timeout scenarios
             mock.AddCommandBehavior("long-running-command", new CdbCommandBehavior
             {
-                StdoutLines = new[] { "Starting long operation..." },
-                StderrLines = new string[0],
+                StdoutLines = ["Starting long operation..."],
+                StderrLines = [],
                 ExecutionDelay = TimeSpan.FromMinutes(5), // Very long execution
                 CompletionDelay = TimeSpan.FromMilliseconds(100)
             });
 
             mock.AddCommandBehavior("hanging-command", new CdbCommandBehavior
             {
-                StdoutLines = new[] { "This command will hang" },
-                StderrLines = new string[0],
+                StdoutLines = ["This command will hang"],
+                StderrLines = [],
                 ExecutionDelay = TimeSpan.FromHours(1), // Never completes
                 CompletionDelay = TimeSpan.FromMilliseconds(100)
             });
@@ -173,8 +173,8 @@ namespace mcp_nexus_tests.Mocks
             // Add failing command behavior for error testing
             mock.AddCommandBehavior("failing-command", new CdbCommandBehavior
             {
-                StdoutLines = new string[0],
-                StderrLines = new[] { "Command failed with error" },
+                StdoutLines = [],
+                StderrLines = ["Command failed with error"],
                 ExecutionDelay = TimeSpan.FromMilliseconds(50),
                 CompletionDelay = TimeSpan.FromMilliseconds(10),
                 ShouldFail = true
@@ -195,8 +195,8 @@ namespace mcp_nexus_tests.Mocks
             // Add behaviors that simulate error scenarios
             mock.AddCommandBehavior("failing-command", new CdbCommandBehavior
             {
-                StdoutLines = new string[0],
-                StderrLines = new[] { "Command failed with error" },
+                StdoutLines = [],
+                StderrLines = ["Command failed with error"],
                 ExecutionDelay = TimeSpan.FromMilliseconds(50),
                 CompletionDelay = TimeSpan.FromMilliseconds(10),
                 ShouldFail = true
@@ -204,8 +204,8 @@ namespace mcp_nexus_tests.Mocks
 
             mock.AddCommandBehavior("stderr-only-command", new CdbCommandBehavior
             {
-                StdoutLines = new string[0],
-                StderrLines = new[] { "Error: This command only produces stderr" },
+                StdoutLines = [],
+                StderrLines = ["Error: This command only produces stderr"],
                 ExecutionDelay = TimeSpan.FromMilliseconds(100),
                 CompletionDelay = TimeSpan.FromMilliseconds(50)
             });

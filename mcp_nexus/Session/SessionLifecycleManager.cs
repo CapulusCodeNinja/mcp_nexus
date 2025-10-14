@@ -12,53 +12,38 @@ namespace mcp_nexus.Session
     /// Manages the lifecycle of debugging sessions including creation, closure, and cleanup.
     /// Provides thread-safe session management with proper resource cleanup and notification support.
     /// </summary>
-    public class SessionLifecycleManager
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="SessionLifecycleManager"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance for recording lifecycle operations and errors.</param>
+    /// <param name="serviceProvider">The service provider for dependency injection.</param>
+    /// <param name="loggerFactory">The logger factory for creating session-specific loggers.</param>
+    /// <param name="notificationService">The notification service for sending session events.</param>
+    /// <param name="config">The session manager configuration.</param>
+    /// <param name="sessions">The thread-safe dictionary for storing session information.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
+    public class SessionLifecycleManager(
+        ILogger logger,
+        IServiceProvider serviceProvider,
+        ILoggerFactory loggerFactory,
+        IMcpNotificationService notificationService,
+        SessionManagerConfiguration config,
+        ConcurrentDictionary<string, SessionInfo> sessions)
     {
-        private readonly ILogger m_Logger;
-        private readonly IServiceProvider m_ServiceProvider;
-        private readonly ILoggerFactory m_LoggerFactory;
-        private readonly IMcpNotificationService m_NotificationService;
-        private readonly SessionManagerConfiguration m_Config;
-        private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions;
-        private readonly ConcurrentDictionary<string, SessionCommandResultCache> m_SessionCaches;
-        private readonly IExtensionCommandTracker? m_ExtensionTracker;
-        private readonly IExtensionExecutor? m_ExtensionExecutor;
+        private readonly ILogger m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly IServiceProvider m_ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        private readonly ILoggerFactory m_LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        private readonly IMcpNotificationService m_NotificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+        private readonly SessionManagerConfiguration m_Config = config ?? throw new ArgumentNullException(nameof(config));
+        private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
+        private readonly ConcurrentDictionary<string, SessionCommandResultCache> m_SessionCaches = new ConcurrentDictionary<string, SessionCommandResultCache>();
+        private readonly IExtensionCommandTracker? m_ExtensionTracker = serviceProvider.GetService<IExtensionCommandTracker>();
+        private readonly IExtensionExecutor? m_ExtensionExecutor = serviceProvider.GetService<IExtensionExecutor>();
 
         // Thread-safe counters
         private long m_TotalSessionsCreated = 0;
         private long m_TotalSessionsClosed = 0;
         private long m_TotalSessionsExpired = 0;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SessionLifecycleManager"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance for recording lifecycle operations and errors.</param>
-        /// <param name="serviceProvider">The service provider for dependency injection.</param>
-        /// <param name="loggerFactory">The logger factory for creating session-specific loggers.</param>
-        /// <param name="notificationService">The notification service for sending session events.</param>
-        /// <param name="config">The session manager configuration.</param>
-        /// <param name="sessions">The thread-safe dictionary for storing session information.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
-        public SessionLifecycleManager(
-            ILogger logger,
-            IServiceProvider serviceProvider,
-            ILoggerFactory loggerFactory,
-            IMcpNotificationService notificationService,
-            SessionManagerConfiguration config,
-            ConcurrentDictionary<string, SessionInfo> sessions)
-        {
-            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            m_LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-            m_NotificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
-            m_Config = config ?? throw new ArgumentNullException(nameof(config));
-            m_Sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
-            m_SessionCaches = new ConcurrentDictionary<string, SessionCommandResultCache>();
-
-            // Optional extension services (may be null if extensions are disabled)
-            m_ExtensionTracker = serviceProvider.GetService<IExtensionCommandTracker>();
-            m_ExtensionExecutor = serviceProvider.GetService<IExtensionExecutor>();
-        }
 
         /// <summary>
         /// Creates a new debugging session asynchronously.
@@ -166,7 +151,7 @@ namespace mcp_nexus.Session
                     // Use exponential backoff instead of fixed delay
                     var elapsed = DateTime.UtcNow - waitStart;
                     var delayMs = Math.Min(500, 50 * (int)Math.Pow(1.5, elapsed.TotalSeconds));
-                    await Task.Delay(delayMs);
+                    await Task.Delay(delayMs, cancellationToken);
                 }
 
                 // Session is ready for use now
@@ -245,7 +230,7 @@ namespace mcp_nexus.Session
                         .Where(cmd => !cmd.IsCompleted)
                         .ToList();
 
-                    if (runningExtensions.Any())
+                    if (runningExtensions.Count != 0)
                     {
                         m_Logger.LogInformation("Cancelling {Count} running extensions for session {SessionId}",
                             runningExtensions.Count, sessionId);
@@ -339,7 +324,7 @@ namespace mcp_nexus.Session
         public async Task<int> CleanupExpiredSessionsAsync()
         {
             var expiredSessions = new List<string>();
-            var now = DateTime.UtcNow;
+            _ = DateTime.UtcNow;
 
             // Find expired sessions
             foreach (var kvp in m_Sessions)
@@ -470,7 +455,7 @@ namespace mcp_nexus.Session
         /// </summary>
         /// <param name="sessionInfo">The session information.</param>
         /// <returns>A session context for notifications.</returns>
-        private SessionContext GetSessionContext(SessionInfo sessionInfo)
+        private static SessionContext GetSessionContext(SessionInfo sessionInfo)
         {
             if (sessionInfo == null)
             {

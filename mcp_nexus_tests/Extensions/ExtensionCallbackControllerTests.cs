@@ -41,12 +41,13 @@ namespace mcp_nexus_tests.Extensions
                 m_MockLogger.Object,
                 m_MockTokenValidator.Object,
                 m_MockSessionManager.Object,
-                m_MockCommandTracker.Object);
-
-            // Setup HTTP context
-            controller.ControllerContext = new ControllerContext
+                m_MockCommandTracker.Object)
             {
-                HttpContext = new DefaultHttpContext()
+                // Setup HTTP context
+                ControllerContext = new ControllerContext
+                {
+                    HttpContext = new DefaultHttpContext()
+                }
             };
 
             return controller;
@@ -139,7 +140,7 @@ namespace mcp_nexus_tests.Extensions
             // Arrange
             var controller = CreateController();
             controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
-            controller.HttpContext.Request.Headers["Authorization"] = "Bearer tok";
+            controller.HttpContext.Request.Headers.Authorization = "Bearer tok";
             m_MockTokenValidator.Setup(v => v.ValidateToken("tok")).Returns((true, "sess-1", "ext-1"));
 
             m_MockCommandTracker.Setup(t => t.IncrementCallbackCount("ext-1"));
@@ -149,8 +150,10 @@ namespace mcp_nexus_tests.Extensions
             ICommandQueueService? outQueue = mockQueue.Object;
             m_MockSessionManager.Setup(s => s.TryGetCommandQueue("sess-1", out outQueue)).Returns(true);
 
-            var cmdInfo = new CommandInfo("cmd-123", "!analyze -v", CommandState.Completed, DateTime.UtcNow, 0);
-            cmdInfo.IsCompleted = true;
+            var cmdInfo = new CommandInfo("cmd-123", "!analyze -v", CommandState.Completed, DateTime.UtcNow, 0)
+            {
+                IsCompleted = true
+            };
             var cmdResult = new CommandResult(true, "ok", null);
             m_MockSessionManager.Setup(s => s.GetCommandInfoAndResultAsync("sess-1", "cmd-123"))
                 .ReturnsAsync((cmdInfo, (ICommandResult)cmdResult));
@@ -206,7 +209,7 @@ namespace mcp_nexus_tests.Extensions
             // Arrange
             var controller = CreateController();
             controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
-            controller.HttpContext.Request.Headers["Authorization"] = "Bearer tok";
+            controller.HttpContext.Request.Headers.Authorization = "Bearer tok";
             m_MockTokenValidator.Setup(v => v.ValidateToken("tok")).Returns((true, "sess-1", "ext-1"));
 
             var req = new ExtensionCallbackLogRequest { Message = "" };
@@ -225,11 +228,13 @@ namespace mcp_nexus_tests.Extensions
             // Arrange
             var controller = CreateController();
             controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
-            controller.HttpContext.Request.Headers["Authorization"] = "tok"; // No Bearer prefix
+            controller.HttpContext.Request.Headers.Authorization = "tok"; // No Bearer prefix
             m_MockTokenValidator.Setup(v => v.ValidateToken("tok")).Returns((true, "sess-1", null));
 
-            var cmdInfo = new CommandInfo("cmd-1", "!analyze -v", CommandState.Completed, DateTime.UtcNow, 0);
-            cmdInfo.IsCompleted = true;
+            var cmdInfo = new CommandInfo("cmd-1", "!analyze -v", CommandState.Completed, DateTime.UtcNow, 0)
+            {
+                IsCompleted = true
+            };
             var cmdResult = new CommandResult(true, "out", null);
             m_MockSessionManager.Setup(s => s.GetCommandInfoAndResultAsync("sess-1", "cmd-1"))
                 .ReturnsAsync((cmdInfo, (ICommandResult)cmdResult));
@@ -253,7 +258,7 @@ namespace mcp_nexus_tests.Extensions
             // Arrange
             var controller = CreateController();
             controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
-            controller.HttpContext.Request.Headers["Authorization"] = "Bearer invalid";
+            controller.HttpContext.Request.Headers.Authorization = "Bearer invalid";
             m_MockTokenValidator.Setup(v => v.ValidateToken(It.IsAny<string>())).Returns((false, null, null));
 
             var request = new ExtensionCallbackReadRequest { CommandId = "cmd-1" };
@@ -272,7 +277,7 @@ namespace mcp_nexus_tests.Extensions
             // Arrange
             var controller = CreateController();
             controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
-            controller.HttpContext.Request.Headers["Authorization"] = "Bearer valid";
+            controller.HttpContext.Request.Headers.Authorization = "Bearer valid";
             m_MockTokenValidator.Setup(v => v.ValidateToken("valid")).Returns((true, "sess-1", null));
             m_MockSessionManager.Setup(s => s.GetCommandInfoAndResultAsync("sess-1", "cmd-404")).ReturnsAsync((CommandInfo: null, Result: (ICommandResult?)null));
 
@@ -297,7 +302,7 @@ namespace mcp_nexus_tests.Extensions
             // Arrange
             var controller = CreateController();
             controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
-            controller.HttpContext.Request.Headers["Authorization"] = "Bearer tok";
+            controller.HttpContext.Request.Headers.Authorization = "Bearer tok";
             m_MockTokenValidator.Setup(v => v.ValidateToken("tok")).Returns((true, "sess-1", "ext-1"));
             m_MockCommandTracker.Setup(t => t.GetCommandInfo("ext-1")).Returns(new ExtensionCommandInfo { ExtensionName = "ext", Id = "ext-1" });
 

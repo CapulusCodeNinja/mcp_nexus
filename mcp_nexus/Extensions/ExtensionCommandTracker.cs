@@ -82,21 +82,16 @@ namespace mcp_nexus.Extensions
     /// <summary>
     /// Implementation of extension command tracker.
     /// </summary>
-    public class ExtensionCommandTracker : IExtensionCommandTracker
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="ExtensionCommandTracker"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance.</param>
+    /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
+    public class ExtensionCommandTracker(ILogger<ExtensionCommandTracker> logger) : IExtensionCommandTracker
     {
-        private readonly ILogger<ExtensionCommandTracker> m_Logger;
+        private readonly ILogger<ExtensionCommandTracker> m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly ConcurrentDictionary<string, ExtensionCommandInfo> m_Commands = new();
         private readonly ConcurrentDictionary<string, ICommandResult> m_Results = new();
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExtensionCommandTracker"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance.</param>
-        /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
-        public ExtensionCommandTracker(ILogger<ExtensionCommandTracker> logger)
-        {
-            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
 
         /// <summary>
         /// Tracks a new extension command.
@@ -251,7 +246,7 @@ namespace mcp_nexus.Extensions
         public void RemoveSessionCommands(string sessionId)
         {
             var sessionCommands = m_Commands.Values.Where(c => c.SessionId == sessionId).ToList();
-            
+
             foreach (var cmd in sessionCommands)
             {
                 m_Commands.TryRemove(cmd.Id, out _);

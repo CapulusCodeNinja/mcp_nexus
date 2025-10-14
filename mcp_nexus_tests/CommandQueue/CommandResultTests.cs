@@ -344,6 +344,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Assert
             Assert.Equal(output, result.Output);
         }
+        private static readonly int[] value = new[] { 1, 2, 3 };
 
         [Fact]
         public void Constructor_WithComplexDataTypes_HandlesCorrectly()
@@ -357,7 +358,7 @@ namespace mcp_nexus_tests.CommandQueue
                 { "int", 42 },
                 { "double", 3.14 },
                 { "bool", true },
-                { "array", new[] { 1, 2, 3 } },
+                { "array", value },
                 { "nested", new Dictionary<string, object> { { "nestedKey", "nestedValue" } } }
             };
 
@@ -395,7 +396,7 @@ namespace mcp_nexus_tests.CommandQueue
             var result = new CommandResult(true, "test", data: data);
 
             // Act & Assert
-            Assert.True(result.Data is IReadOnlyDictionary<string, object>);
+            Assert.True(result.Data is not null);
         }
 
         #endregion

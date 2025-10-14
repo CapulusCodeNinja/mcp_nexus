@@ -32,7 +32,7 @@ namespace mcp_nexus_tests.Configuration
         public void HttpServerSetup_Class_Exists()
         {
             // This test verifies that the HttpServerSetup class exists and can be instantiated
-            Assert.True(typeof(HttpServerSetup) != null);
+            Assert.NotNull(typeof(HttpServerSetup));
         }
 
         [Fact]
@@ -222,7 +222,7 @@ namespace mcp_nexus_tests.Configuration
             HttpServerSetup.ConfigureHttpServices(services, configuration);
 
             // Assert
-            var serviceProvider = services.BuildServiceProvider();
+            _ = services.BuildServiceProvider();
 
             // Verify MCP server services are registered
             // Note: The exact services depend on the MCP SDK implementation

@@ -8,11 +8,18 @@ namespace mcp_nexus.Debugger
     /// Handles command execution and output reading for CDB debugger sessions.
     /// Uses event-based stream reading to avoid deadlocks.
     /// </summary>
-    public class CdbCommandExecutor : IDisposable
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CdbCommandExecutor"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="config">The CDB session configuration.</param>
+    /// <param name="outputParser">The output parser for processing CDB responses.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
+    public class CdbCommandExecutor(ILogger<CdbCommandExecutor> logger, CdbSessionConfiguration config, CdbOutputParser outputParser) : IDisposable
     {
-        private readonly ILogger<CdbCommandExecutor> m_logger;
-        private readonly CdbSessionConfiguration m_config;
-        private readonly CdbOutputParser m_outputParser;
+        private readonly ILogger<CdbCommandExecutor> m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly CdbSessionConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
+        private readonly CdbOutputParser m_outputParser = outputParser ?? throw new ArgumentNullException(nameof(outputParser));
         private readonly object m_cancellationLock = new();
 
         private readonly SemaphoreSlim m_commandExecutionSemaphore = new(1, 1);
@@ -21,23 +28,9 @@ namespace mcp_nexus.Debugger
         private Channel<(string Line, bool IsStderr, DateTime Timestamp)>? m_sessionChannel;
         private Task? m_consumer;
         private CancellationTokenSource? m_sessionCancellation;
-        private readonly Dictionary<string, TaskCompletionSource<string>> m_pendingCommands = new();
+        private readonly Dictionary<string, TaskCompletionSource<string>> m_pendingCommands = [];
         private readonly object m_pendingCommandsLock = new();
         private string? m_currentCommandId = null;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CdbCommandExecutor"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance.</param>
-        /// <param name="config">The CDB session configuration.</param>
-        /// <param name="outputParser">The output parser for processing CDB responses.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
-        public CdbCommandExecutor(ILogger<CdbCommandExecutor> logger, CdbSessionConfiguration config, CdbOutputParser outputParser)
-        {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_config = config ?? throw new ArgumentNullException(nameof(config));
-            m_outputParser = outputParser ?? throw new ArgumentNullException(nameof(outputParser));
-        }
 
         /// <summary>
         /// Event handler for data received from CDB process streams.
@@ -55,7 +48,7 @@ namespace mcp_nexus.Debugger
 
             // Split by newlines in case multiple lines arrived together
             // This prevents sentinel detection issues with concatenated output
-            var lines = e.Data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var lines = e.Data.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
             // Send each line individually to the channel
             if (m_sessionChannel != null)
@@ -78,8 +71,7 @@ namespace mcp_nexus.Debugger
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="processManager"/> is null.</exception>
         public Task InitializeSessionAsync(CdbProcessManager processManager, CancellationToken cancellationToken = default)
         {
-            if (processManager == null)
-                throw new ArgumentNullException(nameof(processManager));
+            ArgumentNullException.ThrowIfNull(processManager);
 
             if (m_sessionChannel != null)
             {
@@ -413,10 +405,9 @@ namespace mcp_nexus.Debugger
         /// <param name="command">The original command to wrap with sentinels.</param>
         /// <returns>The command wrapped with start and end sentinels.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="command"/> is null.</exception>
-        private string CreateCommandWithSentinels(string command)
+        private static string CreateCommandWithSentinels(string command)
         {
-            if (command == null)
-                throw new ArgumentNullException(nameof(command));
+            ArgumentNullException.ThrowIfNull(command);
 
             return $".echo {CdbSentinels.StartMarker}; {command}; .echo {CdbSentinels.EndMarker}";
         }
@@ -432,17 +423,12 @@ namespace mcp_nexus.Debugger
         /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
         private async Task SendCommandToCdbAsync(CdbProcessManager processManager, string command, CancellationToken cancellationToken)
         {
-            var debuggerInput = processManager.DebuggerInput;
-            if (debuggerInput == null)
-            {
-                throw new InvalidOperationException("No input stream available for sending command");
-            }
-
+            var debuggerInput = processManager.DebuggerInput ?? throw new InvalidOperationException("No input stream available for sending command");
             m_logger.LogDebug("Sending command to CDB: {Command}", command);
 
             // TRUE ASYNC: Use WriteLineAsync instead of blocking WriteLine
             await debuggerInput.WriteLineAsync(command).ConfigureAwait(false);
-            await debuggerInput.FlushAsync().ConfigureAwait(false);
+            await debuggerInput.FlushAsync(cancellationToken).ConfigureAwait(false);
 
             m_logger.LogDebug("Command sent successfully to CDB");
         }
@@ -477,7 +463,7 @@ namespace mcp_nexus.Debugger
                 {
                     if (m_consumer != null)
                     {
-                        Task.WaitAll(new[] { m_consumer }, TimeSpan.FromSeconds(5));
+                        Task.WaitAll([m_consumer], TimeSpan.FromSeconds(5));
                     }
                 }
                 catch (Exception ex)

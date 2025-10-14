@@ -52,7 +52,7 @@ namespace mcp_nexus_tests.Configuration
         public void ServiceRegistration_Class_Exists()
         {
             // This test verifies that the ServiceRegistration class exists and can be instantiated
-            Assert.True(typeof(ServiceRegistration) != null);
+            Assert.NotNull(typeof(ServiceRegistration));
         }
 
         [Fact]
@@ -126,7 +126,7 @@ namespace mcp_nexus_tests.Configuration
                 ServiceRegistration.RegisterServices(services, configuration, null);
 
                 // Assert
-                var logs = (memory.Logs ?? new System.Collections.Generic.List<string>());
+                var logs = (memory.Logs ?? []);
                 Assert.Contains(logs, m => m.Contains("Registering services..."));
                 Assert.Contains(logs, m => m.Contains("All services registered successfully"));
                 Assert.Contains(logs, m => m.Contains("Registered core services (CDB, Session, Notifications, Protocol)"));
@@ -191,7 +191,7 @@ namespace mcp_nexus_tests.Configuration
             ServiceRegistration.RegisterServices(services, configuration, null);
 
             // Assert
-            var serviceProvider = services.BuildServiceProvider();
+            _ = services.BuildServiceProvider();
 
             // Verify advanced services are registered (dead enterprise services removed)
         }
@@ -314,7 +314,7 @@ namespace mcp_nexus_tests.Configuration
                 ServiceRegistration.RegisterServices(services, configuration, null);
 
                 // Assert
-                var logs = (memory.Logs ?? new System.Collections.Generic.List<string>());
+                var logs = (memory.Logs ?? []);
                 Assert.Contains(logs, m => m.Contains("Registering services..."));
             }
             finally
@@ -355,7 +355,7 @@ namespace mcp_nexus_tests.Configuration
                 ServiceRegistration.RegisterServices(services, configuration, null);
 
                 // Assert
-                var logs = (memory.Logs ?? new System.Collections.Generic.List<string>());
+                var logs = (memory.Logs ?? []);
                 Assert.Contains(logs, m => m.Contains("Registering services..."));
                 // The warning about CDB will be logged via logger in ServiceRegistration.RegisterCoreServices
             }

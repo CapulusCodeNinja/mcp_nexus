@@ -5,30 +5,23 @@ namespace mcp_nexus.Recovery
     /// <summary>
     /// Monitors CDB session health and responsiveness
     /// </summary>
-    public class SessionHealthMonitor
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="SessionHealthMonitor"/> class.
+    /// </remarks>
+    /// <param name="cdbSession">The CDB session to monitor.</param>
+    /// <param name="logger">The logger instance for recording health monitoring operations.</param>
+    /// <param name="config">The recovery configuration settings.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
+    public class SessionHealthMonitor(
+        ICdbSession cdbSession,
+        ILogger logger,
+        RecoveryConfiguration config)
     {
-        private readonly ICdbSession m_cdbSession;
-        private readonly ILogger m_logger;
-        private readonly RecoveryConfiguration m_config;
+        private readonly ICdbSession m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
+        private readonly ILogger m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly RecoveryConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
         private DateTime m_lastHealthCheck = DateTime.UtcNow;
         private bool m_lastHealthResult = true;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SessionHealthMonitor"/> class.
-        /// </summary>
-        /// <param name="cdbSession">The CDB session to monitor.</param>
-        /// <param name="logger">The logger instance for recording health monitoring operations.</param>
-        /// <param name="config">The recovery configuration settings.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
-        public SessionHealthMonitor(
-            ICdbSession cdbSession,
-            ILogger logger,
-            RecoveryConfiguration config)
-        {
-            m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_config = config ?? throw new ArgumentNullException(nameof(config));
-        }
 
         /// <summary>
         /// Checks if the session is currently healthy.
@@ -150,6 +143,6 @@ namespace mcp_nexus.Recovery
         public TimeSpan TimeSinceLastCheck { get; set; }
         public bool IsHealthCheckDue { get; set; }
         public string? ErrorMessage { get; set; }
-        public Dictionary<string, object> AdditionalInfo { get; set; } = new();
+        public Dictionary<string, object> AdditionalInfo { get; set; } = [];
     }
 }

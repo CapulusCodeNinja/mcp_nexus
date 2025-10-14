@@ -265,7 +265,7 @@ namespace mcp_nexus_tests.Debugger
         /// <summary>
         /// Creates a mock CdbProcessManager with basic setup for testing.
         /// </summary>
-        private Mock<CdbProcessManager> CreateMockProcessManager()
+        private static Mock<CdbProcessManager> CreateMockProcessManager()
         {
             var mockLogger = new Mock<ILogger<CdbProcessManager>>();
             var mockConfig = new CdbSessionConfiguration(commandTimeoutMs: 600000); // 10 minutes for tests

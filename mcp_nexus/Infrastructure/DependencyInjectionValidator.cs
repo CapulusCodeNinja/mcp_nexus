@@ -12,20 +12,15 @@ namespace mcp_nexus.Infrastructure
     /// Validates dependency injection configuration for completeness and correctness.
     /// Provides comprehensive validation of service registrations, circular dependencies, lifetime mismatches, and missing dependencies.
     /// </summary>
-    public class DependencyInjectionValidator
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="DependencyInjectionValidator"/> class.
+    /// </remarks>
+    /// <param name="services">The service collection to validate.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> is null.</exception>
+    public class DependencyInjectionValidator(IServiceCollection services)
     {
-        private readonly IServiceCollection m_Services;
-        private readonly List<ValidationResult> m_ValidationResults = new();
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DependencyInjectionValidator"/> class.
-        /// </summary>
-        /// <param name="services">The service collection to validate.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> is null.</exception>
-        public DependencyInjectionValidator(IServiceCollection services)
-        {
-            m_Services = services ?? throw new ArgumentNullException(nameof(services));
-        }
+        private readonly IServiceCollection m_Services = services ?? throw new ArgumentNullException(nameof(services));
+        private readonly List<ValidationResult> m_ValidationResults = [];
 
         /// <summary>
         /// Validates the entire dependency injection configuration.
@@ -44,7 +39,7 @@ namespace mcp_nexus.Infrastructure
             return new ValidationResult
             {
                 IsValid = !m_ValidationResults.Any(r => r.Severity == ValidationSeverity.Error),
-                Results = m_ValidationResults.ToList()
+                Results = [.. m_ValidationResults]
             };
         }
 
@@ -96,7 +91,7 @@ namespace mcp_nexus.Infrastructure
             return new ValidationResult
             {
                 IsValid = !m_ValidationResults.Any(r => r.Severity == ValidationSeverity.Error),
-                Results = m_ValidationResults.ToList()
+                Results = [.. m_ValidationResults]
             };
         }
 
@@ -111,11 +106,9 @@ namespace mcp_nexus.Infrastructure
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="serviceProvider"/> or <paramref name="logger"/> is null.</exception>
         public static bool ValidateServiceRegistration(IServiceProvider serviceProvider, ILogger logger)
         {
-            if (serviceProvider == null)
-                throw new ArgumentNullException(nameof(serviceProvider));
+            ArgumentNullException.ThrowIfNull(serviceProvider);
 
-            if (logger == null)
-                throw new ArgumentNullException(nameof(logger));
+            ArgumentNullException.ThrowIfNull(logger);
 
             try
             {
@@ -144,11 +137,9 @@ namespace mcp_nexus.Infrastructure
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="serviceProvider"/> or <paramref name="logger"/> is null.</exception>
         public static ValidationResult ValidateCriticalServices(IServiceProvider serviceProvider, ILogger logger)
         {
-            if (serviceProvider == null)
-                throw new ArgumentNullException(nameof(serviceProvider));
+            ArgumentNullException.ThrowIfNull(serviceProvider);
 
-            if (logger == null)
-                throw new ArgumentNullException(nameof(logger));
+            ArgumentNullException.ThrowIfNull(logger);
 
             try
             {
@@ -159,7 +150,7 @@ namespace mcp_nexus.Infrastructure
                 return new ValidationResult
                 {
                     IsValid = true,
-                    Results = new List<ValidationResult>()
+                    Results = []
                 };
             }
             catch (Exception ex)
@@ -291,7 +282,7 @@ namespace mcp_nexus.Infrastructure
             }
         }
 
-        private bool IsLifetimeMismatch(ServiceLifetime dependent, ServiceLifetime dependency)
+        private static bool IsLifetimeMismatch(ServiceLifetime dependent, ServiceLifetime dependency)
         {
             return (dependent == ServiceLifetime.Singleton && dependency == ServiceLifetime.Scoped) ||
                    (dependent == ServiceLifetime.Singleton && dependency == ServiceLifetime.Transient) ||
@@ -343,7 +334,7 @@ namespace mcp_nexus.Infrastructure
         /// <summary>
         /// Gets or sets the list of nested validation results.
         /// </summary>
-        public List<ValidationResult> Results { get; set; } = new();
+        public List<ValidationResult> Results { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the severity level of the validation result.

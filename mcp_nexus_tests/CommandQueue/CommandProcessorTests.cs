@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void CommandProcessor_Class_Exists()
         {
             // This test verifies that the CommandProcessor class exists and can be instantiated
-            Assert.True(typeof(CommandProcessor) != null);
+            Assert.NotNull(typeof(CommandProcessor));
         }
     }
 }

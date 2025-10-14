@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.Debugger
         public void CdbSessionConfiguration_Class_Exists()
         {
             // This test verifies that the CdbSessionConfiguration class exists and can be instantiated
-            Assert.True(typeof(CdbSessionConfiguration) != null);
+            Assert.NotNull(typeof(CdbSessionConfiguration));
         }
 
         [Fact]

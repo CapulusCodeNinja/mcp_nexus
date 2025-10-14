@@ -7,30 +7,24 @@ namespace mcp_nexus.Session
     /// <summary>
     /// Configuration settings and validation for session management
     /// </summary>
-    public class SessionManagerConfiguration
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="SessionManagerConfiguration"/> class.
+    /// </remarks>
+    /// <param name="config">Optional session configuration options.</param>
+    /// <param name="cdbOptions">Optional CDB session options.</param>
+    public class SessionManagerConfiguration(
+        IOptions<SessionConfiguration>? config = null,
+        IOptions<CdbSessionOptions>? cdbOptions = null)
     {
         /// <summary>
         /// Gets the session configuration settings.
         /// </summary>
-        public SessionConfiguration Config { get; }
+        public SessionConfiguration Config { get; } = config?.Value ?? new SessionConfiguration();
 
         /// <summary>
         /// Gets the CDB session options.
         /// </summary>
-        public CdbSessionOptions CdbOptions { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SessionManagerConfiguration"/> class.
-        /// </summary>
-        /// <param name="config">Optional session configuration options.</param>
-        /// <param name="cdbOptions">Optional CDB session options.</param>
-        public SessionManagerConfiguration(
-            IOptions<SessionConfiguration>? config = null,
-            IOptions<CdbSessionOptions>? cdbOptions = null)
-        {
-            Config = config?.Value ?? new SessionConfiguration();
-            CdbOptions = cdbOptions?.Value ?? new CdbSessionOptions();
-        }
+        public CdbSessionOptions CdbOptions { get; } = cdbOptions?.Value ?? new CdbSessionOptions();
 
         /// <summary>
         /// Validates session creation parameters
@@ -79,17 +73,12 @@ namespace mcp_nexus.Session
         /// </exception>
         private string GetCdbSessionBasedLogPath(string sessionId)
         {
-            var fileTarget = LogManager.Configuration?.FindTargetByName("mainFile") as NLog.Targets.FileTarget;
-            if (fileTarget == null)
-            {
-                throw new InvalidOperationException("File target not found in NLog configuration");
-            }
-
+            var fileTarget = LogManager.Configuration?.FindTargetByName("mainFile") as NLog.Targets.FileTarget ?? throw new InvalidOperationException("File target not found in NLog configuration");
             var logEventInfo = new LogEventInfo(NLog.LogLevel.Info, "", "");
             var originalPath = fileTarget.FileName.Render(logEventInfo);
 
             string? directory = Path.GetDirectoryName(originalPath);
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalPath);
+            _ = Path.GetFileNameWithoutExtension(originalPath);
 
             if (string.IsNullOrEmpty(directory))
             {

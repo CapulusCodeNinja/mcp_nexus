@@ -10,7 +10,7 @@ namespace mcp_nexus.Notifications
     {
         private bool m_isRunning = false;
         private readonly IMcpNotificationService m_notificationService;
-        private readonly List<string> m_subscriptionIds = new();
+        private readonly List<string> m_subscriptionIds = [];
         private bool m_isInitialized = false;
         private readonly ILogger<StdioNotificationBridge>? m_Logger;
 
@@ -98,33 +98,33 @@ namespace mcp_nexus.Notifications
             if (!m_isInitialized)
             {
                 // Subscribe to all notification types
-                m_subscriptionIds.Add(m_notificationService.Subscribe("CommandStatus", async (object notification) =>
+                m_subscriptionIds.Add(m_notificationService.Subscribe("CommandStatus", async notification =>
                 {
                     await SendNotificationAsync(notification);
                 }));
 
                 // Subscribe to other notification types
-                m_subscriptionIds.Add(m_notificationService.Subscribe("CommandHeartbeat", async (object notification) =>
+                m_subscriptionIds.Add(m_notificationService.Subscribe("CommandHeartbeat", async notification =>
                 {
                     await SendNotificationAsync(notification);
                 }));
 
-                m_subscriptionIds.Add(m_notificationService.Subscribe("SessionEvent", async (object notification) =>
+                m_subscriptionIds.Add(m_notificationService.Subscribe("SessionEvent", async notification =>
                 {
                     await SendNotificationAsync(notification);
                 }));
 
-                m_subscriptionIds.Add(m_notificationService.Subscribe("SessionRecovery", async (object notification) =>
+                m_subscriptionIds.Add(m_notificationService.Subscribe("SessionRecovery", async notification =>
                 {
                     await SendNotificationAsync(notification);
                 }));
 
-                m_subscriptionIds.Add(m_notificationService.Subscribe("ServerHealth", async (object notification) =>
+                m_subscriptionIds.Add(m_notificationService.Subscribe("ServerHealth", async notification =>
                 {
                     await SendNotificationAsync(notification);
                 }));
 
-                m_subscriptionIds.Add(m_notificationService.Subscribe("ToolsListChanged", async (object notification) =>
+                m_subscriptionIds.Add(m_notificationService.Subscribe("ToolsListChanged", async notification =>
                 {
                     await SendNotificationAsync(notification);
                 }));

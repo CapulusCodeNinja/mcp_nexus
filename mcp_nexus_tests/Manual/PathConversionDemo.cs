@@ -10,14 +10,9 @@ namespace mcp_nexus_tests.Manual
     /// This is a manual test that demonstrates the path conversion functionality.
     /// Run this test to see exactly what the MCP server logs will look like.
     /// </summary>
-    public class PathConversionDemo
+    public class PathConversionDemo(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper output;
-
-        public PathConversionDemo(ITestOutputHelper output)
-        {
-            this.output = output;
-        }
+        private readonly ITestOutputHelper output = output;
 
         [Fact]
         public void DemonstratePathConversion()

@@ -231,7 +231,7 @@ namespace mcp_nexus_tests.Extensions
                 }));
             }
 
-            await Task.WhenAll(tasks.ToArray());
+            await Task.WhenAll([.. tasks]);
 
             // Assert - All tokens should be valid
             foreach (var token in tokens)
@@ -255,7 +255,7 @@ namespace mcp_nexus_tests.Extensions
 
             // Act - Revoke tokens concurrently
             var tasks = tokens.Select(token => Task.Run(() => validator.RevokeToken(token))).ToList();
-            await Task.WhenAll(tasks.ToArray());
+            await Task.WhenAll([.. tasks]);
 
             // Assert - All tokens should be invalid
             foreach (var token in tokens)

@@ -16,7 +16,7 @@ namespace mcp_nexus.Debugger
 
         // CRITICAL: Semaphore to ensure only ONE command executes at a time in CDB
         // CDB is single-threaded and cannot handle concurrent commands
-        private readonly SemaphoreSlim m_commandSemaphore = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim m_commandSemaphore = new(1, 1);
 
         private bool m_disposed;
 
@@ -119,14 +119,9 @@ namespace mcp_nexus.Debugger
         /// Simple logger wrapper that implements ILogger&lt;T&gt; by forwarding to an untyped logger
         /// This fixes the NullLogger issue when logger casting fails
         /// </summary>
-        private class LoggerWrapper<T> : ILogger<T>
+        private class LoggerWrapper<T>(ILogger logger) : ILogger<T>
         {
-            private readonly ILogger m_InnerLogger;
-
-            public LoggerWrapper(ILogger logger)
-            {
-                m_InnerLogger = logger ?? throw new ArgumentNullException(nameof(logger));
-            }
+            private readonly ILogger m_InnerLogger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull
                 => m_InnerLogger.BeginScope(state);

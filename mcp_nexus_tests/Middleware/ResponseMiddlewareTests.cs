@@ -480,7 +480,7 @@ namespace mcp_nexus_tests.Middleware
         public void ResponseMiddleware_Class_Exists()
         {
             // Assert
-            Assert.True(typeof(ResponseMiddleware) != null);
+            Assert.NotNull(typeof(ResponseMiddleware));
         }
 
         [Fact]
@@ -548,7 +548,7 @@ namespace mcp_nexus_tests.Middleware
             Assert.NotNull(middleware);
         }
 
-        private HttpContext CreateHttpContext()
+        private static HttpContext CreateHttpContext()
         {
             var context = new DefaultHttpContext();
             context.Response.Body = new MemoryStream();

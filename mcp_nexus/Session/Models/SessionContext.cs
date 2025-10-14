@@ -33,6 +33,6 @@ namespace mcp_nexus.Session.Models
         public TimeSpan? TimeUntilExpiry { get; set; }
 
         /// <summary>Helpful hints for AI client about session usage</summary>
-        public List<string> UsageHints { get; set; } = new();
+        public List<string> UsageHints { get; set; } = [];
     }
 }

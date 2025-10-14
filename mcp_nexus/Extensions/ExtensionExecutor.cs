@@ -9,7 +9,7 @@ namespace mcp_nexus.Extensions
     /// <summary>
     /// Executes extension scripts and manages their lifecycle.
     /// </summary>
-    public class ExtensionExecutor : IExtensionExecutor
+    public partial class ExtensionExecutor : IExtensionExecutor
     {
         private readonly ILogger<ExtensionExecutor> m_Logger;
         private readonly IExtensionManager m_ExtensionManager;
@@ -18,6 +18,12 @@ namespace mcp_nexus.Extensions
         private readonly IExtensionTokenValidator m_TokenValidator;
         private readonly ConcurrentDictionary<string, ExtensionProcessInfo> m_RunningExtensions = new();
         private readonly ConcurrentDictionary<string, IProcessHandle> m_Processes = new();
+
+        /// <summary>
+        /// Regex to strip ANSI escape sequences from process output
+        /// </summary>
+        private static readonly System.Text.RegularExpressions.Regex s_AnsiRegex =
+            MyRegex();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExtensionExecutor"/> class.
@@ -37,7 +43,7 @@ namespace mcp_nexus.Extensions
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_ExtensionManager = extensionManager ?? throw new ArgumentNullException(nameof(extensionManager));
-            
+
             if (string.IsNullOrWhiteSpace(callbackUrl))
                 throw new ArgumentException("Callback URL cannot be null or empty", nameof(callbackUrl));
 
@@ -79,11 +85,7 @@ namespace mcp_nexus.Extensions
                 extensionName, sessionId, commandId);
 
             // Get extension metadata
-            var metadata = m_ExtensionManager.GetExtension(extensionName);
-            if (metadata == null)
-            {
-                throw new InvalidOperationException($"Extension '{extensionName}' not found");
-            }
+            var metadata = m_ExtensionManager.GetExtension(extensionName) ?? throw new InvalidOperationException($"Extension '{extensionName}' not found");
 
             // Validate extension
             var (isValid, errorMessage) = m_ExtensionManager.ValidateExtension(extensionName);
@@ -128,12 +130,13 @@ namespace mcp_nexus.Extensions
                 {
                     if (!string.IsNullOrEmpty(e.Data))
                     {
-                        outputBuilder.AppendLine(e.Data);
+                        var sanitized = StripAnsi(e.Data);
+                        outputBuilder.AppendLine(sanitized);
 
                         // Check for progress messages
                         if (e.Data.StartsWith("[PROGRESS]"))
                         {
-                            var progressMessage = e.Data.Substring(10).Trim();
+                            var progressMessage = e.Data[10..].Trim();
                             progressCallback?.Invoke(progressMessage);
                         }
 
@@ -150,8 +153,9 @@ namespace mcp_nexus.Extensions
                 {
                     if (!string.IsNullOrEmpty(e.Data))
                     {
-                        errorBuilder.AppendLine(e.Data);
-                        m_Logger.LogWarning("Extension {Extension} stderr: {Message}", extensionName, e.Data);
+                        var sanitized = StripAnsi(e.Data);
+                        errorBuilder.AppendLine(sanitized);
+                        m_Logger.LogWarning("Extension {Extension} stderr: {Message}", extensionName, sanitized);
                     }
                 };
 
@@ -240,7 +244,7 @@ namespace mcp_nexus.Extensions
                     m_Logger.LogError(exCodeEx, "Failed to get ExitCode for extension {Extension}", extensionName);
                     throw new InvalidOperationException($"Failed to get exit code: {exCodeEx.Message}", exCodeEx);
                 }
-                
+
                 var output = outputBuilder.ToString();
                 var standardError = errorBuilder.ToString();
 
@@ -337,12 +341,7 @@ namespace mcp_nexus.Extensions
             if (scriptType == "powershell")
             {
                 // Try to find PowerShell - prefer pwsh (PowerShell 7+), fall back to powershell (5.1)
-                string? powershellPath = FindPowerShell();
-                if (powershellPath == null)
-                {
-                    throw new InvalidOperationException("PowerShell not found. Please ensure pwsh.exe or powershell.exe is in PATH or installed.");
-                }
-                
+                string? powershellPath = FindPowerShell() ?? throw new InvalidOperationException("PowerShell not found. Please ensure pwsh.exe or powershell.exe is in PATH or installed.");
                 fileName = powershellPath;
                 arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{metadata.FullScriptPath}\"";
             }
@@ -354,6 +353,15 @@ namespace mcp_nexus.Extensions
             m_Logger.LogDebug("Extension process: {FileName} {Arguments}", fileName, arguments);
 
             return m_ProcessWrapper.CreateProcess(fileName, arguments, environmentVariables);
+        }
+
+        /// <summary>
+        /// Removes ANSI escape sequences from a given string for clean logging.
+        /// </summary>
+        private static string StripAnsi(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+            try { return s_AnsiRegex.Replace(input, string.Empty); } catch { return input; }
         }
 
         /// <summary>
@@ -383,7 +391,7 @@ namespace mcp_nexus.Extensions
                         m_Logger.LogDebug("Found PowerShell at: {Path}", path);
                         return path;
                     }
-                    
+
                     // For simple names, just return them and let Process.Start handle PATH lookup
                     if (!Path.IsPathRooted(path))
                     {
@@ -401,7 +409,7 @@ namespace mcp_nexus.Extensions
             return null;
         }
 
-        
+
 
         /// <summary>
         /// Kills a running extension by command ID.
@@ -445,6 +453,9 @@ namespace mcp_nexus.Extensions
 
             return m_RunningExtensions.TryGetValue(commandId, out var info) ? info : null;
         }
+
+        [GeneratedRegexAttribute("\\u001B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled)]
+        private static partial System.Text.RegularExpressions.Regex MyRegex();
     }
 }
 

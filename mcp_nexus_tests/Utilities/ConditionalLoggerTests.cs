@@ -21,7 +21,7 @@ namespace mcp_nexus_tests.Utilities
         public void ConditionalLogger_Class_Exists()
         {
             // This test verifies that the ConditionalLogger class exists and can be instantiated
-            Assert.True(typeof(ConditionalLogger) != null);
+            Assert.NotNull(typeof(ConditionalLogger));
         }
 
         [Fact]

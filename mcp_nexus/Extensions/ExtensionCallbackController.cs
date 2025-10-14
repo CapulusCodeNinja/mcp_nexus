@@ -10,34 +10,26 @@ namespace mcp_nexus.Extensions
     /// Controller for handling extension callback requests.
     /// Provides HTTP REST API endpoints for extensions to execute and read commands.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="ExtensionCallbackController"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="tokenValidator">The token validator for authentication.</param>
+    /// <param name="sessionManager">The session manager for accessing sessions.</param>
+    /// <param name="extensionTracker">The extension command tracker.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any required parameter is null.</exception>
     [ApiController]
     [Route("extension-callback")]
-    public class ExtensionCallbackController : ControllerBase
+    public class ExtensionCallbackController(
+        ILogger<ExtensionCallbackController> logger,
+        IExtensionTokenValidator tokenValidator,
+        ISessionManager sessionManager,
+        IExtensionCommandTracker extensionTracker) : ControllerBase
     {
-        private readonly ILogger<ExtensionCallbackController> m_Logger;
-        private readonly IExtensionTokenValidator m_TokenValidator;
-        private readonly ISessionManager m_SessionManager;
-        private readonly IExtensionCommandTracker m_ExtensionTracker;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExtensionCallbackController"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance.</param>
-        /// <param name="tokenValidator">The token validator for authentication.</param>
-        /// <param name="sessionManager">The session manager for accessing sessions.</param>
-        /// <param name="extensionTracker">The extension command tracker.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any required parameter is null.</exception>
-        public ExtensionCallbackController(
-            ILogger<ExtensionCallbackController> logger,
-            IExtensionTokenValidator tokenValidator,
-            ISessionManager sessionManager,
-            IExtensionCommandTracker extensionTracker)
-        {
-            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_TokenValidator = tokenValidator ?? throw new ArgumentNullException(nameof(tokenValidator));
-            m_SessionManager = sessionManager ?? throw new ArgumentNullException(nameof(sessionManager));
-            m_ExtensionTracker = extensionTracker ?? throw new ArgumentNullException(nameof(extensionTracker));
-        }
+        private readonly ILogger<ExtensionCallbackController> m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly IExtensionTokenValidator m_TokenValidator = tokenValidator ?? throw new ArgumentNullException(nameof(tokenValidator));
+        private readonly ISessionManager m_SessionManager = sessionManager ?? throw new ArgumentNullException(nameof(sessionManager));
+        private readonly IExtensionCommandTracker m_ExtensionTracker = extensionTracker ?? throw new ArgumentNullException(nameof(extensionTracker));
 
         /// <summary>
         /// Executes a WinDBG command via extension callback.
@@ -344,7 +336,7 @@ namespace mcp_nexus.Extensions
 
                 // Write log message with commandId prefix for tracking multiple concurrent executions
                 var logMessage = $"[{extensionName}] [{commandId}] {request.Message}";
-                
+
                 switch (request.Level?.ToLowerInvariant())
                 {
                     case "debug":
@@ -400,12 +392,12 @@ namespace mcp_nexus.Extensions
         /// <returns>The token string, or null if not found.</returns>
         private string? ExtractBearerToken()
         {
-            var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+            var authHeader = Request.Headers.Authorization.FirstOrDefault();
             if (string.IsNullOrWhiteSpace(authHeader))
                 return null;
 
             if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-                return authHeader.Substring(7).Trim();
+                return authHeader[7..].Trim();
 
             return authHeader;
         }

@@ -78,8 +78,7 @@ namespace mcp_nexus.Recovery
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CdbSessionRecoveryService));
 
-            if (reason == null)
-                throw new ArgumentNullException(nameof(reason));
+            ArgumentNullException.ThrowIfNull(reason);
 
             if (string.IsNullOrWhiteSpace(reason))
                 throw new ArgumentException("Reason cannot be empty or whitespace", nameof(reason));
@@ -107,8 +106,7 @@ namespace mcp_nexus.Recovery
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(CdbSessionRecoveryService));
 
-            if (reason == null)
-                throw new ArgumentNullException(nameof(reason));
+            ArgumentNullException.ThrowIfNull(reason);
 
             if (string.IsNullOrWhiteSpace(reason))
                 throw new ArgumentException("Reason cannot be empty or whitespace", nameof(reason));

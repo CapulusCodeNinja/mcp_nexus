@@ -39,7 +39,7 @@ namespace mcp_nexus.Infrastructure
         /// <summary>
         /// Gets or sets the list of service dependencies.
         /// </summary>
-        public string[] Dependencies { get; set; } = Array.Empty<string>();
+        public string[] Dependencies { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the start type of the service (Automatic, Manual, Disabled, etc.).
@@ -79,12 +79,12 @@ namespace mcp_nexus.Infrastructure
         /// <summary>
         /// Gets or sets environment variables to be set for the service.
         /// </summary>
-        public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
+        public Dictionary<string, string> EnvironmentVariables { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the list of required permissions for the service.
         /// </summary>
-        public string[] RequiredPermissions { get; set; } = Array.Empty<string>();
+        public string[] RequiredPermissions { get; set; } = [];
 
         /// <summary>
         /// Gets or sets whether event logging is enabled for the service.
@@ -99,7 +99,7 @@ namespace mcp_nexus.Infrastructure
         /// <summary>
         /// Gets or sets the list of users allowed to control the service.
         /// </summary>
-        public string[] AllowedUsers { get; set; } = Array.Empty<string>();
+        public string[] AllowedUsers { get; set; } = [];
 
         /// <summary>
         /// Gets or sets whether administrator privileges are required for service operations.
@@ -129,7 +129,7 @@ namespace mcp_nexus.Infrastructure
         /// <summary>
         /// Gets or sets the list of health check endpoints to monitor.
         /// </summary>
-        public string[] HealthCheckEndpoints { get; set; } = Array.Empty<string>();
+        public string[] HealthCheckEndpoints { get; set; } = [];
 
         /// <summary>
         /// Gets or sets whether metrics collection is enabled for the service.
@@ -154,7 +154,7 @@ namespace mcp_nexus.Infrastructure
         /// <summary>
         /// Gets or sets custom settings for the service configuration.
         /// </summary>
-        public Dictionary<string, object> CustomSettings { get; set; } = new();
+        public Dictionary<string, object> CustomSettings { get; set; } = [];
 
         // Additional properties expected by tests (instance properties)
         /// <summary>
@@ -258,8 +258,7 @@ namespace mcp_nexus.Infrastructure
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="executablePath"/> is null.</exception>
         public static string GetCreateServiceCommand(string serviceName, string displayName, string description, string executablePath)
         {
-            if (executablePath == null)
-                throw new ArgumentNullException(nameof(executablePath));
+            ArgumentNullException.ThrowIfNull(executablePath);
 
             var config = new ServiceConfiguration();
             return $"sc create \"{serviceName}\" binPath=\"{executablePath} {config.ServiceArguments}\" DisplayName=\"{config.ServiceDisplayName}\" start= auto";

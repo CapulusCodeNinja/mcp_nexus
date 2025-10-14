@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.Infrastructure
         public void TokenElevationType_Class_Exists()
         {
             // This test verifies that the TokenElevationType class exists and can be instantiated
-            Assert.True(typeof(TokenElevationType) != null);
+            Assert.NotNull(typeof(TokenElevationType));
         }
     }
 }

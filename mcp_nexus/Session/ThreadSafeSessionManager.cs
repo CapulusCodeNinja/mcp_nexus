@@ -79,15 +79,14 @@ namespace mcp_nexus.Session
             ThrowIfDisposed();
 
             // Validate parameters
-            if (dumpPath == null)
-                throw new ArgumentNullException(nameof(dumpPath));
+            ArgumentNullException.ThrowIfNull(dumpPath);
 
-            var validation = m_config.ValidateSessionCreation(dumpPath, symbolsPath);
-            if (!validation.IsValid)
+            var (IsValid, ErrorMessage) = m_config.ValidateSessionCreation(dumpPath, symbolsPath);
+            if (!IsValid)
             {
-                if (validation.ErrorMessage?.Contains("not found") == true)
-                    throw new FileNotFoundException(validation.ErrorMessage);
-                throw new ArgumentException(validation.ErrorMessage);
+                if (ErrorMessage?.Contains("not found") == true)
+                    throw new FileNotFoundException(ErrorMessage);
+                throw new ArgumentException(ErrorMessage);
             }
 
             using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
@@ -142,8 +141,7 @@ namespace mcp_nexus.Session
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (sessionId == null)
-                throw new ArgumentNullException(nameof(sessionId));
+            ArgumentNullException.ThrowIfNull(sessionId);
 
             if (string.IsNullOrWhiteSpace(sessionId))
                 throw new ArgumentException("Session ID cannot be empty or whitespace", nameof(sessionId));
@@ -161,8 +159,7 @@ namespace mcp_nexus.Session
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(ThreadSafeSessionManager));
 
-            if (sessionId == null)
-                throw new ArgumentNullException(nameof(sessionId));
+            ArgumentNullException.ThrowIfNull(sessionId);
 
             if (string.IsNullOrWhiteSpace(sessionId))
                 throw new ArgumentException("Session ID cannot be empty or whitespace", nameof(sessionId));
@@ -315,7 +312,7 @@ namespace mcp_nexus.Session
         public virtual IEnumerable<SessionContext> GetActiveSessions()
         {
             if (m_disposed)
-                return Enumerable.Empty<SessionContext>();
+                return [];
 
             return m_statisticsCollector.GetActiveSessions();
         }
@@ -327,7 +324,7 @@ namespace mcp_nexus.Session
         public virtual IEnumerable<SessionInfo> GetAllSessions()
         {
             if (m_disposed)
-                return Enumerable.Empty<SessionInfo>();
+                return [];
 
             return m_statisticsCollector.GetAllSessions();
         }

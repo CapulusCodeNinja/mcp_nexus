@@ -51,6 +51,13 @@ namespace mcp_nexus.Debugger
         /// When disabled, commands are sent to CDB as-is without any preprocessing.
         /// </summary>
         public bool EnableCommandPreprocessing { get; }
+        private static readonly string[] collection = new[]
+                    {
+                        @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe",
+                        @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
+                        @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe",
+                        @"C:\Program Files (x86)\Debugging Tools for Windows (x64)\cdb.exe"
+                    };
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CdbSessionConfiguration"/> class.
@@ -184,13 +191,7 @@ namespace mcp_nexus.Debugger
             switch (currentArch)
             {
                 case "x64":
-                    possiblePaths.AddRange(new[]
-                    {
-                        @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe",
-                        @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
-                        @"C:\Program Files\Debugging Tools for Windows (x64)\cdb.exe",
-                        @"C:\Program Files (x86)\Debugging Tools for Windows (x64)\cdb.exe"
-                    });
+                    possiblePaths.AddRange(collection);
                     break;
                 case "x86":
                     possiblePaths.AddRange(new[]

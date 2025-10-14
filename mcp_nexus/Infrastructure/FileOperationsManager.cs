@@ -10,19 +10,14 @@ namespace mcp_nexus.Infrastructure
     /// Manages file operations for the service.
     /// Provides methods for copying, deleting, creating directories, and querying file information.
     /// </summary>
-    public class FileOperationsManager
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="FileOperationsManager"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance for recording file operations and errors.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+    public class FileOperationsManager(ILogger<FileOperationsManager> logger)
     {
-        private readonly ILogger<FileOperationsManager> m_Logger;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FileOperationsManager"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance for recording file operations and errors.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-        public FileOperationsManager(ILogger<FileOperationsManager> logger)
-        {
-            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
+        private readonly ILogger<FileOperationsManager> m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         /// <summary>
         /// Copies a file from the source path to the destination path asynchronously.
@@ -229,18 +224,18 @@ namespace mcp_nexus.Infrastructure
                     {
                         return Directory.GetFiles(directoryPath, pattern, SearchOption.AllDirectories);
                     }
-                    return Array.Empty<string>();
+                    return [];
                 }, cancellationToken);
             }
             catch (OperationCanceledException)
             {
                 m_Logger.LogWarning("File search was cancelled: {DirectoryPath}", directoryPath);
-                return Array.Empty<string>();
+                return [];
             }
             catch (Exception ex)
             {
                 m_Logger.LogError(ex, "Failed to get files from directory: {DirectoryPath}", directoryPath);
-                return Array.Empty<string>();
+                return [];
             }
         }
     }

@@ -51,7 +51,7 @@ namespace mcp_nexus.Resources
 
                 var result = new
                 {
-                    sessions = sessions,
+                    sessions,
                     count = sessions.Count,
                     timestamp = DateTimeOffset.Now
                 };

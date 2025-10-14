@@ -14,7 +14,7 @@ namespace mcp_nexus_tests.Recovery
         public void RecoveryConfiguration_Class_Exists()
         {
             // This test verifies that the RecoveryConfiguration class exists and can be instantiated
-            Assert.True(typeof(RecoveryConfiguration) != null);
+            Assert.NotNull(typeof(RecoveryConfiguration));
         }
     }
 }

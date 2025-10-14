@@ -511,9 +511,9 @@ namespace mcp_nexus_tests.Debugger
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // Act & Assert
-            Assert.True((bool)method!.Invoke(session, new object[] { "0:000>" })!);
-            Assert.True((bool)method!.Invoke(session, new object[] { "1:001>" })!);
-            Assert.True((bool)method!.Invoke(session, new object[] { "2:002>" })!);
+            Assert.True((bool)method!.Invoke(session, ["0:000>"])!);
+            Assert.True((bool)method!.Invoke(session, ["1:001>"])!);
+            Assert.True((bool)method!.Invoke(session, ["2:002>"])!);
         }
 
         [Fact]
@@ -525,9 +525,9 @@ namespace mcp_nexus_tests.Debugger
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // Act & Assert
-            Assert.False((bool)method!.Invoke(session, new object[] { "some output" })!);
-            Assert.False((bool)method!.Invoke(session, new object[] { "" })!);
-            Assert.False((bool)method!.Invoke(session, new object[] { "0:000" })!); // Missing >
+            Assert.False((bool)method!.Invoke(session, ["some output"])!);
+            Assert.False((bool)method!.Invoke(session, [""])!);
+            Assert.False((bool)method!.Invoke(session, ["0:000"])!); // Missing >
         }
 
         [Fact]
@@ -539,7 +539,7 @@ namespace mcp_nexus_tests.Debugger
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // Act & Assert - Test with empty string instead of null to avoid null reference exception
-            Assert.False((bool)method!.Invoke(session, new object[] { "" })!);
+            Assert.False((bool)method!.Invoke(session, [""])!);
         }
 
         [Fact]

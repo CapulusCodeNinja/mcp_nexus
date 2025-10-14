@@ -7,45 +7,35 @@ namespace mcp_nexus.Recovery
     /// Orchestrates CDB session recovery operations with comprehensive error handling.
     /// Provides multi-step recovery strategies for stuck or unresponsive CDB sessions.
     /// </summary>
-    public class RecoveryOrchestrator
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="RecoveryOrchestrator"/> class.
+    /// </remarks>
+    /// <param name="cdbSession">The CDB session to manage recovery for.</param>
+    /// <param name="logger">The logger instance for recording recovery operations and errors.</param>
+    /// <param name="cancelAllCommandsCallback">Callback function to cancel all pending commands.</param>
+    /// <param name="config">The recovery configuration containing retry limits and timeouts.</param>
+    /// <param name="healthMonitor">The session health monitor for checking session responsiveness.</param>
+    /// <param name="notificationService">Optional notification service for sending recovery events.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
+    public class RecoveryOrchestrator(
+        ICdbSession cdbSession,
+        ILogger logger,
+        Func<string, int> cancelAllCommandsCallback,
+        RecoveryConfiguration config,
+        SessionHealthMonitor healthMonitor,
+        IMcpNotificationService? notificationService = null)
     {
-        private readonly ICdbSession m_cdbSession;
-        private readonly ILogger m_logger;
-        private readonly Func<string, int> m_cancelAllCommandsCallback;
-        private readonly IMcpNotificationService? m_notificationService;
-        private readonly RecoveryConfiguration m_config;
-        private readonly SessionHealthMonitor m_healthMonitor;
+        private readonly ICdbSession m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
+        private readonly ILogger m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly Func<string, int> m_cancelAllCommandsCallback = cancelAllCommandsCallback ?? throw new ArgumentNullException(nameof(cancelAllCommandsCallback));
+        private readonly IMcpNotificationService? m_notificationService = notificationService;
+        private readonly RecoveryConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
+        private readonly SessionHealthMonitor m_healthMonitor = healthMonitor ?? throw new ArgumentNullException(nameof(healthMonitor));
 
         // Recovery state tracking
         private volatile int m_recoveryAttempts = 0;
         private DateTime m_lastRecoveryAttempt = DateTime.MinValue;
         private readonly ReaderWriterLockSlim m_recoveryLock = new();
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RecoveryOrchestrator"/> class.
-        /// </summary>
-        /// <param name="cdbSession">The CDB session to manage recovery for.</param>
-        /// <param name="logger">The logger instance for recording recovery operations and errors.</param>
-        /// <param name="cancelAllCommandsCallback">Callback function to cancel all pending commands.</param>
-        /// <param name="config">The recovery configuration containing retry limits and timeouts.</param>
-        /// <param name="healthMonitor">The session health monitor for checking session responsiveness.</param>
-        /// <param name="notificationService">Optional notification service for sending recovery events.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
-        public RecoveryOrchestrator(
-            ICdbSession cdbSession,
-            ILogger logger,
-            Func<string, int> cancelAllCommandsCallback,
-            RecoveryConfiguration config,
-            SessionHealthMonitor healthMonitor,
-            IMcpNotificationService? notificationService = null)
-        {
-            m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_cancelAllCommandsCallback = cancelAllCommandsCallback ?? throw new ArgumentNullException(nameof(cancelAllCommandsCallback));
-            m_config = config ?? throw new ArgumentNullException(nameof(config));
-            m_healthMonitor = healthMonitor ?? throw new ArgumentNullException(nameof(healthMonitor));
-            m_notificationService = notificationService;
-        }
 
         /// <summary>
         /// Attempts to recover a stuck CDB session using a multi-step approach.

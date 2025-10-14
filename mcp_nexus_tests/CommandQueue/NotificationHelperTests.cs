@@ -26,7 +26,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void NotificationHelper_Class_Exists()
         {
             // This test verifies that the NotificationHelper class exists and can be instantiated
-            Assert.True(typeof(NotificationHelper) != null);
+            Assert.NotNull(typeof(NotificationHelper));
         }
 
         [Fact]

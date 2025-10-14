@@ -6,38 +6,29 @@ namespace mcp_nexus.Session
     /// <summary>
     /// Collects and provides statistics about session management
     /// </summary>
-    public class SessionStatisticsCollector
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="SessionStatisticsCollector"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance for recording statistics operations and errors.</param>
+    /// <param name="sessions">The concurrent dictionary containing active sessions.</param>
+    /// <param name="lifecycleManager">The session lifecycle manager for managing session operations.</param>
+    /// <param name="monitoringService">The session monitoring service for tracking session health.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
+    public class SessionStatisticsCollector(
+        ILogger logger,
+        ConcurrentDictionary<string, SessionInfo> sessions,
+        SessionLifecycleManager lifecycleManager,
+        SessionMonitoringService monitoringService)
     {
-        private readonly ILogger m_logger;
-        private readonly ConcurrentDictionary<string, SessionInfo> m_sessions;
-        private readonly SessionLifecycleManager m_lifecycleManager;
-        private readonly SessionMonitoringService m_monitoringService;
-        private readonly DateTime m_startTime;
+        private readonly ILogger m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ConcurrentDictionary<string, SessionInfo> m_sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
+        private readonly SessionLifecycleManager m_lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
+        private readonly SessionMonitoringService m_monitoringService = monitoringService ?? throw new ArgumentNullException(nameof(monitoringService));
+        private readonly DateTime m_startTime = DateTime.UtcNow;
 
         // Performance counters
         private long m_totalCommandsProcessed = 0;
         private int m_peakConcurrentSessions = 0;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SessionStatisticsCollector"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance for recording statistics operations and errors.</param>
-        /// <param name="sessions">The concurrent dictionary containing active sessions.</param>
-        /// <param name="lifecycleManager">The session lifecycle manager for managing session operations.</param>
-        /// <param name="monitoringService">The session monitoring service for tracking session health.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
-        public SessionStatisticsCollector(
-            ILogger logger,
-            ConcurrentDictionary<string, SessionInfo> sessions,
-            SessionLifecycleManager lifecycleManager,
-            SessionMonitoringService monitoringService)
-        {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
-            m_lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
-            m_monitoringService = monitoringService ?? throw new ArgumentNullException(nameof(monitoringService));
-            m_startTime = DateTime.UtcNow;
-        }
 
         /// <summary>
         /// Gets comprehensive session statistics
@@ -48,7 +39,7 @@ namespace mcp_nexus.Session
             try
             {
                 var activeSessionCount = m_sessions.Count;
-                var lifecycleStats = m_lifecycleManager.GetLifecycleStats();
+                var (Created, Closed, Expired) = m_lifecycleManager.GetLifecycleStats();
                 var uptime = DateTime.UtcNow - m_startTime;
 
                 // Update peak concurrent sessions
@@ -63,9 +54,9 @@ namespace mcp_nexus.Session
 
                 return new SessionStatistics
                 {
-                    TotalSessionsCreated = lifecycleStats.Created,
-                    TotalSessionsClosed = lifecycleStats.Closed,
-                    TotalSessionsExpired = lifecycleStats.Expired,
+                    TotalSessionsCreated = Created,
+                    TotalSessionsClosed = Closed,
+                    TotalSessionsExpired = Expired,
                     ActiveSessions = activeSessionCount,
                     TotalCommandsProcessed = totalCommands,
                     AverageSessionLifetime = m_monitoringService.CalculateAverageSessionLifetime(),
@@ -124,7 +115,7 @@ namespace mcp_nexus.Session
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "Error getting active sessions");
-                return Enumerable.Empty<SessionContext>();
+                return [];
             }
         }
 
@@ -141,7 +132,7 @@ namespace mcp_nexus.Session
             catch (Exception ex)
             {
                 m_logger.LogError(ex, "Error getting all sessions");
-                return Enumerable.Empty<SessionInfo>();
+                return [];
             }
         }
 
@@ -198,17 +189,17 @@ namespace mcp_nexus.Session
             try
             {
                 return sessionInfo.CommandQueue?.GetQueueStatus()?.ToList() ??
-                       new List<(string, string, DateTime, string)>();
+                       [];
             }
             catch (ObjectDisposedException)
             {
                 m_logger.LogTrace("Command queue disposed for session {SessionId}", sessionInfo.SessionId);
-                return new List<(string, string, DateTime, string)>();
+                return [];
             }
             catch (Exception ex)
             {
                 m_logger.LogWarning(ex, "Error getting queue status for session {SessionId}", sessionInfo.SessionId);
-                return new List<(string, string, DateTime, string)>();
+                return [];
             }
         }
 

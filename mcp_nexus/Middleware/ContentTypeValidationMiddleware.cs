@@ -6,21 +6,15 @@ namespace mcp_nexus.Middleware
     /// <summary>
     /// Middleware that validates Content-Type header for JSON-RPC requests
     /// </summary>
-    public class ContentTypeValidationMiddleware
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="ContentTypeValidationMiddleware"/> class.
+    /// </remarks>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    /// <param name="logger">The logger instance for recording validation operations.</param>
+    public class ContentTypeValidationMiddleware(RequestDelegate next, ILogger<ContentTypeValidationMiddleware> logger)
     {
-        private readonly RequestDelegate m_next;
-        private readonly ILogger<ContentTypeValidationMiddleware> m_logger;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ContentTypeValidationMiddleware"/> class.
-        /// </summary>
-        /// <param name="next">The next middleware in the pipeline.</param>
-        /// <param name="logger">The logger instance for recording validation operations.</param>
-        public ContentTypeValidationMiddleware(RequestDelegate next, ILogger<ContentTypeValidationMiddleware> logger)
-        {
-            m_next = next;
-            m_logger = logger;
-        }
+        private readonly RequestDelegate m_next = next;
+        private readonly ILogger<ContentTypeValidationMiddleware> m_logger = logger;
 
         /// <summary>
         /// Invokes the middleware to validate Content-Type headers for JSON-RPC requests.

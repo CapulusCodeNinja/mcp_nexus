@@ -368,7 +368,7 @@ namespace mcp_nexus_tests.Extensions
                 }));
             }
 
-            await Task.WhenAll(tasks.ToArray());
+            await Task.WhenAll([.. tasks]);
 
             // Assert - All commands should be tracked
             for (int i = 0; i < 100; i++)

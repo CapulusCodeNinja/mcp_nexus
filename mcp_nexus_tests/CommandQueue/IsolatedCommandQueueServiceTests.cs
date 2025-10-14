@@ -19,7 +19,7 @@ namespace mcp_nexus_tests.CommandQueue
         private readonly Mock<ILogger<IsolatedCommandQueueService>> m_MockLogger;
         private readonly Mock<IMcpNotificationService> m_MockNotificationService;
         private readonly string m_SessionId = "test-session-123";
-        private IsolatedCommandQueueService m_Service;
+        private readonly IsolatedCommandQueueService m_Service;
 
         public IsolatedCommandQueueServiceTests()
         {
@@ -347,11 +347,11 @@ namespace mcp_nexus_tests.CommandQueue
         [Fact]
         public void GetPerformanceStats_Initially_ReturnsZeros()
         {
-            var stats = m_Service.GetPerformanceStats();
-            Assert.Equal(0, stats.Total);
-            Assert.Equal(0, stats.Completed);
-            Assert.Equal(0, stats.Failed);
-            Assert.Equal(0, stats.Cancelled);
+            var (Total, Completed, Failed, Cancelled) = m_Service.GetPerformanceStats();
+            Assert.Equal(0, Total);
+            Assert.Equal(0, Completed);
+            Assert.Equal(0, Failed);
+            Assert.Equal(0, Cancelled);
         }
 
         [Fact]
@@ -363,14 +363,14 @@ namespace mcp_nexus_tests.CommandQueue
             m_Service.QueueCommand("info");
 
             // Act
-            var stats = m_Service.GetPerformanceStats();
+            var (Total, Completed, Failed, Cancelled) = m_Service.GetPerformanceStats();
 
             // Assert
             // Performance stats only count completed/failed/cancelled, not queued commands
-            Assert.Equal(0, stats.Total);
-            Assert.Equal(0, stats.Completed);
-            Assert.Equal(0, stats.Failed);
-            Assert.Equal(0, stats.Cancelled);
+            Assert.Equal(0, Total);
+            Assert.Equal(0, Completed);
+            Assert.Equal(0, Failed);
+            Assert.Equal(0, Cancelled);
         }
 
         [Fact]
@@ -494,14 +494,14 @@ namespace mcp_nexus_tests.CommandQueue
             m_Service.Dispose();
 
             // Act
-            var stats = m_Service.GetPerformanceStats();
+            var (Total, Completed, Failed, Cancelled) = m_Service.GetPerformanceStats();
 
             // Assert
             // GetPerformanceStats doesn't check disposal state, just returns zeros
-            Assert.Equal(0, stats.Total);
-            Assert.Equal(0, stats.Completed);
-            Assert.Equal(0, stats.Failed);
-            Assert.Equal(0, stats.Cancelled);
+            Assert.Equal(0, Total);
+            Assert.Equal(0, Completed);
+            Assert.Equal(0, Failed);
+            Assert.Equal(0, Cancelled);
         }
 
         [Fact]
@@ -570,14 +570,14 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Act
             m_Service.CancelAllCommands();
-            var stats = m_Service.GetPerformanceStats();
+            var (Total, Completed, Failed, Cancelled) = m_Service.GetPerformanceStats();
 
             // Assert
             // Performance stats may be updated by the processing loop, so we can't guarantee 0
-            Assert.True(stats.Total >= 0);
-            Assert.True(stats.Completed >= 0);
-            Assert.True(stats.Failed >= 0);
-            Assert.True(stats.Cancelled >= 0);
+            Assert.True(Total >= 0);
+            Assert.True(Completed >= 0);
+            Assert.True(Failed >= 0);
+            Assert.True(Cancelled >= 0);
         }
     }
 }

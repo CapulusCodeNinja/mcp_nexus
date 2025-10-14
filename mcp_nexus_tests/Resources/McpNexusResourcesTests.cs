@@ -145,8 +145,7 @@ namespace mcp_nexus_tests.Resources
             // Setup mock extension data
             var mockExtensions = new List<ExtensionMetadata>
             {
-                new ExtensionMetadata
-                {
+                new() {
                     Name = "basic_crash_analysis",
                     Description = "Essential commands for initial crash investigation",
                     Version = "1.0.0",
@@ -198,7 +197,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act & Assert
-            Assert.Equal("Queued", (string)method!.Invoke(null, new object[] { queuedCommand })!);
+            Assert.Equal("Queued", (string)method!.Invoke(null, [queuedCommand])!);
         }
 
         [Fact]
@@ -211,7 +210,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (int)method!.Invoke(null, new object[] { executingCommand, allCommands })!;
+            var result = (int)method!.Invoke(null, [executingCommand, allCommands])!;
 
             // Assert
             Assert.Equal(0, result);
@@ -227,7 +226,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (int)method!.Invoke(null, new object[] { queuedCommand, allCommands })!;
+            var result = (int)method!.Invoke(null, [queuedCommand, allCommands])!;
 
             // Assert
             Assert.Equal(0, result); // First in queue
@@ -243,7 +242,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (int)method!.Invoke(null, new object[] { completedCommand, allCommands })!;
+            var result = (int)method!.Invoke(null, [completedCommand, allCommands])!;
 
             // Assert
             Assert.Equal(100, result);
@@ -259,7 +258,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (int)method!.Invoke(null, new object[] { failedCommand, allCommands })!;
+            var result = (int)method!.Invoke(null, [failedCommand, allCommands])!;
 
             // Assert
             Assert.Equal(0, result);
@@ -275,7 +274,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (string)method!.Invoke(null, new object[] { completedCommand, allCommands })!;
+            var result = (string)method!.Invoke(null, [completedCommand, allCommands])!;
 
             // Assert
             Assert.Equal("Command completed successfully", result);
@@ -291,7 +290,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (string)method!.Invoke(null, new object[] { failedCommand, allCommands })!;
+            var result = (string)method!.Invoke(null, [failedCommand, allCommands])!;
 
             // Assert
             Assert.Equal("Command failed", result);
@@ -307,7 +306,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (string)method!.Invoke(null, new object[] { cancelledCommand, allCommands })!;
+            var result = (string)method!.Invoke(null, [cancelledCommand, allCommands])!;
 
             // Assert
             Assert.Equal("Command was cancelled", result);
@@ -322,7 +321,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (string?)method!.Invoke(null, new object[] { completedCommand })!;
+            var result = (string?)method!.Invoke(null, [completedCommand])!;
 
             // Assert
             Assert.Null(result);
@@ -337,7 +336,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (string?)method!.Invoke(null, new object[] { executingCommand })!;
+            var result = (string?)method!.Invoke(null, [executingCommand])!;
 
             // Assert
             Assert.NotNull(result);
@@ -353,7 +352,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (string?)method!.Invoke(null, new object[] { completedCommand })!;
+            var result = (string?)method!.Invoke(null, [completedCommand])!;
 
             // Assert
             Assert.Null(result);
@@ -368,7 +367,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (string?)method!.Invoke(null, new object[] { executingCommand })!;
+            var result = (string?)method!.Invoke(null, [executingCommand])!;
 
             // Assert
             Assert.NotNull(result);
@@ -435,7 +434,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (string)method!.Invoke(null, new object[] { executingCommand, allCommands })!;
+            var result = (string)method!.Invoke(null, [executingCommand, allCommands])!;
 
             // Assert
             Assert.Contains("Command is currently executing", result);
@@ -453,7 +452,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (string)method!.Invoke(null, new object[] { executingCommand, allCommands })!;
+            var result = (string)method!.Invoke(null, [executingCommand, allCommands])!;
 
             // Assert
             Assert.Contains("Command is currently executing", result);
@@ -471,7 +470,7 @@ namespace mcp_nexus_tests.Resources
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
-            var result = (string)method!.Invoke(null, new object[] { queuedCommand, allCommands })!;
+            var result = (string)method!.Invoke(null, [queuedCommand, allCommands])!;
 
             // Assert
             Assert.Contains("Command is next in queue", result);

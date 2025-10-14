@@ -271,11 +271,11 @@ namespace mcp_nexus_tests.Models
             // Arrange
             var result = new McpToolResult
             {
-                Content = new[]
-                {
+                Content =
+                [
                     new McpContent { Type = "text", Text = "First content" },
                     new McpContent { Type = "text", Text = "Second content" }
-                }
+                ]
             };
 
             // Act
