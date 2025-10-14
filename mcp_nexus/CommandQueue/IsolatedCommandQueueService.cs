@@ -13,6 +13,7 @@ namespace mcp_nexus.CommandQueue
         private readonly ICdbSession m_CdbSession;
         private readonly ILogger<IsolatedCommandQueueService> m_Logger;
         private readonly IMcpNotificationService m_NotificationService;
+        private readonly SessionCommandResultCache m_ResultCache;
 
         // Focused components
         private readonly CommandQueueConfiguration m_Config;
@@ -54,7 +55,9 @@ namespace mcp_nexus.CommandQueue
 
             // Create focused components
             m_Tracker = new CommandTracker(m_Logger, m_Config, m_CommandQueue);
-            m_Processor = new CommandProcessor(m_CdbSession, m_Logger, m_Config, m_Tracker, m_CommandQueue, m_ProcessingCts, resultCache);
+            // Always have a cache to allow post-cleanup retrieval; use provided or create a default
+            m_ResultCache = resultCache ?? new SessionCommandResultCache();
+            m_Processor = new CommandProcessor(m_CdbSession, m_Logger, m_Config, m_Tracker, m_CommandQueue, m_ProcessingCts, m_ResultCache);
             m_NotificationManager = new CommandNotificationManager(m_NotificationService, m_Logger, m_Config);
 
             m_Logger.LogInformation("🚀 IsolatedCommandQueueService initializing for session {SessionId}", sessionId);
@@ -370,6 +373,7 @@ namespace mcp_nexus.CommandQueue
                 // Dispose resources
                 m_CommandQueue.Dispose();
                 m_ProcessingCts.Dispose();
+                m_ResultCache.Dispose();
             }
             catch (Exception ex)
             {

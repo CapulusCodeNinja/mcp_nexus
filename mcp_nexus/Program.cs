@@ -543,7 +543,7 @@ namespace mcp_nexus
             logger.Info("┌─ Environment Variables ────────────────────────────────────────────");
             logger.Info($"│ ASPNETCORE_ENVIRONMENT: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Not set"}");
             logger.Info($"│ ASPNETCORE_URLS:        {Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "Not set"}");
-            logger.Info($"│ PRIVATE_TOKEN:          {Environment.GetEnvironmentVariable("PRIVATE_TOKEN") ?? "Not set"}");
+            logger.Info($"│ PRIVATE_TOKEN:          {MaskSecret(Environment.GetEnvironmentVariable("PRIVATE_TOKEN"))}");
             logger.Info($"│ CDB Paths in PATH:      {GetCdbPathInfo()}");
 
             // System Information
@@ -569,6 +569,29 @@ namespace mcp_nexus
 
             logger.Info("└────────────────────────────────────────────────────────────────────");
             logger.Info("");
+        }
+
+        /// <summary>
+        /// Masks a secret by keeping the first 5 characters and replacing the rest with '*'.
+        /// Returns "Not set" when the input is null or empty.
+        /// </summary>
+        /// <param name="secret">The secret string to mask.</param>
+        /// <returns>The masked secret.</returns>
+        private static string MaskSecret(string? secret)
+        {
+            if (string.IsNullOrEmpty(secret))
+            {
+                return "Not set";
+            }
+
+            const int visiblePrefixLength = 5;
+            if (secret.Length <= visiblePrefixLength)
+            {
+                return secret;
+            }
+
+            var prefix = secret.Substring(0, visiblePrefixLength);
+            return prefix + new string('*', secret.Length - visiblePrefixLength);
         }
 
         /// <summary>
