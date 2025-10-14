@@ -294,6 +294,36 @@ namespace mcp_nexus_tests.Extensions
         }
 
         [Fact]
+        public async Task ValidateExtension_WithUnsupportedScriptType_ReturnsFalse()
+        {
+            // Arrange
+            var metadata = new
+            {
+                name = "test_extension1",
+                description = "Test extension",
+                version = "1.0.0",
+                author = "Test Author",
+                scriptType = "python",
+                scriptFile = "test.py",
+                timeout = 300000
+            };
+
+            CreateMetadataFile(m_TestExtension1Path, metadata);
+            File.WriteAllText(Path.Combine(m_TestExtension1Path, "test.py"), "# placeholder");
+
+            var manager = new ExtensionManager(m_MockLogger.Object, m_TestExtensionsPath);
+            await manager.LoadExtensionsAsync();
+
+            // Act
+            var (isValid, errorMessage) = manager.ValidateExtension("test_extension1");
+
+            // Assert
+            Assert.False(isValid);
+            Assert.NotNull(errorMessage);
+            Assert.Contains("unsupported", errorMessage, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
         public void ValidateExtension_WithNonexistentExtension_ReturnsFalse()
         {
             // Arrange

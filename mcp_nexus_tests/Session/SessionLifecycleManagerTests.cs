@@ -371,6 +371,45 @@ namespace mcp_nexus_tests.Session
             mockExtensionTracker.Verify(x => x.RemoveSessionCommands(sessionId), Times.Once);
         }
 
+        [Fact]
+        public async Task CloseSessionAsync_RevokesExtensionTokensForSession()
+        {
+            // Arrange
+            var sessionId = "test-session-token";
+            var mockTokenValidator = new Mock<IExtensionTokenValidator>();
+            m_MockServiceProvider.Setup(x => x.GetService(typeof(IExtensionTokenValidator))).Returns(mockTokenValidator.Object);
+
+            var managerWithTokens = new SessionLifecycleManager(
+                m_MockLogger.Object,
+                m_MockServiceProvider.Object,
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions);
+
+            // Add a minimal session
+            var sessionInfo = new SessionInfo
+            {
+                SessionId = sessionId,
+                DumpPath = "C:\\Test\\dump.dmp",
+                CdbSession = m_RealisticCdbSession,
+                CommandQueue = m_MockCommandQueue.Object,
+                CreatedAt = DateTime.UtcNow,
+                LastActivity = DateTime.UtcNow,
+                Status = SessionStatus.Active
+            };
+            m_Sessions[sessionId] = sessionInfo;
+
+            m_MockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(0);
+
+            // Act
+            var result = await managerWithTokens.CloseSessionAsync(sessionId);
+
+            // Assert
+            Assert.True(result);
+            mockTokenValidator.Verify(v => v.RevokeSessionTokens(sessionId), Times.Once);
+        }
+
         public void Dispose()
         {
             m_RealisticCdbSession?.Dispose();

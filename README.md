@@ -2,8 +2,8 @@
 
 **AI-Powered Windows Crash Dump Analysis Platform**
 
-[![Tests](https://img.shields.io/badge/tests-1,842%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
-[![Coverage](https://img.shields.io/badge/coverage-62.03%25-good?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Tests](https://img.shields.io/badge/tests-1,851%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Coverage](https://img.shields.io/badge/coverage-62.62%25-good?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Build](https://img.shields.io/badge/build-0%20warnings-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
 
@@ -317,8 +317,8 @@ dotnet test --filter "Notification"
 
 ### Test Statistics
 
-- ✅ **1,842 total tests** (1,842 passing)
-- ✅ **62.03% line coverage** with comprehensive analysis testing
+- ✅ **1,851 total tests** (1,851 passing)
+- ✅ **62.62% line coverage** with comprehensive analysis testing
 - ✅ **0 warnings** in build (clean codebase)
 - ✅ **17+ test categories** covering all major functionality including Extensions
 - ✅ **Fast execution** (~58 seconds for full suite)
@@ -331,7 +331,7 @@ dotnet test --filter "Notification"
 | **Session Management** | ~300+ tests | Session lifecycle and resource management |
 | **Command Queue** | ~200+ tests | Async command execution and queuing |
 | **Notifications** | ~150+ tests | Real-time notification system |
-| **Extensions** | 117 tests | Extension system for complex workflows |
+| **Extensions** | 120+ tests | Extension system for complex workflows |
 | **Infrastructure** | ~100+ tests | Windows service and infrastructure |
 | **Security** | ~80+ tests | Security validation and access control |
 | **Health & Metrics** | ~70+ tests | System health monitoring and metrics |
@@ -347,7 +347,6 @@ dotnet test --filter "Notification"
 
 ### Quality Assurance
 
-- **99.1% Test Success Rate**: 1,823 out of 1,840 tests passing (17 new extension tests in development)
 - **Clean Codebase**: 0 warnings in build, following best practices
 - **Comprehensive Coverage**: Tests cover all major functionality across 16+ categories
 - **Fast Execution**: Full test suite runs in ~29 seconds

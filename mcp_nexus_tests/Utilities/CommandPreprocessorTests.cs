@@ -1,4 +1,5 @@
 using mcp_nexus.Utilities;
+using System.IO;
 using Xunit;
 
 namespace mcp_nexus_tests.Utilities
@@ -25,11 +26,19 @@ namespace mcp_nexus_tests.Utilities
                     "!analyze -v")]
         public void PreprocessCommand_WithPathConversion_ConvertsWSLPaths(string input, string expected)
         {
-            // Act
-            var result = CommandPreprocessor.PreprocessCommand(input);
+            string result = string.Empty;
+            try
+            {
+                // Act
+                result = CommandPreprocessor.PreprocessCommand(input);
 
-            // Assert
-            Assert.Equal(expected, result);
+                // Assert
+                Assert.Equal(expected, result);
+            }
+            finally
+            {
+                CleanupCreatedDirectoriesFromSrcpath(expected);
+            }
         }
 
         [Theory]
@@ -81,11 +90,19 @@ namespace mcp_nexus_tests.Utilities
             // Arrange
             var input = ".srcpath \"/mnt/c/path1;C:\\path2;/mnt/d/path3\"";
 
-            // Act
-            var result = CommandPreprocessor.PreprocessCommand(input);
+            string result = string.Empty;
+            try
+            {
+                // Act
+                result = CommandPreprocessor.PreprocessCommand(input);
 
-            // Assert
-            Assert.Equal(".srcpath \"C:\\path1;C:\\path2;D:\\path3\"", result);
+                // Assert
+                Assert.Equal(".srcpath \"C:\\path1;C:\\path2;D:\\path3\"", result);
+            }
+            finally
+            {
+                CleanupCreatedDirectoriesFromSrcpath(result);
+            }
         }
 
         [Fact]
@@ -145,6 +162,40 @@ namespace mcp_nexus_tests.Utilities
                 if (Directory.Exists(tempDir))
                 {
                     Directory.Delete(tempDir, true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Best-effort cleanup for any directories that may be created by CommandPreprocessor during tests.
+        /// Parses .srcpath arguments and removes non-srv, non-UNC directories.
+        /// </summary>
+        internal static void CleanupCreatedDirectoriesFromSrcpath(string command)
+        {
+            if (string.IsNullOrWhiteSpace(command)) return;
+            if (!command.StartsWith(".srcpath", StringComparison.OrdinalIgnoreCase)) return;
+
+            // Extract argument after .srcpath/.srcpath+
+            var firstSpace = command.IndexOf(' ');
+            if (firstSpace < 0 || firstSpace + 1 >= command.Length) return;
+            var arg = command.Substring(firstSpace + 1).Trim().Trim('"');
+            var tokens = arg.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var token in tokens)
+            {
+                var path = token.Trim().Trim('"');
+                if (path.StartsWith("srv", StringComparison.OrdinalIgnoreCase) || path.StartsWith("\\\\"))
+                    continue;
+                try
+                {
+                    if (Directory.Exists(path))
+                    {
+                        Directory.Delete(path, true);
+                    }
+                }
+                catch
+                {
+                    // Ignore cleanup errors in tests
                 }
             }
         }
