@@ -67,25 +67,57 @@ namespace mcp_nexus.Configuration
         /// <param name="isServiceMode">Whether the application is running in service mode.</param>
         private static void ConfigureNLogDynamically(IConfiguration configuration, Microsoft.Extensions.Logging.LogLevel logLevel, bool isServiceMode)
         {
-            var nlogConfig = LogManager.Configuration;
-            if (nlogConfig != null)
+            // Build or augment NLog configuration entirely from appsettings + code (no external nlog.json)
+            var nlogConfig = LogManager.Configuration ?? new NLog.Config.LoggingConfiguration();
+
+            // Ensure main file target exists
+            var fileTarget = nlogConfig.FindTargetByName("mainFile") as NLog.Targets.FileTarget;
+            if (fileTarget == null)
             {
-                var nlogLevel = GetNLogLevel(logLevel);
-
-                // Configure log paths based on service mode
-                ConfigureLogPaths(nlogConfig, isServiceMode);
-
-                foreach (var rule in nlogConfig.LoggingRules)
+                fileTarget = new NLog.Targets.FileTarget("mainFile")
                 {
-                    rule.SetLoggingLevels(nlogLevel, NLog.LogLevel.Fatal);
-                }
-
-                // Apply the configuration
-                LogManager.Configuration = nlogConfig;
-
-                // Set internal log file path after configuration is applied
-                SetInternalLogFile(isServiceMode);
+                    FileName = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp-nexus.log"),
+                    ArchiveFileName = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "archive", "mcp-nexus-${shortdate}-{##}.log"),
+                    ArchiveEvery = NLog.Targets.FileArchivePeriod.Day,
+                    ArchiveSuffixFormat = "{#}",
+                    MaxArchiveFiles = 30,
+                    KeepFileOpen = false,
+                    AutoFlush = true,
+                    CreateDirs = true,
+                    Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}"
+                };
+                nlogConfig.AddTarget(fileTarget);
+                nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, fileTarget));
             }
+
+            // Ensure stderr console target exists
+            var stderrTarget = nlogConfig.FindTargetByName("stderr") as NLog.Targets.ConsoleTarget;
+            if (stderrTarget == null)
+            {
+                stderrTarget = new NLog.Targets.ConsoleTarget("stderr")
+                {
+                    StdErr = true,
+                    Layout = "${longdate}|${uppercase:${level}}|${logger}|${message} ${exception:format=ToString}"
+                };
+                nlogConfig.AddTarget(stderrTarget);
+                nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, stderrTarget));
+            }
+
+            // Apply service-mode paths (ProgramData vs app dir)
+            ConfigureLogPaths(nlogConfig, isServiceMode);
+
+            // Update levels from appsettings
+            var nlogLevel = GetNLogLevel(logLevel);
+            foreach (var rule in nlogConfig.LoggingRules)
+            {
+                rule.SetLoggingLevels(nlogLevel, NLog.LogLevel.Fatal);
+            }
+
+            // Apply the configuration
+            LogManager.Configuration = nlogConfig;
+
+            // Set internal log file path after configuration is applied
+            SetInternalLogFile(isServiceMode);
         }
 
         /// <summary>

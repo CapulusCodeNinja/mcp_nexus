@@ -28,14 +28,15 @@ namespace mcp_nexus.Configuration
         /// <param name="serviceMode">Whether the application is running in service mode.</param>
         public static void RegisterServices(IServiceCollection services, IConfiguration configuration, string? customCdbPath, bool serviceMode = false)
         {
-            Console.Error.WriteLine("Registering services...");
+            var bootstrapLogger = LogManager.GetCurrentClassLogger();
+            bootstrapLogger.Info("Registering services...");
 
             RegisterCoreServices(services, configuration, customCdbPath, serviceMode);
             RegisterRecoveryServices(services);
             RegisterToolsAndProtocol(services);
             RegisterExtensionServices(services, configuration);
 
-            Console.Error.WriteLine("All services registered successfully");
+            bootstrapLogger.Info("All services registered successfully");
         }
 
         /// <summary>
@@ -133,7 +134,7 @@ namespace mcp_nexus.Configuration
             services.AddSingleton<IMcpNotificationService, McpNotificationService>();
             services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
 
-            Console.Error.WriteLine("Registered core services (CDB, Session, Notifications, Protocol)");
+            logger.Info("Registered core services (CDB, Session, Notifications, Protocol)");
         }
 
 
@@ -143,8 +144,9 @@ namespace mcp_nexus.Configuration
         /// <param name="services">The service collection to register services with.</param>
         private static void RegisterRecoveryServices(IServiceCollection services)
         {
+            var logger = LogManager.GetCurrentClassLogger();
             services.AddSingleton<ICommandTimeoutService, CommandTimeoutService>();
-            Console.Error.WriteLine("Registered CommandTimeoutService for automated timeouts");
+            logger.Info("Registered CommandTimeoutService for automated timeouts");
 
             services.AddSingleton<ICdbSessionRecoveryService>(serviceProvider =>
             {
@@ -181,7 +183,7 @@ namespace mcp_nexus.Configuration
                 return new CdbSessionRecoveryService(cdbSession, logger, cancelAllCommandsCallback, notificationService);
             });
 
-            Console.Error.WriteLine("Registered recovery services");
+            logger.Info("Registered recovery services");
         }
 
         /// <summary>
@@ -194,8 +196,8 @@ namespace mcp_nexus.Configuration
             services.AddSingleton<ICommandQueueService, CommandQueueService>();
             services.AddSingleton<ResilientCommandQueueService>();
             // Note: IsolatedCommandQueueService is created per session, not registered as singleton
-
-            Console.Error.WriteLine("Registered command queue services");
+            var logger = LogManager.GetCurrentClassLogger();
+            logger.Info("Registered command queue services");
         }
 
         /// <summary>
@@ -210,9 +212,10 @@ namespace mcp_nexus.Configuration
             var extensionsPath = configuration.GetValue<string>("McpNexus:Extensions:ExtensionsPath") ?? "extensions";
             var callbackPort = configuration.GetValue<int>("McpNexus:Extensions:CallbackPort", 0); // 0 = use MCP server port
             
+            var logger = LogManager.GetCurrentClassLogger();
             if (!extensionsEnabled)
             {
-                Console.Error.WriteLine("Extensions are disabled in configuration");
+                logger.Info("Extensions are disabled in configuration");
                 return;
             }
 
@@ -257,7 +260,7 @@ namespace mcp_nexus.Configuration
                 .AddApplicationPart(typeof(ExtensionCallbackController).Assembly)
                 .AddControllersAsServices();
 
-            Console.Error.WriteLine($"Registered extension services (Path: {extensionsPath}, Callback: {callbackUrl})");
+            logger.Info($"Registered extension services (Path: {extensionsPath}, Callback: {callbackUrl})");
         }
     }
 }

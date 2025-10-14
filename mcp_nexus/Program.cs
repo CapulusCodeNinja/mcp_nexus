@@ -697,12 +697,15 @@ namespace mcp_nexus
         /// </remarks>
         private static async Task RunHttpServer(string[] args, CommandLineArguments commandLineArgs)
         {
+            var webBuilder = WebApplication.CreateBuilder(args);
+
+            // Initialize file logger as early as possible using central configuration
+            LoggingSetup.ConfigureLogging(webBuilder.Logging, commandLineArgs.ServiceMode, webBuilder.Configuration);
+
             var logMessage = commandLineArgs.ServiceMode ?
                 "Configuring for Windows service mode (HTTP)..." :
                 "Configuring for HTTP transport...";
             Console.WriteLine(logMessage);
-
-            var webBuilder = WebApplication.CreateBuilder(args);
 
             // Read configuration from appsettings files first, then apply command line overrides
             var configHost = webBuilder.Configuration["McpNexus:Server:Host"];
@@ -725,9 +728,6 @@ namespace mcp_nexus
             Console.WriteLine(hostSource == portSource
                 ? $"Using host: {host}, port: {port} (from {hostSource})"
                 : $"Using host: {host} (from {hostSource}), port: {port} (from {portSource})");
-
-            // Configure logging FIRST so startup logs go to the correct location
-            LoggingSetup.ConfigureLogging(webBuilder.Logging, commandLineArgs.ServiceMode, webBuilder.Configuration);
 
             // Add Windows service support if in service mode
             if (commandLineArgs.ServiceMode && OperatingSystem.IsWindows())

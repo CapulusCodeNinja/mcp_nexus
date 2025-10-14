@@ -109,13 +109,16 @@ namespace mcp_nexus_tests.Configuration
         }
 
         [Fact]
-        public void RegisterServices_WithConsoleOutput_CapturesOutput()
+        public void RegisterServices_LogsWithNLog_CapturesOutput()
         {
             // Arrange
             var services = new ServiceCollection();
             var configuration = m_Configuration;
-            var consoleError = new StringWriter();
-            Console.SetError(consoleError);
+            var nlogConfig = new NLog.Config.LoggingConfiguration();
+            var memory = new NLog.Targets.MemoryTarget("testMemory") { Layout = "${message}" };
+            nlogConfig.AddTarget(memory);
+            nlogConfig.AddRuleForAllLevels(memory);
+            LogManager.Configuration = nlogConfig;
 
             try
             {
@@ -123,18 +126,17 @@ namespace mcp_nexus_tests.Configuration
                 ServiceRegistration.RegisterServices(services, configuration, null);
 
                 // Assert
-                var output = consoleError.ToString();
-                Assert.Contains("Registering services...", output);
-                Assert.Contains("All services registered successfully", output);
-                Assert.Contains("Registered core services (CDB, Session, Notifications, Protocol)", output);
-                Assert.Contains("Registered CommandTimeoutService for automated timeouts", output);
-                Assert.Contains("Registered recovery services", output);
-                Assert.Contains("Registered command queue services", output);
+                var logs = (memory.Logs ?? new System.Collections.Generic.List<string>());
+                Assert.Contains(logs, m => m.Contains("Registering services..."));
+                Assert.Contains(logs, m => m.Contains("All services registered successfully"));
+                Assert.Contains(logs, m => m.Contains("Registered core services (CDB, Session, Notifications, Protocol)"));
+                Assert.Contains(logs, m => m.Contains("Registered CommandTimeoutService for automated timeouts"));
+                Assert.Contains(logs, m => m.Contains("Registered recovery services"));
+                Assert.Contains(logs, m => m.Contains("Registered command queue services"));
             }
             finally
             {
-                // Restore console error
-                Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
+                LogManager.Configuration = null;
             }
         }
 
@@ -300,8 +302,11 @@ namespace mcp_nexus_tests.Configuration
                 .AddInMemoryCollection(configurationData)
                 .Build();
 
-            var consoleError = new StringWriter();
-            Console.SetError(consoleError);
+            var nlogConfig = new NLog.Config.LoggingConfiguration();
+            var memory = new NLog.Targets.MemoryTarget("testMemory") { Layout = "${message}" };
+            nlogConfig.AddTarget(memory);
+            nlogConfig.AddRuleForAllLevels(memory);
+            LogManager.Configuration = nlogConfig;
 
             try
             {
@@ -309,14 +314,12 @@ namespace mcp_nexus_tests.Configuration
                 ServiceRegistration.RegisterServices(services, configuration, null);
 
                 // Assert
-                var output = consoleError.ToString();
-                // The exact log message depends on whether CDB is found at the configured path
-                Assert.Contains("Registering services...", output);
+                var logs = (memory.Logs ?? new System.Collections.Generic.List<string>());
+                Assert.Contains(logs, m => m.Contains("Registering services..."));
             }
             finally
             {
-                // Restore console error
-                Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
+                LogManager.Configuration = null;
             }
         }
 
@@ -340,8 +343,11 @@ namespace mcp_nexus_tests.Configuration
                 .AddInMemoryCollection(configurationData)
                 .Build();
 
-            var consoleError = new StringWriter();
-            Console.SetError(consoleError);
+            var nlogConfig = new NLog.Config.LoggingConfiguration();
+            var memory = new NLog.Targets.MemoryTarget("testMemory") { Layout = "${message}" };
+            nlogConfig.AddTarget(memory);
+            nlogConfig.AddRuleForAllLevels(memory);
+            LogManager.Configuration = nlogConfig;
 
             try
             {
@@ -349,14 +355,13 @@ namespace mcp_nexus_tests.Configuration
                 ServiceRegistration.RegisterServices(services, configuration, null);
 
                 // Assert
-                var output = consoleError.ToString();
-                Assert.Contains("Registering services...", output);
-                // The warning message about CDB not found should be in the output
+                var logs = (memory.Logs ?? new System.Collections.Generic.List<string>());
+                Assert.Contains(logs, m => m.Contains("Registering services..."));
+                // The warning about CDB will be logged via logger in ServiceRegistration.RegisterCoreServices
             }
             finally
             {
-                // Restore console error
-                Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
+                LogManager.Configuration = null;
             }
         }
     }
