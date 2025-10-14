@@ -543,6 +543,7 @@ namespace mcp_nexus
             logger.Info("┌─ Environment Variables ────────────────────────────────────────────");
             logger.Info($"│ ASPNETCORE_ENVIRONMENT: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Not set"}");
             logger.Info($"│ ASPNETCORE_URLS:        {Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "Not set"}");
+            logger.Info($"│ PRIVATE_TOKEN:          {Environment.GetEnvironmentVariable("PRIVATE_TOKEN") ?? "Not set"}");
             logger.Info($"│ CDB Paths in PATH:      {GetCdbPathInfo()}");
 
             // System Information
