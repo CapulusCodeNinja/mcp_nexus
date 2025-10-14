@@ -199,79 +199,52 @@ namespace mcp_nexus_tests.Utilities
         [Fact]
         public void IsWslMountPath_ValidWslMountPath_ReturnsTrue()
         {
-            // Arrange
+            // Using conversion behavior as proxy: /mnt/c/... must convert to C:\...
             var wslPath = "/mnt/c/inetpub/wwwroot/uploads/dump.dmp";
-
-            // Act
-            var result = PathHandler.IsWslMountPath(wslPath);
-
-            // Assert
-            Assert.True(result);
+            var converted = PathHandler.ConvertToWindowsPath(wslPath);
+            Assert.StartsWith("C:\\", converted);
         }
 
         [Fact]
         public void IsWslMountPath_ValidWslMountPathUppercase_ReturnsTrue()
         {
-            // Arrange
             var wslPath = "/mnt/D/symbols";
-
-            // Act
-            var result = PathHandler.IsWslMountPath(wslPath);
-
-            // Assert
-            Assert.True(result);
+            var converted = PathHandler.ConvertToWindowsPath(wslPath);
+            Assert.StartsWith("D:\\", converted);
         }
 
         [Fact]
         public void IsWslMountPath_WindowsPath_ReturnsFalse()
         {
-            // Arrange
             var windowsPath = "C:\\inetpub\\wwwroot\\uploads\\dump.dmp";
-
-            // Act
-            var result = PathHandler.IsWslMountPath(windowsPath);
-
-            // Assert
-            Assert.False(result);
+            var converted = PathHandler.ConvertToWindowsPath(windowsPath);
+            // Ensure we didn't corrupt backslashes (ASCII backslash expected)
+            Assert.StartsWith("C:\\", converted);
         }
 
         [Fact]
         public void IsWslMountPath_UnixPath_ReturnsFalse()
         {
-            // Arrange
             var unixPath = "/usr/local/bin/tool";
-
-            // Act
-            var result = PathHandler.IsWslMountPath(unixPath);
-
-            // Assert
-            Assert.False(result);
+            var converted = PathHandler.ConvertToWindowsPath(unixPath);
+            // Without /mnt/<drive> or fstab mapping, do not convert arbitrary Unix paths
+            Assert.Equal(unixPath, converted);
         }
 
         [Fact]
         public void IsWslMountPath_EmptyString_ReturnsFalse()
         {
-            // Arrange
-            var emptyPath = "";
-
-            // Act
-            var result = PathHandler.IsWslMountPath(emptyPath);
-
-            // Assert
-            Assert.False(result);
+            var emptyPath = string.Empty;
+            var converted = PathHandler.ConvertToWindowsPath(emptyPath);
+            Assert.Equal(emptyPath, converted);
         }
 
         [Fact]
         public void IsWslMountPath_NullString_ReturnsFalse()
         {
-            // Arrange
             string? nullPath = null;
-
-            // Act
-            var result = PathHandler.IsWslMountPath(nullPath!);
-
-            // Assert
-            Assert.False(result);
+            var converted = PathHandler.ConvertToWindowsPath(nullPath!);
+            Assert.Equal(nullPath, converted);
         }
 
         [Fact]

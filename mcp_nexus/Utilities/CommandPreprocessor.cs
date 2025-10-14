@@ -58,6 +58,42 @@ namespace mcp_nexus.Utilities
                 }
             }
 
+            // Handle .sympath (set symbol path) - ensure local directories exist, skip srv*/http tokens
+            else if (result.StartsWith(".sympath", StringComparison.OrdinalIgnoreCase))
+            {
+                var match = Regex.Match(result, @"^\.sympath\+?\s+(.+)$", RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    var pathArg = match.Groups[1].Value;
+                    var parts = pathArg.Split([';', ' '], StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var part in parts)
+                    {
+                        var clean = part.Trim().Trim('"').Trim('\'');
+                        if (ShouldSkipSymbolPathToken(clean))
+                            continue;
+                        EnsureDirectoryExists(clean);
+                    }
+                }
+            }
+
+            // Handle .symfix (set default symbol path with optional downstream store) - ensure local store exists
+            else if (result.StartsWith(".symfix", StringComparison.OrdinalIgnoreCase))
+            {
+                var match = Regex.Match(result, @"^\.symfix\+?\s+(.+)$", RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    var arg = match.Groups[1].Value;
+                    var parts = arg.Split([';', ' '], StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var part in parts)
+                    {
+                        var clean = part.Trim().Trim('"').Trim('\'');
+                        if (ShouldSkipSymbolPathToken(clean))
+                            continue;
+                        EnsureDirectoryExists(clean);
+                    }
+                }
+            }
+
             return result;
         }
 
@@ -96,6 +132,22 @@ namespace mcp_nexus.Utilities
                 // Silently ignore directory creation failures
                 // The .srcpath command will handle the error appropriately
             }
+        }
+
+        private static bool ShouldSkipSymbolPathToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token)) return true;
+
+            // Skip symbol server specifiers and URLs
+            if (token.StartsWith("srv", StringComparison.OrdinalIgnoreCase)) return true;
+            if (token.StartsWith("symsrv", StringComparison.OrdinalIgnoreCase)) return true;
+            if (token.StartsWith("cache", StringComparison.OrdinalIgnoreCase)) return true;
+            if (token.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return true;
+
+            // Skip UNC paths (handled upstream as disallowed for creation here)
+            if (token.StartsWith("\\\\")) return true;
+
+            return false;
         }
 
         [GeneratedRegex(@"/mnt/[a-zA-Z]/[^\s;""]+", RegexOptions.Compiled)]

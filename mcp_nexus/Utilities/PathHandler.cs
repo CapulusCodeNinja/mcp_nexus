@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using System.Diagnostics;
+using System.Collections.Concurrent;
 
 namespace mcp_nexus.Utilities
 {
@@ -9,7 +11,12 @@ namespace mcp_nexus.Utilities
     /// </summary>
     public static partial class PathHandler
     {
-        private static readonly Regex WslPathRegex = MyRegex();
+        private static readonly ConcurrentDictionary<string, string> s_FstabMountMap = new();
+        private static DateTime s_FstabLastLoadedUtc = DateTime.MinValue;
+        private static readonly object s_FstabLock = new();
+        private const int WslHelperTimeoutMs = 500;
+        private static readonly ConcurrentDictionary<string, (string Converted, DateTime ExpiresUtc)> m_ConversionCache = new();
+        private static readonly TimeSpan ConversionTtl = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// Converts a WSL-style path to Windows format if needed.
@@ -33,23 +40,46 @@ namespace mcp_nexus.Utilities
 
             try
             {
-                // Check if it's a WSL mount path pattern: /mnt/[drive_letter]/rest/of/path
-                var match = WslPathRegex.Match(path);
-                if (match.Success)
+                // Short-circuit for Windows and UNC paths
+                if (IsWindowsPath(path) || path.StartsWith("\\\\"))
                 {
-                    var driveLetter = match.Groups[1].Value.ToUpper();
-                    var restOfPath = match.Groups[2].Success ? match.Groups[2].Value.Replace('/', '\\') : "";
-
-                    // Handle empty rest of path (e.g., /mnt/c or /mnt/c/ -> C:\)
-                    if (string.IsNullOrEmpty(restOfPath))
-                    {
-                        return $"{driveLetter}:\\";
-                    }
-
-                    return $"{driveLetter}:\\{restOfPath}";
+                    return path;
                 }
 
-                // If it's already a Windows path or not a WSL mount path, return as-is
+                // Only attempt WSL-related conversions for Unix-style inputs
+                if (!path.StartsWith("/"))
+                {
+                    return path;
+                }
+                
+                // Cache lookup (only conversions are cached, not passthrough)
+                if (m_ConversionCache.TryGetValue(path, out var cached) && cached.ExpiresUtc > DateTime.UtcNow)
+                {
+                    return cached.Converted;
+                }
+
+                // Fast-path: /mnt/<drive>/... mapping without external calls
+                if (TryConvertLocalMntMapping(path, out var localConverted))
+                {
+                    m_ConversionCache[path] = (localConverted, DateTime.UtcNow + ConversionTtl);
+                    return localConverted;
+                }
+
+                // Use fstab mapping (cached) before invoking wslpath
+                if (TryConvertWithFstabMapping(path, out var fstabConverted))
+                {
+                    m_ConversionCache[path] = (fstabConverted, DateTime.UtcNow + ConversionTtl);
+                    return fstabConverted;
+                }
+
+                // Fallback: wslpath call with short timeout (only for /mnt/<letter>/...)
+                if (path.StartsWith("/mnt/", StringComparison.OrdinalIgnoreCase) && TryConvertWithWslPath(path, out var wslConverted))
+                {
+                    m_ConversionCache[path] = (wslConverted, DateTime.UtcNow + ConversionTtl);
+                    return wslConverted;
+                }
+
+                // If it's already a Windows path or not a recognized WSL mount path, return as-is
                 return path;
             }
             catch (Exception)
@@ -57,6 +87,224 @@ namespace mcp_nexus.Utilities
                 // If any error occurs during conversion, return the original path
                 // This ensures the system remains functional even with unexpected input
                 return path;
+            }
+        }
+
+        /// <summary>
+        /// Local, zero-cost conversion for /mnt/<letter> patterns without spawning processes.
+        /// </summary>
+        private static bool TryConvertLocalMntMapping(string path, out string windowsPath)
+        {
+            windowsPath = path;
+            if (!path.StartsWith("/mnt/", StringComparison.OrdinalIgnoreCase) || path.Length < 6)
+            {
+                return false;
+            }
+
+            char letter = path[5];
+            // Expecting /mnt/<letter> or /mnt/<letter>/...
+            if (!char.IsLetter(letter))
+            {
+                return false;
+            }
+
+            string rest = path.Length > 6 ? path.Substring(6) : string.Empty; // skip "/mnt/<l>"
+            // Normalize: if rest starts with '/', drop it for root scenarios
+            if (rest.StartsWith('/')) rest = rest.Substring(1);
+
+            if (string.IsNullOrEmpty(rest))
+            {
+                windowsPath = char.ToUpperInvariant(letter) + ":\\";
+                return true;
+            }
+
+            windowsPath = char.ToUpperInvariant(letter) + ":\\" + rest.Replace('/', '\\');
+            return true;
+        }
+
+        /// <summary>
+        /// Attempts to convert a Linux path to a Windows path using 'wsl.exe wslpath -w'.
+        /// Uses a very short timeout and fails silently to avoid blocking.
+        /// </summary>
+        private static bool TryConvertWithWslPath(string path, out string windowsPath)
+        {
+            windowsPath = path;
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "wsl.exe",
+                    Arguments = $"-e wslpath -w \"{path.Replace("\"", "\\\"")}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using var proc = Process.Start(psi);
+                if (proc == null)
+                {
+                    return false;
+                }
+
+                if (!proc.WaitForExit(WslHelperTimeoutMs))
+                {
+                    try { proc.Kill(entireProcessTree: true); } catch { }
+                    return false;
+                }
+
+                if (proc.ExitCode == 0)
+                {
+                    var output = proc.StandardOutput.ReadToEnd().Trim();
+                    if (!string.IsNullOrWhiteSpace(output))
+                    {
+                        windowsPath = output.Replace('/', '\\');
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore and fall back
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Attempts to convert using a mapping derived from '/etc/fstab' (drvfs entries) via WSL.
+        /// This supports custom mount points, e.g. mapping \\server\share to /mnt/share.
+        /// </summary>
+        private static bool TryConvertWithFstabMapping(string path, out string windowsPath)
+        {
+            windowsPath = path;
+
+            try
+            {
+                EnsureFstabMountMapLoaded();
+
+                if (s_FstabMountMap.Count == 0)
+                    return false;
+
+                // Find the longest matching mount prefix
+                var match = s_FstabMountMap
+                    .OrderByDescending(kvp => kvp.Key.Length)
+                    .FirstOrDefault(kvp => path.StartsWith(kvp.Key, StringComparison.OrdinalIgnoreCase));
+
+                if (!string.IsNullOrEmpty(match.Key))
+                {
+                    var relative = path.Substring(match.Key.Length).TrimStart('/');
+                    var root = match.Value;
+
+                    if (root.StartsWith("\\\\"))
+                    {
+                        // UNC root
+                        windowsPath = root + (relative.Length > 0 ? "\\" + relative.Replace('/', '\\') : string.Empty);
+                        return true;
+                    }
+
+                    if (root.Length >= 2 && root[1] == ':' && char.IsLetter(root[0]))
+                    {
+                        // Drive letter root like C:
+                        windowsPath = root + (relative.Length > 0 ? relative.Replace('/', '\\') : string.Empty);
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore and fall back
+            }
+
+            return false;
+        }
+
+        private static void EnsureFstabMountMapLoaded()
+        {
+            // Refresh map at most every 5 minutes
+            if ((DateTime.UtcNow - s_FstabLastLoadedUtc) < TimeSpan.FromMinutes(5) && s_FstabMountMap.Count > 0)
+                return;
+
+            lock (s_FstabLock)
+            {
+                if ((DateTime.UtcNow - s_FstabLastLoadedUtc) < TimeSpan.FromMinutes(5) && s_FstabMountMap.Count > 0)
+                    return;
+
+                try
+                {
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = "wsl.exe",
+                        Arguments = "-e cat /etc/fstab",
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+
+                    using var proc = Process.Start(psi);
+                    if (proc == null)
+                        return;
+
+                    if (!proc.WaitForExit(WslHelperTimeoutMs))
+                    {
+                        try { proc.Kill(entireProcessTree: true); } catch { }
+                        return;
+                    }
+
+                    var text = proc.StandardOutput.ReadToEnd();
+                    var newMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var rawLine in text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        var line = rawLine.Trim();
+                        if (line.StartsWith("#")) continue;
+
+                        // fstab format: <src> <mount> <type> <opts> <dump> <pass>
+                        var parts = Regex.Split(line, @"\s+");
+                        if (parts.Length < 3) continue;
+
+                        var src = parts[0];
+                        var mount = parts[1];
+                        var type = parts[2];
+
+                        if (!string.Equals(type, "drvfs", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        // Map mount -> windows root
+                        string? root = null;
+                        if (src.Length >= 2 && src[1] == ':' && char.IsLetter(src[0]))
+                        {
+                            // e.g., C:
+                            root = char.ToUpperInvariant(src[0]) + ":\\";
+                        }
+                        else if (src.StartsWith("//") || src.StartsWith("\\\\"))
+                        {
+                            // UNC like //server/share
+                            var unc = src.Replace('/', '\\');
+                            if (!unc.StartsWith("\\\\")) unc = "\\\\" + unc.TrimStart('\\');
+                            root = unc;
+                        }
+
+                        if (root != null)
+                        {
+                            // Normalize mount key (no trailing slash)
+                            var key = mount.EndsWith('/') ? mount.TrimEnd('/') : mount;
+                            if (!newMap.ContainsKey(key))
+                                newMap[key] = root;
+                        }
+                    }
+
+                    s_FstabMountMap.Clear();
+                    foreach (var kvp in newMap)
+                        s_FstabMountMap[kvp.Key] = kvp.Value;
+
+                    s_FstabLastLoadedUtc = DateTime.UtcNow;
+                }
+                catch
+                {
+                    // Ignore failures; leave map empty
+                }
             }
         }
 
@@ -107,21 +355,6 @@ namespace mcp_nexus.Utilities
         }
 
         /// <summary>
-        /// Determines if a path is in WSL mount format (/mnt/[drive_letter]/...)
-        /// </summary>
-        /// <param name="path">The path to check</param>
-        /// <returns>True if the path is a WSL mount path, false otherwise</returns>
-        public static bool IsWslMountPath(string path)
-        {
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                return false;
-            }
-
-            return WslPathRegex.IsMatch(path);
-        }
-
-        /// <summary>
         /// Determines if a path is in Windows format (starts with drive letter)
         /// </summary>
         /// <param name="path">The path to check</param>
@@ -161,6 +394,8 @@ namespace mcp_nexus.Utilities
 
             return [.. paths.Select(NormalizeForWindows)];
         }
+
+        // Intentionally no IsWslMountPath in production to avoid unused public API.
 
         /// <summary>
         /// Validates path security to prevent traversal attacks and malicious paths
@@ -213,9 +448,6 @@ namespace mcp_nexus.Utilities
                 throw new ArgumentException($"Path contains invalid control characters: {path}", nameof(path));
             }
         }
-
-        [GeneratedRegex(@"^/mnt/([a-zA-Z])(?:/(.*))?$", RegexOptions.Compiled)]
-        private static partial Regex MyRegex();
     }
 }
 

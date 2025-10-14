@@ -70,9 +70,10 @@ The following steps must be performed sequentially. Ensure all mandatory rules a
 
 1. **Initialize Analysis:** Open the analyze session for the dump file with the tool from Nexus MCP server `nexus_open_dump_analyze_session`. Feel free to run multiple sessions in parallel if it helps to make the **analysis** faster, the system **resources** allow that and the commands are independent
 2. **Source Code Retrieval:**    
-    * Set the source server path: `.srcpath "srv*;[workingdir]\source"`
-    * Enable source verbosity: `.srcnoisy 3`
     * Enable the source server: `.srcfix+`
+    * Enable source verbosity: `.srcnoisy 3`
+    * Ensure the folder exists `[workingdir]\source`
+    * Set the source server path: `.srcpath "srv*[workingdir]\source"`
     * Execute the extension to resolve sources for the current stack and frames.
     * Use tool: `nexus_enqueue_async_extension_command` with `sessionId` and `extensionName = "stack_with_sources"`.
     * The tool returns a `commandId` (prefixed with `ext-`)

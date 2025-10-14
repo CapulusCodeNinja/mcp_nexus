@@ -105,6 +105,51 @@ namespace mcp_nexus_tests.Utilities
             }
         }
 
+        [Theory]
+        [InlineData(".sympath srv*C:\\symbols;C:\\cache;http://msdl.microsoft.com/download/symbols", ".sympath srv*C:\\symbols;C:\\cache;http://msdl.microsoft.com/download/symbols")]
+        [InlineData(".sympath \"srv*;C:\\symcache;C:\\extra\"", ".sympath \"srv*;C:\\symcache;C:\\extra\"")]
+        [InlineData(".sympath /mnt/c/symcache;/mnt/d/extra", ".sympath C:\\symcache;D:\\extra")]
+        public void PreprocessCommand_Sympath_ConvertsWsl_AndPreservesTokens(string input, string expected)
+        {
+            var result = CommandPreprocessor.PreprocessCommand(input);
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void PreprocessCommand_Symfix_CreatesLocalStore_ForWindowsPath()
+        {
+            var temp = Path.Combine(Path.GetTempPath(), "symfix_" + Guid.NewGuid().ToString("N").Substring(0,8));
+            try
+            {
+                var input = $".symfix {temp}";
+                var result = CommandPreprocessor.PreprocessCommand(input);
+                Assert.Equal($".symfix {temp}", result);
+                Assert.True(Directory.Exists(temp));
+            }
+            finally
+            {
+                try { if (Directory.Exists(temp)) Directory.Delete(temp, true); } catch { }
+            }
+        }
+
+        [Fact]
+        public void PreprocessCommand_Symfix_ConvertsAndCreates_ForWslPath()
+        {
+            var temp = Path.Combine(Path.GetTempPath(), "symfix_" + Guid.NewGuid().ToString("N").Substring(0,8));
+            var wsl = PathHandler.ConvertToWslPath(temp);
+            try
+            {
+                var input = $".symfix {wsl}";
+                var result = CommandPreprocessor.PreprocessCommand(input);
+                Assert.Equal($".symfix {temp}", result);
+                Assert.True(Directory.Exists(temp));
+            }
+            finally
+            {
+                try { if (Directory.Exists(temp)) Directory.Delete(temp, true); } catch { }
+            }
+        }
+
         [Fact]
         public void PreprocessCommand_WithNonExistentDirectory_CreatesDirectory()
         {
