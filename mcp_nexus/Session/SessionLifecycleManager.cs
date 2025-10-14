@@ -39,6 +39,7 @@ namespace mcp_nexus.Session
         private readonly ConcurrentDictionary<string, SessionCommandResultCache> m_SessionCaches = new ConcurrentDictionary<string, SessionCommandResultCache>();
         private readonly IExtensionCommandTracker? m_ExtensionTracker = serviceProvider.GetService<IExtensionCommandTracker>();
         private readonly IExtensionExecutor? m_ExtensionExecutor = serviceProvider.GetService<IExtensionExecutor>();
+        private readonly IExtensionTokenValidator? m_TokenValidator = serviceProvider.GetService<IExtensionTokenValidator>();
 
         // Thread-safe counters
         private long m_TotalSessionsCreated = 0;
@@ -264,11 +265,10 @@ namespace mcp_nexus.Session
                     }
                 }
 
-                // Revoke all extension tokens for this session
+                // Revoke all extension tokens for this session (resolve once to avoid disposed provider during shutdown)
                 try
                 {
-                    var tokenValidator = m_ServiceProvider.GetService<IExtensionTokenValidator>();
-                    tokenValidator?.RevokeSessionTokens(sessionId);
+                    m_TokenValidator?.RevokeSessionTokens(sessionId);
                 }
                 catch (Exception ex)
                 {
