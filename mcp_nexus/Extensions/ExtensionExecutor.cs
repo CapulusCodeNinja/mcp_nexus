@@ -367,7 +367,7 @@ namespace mcp_nexus.Extensions
         /// Builds PowerShell command-line parameter arguments from a JSON object.
         /// Converts parameter names to PowerShell naming convention (camelCase to PascalCase).
         /// </summary>
-        /// <param name="parameters">The parameters object to convert.</param>
+        /// <param name="parameters">The parameters object to convert (can be an object or JSON string).</param>
         /// <returns>PowerShell parameter string (e.g., "-ThreadId '5' -Verbose $true").</returns>
         private string BuildPowerShellParameterArguments(object parameters)
         {
@@ -376,10 +376,41 @@ namespace mcp_nexus.Extensions
 
             var argumentsBuilder = new StringBuilder();
 
-            // Serialize to JSON and deserialize to JsonElement for easy property access
-            var json = JsonSerializer.Serialize(parameters);
+            // Log parameter type for debugging
+            m_Logger.LogDebug("BuildPowerShellParameterArguments called with type: {Type}, value: {Value}",
+                parameters.GetType().FullName, parameters);
+
+            // Handle case where parameters might be a JsonElement, JSON string, or object
+            string json;
+            if (parameters is JsonElement jsonElement)
+            {
+                m_Logger.LogDebug("Parameters is a JsonElement, type: {Type}", jsonElement.ValueKind);
+                json = jsonElement.GetRawText();
+            }
+            else if (parameters is string jsonString)
+            {
+                m_Logger.LogDebug("Parameters is already a JSON string: {Json}", jsonString);
+                json = jsonString;
+            }
+            else
+            {
+                m_Logger.LogDebug("Parameters is an object, serializing to JSON");
+                json = JsonSerializer.Serialize(parameters);
+                m_Logger.LogDebug("Serialized JSON: {Json}", json);
+            }
+
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
+
+            m_Logger.LogDebug("JSON root element type: {Type}", root.ValueKind);
+
+            // If root is a string (not an object), we can't enumerate properties
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                m_Logger.LogWarning("Parameters is not a JSON object, cannot convert to PowerShell arguments. Type: {Type}, Raw JSON: {Json}",
+                    root.ValueKind, json);
+                return string.Empty;
+            }
 
             foreach (var property in root.EnumerateObject())
             {
@@ -426,7 +457,9 @@ namespace mcp_nexus.Extensions
                 }
             }
 
-            return argumentsBuilder.ToString();
+            var result = argumentsBuilder.ToString();
+            m_Logger.LogDebug("Built PowerShell arguments: {Arguments}", result);
+            return result;
         }
 
         /// <summary>
