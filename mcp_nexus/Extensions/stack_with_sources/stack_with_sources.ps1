@@ -35,6 +35,9 @@ $threadDisplay = if ($ThreadId -eq ".") { "current thread" } else { "thread $Thr
 Write-NexusProgress "Starting stack analysis with source download for $threadDisplay"
 
 try {
+    Write-NexusProgress "Enable source verbosity for $threadDisplay..."
+    $stackOutput = Invoke-NexusCommand ".srcnoisy 3"
+    
     # Step 1: Get stack with line numbers
     Write-NexusProgress "Retrieving stack trace for $threadDisplay..."
     $stackCommand = if ($ThreadId -eq ".") { "kL" } else { "~${ThreadId}kL" }
@@ -64,7 +67,8 @@ try {
             addresses = @()
             error = "Thread '$ThreadId' not found. The thread ID may be invalid or the thread may not exist in this dump file."
             suggestion = "Use the '!threads' or '~' command to list available threads, then try again with a valid thread ID."
-        } | ConvertTo-Json
+            stackTrace = $stackOutput
+        } | ConvertTo-Json -Depth 10
         Write-Output $result
         exit 0
     }
@@ -99,7 +103,8 @@ try {
             sourcesDownloaded = 0
             addresses = @()
             error = "No valid return addresses found in stack trace"
-        } | ConvertTo-Json
+            stackTrace = $stackOutput
+        } | ConvertTo-Json -Depth 10
         Write-Output $result
         exit 0
     }
@@ -107,43 +112,69 @@ try {
     Write-NexusLog "Found $($addresses.Count) return addresses to process" -Level Information
     Write-NexusProgress "Found $($addresses.Count) return addresses to process"
 
-    # Step 3: Download sources for each address
-    $downloadedCount = 0
-    $failedAddresses = @()
+    # Step 3: Download sources for each address (first pass)
+    Write-NexusProgress "[$threadDisplay] Downloading sources for $($addresses.Count) addresses..."
     $processedCount = 0
-
+    
     foreach ($addr in $addresses) {
         $processedCount++
         $percent = [int](($processedCount / $addresses.Count) * 100)
         Write-NexusProgress "[$threadDisplay] Downloading source for address $addr ($processedCount of $($addresses.Count), $percent%)"
-
+        
         try {
-            $lsaOutput = Invoke-NexusCommand "lsa $addr"
+            # First pass: Just download, don't verify yet
+            $null = Invoke-NexusCommand "lsa $addr"
+        }
+        catch {
+            Write-NexusLog "Failed to execute lsa for address $addr`: $_" -Level Warning
+        }
+    }
+    
+    # Step 4: Verify downloaded sources (second pass)
+    Write-NexusProgress "[$threadDisplay] Verifying downloaded sources..."
+    $downloadedCount = 0
+    $failedAddresses = @()
+    $processedCount = 0
+    $sourceOutputs = @{}  # Collect all lsa outputs
+    
+    foreach ($addr in $addresses) {
+        $processedCount++
+        $percent = [int](($processedCount / $addresses.Count) * 100)
+        Write-NexusProgress "[$threadDisplay] Verifying source for address $addr ($processedCount of $($addresses.Count), $percent%)"
+        
+        try {
+            $verifyOutput = Invoke-NexusCommand "lsa $addr"
+            $sourceOutputs[$addr] = $verifyOutput
             
-            # Check if source was actually downloaded
-            if ($lsaOutput -match 'source' -or $lsaOutput -match '\.c' -or $lsaOutput -match '\.cpp' -or $lsaOutput -match '\.h') {
+            # Check if source was found in cache (with .srcnoisy 3, should show "already loaded")
+            # Also accept if output shows line numbers (source is displayed)
+            if ($verifyOutput -match 'Found already loaded file:|already loaded' -or
+                $verifyOutput -match '^\s*\d+:') {
                 $downloadedCount++
+                Write-NexusLog "[$threadDisplay] Verified source for address $addr (cached)" -Level Debug
             }
             else {
                 $failedAddresses += $addr
+                Write-NexusLog "[$threadDisplay] No source found for address $addr" -Level Debug
             }
         }
         catch {
-            Write-Warning "Failed to download source for address $addr`: $_"
             $failedAddresses += $addr
+            $sourceOutputs[$addr] = "ERROR: $_"
+            Write-NexusLog "Failed to verify source for address $addr`: $_" -Level Warning
         }
     }
 
-    Write-NexusProgress "[$threadDisplay] Source download complete: $downloadedCount of $($addresses.Count) sources downloaded"
+    Write-NexusProgress "[$threadDisplay] Source download complete: $downloadedCount of $($addresses.Count) sources verified"
     
     $successRate = [math]::Round(($downloadedCount / $addresses.Count) * 100, 2)
-    Write-NexusLog "[$threadDisplay] Source download completed: $downloadedCount/$($addresses.Count) sources ($successRate% success rate)" -Level Information
+    Write-NexusLog "[$threadDisplay] Source download completed: $downloadedCount/$($addresses.Count) sources verified ($successRate% success rate)" -Level Information
     
     if ($failedAddresses.Count -gt 0) {
         Write-NexusLog "Failed to download sources for $($failedAddresses.Count) addresses" -Level Warning
     }
 
-    # Return structured result
+    # Return structured result with all command outputs
     $result = @{
         success = $true
         threadId = $ThreadId
@@ -153,8 +184,10 @@ try {
         successRate = $successRate
         addresses = $addresses
         failedAddresses = $failedAddresses
-        message = "Successfully downloaded $downloadedCount of $($addresses.Count) source files"
-    } | ConvertTo-Json
+        message = "Successfully downloaded and verified $downloadedCount of $($addresses.Count) source files"
+        stackTrace = $stackOutput
+        sourceOutputs = $sourceOutputs
+    } | ConvertTo-Json -Depth 10
 
     Write-Output $result
     exit 0

@@ -334,11 +334,11 @@ namespace mcp_nexus.Extensions
                 // Try to find PowerShell - prefer pwsh (PowerShell 7+), fall back to powershell (5.1)
                 string? powershellPath = FindPowerShell() ?? throw new InvalidOperationException("PowerShell not found. Please ensure pwsh.exe or powershell.exe is in PATH or installed.");
                 fileName = powershellPath;
-                
+
                 // Build PowerShell arguments with parameters
                 var argumentsBuilder = new StringBuilder();
                 argumentsBuilder.Append($"-NoProfile -ExecutionPolicy Bypass -File \"{metadata.FullScriptPath}\"");
-                
+
                 // Add parameters as PowerShell command-line arguments
                 if (parameters != null)
                 {
@@ -349,7 +349,7 @@ namespace mcp_nexus.Extensions
                         argumentsBuilder.Append(paramArgs);
                     }
                 }
-                
+
                 arguments = argumentsBuilder.ToString();
             }
             else
@@ -385,7 +385,7 @@ namespace mcp_nexus.Extensions
             if (parameters is JsonElement jsonElement)
             {
                 m_Logger.LogDebug("Parameters is a JsonElement, type: {Type}", jsonElement.ValueKind);
-                
+
                 // If JsonElement is a string, it's a JSON string that needs to be unwrapped
                 if (jsonElement.ValueKind == JsonValueKind.String)
                 {
@@ -432,7 +432,7 @@ namespace mcp_nexus.Extensions
             {
                 // Convert camelCase to PascalCase for PowerShell convention
                 var paramName = char.ToUpper(property.Name[0]) + property.Name[1..];
-                
+
                 if (argumentsBuilder.Length > 0)
                     argumentsBuilder.Append(' ');
 
@@ -443,9 +443,9 @@ namespace mcp_nexus.Extensions
                 {
                     case JsonValueKind.String:
                         var stringValue = property.Value.GetString() ?? string.Empty;
-                        
+
                         // Only quote if the value contains spaces or special characters
-                        if (stringValue.Contains(' ') || stringValue.Contains('"') || stringValue.Contains('\'') || 
+                        if (stringValue.Contains(' ') || stringValue.Contains('"') || stringValue.Contains('\'') ||
                             stringValue.Contains('$') || stringValue.Contains('`') || string.IsNullOrWhiteSpace(stringValue))
                         {
                             // Escape single quotes and wrap in single quotes
