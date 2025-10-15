@@ -2,8 +2,8 @@
 
 **AI-Powered Windows Crash Dump Analysis Platform**
 
-[![Tests](https://img.shields.io/badge/tests-1,862%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
-[![Coverage](https://img.shields.io/badge/coverage-62.62%25-good?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Tests](https://img.shields.io/badge/tests-2,533%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Coverage](https://img.shields.io/badge/coverage-75.65%25%20line%20%7C%2072.41%25%20branch-yellow?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Build](https://img.shields.io/badge/build-0%20warnings-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
 
@@ -65,6 +65,7 @@ MCP Nexus is a platform that provides structured access to Windows debugging too
 - **🔗 Symbol Server Support**: Automatic symbol downloading and caching
 - **⚙️ Configurable Analysis**: Customizable analysis parameters and timeouts
 - **📊 Rich Reporting**: Detailed analysis reports with actionable insights
+- **⚡ Command Batching**: Intelligent batching of multiple commands for improved throughput
 
 ## 🚀 Quick Start
 
@@ -107,7 +108,7 @@ dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http
    }
    ```
 
-2. **Analyze the crash**:
+2. **Queue multiple commands** (recommended for efficiency):
    ```json
    {
      "method": "tools/call",
@@ -120,8 +121,45 @@ dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http
      }
    }
    ```
+   ```json
+   {
+     "method": "tools/call",
+     "params": {
+       "name": "nexus_enqueue_async_dump_analyze_command",
+       "arguments": {
+         "sessionId": "sess-123",
+         "command": "kL"
+       }
+     }
+   }
+   ```
+   ```json
+   {
+     "method": "tools/call",
+     "params": {
+       "name": "nexus_enqueue_async_dump_analyze_command",
+       "arguments": {
+         "sessionId": "sess-123",
+         "command": "!threads"
+       }
+     }
+   }
+   ```
 
-3. **Get results**:
+3. **Monitor all commands efficiently** (bulk polling):
+   ```json
+   {
+     "method": "tools/call",
+     "params": {
+       "name": "nexus_get_dump_analyze_commands_status",
+       "arguments": {
+         "sessionId": "sess-123"
+       }
+     }
+   }
+   ```
+
+4. **Get individual results** when completed:
    ```json
    {
      "method": "tools/call",
@@ -134,6 +172,15 @@ dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http
      }
    }
    ```
+
+### Efficient Workflow Pattern
+
+**Recommended approach for multiple commands:**
+1. **Queue all commands** at once using `nexus_enqueue_async_dump_analyze_command`
+2. **Poll bulk status** using `nexus_get_dump_analyze_commands_status` (one call for all commands)
+3. **Get individual results** using `nexus_read_dump_analyze_command_result` when status shows "Completed"
+
+This pattern is much more efficient than polling each command individually!
 
 ## 🔍 Analysis Capabilities
 
@@ -232,7 +279,8 @@ MCP Nexus provides live updates during analysis:
 - **`nexus_open_dump_analyze_session`**: Open a crash dump for analysis
 - **`nexus_close_dump_analyze_session`**: Close analysis session and cleanup
 - **`nexus_enqueue_async_dump_analyze_command`**: Execute debugging commands
-- **`nexus_read_dump_analyze_command_result`**: Get command results
+- **`nexus_get_dump_analyze_commands_status`**: Get status of ALL commands in a session (bulk polling)
+- **`nexus_read_dump_analyze_command_result`**: Get individual command results
 
 
 ### MCP Resources
@@ -292,6 +340,33 @@ The logging system now uses a single `LogLevel` setting:
 - **Development**: `"Debug"`
 - **Service/Production**: `"Information"`
 
+### Command Batching
+MCP Nexus intelligently batches multiple commands for improved throughput:
+
+```json
+{
+  "McpNexus": {
+    "Batching": {
+      "Enabled": true,
+      "MaxBatchSize": 5,
+      "BatchWaitTimeoutMs": 2000,
+      "BatchTimeoutMultiplier": 1.0,
+      "MaxBatchTimeoutMinutes": 30,
+      "ExcludedCommands": [
+        "!analyze", "!dump", "!heap", "!memusage", "!runaway",
+        "~*k", "!locks", "!cs", "!gchandles"
+      ]
+    }
+  }
+}
+```
+
+**Features:**
+- **Automatic Batching**: Commands are automatically grouped for execution
+- **Configurable Limits**: Set maximum batch size and timeout multipliers
+- **Smart Exclusions**: Long-running or resource-intensive commands execute individually
+- **Transparent to AI**: Batching happens internally, no changes needed in AI clients
+
 ### 📖 **[Complete Configuration Guide](docs/CONFIGURATION.md)**
 For detailed configuration options, environment settings, and best practices, see the comprehensive configuration documentation.
 
@@ -317,42 +392,12 @@ dotnet test --filter "Notification"
 
 ### Test Statistics
 
-- ✅ **1,862 total tests** (1,862 passing)
-- ✅ **62.62% line coverage** with comprehensive analysis testing
+- ✅ **2,533 total tests** (all passing)
+- ⚠️ **75.65% line coverage** (meets ≥75% threshold)
+- ⚠️ **72.41% branch coverage** (below ≥75% threshold)
 - ✅ **0 warnings** in build (clean codebase)
-- ✅ **17+ test categories** covering all major functionality including Extensions
-- ✅ **Fast execution** (~58 seconds for full suite)
+- ✅ **Fast execution** (~90 seconds for full suite)
 - ✅ **Comprehensive mocking** for reliable testing
-
-### Test Categories
-
-| Category | Tests | Description |
-|----------|-------|-------------|
-| **Session Management** | ~300+ tests | Session lifecycle and resource management |
-| **Command Queue** | ~200+ tests | Async command execution and queuing |
-| **Notifications** | ~150+ tests | Real-time notification system |
-| **Extensions** | 120+ tests | Extension system for complex workflows |
-| **Infrastructure** | ~100+ tests | Windows service and infrastructure |
-| **Security** | ~80+ tests | Security validation and access control |
-| **Health & Metrics** | ~70+ tests | System health monitoring and metrics |
-| **Resilience** | ~60+ tests | Circuit breaker and error handling |
-| **Integration** | ~50+ tests | End-to-end workflow testing |
-| **Utilities** | ~40+ tests | Helper functions and utilities |
-| **Models** | ~30+ tests | Data models and validation |
-| **Recovery** | ~25+ tests | Session recovery and timeout handling |
-| **Tools** | ~20+ tests | MCP tool implementation |
-| **Resources** | ~15+ tests | MCP resource management |
-| **Protocol** | ~8+ tests | MCP protocol handling |
-| **Other** | ~700+ tests | Additional comprehensive test coverage |
-
-### Quality Assurance
-
-- **Clean Codebase**: 0 warnings in build, following best practices
-- **Comprehensive Coverage**: Tests cover all major functionality across 16+ categories
-- **Fast Execution**: Full test suite runs in ~29 seconds
-- **Reliable Mocking**: Proper isolation for consistent test results
-- **CI/CD Ready**: Tests run automatically on every commit
-- **Production Ready**: All existing tests passing with enterprise-grade quality standards
 
 ## 🛠️ Development
 

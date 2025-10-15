@@ -12,7 +12,7 @@ namespace mcp_nexus.Middleware
     /// <param name="next">The next middleware in the pipeline.</param>
     public class ResponseMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate m_next = next;
+        private readonly RequestDelegate m_Next = next;
 
         /// <summary>
         /// Invokes the middleware to process the HTTP request and ensure UTF-8 encoding.
@@ -53,7 +53,7 @@ namespace mcp_nexus.Middleware
                 return Task.CompletedTask;
             });
 
-            await m_next(context);
+            await m_Next(context);
         }
     }
 }

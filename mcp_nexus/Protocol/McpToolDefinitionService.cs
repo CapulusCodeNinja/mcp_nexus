@@ -1,6 +1,7 @@
 using mcp_nexus.Models;
 using mcp_nexus.Notifications;
 using mcp_nexus.Tools;
+using mcp_nexus.Utilities.Json;
 
 namespace mcp_nexus.Protocol
 {
@@ -14,8 +15,7 @@ namespace mcp_nexus.Protocol
     /// <param name="notificationService">Optional notification service for publishing tool events.</param>
     public class McpToolDefinitionService(IMcpNotificationService? notificationService = null) : IMcpToolDefinitionService
     {
-        private readonly IMcpNotificationService? m_notificationService = notificationService;
-
+        private readonly IMcpNotificationService? m_NotificationService = notificationService;
         /// <summary>
         /// Gets all available MCP tools.
         /// </summary>
@@ -37,9 +37,9 @@ namespace mcp_nexus.Protocol
         /// </summary>
         public async Task NotifyToolsChanged()
         {
-            if (m_notificationService != null)
+            if (m_NotificationService != null)
             {
-                await m_notificationService.NotifyToolsListChangedAsync();
+                await m_NotificationService.NotifyToolsListChangedAsync();
             }
         }
 
@@ -48,14 +48,16 @@ namespace mcp_nexus.Protocol
         /// Creates the MCP tool schema for opening a dump analyze session.
         /// </summary>
         /// <returns>The MCP tool schema for the open dump analyze session tool.</returns>
+        private static readonly string m_ToolUsageJson = System.Text.Json.JsonSerializer.Serialize(
+            SessionAwareWindbgTool.USAGE_EXPLANATION,
+            JsonOptions.JsonIndented);
+
         private static McpToolSchema CreateNexusOpenDumpAnalyzeSessionTool()
         {
             return new McpToolSchema
             {
                 Name = "nexus_open_dump_analyze_session",
-                Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.USAGE_EXPLANATION,
-                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+                Description = m_ToolUsageJson,
                 InputSchema = new
                 {
                     type = "object",
@@ -86,9 +88,7 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_close_dump_analyze_session",
-                Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.USAGE_EXPLANATION,
-                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+                Description = m_ToolUsageJson,
                 InputSchema = new
                 {
                     type = "object",
@@ -114,9 +114,7 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_enqueue_async_dump_analyze_command",
-                Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.USAGE_EXPLANATION,
-                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+                Description = m_ToolUsageJson,
                 InputSchema = new
                 {
                     type = "object",
@@ -137,7 +135,5 @@ namespace mcp_nexus.Protocol
                 }
             };
         }
-
-
     }
 }

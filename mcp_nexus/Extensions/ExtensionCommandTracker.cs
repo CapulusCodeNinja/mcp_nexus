@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.CommandQueue.Core;
 using Microsoft.Extensions.Logging;
 
 namespace mcp_nexus.Extensions
@@ -110,7 +110,7 @@ namespace mcp_nexus.Extensions
                 ExtensionName = extensionName,
                 Parameters = parameters,
                 State = CommandState.Queued,
-                QueuedAt = DateTime.UtcNow,
+                QueuedAt = DateTime.Now,
                 QueuePosition = -1,
                 CallbackCount = 0,
                 Elapsed = TimeSpan.Zero,
@@ -135,16 +135,16 @@ namespace mcp_nexus.Extensions
 
                 if (state == CommandState.Executing && !info.StartedAt.HasValue)
                 {
-                    info.StartedAt = DateTime.UtcNow;
+                    info.StartedAt = DateTime.Now;
                 }
                 else if (state == CommandState.Completed || state == CommandState.Failed || state == CommandState.Cancelled)
                 {
-                    info.CompletedAt = DateTime.UtcNow;
+                    info.CompletedAt = DateTime.Now;
                     info.IsCompleted = true;
                 }
 
                 // Update timing
-                info.Elapsed = DateTime.UtcNow - info.QueuedAt;
+                info.Elapsed = DateTime.Now - info.QueuedAt;
 
                 m_Logger.LogDebug("Updated extension command {CommandId} state to {State}", commandId, state);
             }
@@ -363,7 +363,7 @@ namespace mcp_nexus.Extensions
         public void MarkCompleted()
         {
             IsCompleted = true;
-            CompletedAt = DateTime.UtcNow;
+            CompletedAt = DateTime.Now;
         }
 
         /// <summary>

@@ -1,19 +1,13 @@
-using mcp_nexus.Session;
-using mcp_nexus.Session.Models;
-using mcp_nexus.CommandQueue;
-using mcp_nexus.Notifications;
-using mcp_nexus.Protocol;
-using mcp_nexus.Recovery;
-using mcp_nexus.Infrastructure;
-using mcp_nexus.Utilities;
-using mcp_nexus.Constants;
-using mcp_nexus.Models;
+using mcp_nexus.Session.Lifecycle;
+using mcp_nexus.Session.Core.Models;
+using mcp_nexus.CommandQueue.Core;
+using mcp_nexus.Utilities.PathHandling;
+using mcp_nexus.Utilities.Validation;
+using mcp_nexus.Resources;
 using mcp_nexus.Extensions;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -259,8 +253,8 @@ namespace mcp_nexus.Tools
                     // Background processing task needs time to initialize after session creation
                     for (int attempt = 1; attempt <= 20; attempt++)
                     {
-                        // Use exponential backoff instead of fixed delay
-                        var delayMs = Math.Min(1000, 50 * (int)Math.Pow(1.5, attempt - 1));
+                        // Use optimized exponential backoff with smaller maximum delay
+                        var delayMs = Math.Min(200, 25 * (int)Math.Pow(1.3, attempt - 1));
                         await Task.Delay(delayMs);
 
                         if (sessionManager.TryGetCommandQueue(sessionId, out commandQueue) && commandQueue != null)
@@ -308,10 +302,17 @@ namespace mcp_nexus.Tools
                     sessionId, context.Status, context.LastActivity);
                 var commandId = commandQueue.QueueCommand(command);
 
-                // Get queue position for the newly queued command
-                var queueStatus = commandQueue.GetQueueStatus().ToList();
-                var queuePosition = queueStatus.FindIndex(q => q.Id == commandId);
-                var totalInQueue = queueStatus.Count;
+                // Get queue position for the newly queued command without materializing the whole list
+                var qs = commandQueue.GetQueueStatus();
+                var queuePosition = -1;
+                var totalInQueue = 0;
+                var idx = 0;
+                foreach (var q in qs)
+                {
+                    if (queuePosition < 0 && q.Id == commandId) queuePosition = idx;
+                    idx++;
+                }
+                totalInQueue = idx;
 
                 var response = new
                 {
@@ -320,7 +321,7 @@ namespace mcp_nexus.Tools
                     command,
                     status = "Queued",
                     operation = "nexus_enqueue_async_dump_analyze_command",
-                    message = $"Command queued successfully. Queue position: {queuePosition + 1} of {totalInQueue}. Use the 'commands' resource to monitor all commands or the 'nexus_read_dump_analyze_command_result' tool to get specific results.",
+                    message = $"Command queued successfully. Queue position: {queuePosition + 1} of {totalInQueue}. You can queue multiple commands and then use 'nexus_get_dump_analyze_commands_status' to poll status of ALL commands at once, then 'nexus_read_dump_analyze_command_result' to get individual results when completed.",
                     timeoutMinutes = 10,
                     queuePosition = queuePosition + 1,
                     totalInQueue
@@ -629,14 +630,14 @@ namespace mcp_nexus.Tools
             }
 
             // Look for "Elapsed: Xmin Ys" pattern
-            var elapsedMinSecMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"Elapsed: ([\d]+min [\d]+s)");
+            var elapsedMinSecMatch = ElapsedMinSecRegex().Match(commandResult);
             if (elapsedMinSecMatch.Success)
             {
                 return elapsedMinSecMatch.Groups[1].Value;
             }
 
             // Look for "Elapsed: Xmin" pattern (without decimal or seconds)
-            var elapsedMinMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"Elapsed: ([\d]+min)");
+            var elapsedMinMatch = ElapsedMinOnlyRegex().Match(commandResult);
             if (elapsedMinMatch.Success)
             {
                 return elapsedMinMatch.Groups[1].Value;
@@ -654,14 +655,14 @@ namespace mcp_nexus.Tools
                 return null;
 
             // Look for "ETA: Xmin Ys" pattern
-            var etaMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"ETA: ([\d]+)min ([\d]+)s");
+            var etaMatch = EtaMinSecRegex().Match(commandResult);
             if (etaMatch.Success)
             {
                 return $"{etaMatch.Groups[1].Value}min {etaMatch.Groups[2].Value}s";
             }
 
             // Look for "ETA: <1min" pattern
-            var etaMinMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"ETA: (<1min)");
+            var etaMinMatch = EtaLtOneMinRegex().Match(commandResult);
             if (etaMinMatch.Success)
             {
                 return etaMinMatch.Groups[1].Value;
@@ -886,13 +887,13 @@ namespace mcp_nexus.Tools
 
                 _ = Task.Run(async () =>
                 {
-                    var queueTime = DateTime.UtcNow;
+                    var queueTime = DateTime.Now;
                     DateTime? startTime = null;
 
                     try
                     {
                         extensionTracker.UpdateState(commandId, CommandState.Executing);
-                        startTime = DateTime.UtcNow;
+                        startTime = DateTime.Now;
 
                         var result = await extensionExecutor.ExecuteAsync(
                             extensionName,
@@ -919,7 +920,7 @@ namespace mcp_nexus.Tools
                                     originalCommand: $"Extension: {extensionName}",
                                     queueTime: queueTime,
                                     startTime: startTime,
-                                    endTime: DateTime.UtcNow);
+                                    endTime: DateTime.Now);
 
                                 logger.LogDebug("📦 Stored extension {Extension} result in session cache for session {SessionId}", extensionName, sessionId);
                             }
@@ -959,7 +960,7 @@ namespace mcp_nexus.Tools
                                     originalCommand: $"Extension: {extensionName}",
                                     queueTime: queueTime,
                                     startTime: startTime,
-                                    endTime: DateTime.UtcNow);
+                                    endTime: DateTime.Now);
                             }
                         }
                         catch (Exception cacheEx)
@@ -1008,5 +1009,87 @@ namespace mcp_nexus.Tools
 
         [System.Text.RegularExpressions.GeneratedRegex(@"Elapsed: ([\d]+\.[\d]+min)")]
         private static partial System.Text.RegularExpressions.Regex MyRegex();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"Elapsed: ([\d]+min [\d]+s)")]
+        private static partial System.Text.RegularExpressions.Regex ElapsedMinSecRegex();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"Elapsed: ([\d]+min)")]
+        private static partial System.Text.RegularExpressions.Regex ElapsedMinOnlyRegex();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"ETA: ([\d]+)min ([\d]+)s")]
+        private static partial System.Text.RegularExpressions.Regex EtaMinSecRegex();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"ETA: (<1min)")]
+        private static partial System.Text.RegularExpressions.Regex EtaLtOneMinRegex();
+
+        /// <summary>
+        /// Get status of ALL commands for a specific session (not just one command).
+        /// Returns same format as 'commands' resource but filtered by sessionId.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <param name="sessionId">Session ID to get ALL commands for.</param>
+        /// <returns>Status of all commands in the session with timing information.</returns>
+        [McpServerTool, Description("GET COMMAND STATUS: Get status of ALL commands for a specific session (not just one command). Returns same format as 'commands' resource but filtered by sessionId.")]
+        public static Task<object> nexus_get_dump_analyze_commands_status(
+            IServiceProvider serviceProvider,
+            [Description("Session ID to get ALL commands for")] string sessionId)
+        {
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("McpNexusTools");
+            var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
+
+            logger.LogInformation("Getting command status for session: {SessionId}", sessionId);
+
+            try
+            {
+                // Validate sessionId
+                if (string.IsNullOrWhiteSpace(sessionId))
+                {
+                    return Task.FromResult((object)new
+                    {
+                        sessionId,
+                        status = "Failed",
+                        error = "Session ID cannot be null or empty",
+                        operation = "nexus_get_dump_analyze_commands_status"
+                    });
+                }
+
+                if (!sessionManager.SessionExists(sessionId))
+                {
+                    return Task.FromResult((object)new
+                    {
+                        sessionId,
+                        status = "Failed",
+                        error = $"Session {sessionId} not found. Use 'sessions' resource to see available sessions.",
+                        operation = "nexus_get_dump_analyze_commands_status"
+                    });
+                }
+
+                // Get command queue for this session
+                var commandQueue = sessionManager.GetCommandQueue(sessionId);
+                var sessionCommands = McpNexusResources.GetSessionCommandsFromQueue(commandQueue, sessionId);
+
+                var result = new
+                {
+                    sessionId,
+                    commands = sessionCommands,
+                    commandCount = sessionCommands.Count,
+                    timestamp = DateTimeOffset.Now,
+                    note = "All commands for this session. Poll this tool to monitor command progress."
+                };
+
+                return Task.FromResult((object)result);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to get command status for session: {SessionId}", sessionId);
+                return Task.FromResult((object)new
+                {
+                    sessionId,
+                    status = "Failed",
+                    error = ex.Message,
+                    operation = "nexus_get_dump_analyze_commands_status"
+                });
+            }
+        }
     }
 }

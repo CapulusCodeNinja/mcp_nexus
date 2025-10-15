@@ -31,7 +31,8 @@ The following steps must be performed sequentially. Ensure all mandatory rules a
     * Execute the extension to resolve sources for the current stack and frames.
     * Use tool: `nexus_enqueue_async_extension_command` with `sessionId` and `extensionName = "stack_with_sources"`.
     * The tool returns a `commandId` (prefixed with `ext-`)
-    * Poll results via `nexus_read_dump_analyze_command_result` using the same `sessionId` and returned `commandId`.
+    * **Efficient Monitoring:** Use `nexus_get_dump_analyze_commands_status(sessionId)` to poll ALL commands in the session at once (recommended for better performance)
+    * Get individual results via `nexus_read_dump_analyze_command_result` using the same `sessionId` and returned `commandId` when status shows "Completed"
     * When completed successfully the sources for the faulting frames should be available on the filesystem
     * If source is not found for the current frame, try `lsa [ADDRESS]` where `ADDRESS` is the instruction address.
     * Note: Source files (if found) will be in `[workingdir]/source`.
@@ -39,15 +40,17 @@ The following steps must be performed sequentially. Ensure all mandatory rules a
     * Execute the baseline crash analysis extension.
     * Use tool: `nexus_enqueue_async_extension_command` with `sessionId` and `extensionName = "basic_crash_analysis"`.
     * The tool returns a `commandId` (prefixed with `ext-`).
-    * Poll for completion via `nexus_read_dump_analyze_command_result` using the same `sessionId` and returned `commandId`.
+    * **Efficient Monitoring:** Use `nexus_get_dump_analyze_commands_status(sessionId)` to monitor all commands in the session
+    * Get individual results via `nexus_read_dump_analyze_command_result` using the same `sessionId` and returned `commandId` when status shows "Completed"
     * On success, the result contains outputs from core analysis commands and a concise summary to guide next steps.
 4. **Comprehensive and in-depth Analysis:**
-    * Perform a thorough analysis to pinpoint the **exact root cause**.
-    * Gather all helpful information from the dump.
-    * For exceptions, collect all necessary data, including the type and the `what()` string.
-    * For timeouts, execute WinDbg commands in single, sequential steps.
-    * Run extended WinDbg commands to gain a more detailed view of the issue.
-    * **Consider checking** the `workflows` resource for **helpful** commands for the specific issue.
+    * Perform a thorough analysis to pinpoint the **exact root cause**.
+    * Gather all helpful information from the dump.
+    * For exceptions, collect all necessary data, including the type and the `what()` string.
+    * For timeouts, execute WinDbg commands in single, sequential steps.
+    * Run extended WinDbg commands to gain a more detailed view of the issue.
+    * **Efficient Command Management:** When running multiple WinDbg commands, queue them all first with `nexus_enqueue_async_dump_analyze_command`, then use `nexus_get_dump_analyze_commands_status(sessionId)` to monitor all commands at once for better performance
+    * **Consider checking** the `workflows` resource for **helpful** commands for the specific issue.
 5. **Analyze the root cause:**
     * **Summarize** the results from the previous steps.
     * Analyze all the current data in-depth to find the root cause of the crash.

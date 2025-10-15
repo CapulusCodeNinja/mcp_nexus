@@ -243,7 +243,7 @@
             {
                 // Poll for result and stop when MD exists - configurable timeout via environment variable
                 string foundWin = null;
-                var startTime = DateTime.UtcNow;
+                var startTime = DateTime.Now;
                 
                 // Check if max runtime is specified (0 = unlimited)
                 string envMaxRuntime = Environment.GetEnvironmentVariable("CURSOR_AGENT_MAX_RUNTIME_MINUTES");
@@ -332,7 +332,7 @@
                     // Check for timeout if max runtime is set
                     if (maxRuntimeMinutes > 0)
                     {
-                        var elapsed = DateTime.UtcNow - startTime;
+                        var elapsed = DateTime.Now - startTime;
                         if (elapsed.TotalMinutes >= maxRuntimeMinutes)
                         {
                             LogApplicationResult(windowsFilePath, -2, "Cursor-agent execution timeout after " + maxRuntimeMinutes + " minutes", "");
@@ -672,8 +672,8 @@
                     
                     // Extract timestamp
                     int timestamp = BitConverter.ToInt32(header, 12);
-                    DateTime crashTime = new DateTime(1970, 1, 1).AddSeconds(timestamp);
-                    results.AppendLine("Crash time: " + crashTime.ToString("yyyy-MM-dd HH:mm:ss UTC"));
+                    DateTime crashTimeLocal = DateTimeOffset.FromUnixTimeSeconds(timestamp).LocalDateTime;
+                    results.AppendLine("Crash time: " + crashTimeLocal.ToString("yyyy-MM-dd HH:mm:ss"));
                 }
                 else
                 {

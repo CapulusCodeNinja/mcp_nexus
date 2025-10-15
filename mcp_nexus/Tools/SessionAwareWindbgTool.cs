@@ -1,11 +1,12 @@
-using mcp_nexus.Session;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Lifecycle;
+using mcp_nexus.Session.Core.Models;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Notifications;
 using mcp_nexus.Protocol;
-using mcp_nexus.Recovery;
-using mcp_nexus.Infrastructure;
-using mcp_nexus.Utilities;
+using mcp_nexus.CommandQueue.Recovery;
+using mcp_nexus.Infrastructure.Adapters;
+using mcp_nexus.Utilities.PathHandling;
+using mcp_nexus.Utilities.Validation;
 using mcp_nexus.Constants;
 using mcp_nexus.Models;
 using ModelContextProtocol.Server;
@@ -38,7 +39,8 @@ namespace mcp_nexus.Tools
                     "TOOLS: Use tools/call method to execute debugging operations (open session, run commands, close session)",
                     "RESOURCES: Use resources/read method to access data (command lists, session lists, documentation, metrics)",
                     "After opening an analyze session, WinDBG commands can be asynchronously executed.",
-                    "Command results can be accessed via the 'nexus_read_dump_analyze_command_result' tool or 'List Commands' resource.",
+                    "You can queue multiple commands at once and use 'nexus_get_dump_analyze_commands_status' to poll status of ALL commands in one call.",
+                    "Command results can be accessed via the 'nexus_read_dump_analyze_command_result' tool when status shows 'Completed'.",
                     "Opening a session without executing commands will not have any effect."
                 },
                 available_tools = new object[]
@@ -81,6 +83,15 @@ namespace mcp_nexus.Tools
                     },
                     new
                     {
+                        step_title = "Tooling - Get Commands Status",
+                        tool_name = "nexus_get_dump_analyze_commands_status",
+                        action = "Get status of ALL commands for a specific session. Use this to poll command progress efficiently.",
+                        input = new { sessionId = "string (required)" },
+                        output = (string?)"status of all commands in the session with timing information",
+                        note = (string?)"Returns ALL commands for the session (not just one). Queue multiple commands and poll this once to see status of all. Use nexus_read_dump_analyze_command_result to get individual results when completed."
+                    },
+                    new
+                    {
                         step_title = "Tooling - Queue Extension",
                         tool_name = "nexus_enqueue_async_extension_command",
                         action = "Queue an extension script for complex workflows. Extensions execute multiple commands and implement sophisticated analysis patterns.",
@@ -101,14 +112,6 @@ namespace mcp_nexus.Tools
                 },
                 available_resources = new object[]
                 {
-                    new
-                    {
-                        uri = "workflows",
-                        name = "Crash Analysis Workflows",
-                        description = "Comprehensive step-by-step analysis workflows for Windows crash dump investigation",
-                        input = (object?)null,
-                        note = (string?)"Access via MCP resources/read method"
-                    },
                     new
                     {
                         uri = "usage",

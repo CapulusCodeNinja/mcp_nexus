@@ -9,6 +9,7 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 ### Core Components
 - **Session Management**: Multi-session debugging with isolated CDB processes
 - **Command Queue System**: Asynchronous command execution with resilience patterns
+- **Command Batching**: Intelligent batching of multiple commands for improved throughput
 - **Circuit Breaker Pattern**: Fault tolerance and failure recovery
 - **Health Monitoring**: Comprehensive system health checks and metrics
 - **Intelligent Caching**: Memory-efficient caching with eviction strategies
@@ -35,64 +36,107 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 
 **❌ VIOLATIONS WILL RESULT IN IMMEDIATE REJECTION ❌**
 
+**🚫 NO EXCEPTIONS ARE ALLOWED - ALL RULES ARE ABSOLUTE 🚫**
+
 ### 🔥 IMMEDIATE REQUIREMENTS (Check These FIRST!)
 
-1. **✅ ALL TESTS MUST PASS**: Run `dotnet test` - ALL tests must be green before any submission
-2. **✅ VERSION MUST BE UPDATED**: Increment the build version in `mcp_nexus.csproj` (e.g., 1.0.6.12 → 1.0.6.13)
-   - The following version fields MUST exist and MUST have the same value: `Version`, `AssemblyVersion`, and `FileVersion`. Update all three together.
-3. **✅ README.md MUST BE UPDATED**: Update test count and coverage in README.md badges AND Test Statistics section
-4. **✅ NO COMPILATION ERRORS**: Code must build with zero warnings and zero errors
-5. **✅ NO DEAD CODE**: Remove unused code, methods, or files
-6. **✅ FORMATTING & HYGIENE VERIFIED (SOLUTION-WIDE)**:
+1. **✅ ALL TESTS MUST PASS**: Run `dotnet test` - ALL tests must be green before any submission. NO EXCEPTIONS.
+2. **✅ VERSION MUST BE UPDATED**: Increment the build version in `mcp_nexus.csproj` (e.g., 1.0.6.12 → 1.0.6.13). MANDATORY.
+   - The following version fields MUST exist and MUST have the same value: `Version`, `AssemblyVersion`, and `FileVersion`. Update all three together. NO EXCEPTIONS.
+3. **✅ README.md MUST BE UPDATED**: Update test count and coverage in README.md badges AND Test Statistics section. MANDATORY.
+4. **✅ MINIMUM COVERAGE THRESHOLDS MUST BE MAINTAINED**: ABSOLUTE REQUIREMENT.
+   - **Line Coverage**: Must NEVER fall below **75%**. NO EXCEPTIONS.
+   - **Branch Coverage**: Must NEVER fall below **75%**. NO EXCEPTIONS.
+   - Run `dotnet test --collect:"XPlat Code Coverage"` to verify coverage before submission. MANDATORY.
+   - If any change causes coverage to drop below these thresholds, add tests to restore coverage. ABSOLUTE REQUIREMENT.
+5. **✅ NO COMPILATION ERRORS**: Code must build with zero warnings and zero errors. ABSOLUTE REQUIREMENT.
+6. **✅ NO DEAD CODE**: Remove unused code, methods, or files. NO EXCEPTIONS.
+7. **✅ FORMATTING & HYGIENE VERIFIED (SOLUTION-WIDE)**: MANDATORY.
    - Run repository-wide formatting and style enforcement before submitting any change:
      - `dotnet format style`
      - `dotnet format analyzers`
      - `dotnet format whitespace`
-   - There MUST be no formatting diffs left. Use `--verify-no-changes` in CI.
-   - Absolutely NO commented-out code or commented-out `using` directives anywhere.
-   - Absolutely NO unused `using` directives. Remove them.
-   - This rule applies to ALL files in the repository, not just edited ones.
+   - There MUST be no formatting diffs left. Use `--verify-no-changes` in CI. NO EXCEPTIONS.
+   - Absolutely NO commented-out code or commented-out `using` directives anywhere. ABSOLUTE.
+   - Absolutely NO unused `using` directives. Remove them. MANDATORY.
+   - This rule applies to ALL files in the repository, not just edited ones. NO EXCEPTIONS.
 
 ### 📋 DETAILED GROUND RULES
 
 #### Code Structure and Quality
-* **Atomicity and Clarity:** Methods must be **atomic, focused, and build successfully with zero warnings** in all configurations.
-* **Code Cleanliness:** There must be **no unused code**, **dead code**, **commented-out code**, or **unused import/using directives** within any file.
-* **File-Class Parity:** Each **top-level class or interface must reside in its own dedicated file**, with the filename matching the class/interface name.
-* **Standardized Formatting:** All code must be **perfectly formatted and aligned** according to the project's established standards (enforced by `dotnet format` or equivalent tooling). Apply this across the entire solution for every change.
-* **Concurrency and Performance Integrity:** As this is a **server application**, code must adhere to **proper concurrency practices**. Introduction of **blocking operations, excessive/long `Thread.Sleep` calls, or potential deadlocks/livelocks is strictly prohibited**. The code must be performant and thread-safe.
+* **Atomicity and Clarity:** Methods must be **atomic, focused, and build successfully with zero warnings** in all configurations. NO EXCEPTIONS.
+* **Code Cleanliness:** There must be **no unused code**, **dead code**, **commented-out code**, or **unused import/using directives** within any file. ABSOLUTE REQUIREMENT.
+* **File-Class Parity:** Each **top-level class or interface must reside in its own dedicated file**, with the filename matching the class/interface name. MANDATORY.
+* **Standardized Formatting:** All code must be **perfectly formatted and aligned** according to the project's established standards (enforced by `dotnet format` or equivalent tooling). Apply this across the entire solution for every change. NO EXCEPTIONS.
+* **Concurrency and Performance Integrity:** As this is a **server application**, code must adhere to **proper concurrency practices**. Introduction of **blocking operations, excessive/long `Thread.Sleep` calls, or potential deadlocks/livelocks is strictly prohibited**. The code must be performant and thread-safe. ABSOLUTE REQUIREMENT.
+* **No Arbitrary Delays:** **Sleeps, `Task.Delay`, `Thread.Sleep`, and similar blocking delays should be avoided as much as possible**. Use deterministic synchronization mechanisms like `TaskCompletionSource`, `SemaphoreSlim`, `CancellationToken`, or proper async/await patterns instead. **Static delays or sleeps bigger than 100ms in the tests are not acceptable without any exception**. NO EXCEPTIONS.
+* **Proper Concurrency is Mandatory:** **Proper concurrency practices are mandatory and there is no exception**. All asynchronous operations must use proper async/await patterns, cancellation tokens, and thread-safe synchronization primitives. Blocking operations, race conditions, and improper synchronization are strictly prohibited. ABSOLUTE REQUIREMENT.
+* **Proper Encapsulation is Mandatory:** **Proper encapsulation is mandatory and there is no exception**. All private fields must be properly encapsulated, public APIs must be minimal and well-defined, and internal implementation details must not leak through public interfaces. NO EXCEPTIONS.
 
 #### Testing and Documentation
-* **100% Test Pass Rate:** **All unit tests must pass** (be "green") before submission.
-* **Testing Integrity:** **No existing or new tests may be excluded, ignored, or removed** without prior architectural review and approval.
-* **Documentation Synchronization:** All relevant **documentation** (e.g., Markdown documentation, README, or designated build manifest files) must be **up-to-date and reflect the current state** of the codebase and tests.
+* **100% Test Pass Rate:** **All unit tests must pass** (be "green") before submission. NO EXCEPTIONS.
+* **Minimum Coverage Thresholds:** **Code coverage must NEVER fall below the mandatory thresholds**. ABSOLUTE REQUIREMENT.
+  - **Line Coverage**: Must be **≥75%** at all times. NO EXCEPTIONS.
+  - **Branch Coverage**: Must be **≥75%** at all times. NO EXCEPTIONS.
+  - If any code change causes coverage to drop below these thresholds, additional tests MUST be added before submission. MANDATORY.
+  - Run `dotnet test --collect:"XPlat Code Coverage"` to verify coverage before any submission. ABSOLUTE REQUIREMENT.
+* **Testing Integrity:** **No existing or new tests may be excluded, ignored, or removed** without prior architectural review and approval. ABSOLUTE REQUIREMENT.
+* **Flaky Tests Are NOT Acceptable:** **Flaky tests are NOT acceptable!** Tests that pass sometimes and fail other times indicate poor test design and must be fixed immediately. NO EXCEPTIONS.
+* **Test Isolation Is Mandatory:** **Isolation issues in tests are NOT acceptable!** Tests must be completely isolated from each other and must not depend on execution order or shared state. ABSOLUTE REQUIREMENT.
+* **Zero Tolerance for Test Failures:** **Failing test is a failing test independent of the reason, there are no exceptions and no acceptable failure interpretation!** All tests must pass consistently, every time, without any excuses. NO EXCEPTIONS.
+* **Mocking is Mandatory:** **Mocking should be used for testing without exception**. All external dependencies, services, and collaborators must be mocked to ensure test isolation and deterministic behavior. NO EXCEPTIONS.
+* **Documentation Synchronization:** All relevant **documentation** (e.g., Markdown documentation, README, or designated build manifest files) must be **up-to-date and reflect the current state** of the codebase and tests. MANDATORY.
 
 #### Versioning and Scope
-* **Version Increment:** Only the **build version component** (the last digit/identifier) in the project's versioning scheme must be incremented for this change. (Assuming a **Major.Minor.Patch.Build** semantic versioning standard.)
-* **Version Field Equality:** In `mcp_nexus.csproj`, the `Version`, `AssemblyVersion`, and `FileVersion` values MUST be identical at all times. When bumping the version, update all three fields to the same value.
+* **Version Increment:** Only the **build version component** (the last digit/identifier) in the project's versioning scheme must be incremented for this change. (Assuming a **Major.Minor.Patch.Build** semantic versioning standard.) NO EXCEPTIONS.
+* **Version Field Equality:** In `mcp_nexus.csproj`, the `Version`, `AssemblyVersion`, and `FileVersion` values MUST be identical at all times. When bumping the version, update all three fields to the same value. ABSOLUTE REQUIREMENT.
 
 ### 🎯 COMMON VIOLATIONS TO AVOID
 
-**❌ DON'T FORGET:**
-- Running tests before submission
-- Updating version numbers
-- Updating README.md with new test counts and Test Statistics section
-- Removing dead/unused code
-- Checking for compilation errors
+**❌ DON'T FORGET (ALL MANDATORY - NO EXCEPTIONS):**
+- Running tests before submission - ABSOLUTE REQUIREMENT
+- Updating version numbers - MANDATORY
+- Updating README.md with new test counts and Test Statistics section - ABSOLUTE REQUIREMENT
+- **Verifying coverage thresholds (≥75% line, ≥75% branch)** - ABSOLUTE REQUIREMENT
+- Removing dead/unused code - NO EXCEPTIONS
+- Checking for compilation errors - MANDATORY
+- **Fixing flaky tests immediately** - ABSOLUTE REQUIREMENT
+- **Ensuring test isolation** - NO EXCEPTIONS
+- **Making tests pass consistently every time** - MANDATORY
+- **Avoiding arbitrary delays (`Task.Delay`, `Thread.Sleep`)** - NO EXCEPTIONS
+- **Using proper concurrency patterns** - ABSOLUTE REQUIREMENT
+- **Maintaining proper encapsulation** - MANDATORY
+- **Using mocking for all external dependencies** - NO EXCEPTIONS
+- **Organizing namespaces correctly** - ABSOLUTE REQUIREMENT
+- **Splitting large directories into logical sub-namespaces** - NO EXCEPTIONS
+- **Mirroring test structure to production structure** - ABSOLUTE REQUIREMENT
+- **Maintaining test namespace alignment with production** - NO EXCEPTIONS
 
-**✅ ALWAYS DO:**
-- Run `dotnet test` and verify all tests pass
-- Update version in `mcp_nexus.csproj`
-- Update test count and Test Statistics section in README.md
-- Remove any unused code or files
-- Verify zero compilation warnings/errors
+**✅ ALWAYS DO (ALL MANDATORY - NO EXCEPTIONS):**
+- Run `dotnet test` and verify all tests pass - ABSOLUTE REQUIREMENT
+- Update version in `mcp_nexus.csproj` - MANDATORY
+- Update test count and Test Statistics section in README.md - NO EXCEPTIONS
+- **Run coverage and verify ≥75% line coverage and ≥75% branch coverage** - ABSOLUTE REQUIREMENT
+- Remove any unused code or files - ABSOLUTE REQUIREMENT
+- Verify zero compilation warnings/errors - MANDATORY
+- **Fix any test that fails intermittently** - NO EXCEPTIONS
+- **Ensure tests are completely isolated** - ABSOLUTE REQUIREMENT
+- **Make tests deterministic and reliable** - MANDATORY
+- **Use deterministic synchronization instead of delays** - NO EXCEPTIONS
+- **Implement proper async/await patterns** - ABSOLUTE REQUIREMENT
+- **Maintain strict encapsulation boundaries** - MANDATORY
+- **Mock all external dependencies in tests** - NO EXCEPTIONS
+- **Organize classes in logical, cohesive namespaces** - ABSOLUTE REQUIREMENT
+- **Split directories with more than 5-7 classes into sub-namespaces** - NO EXCEPTIONS
+- **Ensure test project structure mirrors production structure exactly** - ABSOLUTE REQUIREMENT
+- **Use `.Tests` suffix for test namespaces matching production namespaces** - NO EXCEPTIONS
 
 ---
 
 ## Coding Standards
 
 ### XML Documentation Requirements
-**CRITICAL**: Every public and private method, property, constructor, enum, and class MUST have complete XML documentation:
+**CRITICAL - ABSOLUTE REQUIREMENT**: Every public and private method, property, constructor, enum, and class MUST have complete XML documentation. NO EXCEPTIONS.
 
 ```csharp
 /// <summary>
@@ -105,30 +149,37 @@ public ReturnType MethodName(ParameterType paramName)
 ```
 
 ### Naming Conventions
-- **Classes**: PascalCase (e.g., `SessionManager`, `CommandQueueService`)
-- **Methods**: PascalCase (e.g., `CreateSessionAsync`, `QueueCommand`)
-- **Properties**: PascalCase (e.g., `SessionId`, `IsHealthy`)
-- **Fields**: camelCase with `m_` prefix followed by PascalCase (e.g., `m_Logger`, `m_Sessions`, `m_CommandQueue`)
-- **Constants**: PascalCase (e.g., `MaxSessions`, `DefaultTimeout`)
+- **Classes**: PascalCase (e.g., `SessionManager`, `CommandQueueService`) - MANDATORY
+- **Methods**: PascalCase (e.g., `CreateSessionAsync`, `QueueCommand`) - ABSOLUTE REQUIREMENT
+- **Properties**: PascalCase (e.g., `SessionId`, `IsHealthy`) - NO EXCEPTIONS
+- **Fields (including static fields)**: camelCase with `m_` prefix followed by PascalCase (e.g., `m_Logger`, `m_Sessions`, `m_CommandQueue`) - MANDATORY.
+  - Static fields are treated as member variables for naming purposes and MUST also use the `m_` prefix (NOT `s_`) - ABSOLUTE REQUIREMENT.
+  - Example: use `m_PathPattern` instead of `s_PathPattern` - NO EXCEPTIONS.
+- **Constants**: PascalCase (e.g., `MaxSessions`, `DefaultTimeout`) - MANDATORY
 
-**IMPORTANT**: Member variables must follow the pattern `m_PascalCase` where the first letter after the underscore is uppercase. This ensures consistency with C# naming conventions and improves code readability.
-- **Enums**: PascalCase (e.g., `CommandState`, `CircuitState`)
+**IMPORTANT - ABSOLUTE REQUIREMENT**: Member variables must follow the pattern `m_PascalCase` where the first letter after the underscore is uppercase. This ensures consistency with C# naming conventions and improves code readability. NO EXCEPTIONS.
+- **Enums**: PascalCase (e.g., `CommandState`, `CircuitState`) - MANDATORY
+
+### Time Policy
+- Use local time consistently across the codebase - ABSOLUTE REQUIREMENT.
+- Prefer `DateTime.Now` over `DateTime.UtcNow` and `DateTimeOffset.Now` over `DateTimeOffset.UtcNow` in any possible case - NO EXCEPTIONS.
+- Logs, timestamps, metrics, and persisted times should all use local time to avoid confusion - MANDATORY.
 
 ### Code Organization
-- **One class per file**: Each class in its own file
-- **Namespace structure**: `mcp_nexus.{Category}` (e.g., `mcp_nexus.Session`, `mcp_nexus.CommandQueue`)
-- **Using statements**: Grouped by system, third-party, then project namespaces
-- **Member variable placement**: **ALL member variables (fields, properties, constants) MUST be declared at the TOP of the class definition, before any methods or constructors**
-- **Method ordering**: Constructors, public methods, private methods, dispose pattern
+- **One class per file**: Each class in its own file - ABSOLUTE REQUIREMENT
+- **Namespace structure**: `mcp_nexus.{Category}` (e.g., `mcp_nexus.Session`, `mcp_nexus.CommandQueue`) - MANDATORY
+- **Using statements**: Grouped by system, third-party, then project namespaces - NO EXCEPTIONS
+- **Member variable placement**: **ALL member variables (fields, properties, constants) MUST be declared at the TOP of the class definition, before any methods or constructors** - ABSOLUTE REQUIREMENT
+- **Method ordering**: Constructors, public methods, private methods, dispose pattern - MANDATORY
 
 ### Error Handling
-- **Exception types**: Use specific exception types (`SessionNotFoundException`, `CircuitBreakerOpenException`)
-- **Logging levels**: 
-  - `LogError` for exceptions and failures
-  - `LogWarning` for recoverable issues
-  - `LogInformation` for important events
-  - `LogDebug` for detailed debugging
-- **Graceful degradation**: Always provide fallback behavior
+- **Exception types**: Use specific exception types (`SessionNotFoundException`, `CircuitBreakerOpenException`) - ABSOLUTE REQUIREMENT
+- **Logging levels**: MANDATORY
+  - `LogError` for exceptions and failures - NO EXCEPTIONS
+  - `LogWarning` for recoverable issues - ABSOLUTE REQUIREMENT
+  - `LogInformation` for important events - MANDATORY
+  - `LogDebug` for detailed debugging - NO EXCEPTIONS
+- **Graceful degradation**: Always provide fallback behavior - ABSOLUTE REQUIREMENT
 
 ## Domain Knowledge
 
@@ -147,15 +198,50 @@ public ReturnType MethodName(ParameterType paramName)
 ### Session Lifecycle
 1. **Create**: `nexus_open_dump_analyze_session` - Creates isolated session
 2. **Execute**: `nexus_enqueue_async_dump_analyze_command` - Queues commands
-3. **Monitor**: Use `commands` resource to track status
-4. **Retrieve**: `nexus_read_dump_analyze_command_result` - Get results
+3. **Monitor**: `nexus_get_dump_analyze_commands_status` - Bulk status polling (recommended)
+4. **Retrieve**: `nexus_read_dump_analyze_command_result` - Get individual results
 5. **Close**: `nexus_close_dump_analyze_session` - Clean up resources
+
+**Efficient Monitoring Pattern:**
+- Use `nexus_get_dump_analyze_commands_status` to poll ALL commands in a session at once
+- Much more efficient than individual command polling
+- Returns status, timing, and progress for all commands
+- Use `nexus_read_dump_analyze_command_result` only when status shows "Completed"
 
 ### Command Queue System
 - **Sequential execution**: Commands execute in FIFO order per session
 - **Timeout handling**: Configurable timeouts with heartbeat monitoring
 - **Recovery mechanisms**: Automatic retry and circuit breaker patterns
 - **Status tracking**: Real-time status updates and progress reporting
+
+### Efficient Command Monitoring
+
+**Bulk Status Polling Pattern (Recommended):**
+```json
+// 1. Queue multiple commands
+nexus_enqueue_async_dump_analyze_command(sessionId, "!analyze -v")
+nexus_enqueue_async_dump_analyze_command(sessionId, "kL")
+nexus_enqueue_async_dump_analyze_command(sessionId, "!threads")
+
+// 2. Poll ALL commands at once (efficient)
+nexus_get_dump_analyze_commands_status(sessionId)
+// Returns: Status of all commands with timing and progress
+
+// 3. Get individual results when completed
+nexus_read_dump_analyze_command_result(sessionId, "cmd-123")
+```
+
+**Benefits of Bulk Polling:**
+- **Single API call** instead of multiple individual polls
+- **Reduced network overhead** and latency
+- **Better performance** for monitoring multiple commands
+- **Unified view** of all command statuses in one response
+- **Easier to implement** efficient polling loops
+
+**When to Use Individual Polling:**
+- Only when you need the **full command output** (not just status)
+- When a specific command shows "Completed" status
+- For **debugging** specific command issues
 
 ## Performance Considerations
 
@@ -177,21 +263,92 @@ public ReturnType MethodName(ParameterType paramName)
 ## Testing Requirements
 
 ### Test File Organization
-- **One-to-One Correspondence**: Every test file MUST correspond to exactly one production source file
-- **Naming Convention**: Test files must follow the pattern `{ProductionFileName}Tests.cs`
-- **No Orphaned Tests**: All tests for a production class must be in the corresponding test file
-- **No Generic Test Files**: Test files with generic names (e.g., `UtilityTests.cs`, `HelperTests.cs`) are prohibited
-- **Consolidation Required**: If multiple test files exist for the same production class, they must be consolidated
+- **One-to-One Correspondence**: Every test file MUST correspond to exactly one production source file - ABSOLUTE REQUIREMENT
+- **Naming Convention**: Test files must follow the pattern `{ProductionFileName}Tests.cs` - MANDATORY
+- **No Orphaned Tests**: All tests for a production class must be in the corresponding test file - NO EXCEPTIONS
+- **No Generic Test Files**: Test files with generic names (e.g., `UtilityTests.cs`, `HelperTests.cs`) are prohibited - ABSOLUTE REQUIREMENT
+- **Consolidation Required**: If multiple test files exist for the same production class, they must be consolidated - MANDATORY
+
+#### Test Structure Requirements
+- **Test Project Mirroring**: **Test project structure MUST exactly mirror production code structure**. Test directories and namespaces must follow the same organization as production code. ABSOLUTE REQUIREMENT.
+- **Test Namespace Convention**: **Test namespaces must match production namespaces with `.Tests` suffix**. For example: `mcp_nexus.CommandQueue.Batching` → `mcp_nexus.CommandQueue.Batching.Tests`. NO EXCEPTIONS.
+- **Test Directory Alignment**: **Test directories must mirror production directories exactly**. If production has `CommandQueue/Batching/`, tests must have `CommandQueue/Batching/` with `.Tests` namespace. MANDATORY.
+- **Test Class Organization**: **Test classes must be organized in the same sub-namespaces as their production counterparts**. NO EXCEPTIONS.
+
+### Test Organization and Strategy
+
+The project maintains two separate test projects, each serving distinct purposes while following the same ground rules:
+
+#### Unit Tests (`mcp_nexus_unit_tests`)
+**Purpose**: Fast, isolated tests that verify individual component behavior with mocked dependencies.
+
+**Characteristics**:
+- **Execution Speed**: Fast (milliseconds to seconds per test) - MANDATORY
+- **Dependencies**: All external dependencies mocked (CDB, file system, network, etc.) - ABSOLUTE REQUIREMENT
+- **Scope**: Individual classes, methods, and components in isolation - NO EXCEPTIONS
+- **Examples**: Service logic, command parsing, validation, state management - MANDATORY
+- **Naming Convention**: `{ProductionFileName}Tests.cs` (e.g., `CommandBatchBuilder.cs` → `CommandBatchBuilderTests.cs`) - ABSOLUTE REQUIREMENT
+- **Namespace Convention**: `mcp_nexus_unit_tests.{Category}` matching production namespace structure - NO EXCEPTIONS
+
+**When to Write Unit Tests**:
+- Testing business logic and algorithms - MANDATORY
+- Validating input/output transformations - ABSOLUTE REQUIREMENT
+- Testing error handling and edge cases - NO EXCEPTIONS
+- Verifying state transitions and lifecycle management - MANDATORY
+
+#### Integration Tests (`mcp_nexus_integration_tests`)
+**Purpose**: Slower tests that verify component interactions and infrastructure behavior with real dependencies.
+
+**Characteristics**:
+- **Execution Speed**: Slower (seconds to minutes per test, **maximum 5 minutes per test**) - ABSOLUTE REQUIREMENT
+- **Dependencies**: Real dependencies where feasible (actual CDB process, real file system, etc.) - MANDATORY
+- **Scope**: Multiple components working together, infrastructure failures, end-to-end scenarios - NO EXCEPTIONS
+- **Examples**: CDB session lifecycle, batch command execution with real debugger, task recovery mechanisms - MANDATORY
+- **Naming Convention**: `{ProductionFileName}Tests.cs` (same as unit tests) - ABSOLUTE REQUIREMENT
+- **Namespace Convention**: `mcp_nexus_integration_tests.{Category}` matching production namespace structure - NO EXCEPTIONS
+
+**When to Write Integration Tests**:
+- Testing infrastructure resilience (task faulting, recovery, timeout handling) - MANDATORY
+- Verifying real CDB command execution and output parsing - ABSOLUTE REQUIREMENT
+- Testing file system operations and path handling - NO EXCEPTIONS
+- Validating cross-component workflows and data flow - MANDATORY
+
+#### Shared Ground Rules (Apply to BOTH Test Projects)
+**ALL ground rules from the "MANDATORY GROUND RULES" section apply equally to both unit tests and integration tests. NO EXCEPTIONS.**
+
+Specifically:
+- **Coverage Thresholds**: Both projects must maintain ≥75% line coverage and ≥75% branch coverage - ABSOLUTE REQUIREMENT
+- **No Flaky Tests**: Tests must pass consistently, every time, in both projects - NO EXCEPTIONS
+- **Test Isolation**: Tests must be completely isolated from each other in both projects - MANDATORY
+- **No Arbitrary Delays**: No `Task.Delay` or `Thread.Sleep` >100ms in either project - ABSOLUTE REQUIREMENT
+- **Proper Concurrency**: Use deterministic synchronization (TaskCompletionSource, SemaphoreSlim) in both projects - NO EXCEPTIONS
+- **Mocking**: Unit tests mock all dependencies; integration tests mock only what's necessary for test control - MANDATORY
+- **Naming Convention**: Both projects use `{ProductionFileName}Tests.cs` pattern - ABSOLUTE REQUIREMENT
+- **Namespace Alignment**: Both projects mirror production namespace structure with `.Tests` suffix - NO EXCEPTIONS
+- **Maximum Test Duration**: Integration tests must complete within 5 minutes - ABSOLUTE REQUIREMENT
+
+#### Test Selection Guidelines
+**Use Unit Tests When**:
+- Testing pure logic without external dependencies - MANDATORY
+- Execution speed is critical (CI/CD pipeline) - ABSOLUTE REQUIREMENT
+- Testing all code paths and edge cases exhaustively - NO EXCEPTIONS
+
+**Use Integration Tests When**:
+- Testing infrastructure failure scenarios (task faulting, process crashes) - MANDATORY
+- Verifying real external tool behavior (CDB syntax, output format) - ABSOLUTE REQUIREMENT
+- Testing recovery mechanisms and resilience patterns - NO EXCEPTIONS
+- Validating end-to-end workflows across multiple components - MANDATORY
+
+**IMPORTANT**: The existence of integration tests does NOT reduce the requirement for comprehensive unit test coverage. Both are mandatory. ABSOLUTE REQUIREMENT.
 
 ### Unit Tests
-- **Coverage**: Aim for 100% code coverage
-- **Mocking**: Use mocks for external dependencies
-- **Edge cases**: Test error conditions and boundary values
-
-### Integration Tests
-- **End-to-end workflows**: Test complete debugging sessions
-- **Error scenarios**: Test failure recovery and circuit breaker behavior
-- **Performance tests**: Verify memory usage and response times
+- **Coverage Thresholds**: **Mandatory minimum coverage requirements** - ABSOLUTE REQUIREMENT
+  - **Line Coverage**: Must be **≥75%** at all times. NO EXCEPTIONS.
+  - **Branch Coverage**: Must be **≥75%** at all times. NO EXCEPTIONS.
+  - Aim for 100% coverage where feasible, but never drop below these mandatory thresholds. MANDATORY.
+- **Mocking**: Use mocks for external dependencies - MANDATORY
+- **Mocking is Mandatory**: **Mocking should be used for testing without exception**. All external dependencies, services, and collaborators must be mocked to ensure test isolation and deterministic behavior. NO EXCEPTIONS.
+- **Edge cases**: Test error conditions and boundary values - NO EXCEPTIONS
 
 ## Security Considerations
 
@@ -242,47 +399,42 @@ public ReturnType MethodName(ParameterType paramName)
 ## Development Workflow
 
 ### Before Making Changes
-1. Read and understand the existing code structure
-2. Check for existing XML documentation
-3. Verify test coverage for affected areas
-4. Consider impact on session isolation
+1. Read and understand the existing code structure - MANDATORY
+2. Check for existing XML documentation - ABSOLUTE REQUIREMENT
+3. Verify test coverage for affected areas - NO EXCEPTIONS
+4. Consider impact on session isolation - MANDATORY
 
 ### During Development
-1. Follow the XML documentation standards strictly
-2. Use appropriate logging levels
-3. Handle exceptions gracefully
-4. Consider performance implications
-5. Maintain thread safety
+1. Follow the XML documentation standards strictly - ABSOLUTE REQUIREMENT
+2. Use appropriate logging levels - MANDATORY
+3. Handle exceptions gracefully - NO EXCEPTIONS
+4. Consider performance implications - ABSOLUTE REQUIREMENT
+5. Maintain thread safety - MANDATORY
 
 ### After Changes
-1. Verify all XML documentation is complete
-2. Run existing tests
-3. Add new tests for new functionality
-4. Check for memory leaks
-5. Verify session isolation is maintained
-6. Run `dotnet format` (style, analyzers, whitespace) solution-wide and ensure no changes remain (`--verify-no-changes`).
+1. Verify all XML documentation is complete - ABSOLUTE REQUIREMENT
+2. Run existing tests - MANDATORY
+3. Add new tests for new functionality - NO EXCEPTIONS
+4. Check for memory leaks - ABSOLUTE REQUIREMENT
+5. Verify session isolation is maintained - MANDATORY
+6. Run `dotnet format` (style, analyzers, whitespace) solution-wide and ensure no changes remain (`--verify-no-changes`) - ABSOLUTE REQUIREMENT.
 
 ## Special Considerations
 
 ### Session Management
-- **Isolation**: Each session must be completely isolated
-- **Cleanup**: Always clean up resources when sessions close
-- **Limits**: Respect maximum session limits
-- **Context**: Maintain session context for notifications
+- **Isolation**: Each session must be completely isolated - ABSOLUTE REQUIREMENT
+- **Cleanup**: Always clean up resources when sessions close - MANDATORY
+- **Limits**: Respect maximum session limits - NO EXCEPTIONS
+- **Context**: Maintain session context for notifications - ABSOLUTE REQUIREMENT
 
 ### Command Execution
-- **Asynchronous**: All command execution must be asynchronous
-- **Timeout**: Implement proper timeout handling
-- **Recovery**: Provide recovery mechanisms for failures
-- **Status**: Always provide clear status information
+- **Asynchronous**: All command execution must be asynchronous - MANDATORY
+- **Timeout**: Implement proper timeout handling - NO EXCEPTIONS
+- **Recovery**: Provide recovery mechanisms for failures - ABSOLUTE REQUIREMENT
+- **Status**: Always provide clear status information - MANDATORY
 
-### Error Recovery
-- **Circuit breakers**: Use for external dependencies
-- **Retry logic**: Implement exponential backoff
-- **Graceful degradation**: Provide fallback behavior
-- **User feedback**: Always inform users of issues
 
-This project represents a sophisticated debugging platform that requires careful attention to documentation, error handling, and resource management. Every change should maintain the high standards established for XML documentation and system reliability.
+This project represents a sophisticated debugging platform that requires careful attention to documentation, error handling, and resource management. Every change should maintain the high standards established for XML documentation and system reliability. ALL REQUIREMENTS ARE ABSOLUTE - NO EXCEPTIONS ARE ALLOWED.
 
 ---
 
@@ -360,9 +512,11 @@ Extension Process          Command Queue (Serial)
 #### 2. **Unified Command Tracking**
 
 Extensions get their own `commandId` (prefixed with `ext-`) which allows:
-- AI can track extension progress with `nexus_read_dump_analyze_command_result(ext-xxx)`
+- AI can track extension progress with `nexus_get_dump_analyze_commands_status(sessionId)` (bulk polling)
+- AI can get individual results with `nexus_read_dump_analyze_command_result(ext-xxx)`
 - Same polling mechanism as regular commands
 - Consistent UX for AI agents
+- **Efficient monitoring**: Use bulk status polling to monitor extension + regular commands together
 
 #### 3. **Security: Localhost-Only HTTP Callbacks with Token Authentication**
 
@@ -544,8 +698,12 @@ extensions/
 7. Script completes, returns JSON output
    └─> ExtensionCommandTracker stores result
 
-8. AI polls: nexus_read_dump_analyze_command_result("ext-123")
-   └─> Returns: Extension output when completed
+8. AI polls: nexus_get_dump_analyze_commands_status(sessionId)
+   ├─> Returns: Status of ALL commands including "ext-123"
+   └─> Shows progress for extension and any other commands
+
+9. AI gets result: nexus_read_dump_analyze_command_result("ext-123")
+   └─> Returns: Extension output when status shows "Completed"
 ```
 
 ### Key Files
@@ -701,18 +859,377 @@ $output2 = Invoke-NexusCommand "lm"
 
 ---
 
+## Async Command Execution (v1.0.7.5)
+
+### Problem
+
+Extension scripts using synchronous `Invoke-NexusCommand` cannot leverage command batching because each command blocks until completion, preventing multiple commands from being queued together.
+
+### Solution
+
+Added async command execution functions that queue commands without blocking, enabling the internal command batching system to improve throughput.
+
+### New PowerShell Functions
+
+- `Start-NexusCommand` - Queue a command, returns command ID immediately
+- `Wait-NexusCommand` - Block until queued command completes
+- `Get-NexusCommandResult` - Check command status without blocking
+- `Start-NexusCommands` - Queue multiple commands at once
+
+### New HTTP Endpoint
+
+- `POST /extension-callback/queue` - Queue command without waiting (enables batching)
+
+### Usage Example
+
+```powershell
+# Queue multiple commands (enables batching)
+$ids = Start-NexusCommands -Commands @("lm", "!threads", "!peb")
+
+# Wait for all to complete
+foreach ($id in $ids) {
+    $result = Wait-NexusCommand -CommandId $id
+    Process-Result $result
+}
+```
+
+### Benefits
+
+- Commands queued together can be batched automatically by `BatchCommandProcessor`
+- Better throughput for bulk operations
+- Backward compatible with existing `Invoke-NexusCommand` (synchronous)
+
+---
+
+## Command Batching System Architecture
+
+### Overview
+
+The command batching system improves throughput by intelligently grouping multiple commands into a single execution batch. This is transparent to AI clients and maintains command dependencies by executing batches sequentially within each session.
+
+### Core Problem Solved
+
+**Before Batching:**
+- Each command executed individually
+- High overhead from process communication
+- Slower throughput for multiple sequential commands
+- Timeouts set per command could be conservative
+
+**After Batching:**
+- Commands automatically grouped (up to configurable limit)
+- Single execution with multiple commands
+- Improved overall throughput
+- Adaptive timeouts based on batch size
+
+### Key Design Decisions
+
+#### 1. **Batching is Internal and Transparent**
+
+**Critical Architecture Point:**
+- Batching happens **inside** `IsolatedCommandQueueService`
+- AI clients see **no difference** in behavior
+- Commands still queued individually
+- Results stored and retrieved individually
+- No changes needed to MCP tools or AI integration
+
+**Why this works:**
+```
+AI Client                    IsolatedCommandQueueService
+   |                                   |
+   |-- Queue: Command A -------------->|
+   |-- Queue: Command B -------------->| [Batch: A, B, C]
+   |-- Queue: Command C -------------->|     |
+   |                                   |     v
+   |                                   | Execute Combined
+   |                                   |     |
+   |<-- Result A ----------------------|     v
+   |<-- Result B ----------------------| Parse & Distribute
+   |<-- Result C ----------------------|
+```
+
+**No Race Conditions** because:
+- Batching is session-scoped → isolated per session
+- Commands execute sequentially within batch
+- Results parsed and stored atomically
+- Cache is thread-safe
+
+#### 2. **Configurable Batching Behavior**
+
+Batching is fully configurable via `appsettings.json`:
+
+```json
+{
+  "McpNexus": {
+    "Batching": {
+      "Enabled": true,
+      "MaxBatchSize": 5,
+      "BatchWaitTimeoutMs": 2000,
+      "BatchTimeoutMultiplier": 1.0,
+      "MaxBatchTimeoutMinutes": 30,
+      "ExcludedCommands": [
+        "!analyze", "!dump", "!heap", "!memusage", "!runaway",
+        "~*k", "!locks", "!cs", "!gchandles"
+      ]
+    }
+  }
+}
+```
+
+**Configuration Parameters:**
+- **Enabled**: Enable/disable batching system-wide
+- **MaxBatchSize**: Maximum commands per batch (default: 5)
+- **BatchWaitTimeoutMs**: Max wait time to accumulate commands (default: 2000ms)
+- **BatchTimeoutMultiplier**: Multiplier for timeout calculation (default: 1.0)
+- **MaxBatchTimeoutMinutes**: Cap for batch timeout (default: 30 minutes)
+- **ExcludedCommands**: Commands that should never be batched
+
+#### 3. **Smart Command Filtering**
+
+**Exclusion List:**
+Commands that should **not** be batched:
+- `!analyze` - Complex, long-running analysis
+- `!dump`, `!heap`, `!memusage` - Memory-intensive operations
+- `!runaway` - Performance profiling
+- `~*k`, `!locks`, `!cs` - Thread analysis
+- `!gchandles` - Managed heap analysis
+
+**Why exclude these:**
+- They are **long-running** and batching adds no value
+- They may **change debugger state** significantly
+- They produce **large output** that's better processed alone
+- Batching them could exceed timeout limits
+
+**Prefix Matching:**
+The `BatchCommandFilter` uses prefix matching, so:
+- Exclusion `"!analyze"` blocks: `!analyze`, `!analyze -v`, `!analyzev`
+- Exclusion `"~*k"` blocks: `~*k`, `~*kv`, `~*kp`
+
+#### 4. **Adaptive Timeout Calculation**
+
+**Formula:**
+```csharp
+BatchTimeout = Min(
+    BaseCommandTimeout * CommandCount * BatchTimeoutMultiplier,
+    MaxBatchTimeoutMinutes
+)
+```
+
+**Example:**
+- Base command timeout: 10 minutes (600,000ms)
+- Commands in batch: 3
+- Multiplier: 1.0
+- **Calculated timeout**: 30 minutes (capped at MaxBatchTimeoutMinutes)
+
+**Why this works:**
+- Larger batches get more time
+- Cap prevents runaway timeouts
+- Multiplier allows tuning for specific environments
+
+#### 5. **Batch Parsing with Sentinel Markers**
+
+**Sentinel Markers:**
+```csharp
+public const string BatchStart = "MCP_NEXUS_BATCH_START";
+public const string BatchEnd = "MCP_NEXUS_BATCH_END";
+public const string CommandSeparator = "MCP_NEXUS_CMD_SEP";
+```
+
+**Batch Command Format:**
+```
+.echo MCP_NEXUS_BATCH_START; .echo MCP_NEXUS_CMD_SEP_CMD-123_START; <actual command>; .echo MCP_NEXUS_CMD_SEP_CMD-123_END; .echo MCP_NEXUS_CMD_SEP_CMD-456_START; <actual command>; .echo MCP_NEXUS_CMD_SEP_CMD-456_END; .echo MCP_NEXUS_BATCH_END
+```
+
+**Why this works:**
+- Each command's output is clearly delimited
+- Parser can reliably extract individual results
+- Unique IDs prevent cross-contamination
+- Robust against commands that produce special characters
+
+### Component Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│              IsolatedCommandQueueService                    │
+│  ┌───────────────────────────────────────────────┐         │
+│  │  ProcessCommandQueueAsync()                   │         │
+│  │    │                                           │         │
+│  │    ├──> Take command from queue               │         │
+│  │    │                                           │         │
+│  │    └──> BatchCommandProcessor.ProcessCommand()│         │
+│  └───────────────────────────────────────────────┘         │
+└───────────────────┬─────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│              BatchCommandProcessor                          │
+│  ┌───────────────────────────────────────────────┐         │
+│  │  ProcessCommandAsync(command)                 │         │
+│  │    │                                           │         │
+│  │    ├──> BatchCommandFilter.CanBatchCommand()  │         │
+│  │    │      (Check exclusion list)              │         │
+│  │    │                                           │         │
+│  │    ├──> If batchable: Queue internally        │         │
+│  │    │    If not: ExecuteSingleCommandAsync()   │         │
+│  │    │                                           │         │
+│  │    └──> BatchProcessingLoopAsync()            │         │
+│  │           (Background loop)                   │         │
+│  └───────────────────────────────────────────────┘         │
+│                                                              │
+│  Background Loop:                                           │
+│  ┌───────────────────────────────────────────────┐         │
+│  │  1. Wait for commands or timeout              │         │
+│  │  2. Collect up to MaxBatchSize commands       │         │
+│  │  3. CommandBatchBuilder.CreateBatchCommand()  │         │
+│  │  4. BatchTimeoutCalculator.CalculateTimeout() │         │
+│  │  5. CdbSession.ExecuteCommand(batch)          │         │
+│  │  6. BatchResultParser.SplitBatchResults()     │         │
+│  │  7. Store results in SessionCommandResultCache│         │
+│  │  8. Complete QueuedCommand.SetResult()        │         │
+│  └───────────────────────────────────────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Files
+
+**Batching Infrastructure:**
+- `mcp_nexus/CommandQueue/BatchingConfiguration.cs` - Configuration model
+- `mcp_nexus/CommandQueue/BatchCommandBuilder.cs` - Builds combined command
+- `mcp_nexus/CommandQueue/BatchResultParser.cs` - Parses batch output
+- `mcp_nexus/CommandQueue/BatchCommandFilter.cs` - Exclusion list filtering
+- `mcp_nexus/CommandQueue/BatchTimeoutCalculator.cs` - Timeout calculation
+- `mcp_nexus/CommandQueue/BatchCommandProcessor.cs` - Main batching orchestration
+- `mcp_nexus/Debugger/CdbSentinels.cs` - Batch sentinel markers
+
+**Integration Points:**
+- `mcp_nexus/CommandQueue/IsolatedCommandQueueService.cs` - Integrated BatchCommandProcessor
+- `mcp_nexus/Session/SessionLifecycleManager.cs` - Passes batching config to queue service
+- `mcp_nexus/Configuration/ServiceRegistration.cs` - DI registration for batching config
+- `mcp_nexus/appsettings.json` - Batching configuration
+
+**Tests:**
+- `mcp_nexus_tests/CommandQueue/BatchCommandProcessorTests.cs` - 16 tests
+- `mcp_nexus_tests/CommandQueue/BatchCommandBuilderTests.cs` - 8 tests
+- `mcp_nexus_tests/CommandQueue/BatchResultParserTests.cs` - 8 tests
+- `mcp_nexus_tests/CommandQueue/BatchCommandFilterTests.cs` - 8 tests
+- `mcp_nexus_tests/CommandQueue/BatchTimeoutCalculatorTests.cs` - 8 tests
+
+**Total: 48 batching-specific tests**
+
+### Performance Considerations
+
+#### Memory Management
+- **Bounded queues**: Maximum batch size prevents unbounded growth
+- **Timeout-based flushing**: Commands don't wait indefinitely
+- **Per-session isolation**: Each session has its own batch processor
+- **Automatic cleanup**: Batch processor disposed with session
+
+#### Concurrency
+- **Thread safety**: All batch operations are thread-safe
+- **Background processing**: Batching happens on dedicated background task
+- **No blocking**: Queue operations don't block command submission
+- **Cancellation support**: Proper cancellation token handling
+
+### Batching Behavior Examples
+
+#### Example 1: Simple Batching
+```
+Time  | Event
+------|----------------------------------------------
+0ms   | AI queues: "lm"
+10ms  | AI queues: "!threads"
+20ms  | AI queues: "!peb"
+2000ms| Batch timeout reached
+      | → Execute batch: "lm", "!threads", "!peb"
+      | → Parse results
+      | → Store in cache
+```
+
+#### Example 2: Immediate Batch (Max Size Reached)
+```
+Time  | Event
+------|----------------------------------------------
+0ms   | AI queues 5 commands (all batchable)
+1ms   | MaxBatchSize (5) reached
+      | → Execute batch immediately
+      | → No wait for timeout
+```
+
+#### Example 3: Mixed Batchable/Non-Batchable
+```
+Time  | Event
+------|----------------------------------------------
+0ms   | AI queues: "lm" (batchable)
+10ms  | AI queues: "!analyze -v" (excluded)
+      | → "lm" added to batch queue
+      | → "!analyze -v" executed immediately (single)
+20ms  | AI queues: "!threads" (batchable)
+      | → Added to batch queue with "lm"
+2000ms| Batch timeout
+      | → Execute batch: "lm", "!threads"
+```
+
+### Common Pitfalls to Avoid
+
+1. ❌ **Don't add commands to exclusion list without reason**
+   - ✅ Only exclude truly long-running or state-changing commands
+
+2. ❌ **Don't set MaxBatchSize too high**
+   - ✅ Keep it reasonable (3-10) to avoid timeout issues
+
+3. ❌ **Don't disable batching to "fix" issues**
+   - ✅ Investigate root cause and adjust configuration
+
+4. ❌ **Don't assume batching changes command order**
+   - ✅ Commands within a batch execute in order
+
+5. ❌ **Don't forget to update BatchingConfiguration when changing appsettings.json**
+   - ✅ Keep model in sync with config file
+
+### Future Enhancements (Not Yet Implemented)
+
+- **Dynamic batch sizing**: Adjust based on command execution times
+- **Smart command grouping**: Group related commands together
+- **Batch statistics**: Track batch efficiency metrics
+- **Adaptive exclusion list**: Learn which commands batch poorly
+
+---
+
 ## For Future AI Assistants
 
 When working on this project:
-1. **Read AGENTS.md first** - Understand the architecture before making changes
-2. **Follow the established patterns** - Especially for extensions
-3. **PowerShell-only for extension scripts** - No Python
-4. **Add tests for new features** - Maintain test coverage
-5. **Zero-regression policy** - All existing tests must pass
-6. **Update this document** - If architecture changes significantly
+1. **Read AGENTS.md first** - Understand the architecture before making changes - ABSOLUTE REQUIREMENT
+2. **Follow the established patterns** - Especially for extensions and batching - MANDATORY
+3. **PowerShell-only for extension scripts** - No Python - NO EXCEPTIONS
+4. **Add tests for new features** - Maintain test coverage - ABSOLUTE REQUIREMENT
+5. **Zero-regression policy** - All existing tests must pass - MANDATORY
+6. **Update this document** - If architecture changes significantly - NO EXCEPTIONS
 
 ### Extension System Key Principle
 
-**Extensions orchestrate workflows externally, using callbacks for individual commands.**
+**Extensions orchestrate workflows externally, using callbacks for individual commands. - ABSOLUTE REQUIREMENT**
 
-This design prevents deadlocks, maintains session isolation, and gives AI agents a reliable way to execute complex debugging workflows.
+This design prevents deadlocks, maintains session isolation, and gives AI agents a reliable way to execute complex debugging workflows. NO EXCEPTIONS.
+
+### Command Batching Key Principle
+
+**Batching improves throughput internally, while being completely transparent to AI clients. - MANDATORY**
+
+This design maintains command dependencies, prevents race conditions, and provides configurable performance optimization without requiring changes to AI integration. ABSOLUTE REQUIREMENT.
+
+---
+
+## Logging Severity Policy (NO EXCEPTIONS)
+
+The following logging severity levels MUST be used consistently across the entire product. These definitions are binding and there are NO EXCEPTIONS.
+
+- ERROR: Fatal issue from which the product cannot recover.
+- WARN: Something unusual happened; the product can handle it autonomously.
+- INFO: Normal logs with interesting and helpful information for end users.
+- DEBUG: Normal logs with useful technical information for product developers only.
+- TRACE: Same as DEBUG but reserved for very high-frequency logs (more than once per second).
+
+Enforcement:
+- Choose the lowest severity that accurately conveys the situation per the definitions above.
+- Do not use ERROR for recoverable or expected conditions.
+- Prefer INFO for user-relevant milestones and state changes; prefer DEBUG/TRACE for internal details.
+- TRACE should be disabled by default in production configurations.

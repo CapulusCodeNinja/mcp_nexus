@@ -1,13 +1,13 @@
 using System;
 using System.Linq;
-using mcp_nexus.Session;
-using mcp_nexus.Session.Models;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.Session.Lifecycle;
+using mcp_nexus.Session.Core.Models;
+using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Notifications;
 using mcp_nexus.Protocol;
-using mcp_nexus.Recovery;
-using mcp_nexus.Infrastructure;
-using mcp_nexus.Utilities;
+using mcp_nexus.CommandQueue.Recovery;
+using mcp_nexus.Infrastructure.Adapters;
+using mcp_nexus.Utilities.Json;
 using mcp_nexus.Constants;
 using mcp_nexus.Models;
 using mcp_nexus.Extensions;
@@ -30,6 +30,8 @@ namespace mcp_nexus.Resources
     [McpServerResourceType]
     public static class McpNexusResources
     {
+        // Use centralized JSON options directly from Utilities.JsonOptions
+        private static readonly string m_UsageJson = CreateUsageJson();
         // IMPORTANT: Method names directly determine resource names!
         // Method "Sessions" becomes resource "sessions", "Commands" becomes "commands", etc.
         /// <summary>
@@ -47,16 +49,19 @@ namespace mcp_nexus.Resources
             try
             {
                 var allSessions = sessionManager.GetAllSessions();
-                var sessions = allSessions.OrderByDescending(s => s.CreatedAt).ToList();
-
+                // Avoid materializing and sorting; stream enumerable for throughput
+                var sessionEnumerable = allSessions; // already an IEnumerable<ISessionInfo>
+                // Compute count with a single pass if needed; otherwise, let JSON serialize the enumerable
+                int count = 0;
+                foreach (var _ in sessionEnumerable) { count++; }
                 var result = new
                 {
-                    sessions,
-                    count = sessions.Count,
+                    sessions = allSessions, // keep as enumerable to avoid allocations
+                    count,
                     timestamp = DateTimeOffset.Now
                 };
 
-                return Task.FromResult(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+                return Task.FromResult(JsonSerializer.Serialize(result, JsonOptions.JsonIndented));
             }
             catch (Exception ex)
             {
@@ -112,7 +117,7 @@ namespace mcp_nexus.Resources
                     note = "Commands from all sessions"
                 };
 
-                return Task.FromResult(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+                return Task.FromResult(JsonSerializer.Serialize(result, JsonOptions.JsonIndented));
             }
             catch (Exception ex)
             {
@@ -148,32 +153,37 @@ namespace mcp_nexus.Resources
                         timestamp = DateTimeOffset.Now
                     };
 
-                    return Task.FromResult(JsonSerializer.Serialize(disabledResult, new JsonSerializerOptions { WriteIndented = true }));
+                    return Task.FromResult(JsonSerializer.Serialize(disabledResult, JsonOptions.JsonIndented));
                 }
 
                 var allExtensions = extensionManager.GetAllExtensions();
-                var extensionList = allExtensions.Select(ext => new
+                // Build a compact array without sorting/materialization overhead beyond one pass
+                var list = new List<object>();
+                foreach (var ext in allExtensions)
                 {
-                    name = ext.Name,
-                    description = ext.Description,
-                    version = ext.Version,
-                    author = ext.Author,
-                    scriptType = ext.ScriptType,
-                    timeout = ext.Timeout,
-                    parameters = ext.Parameters?.Select(p => new
+                    list.Add(new
                     {
-                        name = p.Name,
-                        type = p.Type,
-                        description = p.Description,
-                        required = p.Required,
-                        defaultValue = p.Default
-                    }).ToArray() ?? Array.Empty<object>()
-                }).OrderBy(e => e.name).ToList();
-
+                        name = ext.Name,
+                        description = ext.Description,
+                        version = ext.Version,
+                        author = ext.Author,
+                        scriptType = ext.ScriptType,
+                        timeout = ext.Timeout,
+                        parameters = ext.Parameters?.Select(p => new
+                        {
+                            name = p.Name,
+                            type = p.Type,
+                            description = p.Description,
+                            required = p.Required,
+                            defaultValue = p.Default
+                        }).ToArray() ?? Array.Empty<object>()
+                    });
+                }
+                var extensionsArray = list.ToArray();
                 var result = new
                 {
-                    extensions = extensionList,
-                    count = extensionList.Count,
+                    extensions = extensionsArray,
+                    count = extensionsArray.Length,
                     enabled = true,
                     timestamp = DateTimeOffset.Now,
                     usage = new
@@ -189,7 +199,7 @@ namespace mcp_nexus.Resources
                     }
                 };
 
-                return Task.FromResult(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+                return Task.FromResult(JsonSerializer.Serialize(result, JsonOptions.JsonIndented));
             }
             catch (Exception ex)
             {
@@ -201,6 +211,11 @@ namespace mcp_nexus.Resources
         [McpServerResource, Description("❓ USAGE: Essential tool usage information and API reference for MCP Nexus server")]
         public static Task<string> Usage(
             IServiceProvider serviceProvider)
+        {
+            return Task.FromResult(m_UsageJson);
+        }
+
+        private static string CreateUsageJson()
         {
             var usage = new
             {
@@ -241,6 +256,13 @@ namespace mcp_nexus.Resources
                         description = "📋 READ COMMAND RESULT: Get the full WinDBG output and status of a specific async command",
                         parameters = new[] { "sessionId (required)", "commandId (required)" },
                         returns = "Complete command output, status, and execution details"
+                    },
+                    new
+                    {
+                        name = "nexus_get_dump_analyze_commands_status",
+                        description = "GET COMMAND STATUS: Get status of ALL commands for a specific session",
+                        parameters = new[] { "sessionId (required)" },
+                        returns = "Status of all commands in the session with timing information"
                     }
                 },
                 available_resources = new[]
@@ -277,16 +299,17 @@ namespace mcp_nexus.Resources
                 example_workflow = new[]
                 {
                     "1. Use 'nexus_open_dump_analyze_session' to create a session (get sessionId)",
-                    "2. Use 'nexus_enqueue_async_dump_analyze_command' to queue WinDBG commands (get commandId)",
-                    "3. Use 'nexus_read_dump_analyze_command_result' to get command results",
-                    "4. Use 'sessions' or 'commands' resources to monitor activity",
+                    "2. Use 'nexus_enqueue_async_dump_analyze_command' multiple times to queue many commands at once (get commandIds)",
+                    "3. Use 'nexus_get_dump_analyze_commands_status' to poll status of ALL commands in the session",
+                    "4. Use 'nexus_read_dump_analyze_command_result' to get results when status shows 'Completed'",
                     "5. Use 'nexus_close_dump_analyze_session' when done"
                 },
                 important_notes = new[]
                 {
                     "All commands are asynchronous - use the commandId to track progress",
-                    "Resources are parameterless and return all available data",
-                    "Use 'commands' resource to monitor command status",
+                    "Use 'nexus_get_dump_analyze_commands_status' to get status of ALL commands in a session (one call per session)",
+                    "Use 'nexus_read_dump_analyze_command_result' to get results of a SPECIFIC command when completed",
+                    "Resources are parameterless and return all available data across all sessions",
                     "Always close sessions when no longer needed to free resources"
                 },
                 transport_limitations = new
@@ -296,13 +319,13 @@ namespace mcp_nexus.Resources
                 }
             };
 
-            return Task.FromResult(JsonSerializer.Serialize(usage, new JsonSerializerOptions { WriteIndented = true }));
+            return JsonSerializer.Serialize(usage, JsonOptions.JsonIndented);
         }
 
         /// <summary>
         /// Gets commands from a command queue service
         /// </summary>
-        private static Dictionary<string, object> GetSessionCommandsFromQueue(ICommandQueueService commandQueue, string sessionId)
+        internal static Dictionary<string, object> GetSessionCommandsFromQueue(ICommandQueueService commandQueue, string sessionId)
         {
             var commands = new Dictionary<string, object>();
 
@@ -348,7 +371,7 @@ namespace mcp_nexus.Resources
                     isFinished = cmd.State == CommandState.Completed || cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled,
                     createdAt = cmd.QueueTime,
                     completedAt = (DateTime?)null, // QueuedCommand doesn't have CompletedAt
-                    duration = DateTime.UtcNow - cmd.QueueTime,
+                    duration = DateTime.Now - cmd.QueueTime,
                     error = (string?)null, // QueuedCommand doesn't have Error property
                     progress = new
                     {
@@ -375,7 +398,7 @@ namespace mcp_nexus.Resources
                     command = "Error",
                     status = "Error",
                     isFinished = true,
-                    createdAt = DateTime.UtcNow,
+                    createdAt = DateTime.Now,
                     completedAt = (DateTime?)null,
                     duration = TimeSpan.Zero
                 };
@@ -442,7 +465,7 @@ namespace mcp_nexus.Resources
                 return 0;
 
             var queuePosition = GetQueuePositionForCommand(cmd, allCommands);
-            var elapsed = DateTime.UtcNow - cmd.QueueTime;
+            var elapsed = DateTime.Now - cmd.QueueTime;
 
             // Base progress from queue position (0-50%)
             var queueProgress = Math.Max(0, Math.Min(50, (10 - queuePosition) * 5));
@@ -478,14 +501,14 @@ namespace mcp_nexus.Resources
 
             if (cmd.State == CommandState.Executing)
             {
-                var elapsed = DateTime.UtcNow - cmd.QueueTime;
+                var elapsed = DateTime.Now - cmd.QueueTime;
                 return $"Command is currently executing (elapsed: {elapsed.TotalMinutes:F1} minutes)";
             }
 
             if (cmd.State == CommandState.Queued)
             {
                 var queuePosition = GetQueuePositionForCommand(cmd, allCommands);
-                var elapsed = DateTime.UtcNow - cmd.QueueTime;
+                var elapsed = DateTime.Now - cmd.QueueTime;
                 var progressPercentage = GetProgressPercentageForCommand(cmd, allCommands);
 
                 var baseMessage = queuePosition switch
@@ -515,7 +538,7 @@ namespace mcp_nexus.Resources
             if (cmd.State == CommandState.Completed || cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled)
                 return null;
 
-            var elapsed = DateTime.UtcNow - cmd.QueueTime;
+            var elapsed = DateTime.Now - cmd.QueueTime;
             return $"{elapsed.TotalMinutes:F1}min";
         }
 
@@ -527,7 +550,7 @@ namespace mcp_nexus.Resources
             if (cmd.State == CommandState.Completed || cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled)
                 return null;
 
-            var elapsed = DateTime.UtcNow - cmd.QueueTime;
+            var elapsed = DateTime.Now - cmd.QueueTime;
             var remaining = TimeSpan.FromMinutes(10) - elapsed;
 
             if (remaining.TotalMinutes <= 0)
@@ -547,7 +570,7 @@ namespace mcp_nexus.Resources
             if (cmd.State != CommandState.Completed)
                 return null;
 
-            var elapsed = DateTime.UtcNow - cmd.QueueTime;
+            var elapsed = DateTime.Now - cmd.QueueTime;
             return FormatDuration(elapsed);
         }
 

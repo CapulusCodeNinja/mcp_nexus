@@ -1,10 +1,19 @@
 using mcp_nexus.Debugger;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.CommandQueue.Core;
+using mcp_nexus.CommandQueue.Batching;
+using mcp_nexus.CommandQueue.Recovery;
+using mcp_nexus.CommandQueue.Validation;
+using mcp_nexus.CommandQueue.Notification;
 using mcp_nexus.Notifications;
-using mcp_nexus.Recovery;
-using mcp_nexus.Infrastructure;
-using mcp_nexus.Session;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Infrastructure.Adapters;
+using mcp_nexus.Infrastructure.Installation;
+using mcp_nexus.Infrastructure.Validation;
+using mcp_nexus.Infrastructure.Core;
+using mcp_nexus.Utilities.PathHandling;
+using mcp_nexus.Utilities.Validation;
+using mcp_nexus.Session.Lifecycle;
+using mcp_nexus.Session.Core;
+using mcp_nexus.Session.Core.Models;
 using mcp_nexus.Protocol;
 using mcp_nexus.Tools;
 using mcp_nexus.Extensions;
@@ -32,6 +41,7 @@ namespace mcp_nexus.Configuration
             LogManager.ReconfigExistingLoggers();
             var bootstrapLogger = LogManager.GetCurrentClassLogger();
             bootstrapLogger.Info("Registering services...");
+            try { LogManager.Flush(); } catch { }
 
             RegisterCoreServices(services, configuration, customCdbPath, serviceMode);
             RegisterRecoveryServices(services);
@@ -39,6 +49,7 @@ namespace mcp_nexus.Configuration
             RegisterExtensionServices(services, configuration);
 
             bootstrapLogger.Info("All services registered successfully");
+            try { LogManager.Flush(); } catch { }
         }
 
         /// <summary>
@@ -127,6 +138,9 @@ namespace mcp_nexus.Configuration
                 config.ServiceMode = capturedServiceMode;
             });
 
+            // Configure batching options
+            services.Configure<BatchingConfiguration>(configuration.GetSection("McpNexus:Batching"));
+
             // Register core services
             // Shared session store (explicit DI singleton instead of static state)
             services.AddSingleton(new ConcurrentDictionary<string, SessionInfo>());
@@ -137,9 +151,9 @@ namespace mcp_nexus.Configuration
             services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
 
             // Register utility services for path handling and command preprocessing
-            services.AddSingleton<mcp_nexus.Utilities.IWslPathConverter, mcp_nexus.Utilities.WslPathConverter>();
-            services.AddSingleton<mcp_nexus.Utilities.IPathHandler, mcp_nexus.Utilities.PathHandler>();
-            services.AddSingleton<mcp_nexus.Utilities.ICommandPreprocessor, mcp_nexus.Utilities.CommandPreprocessor>();
+            services.AddSingleton<IWslPathConverter, WslPathConverter>();
+            services.AddSingleton<IPathHandler, PathHandler>();
+            services.AddSingleton<ICommandPreprocessor, CommandPreprocessor>();
 
             logger.Info("Registered core services (CDB, Session, Notifications, Protocol, Utilities)");
         }
@@ -253,7 +267,8 @@ namespace mcp_nexus.Configuration
                 var extensionManager = serviceProvider.GetRequiredService<IExtensionManager>();
                 var processWrapper = serviceProvider.GetRequiredService<IProcessWrapper>();
                 var tokenValidator = serviceProvider.GetRequiredService<IExtensionTokenValidator>();
-                return new ExtensionExecutor(logger, extensionManager, callbackUrl, processWrapper, tokenValidator);
+                var extensionConfig = configuration.GetSection("McpNexus:Extensions").Get<ExtensionConfiguration>() ?? new ExtensionConfiguration();
+                return new ExtensionExecutor(logger, extensionManager, callbackUrl, extensionConfig, processWrapper, tokenValidator);
             });
 
             services.AddSingleton<IExtensionTokenValidator, ExtensionTokenValidator>();

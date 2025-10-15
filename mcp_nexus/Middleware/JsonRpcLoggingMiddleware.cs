@@ -1,4 +1,5 @@
 using System.Text.Json;
+using mcp_nexus.Utilities.Json;
 
 namespace mcp_nexus.Middleware
 {
@@ -12,8 +13,8 @@ namespace mcp_nexus.Middleware
     /// <param name="logger">The logger instance for recording JSON-RPC operations.</param>
     public class JsonRpcLoggingMiddleware(RequestDelegate next, ILogger<JsonRpcLoggingMiddleware> logger)
     {
-        private readonly RequestDelegate m_next = next;
-        private readonly ILogger<JsonRpcLoggingMiddleware> m_logger = logger;
+        private readonly RequestDelegate m_Next = next;
+        private readonly ILogger<JsonRpcLoggingMiddleware> m_Logger = logger;
 
         /// <summary>
         /// Invokes the middleware to log JSON-RPC requests and responses.
@@ -28,7 +29,7 @@ namespace mcp_nexus.Middleware
             }
             else
             {
-                await m_next(context);
+                await m_Next(context);
             }
         }
 
@@ -57,7 +58,7 @@ namespace mcp_nexus.Middleware
             using var responseBody = new MemoryStream();
             context.Response.Body = responseBody;
 
-            await m_next(context);
+            await m_Next(context);
 
             // Log the response
             await ReadAndLogResponseAsync(context, responseBody);
@@ -82,8 +83,11 @@ namespace mcp_nexus.Middleware
             }
             context.Request.Body.Position = 0;
 
-            var formattedRequest = FormatJsonForLogging(requestBody);
-            m_logger.LogDebug("📨 JSON-RPC Request:\n{RequestBody}", formattedRequest);
+            if (m_Logger.IsEnabled(LogLevel.Debug))
+            {
+                var formattedRequest = FormatJsonForLogging(requestBody);
+                m_Logger.LogDebug("📨 JSON-RPC Request:\n{RequestBody}", formattedRequest);
+            }
 
             return requestBody;
         }
@@ -105,24 +109,20 @@ namespace mcp_nexus.Middleware
             }
             responseBody.Seek(0, SeekOrigin.Begin);
 
-            var formattedResponse = FormatSseResponseForLogging(responseBodyText);
-
-            // Try to decode the text for easier debugging
-            // For Info level, don't truncate; for Debug and higher, truncate large fields
-            var (_, decodeSuccess) = DecodeJsonText(responseBodyText, shouldTruncate: false); // Info level - no truncation
-            if (decodeSuccess)
+            if (m_Logger.IsEnabled(LogLevel.Debug))
             {
-                // DecodeJsonText succeeded - use Info for main response, Debug for decoded text
-                m_logger.LogTrace("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
-
-                // For Debug level, truncate large fields
-                var (truncatedDecodedText, _) = DecodeJsonText(responseBodyText, shouldTruncate: true);
-                m_logger.LogDebug("📤 JSON-RPC Response Text:\n{DecodedText}", truncatedDecodedText);
-            }
-            else
-            {
-                // DecodeJsonText failed - use Info for main response only
-                m_logger.LogDebug("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
+                var formattedResponse = FormatSseResponseForLogging(responseBodyText);
+                var (_, decodeSuccess) = DecodeJsonText(responseBodyText, shouldTruncate: false);
+                if (decodeSuccess)
+                {
+                    m_Logger.LogTrace("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
+                    var (truncatedDecodedText, _) = DecodeJsonText(responseBodyText, shouldTruncate: true);
+                    m_Logger.LogDebug("📤 JSON-RPC Response Text:\n{DecodedText}", truncatedDecodedText);
+                }
+                else
+                {
+                    m_Logger.LogDebug("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
+                }
             }
         }
 
@@ -131,6 +131,8 @@ namespace mcp_nexus.Middleware
         /// </summary>
         /// <param name="json">The JSON string to format.</param>
         /// <returns>A formatted JSON string.</returns>
+        private static readonly JsonSerializerOptions m_Indented = JsonOptions.JsonIndented;
+
         private static string FormatJsonForLogging(string json)
         {
             // Handle empty or whitespace-only responses
@@ -143,7 +145,7 @@ namespace mcp_nexus.Middleware
             {
                 using var document = JsonDocument.Parse(json);
                 using var stream = new MemoryStream();
-                return System.Text.Json.JsonSerializer.Serialize(document.RootElement, new JsonSerializerOptions { WriteIndented = true });
+                return System.Text.Json.JsonSerializer.Serialize(document.RootElement, m_Indented);
             }
             catch (JsonException)
             {
@@ -167,13 +169,21 @@ namespace mcp_nexus.Middleware
             try
             {
                 // Handle Server-Sent Events format - extract only the JSON data part
-                var lines = sseResponse.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-                foreach (var line in lines)
+                ReadOnlySpan<char> span = sseResponse.AsSpan();
+                int start = 0;
+                for (int i = 0; i <= span.Length; i++)
                 {
-                    if (line.StartsWith("data: "))
+                    bool atEnd = i == span.Length;
+                    if (atEnd || span[i] == '\n')
                     {
-                        var jsonPart = line[6..].Trim();
-                        return FormatJsonForLogging(jsonPart);
+                        var lineSpan = span.Slice(start, i - start).Trim();
+                        if (lineSpan.StartsWith("data: ".AsSpan()))
+                        {
+                            var jsonSpan = lineSpan.Slice(6).Trim();
+                            var jsonPart = new string(jsonSpan);
+                            return FormatJsonForLogging(jsonPart);
+                        }
+                        start = i + 1;
                     }
                 }
 
@@ -192,8 +202,9 @@ namespace mcp_nexus.Middleware
         /// <param name="element">The JSON element to process.</param>
         /// <param name="maxFieldLength">The maximum length for field values.</param>
         /// <param name="shouldTruncate">Whether to actually truncate the fields.</param>
+        /// <param name="propertyName">The name of the property this element represents (optional).</param>
         /// <returns>A new JSON element with truncated fields.</returns>
-        private static JsonElement TruncateLargeFields(JsonElement element, int maxFieldLength = 1000, bool shouldTruncate = true)
+        private static JsonElement TruncateLargeFields(JsonElement element, int maxFieldLength = 1000, bool shouldTruncate = true, string? propertyName = null)
         {
             // If truncation is disabled, return the element as-is
             if (!shouldTruncate)
@@ -204,9 +215,22 @@ namespace mcp_nexus.Middleware
             switch (element.ValueKind)
             {
                 case JsonValueKind.Object:
+<<<<<<< HEAD
+=======
+                    if(propertyName?.EndsWith("usage") == true)
+                    {
+                        return JsonDocument.Parse("\"...(truncated)\"").RootElement;
+                    }
+
+>>>>>>> bf4cc5f (Fix bug in the web config)
                     var truncatedObject = new Dictionary<string, object>();
                     foreach (var property in element.EnumerateObject())
                     {
+                        if (property.Name.EndsWith("usage", System.StringComparison.OrdinalIgnoreCase))
+                        {
+                            truncatedObject[property.Name] = "...(truncated)";
+                            continue;
+                        }
                         if (property.Value.ValueKind == JsonValueKind.String && property.Value.GetString()?.Length > maxFieldLength)
                         {
                             var originalValue = property.Value.GetString() ?? "";
@@ -214,10 +238,10 @@ namespace mcp_nexus.Middleware
                         }
                         else
                         {
-                            truncatedObject[property.Name] = TruncateLargeFields(property.Value, maxFieldLength, shouldTruncate);
+                            truncatedObject[property.Name] = TruncateLargeFields(property.Value, maxFieldLength, shouldTruncate, property.Name);
                         }
                     }
-                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedObject)).RootElement;
+                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedObject, JsonOptions.JsonIndented)).RootElement;
 
                 case JsonValueKind.Array:
                     var truncatedArray = new List<object>();
@@ -225,7 +249,7 @@ namespace mcp_nexus.Middleware
                     {
                         truncatedArray.Add(TruncateLargeFields(item, maxFieldLength, shouldTruncate));
                     }
-                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedArray)).RootElement;
+                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedArray, JsonOptions.JsonIndented)).RootElement;
 
                 case JsonValueKind.String:
                     var stringValue = element.GetString() ?? "";
@@ -257,15 +281,21 @@ namespace mcp_nexus.Middleware
             try
             {
                 // Handle Server-Sent Events format - extract only the JSON data part
-                var lines = responseText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
                 string jsonContent = responseText;
-
-                foreach (var line in lines)
+                ReadOnlySpan<char> span = responseText.AsSpan();
+                int start = 0;
+                for (int i = 0; i <= span.Length; i++)
                 {
-                    if (line.StartsWith("data: "))
+                    bool atEnd = i == span.Length;
+                    if (atEnd || span[i] == '\n')
                     {
-                        jsonContent = line[6..].Trim();
-                        break;
+                        var lineSpan = span.Slice(start, i - start).Trim();
+                        if (lineSpan.StartsWith("data: ".AsSpan()))
+                        {
+                            jsonContent = new string(lineSpan.Slice(6).Trim());
+                            break;
+                        }
+                        start = i + 1;
                     }
                 }
 
@@ -301,7 +331,7 @@ namespace mcp_nexus.Middleware
                         using var textDocument = JsonDocument.Parse(decodedText);
                         var truncatedJson = TruncateLargeFields(textDocument.RootElement, 1000, shouldTruncate);
 
-                        return (System.Text.Json.JsonSerializer.Serialize(truncatedJson, new JsonSerializerOptions { WriteIndented = true }), true);
+                        return (System.Text.Json.JsonSerializer.Serialize(truncatedJson, m_Indented), true);
                     }
                 }
 

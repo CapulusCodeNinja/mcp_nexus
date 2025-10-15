@@ -17,17 +17,17 @@ namespace mcp_nexus.Debugger
     /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
     public class CdbCommandExecutor(ILogger<CdbCommandExecutor> logger, CdbSessionConfiguration config, CdbOutputParser outputParser) : IDisposable
     {
-        private readonly ILogger<CdbCommandExecutor> m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly CdbSessionConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
-        private readonly CdbOutputParser m_outputParser = outputParser ?? throw new ArgumentNullException(nameof(outputParser));
-        private readonly object m_cancellationLock = new();
+        private readonly ILogger<CdbCommandExecutor> m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly CdbSessionConfiguration m_Config = config ?? throw new ArgumentNullException(nameof(config));
+        private readonly CdbOutputParser m_OutputParser = outputParser ?? throw new ArgumentNullException(nameof(outputParser));
+        private readonly object m_CancellationLock = new();
 
-        private readonly SemaphoreSlim m_commandExecutionSemaphore = new(1, 1);
+        private readonly SemaphoreSlim m_CommandExecutionSemaphore = new(1, 1);
 
         // Session-scoped architecture components
-        private Channel<(string Line, bool IsStderr, DateTime Timestamp)>? m_sessionChannel;
-        private Task? m_consumer;
-        private CancellationTokenSource? m_sessionCancellation;
+        private Channel<(string Line, bool IsStderr, DateTime Timestamp)>? m_SessionChannel;
+        private Task? m_Consumer;
+        private CancellationTokenSource? m_SessionCancellation;
         private readonly Dictionary<string, TaskCompletionSource<string>> m_pendingCommands = [];
         private readonly object m_pendingCommandsLock = new();
         private string? m_currentCommandId = null;
@@ -46,17 +46,46 @@ namespace mcp_nexus.Debugger
                 return;
             }
 
-            // Split by newlines in case multiple lines arrived together
-            // This prevents sentinel detection issues with concatenated output
-            var lines = e.Data.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-
-            // Send each line individually to the channel
-            if (m_sessionChannel != null)
+            // Parse lines without allocations: scan for \r or \n and slice
+            if (m_SessionChannel != null)
             {
-                foreach (var line in lines)
+                ReadOnlySpan<char> span = e.Data.AsSpan();
+                int start = 0;
+                for (int i = 0; i < span.Length; i++)
                 {
-                    // Use fire-and-forget approach for event handler
-                    _ = m_sessionChannel.Writer.WriteAsync((line, isStderr, DateTime.Now)).AsTask();
+                    char c = span[i];
+                    if (c == '\r' || c == '\n')
+                    {
+                        if (i > start)
+                        {
+                            var line = new string(span.Slice(start, i - start));
+                            var item = (line, isStderr, DateTime.Now);
+                            if (!m_SessionChannel.Writer.TryWrite(item))
+                            {
+                                var vt = m_SessionChannel.Writer.WriteAsync(item);
+                                if (!vt.IsCompletedSuccessfully)
+                                {
+                                    _ = vt.AsTask();
+                                }
+                            }
+                        }
+                        start = i + 1; // skip delimiter
+                    }
+                }
+
+                // Trailing segment
+                if (start < span.Length)
+                {
+                    var line = new string(span.Slice(start));
+                    var item = (line, isStderr, DateTime.Now);
+                    if (!m_SessionChannel.Writer.TryWrite(item))
+                    {
+                        var vt = m_SessionChannel.Writer.WriteAsync(item);
+                        if (!vt.IsCompletedSuccessfully)
+                        {
+                            _ = vt.AsTask();
+                        }
+                    }
                 }
             }
         }
@@ -73,26 +102,26 @@ namespace mcp_nexus.Debugger
         {
             ArgumentNullException.ThrowIfNull(processManager);
 
-            if (m_sessionChannel != null)
+            if (m_SessionChannel != null)
             {
-                m_logger.LogWarning("Session already initialized");
+                m_Logger.LogWarning("Session already initialized");
                 return Task.CompletedTask;
             }
 
-            m_logger.LogInformation("🚀 Initializing session-scoped event-based stream reading");
+            m_Logger.LogDebug("🚀 Initializing session-scoped event-based stream reading");
 
             // Create session-scoped channel
-            m_sessionChannel = Channel.CreateUnbounded<(string Line, bool IsStderr, DateTime Timestamp)>(new UnboundedChannelOptions
+            m_SessionChannel = Channel.CreateUnbounded<(string Line, bool IsStderr, DateTime Timestamp)>(new UnboundedChannelOptions
             {
                 SingleReader = true,  // Only consumer reads
                 SingleWriter = false  // Event handlers write
             });
 
             // Create session cancellation token
-            m_sessionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            m_SessionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
             // Start consumer (handles all parsing and command completion logic)
-            m_consumer = StartConsumerAsync(m_sessionCancellation.Token);
+            m_Consumer = StartConsumerAsync(m_SessionCancellation.Token);
 
             // Register event handlers for non-blocking stream reading
             var debuggerProcess = processManager.DebuggerProcess;
@@ -105,11 +134,11 @@ namespace mcp_nexus.Debugger
                 debuggerProcess.BeginOutputReadLine();
                 debuggerProcess.BeginErrorReadLine();
 
-                m_logger.LogInformation("🚀 Event-based stream reading started");
+                m_Logger.LogDebug("🚀 Event-based stream reading started");
             }
 
 
-            m_logger.LogInformation("✅ Session-scoped event-based architecture initialized successfully");
+            m_Logger.LogDebug("✅ Session-scoped event-based architecture initialized successfully");
             return Task.CompletedTask;
         }
 
@@ -137,18 +166,18 @@ namespace mcp_nexus.Debugger
             if (!processManager.IsActive)
                 throw new InvalidOperationException("No active debugging session");
 
-            if (m_sessionChannel == null)
+            if (m_SessionChannel == null)
                 throw new InvalidOperationException("Session not initialized. Call InitializeSessionAsync first.");
 
             // Ensure only one command executes at a time
-            await m_commandExecutionSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
+            await m_CommandExecutionSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
             try
             {
-                m_logger.LogInformation("🎯 CDB ExecuteCommand START: {Command}", command);
+                m_Logger.LogDebug("🎯 CDB ExecuteCommand START: {Command}", command);
 
                 // Create command with sentinels
                 var commandWithSentinels = CreateCommandWithSentinels(command);
-                m_logger.LogDebug("Executing command with sentinels: '{Original}' -> '{WithSentinels}'",
+                m_Logger.LogDebug("Executing command with sentinels: '{Original}' -> '{WithSentinels}'",
                     command, commandWithSentinels);
 
                 // Create completion source for this command using the provided command ID
@@ -160,41 +189,41 @@ namespace mcp_nexus.Debugger
                     m_currentCommandId = commandId; // Set the current command ID for the consumer
                 }
 
-                m_logger.LogDebug("🎯 About to call SendCommandToCdbAsync");
+                m_Logger.LogDebug("🎯 About to call SendCommandToCdbAsync");
                 // Send command to CDB
                 await SendCommandToCdbAsync(processManager, commandWithSentinels, externalCancellationToken).ConfigureAwait(false);
-                m_logger.LogDebug("🎯 SendCommandToCdbAsync completed");
+                m_Logger.LogDebug("🎯 SendCommandToCdbAsync completed");
 
                 // Wait for command completion with timeout
                 // Use CommandTimeoutMs for command execution - must be configured
-                if (m_config.CommandTimeoutMs <= 0)
+                if (m_Config.CommandTimeoutMs <= 0)
                 {
-                    throw new InvalidOperationException("CommandTimeoutMs must be configured and greater than 0. Current value: " + m_config.CommandTimeoutMs);
+                    throw new InvalidOperationException("CommandTimeoutMs must be configured and greater than 0. Current value: " + m_Config.CommandTimeoutMs);
                 }
-                var timeoutMs = m_config.CommandTimeoutMs;
+                var timeoutMs = m_Config.CommandTimeoutMs;
                 using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMs));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(externalCancellationToken, timeoutCts.Token);
 
                 try
                 {
                     var result = await completionSource.Task.WaitAsync(linkedCts.Token).ConfigureAwait(false);
-                    m_logger.LogInformation("✅ CDB ExecuteCommand COMPLETED: {Command}", command);
+                    m_Logger.LogDebug("✅ CDB ExecuteCommand COMPLETED: {Command}", command);
                     return result;
                 }
                 catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
                 {
-                    m_logger.LogError("⏰ CDB ExecuteCommand TIMEOUT: {Command} (timeout: {TimeoutMs}ms)", command, timeoutMs);
+                    m_Logger.LogError("⏰ CDB ExecuteCommand TIMEOUT: {Command} (timeout: {TimeoutMs}ms)", command, timeoutMs);
                     throw new TimeoutException($"Command execution timed out after {timeoutMs}ms");
                 }
                 catch (OperationCanceledException)
                 {
-                    m_logger.LogInformation("🚫 CDB ExecuteCommand CANCELLED: {Command}", command);
+                    m_Logger.LogWarning("🚫 CDB ExecuteCommand CANCELLED: {Command}", command);
                     throw;
                 }
             }
             finally
             {
-                m_commandExecutionSemaphore.Release();
+                m_CommandExecutionSemaphore.Release();
             }
         }
 
@@ -207,13 +236,13 @@ namespace mcp_nexus.Debugger
         /// <exception cref="OperationCanceledException">Thrown when the consumer is cancelled via the cancellation token.</exception>
         private async Task StartConsumerAsync(CancellationToken cancellationToken)
         {
-            m_logger.LogInformation("🧠 Starting consumer thread");
+            m_Logger.LogDebug("🧠 Starting consumer thread");
 
             try
             {
-                if (m_sessionChannel == null)
+                if (m_SessionChannel == null)
                 {
-                    m_logger.LogError("Session channel not initialized");
+                    m_Logger.LogError("Session channel not initialized");
                     return;
                 }
 
@@ -222,7 +251,7 @@ namespace mcp_nexus.Debugger
                 var currentCommandId = string.Empty;
                 var inCommand = false;
 
-                await foreach (var (line, isStderr, timestamp) in m_sessionChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+                await foreach (var (line, isStderr, timestamp) in m_SessionChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
                 {
                     try
                     {
@@ -230,7 +259,7 @@ namespace mcp_nexus.Debugger
                         if (string.Equals(line, CdbSentinels.StartMarker, StringComparison.Ordinal) ||
                             line.Contains(CdbSentinels.StartMarker))
                         {
-                            m_logger.LogDebug("🧠 Start sentinel detected: {Line}", line);
+                            m_Logger.LogDebug("🧠 Start sentinel detected: {Line}", line);
 
                             // Complete previous command if any
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
@@ -253,7 +282,7 @@ namespace mcp_nexus.Debugger
                         if (string.Equals(line, CdbSentinels.EndMarker, StringComparison.Ordinal) ||
                             line.Contains(CdbSentinels.EndMarker))
                         {
-                            m_logger.LogInformation("🧠 End sentinel detected - completing command: {Line}", line);
+                            m_Logger.LogDebug("🧠 End sentinel detected - completing command: {Line}", line);
 
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
@@ -275,7 +304,7 @@ namespace mcp_nexus.Debugger
                         // FALLBACK: Check for CDB prompt patterns (100% reliable)
                         if (CdbCompletionPatterns.IsCdbPrompt(line))
                         {
-                            m_logger.LogInformation("🧠 CDB prompt detected - completing command: {Line}", line);
+                            m_Logger.LogDebug("🧠 CDB prompt detected - completing command: {Line}", line);
 
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
@@ -297,7 +326,7 @@ namespace mcp_nexus.Debugger
                         // FALLBACK: Check for ultra-safe completion patterns
                         if (CdbCompletionPatterns.IsUltraSafeCompletion(line))
                         {
-                            m_logger.LogInformation("🧠 Ultra-safe completion pattern detected - completing command: {Line}", line);
+                            m_Logger.LogDebug("🧠 Ultra-safe completion pattern detected - completing command: {Line}", line);
 
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
@@ -327,27 +356,27 @@ namespace mcp_nexus.Debugger
                     }
                     catch (OperationCanceledException)
                     {
-                        m_logger.LogDebug("🧠 Consumer processing cancelled for line: {Line}", line);
+                        m_Logger.LogDebug("🧠 Consumer processing cancelled for line: {Line}", line);
                         break;
                     }
                     catch (Exception ex)
                     {
-                        m_logger.LogError(ex, "🧠 Error processing line in consumer: {Line}", line);
+                        m_Logger.LogError(ex, "🧠 Error processing line in consumer: {Line}", line);
                         // Continue processing other lines
                     }
                 }
             }
             catch (OperationCanceledException)
             {
-                m_logger.LogInformation("🧠 Consumer thread cancelled");
+                m_Logger.LogWarning("🧠 Consumer thread cancelled");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "🧠 Error in consumer thread");
+                m_Logger.LogError(ex, "🧠 Error in consumer thread");
             }
             finally
             {
-                m_logger.LogInformation("🧠 Consumer thread ended");
+                m_Logger.LogDebug("🧠 Consumer thread ended");
             }
         }
 
@@ -382,17 +411,17 @@ namespace mcp_nexus.Debugger
 
                 if (completionSource != null)
                 {
-                    m_logger.LogInformation("🧠 Completing command {CommandId} with {OutputLength} chars", commandId, result.Length);
+                    m_Logger.LogDebug("🧠 Completing command {CommandId} with {OutputLength} chars", commandId, result.Length);
                     completionSource.SetResult(result);
                 }
                 else
                 {
-                    m_logger.LogWarning("🧠 No pending command found for completion: {CommandId}", commandId);
+                    m_Logger.LogWarning("🧠 No pending command found for completion: {CommandId}", commandId);
                 }
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "🧠 Error completing command: {CommandId}", commandId);
+                m_Logger.LogError(ex, "🧠 Error completing command: {CommandId}", commandId);
             }
 
             return Task.CompletedTask;
@@ -413,6 +442,77 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
+        /// Executes a batch command in the CDB session without single-command sentinel wrapping.
+        /// This method is specifically for batch commands that have their own sentinel system.
+        /// </summary>
+        /// <param name="batchCommand">The batch command to execute (with semicolon-separated commands).</param>
+        /// <param name="processManager">The CDB process manager.</param>
+        /// <param name="externalCancellationToken">External cancellation token.</param>
+        /// <returns>The batch command output.</returns>
+        /// <exception cref="ArgumentException">Thrown when batchCommand is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no active session or session not initialized.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when operation is cancelled.</exception>
+        /// <exception cref="TimeoutException">Thrown when command execution times out.</exception>
+        public async Task<string> ExecuteBatchCommandAsync(
+            string batchCommand,
+            CdbProcessManager processManager,
+            CancellationToken externalCancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(batchCommand))
+                throw new ArgumentException("Batch command cannot be null or empty", nameof(batchCommand));
+
+            if (!processManager.IsActive)
+                throw new InvalidOperationException("No active debugging session");
+
+            if (m_SessionChannel == null)
+                throw new InvalidOperationException("Session not initialized. Call InitializeSessionAsync first.");
+
+            await m_CommandExecutionSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
+            try
+            {
+                m_Logger.LogDebug("🎯 CDB ExecuteBatchCommand START (no sentinel wrapping)");
+
+                var batchCommandId = $"BATCH-{Guid.NewGuid()}";
+                var completionSource = new TaskCompletionSource<string>();
+
+                lock (m_pendingCommandsLock)
+                {
+                    m_pendingCommands[batchCommandId] = completionSource;
+                    m_currentCommandId = batchCommandId;
+                }
+
+                // Wrap entire batch in single-command sentinels so normal completion applies
+                var wrappedBatch = CreateCommandWithSentinels(batchCommand);
+                await SendCommandToCdbAsync(processManager, wrappedBatch, externalCancellationToken).ConfigureAwait(false);
+
+                var timeoutMs = m_Config.CommandTimeoutMs;
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMs));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(externalCancellationToken, timeoutCts.Token);
+
+                try
+                {
+                    var result = await completionSource.Task.WaitAsync(linkedCts.Token).ConfigureAwait(false);
+                    m_Logger.LogDebug("✅ CDB ExecuteBatchCommand COMPLETED");
+                    return result;
+                }
+                catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
+                {
+                    m_Logger.LogError("⏰ CDB ExecuteBatchCommand TIMEOUT (timeout: {TimeoutMs}ms)", timeoutMs);
+                    throw new TimeoutException($"Batch command execution timed out after {timeoutMs}ms");
+                }
+                catch (OperationCanceledException)
+                {
+                    m_Logger.LogWarning("🚫 CDB ExecuteBatchCommand CANCELLED");
+                    throw;
+                }
+            }
+            finally
+            {
+                m_CommandExecutionSemaphore.Release();
+            }
+        }
+
+        /// <summary>
         /// Sends a command to the CDB process input stream.
         /// </summary>
         /// <param name="processManager">The CDB process manager.</param>
@@ -424,13 +524,13 @@ namespace mcp_nexus.Debugger
         private async Task SendCommandToCdbAsync(CdbProcessManager processManager, string command, CancellationToken cancellationToken)
         {
             var debuggerInput = processManager.DebuggerInput ?? throw new InvalidOperationException("No input stream available for sending command");
-            m_logger.LogDebug("Sending command to CDB: {Command}", command);
+            m_Logger.LogDebug("Sending command to CDB: {Command}", command);
 
             // TRUE ASYNC: Use WriteLineAsync instead of blocking WriteLine
             await debuggerInput.WriteLineAsync(command).ConfigureAwait(false);
             await debuggerInput.FlushAsync(cancellationToken).ConfigureAwait(false);
 
-            m_logger.LogDebug("Command sent successfully to CDB");
+            m_Logger.LogDebug("Command sent successfully to CDB");
         }
 
         /// <summary>
@@ -450,26 +550,26 @@ namespace mcp_nexus.Debugger
         {
             if (disposing)
             {
-                m_logger.LogInformation("🧹 Disposing CdbCommandExecutor");
+                m_Logger.LogDebug("🧹 Disposing CdbCommandExecutor");
 
                 // Cancel session
-                m_sessionCancellation?.Cancel();
+                m_SessionCancellation?.Cancel();
 
                 // Complete channel to stop consumer
-                m_sessionChannel?.Writer.TryComplete();
+                m_SessionChannel?.Writer.TryComplete();
 
                 // Wait for consumer task to complete
                 try
                 {
-                    if (m_consumer != null)
+                    if (m_Consumer != null)
                     {
-                        Task.WaitAll([m_consumer], TimeSpan.FromSeconds(5));
+                        Task.WaitAll([m_Consumer], TimeSpan.FromSeconds(5));
                     }
                 }
                 catch (Exception ex)
                 {
 
-                    m_logger.LogWarning(ex, "Error waiting for tasks to complete during disposal");
+                    m_Logger.LogWarning(ex, "Error waiting for tasks to complete during disposal");
                 }
 
                 // Complete any pending commands with error
@@ -483,10 +583,10 @@ namespace mcp_nexus.Debugger
                 }
 
                 // Dispose resources
-                m_sessionCancellation?.Dispose();
-                m_commandExecutionSemaphore?.Dispose();
+                m_SessionCancellation?.Dispose();
+                m_CommandExecutionSemaphore?.Dispose();
 
-                m_logger.LogInformation("🧹 CdbCommandExecutor disposed");
+                m_Logger.LogDebug("🧹 CdbCommandExecutor disposed");
             }
         }
     }

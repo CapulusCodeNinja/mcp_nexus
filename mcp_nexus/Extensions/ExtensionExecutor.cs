@@ -4,24 +4,26 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using mcp_nexus.Utilities.Json;
 
 namespace mcp_nexus.Extensions
 {
     /// <summary>
     /// Executes extension scripts and manages their lifecycle.
     /// </summary>
-    public class ExtensionExecutor : IExtensionExecutor
+    public class ExtensionExecutor : IExtensionExecutor, IDisposable
     {
         private readonly ILogger<ExtensionExecutor> m_Logger;
         private readonly IExtensionManager m_ExtensionManager;
         private readonly string m_CallbackUrl;
         private readonly IProcessWrapper m_ProcessWrapper;
         private readonly IExtensionTokenValidator m_TokenValidator;
+        private readonly ExtensionConfiguration m_Configuration;
         private readonly ConcurrentDictionary<string, ExtensionProcessInfo> m_RunningExtensions = new();
         private readonly ConcurrentDictionary<string, IProcessHandle> m_Processes = new();
 
         // Compiled regex to strip ANSI escape sequences from process output
-        private static readonly Regex s_AnsiRegex = new("\x1B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
+        private static readonly Regex m_AnsiRegex = new("\x1B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExtensionExecutor"/> class.
@@ -29,18 +31,22 @@ namespace mcp_nexus.Extensions
         /// <param name="logger">The logger instance for recording execution operations.</param>
         /// <param name="extensionManager">The extension manager for retrieving extension metadata.</param>
         /// <param name="callbackUrl">The base URL for extension callbacks.</param>
+        /// <param name="configuration">Configuration settings for extension execution.</param>
         /// <param name="processWrapper">Optional process wrapper for testing (defaults to real Process).</param>
-        /// <exception cref="ArgumentNullException">Thrown when logger or extensionManager is null.</exception>
+        /// <param name="tokenValidator">Optional token validator for testing (defaults to real validator).</param>
+        /// <exception cref="ArgumentNullException">Thrown when logger, extensionManager, or configuration is null.</exception>
         /// <exception cref="ArgumentException">Thrown when callbackUrl is null or empty.</exception>
         public ExtensionExecutor(
             ILogger<ExtensionExecutor> logger,
             IExtensionManager extensionManager,
             string callbackUrl,
+            ExtensionConfiguration configuration,
             IProcessWrapper? processWrapper = null,
             IExtensionTokenValidator? tokenValidator = null)
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_ExtensionManager = extensionManager ?? throw new ArgumentNullException(nameof(extensionManager));
+            m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
             if (string.IsNullOrWhiteSpace(callbackUrl))
                 throw new ArgumentException("Callback URL cannot be null or empty", nameof(callbackUrl));
@@ -106,7 +112,7 @@ namespace mcp_nexus.Extensions
                     CommandId = commandId,
                     ExtensionName = extensionName,
                     SessionId = sessionId,
-                    StartedAt = DateTime.UtcNow,
+                    StartedAt = DateTime.Now,
                     IsRunning = true,
                     CallbackCount = 0
                 };
@@ -195,19 +201,7 @@ namespace mcp_nexus.Extensions
                 catch (OperationCanceledException)
                 {
                     // Kill process if cancelled or timed out
-                    try
-                    {
-                        if (!process.HasExited)
-                        {
-                            process.Kill(entireProcessTree: true);
-                            m_Logger.LogWarning("🔪 Killed extension script '{Extension}' (command {CommandId}) due to timeout after {Elapsed:F1} seconds (timeout: {Timeout}ms)",
-                                extensionName, commandId, stopwatch.Elapsed.TotalSeconds, metadata.Timeout);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        m_Logger.LogError(ex, "❌ Failed to kill extension {Extension} (command {CommandId})", extensionName, commandId);
-                    }
+                    KillExtensionProcess(process, extensionName, commandId, stopwatch.Elapsed, metadata.Timeout);
 
                     throw new OperationCanceledException(
                         $"Extension '{extensionName}' was cancelled or timed out after {stopwatch.Elapsed.TotalSeconds:F1} seconds");
@@ -411,7 +405,7 @@ namespace mcp_nexus.Extensions
             else
             {
                 m_Logger.LogDebug("Parameters is an object, serializing to JSON");
-                json = JsonSerializer.Serialize(parameters);
+                json = JsonSerializer.Serialize(parameters, JsonOptions.JsonIndented);
                 m_Logger.LogDebug("Serialized JSON: {Json}", json);
             }
 
@@ -580,6 +574,8 @@ namespace mcp_nexus.Extensions
         /// <summary>
         /// Removes ANSI escape sequences for clean logging/output.
         /// </summary>
+        /// <param name="input">The input string that may contain ANSI escape sequences.</param>
+        /// <returns>The input string with ANSI escape sequences removed, or the original string if input is null/empty or if an error occurs.</returns>
         private static string StripAnsi(string input)
         {
             if (string.IsNullOrEmpty(input))
@@ -588,11 +584,92 @@ namespace mcp_nexus.Extensions
             }
             try
             {
-                return s_AnsiRegex.Replace(input, string.Empty);
+                return m_AnsiRegex.Replace(input, string.Empty);
             }
             catch
             {
                 return input;
+            }
+        }
+
+        /// <summary>
+        /// Kills an extension process with proper error handling and logging
+        /// </summary>
+        /// <param name="process">The process to kill</param>
+        /// <param name="extensionName">Name of the extension for logging</param>
+        /// <param name="commandId">Command ID for logging</param>
+        /// <param name="elapsed">Elapsed time for logging</param>
+        /// <param name="timeout">Timeout value for logging</param>
+        private void KillExtensionProcess(IProcessHandle process, string extensionName, string commandId, TimeSpan elapsed, int timeout)
+        {
+            try
+            {
+                if (!process.HasExited)
+                {
+                    m_Logger.LogWarning("🔪 Killing extension script '{Extension}' (command {CommandId}) due to timeout after {Elapsed:F1} seconds (timeout: {Timeout}ms)",
+                        extensionName, commandId, elapsed.TotalSeconds, timeout);
+
+                    process.Kill(entireProcessTree: true);
+                    m_Logger.LogWarning("🔪 Killed extension script '{Extension}' (command {CommandId})", extensionName, commandId);
+                }
+                else
+                {
+                    m_Logger.LogDebug("Extension {Extension} already exited, no need to kill", extensionName);
+                }
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogError(ex, "❌ Failed to kill extension {Extension} (command {CommandId})", extensionName, commandId);
+            }
+        }
+
+        /// <summary>
+        /// Disposes of the extension executor and cleans up all running processes.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Disposes of the extension executor and cleans up all running processes.
+        /// </summary>
+        /// <param name="disposing">True if called from Dispose(), false if called from finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                try
+                {
+                    // Kill all running processes
+                    foreach (var kvp in m_Processes.ToArray())
+                    {
+                        try
+                        {
+                            if (!kvp.Value.HasExited)
+                            {
+                                m_Logger.LogWarning("🔪 Killing extension process {CommandId} during disposal", kvp.Key);
+                                kvp.Value.Kill(entireProcessTree: true);
+                            }
+                            kvp.Value.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            m_Logger.LogError(ex, "❌ Error disposing extension process {CommandId}", kvp.Key);
+                        }
+                    }
+
+                    // Clear the dictionaries
+                    m_Processes.Clear();
+                    m_RunningExtensions.Clear();
+
+                    m_Logger.LogInformation("✅ ExtensionExecutor disposed successfully");
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.LogError(ex, "❌ Error during ExtensionExecutor disposal");
+                }
             }
         }
     }

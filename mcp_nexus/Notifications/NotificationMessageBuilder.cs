@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using mcp_nexus.Models;
+using mcp_nexus.Utilities.Json;
 
 namespace mcp_nexus.Notifications
 {
@@ -52,13 +53,10 @@ namespace mcp_nexus.Notifications
             return m_Notification;
         }
 
-        /// <summary>
-        /// Builds the notification message as JSON.
-        /// </summary>
-        /// <returns>JSON string representation</returns>
+
         public string BuildJson()
         {
-            return JsonSerializer.Serialize(m_Notification);
+            return JsonSerializer.Serialize(m_Notification, JsonOptions.JsonCompact);
         }
 
         /// <summary>

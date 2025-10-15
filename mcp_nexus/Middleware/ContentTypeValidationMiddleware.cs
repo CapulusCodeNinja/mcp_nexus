@@ -1,5 +1,6 @@
 using System.Text.Json;
 using mcp_nexus.Configuration;
+using mcp_nexus.Utilities.Json;
 
 namespace mcp_nexus.Middleware
 {
@@ -13,8 +14,8 @@ namespace mcp_nexus.Middleware
     /// <param name="logger">The logger instance for recording validation operations.</param>
     public class ContentTypeValidationMiddleware(RequestDelegate next, ILogger<ContentTypeValidationMiddleware> logger)
     {
-        private readonly RequestDelegate m_next = next;
-        private readonly ILogger<ContentTypeValidationMiddleware> m_logger = logger;
+        private readonly RequestDelegate m_Next = next;
+        private readonly ILogger<ContentTypeValidationMiddleware> m_Logger = logger;
 
         /// <summary>
         /// Invokes the middleware to validate Content-Type headers for JSON-RPC requests.
@@ -32,7 +33,7 @@ namespace mcp_nexus.Middleware
                 }
             }
 
-            await m_next(context);
+            await m_Next(context);
         }
 
         /// <summary>
@@ -62,7 +63,7 @@ namespace mcp_nexus.Middleware
         /// <returns>A task representing the asynchronous operation.</returns>
         private async Task HandleInvalidContentTypeAsync(HttpContext context)
         {
-            m_logger.LogWarning("Invalid Content-Type received: {ContentType}", context.Request.ContentType);
+            m_Logger.LogWarning("Invalid Content-Type received: {ContentType}", context.Request.ContentType);
 
             context.Response.StatusCode = 400;
             context.Response.ContentType = EncodingConfiguration.JsonContentType;
@@ -79,7 +80,8 @@ namespace mcp_nexus.Middleware
                 }
             };
 
-            await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
+            // Tests expect compact JSON (no whitespace changes). Use CompactJson to match.
+            await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, JsonOptions.JsonCompact));
         }
     }
 }

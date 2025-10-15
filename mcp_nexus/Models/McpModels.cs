@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Core.Models;
 
 namespace mcp_nexus.Models
 {
@@ -239,102 +239,6 @@ namespace mcp_nexus.Models
         /// </summary>
         [JsonPropertyName("tools")]
         public McpToolSchema[] Tools { get; set; } = [];
-    }
-
-    // ===== MCP RESOURCE MODELS =====
-
-    /// <summary>
-    /// Represents a Model Context Protocol (MCP) resource.
-    /// Contains resource URI, name, description, and MIME type.
-    /// </summary>
-    public class McpResource
-    {
-        /// <summary>
-        /// Gets or sets the resource URI.
-        /// </summary>
-        [JsonPropertyName("uri")]
-        public string Uri { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the resource name.
-        /// </summary>
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the resource description.
-        /// </summary>
-        [JsonPropertyName("description")]
-        public string Description { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the MIME type of the resource.
-        /// </summary>
-        [JsonPropertyName("mimeType")]
-        public string? MimeType { get; set; }
-
-        /// <summary>
-        /// Gets or sets the expiration time of the resource.
-        /// </summary>
-        [JsonPropertyName("expiresAt")]
-        public DateTime? ExpiresAt { get; set; }
-    }
-
-    /// <summary>
-    /// Represents the result of listing Model Context Protocol (MCP) resources.
-    /// Contains an array of available resources.
-    /// </summary>
-    public class McpResourcesListResult
-    {
-        /// <summary>
-        /// Gets or sets the array of available resources.
-        /// </summary>
-        [JsonPropertyName("resources")]
-        public McpResource[] Resources { get; set; } = [];
-    }
-
-    /// <summary>
-    /// Represents the content of a Model Context Protocol (MCP) resource.
-    /// Contains resource URI, MIME type, and content data (text or blob).
-    /// </summary>
-    public class McpResourceContent
-    {
-        /// <summary>
-        /// Gets or sets the resource URI.
-        /// </summary>
-        [JsonPropertyName("uri")]
-        public string Uri { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the MIME type of the content.
-        /// </summary>
-        [JsonPropertyName("mimeType")]
-        public string MimeType { get; set; } = "text/plain";
-
-        /// <summary>
-        /// Gets or sets the text content.
-        /// </summary>
-        [JsonPropertyName("text")]
-        public string? Text { get; set; }
-
-        /// <summary>
-        /// Gets or sets the binary content as base64 string.
-        /// </summary>
-        [JsonPropertyName("blob")]
-        public string? Blob { get; set; }
-    }
-
-    /// <summary>
-    /// Represents the result of reading a Model Context Protocol (MCP) resource.
-    /// Contains an array of resource content items.
-    /// </summary>
-    public class McpResourceReadResult
-    {
-        /// <summary>
-        /// Gets or sets the array of resource content items.
-        /// </summary>
-        [JsonPropertyName("contents")]
-        public McpResourceContent[] Contents { get; set; } = [];
     }
 
     /// <summary>
@@ -733,64 +637,6 @@ namespace mcp_nexus.Models
         public TimeSpan? Uptime { get; set; }
     }
 
-    /// <summary>
-    /// Session event notification parameters
-    /// 
-    /// Sent via notifications/sessionEvent when important session lifecycle events occur.
-    /// AI clients should monitor these to track session state and handle session expiry.
-    /// 
-    /// Example notification:
-    /// {
-    ///   "jsonrpc": "2.0",
-    ///   "method": "notifications/sessionEvent",
-    ///   "params": {
-    ///     "sessionId": "sess-000001-abc12345",
-    ///     "eventType": "SESSION_CREATED",
-    ///     "message": "Session created for mydump.dmp",
-    ///     "context": {
-    ///       "sessionId": "sess-000001-abc12345",
-    ///       "description": "Debugging session for mydump.dmp",
-    ///       "createdAt": "2025-09-25T18:30:00.000Z",
-    ///       "status": "Active",
-    ///       "commandsProcessed": 0,
-    ///       "activeCommands": 0
-    ///     },
-    ///     "timestamp": "2025-09-25T18:30:00.123Z"
-    ///   }
-    /// }
-    /// </summary>
-    public class McpSessionEventNotification
-    {
-        /// <summary>
-        /// Gets or sets the session ID.
-        /// </summary>
-        [JsonPropertyName("sessionId")]
-        public string SessionId { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the event type.
-        /// </summary>
-        [JsonPropertyName("eventType")]
-        public string EventType { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the event message.
-        /// </summary>
-        [JsonPropertyName("message")]
-        public string Message { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the session context.
-        /// </summary>
-        [JsonPropertyName("context")]
-        public SessionContext? Context { get; set; }
-
-        /// <summary>
-        /// Gets or sets the notification timestamp.
-        /// </summary>
-        [JsonPropertyName("timestamp")]
-        public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.Now;
-    }
 }
 
 

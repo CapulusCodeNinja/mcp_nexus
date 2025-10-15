@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using mcp_nexus.Utilities.Validation;
 
 namespace mcp_nexus.Debugger
 {
@@ -8,18 +9,18 @@ namespace mcp_nexus.Debugger
     /// </summary>
     public class CdbSession : IDisposable, ICdbSession
     {
-        private readonly ILogger<CdbSession> m_logger;
-        private readonly CdbSessionConfiguration m_config;
-        private readonly CdbProcessManager m_processManager;
-        private readonly CdbCommandExecutor m_commandExecutor;
-        private readonly CdbOutputParser m_outputParser;
-        private readonly mcp_nexus.Utilities.ICommandPreprocessor? m_commandPreprocessor;
+        private readonly ILogger<CdbSession> m_Logger;
+        private readonly CdbSessionConfiguration m_Config;
+        private readonly CdbProcessManager m_ProcessManager;
+        private readonly CdbCommandExecutor m_CommandExecutor;
+        private readonly CdbOutputParser m_OutputParser;
+        private readonly ICommandPreprocessor? m_CommandPreprocessor;
 
         // CRITICAL: Semaphore to ensure only ONE command executes at a time in CDB
         // CDB is single-threaded and cannot handle concurrent commands
-        private readonly SemaphoreSlim m_commandSemaphore = new(1, 1);
+        private readonly SemaphoreSlim m_CommandSemaphore = new(1, 1);
 
-        private bool m_disposed;
+        private bool m_Disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CdbSession"/> class.
@@ -48,13 +49,13 @@ namespace mcp_nexus.Debugger
             int outputReadingTimeoutMs = 300000,
             bool enableCommandPreprocessing = true,
             string? sessionId = null,
-            mcp_nexus.Utilities.ICommandPreprocessor? commandPreprocessor = null)
+            ICommandPreprocessor? commandPreprocessor = null)
         {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_commandPreprocessor = commandPreprocessor;
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_CommandPreprocessor = commandPreprocessor;
 
             // Create configuration with validation
-            m_config = new CdbSessionConfiguration(
+            m_Config = new CdbSessionConfiguration(
                 commandTimeoutMs: commandTimeoutMs,
                 idleTimeoutMs: idleTimeoutMs,
                 customCdbPath: customCdbPath,
@@ -71,17 +72,17 @@ namespace mcp_nexus.Debugger
             var parserLogger = new LoggerWrapper<CdbOutputParser>(logger);
             var executorLogger = new LoggerWrapper<CdbCommandExecutor>(logger);
 
-            m_processManager = new CdbProcessManager(processLogger, m_config);
-            m_outputParser = new CdbOutputParser(parserLogger);
-            m_commandExecutor = new CdbCommandExecutor(executorLogger, m_config, m_outputParser);
+            m_ProcessManager = new CdbProcessManager(processLogger, m_Config);
+            m_OutputParser = new CdbOutputParser(parserLogger);
+            m_CommandExecutor = new CdbCommandExecutor(executorLogger, m_Config, m_OutputParser);
 
             // Set session ID for session-specific log files
             if (!string.IsNullOrEmpty(sessionId))
             {
-                m_processManager.SetSessionId(sessionId);
+                m_ProcessManager.SetSessionId(sessionId);
             }
 
-            m_logger.LogDebug("CdbSession initialized with focused components");
+            m_Logger.LogDebug("CdbSession initialized with focused components");
         }
 
         /// <summary>
@@ -96,11 +97,11 @@ namespace mcp_nexus.Debugger
             ILogger<CdbSession> logger,
             CdbSessionConfiguration config,
             string? sessionId = null,
-            mcp_nexus.Utilities.ICommandPreprocessor? commandPreprocessor = null)
+            ICommandPreprocessor? commandPreprocessor = null)
         {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_config = config ?? throw new ArgumentNullException(nameof(config));
-            m_commandPreprocessor = commandPreprocessor;
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_Config = config ?? throw new ArgumentNullException(nameof(config));
+            m_CommandPreprocessor = commandPreprocessor;
 
             // CRITICAL FIX: Logger casting was failing, causing NullLogger to be used!
             // This resulted in zero visibility into CdbProcessManager init consumer
@@ -109,17 +110,17 @@ namespace mcp_nexus.Debugger
             var parserLogger = new LoggerWrapper<CdbOutputParser>(logger);
             var executorLogger = new LoggerWrapper<CdbCommandExecutor>(logger);
 
-            m_processManager = new CdbProcessManager(processLogger, m_config);
-            m_outputParser = new CdbOutputParser(parserLogger);
-            m_commandExecutor = new CdbCommandExecutor(executorLogger, m_config, m_outputParser);
+            m_ProcessManager = new CdbProcessManager(processLogger, m_Config);
+            m_OutputParser = new CdbOutputParser(parserLogger);
+            m_CommandExecutor = new CdbCommandExecutor(executorLogger, m_Config, m_OutputParser);
 
             // Set session ID for session-specific log files
             if (!string.IsNullOrEmpty(sessionId))
             {
-                m_processManager.SetSessionId(sessionId);
+                m_ProcessManager.SetSessionId(sessionId);
             }
 
-            m_logger.LogDebug("CdbSession initialized with focused components and configuration object");
+            m_Logger.LogDebug("CdbSession initialized with focused components and configuration object");
         }
 
         /// <summary>
@@ -152,10 +153,10 @@ namespace mcp_nexus.Debugger
         {
             get
             {
-                if (m_disposed)
+                if (m_Disposed)
                     return false;
 
-                return m_processManager.IsActive;
+                return m_ProcessManager.IsActive;
             }
         }
 
@@ -166,16 +167,16 @@ namespace mcp_nexus.Debugger
         {
             get
             {
-                if (m_disposed)
+                if (m_Disposed)
                     return null;
 
                 try
                 {
-                    return m_processManager.DebuggerProcess?.Id;
+                    return m_ProcessManager.DebuggerProcess?.Id;
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogWarning(ex, "Could not retrieve CDB process ID");
+                    m_Logger.LogWarning(ex, "Could not retrieve CDB process ID");
                     return null;
                 }
             }
@@ -190,7 +191,7 @@ namespace mcp_nexus.Debugger
         {
             ThrowIfDisposed();
 
-            m_logger.LogWarning("Cancelling current operation");
+            m_Logger.LogWarning("Cancelling current operation");
             // Note: With the new architecture, cancellation is handled at the session level
             // Individual command cancellation is managed through CancellationToken
         }
@@ -214,33 +215,33 @@ namespace mcp_nexus.Debugger
             if (string.IsNullOrWhiteSpace(target))
                 throw new ArgumentException("Target cannot be null or empty", nameof(target));
 
-            m_logger.LogInformation("🔧 StartSession called with target: {Target}, arguments: {Arguments}", target, arguments);
-            m_logger.LogInformation("🔧 ProcessManager is null: {IsNull}", m_processManager == null);
+            m_Logger.LogInformation("🔧 StartSession called");
+            m_Logger.LogDebug("StartSession target: {Target}, arguments: {Arguments}, ProcessManager null: {IsNull}", target, arguments, m_ProcessManager == null);
 
             try
             {
-                m_logger.LogInformation("🔧 About to call StartProcess directly");
-                var result = m_processManager?.StartProcess(target, m_config.CustomCdbPath) ?? throw new InvalidOperationException("Process manager not initialized");
-                m_logger.LogInformation("🔧 StartProcess returned: {Result}", result);
+                m_Logger.LogDebug("About to call StartProcess directly");
+                var result = m_ProcessManager?.StartProcess(target, m_Config.CustomCdbPath) ?? throw new InvalidOperationException("Process manager not initialized");
+                m_Logger.LogDebug("🔧 StartProcess returned: {Result}", result);
 
                 if (result)
                 {
                     // Initialize the session-scoped producer-consumer architecture
-                    m_logger.LogInformation("🔧 Initializing session-scoped architecture");
-                    await m_commandExecutor.InitializeSessionAsync(m_processManager).ConfigureAwait(false);
-                    m_logger.LogInformation("🔧 Session-scoped architecture initialized successfully");
+                    m_Logger.LogDebug("🔧 Initializing session-scoped architecture");
+                    await m_CommandExecutor.InitializeSessionAsync(m_ProcessManager).ConfigureAwait(false);
+                    m_Logger.LogDebug("🔧 Session-scoped architecture initialized successfully");
                 }
 
                 return result;
             }
             catch (OperationCanceledException)
             {
-                m_logger.LogError("❌ StartSession timed out after {TimeoutMs}ms for target: {Target}", m_config.CommandTimeoutMs, target);
+                m_Logger.LogWarning("❌ StartSession timed out after {TimeoutMs}ms for target: {Target}", m_Config.CommandTimeoutMs, target);
                 return false;
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "❌ Failed to start CDB session with target: {Target}", target);
+                m_Logger.LogError(ex, "❌ Failed to start CDB session with target: {Target}", target);
                 return false;
             }
         }
@@ -305,49 +306,97 @@ namespace mcp_nexus.Debugger
 
             // CRITICAL: Use semaphore to ensure ONLY ONE command executes at a time
             // CDB is single-threaded and crashes/hangs if multiple commands run concurrently
-            await m_commandSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
+            await m_CommandSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
 
             try
             {
                 if (!IsActive)
                 {
-                    m_logger.LogError("Cannot execute command '{Command}' - CDB session is not active (IsActive={IsActive})", command, IsActive);
+                    m_Logger.LogError("Cannot execute command '{Command}' - CDB session is not active (IsActive={IsActive})", command, IsActive);
                     throw new InvalidOperationException("No active debugging session");
                 }
 
-                m_logger.LogInformation("🔒 SEMAPHORE: About to execute command '{Command}' (TRUE ASYNC)", command);
+                m_Logger.LogDebug("🔒 SEMAPHORE: About to execute command '{Command}'", command);
 
                 // Preprocess the command to fix common issues (e.g., .srcpath path conversion and directory creation)
                 // Only if preprocessing is enabled in configuration and preprocessor is available
                 var preprocessedCommand = command;
-                if (m_config.EnableCommandPreprocessing && m_commandPreprocessor != null)
+                if (m_Config.EnableCommandPreprocessing && m_CommandPreprocessor != null)
                 {
-                    preprocessedCommand = m_commandPreprocessor.PreprocessCommand(command);
+                    preprocessedCommand = m_CommandPreprocessor.PreprocessCommand(command);
                     if (preprocessedCommand != command)
                     {
-                        m_logger.LogInformation("🔧 Command preprocessed: '{Original}' -> '{Preprocessed}'", command, preprocessedCommand);
+                        m_Logger.LogDebug("🔧 Command preprocessed: '{Original}' -> '{Preprocessed}'", command, preprocessedCommand);
                     }
                 }
-                else if (m_config.EnableCommandPreprocessing && m_commandPreprocessor == null)
+                else if (m_Config.EnableCommandPreprocessing && m_CommandPreprocessor == null)
                 {
-                    m_logger.LogWarning("⚠️ Command preprocessing is ENABLED but no preprocessor provided - sending command as-is: '{Command}'", command);
+                    m_Logger.LogWarning("⚠️ Command preprocessing is ENABLED but no preprocessor provided - sending command as-is: '{Command}'", command);
                 }
                 else
                 {
-                    m_logger.LogDebug("⚠️ Command preprocessing is DISABLED - sending command as-is: '{Command}'", command);
+                    m_Logger.LogDebug("⚠️ Command preprocessing is DISABLED - sending command as-is: '{Command}'", command);
                 }
 
                 // TRUE ASYNC: Direct call without Task.Run - proper async all the way through
                 // Semaphore ensures serialization, no need for thread pool wrapper
-                var result = await m_commandExecutor.ExecuteCommandAsync(preprocessedCommand, commandId, m_processManager, externalCancellationToken).ConfigureAwait(false);
+                var result = await m_CommandExecutor.ExecuteCommandAsync(preprocessedCommand, commandId, m_ProcessManager, externalCancellationToken).ConfigureAwait(false);
 
-                m_logger.LogInformation("🔒 SEMAPHORE: Command '{Command}' completed, result length: {Length}", command, result?.Length ?? 0);
+                m_Logger.LogDebug("🔒 SEMAPHORE: Command '{Command}' completed, result length: {Length}", command, result?.Length ?? 0);
 
                 return result ?? string.Empty;
             }
             finally
             {
-                m_commandSemaphore.Release();
+                m_CommandSemaphore.Release();
+            }
+        }
+
+        /// <summary>
+        /// Executes a batch command in the debugging session without single-command sentinel wrapping.
+        /// This method is specifically for batch commands that have their own sentinel system.
+        /// </summary>
+        /// <param name="batchCommand">The batch command to execute (with semicolon-separated commands).</param>
+        /// <param name="externalCancellationToken">The cancellation token for external cancellation.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the batch command output as a string, or an error message if execution fails.
+        /// </returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="batchCommand"/> is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no active debugging session is available.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
+        public async Task<string> ExecuteBatchCommand(string batchCommand, CancellationToken externalCancellationToken)
+        {
+            ThrowIfDisposed();
+
+            if (string.IsNullOrWhiteSpace(batchCommand))
+                throw new ArgumentException("Batch command cannot be null or empty", nameof(batchCommand));
+
+            // CRITICAL: Use semaphore to ensure ONLY ONE command executes at a time
+            // CDB is single-threaded and crashes/hangs if multiple commands run concurrently
+            await m_CommandSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
+
+            try
+            {
+                if (!IsActive)
+                {
+                    m_Logger.LogError("Cannot execute batch command - CDB session is not active (IsActive={IsActive})", IsActive);
+                    throw new InvalidOperationException("No active debugging session");
+                }
+
+                m_Logger.LogDebug("🔒 SEMAPHORE: About to execute BATCH command (bypassing single command sentinels)");
+
+                // Call ExecuteBatchCommandAsync directly without sentinel wrapping
+                var result = await m_CommandExecutor.ExecuteBatchCommandAsync(batchCommand, m_ProcessManager, externalCancellationToken).ConfigureAwait(false);
+
+                m_Logger.LogDebug("🔒 SEMAPHORE: Batch command completed, result length: {Length}", result?.Length ?? 0);
+
+                return result ?? string.Empty;
+            }
+            finally
+            {
+                m_CommandSemaphore.Release();
             }
         }
 
@@ -364,19 +413,19 @@ namespace mcp_nexus.Debugger
         {
             ThrowIfDisposed();
 
-            m_logger.LogDebug("StopSession called");
+            m_Logger.LogDebug("StopSession called");
 
             return Task.Run(() =>
             {
                 try
                 {
-                    var result = m_processManager.StopProcess();
-                    m_logger.LogInformation("StopSession completed with result: {Result}", result);
+                    var result = m_ProcessManager.StopProcess();
+                    m_Logger.LogDebug("StopSession completed with result: {Result}", result);
                     return result;
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogError(ex, "Error stopping session");
+                    m_Logger.LogError(ex, "Error stopping session");
                     return false;
                 }
             });
@@ -388,7 +437,7 @@ namespace mcp_nexus.Debugger
         /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
         private void ThrowIfDisposed()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CdbSession));
         }
 
@@ -399,14 +448,14 @@ namespace mcp_nexus.Debugger
         /// <returns>A string representing the current architecture.</returns>
         private string GetCurrentArchitecture()
         {
-            return m_config.GetCurrentArchitecture();
+            return m_Config.GetCurrentArchitecture();
         }
 
         private string? FindCdbPath()
         {
             try
             {
-                return m_config.FindCdbPath();
+                return m_Config.FindCdbPath();
             }
             catch
             {
@@ -421,7 +470,7 @@ namespace mcp_nexus.Debugger
         /// <returns><c>true</c> if the line indicates command completion; otherwise, <c>false</c>.</returns>
         private bool IsCommandComplete(string line)
         {
-            return m_outputParser.IsCommandComplete(line);
+            return m_OutputParser.IsCommandComplete(line);
         }
 
         /// <summary>
@@ -430,29 +479,29 @@ namespace mcp_nexus.Debugger
         /// </summary>
         public void Dispose()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return;
 
-            m_logger.LogDebug("Disposing CdbSession");
+            m_Logger.LogDebug("Disposing CdbSession");
 
             // Dispose semaphore first
             try
             {
-                m_commandSemaphore?.Dispose();
+                m_CommandSemaphore?.Dispose();
             }
             catch { }
 
             try
             {
-                m_processManager?.Dispose();
+                m_ProcessManager?.Dispose();
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error disposing process manager");
+                m_Logger.LogWarning(ex, "Error disposing process manager");
             }
 
-            m_disposed = true;
-            m_logger.LogDebug("CdbSession disposed successfully");
+            m_Disposed = true;
+            m_Logger.LogDebug("CdbSession disposed successfully");
         }
     }
 }

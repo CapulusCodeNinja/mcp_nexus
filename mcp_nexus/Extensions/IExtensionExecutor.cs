@@ -3,7 +3,7 @@ namespace mcp_nexus.Extensions
     /// <summary>
     /// Interface for executing extension scripts.
     /// </summary>
-    public interface IExtensionExecutor
+    public interface IExtensionExecutor : IDisposable
     {
         /// <summary>
         /// Executes an extension script asynchronously.

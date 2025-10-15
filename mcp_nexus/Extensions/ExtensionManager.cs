@@ -12,6 +12,9 @@ namespace mcp_nexus.Extensions
         private readonly string m_ExtensionsPath;
         private readonly Dictionary<string, ExtensionMetadata> m_Extensions = [];
         private readonly object m_Lock = new();
+        private readonly FileSystemWatcher? m_Watcher;
+        private volatile bool m_ReloadPending = false;
+        private int m_Version = 0;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExtensionManager"/> class.
@@ -28,6 +31,28 @@ namespace mcp_nexus.Extensions
                 throw new ArgumentException("Extensions path cannot be null or empty", nameof(extensionsPath));
 
             m_ExtensionsPath = extensionsPath;
+
+            try
+            {
+                if (Directory.Exists(m_ExtensionsPath))
+                {
+                    m_Watcher = new FileSystemWatcher(m_ExtensionsPath)
+                    {
+                        IncludeSubdirectories = true,
+                        Filter = "*.*",
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.Size
+                    };
+                    m_Watcher.Changed += OnExtensionsChanged;
+                    m_Watcher.Created += OnExtensionsChanged;
+                    m_Watcher.Deleted += OnExtensionsChanged;
+                    m_Watcher.Renamed += OnExtensionsChanged;
+                    m_Watcher.EnableRaisingEvents = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogWarning(ex, "Failed to initialize extensions FileSystemWatcher");
+            }
         }
 
         /// <summary>
@@ -49,11 +74,25 @@ namespace mcp_nexus.Extensions
             var metadataFiles = Directory.GetFiles(m_ExtensionsPath, "*.json", SearchOption.AllDirectories);
             m_Logger.LogInformation("Found {Count} metadata files", metadataFiles.Length);
 
+            // Build a new map to replace atomically
+            var newMap = new Dictionary<string, ExtensionMetadata>(StringComparer.OrdinalIgnoreCase);
+
             foreach (var metadataFile in metadataFiles)
             {
                 try
                 {
-                    await LoadExtensionAsync(metadataFile);
+                    var meta = await LoadExtensionMetadataAsync(metadataFile);
+                    if (meta != null)
+                    {
+                        if (!newMap.ContainsKey(meta.Name))
+                        {
+                            newMap[meta.Name] = meta;
+                        }
+                        else
+                        {
+                            m_Logger.LogWarning("Duplicate extension name '{Name}' encountered; keeping first", meta.Name);
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -61,6 +100,16 @@ namespace mcp_nexus.Extensions
                 }
             }
 
+            lock (m_Lock)
+            {
+                m_Extensions.Clear();
+                foreach (var kv in newMap)
+                {
+                    m_Extensions[kv.Key] = kv.Value;
+                }
+            }
+
+            Interlocked.Increment(ref m_Version);
             m_Logger.LogInformation("Loaded {Count} extensions successfully", m_Extensions.Count);
         }
 
@@ -69,7 +118,7 @@ namespace mcp_nexus.Extensions
         /// </summary>
         /// <param name="metadataFile">The path to the metadata JSON file.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        private async Task LoadExtensionAsync(string metadataFile)
+        private async Task<ExtensionMetadata?> LoadExtensionMetadataAsync(string metadataFile)
         {
             m_Logger.LogDebug("Loading extension metadata from: {MetadataFile}", metadataFile);
 
@@ -82,19 +131,19 @@ namespace mcp_nexus.Extensions
             if (metadata == null)
             {
                 m_Logger.LogWarning("Failed to deserialize metadata from: {MetadataFile}", metadataFile);
-                return;
+                return null;
             }
 
             if (string.IsNullOrWhiteSpace(metadata.Name))
             {
                 m_Logger.LogWarning("Extension metadata missing name: {MetadataFile}", metadataFile);
-                return;
+                return null;
             }
 
             if (string.IsNullOrWhiteSpace(metadata.ScriptFile))
             {
                 m_Logger.LogWarning("Extension {Name} missing script file reference", metadata.Name);
-                return;
+                return null;
             }
 
             // Set extension path (directory containing the metadata file)
@@ -105,21 +154,9 @@ namespace mcp_nexus.Extensions
             {
                 m_Logger.LogWarning("Extension {Name} script file not found: {ScriptPath}",
                     metadata.Name, metadata.FullScriptPath);
-                return;
+                return null;
             }
-
-            lock (m_Lock)
-            {
-                if (m_Extensions.ContainsKey(metadata.Name))
-                {
-                    m_Logger.LogWarning("Extension {Name} already loaded, skipping duplicate", metadata.Name);
-                    return;
-                }
-
-                m_Extensions[metadata.Name] = metadata;
-                m_Logger.LogInformation("Loaded extension: {Name} v{Version} - {Description}",
-                    metadata.Name, metadata.Version, metadata.Description);
-            }
+            return metadata;
         }
 
         /// <summary>
@@ -148,6 +185,35 @@ namespace mcp_nexus.Extensions
             {
                 return m_Extensions.Values.ToList();
             }
+        }
+
+        /// <summary>
+        /// Gets a monotonically increasing version of the extensions set for cache invalidation.
+        /// </summary>
+        public int GetExtensionsVersion() => Volatile.Read(ref m_Version);
+
+        private void OnExtensionsChanged(object sender, FileSystemEventArgs e)
+        {
+            // Debounce: if a reload is already pending, ignore
+            if (m_ReloadPending)
+                return;
+            m_ReloadPending = true;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    m_Logger.LogInformation("🔁 Detected extensions change: {Change} on {Path}. Reloading...", e.ChangeType, e.FullPath);
+                    await LoadExtensionsAsync();
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.LogError(ex, "Error reloading extensions after change");
+                }
+                finally
+                {
+                    m_ReloadPending = false;
+                }
+            });
         }
 
         /// <summary>

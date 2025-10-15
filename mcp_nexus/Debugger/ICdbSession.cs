@@ -74,6 +74,18 @@ namespace mcp_nexus.Debugger
         Task<string> ExecuteCommand(string command, string commandId, CancellationToken externalCancellationToken);
 
         /// <summary>
+        /// Executes a batch command in the debugging session without single-command sentinel wrapping.
+        /// This method is specifically for batch commands that have their own sentinel system.
+        /// </summary>
+        /// <param name="batchCommand">The batch command to execute (with semicolon-separated commands).</param>
+        /// <param name="cancellationToken">The cancellation token for external cancellation.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the batch command output as a string, or an error message if execution fails.
+        /// </returns>
+        Task<string> ExecuteBatchCommand(string batchCommand, CancellationToken cancellationToken);
+
+        /// <summary>
         /// Cancels the currently executing command operation.
         /// </summary>
         void CancelCurrentOperation();
