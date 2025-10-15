@@ -385,7 +385,23 @@ namespace mcp_nexus.Extensions
             if (parameters is JsonElement jsonElement)
             {
                 m_Logger.LogDebug("Parameters is a JsonElement, type: {Type}", jsonElement.ValueKind);
-                json = jsonElement.GetRawText();
+                
+                // If JsonElement is a string, it's a JSON string that needs to be unwrapped
+                if (jsonElement.ValueKind == JsonValueKind.String)
+                {
+                    json = jsonElement.GetString() ?? "{}";
+                    m_Logger.LogDebug("Unwrapped JSON string from JsonElement: {Json}", json);
+                }
+                else if (jsonElement.ValueKind == JsonValueKind.Object)
+                {
+                    json = jsonElement.GetRawText();
+                    m_Logger.LogDebug("Got JSON object from JsonElement: {Json}", json);
+                }
+                else
+                {
+                    m_Logger.LogWarning("JsonElement is not an object or string, type: {Type}", jsonElement.ValueKind);
+                    return string.Empty;
+                }
             }
             else if (parameters is string jsonString)
             {
