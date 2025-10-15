@@ -442,10 +442,21 @@ namespace mcp_nexus.Extensions
                 switch (property.Value.ValueKind)
                 {
                     case JsonValueKind.String:
-                        // Escape single quotes in string values
                         var stringValue = property.Value.GetString() ?? string.Empty;
-                        stringValue = stringValue.Replace("'", "''");
-                        argumentsBuilder.Append($" '{stringValue}'");
+                        
+                        // Only quote if the value contains spaces or special characters
+                        if (stringValue.Contains(' ') || stringValue.Contains('"') || stringValue.Contains('\'') || 
+                            stringValue.Contains('$') || stringValue.Contains('`') || string.IsNullOrWhiteSpace(stringValue))
+                        {
+                            // Escape single quotes and wrap in single quotes
+                            stringValue = stringValue.Replace("'", "''");
+                            argumentsBuilder.Append($" '{stringValue}'");
+                        }
+                        else
+                        {
+                            // Simple value, no quotes needed
+                            argumentsBuilder.Append($" {stringValue}");
+                        }
                         break;
 
                     case JsonValueKind.Number:

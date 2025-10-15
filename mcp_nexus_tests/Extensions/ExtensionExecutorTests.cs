@@ -493,9 +493,12 @@ exit 0
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
             var scriptContent = @"
-$params = $env:MCP_NEXUS_PARAMETERS | ConvertFrom-Json
-Write-Output ""Param1: $($params.param1)""
-Write-Output ""Param2: $($params.param2)""
+param(
+    [string]$Param1,
+    [string]$Param2
+)
+Write-Output ""Param1: $Param1""
+Write-Output ""Param2: $Param2""
 exit 0
 ";
             CreateTestScript("params.ps1", scriptContent);
