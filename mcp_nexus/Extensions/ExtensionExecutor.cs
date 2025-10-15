@@ -315,7 +315,7 @@ namespace mcp_nexus.Extensions
             string callbackToken,
             object? parameters)
         {
-            // Build environment variables dictionary
+            // Build environment variables dictionary (for secrets and system info only)
             var environmentVariables = new Dictionary<string, string>
             {
                 ["MCP_NEXUS_SESSION_ID"] = sessionId,
@@ -323,13 +323,6 @@ namespace mcp_nexus.Extensions
                 ["MCP_NEXUS_CALLBACK_URL"] = m_CallbackUrl,
                 ["MCP_NEXUS_CALLBACK_TOKEN"] = callbackToken
             };
-
-            // Add extension parameters as JSON
-            if (parameters != null)
-            {
-                var parametersJson = JsonSerializer.Serialize(parameters);
-                environmentVariables["MCP_NEXUS_PARAMETERS"] = parametersJson;
-            }
 
             // Configure based on script type (only PowerShell supported)
             var scriptType = metadata.ScriptType.ToLowerInvariant();
@@ -341,7 +334,23 @@ namespace mcp_nexus.Extensions
                 // Try to find PowerShell - prefer pwsh (PowerShell 7+), fall back to powershell (5.1)
                 string? powershellPath = FindPowerShell() ?? throw new InvalidOperationException("PowerShell not found. Please ensure pwsh.exe or powershell.exe is in PATH or installed.");
                 fileName = powershellPath;
-                arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{metadata.FullScriptPath}\"";
+                
+                // Build PowerShell arguments with parameters
+                var argumentsBuilder = new StringBuilder();
+                argumentsBuilder.Append($"-NoProfile -ExecutionPolicy Bypass -File \"{metadata.FullScriptPath}\"");
+                
+                // Add parameters as PowerShell command-line arguments
+                if (parameters != null)
+                {
+                    var paramArgs = BuildPowerShellParameterArguments(parameters);
+                    if (!string.IsNullOrWhiteSpace(paramArgs))
+                    {
+                        argumentsBuilder.Append(' ');
+                        argumentsBuilder.Append(paramArgs);
+                    }
+                }
+                
+                arguments = argumentsBuilder.ToString();
             }
             else
             {
@@ -353,6 +362,72 @@ namespace mcp_nexus.Extensions
             return m_ProcessWrapper.CreateProcess(fileName, arguments, environmentVariables);
         }
 
+
+        /// <summary>
+        /// Builds PowerShell command-line parameter arguments from a JSON object.
+        /// Converts parameter names to PowerShell naming convention (camelCase to PascalCase).
+        /// </summary>
+        /// <param name="parameters">The parameters object to convert.</param>
+        /// <returns>PowerShell parameter string (e.g., "-ThreadId '5' -Verbose $true").</returns>
+        private string BuildPowerShellParameterArguments(object parameters)
+        {
+            if (parameters == null)
+                return string.Empty;
+
+            var argumentsBuilder = new StringBuilder();
+
+            // Serialize to JSON and deserialize to JsonElement for easy property access
+            var json = JsonSerializer.Serialize(parameters);
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            foreach (var property in root.EnumerateObject())
+            {
+                // Convert camelCase to PascalCase for PowerShell convention
+                var paramName = char.ToUpper(property.Name[0]) + property.Name[1..];
+                
+                if (argumentsBuilder.Length > 0)
+                    argumentsBuilder.Append(' ');
+
+                argumentsBuilder.Append($"-{paramName}");
+
+                // Handle different value types
+                switch (property.Value.ValueKind)
+                {
+                    case JsonValueKind.String:
+                        // Escape single quotes in string values
+                        var stringValue = property.Value.GetString() ?? string.Empty;
+                        stringValue = stringValue.Replace("'", "''");
+                        argumentsBuilder.Append($" '{stringValue}'");
+                        break;
+
+                    case JsonValueKind.Number:
+                        argumentsBuilder.Append($" {property.Value.GetRawText()}");
+                        break;
+
+                    case JsonValueKind.True:
+                        argumentsBuilder.Append(" $true");
+                        break;
+
+                    case JsonValueKind.False:
+                        argumentsBuilder.Append(" $false");
+                        break;
+
+                    case JsonValueKind.Null:
+                        argumentsBuilder.Append(" $null");
+                        break;
+
+                    default:
+                        // For complex types (objects, arrays), pass as JSON string
+                        var jsonValue = property.Value.GetRawText();
+                        jsonValue = jsonValue.Replace("'", "''");
+                        argumentsBuilder.Append($" '{jsonValue}'");
+                        break;
+                }
+            }
+
+            return argumentsBuilder.ToString();
+        }
 
         /// <summary>
         /// Finds PowerShell executable on the system.

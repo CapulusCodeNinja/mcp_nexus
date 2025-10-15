@@ -6,22 +6,33 @@ Downloads stack trace with source code for all frames.
 This extension gets the stack trace for a specified thread and downloads
 source files for all frames using the lsa command.
 
+.PARAMETER ThreadId
+Thread ID to analyze (e.g., '8' or '.' for current thread). Defaults to current thread ('.').
+
+.EXAMPLE
+.\stack_with_sources.ps1 -ThreadId '5'
+
+.EXAMPLE
+.\stack_with_sources.ps1
+
 .NOTES
 This is the workflow we discussed - gets stack with kL and runs lsa on each return address.
 #>
 
 param(
+    [Parameter(Mandatory=$false)]
     [string]$ThreadId = "."  # Default to current thread
 )
 
 # Import MCP Nexus helper module
 Import-Module "$PSScriptRoot\..\modules\McpNexusExtensions.psm1" -Force
 
+Write-NexusLog "Starting stack_with_sources extension with ThreadId: $ThreadId" -Level Information
+
 # Display user-friendly thread description
 $threadDisplay = if ($ThreadId -eq ".") { "current thread" } else { "thread $ThreadId" }
 
 Write-NexusProgress "Starting stack analysis with source download for $threadDisplay"
-Write-NexusLog "Starting stack_with_sources extension for thread: $ThreadId" -Level Information
 
 try {
     # Step 1: Get stack with line numbers
