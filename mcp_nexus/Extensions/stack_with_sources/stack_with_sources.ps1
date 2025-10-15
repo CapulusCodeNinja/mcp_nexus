@@ -17,12 +17,15 @@ param(
 # Import MCP Nexus helper module
 Import-Module "$PSScriptRoot\..\modules\McpNexusExtensions.psm1" -Force
 
-Write-NexusProgress "Starting stack analysis with source download for thread $ThreadId"
+# Display user-friendly thread description
+$threadDisplay = if ($ThreadId -eq ".") { "current thread" } else { "thread $ThreadId" }
+
+Write-NexusProgress "Starting stack analysis with source download for $threadDisplay"
 Write-NexusLog "Starting stack_with_sources extension for thread: $ThreadId" -Level Information
 
 try {
     # Step 1: Get stack with line numbers
-    Write-NexusProgress "Retrieving stack trace for thread $ThreadId..."
+    Write-NexusProgress "Retrieving stack trace for $threadDisplay..."
     $stackCommand = if ($ThreadId -eq ".") { "kL" } else { "~${ThreadId}kL" }
     $stackOutput = Invoke-NexusCommand $stackCommand
 
@@ -30,6 +33,29 @@ try {
         Write-NexusLog "Failed to retrieve stack trace - output was empty" -Level Error
         Write-Error "Failed to get stack trace - output was empty"
         exit 1
+    }
+
+    # Step 1.5: Validate that the thread exists (check for common error patterns)
+    if ($stackOutput -match "Invalid thread" -or 
+        $stackOutput -match "Illegal thread" -or 
+        $stackOutput -match "Thread not found" -or
+        $stackOutput -match "\^ .*error" -or
+        $stackOutput -match "Couldn't resolve error") {
+        
+        Write-NexusLog "[$threadDisplay] Thread not found or invalid (ThreadId: $ThreadId)" -Level Error
+        Write-Error "[$threadDisplay] not found or invalid"
+        
+        $result = @{
+            success = $false
+            threadId = $ThreadId
+            totalFrames = 0
+            sourcesDownloaded = 0
+            addresses = @()
+            error = "Thread '$ThreadId' not found. The thread ID may be invalid or the thread may not exist in this dump file."
+            suggestion = "Use the '!threads' or '~' command to list available threads, then try again with a valid thread ID."
+        } | ConvertTo-Json
+        Write-Output $result
+        exit 0
     }
 
     Write-NexusProgress "Stack trace retrieved successfully"
@@ -78,7 +104,7 @@ try {
     foreach ($addr in $addresses) {
         $processedCount++
         $percent = [int](($processedCount / $addresses.Count) * 100)
-        Write-NexusProgress "Downloading source for address $addr ($processedCount of $($addresses.Count), $percent%)"
+        Write-NexusProgress "[$threadDisplay] Downloading source for address $addr ($processedCount of $($addresses.Count), $percent%)"
 
         try {
             $lsaOutput = Invoke-NexusCommand "lsa $addr"
@@ -97,10 +123,10 @@ try {
         }
     }
 
-    Write-NexusProgress "Source download complete: $downloadedCount of $($addresses.Count) sources downloaded"
+    Write-NexusProgress "[$threadDisplay] Source download complete: $downloadedCount of $($addresses.Count) sources downloaded"
     
     $successRate = [math]::Round(($downloadedCount / $addresses.Count) * 100, 2)
-    Write-NexusLog "Source download completed: $downloadedCount/$($addresses.Count) sources ($successRate% success rate)" -Level Information
+    Write-NexusLog "[$threadDisplay] Source download completed: $downloadedCount/$($addresses.Count) sources ($successRate% success rate)" -Level Information
     
     if ($failedAddresses.Count -gt 0) {
         Write-NexusLog "Failed to download sources for $($failedAddresses.Count) addresses" -Level Warning
