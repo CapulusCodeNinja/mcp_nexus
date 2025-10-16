@@ -178,9 +178,8 @@ namespace mcp_nexus.CommandQueue
                 return 0;
 
             var cancelledCount = 0;
-            var commandIds = m_activeCommands.Keys.ToList();
-
-            foreach (var commandId in commandIds)
+            // Enumerate snapshot of keys from ConcurrentDictionary without materializing a list
+            foreach (var commandId in m_activeCommands.Keys)
             {
                 if (CancelCommand(commandId))
                     cancelledCount++;
