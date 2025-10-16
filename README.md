@@ -2,7 +2,7 @@
 
 **AI-Powered Windows Crash Dump Analysis Platform**
 
-[![Tests](https://img.shields.io/badge/tests-1,840%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Tests](https://img.shields.io/badge/tests-1,888%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Coverage](https://img.shields.io/badge/coverage-87.22%25-excellent?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Build](https://img.shields.io/badge/build-0%20warnings-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
@@ -65,6 +65,7 @@ MCP Nexus is a platform that provides structured access to Windows debugging too
 - **🔗 Symbol Server Support**: Automatic symbol downloading and caching
 - **⚙️ Configurable Analysis**: Customizable analysis parameters and timeouts
 - **📊 Rich Reporting**: Detailed analysis reports with actionable insights
+- **⚡ Command Batching**: Intelligent batching of multiple commands for improved throughput
 
 ## 🚀 Quick Start
 
@@ -292,6 +293,33 @@ The logging system now uses a single `LogLevel` setting:
 - **Development**: `"Debug"`
 - **Service/Production**: `"Information"`
 
+### Command Batching
+MCP Nexus intelligently batches multiple commands for improved throughput:
+
+```json
+{
+  "McpNexus": {
+    "Batching": {
+      "Enabled": true,
+      "MaxBatchSize": 5,
+      "BatchWaitTimeoutMs": 2000,
+      "BatchTimeoutMultiplier": 1.0,
+      "MaxBatchTimeoutMinutes": 30,
+      "ExcludedCommands": [
+        "!analyze", "!dump", "!heap", "!memusage", "!runaway",
+        "~*k", "!locks", "!cs", "!gchandles"
+      ]
+    }
+  }
+}
+```
+
+**Features:**
+- **Automatic Batching**: Commands are automatically grouped for execution
+- **Configurable Limits**: Set maximum batch size and timeout multipliers
+- **Smart Exclusions**: Long-running or resource-intensive commands execute individually
+- **Transparent to AI**: Batching happens internally, no changes needed in AI clients
+
 ### 📖 **[Complete Configuration Guide](docs/CONFIGURATION.md)**
 For detailed configuration options, environment settings, and best practices, see the comprehensive configuration documentation.
 
@@ -317,11 +345,11 @@ dotnet test --filter "Notification"
 
 ### Test Statistics
 
-- ✅ **1,840 total tests** (1,840 passing)
+- ✅ **1,888 total tests** (1,880 passing)
 - ✅ **87.22% line coverage** with comprehensive analysis testing
 - ✅ **0 warnings** in build (clean codebase)
-- ✅ **17+ test categories** covering all major functionality including Extensions
-- ✅ **Fast execution** (~29 seconds for full suite)
+- ✅ **18+ test categories** covering all major functionality including Extensions and Batching
+- ✅ **Fast execution** (~50 seconds for full suite)
 - ✅ **Comprehensive mocking** for reliable testing
 
 ### Test Categories
@@ -332,6 +360,7 @@ dotnet test --filter "Notification"
 | **Command Queue** | ~200+ tests | Async command execution and queuing |
 | **Notifications** | ~150+ tests | Real-time notification system |
 | **Extensions** | 120+ tests | Extension system for complex workflows |
+| **Command Batching** | 48 tests | Intelligent command batching for improved throughput |
 | **Infrastructure** | ~100+ tests | Windows service and infrastructure |
 | **Security** | ~80+ tests | Security validation and access control |
 | **Health & Metrics** | ~70+ tests | System health monitoring and metrics |
@@ -343,13 +372,13 @@ dotnet test --filter "Notification"
 | **Tools** | ~20+ tests | MCP tool implementation |
 | **Resources** | ~15+ tests | MCP resource management |
 | **Protocol** | ~8+ tests | MCP protocol handling |
-| **Other** | ~700+ tests | Additional comprehensive test coverage |
+| **Other** | ~650+ tests | Additional comprehensive test coverage |
 
 ### Quality Assurance
 
 - **Clean Codebase**: 0 warnings in build, following best practices
-- **Comprehensive Coverage**: Tests cover all major functionality across 16+ categories
-- **Fast Execution**: Full test suite runs in ~29 seconds
+- **Comprehensive Coverage**: Tests cover all major functionality across 18+ categories
+- **Fast Execution**: Full test suite runs in ~50 seconds
 - **Reliable Mocking**: Proper isolation for consistent test results
 - **CI/CD Ready**: Tests run automatically on every commit
 - **Production Ready**: All existing tests passing with enterprise-grade quality standards

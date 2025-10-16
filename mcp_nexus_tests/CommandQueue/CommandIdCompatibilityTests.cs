@@ -39,7 +39,8 @@ namespace mcp_nexus_tests.CommandQueue
                 _realisticCdbSession,
                 _mockIsolatedLogger.Object,
                 _mockNotificationService.Object,
-                "test-session-123");
+                "test-session-123",
+                _mockLoggerFactory.Object);
 
             _queueService = new CommandQueueService(
                 _realisticCdbSession,

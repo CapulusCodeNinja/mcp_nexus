@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Microsoft.Extensions.Options;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Session.Models;
@@ -43,6 +44,7 @@ namespace mcp_nexus.Session
         private readonly IExtensionCommandTracker? m_ExtensionTracker = serviceProvider.GetService<IExtensionCommandTracker>();
         private readonly IExtensionExecutor? m_ExtensionExecutor = serviceProvider.GetService<IExtensionExecutor>();
         private readonly IExtensionTokenValidator? m_TokenValidator = serviceProvider.GetService<IExtensionTokenValidator>();
+        private readonly IOptions<BatchingConfiguration>? m_BatchingOptions = serviceProvider.GetService<IOptions<BatchingConfiguration>>();
 
         // Thread-safe counters
         private long m_TotalSessionsCreated = 0;
@@ -449,7 +451,9 @@ namespace mcp_nexus.Session
                 m_LoggerFactory.CreateLogger<IsolatedCommandQueueService>(),
                 m_NotificationService,
                 sessionId,
-                sessionCache
+                m_LoggerFactory,
+                sessionCache,
+                m_BatchingOptions
             );
         }
 

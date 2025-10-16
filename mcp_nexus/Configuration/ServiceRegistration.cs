@@ -129,6 +129,9 @@ namespace mcp_nexus.Configuration
                 config.ServiceMode = capturedServiceMode;
             });
 
+            // Configure batching options
+            services.Configure<BatchingConfiguration>(configuration.GetSection("McpNexus:Batching"));
+
             // Register core services
             // Shared session store (explicit DI singleton instead of static state)
             services.AddSingleton(new ConcurrentDictionary<string, SessionInfo>());

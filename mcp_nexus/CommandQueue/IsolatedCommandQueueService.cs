@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Options;
 using mcp_nexus.Debugger;
 using mcp_nexus.Notifications;
 
@@ -20,6 +21,7 @@ namespace mcp_nexus.CommandQueue
         private readonly CommandTracker m_Tracker;
         private readonly CommandProcessor m_Processor;
         private readonly CommandNotificationManager m_NotificationManager;
+        private readonly BatchCommandProcessor? m_BatchProcessor;
 
         // Core infrastructure
         private readonly BlockingCollection<QueuedCommand> m_CommandQueue;
@@ -34,14 +36,18 @@ namespace mcp_nexus.CommandQueue
         /// <param name="logger">The logger instance for recording queue operations.</param>
         /// <param name="notificationService">The notification service for sending notifications.</param>
         /// <param name="sessionId">The unique identifier for the debugging session.</param>
+        /// <param name="loggerFactory">The logger factory for creating additional loggers.</param>
         /// <param name="resultCache">Optional session command result cache for storing results.</param>
+        /// <param name="batchingOptions">Optional batching configuration options.</param>
         /// <exception cref="ArgumentNullException">Thrown when any of the required parameters are null.</exception>
         public IsolatedCommandQueueService(
             ICdbSession cdbSession,
             ILogger<IsolatedCommandQueueService> logger,
             IMcpNotificationService notificationService,
             string sessionId,
-            SessionCommandResultCache? resultCache = null)
+            ILoggerFactory loggerFactory,
+            SessionCommandResultCache? resultCache = null,
+            IOptions<BatchingConfiguration>? batchingOptions = null)
         {
             m_CdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -60,17 +66,118 @@ namespace mcp_nexus.CommandQueue
             m_Processor = new CommandProcessor(m_CdbSession, m_Logger, m_Config, m_Tracker, m_CommandQueue, m_ProcessingCts, m_ResultCache);
             m_NotificationManager = new CommandNotificationManager(m_NotificationService, m_Logger, m_Config);
 
+            // Create batch processor if batching is enabled
+            if (batchingOptions?.Value?.Enabled == true)
+            {
+                var batchLogger = loggerFactory.CreateLogger<BatchCommandProcessor>();
+                m_BatchProcessor = new BatchCommandProcessor(m_CdbSession, m_ResultCache, batchLogger, batchingOptions);
+                m_Logger.LogInformation("🚀 Command batching enabled for session {SessionId}", sessionId);
+            }
+            else
+            {
+                m_Logger.LogInformation("⚡ Command batching disabled for session {SessionId}", sessionId);
+            }
+
             m_Logger.LogInformation("🚀 IsolatedCommandQueueService initializing for session {SessionId}", sessionId);
 
             // Start processing task
             m_Logger.LogTrace("🔄 Starting background processing task for session {SessionId}", sessionId);
-            m_ProcessingTask = Task.Run(m_Processor.ProcessCommandQueueAsync, m_ProcessingCts.Token);
+            m_ProcessingTask = Task.Run(ProcessCommandQueueAsync, m_ProcessingCts.Token);
             m_Logger.LogTrace("✅ Background processing task started for session {SessionId}, Task ID: {TaskId}", sessionId, m_ProcessingTask.Id);
 
             // Notify startup
             m_NotificationManager.NotifyServiceStartup();
 
             m_Logger.LogInformation("✅ IsolatedCommandQueueService created for session {SessionId} (background task initializing)", sessionId);
+        }
+
+        /// <summary>
+        /// Processes commands from the queue, using batching when available
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation</returns>
+        private async Task ProcessCommandQueueAsync()
+        {
+            m_Logger.LogInformation("🔄 Starting command queue processing for session {SessionId}", m_Config.SessionId);
+
+            try
+            {
+                while (!m_ProcessingCts.Token.IsCancellationRequested && !m_CommandQueue.IsCompleted)
+                {
+                    try
+                    {
+                        // Take command from queue
+                        var command = m_CommandQueue.Take(m_ProcessingCts.Token);
+
+                        if (m_BatchProcessor != null)
+                        {
+                            // Use batch processor for intelligent batching
+                            await m_BatchProcessor.ProcessCommandAsync(command);
+                        }
+                        else
+                        {
+                            // Use traditional single-command processing
+                            await ExecuteSingleCommandDirectly(command);
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        m_Logger.LogDebug("Command processing cancelled for session {SessionId}", m_Config.SessionId);
+                        break;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Queue completed, exit loop
+                        m_Logger.LogDebug("Command queue completed for session {SessionId}", m_Config.SessionId);
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        m_Logger.LogError(ex, "❌ Error processing command in session {SessionId}", m_Config.SessionId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogError(ex, "❌ Fatal error in command processing loop for session {SessionId}", m_Config.SessionId);
+            }
+            finally
+            {
+                m_Logger.LogInformation("🏁 Command processing loop ended for session {SessionId}", m_Config.SessionId);
+            }
+        }
+
+        /// <summary>
+        /// Executes a single command directly without batching
+        /// </summary>
+        /// <param name="command">The command to execute</param>
+        /// <returns>A task representing the asynchronous operation</returns>
+        private async Task ExecuteSingleCommandDirectly(QueuedCommand command)
+        {
+            var startTime = DateTime.Now;
+
+            try
+            {
+                m_Logger.LogInformation("⚡ Executing single command {CommandId}: {Command}", command.Id, command.Command);
+
+                var result = await m_CdbSession.ExecuteCommand(command.Command ?? string.Empty, command.CancellationTokenSource?.Token ?? CancellationToken.None);
+
+                var commandResult = CommandResult.Success(result, DateTime.Now - startTime);
+                m_ResultCache?.StoreResult(command.Id ?? string.Empty, commandResult);
+
+                command.SetResult(result);
+
+                m_Logger.LogDebug("✅ Single command {CommandId} completed in {Duration}ms",
+                    command.Id, (DateTime.Now - startTime).TotalMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogError(ex, "❌ Single command {CommandId} failed: {Error}", command.Id, ex.Message);
+
+                var errorResult = CommandResult.Failure(ex.Message, DateTime.Now - startTime);
+                m_ResultCache?.StoreResult(command.Id ?? string.Empty, errorResult);
+
+                command.SetResult(string.Empty);
+            }
         }
 
         /// <summary>
@@ -374,6 +481,7 @@ namespace mcp_nexus.CommandQueue
                 m_CommandQueue.Dispose();
                 m_ProcessingCts.Dispose();
                 m_ResultCache.Dispose();
+                m_BatchProcessor?.Dispose();
             }
             catch (Exception ex)
             {

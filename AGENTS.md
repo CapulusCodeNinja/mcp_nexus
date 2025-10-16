@@ -9,6 +9,7 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 ### Core Components
 - **Session Management**: Multi-session debugging with isolated CDB processes
 - **Command Queue System**: Asynchronous command execution with resilience patterns
+- **Command Batching**: Intelligent batching of multiple commands for improved throughput
 - **Circuit Breaker Pattern**: Fault tolerance and failure recovery
 - **Health Monitoring**: Comprehensive system health checks and metrics
 - **Intelligent Caching**: Memory-efficient caching with eviction strategies
@@ -708,11 +709,311 @@ $output2 = Invoke-NexusCommand "lm"
 
 ---
 
+## Command Batching System Architecture
+
+### Overview
+
+The command batching system improves throughput by intelligently grouping multiple commands into a single execution batch. This is transparent to AI clients and maintains command dependencies by executing batches sequentially within each session.
+
+### Core Problem Solved
+
+**Before Batching:**
+- Each command executed individually
+- High overhead from process communication
+- Slower throughput for multiple sequential commands
+- Timeouts set per command could be conservative
+
+**After Batching:**
+- Commands automatically grouped (up to configurable limit)
+- Single execution with multiple commands
+- Improved overall throughput
+- Adaptive timeouts based on batch size
+
+### Key Design Decisions
+
+#### 1. **Batching is Internal and Transparent**
+
+**Critical Architecture Point:**
+- Batching happens **inside** `IsolatedCommandQueueService`
+- AI clients see **no difference** in behavior
+- Commands still queued individually
+- Results stored and retrieved individually
+- No changes needed to MCP tools or AI integration
+
+**Why this works:**
+```
+AI Client                    IsolatedCommandQueueService
+   |                                   |
+   |-- Queue: Command A -------------->|
+   |-- Queue: Command B -------------->| [Batch: A, B, C]
+   |-- Queue: Command C -------------->|     |
+   |                                   |     v
+   |                                   | Execute Combined
+   |                                   |     |
+   |<-- Result A ----------------------|     v
+   |<-- Result B ----------------------| Parse & Distribute
+   |<-- Result C ----------------------|
+```
+
+**No Race Conditions** because:
+- Batching is session-scoped → isolated per session
+- Commands execute sequentially within batch
+- Results parsed and stored atomically
+- Cache is thread-safe
+
+#### 2. **Configurable Batching Behavior**
+
+Batching is fully configurable via `appsettings.json`:
+
+```json
+{
+  "McpNexus": {
+    "Batching": {
+      "Enabled": true,
+      "MaxBatchSize": 5,
+      "BatchWaitTimeoutMs": 2000,
+      "BatchTimeoutMultiplier": 1.0,
+      "MaxBatchTimeoutMinutes": 30,
+      "ExcludedCommands": [
+        "!analyze", "!dump", "!heap", "!memusage", "!runaway",
+        "~*k", "!locks", "!cs", "!gchandles"
+      ]
+    }
+  }
+}
+```
+
+**Configuration Parameters:**
+- **Enabled**: Enable/disable batching system-wide
+- **MaxBatchSize**: Maximum commands per batch (default: 5)
+- **BatchWaitTimeoutMs**: Max wait time to accumulate commands (default: 2000ms)
+- **BatchTimeoutMultiplier**: Multiplier for timeout calculation (default: 1.0)
+- **MaxBatchTimeoutMinutes**: Cap for batch timeout (default: 30 minutes)
+- **ExcludedCommands**: Commands that should never be batched
+
+#### 3. **Smart Command Filtering**
+
+**Exclusion List:**
+Commands that should **not** be batched:
+- `!analyze` - Complex, long-running analysis
+- `!dump`, `!heap`, `!memusage` - Memory-intensive operations
+- `!runaway` - Performance profiling
+- `~*k`, `!locks`, `!cs` - Thread analysis
+- `!gchandles` - Managed heap analysis
+
+**Why exclude these:**
+- They are **long-running** and batching adds no value
+- They may **change debugger state** significantly
+- They produce **large output** that's better processed alone
+- Batching them could exceed timeout limits
+
+**Prefix Matching:**
+The `BatchCommandFilter` uses prefix matching, so:
+- Exclusion `"!analyze"` blocks: `!analyze`, `!analyze -v`, `!analyzev`
+- Exclusion `"~*k"` blocks: `~*k`, `~*kv`, `~*kp`
+
+#### 4. **Adaptive Timeout Calculation**
+
+**Formula:**
+```csharp
+BatchTimeout = Min(
+    BaseCommandTimeout * CommandCount * BatchTimeoutMultiplier,
+    MaxBatchTimeoutMinutes
+)
+```
+
+**Example:**
+- Base command timeout: 10 minutes (600,000ms)
+- Commands in batch: 3
+- Multiplier: 1.0
+- **Calculated timeout**: 30 minutes (capped at MaxBatchTimeoutMinutes)
+
+**Why this works:**
+- Larger batches get more time
+- Cap prevents runaway timeouts
+- Multiplier allows tuning for specific environments
+
+#### 5. **Batch Parsing with Sentinel Markers**
+
+**Sentinel Markers:**
+```csharp
+public const string BatchStart = "MCP_NEXUS_BATCH_START";
+public const string BatchEnd = "MCP_NEXUS_BATCH_END";
+public const string CommandSeparator = "MCP_NEXUS_CMD_SEP";
+```
+
+**Batch Command Format:**
+```
+MCP_NEXUS_BATCH_START
+echo MCP_NEXUS_CMD_SEP_cmd-123
+<actual command>
+echo MCP_NEXUS_CMD_SEP_cmd-123_END
+echo MCP_NEXUS_CMD_SEP_cmd-456
+<actual command>
+echo MCP_NEXUS_CMD_SEP_cmd-456_END
+MCP_NEXUS_BATCH_END
+```
+
+**Why this works:**
+- Each command's output is clearly delimited
+- Parser can reliably extract individual results
+- Unique IDs prevent cross-contamination
+- Robust against commands that produce special characters
+
+### Component Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│              IsolatedCommandQueueService                    │
+│  ┌───────────────────────────────────────────────┐         │
+│  │  ProcessCommandQueueAsync()                   │         │
+│  │    │                                           │         │
+│  │    ├──> Take command from queue               │         │
+│  │    │                                           │         │
+│  │    └──> BatchCommandProcessor.ProcessCommand()│         │
+│  └───────────────────────────────────────────────┘         │
+└───────────────────┬─────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│              BatchCommandProcessor                          │
+│  ┌───────────────────────────────────────────────┐         │
+│  │  ProcessCommandAsync(command)                 │         │
+│  │    │                                           │         │
+│  │    ├──> BatchCommandFilter.CanBatchCommand()  │         │
+│  │    │      (Check exclusion list)              │         │
+│  │    │                                           │         │
+│  │    ├──> If batchable: Queue internally        │         │
+│  │    │    If not: ExecuteSingleCommandAsync()   │         │
+│  │    │                                           │         │
+│  │    └──> BatchProcessingLoopAsync()            │         │
+│  │           (Background loop)                   │         │
+│  └───────────────────────────────────────────────┘         │
+│                                                              │
+│  Background Loop:                                           │
+│  ┌───────────────────────────────────────────────┐         │
+│  │  1. Wait for commands or timeout              │         │
+│  │  2. Collect up to MaxBatchSize commands       │         │
+│  │  3. CommandBatchBuilder.CreateBatchCommand()  │         │
+│  │  4. BatchTimeoutCalculator.CalculateTimeout() │         │
+│  │  5. CdbSession.ExecuteCommand(batch)          │         │
+│  │  6. BatchResultParser.SplitBatchResults()     │         │
+│  │  7. Store results in SessionCommandResultCache│         │
+│  │  8. Complete QueuedCommand.SetResult()        │         │
+│  └───────────────────────────────────────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Files
+
+**Batching Infrastructure:**
+- `mcp_nexus/CommandQueue/BatchingConfiguration.cs` - Configuration model
+- `mcp_nexus/CommandQueue/BatchCommandBuilder.cs` - Builds combined command
+- `mcp_nexus/CommandQueue/BatchResultParser.cs` - Parses batch output
+- `mcp_nexus/CommandQueue/BatchCommandFilter.cs` - Exclusion list filtering
+- `mcp_nexus/CommandQueue/BatchTimeoutCalculator.cs` - Timeout calculation
+- `mcp_nexus/CommandQueue/BatchCommandProcessor.cs` - Main batching orchestration
+- `mcp_nexus/Debugger/CdbSentinels.cs` - Batch sentinel markers
+
+**Integration Points:**
+- `mcp_nexus/CommandQueue/IsolatedCommandQueueService.cs` - Integrated BatchCommandProcessor
+- `mcp_nexus/Session/SessionLifecycleManager.cs` - Passes batching config to queue service
+- `mcp_nexus/Configuration/ServiceRegistration.cs` - DI registration for batching config
+- `mcp_nexus/appsettings.json` - Batching configuration
+
+**Tests:**
+- `mcp_nexus_tests/CommandQueue/BatchCommandProcessorTests.cs` - 16 tests
+- `mcp_nexus_tests/CommandQueue/BatchCommandBuilderTests.cs` - 8 tests
+- `mcp_nexus_tests/CommandQueue/BatchResultParserTests.cs` - 8 tests
+- `mcp_nexus_tests/CommandQueue/BatchCommandFilterTests.cs` - 8 tests
+- `mcp_nexus_tests/CommandQueue/BatchTimeoutCalculatorTests.cs` - 8 tests
+
+**Total: 48 batching-specific tests**
+
+### Performance Considerations
+
+#### Memory Management
+- **Bounded queues**: Maximum batch size prevents unbounded growth
+- **Timeout-based flushing**: Commands don't wait indefinitely
+- **Per-session isolation**: Each session has its own batch processor
+- **Automatic cleanup**: Batch processor disposed with session
+
+#### Concurrency
+- **Thread safety**: All batch operations are thread-safe
+- **Background processing**: Batching happens on dedicated background task
+- **No blocking**: Queue operations don't block command submission
+- **Cancellation support**: Proper cancellation token handling
+
+### Batching Behavior Examples
+
+#### Example 1: Simple Batching
+```
+Time  | Event
+------|----------------------------------------------
+0ms   | AI queues: "lm"
+10ms  | AI queues: "!threads"
+20ms  | AI queues: "!peb"
+2000ms| Batch timeout reached
+      | → Execute batch: "lm", "!threads", "!peb"
+      | → Parse results
+      | → Store in cache
+```
+
+#### Example 2: Immediate Batch (Max Size Reached)
+```
+Time  | Event
+------|----------------------------------------------
+0ms   | AI queues 5 commands (all batchable)
+1ms   | MaxBatchSize (5) reached
+      | → Execute batch immediately
+      | → No wait for timeout
+```
+
+#### Example 3: Mixed Batchable/Non-Batchable
+```
+Time  | Event
+------|----------------------------------------------
+0ms   | AI queues: "lm" (batchable)
+10ms  | AI queues: "!analyze -v" (excluded)
+      | → "lm" added to batch queue
+      | → "!analyze -v" executed immediately (single)
+20ms  | AI queues: "!threads" (batchable)
+      | → Added to batch queue with "lm"
+2000ms| Batch timeout
+      | → Execute batch: "lm", "!threads"
+```
+
+### Common Pitfalls to Avoid
+
+1. ❌ **Don't add commands to exclusion list without reason**
+   - ✅ Only exclude truly long-running or state-changing commands
+
+2. ❌ **Don't set MaxBatchSize too high**
+   - ✅ Keep it reasonable (3-10) to avoid timeout issues
+
+3. ❌ **Don't disable batching to "fix" issues**
+   - ✅ Investigate root cause and adjust configuration
+
+4. ❌ **Don't assume batching changes command order**
+   - ✅ Commands within a batch execute in order
+
+5. ❌ **Don't forget to update BatchingConfiguration when changing appsettings.json**
+   - ✅ Keep model in sync with config file
+
+### Future Enhancements (Not Yet Implemented)
+
+- **Dynamic batch sizing**: Adjust based on command execution times
+- **Smart command grouping**: Group related commands together
+- **Batch statistics**: Track batch efficiency metrics
+- **Adaptive exclusion list**: Learn which commands batch poorly
+
+---
+
 ## For Future AI Assistants
 
 When working on this project:
 1. **Read AGENTS.md first** - Understand the architecture before making changes
-2. **Follow the established patterns** - Especially for extensions
+2. **Follow the established patterns** - Especially for extensions and batching
 3. **PowerShell-only for extension scripts** - No Python
 4. **Add tests for new features** - Maintain test coverage
 5. **Zero-regression policy** - All existing tests must pass
@@ -723,3 +1024,9 @@ When working on this project:
 **Extensions orchestrate workflows externally, using callbacks for individual commands.**
 
 This design prevents deadlocks, maintains session isolation, and gives AI agents a reliable way to execute complex debugging workflows.
+
+### Command Batching Key Principle
+
+**Batching improves throughput internally, while being completely transparent to AI clients.**
+
+This design maintains command dependencies, prevents race conditions, and provides configurable performance optimization without requiring changes to AI integration.
