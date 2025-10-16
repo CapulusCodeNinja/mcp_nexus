@@ -168,13 +168,21 @@ namespace mcp_nexus.Middleware
             try
             {
                 // Handle Server-Sent Events format - extract only the JSON data part
-                var lines = sseResponse.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-                foreach (var line in lines)
+                ReadOnlySpan<char> span = sseResponse.AsSpan();
+                int start = 0;
+                for (int i = 0; i <= span.Length; i++)
                 {
-                    if (line.StartsWith("data: "))
+                    bool atEnd = i == span.Length;
+                    if (atEnd || span[i] == '\n')
                     {
-                        var jsonPart = line[6..].Trim();
-                        return FormatJsonForLogging(jsonPart);
+                        var lineSpan = span.Slice(start, i - start).Trim();
+                        if (lineSpan.StartsWith("data: ".AsSpan()))
+                        {
+                            var jsonSpan = lineSpan.Slice(6).Trim();
+                            var jsonPart = new string(jsonSpan);
+                            return FormatJsonForLogging(jsonPart);
+                        }
+                        start = i + 1;
                     }
                 }
 
@@ -258,15 +266,21 @@ namespace mcp_nexus.Middleware
             try
             {
                 // Handle Server-Sent Events format - extract only the JSON data part
-                var lines = responseText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
                 string jsonContent = responseText;
-
-                foreach (var line in lines)
+                ReadOnlySpan<char> span = responseText.AsSpan();
+                int start = 0;
+                for (int i = 0; i <= span.Length; i++)
                 {
-                    if (line.StartsWith("data: "))
+                    bool atEnd = i == span.Length;
+                    if (atEnd || span[i] == '\n')
                     {
-                        jsonContent = line[6..].Trim();
-                        break;
+                        var lineSpan = span.Slice(start, i - start).Trim();
+                        if (lineSpan.StartsWith("data: ".AsSpan()))
+                        {
+                            jsonContent = new string(lineSpan.Slice(6).Trim());
+                            break;
+                        }
+                        start = i + 1;
                     }
                 }
 
