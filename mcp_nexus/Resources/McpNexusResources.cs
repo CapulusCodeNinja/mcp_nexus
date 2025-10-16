@@ -30,8 +30,9 @@ namespace mcp_nexus.Resources
     [McpServerResourceType]
     public static class McpNexusResources
     {
-        private static readonly System.Text.Json.JsonSerializerOptions Compact = new();
-        private static readonly System.Text.Json.JsonSerializerOptions Indented = new() { WriteIndented = true };
+        private static readonly System.Text.Json.JsonSerializerOptions m_Compact = new();
+        private static readonly System.Text.Json.JsonSerializerOptions m_Indented = new() { WriteIndented = true };
+        private static readonly string m_UsageJson = CreateUsageJson();
         // IMPORTANT: Method names directly determine resource names!
         // Method "Sessions" becomes resource "sessions", "Commands" becomes "commands", etc.
         /// <summary>
@@ -61,7 +62,7 @@ namespace mcp_nexus.Resources
                     timestamp = DateTimeOffset.Now
                 };
 
-                return Task.FromResult(JsonSerializer.Serialize(result, Indented));
+                return Task.FromResult(JsonSerializer.Serialize(result, m_Indented));
             }
             catch (Exception ex)
             {
@@ -117,7 +118,7 @@ namespace mcp_nexus.Resources
                     note = "Commands from all sessions"
                 };
 
-                return Task.FromResult(JsonSerializer.Serialize(result, Indented));
+                return Task.FromResult(JsonSerializer.Serialize(result, m_Indented));
             }
             catch (Exception ex)
             {
@@ -153,7 +154,7 @@ namespace mcp_nexus.Resources
                         timestamp = DateTimeOffset.Now
                     };
 
-                    return Task.FromResult(JsonSerializer.Serialize(disabledResult, Indented));
+                return Task.FromResult(JsonSerializer.Serialize(disabledResult, m_Indented));
                 }
 
                 var allExtensions = extensionManager.GetAllExtensions();
@@ -199,7 +200,7 @@ namespace mcp_nexus.Resources
                     }
                 };
 
-                return Task.FromResult(JsonSerializer.Serialize(result, Indented));
+                return Task.FromResult(JsonSerializer.Serialize(result, m_Indented));
             }
             catch (Exception ex)
             {
@@ -211,6 +212,11 @@ namespace mcp_nexus.Resources
         [McpServerResource, Description("❓ USAGE: Essential tool usage information and API reference for MCP Nexus server")]
         public static Task<string> Usage(
             IServiceProvider serviceProvider)
+        {
+            return Task.FromResult(m_UsageJson);
+        }
+
+        private static string CreateUsageJson()
         {
             var usage = new
             {
@@ -306,7 +312,7 @@ namespace mcp_nexus.Resources
                 }
             };
 
-            return Task.FromResult(JsonSerializer.Serialize(usage, Indented));
+            return JsonSerializer.Serialize(usage, m_Indented);
         }
 
         /// <summary>
