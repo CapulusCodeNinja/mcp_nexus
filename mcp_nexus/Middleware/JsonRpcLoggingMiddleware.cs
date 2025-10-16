@@ -82,8 +82,11 @@ namespace mcp_nexus.Middleware
             }
             context.Request.Body.Position = 0;
 
-            var formattedRequest = FormatJsonForLogging(requestBody);
-            m_logger.LogDebug("📨 JSON-RPC Request:\n{RequestBody}", formattedRequest);
+            if (m_logger.IsEnabled(LogLevel.Debug))
+            {
+                var formattedRequest = FormatJsonForLogging(requestBody);
+                m_logger.LogDebug("📨 JSON-RPC Request:\n{RequestBody}", formattedRequest);
+            }
 
             return requestBody;
         }
@@ -105,24 +108,20 @@ namespace mcp_nexus.Middleware
             }
             responseBody.Seek(0, SeekOrigin.Begin);
 
-            var formattedResponse = FormatSseResponseForLogging(responseBodyText);
-
-            // Try to decode the text for easier debugging
-            // For Info level, don't truncate; for Debug and higher, truncate large fields
-            var (_, decodeSuccess) = DecodeJsonText(responseBodyText, shouldTruncate: false); // Info level - no truncation
-            if (decodeSuccess)
+            if (m_logger.IsEnabled(LogLevel.Debug))
             {
-                // DecodeJsonText succeeded - use Info for main response, Debug for decoded text
-                m_logger.LogTrace("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
-
-                // For Debug level, truncate large fields
-                var (truncatedDecodedText, _) = DecodeJsonText(responseBodyText, shouldTruncate: true);
-                m_logger.LogDebug("📤 JSON-RPC Response Text:\n{DecodedText}", truncatedDecodedText);
-            }
-            else
-            {
-                // DecodeJsonText failed - use Info for main response only
-                m_logger.LogDebug("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
+                var formattedResponse = FormatSseResponseForLogging(responseBodyText);
+                var (_, decodeSuccess) = DecodeJsonText(responseBodyText, shouldTruncate: false);
+                if (decodeSuccess)
+                {
+                    m_logger.LogTrace("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
+                    var (truncatedDecodedText, _) = DecodeJsonText(responseBodyText, shouldTruncate: true);
+                    m_logger.LogDebug("📤 JSON-RPC Response Text:\n{DecodedText}", truncatedDecodedText);
+                }
+                else
+                {
+                    m_logger.LogDebug("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
+                }
             }
         }
 
