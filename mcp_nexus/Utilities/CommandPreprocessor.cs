@@ -51,17 +51,16 @@ namespace mcp_nexus.Utilities
             if (result.StartsWith(".srcpath", StringComparison.OrdinalIgnoreCase))
             {
                 // Convert srv*/mnt/... to srv*<WindowsPath>
-                result = Regex.Replace(result, @"srv\*(/mnt/[^"";\s]+)",
+                result = SrvMntTokenRegex().Replace(result,
                     (Match m) =>
                     {
                         var wsl = m.Groups[1].Value.Replace('\\', '/');
                         var win = m_PathHandler.ConvertToWindowsPath(wsl);
                         return "srv*" + win;
-                    },
-                    RegexOptions.IgnoreCase);
+                    });
 
                 // Ensure directories for non-srv tokens
-                var match = Regex.Match(result, @"^\.srcpath\+?\s+(.+)$", RegexOptions.IgnoreCase);
+                var match = SrcPathLineRegex().Match(result);
                 if (match.Success)
                 {
                     var pathArg = match.Groups[1].Value;
@@ -80,7 +79,7 @@ namespace mcp_nexus.Utilities
             // Handle .sympath (set symbol path) - ensure local directories exist, skip srv*/http tokens
             else if (result.StartsWith(".sympath", StringComparison.OrdinalIgnoreCase))
             {
-                var match = Regex.Match(result, @"^\.sympath\+?\s+(.+)$", RegexOptions.IgnoreCase);
+                var match = SymPathLineRegex().Match(result);
                 if (match.Success)
                 {
                     var pathArg = match.Groups[1].Value;
@@ -98,7 +97,7 @@ namespace mcp_nexus.Utilities
             // Handle .symfix (set default symbol path with optional downstream store) - ensure local store exists
             else if (result.StartsWith(".symfix", StringComparison.OrdinalIgnoreCase))
             {
-                var match = Regex.Match(result, @"^\.symfix\+?\s+(.+)$", RegexOptions.IgnoreCase);
+                var match = SymFixLineRegex().Match(result);
                 if (match.Success)
                 {
                     var arg = match.Groups[1].Value;
@@ -117,7 +116,7 @@ namespace mcp_nexus.Utilities
             // Convert backslashes to forward slashes to work around CDB's path handling quirks
             else if (result.StartsWith("!homedir", StringComparison.OrdinalIgnoreCase))
             {
-                var match = Regex.Match(result, @"^(!homedir\s+)(.+)$", RegexOptions.IgnoreCase);
+                var match = HomeDirLineRegex().Match(result);
                 if (match.Success)
                 {
                     var commandPrefix = match.Groups[1].Value;
@@ -200,5 +199,20 @@ namespace mcp_nexus.Utilities
 
         [GeneratedRegex(@"/mnt/[^/\s;""]+/[^\s;""]*", RegexOptions.Compiled)]
         private static partial Regex MyRegex();
+
+        [GeneratedRegex(@"^\.srcpath\+?\s+(.+)$", RegexOptions.IgnoreCase)]
+        private static partial Regex SrcPathLineRegex();
+
+        [GeneratedRegex(@"^\.sympath\+?\s+(.+)$", RegexOptions.IgnoreCase)]
+        private static partial Regex SymPathLineRegex();
+
+        [GeneratedRegex(@"^\.symfix\+?\s+(.+)$", RegexOptions.IgnoreCase)]
+        private static partial Regex SymFixLineRegex();
+
+        [GeneratedRegex(@"^(!homedir\s+)(.+)$", RegexOptions.IgnoreCase)]
+        private static partial Regex HomeDirLineRegex();
+
+        [GeneratedRegex(@"srv\*(/mnt/[^"";\s]+)", RegexOptions.IgnoreCase)]
+        private static partial Regex SrvMntTokenRegex();
     }
 }
