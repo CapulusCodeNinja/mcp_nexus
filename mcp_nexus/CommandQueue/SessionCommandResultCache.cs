@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 namespace mcp_nexus.CommandQueue
@@ -19,6 +20,10 @@ namespace mcp_nexus.CommandQueue
         private readonly object m_MemoryLock = new();
         private volatile bool m_Disposed = false;
 
+        // Providers for testability
+        private readonly IMemoryPressureProvider m_MemoryPressureProvider;
+        private readonly IProcessMemoryProvider m_ProcessMemoryProvider;
+
         #endregion
 
         #region Constructor
@@ -34,13 +39,17 @@ namespace mcp_nexus.CommandQueue
             long maxMemoryBytes = 100 * 1024 * 1024, // 100MB
             int maxResults = 1000,
             double memoryPressureThreshold = 0.8,
-            ILogger<SessionCommandResultCache>? logger = null)
+            ILogger<SessionCommandResultCache>? logger = null,
+            IMemoryPressureProvider? memoryPressureProvider = null,
+            IProcessMemoryProvider? processMemoryProvider = null)
         {
             m_MaxMemoryBytes = maxMemoryBytes;
             m_MaxResults = maxResults;
             m_MemoryPressureThreshold = Math.Clamp(memoryPressureThreshold, 0.1, 1.0);
             m_Logger = logger;
             m_Results = new ConcurrentDictionary<string, CachedCommandResult>();
+            m_MemoryPressureProvider = memoryPressureProvider ?? new SystemMemoryPressureProvider();
+            m_ProcessMemoryProvider = processMemoryProvider ?? new DefaultProcessMemoryProvider();
 
             m_Logger?.LogDebug("📦 SessionCommandResultCache initialized - MaxMemory: {MaxMB}MB, MaxResults: {MaxResults}, PressureThreshold: {Threshold:P0}",
                 maxMemoryBytes / (1024.0 * 1024.0), maxResults, memoryPressureThreshold);
@@ -251,6 +260,28 @@ namespace mcp_nexus.CommandQueue
         /// <returns>True if eviction is needed</returns>
         private bool ShouldEvictForMemory(long newResultSize)
         {
+            // Adaptive: system/process pressure first
+            try
+            {
+                var gcHigh = m_MemoryPressureProvider.HighMemoryLoadThresholdBytes;
+                if (gcHigh > 0)
+                {
+                    var systemPressure = m_MemoryPressureProvider.MemoryLoadBytes > gcHigh * 0.85;
+                    if (systemPressure)
+                        return true;
+
+                    var privateBytes = m_ProcessMemoryProvider.PrivateBytes;
+                    var processPressure = privateBytes > gcHigh * 0.75;
+                    if (processPressure)
+                        return true;
+                }
+            }
+            catch
+            {
+                // Ignore adaptive errors; fall back to guardrails
+            }
+
+            // Guardrails: configured caps
             return m_CurrentMemoryUsage + newResultSize > m_MaxMemoryBytes * m_MemoryPressureThreshold ||
                    m_Results.Count >= m_MaxResults;
         }
@@ -262,17 +293,32 @@ namespace mcp_nexus.CommandQueue
         {
             try
             {
-                var resultsToEvict = m_Results
-                    .OrderBy(kvp => kvp.Value.LastAccessTime) // LRU eviction
-                    .Take(Math.Max(1, m_Results.Count / 4)) // Remove 25% of oldest results
-                    .ToList();
+                var total = m_Results.Count;
+                if (total == 0)
+                    return;
+
+                var targetCount = Math.Max(1, total / 4); // Remove ~25% oldest
+
+                var pq = new PriorityQueue<KeyValuePair<string, CachedCommandResult>, DateTime>();
+                foreach (var kv in m_Results)
+                {
+                    if (pq.Count < targetCount)
+                    {
+                        pq.Enqueue(kv, kv.Value.LastAccessTime);
+                    }
+                    else if (kv.Value.LastAccessTime < pq.Peek().Value.LastAccessTime)
+                    {
+                        pq.Dequeue();
+                        pq.Enqueue(kv, kv.Value.LastAccessTime);
+                    }
+                }
 
                 var evictedCount = 0;
                 var freedMemory = 0L;
-
-                foreach (var kvp in resultsToEvict)
+                while (pq.Count > 0)
                 {
-                    if (m_Results.TryRemove(kvp.Key, out var removedResult))
+                    var kv = pq.Dequeue();
+                    if (m_Results.TryRemove(kv.Key, out var removedResult))
                     {
                         freedMemory += EstimateResultSize(removedResult);
                         evictedCount++;
@@ -337,6 +383,28 @@ namespace mcp_nexus.CommandQueue
         }
 
         #endregion
+    }
+
+    public interface IMemoryPressureProvider
+    {
+        long MemoryLoadBytes { get; }
+        long HighMemoryLoadThresholdBytes { get; }
+    }
+
+    public sealed class SystemMemoryPressureProvider : IMemoryPressureProvider
+    {
+        public long MemoryLoadBytes => GC.GetGCMemoryInfo().MemoryLoadBytes;
+        public long HighMemoryLoadThresholdBytes => GC.GetGCMemoryInfo().HighMemoryLoadThresholdBytes;
+    }
+
+    public interface IProcessMemoryProvider
+    {
+        long PrivateBytes { get; }
+    }
+
+    public sealed class DefaultProcessMemoryProvider : IProcessMemoryProvider
+    {
+        public long PrivateBytes => System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64;
     }
 
     /// <summary>

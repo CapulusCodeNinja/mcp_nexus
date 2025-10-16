@@ -525,10 +525,29 @@ namespace mcp_nexus.Session
             return m_SessionCaches.GetOrAdd(sessionId, _ =>
             {
                 m_Logger.LogDebug("📦 Creating command result cache for session {SessionId}", sessionId);
+
+                // Compute adaptive caps once per session
+                long totalAvail;
+                try
+                {
+                    var gcInfo = GC.GetGCMemoryInfo();
+                    totalAvail = gcInfo.TotalAvailableMemoryBytes > 0 ? gcInfo.TotalAvailableMemoryBytes : 16L * 1024 * 1024 * 1024;
+                }
+                catch
+                {
+                    totalAvail = 16L * 1024 * 1024 * 1024; // fallback 16 GB
+                }
+
+                // Derive per-session cap: 1% of available, clamped to [128MB, 8GB]
+                var computed = (long)(totalAvail * 0.01); // 1%
+                var minBytes = 128L * 1024 * 1024;        // 128 MB
+                var maxBytes = 8L * 1024 * 1024 * 1024;   // 8 GB
+                var perSessionCap = Math.Clamp(computed, minBytes, maxBytes);
+
                 return new SessionCommandResultCache(
-                    maxMemoryBytes: 100 * 1024 * 1024, // 100MB default
-                    maxResults: 1000,
-                    memoryPressureThreshold: 0.8,
+                    maxMemoryBytes: perSessionCap,
+                    maxResults: 100_000,
+                    memoryPressureThreshold: 0.90,
                     logger: null); // Use null logger to avoid type mismatch
             });
         }

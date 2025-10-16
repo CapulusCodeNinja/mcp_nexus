@@ -12,6 +12,10 @@ namespace mcp_nexus_tests.CommandQueue
     {
         private readonly Mock<ILogger<SessionCommandResultCache>> m_MockLogger;
         private readonly SessionCommandResultCache m_Cache;
+        private sealed class FakeMem : IMemoryPressureProvider { public long MemoryLoadBytes; public long HighMemoryLoadThresholdBytes; }
+        private sealed class FakeProc : IProcessMemoryProvider { public long PrivateBytes; }
+        private sealed class ThrowMem : IMemoryPressureProvider { public long MemoryLoadBytes => throw new Exception("boom"); public long HighMemoryLoadThresholdBytes => throw new Exception("boom"); }
+        private sealed class ThrowProc : IProcessMemoryProvider { public long PrivateBytes => throw new Exception("boom"); }
 
         public SessionCommandResultCacheTests()
         {
@@ -272,11 +276,16 @@ namespace mcp_nexus_tests.CommandQueue
         [Fact]
         public void StoreResult_WhenMemoryPressure_EvictsOldestResults()
         {
-            // Arrange - Create a cache with very small memory limit
+            // Arrange - Create a cache with adaptive pressure forcing eviction
+            var mem = new FakeMem { HighMemoryLoadThresholdBytes = 1000, MemoryLoadBytes = 900 }; // 90% > 85%
+            var proc = new FakeProc { PrivateBytes = 0 };
             using var smallCache = new SessionCommandResultCache(
-                maxMemoryBytes: 100, // Very small limit
-                maxResults: 5,
-                memoryPressureThreshold: 0.5);
+                maxMemoryBytes: long.MaxValue, // disable guardrail
+                maxResults: int.MaxValue,      // disable guardrail
+                memoryPressureThreshold: 0.99,
+                logger: null,
+                memoryPressureProvider: mem,
+                processMemoryProvider: proc);
 
             // Act - Store multiple results to trigger memory pressure
             for (int i = 0; i < 10; i++)
@@ -288,6 +297,138 @@ namespace mcp_nexus_tests.CommandQueue
             // Assert - Should have evicted some results
             var stats = smallCache.GetStatistics();
             Assert.True(stats.TotalResults < 10); // Some results should have been evicted
+        }
+
+        [Fact]
+        public void StoreResult_WhenProcessPressureOnly_EvictsOldestResults()
+        {
+            // Arrange - Process pressure > 75%, system pressure < 85%
+            var mem = new FakeMem { HighMemoryLoadThresholdBytes = 1000, MemoryLoadBytes = 600 };
+            var proc = new FakeProc { PrivateBytes = 800 }; // 80% > 75%
+            using var cache = new SessionCommandResultCache(
+                maxMemoryBytes: long.MaxValue,
+                maxResults: int.MaxValue,
+                memoryPressureThreshold: 0.99,
+                logger: null,
+                memoryPressureProvider: mem,
+                processMemoryProvider: proc);
+
+            for (int i = 0; i < 20; i++)
+                cache.StoreResult($"cmd-{i}", CommandResult.Success("x"));
+
+            var stats = cache.GetStatistics();
+            Assert.True(stats.TotalResults < 20);
+        }
+
+        [Fact]
+        public void StoreResult_WhenAdaptiveDisabled_UsesGuardrails()
+        {
+            // Arrange - Adaptive disabled (no threshold), force guardrail eviction by small caps
+            var mem = new FakeMem { HighMemoryLoadThresholdBytes = 0, MemoryLoadBytes = 0 };
+            var proc = new FakeProc { PrivateBytes = 0 };
+            using var cache = new SessionCommandResultCache(
+                maxMemoryBytes: 100, // tiny
+                maxResults: 5,
+                memoryPressureThreshold: 0.5,
+                logger: null,
+                memoryPressureProvider: mem,
+                processMemoryProvider: proc);
+
+            for (int i = 0; i < 20; i++)
+                cache.StoreResult($"cmd-{i}", CommandResult.Success(new string('a', 50)));
+
+            var stats = cache.GetStatistics();
+            Assert.True(stats.TotalResults <= 5 || stats.CurrentMemoryUsage <= 100);
+        }
+
+        [Fact]
+        public void StoreResult_WhenAdaptiveThrows_FallsBackToGuardrails()
+        {
+            // Arrange - Providers throw; ensure no crash and guardrails apply
+            using var cache = new SessionCommandResultCache(
+                maxMemoryBytes: 100, // tiny
+                maxResults: 5,
+                memoryPressureThreshold: 0.5,
+                logger: null,
+                memoryPressureProvider: new ThrowMem(),
+                processMemoryProvider: new ThrowProc());
+
+            for (int i = 0; i < 20; i++)
+                cache.StoreResult($"cmd-{i}", CommandResult.Success(new string('b', 50)));
+
+            var stats = cache.GetStatistics();
+            Assert.True(stats.TotalResults <= 5 || stats.CurrentMemoryUsage <= 100);
+        }
+
+        [Fact]
+        public void StoreResult_NoEvictionUnderThresholds()
+        {
+            // Arrange - No pressure and large guardrails
+            var mem = new FakeMem { HighMemoryLoadThresholdBytes = 1000, MemoryLoadBytes = 100 };
+            var proc = new FakeProc { PrivateBytes = 100 };
+            using var cache = new SessionCommandResultCache(
+                maxMemoryBytes: 10 * 1024 * 1024,
+                maxResults: 10000,
+                memoryPressureThreshold: 0.95,
+                logger: null,
+                memoryPressureProvider: mem,
+                processMemoryProvider: proc);
+
+            for (int i = 0; i < 200; i++)
+                cache.StoreResult($"cmd-{i}", CommandResult.Success("x"));
+
+            var stats = cache.GetStatistics();
+            Assert.Equal(200, stats.TotalResults);
+        }
+
+        [Fact]
+        public void StoreResult_PriorityQueueKeepsRecentlyAccessed()
+        {
+            // Arrange - Small guardrails to force eviction path deterministically
+            using var cache = new SessionCommandResultCache(
+                maxMemoryBytes: 1000,
+                maxResults: 4,
+                memoryPressureThreshold: 0.5,
+                logger: null);
+
+            // Add 4 entries
+            cache.StoreResult("a", CommandResult.Success("1"));
+            cache.StoreResult("b", CommandResult.Success("2"));
+            cache.StoreResult("c", CommandResult.Success("3"));
+            cache.StoreResult("d", CommandResult.Success("4"));
+
+            // Refresh access for some
+            Assert.NotNull(cache.GetResult("b"));
+            Assert.NotNull(cache.GetResult("d"));
+
+            // Trigger eviction by exceeding max results
+            cache.StoreResult("e", CommandResult.Success("5"));
+            cache.StoreResult("f", CommandResult.Success("6"));
+
+            // Recently accessed ones should be more likely retained
+            Assert.True(cache.HasResult("b"));
+            Assert.True(cache.HasResult("d"));
+        }
+
+        [Fact]
+        public void AdaptiveThresholdBoundary_DoesNotEvictAtExactThreshold()
+        {
+            // Arrange - Exactly at 85% system, 75% process → no eviction (strict >)
+            var mem = new FakeMem { HighMemoryLoadThresholdBytes = 1000, MemoryLoadBytes = 850 };
+            var proc = new FakeProc { PrivateBytes = 750 };
+            using var cache = new SessionCommandResultCache(
+                maxMemoryBytes: long.MaxValue,
+                maxResults: int.MaxValue,
+                memoryPressureThreshold: 0.99,
+                logger: null,
+                memoryPressureProvider: mem,
+                processMemoryProvider: proc);
+
+            for (int i = 0; i < 50; i++)
+                cache.StoreResult($"cmd-{i}", CommandResult.Success("x"));
+
+            var stats = cache.GetStatistics();
+            Assert.Equal(50, stats.TotalResults);
         }
 
         [Fact]
