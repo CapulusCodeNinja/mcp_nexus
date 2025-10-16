@@ -960,7 +960,7 @@ namespace mcp_nexus
         /// <summary>
         /// Formats JSON string for better human readability in logs.
         /// </summary>
-        private static readonly System.Text.Json.JsonSerializerOptions IndentedJson = new() { WriteIndented = true };
+        internal static readonly System.Text.Json.JsonSerializerOptions IndentedJson = new() { WriteIndented = true };
 
         private static string FormatJsonForLogging(string json)
         {

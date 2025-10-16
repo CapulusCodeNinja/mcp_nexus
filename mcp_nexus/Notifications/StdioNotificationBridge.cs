@@ -50,22 +50,11 @@ namespace mcp_nexus.Notifications
 
             try
             {
-                var options = new System.Text.Json.JsonSerializerOptions();
-                if (Console.Out is StreamWriter sw)
-                {
-                    // Fast path: write UTF-8 bytes directly to underlying stream
-                    var stream = sw.BaseStream;
-                    await System.Text.Json.JsonSerializer.SerializeAsync(stream, notification, options);
-                    await stream.WriteAsync(new byte[] { (byte)'\n' }, 0, 1);
-                    await stream.FlushAsync();
-                }
-                else
-                {
-                    // Fallback for test harnesses that replace Console.Out with a TextWriter (e.g., StringWriter)
-                    var json = System.Text.Json.JsonSerializer.Serialize(notification, options);
-                    await Console.Out.WriteLineAsync(json);
-                    await Console.Out.FlushAsync();
-                }
+                // Always write through Console.Out to respect test harness redirections.
+                // Program startup guarantees UTF-8 encoding for stdio.
+                var json = System.Text.Json.JsonSerializer.Serialize(notification);
+                await Console.Out.WriteLineAsync(json);
+                await Console.Out.FlushAsync();
             }
             catch (Exception ex)
             {
