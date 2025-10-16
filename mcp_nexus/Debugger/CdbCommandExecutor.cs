@@ -50,13 +50,12 @@ namespace mcp_nexus.Debugger
             // This prevents sentinel detection issues with concatenated output
             var lines = e.Data.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
-            // Send each line individually to the channel
+            // Send each line individually to the channel (non-allocating, immediate)
             if (m_sessionChannel != null)
             {
                 foreach (var line in lines)
                 {
-                    // Use fire-and-forget approach for event handler
-                    _ = m_sessionChannel.Writer.WriteAsync((line, isStderr, DateTime.Now)).AsTask();
+                    m_sessionChannel.Writer.TryWrite((line, isStderr, DateTime.Now));
                 }
             }
         }
