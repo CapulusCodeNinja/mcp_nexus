@@ -50,9 +50,17 @@ namespace mcp_nexus.Notifications
 
             try
             {
-                var json = System.Text.Json.JsonSerializer.Serialize(notification);
-                await Console.Out.WriteLineAsync(json);
-                await Console.Out.FlushAsync();
+                // Serialize directly to a memory stream using compact options to reduce allocations
+                var options = new System.Text.Json.JsonSerializerOptions();
+                using var ms = new System.IO.MemoryStream();
+                await System.Text.Json.JsonSerializer.SerializeAsync(ms, notification, options);
+                ms.TryGetBuffer(out var buffer);
+                if (buffer.Array != null)
+                {
+                    await Console.Out.WriteAsync(new string(System.Text.Encoding.UTF8.GetChars(buffer.Array, buffer.Offset, buffer.Count)));
+                    await Console.Out.WriteLineAsync();
+                    await Console.Out.FlushAsync();
+                }
             }
             catch (Exception ex)
             {

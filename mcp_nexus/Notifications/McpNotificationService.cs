@@ -72,9 +72,11 @@ namespace mcp_nexus.Notifications
                     m_logger?.LogTrace("No notification handlers registered for event type: {EventType}", eventType);
                     return;
                 }
-
-                // Create a copy to avoid issues with handlers being modified during iteration
-                handlers = [.. handlers!];
+                // Copy only when there are multiple handlers to avoid mutation issues
+                if (handlers!.Count > 1)
+                {
+                    handlers = [.. handlers];
+                }
             }
 
             // Wrap the data in an McpNotification object for test compatibility
@@ -84,8 +86,19 @@ namespace mcp_nexus.Notifications
                 Params = data
             };
 
-            var tasks = handlers.Select(handler => SafeInvokeHandler(handler, notification));
-            await Task.WhenAll(tasks);
+            if (handlers!.Count == 1)
+            {
+                await SafeInvokeHandler(handlers[0], notification);
+            }
+            else
+            {
+                var tasks = new Task[handlers.Count];
+                for (int i = 0; i < handlers.Count; i++)
+                {
+                    tasks[i] = SafeInvokeHandler(handlers[i], notification);
+                }
+                await Task.WhenAll(tasks);
+            }
         }
 
 
