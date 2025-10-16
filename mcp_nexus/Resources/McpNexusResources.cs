@@ -30,8 +30,7 @@ namespace mcp_nexus.Resources
     [McpServerResourceType]
     public static class McpNexusResources
     {
-        private static readonly System.Text.Json.JsonSerializerOptions m_Compact = new();
-        private static readonly System.Text.Json.JsonSerializerOptions m_Indented = new() { WriteIndented = true };
+        // Use centralized JSON options directly from Utilities.JsonOptions
         private static readonly string m_UsageJson = CreateUsageJson();
         // IMPORTANT: Method names directly determine resource names!
         // Method "Sessions" becomes resource "sessions", "Commands" becomes "commands", etc.
@@ -62,7 +61,7 @@ namespace mcp_nexus.Resources
                     timestamp = DateTimeOffset.Now
                 };
 
-                return Task.FromResult(JsonSerializer.Serialize(result, m_Indented));
+                return Task.FromResult(JsonSerializer.Serialize(result, mcp_nexus.Utilities.JsonOptions.JsonIndented));
             }
             catch (Exception ex)
             {
@@ -118,7 +117,7 @@ namespace mcp_nexus.Resources
                     note = "Commands from all sessions"
                 };
 
-                return Task.FromResult(JsonSerializer.Serialize(result, m_Indented));
+                return Task.FromResult(JsonSerializer.Serialize(result, mcp_nexus.Utilities.JsonOptions.JsonIndented));
             }
             catch (Exception ex)
             {
@@ -154,7 +153,7 @@ namespace mcp_nexus.Resources
                         timestamp = DateTimeOffset.Now
                     };
 
-                return Task.FromResult(JsonSerializer.Serialize(disabledResult, m_Indented));
+                return Task.FromResult(JsonSerializer.Serialize(disabledResult, mcp_nexus.Utilities.JsonOptions.JsonIndented));
                 }
 
                 var allExtensions = extensionManager.GetAllExtensions();
@@ -200,7 +199,7 @@ namespace mcp_nexus.Resources
                     }
                 };
 
-                return Task.FromResult(JsonSerializer.Serialize(result, m_Indented));
+                return Task.FromResult(JsonSerializer.Serialize(result, mcp_nexus.Utilities.JsonOptions.JsonIndented));
             }
             catch (Exception ex)
             {
@@ -312,7 +311,7 @@ namespace mcp_nexus.Resources
                 }
             };
 
-            return JsonSerializer.Serialize(usage, m_Indented);
+            return JsonSerializer.Serialize(usage, mcp_nexus.Utilities.JsonOptions.JsonIndented);
         }
 
         /// <summary>

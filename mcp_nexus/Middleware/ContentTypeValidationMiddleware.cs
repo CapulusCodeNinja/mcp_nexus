@@ -80,7 +80,7 @@ namespace mcp_nexus.Middleware
             };
 
             // Tests expect compact JSON (no whitespace changes). Use CompactJson to match.
-            await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, mcp_nexus.Program.CompactJson));
+            await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, mcp_nexus.Utilities.JsonOptions.JsonCompact));
         }
     }
 }

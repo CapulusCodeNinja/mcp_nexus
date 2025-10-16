@@ -956,20 +956,13 @@ namespace mcp_nexus
             }
         }
 
-        /// <summary>
-        /// <summary>
-        /// Formats JSON string for better human readability in logs.
-        /// </summary>
-        internal static readonly System.Text.Json.JsonSerializerOptions IndentedJson = new() { WriteIndented = true };
-        internal static readonly System.Text.Json.JsonSerializerOptions CompactJson = new();
-
         private static string FormatJsonForLogging(string json)
         {
             try
             {
                 // Try to parse and pretty-print the JSON
                 using var document = JsonDocument.Parse(json);
-                return System.Text.Json.JsonSerializer.Serialize(document.RootElement, IndentedJson);
+                return System.Text.Json.JsonSerializer.Serialize(document.RootElement, mcp_nexus.Utilities.JsonOptions.JsonIndented);
             }
             catch (JsonException ex)
             {
