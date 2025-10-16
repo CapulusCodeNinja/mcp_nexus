@@ -15,6 +15,7 @@ namespace mcp_nexus.Protocol
     public class McpToolDefinitionService(IMcpNotificationService? notificationService = null) : IMcpToolDefinitionService
     {
         private readonly IMcpNotificationService? m_notificationService = notificationService;
+        private static readonly System.Text.Json.JsonSerializerOptions Indented = new() { WriteIndented = true };
 
         /// <summary>
         /// Gets all available MCP tools.
@@ -55,7 +56,7 @@ namespace mcp_nexus.Protocol
                 Name = "nexus_open_dump_analyze_session",
                 Description = System.Text.Json.JsonSerializer.Serialize(
                     SessionAwareWindbgTool.USAGE_EXPLANATION,
-                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+                    Indented),
                 InputSchema = new
                 {
                     type = "object",
@@ -88,7 +89,7 @@ namespace mcp_nexus.Protocol
                 Name = "nexus_close_dump_analyze_session",
                 Description = System.Text.Json.JsonSerializer.Serialize(
                     SessionAwareWindbgTool.USAGE_EXPLANATION,
-                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+                    Indented),
                 InputSchema = new
                 {
                     type = "object",
@@ -116,7 +117,7 @@ namespace mcp_nexus.Protocol
                 Name = "nexus_enqueue_async_dump_analyze_command",
                 Description = System.Text.Json.JsonSerializer.Serialize(
                     SessionAwareWindbgTool.USAGE_EXPLANATION,
-                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+                    Indented),
                 InputSchema = new
                 {
                     type = "object",

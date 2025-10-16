@@ -56,9 +56,11 @@ namespace mcp_nexus.Notifications
         /// Builds the notification message as JSON.
         /// </summary>
         /// <returns>JSON string representation</returns>
+        private static readonly System.Text.Json.JsonSerializerOptions Compact = new();
+
         public string BuildJson()
         {
-            return JsonSerializer.Serialize(m_Notification);
+            return JsonSerializer.Serialize(m_Notification, Compact);
         }
 
         /// <summary>

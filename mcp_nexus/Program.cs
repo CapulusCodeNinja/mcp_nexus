@@ -957,13 +957,15 @@ namespace mcp_nexus
         /// <summary>
         /// Formats JSON string for better human readability in logs.
         /// </summary>
+        private static readonly System.Text.Json.JsonSerializerOptions IndentedJson = new() { WriteIndented = true };
+
         private static string FormatJsonForLogging(string json)
         {
             try
             {
                 // Try to parse and pretty-print the JSON
                 using var document = JsonDocument.Parse(json);
-                return System.Text.Json.JsonSerializer.Serialize(document.RootElement, new JsonSerializerOptions { WriteIndented = true });
+                return System.Text.Json.JsonSerializer.Serialize(document.RootElement, IndentedJson);
             }
             catch (JsonException ex)
             {

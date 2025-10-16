@@ -131,6 +131,8 @@ namespace mcp_nexus.Middleware
         /// </summary>
         /// <param name="json">The JSON string to format.</param>
         /// <returns>A formatted JSON string.</returns>
+        private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
+
         private static string FormatJsonForLogging(string json)
         {
             // Handle empty or whitespace-only responses
@@ -143,7 +145,7 @@ namespace mcp_nexus.Middleware
             {
                 using var document = JsonDocument.Parse(json);
                 using var stream = new MemoryStream();
-                return System.Text.Json.JsonSerializer.Serialize(document.RootElement, new JsonSerializerOptions { WriteIndented = true });
+                return System.Text.Json.JsonSerializer.Serialize(document.RootElement, Indented);
             }
             catch (JsonException)
             {
@@ -301,7 +303,7 @@ namespace mcp_nexus.Middleware
                         using var textDocument = JsonDocument.Parse(decodedText);
                         var truncatedJson = TruncateLargeFields(textDocument.RootElement, 1000, shouldTruncate);
 
-                        return (System.Text.Json.JsonSerializer.Serialize(truncatedJson, new JsonSerializerOptions { WriteIndented = true }), true);
+                        return (System.Text.Json.JsonSerializer.Serialize(truncatedJson, Indented), true);
                     }
                 }
 
