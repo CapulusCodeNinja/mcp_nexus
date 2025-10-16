@@ -30,9 +30,9 @@ namespace mcp_nexus.Debugger
         /// These patterns catch prompts that might not match the primary patterns.
         /// </summary>
         public static readonly Regex[] AdditionalPromptPatterns = [
-            new Regex(@"^\s*\d+:\d{3}>\s*$", RegexOptions.Compiled), // Simple pattern: "0:000>"
-            new Regex(@"^\s*\d+:\d{3}>\s*.*$", RegexOptions.Compiled), // Pattern with trailing content: "0:000> some text"
-            new Regex(@"\d+:\d{3}>\s*$", RegexOptions.Compiled), // Pattern at end of line
+            PromptSimple(), // Simple pattern: "0:000>"
+            PromptWithText(), // Pattern with trailing content: "0:000> some text"
+            PromptEnd(), // Pattern at end of line
         ];
 
         /// <summary>
@@ -99,5 +99,14 @@ namespace mcp_nexus.Debugger
 
         [GeneratedRegex(@"^(\s*)?(\d+):(\d{3})(:[A-Za-z0-9_\-]+)?>\s*", RegexOptions.Multiline | RegexOptions.Compiled)]
         private static partial Regex MyRegex();
+
+        [GeneratedRegex(@"^\s*\d+:\d{3}>\s*$", RegexOptions.Compiled)]
+        private static partial Regex PromptSimple();
+
+        [GeneratedRegex(@"^\s*\d+:\d{3}>\s*.*$", RegexOptions.Compiled)]
+        private static partial Regex PromptWithText();
+
+        [GeneratedRegex(@"\d+:\d{3}>\s*$", RegexOptions.Compiled)]
+        private static partial Regex PromptEnd();
     }
 }

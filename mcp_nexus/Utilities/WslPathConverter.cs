@@ -6,7 +6,7 @@ namespace mcp_nexus.Utilities
     /// <summary>
     /// Real implementation of WSL path conversion using wsl.exe.
     /// </summary>
-    public class WslPathConverter : IWslPathConverter
+    public partial class WslPathConverter : IWslPathConverter
     {
         private const int WslHelperTimeoutMs = 2000;
 
@@ -97,7 +97,7 @@ namespace mcp_nexus.Utilities
                     if (line.StartsWith("#")) continue;
 
                     // fstab format: <src> <mount> <type> <opts> <dump> <pass>
-                    var parts = Regex.Split(line, @"\s+");
+                    var parts = WsSplitRegex().Split(line);
                     if (parts.Length < 3) continue;
 
                     var src = parts[0];
@@ -145,6 +145,15 @@ namespace mcp_nexus.Utilities
 
             return mappings;
         }
+    }
+}
+
+namespace mcp_nexus.Utilities
+{
+    public partial class WslPathConverter
+    {
+        [GeneratedRegex(@"\s+")]
+        private static partial Regex WsSplitRegex();
     }
 }
 

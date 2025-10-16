@@ -629,14 +629,14 @@ namespace mcp_nexus.Tools
             }
 
             // Look for "Elapsed: Xmin Ys" pattern
-            var elapsedMinSecMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"Elapsed: ([\d]+min [\d]+s)");
+            var elapsedMinSecMatch = ElapsedMinSecRegex().Match(commandResult);
             if (elapsedMinSecMatch.Success)
             {
                 return elapsedMinSecMatch.Groups[1].Value;
             }
 
             // Look for "Elapsed: Xmin" pattern (without decimal or seconds)
-            var elapsedMinMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"Elapsed: ([\d]+min)");
+            var elapsedMinMatch = ElapsedMinOnlyRegex().Match(commandResult);
             if (elapsedMinMatch.Success)
             {
                 return elapsedMinMatch.Groups[1].Value;
@@ -654,14 +654,14 @@ namespace mcp_nexus.Tools
                 return null;
 
             // Look for "ETA: Xmin Ys" pattern
-            var etaMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"ETA: ([\d]+)min ([\d]+)s");
+            var etaMatch = EtaMinSecRegex().Match(commandResult);
             if (etaMatch.Success)
             {
                 return $"{etaMatch.Groups[1].Value}min {etaMatch.Groups[2].Value}s";
             }
 
             // Look for "ETA: <1min" pattern
-            var etaMinMatch = System.Text.RegularExpressions.Regex.Match(commandResult, @"ETA: (<1min)");
+            var etaMinMatch = EtaLtOneMinRegex().Match(commandResult);
             if (etaMinMatch.Success)
             {
                 return etaMinMatch.Groups[1].Value;
@@ -1008,5 +1008,17 @@ namespace mcp_nexus.Tools
 
         [System.Text.RegularExpressions.GeneratedRegex(@"Elapsed: ([\d]+\.[\d]+min)")]
         private static partial System.Text.RegularExpressions.Regex MyRegex();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"Elapsed: ([\d]+min [\d]+s)")]
+        private static partial System.Text.RegularExpressions.Regex ElapsedMinSecRegex();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"Elapsed: ([\d]+min)")]
+        private static partial System.Text.RegularExpressions.Regex ElapsedMinOnlyRegex();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"ETA: ([\d]+)min ([\d]+)s")]
+        private static partial System.Text.RegularExpressions.Regex EtaMinSecRegex();
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"ETA: (<1min)")]
+        private static partial System.Text.RegularExpressions.Regex EtaLtOneMinRegex();
     }
 }

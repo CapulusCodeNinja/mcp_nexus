@@ -60,7 +60,7 @@ namespace mcp_nexus.Utilities
             else if (cleaned.Contains("://"))
             {
                 // URL - preserve :// and normalize other slashes
-                cleaned = Regex.Replace(cleaned, @"(?<!:)/(?!/)", "/");
+                cleaned = SingleSlashNotUrlRegex().Replace(cleaned, "/");
             }
             else if (cleaned.Contains("cache*") || cleaned.Contains("srv*"))
             {
@@ -71,7 +71,7 @@ namespace mcp_nexus.Utilities
             else
             {
                 // Regular path - normalize all forward slashes
-                cleaned = Regex.Replace(cleaned, @"[/]+", "/");
+                cleaned = MultiSlashRegex().Replace(cleaned, "/");
             }
 
             return cleaned;
@@ -169,5 +169,11 @@ namespace mcp_nexus.Utilities
 
         [GeneratedRegex(@"[\\]+")]
         private static partial Regex MyRegex();
+
+        [GeneratedRegex(@"(?<!:)/(?!/)")]
+        private static partial Regex SingleSlashNotUrlRegex();
+
+        [GeneratedRegex(@"[/]+")]
+        private static partial Regex MultiSlashRegex();
     }
 }

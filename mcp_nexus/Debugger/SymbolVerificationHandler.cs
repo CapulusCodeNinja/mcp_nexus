@@ -11,7 +11,7 @@ namespace mcp_nexus.Debugger
     /// </remarks>
     /// <param name="logger">The logger instance for this handler.</param>
     /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
-    public class SymbolVerificationHandler(ILogger<SymbolVerificationHandler> logger)
+    public partial class SymbolVerificationHandler(ILogger<SymbolVerificationHandler> logger)
     {
         private readonly ILogger<SymbolVerificationHandler> m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -115,14 +115,16 @@ namespace mcp_nexus.Debugger
         private static string? ExtractModuleNameFromWarning(string warning)
         {
             // Pattern to match module names in warnings like "WARNING: Unable to verify checksum for moduleName.dll"
-            var pattern = @"WARNING:.*?for\s+([a-zA-Z0-9_.-]+\.(dll|exe|sys))";
-            var match = Regex.Match(warning, pattern, RegexOptions.IgnoreCase);
+            var match = WarningModuleRegex().Match(warning);
 
             if (match.Success)
                 return match.Groups[1].Value;
 
             return null;
         }
+
+        [GeneratedRegex(@"WARNING:.*?for\s+([a-zA-Z0-9_.-]+\.(dll|exe|sys))", RegexOptions.IgnoreCase)]
+        private static partial Regex WarningModuleRegex();
 
         /// <summary>
         /// Determines if a module is from third-party software.
