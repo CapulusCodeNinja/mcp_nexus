@@ -49,14 +49,16 @@ namespace mcp_nexus.Protocol
         /// Creates the MCP tool schema for opening a dump analyze session.
         /// </summary>
         /// <returns>The MCP tool schema for the open dump analyze session tool.</returns>
+        private static readonly string s_ToolUsageJson = System.Text.Json.JsonSerializer.Serialize(
+            SessionAwareWindbgTool.USAGE_EXPLANATION,
+            Indented);
+
         private static McpToolSchema CreateNexusOpenDumpAnalyzeSessionTool()
         {
             return new McpToolSchema
             {
                 Name = "nexus_open_dump_analyze_session",
-                Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.USAGE_EXPLANATION,
-                    Indented),
+                Description = s_ToolUsageJson,
                 InputSchema = new
                 {
                     type = "object",
@@ -87,9 +89,7 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_close_dump_analyze_session",
-                Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.USAGE_EXPLANATION,
-                    Indented),
+                Description = s_ToolUsageJson,
                 InputSchema = new
                 {
                     type = "object",
@@ -115,9 +115,7 @@ namespace mcp_nexus.Protocol
             return new McpToolSchema
             {
                 Name = "nexus_enqueue_async_dump_analyze_command",
-                Description = System.Text.Json.JsonSerializer.Serialize(
-                    SessionAwareWindbgTool.USAGE_EXPLANATION,
-                    Indented),
+                Description = s_ToolUsageJson,
                 InputSchema = new
                 {
                     type = "object",
@@ -138,7 +136,5 @@ namespace mcp_nexus.Protocol
                 }
             };
         }
-
-
     }
 }
