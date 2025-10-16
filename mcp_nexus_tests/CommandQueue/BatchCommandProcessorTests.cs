@@ -254,6 +254,318 @@ namespace mcp_nexus_tests.CommandQueue
 
         #endregion
 
+        #region Edge Case Tests
+
+        [Fact]
+        public async Task ProcessCommandAsync_WithBatchingDisabled_ShouldExecuteImmediately()
+        {
+            // Arrange
+            var configWithBatchingDisabled = new BatchingConfiguration
+            {
+                Enabled = false,
+                MaxBatchSize = 3,
+                BatchWaitTimeoutMs = 1000,
+                BatchTimeoutMultiplier = 1.0,
+                MaxBatchTimeoutMinutes = 10,
+                ExcludedCommands = new[] { "!analyze" }
+            };
+
+            var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
+            mockOptions.Setup(x => x.Value).Returns(configWithBatchingDisabled);
+
+            var processor = new BatchCommandProcessor(
+                m_MockCdbSession.Object,
+                m_ResultCache,
+                m_MockLogger.Object,
+                mockOptions.Object);
+
+            var command = new QueuedCommand("cmd-1", "lm", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
+
+            m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Module list output");
+
+            // Act
+            await processor.ProcessCommandAsync(command);
+
+            // Assert
+            m_MockCdbSession.Verify(x => x.ExecuteCommand("lm", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessCommandAsync_WithZeroMaxBatchSize_ShouldExecuteImmediately()
+        {
+            // Arrange
+            var configWithZeroBatchSize = new BatchingConfiguration
+            {
+                Enabled = true,
+                MaxBatchSize = 0, // Zero batch size
+                BatchWaitTimeoutMs = 1000,
+                BatchTimeoutMultiplier = 1.0,
+                MaxBatchTimeoutMinutes = 10,
+                ExcludedCommands = new[] { "!analyze" }
+            };
+
+            var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
+            mockOptions.Setup(x => x.Value).Returns(configWithZeroBatchSize);
+
+            var processor = new BatchCommandProcessor(
+                m_MockCdbSession.Object,
+                m_ResultCache,
+                m_MockLogger.Object,
+                mockOptions.Object);
+
+            var command = new QueuedCommand("cmd-1", "lm", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
+
+            m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Module list output");
+
+            // Act
+            await processor.ProcessCommandAsync(command);
+
+            // Assert
+            m_MockCdbSession.Verify(x => x.ExecuteCommand("lm", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessCommandAsync_WithNegativeMaxBatchSize_ShouldExecuteImmediately()
+        {
+            // Arrange
+            var configWithNegativeBatchSize = new BatchingConfiguration
+            {
+                Enabled = true,
+                MaxBatchSize = -1, // Negative batch size
+                BatchWaitTimeoutMs = 1000,
+                BatchTimeoutMultiplier = 1.0,
+                MaxBatchTimeoutMinutes = 10,
+                ExcludedCommands = new[] { "!analyze" }
+            };
+
+            var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
+            mockOptions.Setup(x => x.Value).Returns(configWithNegativeBatchSize);
+
+            var processor = new BatchCommandProcessor(
+                m_MockCdbSession.Object,
+                m_ResultCache,
+                m_MockLogger.Object,
+                mockOptions.Object);
+
+            var command = new QueuedCommand("cmd-1", "lm", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
+
+            m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Module list output");
+
+            // Act
+            await processor.ProcessCommandAsync(command);
+
+            // Assert
+            m_MockCdbSession.Verify(x => x.ExecuteCommand("lm", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessCommandAsync_WithZeroTimeout_ShouldExecuteImmediately()
+        {
+            // Arrange
+            var configWithZeroTimeout = new BatchingConfiguration
+            {
+                Enabled = true,
+                MaxBatchSize = 3,
+                BatchWaitTimeoutMs = 0, // Zero timeout
+                BatchTimeoutMultiplier = 1.0,
+                MaxBatchTimeoutMinutes = 10,
+                ExcludedCommands = new[] { "!analyze" }
+            };
+
+            var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
+            mockOptions.Setup(x => x.Value).Returns(configWithZeroTimeout);
+
+            var processor = new BatchCommandProcessor(
+                m_MockCdbSession.Object,
+                m_ResultCache,
+                m_MockLogger.Object,
+                mockOptions.Object);
+
+            var command = new QueuedCommand("cmd-1", "lm", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
+
+            m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Module list output");
+
+            // Act
+            await processor.ProcessCommandAsync(command);
+
+            // Assert
+            m_MockCdbSession.Verify(x => x.ExecuteCommand("lm", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessCommandAsync_WithNegativeTimeout_ShouldExecuteImmediately()
+        {
+            // Arrange
+            var configWithNegativeTimeout = new BatchingConfiguration
+            {
+                Enabled = true,
+                MaxBatchSize = 3,
+                BatchWaitTimeoutMs = -1000, // Negative timeout
+                BatchTimeoutMultiplier = 1.0,
+                MaxBatchTimeoutMinutes = 10,
+                ExcludedCommands = new[] { "!analyze" }
+            };
+
+            var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
+            mockOptions.Setup(x => x.Value).Returns(configWithNegativeTimeout);
+
+            var processor = new BatchCommandProcessor(
+                m_MockCdbSession.Object,
+                m_ResultCache,
+                m_MockLogger.Object,
+                mockOptions.Object);
+
+            var command = new QueuedCommand("cmd-1", "lm", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
+
+            m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Module list output");
+
+            // Act
+            await processor.ProcessCommandAsync(command);
+
+            // Assert
+            m_MockCdbSession.Verify(x => x.ExecuteCommand("lm", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessCommandAsync_WithEmptyExcludedCommands_ShouldBatchAllCommands()
+        {
+            // Arrange
+            var configWithEmptyExclusions = new BatchingConfiguration
+            {
+                Enabled = true,
+                MaxBatchSize = 2,
+                BatchWaitTimeoutMs = 1000,
+                BatchTimeoutMultiplier = 1.0,
+                MaxBatchTimeoutMinutes = 10,
+                ExcludedCommands = new string[0] // Empty exclusions
+            };
+
+            var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
+            mockOptions.Setup(x => x.Value).Returns(configWithEmptyExclusions);
+
+            var processor = new BatchCommandProcessor(
+                m_MockCdbSession.Object,
+                m_ResultCache,
+                m_MockLogger.Object,
+                mockOptions.Object);
+
+            var command1 = new QueuedCommand("cmd-1", "!analyze", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
+            var command2 = new QueuedCommand("cmd-2", "lm", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
+
+            m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns<string, CancellationToken>((cmd, token) =>
+                {
+                    // Should be a batch command
+                    Assert.Contains("MCP_NEXUS_BATCH_START", cmd);
+                    Assert.Contains("!analyze", cmd);
+                    Assert.Contains("lm", cmd);
+                    return Task.FromResult("Batch output");
+                });
+
+            // Act
+            await processor.ProcessCommandAsync(command1);
+            await processor.ProcessCommandAsync(command2);
+
+            // Wait for batch processing
+            await Task.Delay(1100);
+
+            // Assert
+            m_MockCdbSession.Verify(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessCommandAsync_WithNullExcludedCommands_ShouldBatchAllCommands()
+        {
+            // Arrange
+            var configWithNullExclusions = new BatchingConfiguration
+            {
+                Enabled = true,
+                MaxBatchSize = 2,
+                BatchWaitTimeoutMs = 1000,
+                BatchTimeoutMultiplier = 1.0,
+                MaxBatchTimeoutMinutes = 10,
+                ExcludedCommands = null! // Null exclusions
+            };
+
+            var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
+            mockOptions.Setup(x => x.Value).Returns(configWithNullExclusions);
+
+            var processor = new BatchCommandProcessor(
+                m_MockCdbSession.Object,
+                m_ResultCache,
+                m_MockLogger.Object,
+                mockOptions.Object);
+
+            var command1 = new QueuedCommand("cmd-1", "!analyze", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
+            var command2 = new QueuedCommand("cmd-2", "lm", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
+
+            m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns<string, CancellationToken>((cmd, token) =>
+                {
+                    // Should be a batch command
+                    Assert.Contains("MCP_NEXUS_BATCH_START", cmd);
+                    Assert.Contains("!analyze", cmd);
+                    Assert.Contains("lm", cmd);
+                    return Task.FromResult("Batch output");
+                });
+
+            // Act
+            await processor.ProcessCommandAsync(command1);
+            await processor.ProcessCommandAsync(command2);
+
+            // Wait for batch processing
+            await Task.Delay(1100);
+
+            // Assert
+            m_MockCdbSession.Verify(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessCommandAsync_WithExtremeTimeoutValues_ShouldHandleGracefully()
+        {
+            // Arrange
+            var configWithExtremeValues = new BatchingConfiguration
+            {
+                Enabled = true,
+                MaxBatchSize = 3,
+                BatchWaitTimeoutMs = int.MaxValue, // Extreme timeout
+                BatchTimeoutMultiplier = double.MaxValue, // Extreme multiplier
+                MaxBatchTimeoutMinutes = int.MaxValue, // Extreme max timeout
+                ExcludedCommands = new[] { "!analyze" }
+            };
+
+            var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
+            mockOptions.Setup(x => x.Value).Returns(configWithExtremeValues);
+
+            var processor = new BatchCommandProcessor(
+                m_MockCdbSession.Object,
+                m_ResultCache,
+                m_MockLogger.Object,
+                mockOptions.Object);
+
+            var command = new QueuedCommand("cmd-1", "lm", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
+
+            m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Module list output");
+
+            // Act
+            await processor.ProcessCommandAsync(command);
+
+            // Assert - Should not throw and should add to batch (not execute immediately with extreme but valid values)
+            // The command should be queued for batching since the values are extreme but valid
+            m_MockCdbSession.Verify(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            
+            // Clean up
+            processor.Dispose();
+        }
+
+        #endregion
+
         #region IDisposable Implementation
 
         public void Dispose()

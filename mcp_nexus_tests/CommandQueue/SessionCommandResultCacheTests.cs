@@ -20,11 +20,16 @@ namespace mcp_nexus_tests.CommandQueue
         public SessionCommandResultCacheTests()
         {
             m_MockLogger = new Mock<ILogger<SessionCommandResultCache>>();
+            // Use fake memory providers to prevent GC-based eviction during tests
+            var fakeMemPressure = new FakeMem { HighMemoryLoadThresholdBytes = long.MaxValue, MemoryLoadBytes = 0 };
+            var fakeProcessMem = new FakeProc { PrivateBytes = 0 };
             m_Cache = new SessionCommandResultCache(
                 maxMemoryBytes: 1024 * 1024, // 1MB for testing
                 maxResults: 10,
                 memoryPressureThreshold: 0.8,
-                logger: m_MockLogger.Object);
+                logger: m_MockLogger.Object,
+                memoryPressureProvider: fakeMemPressure,
+                processMemoryProvider: fakeProcessMem);
         }
 
         public void Dispose()
@@ -385,29 +390,74 @@ namespace mcp_nexus_tests.CommandQueue
         public void StoreResult_PriorityQueueKeepsRecentlyAccessed()
         {
             // Arrange - Small guardrails to force eviction path deterministically
+            // Use large memory limit so count-based eviction triggers, not memory-based
+            // Use fake memory providers to prevent GC-based eviction
+            var fakeMemPressure = new FakeMem { HighMemoryLoadThresholdBytes = long.MaxValue, MemoryLoadBytes = 0 };
+            var fakeProcessMem = new FakeProc { PrivateBytes = 0 };
             using var cache = new SessionCommandResultCache(
-                maxMemoryBytes: 1000,
+                maxMemoryBytes: 10000000, // 10MB - large enough to avoid memory-based eviction
                 maxResults: 4,
-                memoryPressureThreshold: 0.5,
-                logger: null);
+                memoryPressureThreshold: 0.99, // Very high threshold
+                logger: null,
+                memoryPressureProvider: fakeMemPressure,
+                processMemoryProvider: fakeProcessMem);
 
-            // Add 4 entries
+            // Add 4 entries with delays to ensure distinct creation times
             cache.StoreResult("a", CommandResult.Success("1"));
+            var statsAfterA = cache.GetStatistics();
+            Assert.Equal(1, statsAfterA.TotalResults); // Should have 1 item after storing "a"
+            Thread.Sleep(20);
             cache.StoreResult("b", CommandResult.Success("2"));
+            var statsAfterB = cache.GetStatistics();
+            Assert.Equal(2, statsAfterB.TotalResults); // Should have 2 items after storing "b"
+            Thread.Sleep(20);
             cache.StoreResult("c", CommandResult.Success("3"));
+            var statsAfterC = cache.GetStatistics();
+            Assert.Equal(3, statsAfterC.TotalResults); // Should have 3 items after storing "c"
+            Thread.Sleep(20);
             cache.StoreResult("d", CommandResult.Success("4"));
 
-            // Refresh access for some
-            Assert.NotNull(cache.GetResult("b"));
-            Assert.NotNull(cache.GetResult("d"));
+            // Verify all 4 items are present
+            var stats = cache.GetStatistics();
+            Assert.Equal(4, stats.TotalResults); // Should have 4 items
+            Assert.True(cache.HasResult("a"), "a should exist after initial storage");
+            Assert.True(cache.HasResult("b"), "b should exist after initial storage");
+            Assert.True(cache.HasResult("c"), "c should exist after initial storage");
+            Assert.True(cache.HasResult("d"), "d should exist after initial storage");
+
+            // Add delay to ensure different LastAccessTime values
+            Thread.Sleep(50);
+            
+            // Refresh access for b and d (making them more recently accessed)
+            var resultB = cache.GetResult("b");
+            Assert.NotNull(resultB);
+            
+            Thread.Sleep(50);
+            
+            var resultD = cache.GetResult("d");
+            Assert.NotNull(resultD);
+
+            // Add delay before triggering eviction
+            Thread.Sleep(50);
 
             // Trigger eviction by exceeding max results
             cache.StoreResult("e", CommandResult.Success("5"));
+            
+            // After adding "e", we should have 4 items (one evicted)
+            // The evicted item should be "a" or "c" (oldest LastAccessTime)
+            stats = cache.GetStatistics();
+            Assert.Equal(4, stats.TotalResults);
+            
             cache.StoreResult("f", CommandResult.Success("6"));
+            
+            // After adding "f", we should still have 4 items (another one evicted)
+            stats = cache.GetStatistics();
+            Assert.Equal(4, stats.TotalResults);
 
-            // Recently accessed ones should be more likely retained
-            Assert.True(cache.HasResult("b"));
-            Assert.True(cache.HasResult("d"));
+            // Recently accessed ones (b and d) should be retained
+            // Oldest ones (a and c) should be evicted
+            Assert.True(cache.HasResult("b"), "b should be retained (recently accessed)");
+            Assert.True(cache.HasResult("d"), "d should be retained (recently accessed)");
         }
 
         [Fact]
@@ -532,10 +582,16 @@ namespace mcp_nexus_tests.CommandQueue
         public void GetResult_UpdatesAccessTime_ForLRUEviction()
         {
             // Arrange - Create a cache with small limits
+            // Use fake memory providers to prevent GC-based eviction
+            var fakeMemPressure = new FakeMem { HighMemoryLoadThresholdBytes = long.MaxValue, MemoryLoadBytes = 0 };
+            var fakeProcessMem = new FakeProc { PrivateBytes = 0 };
             using var smallCache = new SessionCommandResultCache(
-                maxMemoryBytes: 1000,
+                maxMemoryBytes: 10000000, // Large enough to avoid memory-based eviction
                 maxResults: 3,
-                memoryPressureThreshold: 0.5);
+                memoryPressureThreshold: 0.99,
+                logger: null,
+                memoryPressureProvider: fakeMemPressure,
+                processMemoryProvider: fakeProcessMem);
 
             // Store initial results
             smallCache.StoreResult("command-1", CommandResult.Success("Output 1"));

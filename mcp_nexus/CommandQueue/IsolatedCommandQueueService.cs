@@ -275,7 +275,19 @@ namespace mcp_nexus.CommandQueue
                 return "Command ID cannot be null or empty";
 
             // First, try to get result from cache (for completed commands that may have been cleaned up)
-            var cachedResult = m_Processor.GetCommandResult(commandId);
+            ICommandResult? cachedResult = null;
+            
+            if (m_BatchProcessor != null)
+            {
+                // When batching is enabled, results are stored directly in the SessionCommandResultCache
+                cachedResult = m_ResultCache?.GetResult(commandId);
+            }
+            else
+            {
+                // When batching is disabled, use the traditional CommandProcessor cache
+                cachedResult = m_Processor.GetCommandResult(commandId);
+            }
+
             if (cachedResult != null)
             {
                 m_Logger.LogDebug("IsolatedCommandQueueService.GetCommandResult: Found in cache - Command {CommandId}, Output length: {Length}, Output: '{Output}', IsSuccess: {IsSuccess}",

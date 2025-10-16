@@ -299,36 +299,40 @@ namespace mcp_nexus.CommandQueue
 
                 var targetCount = Math.Max(1, total / 4); // Remove ~25% oldest
 
+                // Create a priority queue to find the oldest items
+                // Use a min-heap by default, so oldest items (smaller DateTime) have highest priority
                 var pq = new PriorityQueue<KeyValuePair<string, CachedCommandResult>, DateTime>();
+                
+                // Add all items to the priority queue (min-heap by default, so oldest first)
                 foreach (var kv in m_Results)
                 {
-                    if (pq.Count < targetCount)
-                    {
-                        pq.Enqueue(kv, kv.Value.LastAccessTime);
-                    }
-                    else if (kv.Value.LastAccessTime < pq.Peek().Value.LastAccessTime)
-                    {
-                        pq.Dequeue();
-                        pq.Enqueue(kv, kv.Value.LastAccessTime);
-                    }
+                    pq.Enqueue(kv, kv.Value.LastAccessTime);
                 }
 
                 var evictedCount = 0;
                 var freedMemory = 0L;
-                while (pq.Count > 0)
+                var evictedKeys = new List<string>();
+                
+                // Remove the oldest items (up to targetCount)
+                var itemsToRemove = Math.Min(targetCount, pq.Count);
+                for (int i = 0; i < itemsToRemove; i++)
                 {
-                    var kv = pq.Dequeue();
-                    if (m_Results.TryRemove(kv.Key, out var removedResult))
+                    if (pq.Count > 0)
                     {
-                        freedMemory += EstimateResultSize(removedResult);
-                        evictedCount++;
+                        var kv = pq.Dequeue();
+                        evictedKeys.Add(kv.Key);
+                        if (m_Results.TryRemove(kv.Key, out var removedResult))
+                        {
+                            freedMemory += EstimateResultSize(removedResult);
+                            evictedCount++;
+                        }
                     }
                 }
 
                 m_CurrentMemoryUsage -= freedMemory;
 
-                m_Logger?.LogDebug("🧹 Evicted {Count} oldest results, freed {FreedMB}MB, current usage: {CurrentMB}MB",
-                    evictedCount, freedMemory / (1024.0 * 1024.0), m_CurrentMemoryUsage / (1024.0 * 1024.0));
+                m_Logger?.LogDebug("🧹 Evicted {Count} oldest results ({EvictedKeys}), freed {FreedMB}MB, current usage: {CurrentMB}MB",
+                    evictedCount, string.Join(", ", evictedKeys), freedMemory / (1024.0 * 1024.0), m_CurrentMemoryUsage / (1024.0 * 1024.0));
             }
             catch (Exception ex)
             {

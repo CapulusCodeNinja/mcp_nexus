@@ -64,8 +64,9 @@ namespace mcp_nexus.CommandQueue
             // Initialize batch management
             m_batchableCommands = new Queue<QueuedCommand>();
 
-            // Create timer for batch timeout
-            m_batchTimer = new Timer(OnBatchTimeout, null, TimeSpan.FromMilliseconds(m_config.BatchWaitTimeoutMs), TimeSpan.FromMilliseconds(m_config.BatchWaitTimeoutMs));
+            // Create timer for batch timeout (ensure timeout is valid)
+            var timeoutMs = Math.Max(1, m_config.BatchWaitTimeoutMs); // Minimum 1ms to avoid invalid timer values
+            m_batchTimer = new Timer(OnBatchTimeout, null, TimeSpan.FromMilliseconds(timeoutMs), TimeSpan.FromMilliseconds(timeoutMs));
 
             m_logger.LogInformation("🚀 BatchCommandProcessor initialized - Enabled: {Enabled}, MaxBatchSize: {MaxBatchSize}, WaitTimeout: {WaitTimeout}ms",
                 m_config.Enabled, m_config.MaxBatchSize, m_config.BatchWaitTimeoutMs);
@@ -90,8 +91,9 @@ namespace mcp_nexus.CommandQueue
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(BatchCommandProcessor));
 
-            // If batching is disabled or command cannot be batched, execute immediately
-            if (!m_config.Enabled || !m_filter.CanBatchCommand(command.Command ?? string.Empty))
+            // If batching is disabled, command cannot be batched, batch size is invalid, or timeout is invalid, execute immediately
+            if (!m_config.Enabled || !m_filter.CanBatchCommand(command.Command ?? string.Empty) || 
+                m_config.MaxBatchSize <= 0 || m_config.BatchWaitTimeoutMs <= 0)
             {
                 await ExecuteSingleCommandAsync(command);
                 return;
