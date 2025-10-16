@@ -46,22 +46,44 @@ namespace mcp_nexus.Debugger
                 return;
             }
 
-            // Split by newlines in case multiple lines arrived together
-            // This prevents sentinel detection issues with concatenated output
-            var lines = e.Data.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-
-            // Send each line individually to the channel (non-allocating, immediate)
+            // Parse lines without allocations: scan for \r or \n and slice
             if (m_sessionChannel != null)
             {
-                foreach (var line in lines)
+                ReadOnlySpan<char> span = e.Data.AsSpan();
+                int start = 0;
+                for (int i = 0; i < span.Length; i++)
                 {
+                    char c = span[i];
+                    if (c == '\r' || c == '\n')
+                    {
+                        if (i > start)
+                        {
+                            var line = new string(span.Slice(start, i - start));
+                            var item = (line, isStderr, DateTime.Now);
+                            if (!m_sessionChannel.Writer.TryWrite(item))
+                            {
+                                var vt = m_sessionChannel.Writer.WriteAsync(item);
+                                if (!vt.IsCompletedSuccessfully)
+                                {
+                                    _ = vt.AsTask();
+                                }
+                            }
+                        }
+                        start = i + 1; // skip delimiter
+                    }
+                }
+                
+                // Trailing segment
+                if (start < span.Length)
+                {
+                    var line = new string(span.Slice(start));
                     var item = (line, isStderr, DateTime.Now);
                     if (!m_sessionChannel.Writer.TryWrite(item))
                     {
                         var vt = m_sessionChannel.Writer.WriteAsync(item);
                         if (!vt.IsCompletedSuccessfully)
                         {
-                            _ = vt.AsTask(); // fire-and-forget fallback for rare backpressure/closing cases
+                            _ = vt.AsTask();
                         }
                     }
                 }
