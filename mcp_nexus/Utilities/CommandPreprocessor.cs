@@ -13,6 +13,32 @@ namespace mcp_nexus.Utilities
         private static readonly Regex m_PathPattern = MyRegex();
         private readonly IPathHandler m_PathHandler;
         private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> m_CommandCache = new();
+        private static List<string> SplitPathTokens(string raw)
+        {
+            var tokens = new List<string>();
+            if (string.IsNullOrWhiteSpace(raw)) return tokens;
+            ReadOnlySpan<char> span = raw.AsSpan();
+            int start = 0;
+            for (int i = 0; i <= span.Length; i++)
+            {
+                bool atEnd = i == span.Length;
+                if (atEnd || span[i] == ';' || span[i] == ' ')
+                {
+                    if (i > start)
+                    {
+                        var token = span.Slice(start, i - start).Trim();
+                        token = token.Trim('"');
+                        token = token.Trim('\'');
+                        if (!token.IsEmpty)
+                        {
+                            tokens.Add(new string(token));
+                        }
+                    }
+                    start = i + 1;
+                }
+            }
+            return tokens;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CommandPreprocessor"/> class.
@@ -71,10 +97,9 @@ namespace mcp_nexus.Utilities
                 if (match.Success)
                 {
                     var pathArg = match.Groups[1].Value;
-                    var paths = pathArg.Split([';', ' '], StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var path in paths)
+                    foreach (var path in SplitPathTokens(pathArg))
                     {
-                        var cleanPath = path.Trim().Trim('"').Trim('\'');
+                        var cleanPath = path;
                         if (!cleanPath.StartsWith("srv", StringComparison.OrdinalIgnoreCase))
                         {
                             EnsureDirectoryExists(cleanPath);
@@ -90,10 +115,9 @@ namespace mcp_nexus.Utilities
                 if (match.Success)
                 {
                     var pathArg = match.Groups[1].Value;
-                    var parts = pathArg.Split([';', ' '], StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var part in parts)
+                    foreach (var part in SplitPathTokens(pathArg))
                     {
-                        var clean = part.Trim().Trim('"').Trim('\'');
+                        var clean = part;
                         if (ShouldSkipSymbolPathToken(clean))
                             continue;
                         EnsureDirectoryExists(clean);
@@ -108,10 +132,9 @@ namespace mcp_nexus.Utilities
                 if (match.Success)
                 {
                     var arg = match.Groups[1].Value;
-                    var parts = arg.Split([';', ' '], StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var part in parts)
+                    foreach (var part in SplitPathTokens(arg))
                     {
-                        var clean = part.Trim().Trim('"').Trim('\'');
+                        var clean = part;
                         if (ShouldSkipSymbolPathToken(clean))
                             continue;
                         EnsureDirectoryExists(clean);
