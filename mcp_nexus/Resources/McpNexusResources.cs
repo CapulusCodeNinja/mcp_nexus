@@ -49,12 +49,15 @@ namespace mcp_nexus.Resources
             try
             {
                 var allSessions = sessionManager.GetAllSessions();
-                var sessions = allSessions.OrderByDescending(s => s.CreatedAt).ToList();
-
+                // Avoid materializing and sorting; stream enumerable for throughput
+                var sessionEnumerable = allSessions; // already an IEnumerable<ISessionInfo>
+                // Compute count with a single pass if needed; otherwise, let JSON serialize the enumerable
+                int count = 0;
+                foreach (var _ in sessionEnumerable) { count++; }
                 var result = new
                 {
-                    sessions,
-                    count = sessions.Count,
+                    sessions = allSessions, // keep as enumerable to avoid allocations
+                    count,
                     timestamp = DateTimeOffset.Now
                 };
 
@@ -154,28 +157,33 @@ namespace mcp_nexus.Resources
                 }
 
                 var allExtensions = extensionManager.GetAllExtensions();
-                var extensionList = allExtensions.Select(ext => new
+                // Build a compact array without sorting/materialization overhead beyond one pass
+                var list = new List<object>();
+                foreach (var ext in allExtensions)
                 {
-                    name = ext.Name,
-                    description = ext.Description,
-                    version = ext.Version,
-                    author = ext.Author,
-                    scriptType = ext.ScriptType,
-                    timeout = ext.Timeout,
-                    parameters = ext.Parameters?.Select(p => new
+                    list.Add(new
                     {
-                        name = p.Name,
-                        type = p.Type,
-                        description = p.Description,
-                        required = p.Required,
-                        defaultValue = p.Default
-                    }).ToArray() ?? Array.Empty<object>()
-                }).OrderBy(e => e.name).ToList();
-
+                        name = ext.Name,
+                        description = ext.Description,
+                        version = ext.Version,
+                        author = ext.Author,
+                        scriptType = ext.ScriptType,
+                        timeout = ext.Timeout,
+                        parameters = ext.Parameters?.Select(p => new
+                        {
+                            name = p.Name,
+                            type = p.Type,
+                            description = p.Description,
+                            required = p.Required,
+                            defaultValue = p.Default
+                        }).ToArray() ?? Array.Empty<object>()
+                    });
+                }
+                var extensionsArray = list.ToArray();
                 var result = new
                 {
-                    extensions = extensionList,
-                    count = extensionList.Count,
+                    extensions = extensionsArray,
+                    count = extensionsArray.Length,
                     enabled = true,
                     timestamp = DateTimeOffset.Now,
                     usage = new
