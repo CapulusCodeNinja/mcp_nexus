@@ -55,7 +55,15 @@ namespace mcp_nexus.Debugger
             {
                 foreach (var line in lines)
                 {
-                    m_sessionChannel.Writer.TryWrite((line, isStderr, DateTime.Now));
+                    var item = (line, isStderr, DateTime.Now);
+                    if (!m_sessionChannel.Writer.TryWrite(item))
+                    {
+                        var vt = m_sessionChannel.Writer.WriteAsync(item);
+                        if (!vt.IsCompletedSuccessfully)
+                        {
+                            _ = vt.AsTask(); // fire-and-forget fallback for rare backpressure/closing cases
+                        }
+                    }
                 }
             }
         }
