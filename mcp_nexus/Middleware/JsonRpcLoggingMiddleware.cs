@@ -226,7 +226,7 @@ namespace mcp_nexus.Middleware
                             truncatedObject[property.Name] = TruncateLargeFields(property.Value, maxFieldLength, shouldTruncate);
                         }
                     }
-                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedObject)).RootElement;
+                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedObject, mcp_nexus.Utilities.JsonOptions.JsonIndented)).RootElement;
 
                 case JsonValueKind.Array:
                     var truncatedArray = new List<object>();
@@ -234,7 +234,7 @@ namespace mcp_nexus.Middleware
                     {
                         truncatedArray.Add(TruncateLargeFields(item, maxFieldLength, shouldTruncate));
                     }
-                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedArray)).RootElement;
+                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedArray, mcp_nexus.Utilities.JsonOptions.JsonIndented)).RootElement;
 
                 case JsonValueKind.String:
                     var stringValue = element.GetString() ?? "";

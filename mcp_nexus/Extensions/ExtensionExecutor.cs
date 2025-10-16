@@ -411,7 +411,7 @@ namespace mcp_nexus.Extensions
             else
             {
                 m_Logger.LogDebug("Parameters is an object, serializing to JSON");
-                json = JsonSerializer.Serialize(parameters);
+                json = JsonSerializer.Serialize(parameters, mcp_nexus.Utilities.JsonOptions.JsonIndented);
                 m_Logger.LogDebug("Serialized JSON: {Json}", json);
             }
 
