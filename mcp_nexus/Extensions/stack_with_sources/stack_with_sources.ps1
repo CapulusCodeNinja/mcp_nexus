@@ -38,6 +38,15 @@ try {
     Write-NexusProgress "Enable source verbosity for $threadDisplay..."
     $stackOutput = Invoke-NexusCommand ".srcnoisy 3"
     
+    Write-NexusProgress "Enable the source server for $threadDisplay..."
+    $stackOutput = Invoke-NexusCommand ".srcfix+"
+    
+    Write-NexusProgress "Reload the symbols for $threadDisplay..."
+    $stackOutput = Invoke-NexusCommand ".reload /f"
+    
+    Write-NexusProgress "Load the symbols of all modules for $threadDisplay..."
+    $stackOutput = Invoke-NexusCommand "ld *"
+
     # Step 1: Get stack with line numbers
     Write-NexusProgress "Retrieving stack trace for $threadDisplay..."
     $stackCommand = if ($ThreadId -eq ".") { "kL" } else { "~${ThreadId}kL" }
