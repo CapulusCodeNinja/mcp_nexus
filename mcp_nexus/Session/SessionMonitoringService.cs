@@ -233,9 +233,16 @@ namespace mcp_nexus.Session
         {
             try
             {
-                return m_sessions.Values
-                    .Select(s => s.CommandQueue.GetQueueStatus().Count())
-                    .Sum();
+                var total = 0;
+                foreach (var s in m_sessions.Values)
+                {
+                    var qs = s.CommandQueue.GetQueueStatus();
+                    // Avoid materialization: iterate and count
+                    var count = 0;
+                    foreach (var _ in qs) { count++; }
+                    total += count;
+                }
+                return total;
             }
             catch (Exception ex)
             {
@@ -252,9 +259,15 @@ namespace mcp_nexus.Session
         {
             try
             {
-                return m_sessions.Values
-                    .Select(s => s.CommandQueue.GetCurrentCommand() != null ? 1 : 0)
-                    .Sum();
+                var total = 0;
+                foreach (var s in m_sessions.Values)
+                {
+                    if (s.CommandQueue.GetCurrentCommand() != null)
+                    {
+                        total += 1;
+                    }
+                }
+                return total;
             }
             catch (Exception ex)
             {
@@ -339,15 +352,15 @@ namespace mcp_nexus.Session
             try
             {
                 var now = DateTime.Now;
-                var lifetimes = m_sessions.Values
-                    .Select(s => now - s.CreatedAt)
-                    .ToList();
-
-                if (lifetimes.Count == 0)
-                    return TimeSpan.Zero;
-
-                var averageTicks = lifetimes.Select(t => t.Ticks).Average();
-                return new TimeSpan((long)averageTicks);
+                long totalTicks = 0;
+                int n = 0;
+                foreach (var s in m_sessions.Values)
+                {
+                    totalTicks += (now - s.CreatedAt).Ticks;
+                    n++;
+                }
+                if (n == 0) return TimeSpan.Zero;
+                return new TimeSpan(totalTicks / n);
             }
             catch (Exception ex)
             {

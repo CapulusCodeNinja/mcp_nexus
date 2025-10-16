@@ -190,19 +190,22 @@ namespace mcp_nexus.Extensions
                 if ((DateTime.Now - m_LastCleanup).TotalMinutes < 5)
                     return;
 
-                var expiredTokens = m_Tokens
-                    .Where(kvp => kvp.Value.ExpiresAt < DateTime.Now || kvp.Value.IsRevoked)
-                    .Select(kvp => kvp.Key)
-                    .ToList();
-
-                foreach (var token in expiredTokens)
+                var removed = 0;
+                foreach (var kvp in m_Tokens)
                 {
-                    m_Tokens.TryRemove(token, out _);
+                    var info = kvp.Value;
+                    if (info.ExpiresAt < DateTime.Now || info.IsRevoked)
+                    {
+                        if (m_Tokens.TryRemove(kvp.Key, out _))
+                        {
+                            removed++;
+                        }
+                    }
                 }
 
-                if (expiredTokens.Count > 0)
+                if (removed > 0)
                 {
-                    m_Logger.LogDebug("Cleaned up {Count} expired/revoked tokens", expiredTokens.Count);
+                    m_Logger.LogDebug("Cleaned up {Count} expired/revoked tokens", removed);
                 }
 
                 m_LastCleanup = DateTime.Now;
