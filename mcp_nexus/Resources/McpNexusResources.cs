@@ -153,7 +153,7 @@ namespace mcp_nexus.Resources
                         timestamp = DateTimeOffset.Now
                     };
 
-                return Task.FromResult(JsonSerializer.Serialize(disabledResult, mcp_nexus.Utilities.JsonOptions.JsonIndented));
+                    return Task.FromResult(JsonSerializer.Serialize(disabledResult, mcp_nexus.Utilities.JsonOptions.JsonIndented));
                 }
 
                 var allExtensions = extensionManager.GetAllExtensions();

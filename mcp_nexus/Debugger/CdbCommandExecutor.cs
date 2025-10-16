@@ -72,7 +72,7 @@ namespace mcp_nexus.Debugger
                         start = i + 1; // skip delimiter
                     }
                 }
-                
+
                 // Trailing segment
                 if (start < span.Length)
                 {
