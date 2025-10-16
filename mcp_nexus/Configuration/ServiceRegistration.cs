@@ -32,6 +32,7 @@ namespace mcp_nexus.Configuration
             LogManager.ReconfigExistingLoggers();
             var bootstrapLogger = LogManager.GetCurrentClassLogger();
             bootstrapLogger.Info("Registering services...");
+            try { LogManager.Flush(); } catch { }
 
             RegisterCoreServices(services, configuration, customCdbPath, serviceMode);
             RegisterRecoveryServices(services);
@@ -39,6 +40,7 @@ namespace mcp_nexus.Configuration
             RegisterExtensionServices(services, configuration);
 
             bootstrapLogger.Info("All services registered successfully");
+            try { LogManager.Flush(); } catch { }
         }
 
         /// <summary>
