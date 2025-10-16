@@ -194,7 +194,7 @@ namespace mcp_nexus.Debugger
         /// </summary>
         private string ReadAvailableLines(StreamReader reader, string streamName)
         {
-            var lines = new List<string>();
+            var sb = new System.Text.StringBuilder();
 
             try
             {
@@ -202,14 +202,16 @@ namespace mcp_nexus.Debugger
                 while (!reader.EndOfStream)
                 {
                     var line = reader.ReadLine();
-                    if (line != null)
-                    {
-                        lines.Add(line);
-                    }
-                    else
+                    if (line == null)
                     {
                         break; // No more data available
                     }
+
+                    if (sb.Length > 0)
+                    {
+                        sb.Append(Environment.NewLine);
+                    }
+                    sb.Append(line);
                 }
             }
             catch (Exception ex)
@@ -217,7 +219,7 @@ namespace mcp_nexus.Debugger
                 m_logger.LogError(ex, "Error reading available lines from {StreamName}", streamName);
             }
 
-            return lines.Count > 0 ? string.Join(Environment.NewLine, lines) : string.Empty;
+            return sb.Length > 0 ? sb.ToString() : string.Empty;
         }
 
         /// <summary>
