@@ -308,10 +308,17 @@ namespace mcp_nexus.Tools
                     sessionId, context.Status, context.LastActivity);
                 var commandId = commandQueue.QueueCommand(command);
 
-                // Get queue position for the newly queued command
-                var queueStatus = commandQueue.GetQueueStatus().ToList();
-                var queuePosition = queueStatus.FindIndex(q => q.Id == commandId);
-                var totalInQueue = queueStatus.Count;
+                // Get queue position for the newly queued command without materializing the whole list
+                var qs = commandQueue.GetQueueStatus();
+                var queuePosition = -1;
+                var totalInQueue = 0;
+                var idx = 0;
+                foreach (var q in qs)
+                {
+                    if (queuePosition < 0 && q.Id == commandId) queuePosition = idx;
+                    idx++;
+                }
+                totalInQueue = idx;
 
                 var response = new
                 {
