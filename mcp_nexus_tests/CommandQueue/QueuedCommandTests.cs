@@ -16,7 +16,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var id = "cmd-123";
             var command = "!analyze -v";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -38,7 +38,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var id = "cmd-123";
             var command = "!analyze -v";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
             var state = CommandState.Executing;
@@ -56,7 +56,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var id = "cmd-123";
             var command = "!analyze -v";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -77,7 +77,7 @@ namespace mcp_nexus_tests.CommandQueue
             var id1 = "cmd-123";
             var id2 = "cmd-456";
             var command = "!analyze -v";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -97,7 +97,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var id = "cmd-123";
             var command = "!analyze -v";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -115,7 +115,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var id = "cmd-123";
             var command = "!analyze -v";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -136,7 +136,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var id = "cmd-123";
             var command = "!analyze -v";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -155,7 +155,7 @@ namespace mcp_nexus_tests.CommandQueue
             var id1 = "cmd-123";
             var id2 = "cmd-456";
             var command = "!analyze -v";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -172,7 +172,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Arrange
             var command = "!analyze -v";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -189,7 +189,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Arrange
             var id = "cmd-123";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -207,7 +207,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var id = "cmd-123";
             var command = "!analyze -v";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var cancellationTokenSource = new CancellationTokenSource();
 
             // Act
@@ -224,7 +224,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var id = "cmd-123";
             var command = "!analyze -v";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
 
             // Act
@@ -242,7 +242,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Arrange
             var command = "!analyze -v";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -261,7 +261,7 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Arrange
             var id = "cmd-123";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 

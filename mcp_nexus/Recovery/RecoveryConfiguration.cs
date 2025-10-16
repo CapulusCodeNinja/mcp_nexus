@@ -54,7 +54,7 @@ namespace mcp_nexus.Recovery
             if (attemptCount >= MaxRecoveryAttempts)
                 return false;
 
-            var timeSinceLastAttempt = DateTime.UtcNow - lastAttemptTime;
+            var timeSinceLastAttempt = DateTime.Now - lastAttemptTime;
             return timeSinceLastAttempt >= RecoveryAttemptCooldown;
         }
 

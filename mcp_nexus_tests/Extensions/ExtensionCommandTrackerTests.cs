@@ -294,7 +294,7 @@ namespace mcp_nexus_tests.Extensions
             Assert.IsAssignableFrom<ICommandInfo>(commandInfo);
             Assert.Equal(commandId, commandInfo.CommandId);
             // QueueTime should be set when command is tracked
-            Assert.True(commandInfo.QueueTime > DateTime.UtcNow.AddMinutes(-1));
+            Assert.True(commandInfo.QueueTime > DateTime.Now.AddMinutes(-1));
         }
 
         [Fact]

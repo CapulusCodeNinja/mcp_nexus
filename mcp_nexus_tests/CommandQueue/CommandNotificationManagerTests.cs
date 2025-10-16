@@ -64,7 +64,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
-            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, cancellationTokenSource);
+            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now, completionSource, cancellationTokenSource);
 
             // Act
             m_Manager.NotifyCommandStatusFireAndForget(queuedCommand, "executing", "result", 50);
@@ -135,7 +135,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
-            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, cancellationTokenSource);
+            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now, completionSource, cancellationTokenSource);
             var elapsed = TimeSpan.FromMinutes(5);
 
             // Act
@@ -160,7 +160,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
-            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, cancellationTokenSource);
+            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now, completionSource, cancellationTokenSource);
             var elapsed = TimeSpan.FromHours(2); // Very long time
 
             // Act
@@ -365,7 +365,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
-            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, cancellationTokenSource);
+            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now, completionSource, cancellationTokenSource);
             var elapsed = TimeSpan.FromMinutes(5);
 
             m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))

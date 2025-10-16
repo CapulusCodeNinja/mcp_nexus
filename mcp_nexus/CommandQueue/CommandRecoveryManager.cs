@@ -41,7 +41,7 @@ namespace mcp_nexus.CommandQueue
         public async Task<string> ExecuteCommandWithRecoveryAsync(QueuedCommand queuedCommand, CancellationToken cancellationToken)
         {
             var commandTimeout = m_config.DetermineCommandTimeout(queuedCommand.Command ?? string.Empty);
-            var startTime = DateTime.UtcNow;
+            var startTime = DateTime.Now;
 
             m_logger.LogInformation("🔄 Executing resilient command {CommandId}: {Command} (timeout: {Timeout})",
                 queuedCommand.Id, queuedCommand.Command, commandTimeout);
@@ -59,7 +59,7 @@ namespace mcp_nexus.CommandQueue
 
                 // Stop heartbeat (task will be cancelled by the cancellation token)
 
-                var elapsed = DateTime.UtcNow - startTime;
+                var elapsed = DateTime.Now - startTime;
                 m_logger.LogInformation("✅ Command {CommandId} completed successfully in {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
 
@@ -72,7 +72,7 @@ namespace mcp_nexus.CommandQueue
             }
             catch (TimeoutException ex)
             {
-                var elapsed = DateTime.UtcNow - startTime;
+                var elapsed = DateTime.Now - startTime;
                 m_logger.LogError("⏰ Command {CommandId} timed out after {Elapsed}ms: {Error}",
                     queuedCommand.Id, elapsed.TotalMilliseconds, ex.Message);
 
@@ -82,7 +82,7 @@ namespace mcp_nexus.CommandQueue
             }
             catch (Exception ex)
             {
-                var elapsed = DateTime.UtcNow - startTime;
+                var elapsed = DateTime.Now - startTime;
                 m_logger.LogError(ex, "❌ Command {CommandId} failed after {Elapsed}ms: {Error}",
                     queuedCommand.Id, elapsed.TotalMilliseconds, ex.Message);
 
@@ -154,7 +154,7 @@ namespace mcp_nexus.CommandQueue
                     {
                         await Task.Delay(m_config.HeartbeatInterval, cancellationToken);
 
-                        var elapsed = DateTime.UtcNow - startTime;
+                        var elapsed = DateTime.Now - startTime;
                         var heartbeatDetails = ResilientQueueConfiguration.GenerateHeartbeatDetails(queuedCommand.Command ?? string.Empty, elapsed);
 
                         m_logger.LogDebug("💓 Heartbeat for command {CommandId}: {Details} (elapsed: {Elapsed})",

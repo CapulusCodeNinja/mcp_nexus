@@ -51,7 +51,7 @@ namespace mcp_nexus_tests.Session.Models
             // Arrange
             var realisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
             var mockCommandQueue = new Mock<ICommandQueueService>();
-            _ = DateTime.UtcNow;
+            _ = DateTime.Now;
             const string sessionId = "test-session-123";
             const string dumpPath = "C:\\test.dmp";
             const string symbolsPath = "C:\\symbols";
@@ -97,7 +97,7 @@ namespace mcp_nexus_tests.Session.Models
         public void SessionContext_WithValues_SetsProperties()
         {
             // Arrange
-            var createdAt = DateTime.UtcNow;
+            var createdAt = DateTime.Now;
             const string sessionId = "context-session-456";
             const string description = "Test session context";
 

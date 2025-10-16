@@ -216,7 +216,7 @@ namespace mcp_nexus_tests.Notifications
             // Arrange
             var sessionId = "session-123";
             var eventType = "session_started";
-            var eventData = new { timestamp = DateTime.UtcNow, version = "1.0" };
+            var eventData = new { timestamp = DateTime.Now, version = "1.0" };
 
             // Act
             var notification = NotificationFactory.CreateSessionEventNotification(sessionId, eventType, eventData);

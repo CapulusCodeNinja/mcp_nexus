@@ -73,7 +73,7 @@ namespace mcp_nexus.CommandQueue
             var tcs = new TaskCompletionSource<string>();
             var cts = new CancellationTokenSource();
 
-            var queuedCommand = new QueuedCommand(commandId, command, DateTime.UtcNow, tcs, cts);
+            var queuedCommand = new QueuedCommand(commandId, command, DateTime.Now, tcs, cts);
 
             m_logger.LogInformation("📝 Adding to activeCommands dictionary: {CommandId}", commandId);
             m_activeCommands[commandId] = queuedCommand;
@@ -278,7 +278,7 @@ namespace mcp_nexus.CommandQueue
                     0
                 )
                 {
-                    Elapsed = DateTime.UtcNow - command.QueueTime,
+                    Elapsed = DateTime.Now - command.QueueTime,
                     Remaining = TimeSpan.Zero, // Not applicable for basic queue
                     IsCompleted = command.State is CommandState.Completed or CommandState.Failed or CommandState.Cancelled
                 };

@@ -489,7 +489,7 @@ namespace mcp_nexus_tests.CommandQueue
             Assert.NotNull(info);
             Assert.Equal(commandId, info.CommandId);
             Assert.Equal("version", info.Command);
-            Assert.True(info.QueueTime <= DateTime.UtcNow);
+            Assert.True(info.QueueTime <= DateTime.Now);
         }
 
         [Fact]

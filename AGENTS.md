@@ -108,11 +108,18 @@ public ReturnType MethodName(ParameterType paramName)
 - **Classes**: PascalCase (e.g., `SessionManager`, `CommandQueueService`)
 - **Methods**: PascalCase (e.g., `CreateSessionAsync`, `QueueCommand`)
 - **Properties**: PascalCase (e.g., `SessionId`, `IsHealthy`)
-- **Fields**: camelCase with `m_` prefix followed by PascalCase (e.g., `m_Logger`, `m_Sessions`, `m_CommandQueue`)
+- **Fields (including static fields)**: camelCase with `m_` prefix followed by PascalCase (e.g., `m_Logger`, `m_Sessions`, `m_CommandQueue`).
+  - Static fields are treated as member variables for naming purposes and MUST also use the `m_` prefix (NOT `s_`).
+  - Example: use `m_PathPattern` instead of `s_PathPattern`.
 - **Constants**: PascalCase (e.g., `MaxSessions`, `DefaultTimeout`)
 
 **IMPORTANT**: Member variables must follow the pattern `m_PascalCase` where the first letter after the underscore is uppercase. This ensures consistency with C# naming conventions and improves code readability.
 - **Enums**: PascalCase (e.g., `CommandState`, `CircuitState`)
+
+### Time Policy
+- Use local time consistently across the codebase.
+- Prefer `DateTime.Now` over `DateTime.UtcNow` and `DateTimeOffset.Now` over `DateTimeOffset.UtcNow` in any possible case.
+- Logs, timestamps, metrics, and persisted times should all use local time to avoid confusion.
 
 ### Code Organization
 - **One class per file**: Each class in its own file

@@ -86,7 +86,7 @@ namespace mcp_nexus.Recovery
             }
 
             var cts = new CancellationTokenSource();
-            var timeoutInfo = new TimeoutInfo(cts, onTimeout, DateTime.UtcNow);
+            var timeoutInfo = new TimeoutInfo(cts, onTimeout, DateTime.Now);
             m_timeouts[commandId] = timeoutInfo;
 
             m_logger.LogDebug("Starting timeout for command {CommandId}: {TimeoutMinutes:F1} minutes",
@@ -166,7 +166,7 @@ namespace mcp_nexus.Recovery
             if (m_timeouts.TryRemove(commandId, out var existingInfo))
             {
                 var originalHandler = existingInfo.OnTimeout;
-                var totalElapsed = DateTime.UtcNow - existingInfo.StartTime;
+                var totalElapsed = DateTime.Now - existingInfo.StartTime;
 
                 m_logger.LogDebug("Extending timeout for command {CommandId} by {AdditionalMinutes:F1} minutes (already running for {ElapsedMinutes:F1} minutes)",
                     commandId, additionalTime.TotalMinutes, totalElapsed.TotalMinutes);
@@ -193,7 +193,7 @@ namespace mcp_nexus.Recovery
 
                         if (!newCts.Token.IsCancellationRequested)
                         {
-                            var finalElapsed = DateTime.UtcNow - existingInfo.StartTime;
+                            var finalElapsed = DateTime.Now - existingInfo.StartTime;
                             m_logger.LogError("Command {CommandId} exceeded extended timeout after {TotalMinutes:F1} minutes",
                                 commandId, finalElapsed.TotalMinutes);
 

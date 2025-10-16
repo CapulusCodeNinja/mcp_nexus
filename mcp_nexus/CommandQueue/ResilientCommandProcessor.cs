@@ -19,7 +19,7 @@ namespace mcp_nexus.CommandQueue
         private long m_commandsProcessed = 0;
         private long m_commandsFailed = 0;
         private long m_commandsCancelled = 0;
-        private DateTime m_lastStatsLog = DateTime.UtcNow;
+        private DateTime m_lastStatsLog = DateTime.Now;
 
         // Cleanup management
         private readonly Timer m_cleanupTimer;
@@ -89,7 +89,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>A task representing the asynchronous operation</returns>
         private async Task ProcessSingleCommandAsync(QueuedCommand queuedCommand, CancellationToken cancellationToken)
         {
-            var startTime = DateTime.UtcNow;
+            var startTime = DateTime.Now;
 
             try
             {
@@ -111,7 +111,7 @@ namespace mcp_nexus.CommandQueue
                 CompleteCommand(queuedCommand, result, CommandState.Completed);
                 Interlocked.Increment(ref m_commandsProcessed);
 
-                var completionTime = DateTime.UtcNow;
+                var completionTime = DateTime.Now;
                 var elapsed = completionTime - startTime;
 
                 // Log detailed command statistics
@@ -133,7 +133,7 @@ namespace mcp_nexus.CommandQueue
                 CompleteCommand(queuedCommand, "Command was cancelled", CommandState.Cancelled);
                 Interlocked.Increment(ref m_commandsCancelled);
 
-                var completionTime = DateTime.UtcNow;
+                var completionTime = DateTime.Now;
                 var elapsed = completionTime - startTime;
 
                 // Log detailed command statistics
@@ -147,7 +147,7 @@ namespace mcp_nexus.CommandQueue
                 // Service shutdown
                 CompleteCommand(queuedCommand, "Service is shutting down", CommandState.Cancelled);
 
-                var completionTime = DateTime.UtcNow;
+                var completionTime = DateTime.Now;
                 LogCommandStatistics(queuedCommand, startTime, completionTime, CommandState.Cancelled);
 
                 m_logger.LogInformation("🛑 Command {CommandId} cancelled due to service shutdown", queuedCommand.Id);
@@ -159,7 +159,7 @@ namespace mcp_nexus.CommandQueue
                 CompleteCommand(queuedCommand, errorMessage, CommandState.Failed);
                 Interlocked.Increment(ref m_commandsFailed);
 
-                var completionTime = DateTime.UtcNow;
+                var completionTime = DateTime.Now;
                 var elapsed = completionTime - startTime;
 
                 // Log detailed command statistics
@@ -333,7 +333,7 @@ namespace mcp_nexus.CommandQueue
             // Check if command is still executing
             if (queuedCommand.CompletionSource?.Task.IsCompleted == false)
             {
-                var elapsed = DateTime.UtcNow - queuedCommand.QueueTime;
+                var elapsed = DateTime.Now - queuedCommand.QueueTime;
                 return $"Command is still executing (elapsed: {elapsed:mm\\:ss}, command: {commandId})";
             }
 
@@ -377,7 +377,7 @@ namespace mcp_nexus.CommandQueue
             if (!m_activeCommands.TryGetValue(commandId, out var queuedCommand))
                 return null;
 
-            var elapsed = DateTime.UtcNow - queuedCommand.QueueTime;
+            var elapsed = DateTime.Now - queuedCommand.QueueTime;
             var isCompleted = queuedCommand.CompletionSource?.Task.IsCompleted == true;
 
             return new CommandInfo(
@@ -449,7 +449,7 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         private void LogPeriodicStatistics()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             if (now - m_lastStatsLog >= TimeSpan.FromMinutes(5))
             {
                 var (Processed, Failed, Cancelled) = GetPerformanceStats();
@@ -467,7 +467,7 @@ namespace mcp_nexus.CommandQueue
         {
             try
             {
-                var cutoffTime = DateTime.UtcNow - m_config.CommandRetentionTime;
+                var cutoffTime = DateTime.Now - m_config.CommandRetentionTime;
                 var commandsToRemove = new List<string>();
 
                 foreach (var kvp in m_activeCommands)

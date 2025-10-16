@@ -343,15 +343,15 @@ namespace mcp_nexus_tests.Session
             // Setup command queue to return some test data
             var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>
             {
-                ("1", "k", DateTime.UtcNow.AddMinutes(-5), "Completed"),
-                ("2", "lm", DateTime.UtcNow.AddMinutes(-2), "Queued"),
-                ("3", "!analyze", DateTime.UtcNow.AddMinutes(-1), "Executing")
+                ("1", "k", DateTime.Now.AddMinutes(-5), "Completed"),
+                ("2", "lm", DateTime.Now.AddMinutes(-2), "Queued"),
+                ("3", "!analyze", DateTime.Now.AddMinutes(-1), "Executing")
             };
             mockCommandQueue.Setup(x => x.GetQueueStatus()).Returns(queueStatus);
 
             var sessionInfo = new SessionInfo(sessionId, realisticCdbSession, mockCommandQueue.Object, dumpPath)
             {
-                LastActivity = DateTime.UtcNow.AddMinutes(-5),
+                LastActivity = DateTime.Now.AddMinutes(-5),
                 Status = status
             };
             return sessionInfo;

@@ -35,7 +35,7 @@ namespace mcp_nexus_tests.Infrastructure
             Assert.Equal(string.Empty, result.ErrorMessage);
             Assert.NotNull(result.PrivilegeStatus);
             Assert.Empty(result.PrivilegeStatus);
-            Assert.True(result.AnalysisTime <= DateTime.UtcNow);
+            Assert.True(result.AnalysisTime <= DateTime.Now);
         }
 
         [Fact]
@@ -232,7 +232,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var result = new PrivilegeAnalysisResult();
-            var analysisTime = DateTime.UtcNow.AddMinutes(-5);
+            var analysisTime = DateTime.Now.AddMinutes(-5);
 
             // Act
             result.AnalysisTime = analysisTime;
@@ -245,13 +245,13 @@ namespace mcp_nexus_tests.Infrastructure
         public void AnalysisTime_DefaultValue_IsSetToUtcNow()
         {
             // Arrange
-            var beforeCreation = DateTime.UtcNow;
+            var beforeCreation = DateTime.Now;
 
             // Act
             var result = new PrivilegeAnalysisResult();
 
             // Assert
-            var afterCreation = DateTime.UtcNow;
+            var afterCreation = DateTime.Now;
             Assert.True(result.AnalysisTime >= beforeCreation);
             Assert.True(result.AnalysisTime <= afterCreation);
         }
@@ -270,7 +270,7 @@ namespace mcp_nexus_tests.Infrastructure
                 ["SeDebugPrivilege"] = false,
                 ["SeLoadDriverPrivilege"] = true
             };
-            var analysisTime = DateTime.UtcNow.AddMinutes(-10);
+            var analysisTime = DateTime.Now.AddMinutes(-10);
 
             // Act
             result.HasRequiredPrivileges = false;
@@ -452,7 +452,7 @@ namespace mcp_nexus_tests.Infrastructure
         {
             // Arrange
             var result = new PrivilegeAnalysisResult();
-            var utcNow = DateTime.UtcNow;
+            var utcNow = DateTime.Now;
 
             // Act
             result.AnalysisTime = utcNow;

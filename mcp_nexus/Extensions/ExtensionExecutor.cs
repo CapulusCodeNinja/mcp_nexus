@@ -21,7 +21,7 @@ namespace mcp_nexus.Extensions
         private readonly ConcurrentDictionary<string, IProcessHandle> m_Processes = new();
 
         // Compiled regex to strip ANSI escape sequences from process output
-        private static readonly Regex s_AnsiRegex = new("\x1B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
+        private static readonly Regex m_AnsiRegex = new("\x1B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExtensionExecutor"/> class.
@@ -106,7 +106,7 @@ namespace mcp_nexus.Extensions
                     CommandId = commandId,
                     ExtensionName = extensionName,
                     SessionId = sessionId,
-                    StartedAt = DateTime.UtcNow,
+                    StartedAt = DateTime.Now,
                     IsRunning = true,
                     CallbackCount = 0
                 };
@@ -588,7 +588,7 @@ namespace mcp_nexus.Extensions
             }
             try
             {
-                return s_AnsiRegex.Replace(input, string.Empty);
+                return m_AnsiRegex.Replace(input, string.Empty);
             }
             catch
             {

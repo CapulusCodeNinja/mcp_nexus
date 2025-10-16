@@ -95,7 +95,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandQueue = new BlockingCollection<QueuedCommand>();
             var cancellationTokenSource = new CancellationTokenSource();
             var completionSource = new TaskCompletionSource<string>();
-            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, cancellationTokenSource);
+            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now, completionSource, cancellationTokenSource);
 
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();
@@ -121,7 +121,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandQueue = new BlockingCollection<QueuedCommand>();
             var cancellationTokenSource = new CancellationTokenSource();
             var completionSource = new TaskCompletionSource<string>();
-            var queuedCommand = new QueuedCommand("cmd-1", "!invalid", DateTime.UtcNow, completionSource, cancellationTokenSource);
+            var queuedCommand = new QueuedCommand("cmd-1", "!invalid", DateTime.Now, completionSource, cancellationTokenSource);
 
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();
@@ -148,7 +148,7 @@ namespace mcp_nexus_tests.CommandQueue
             var cancellationTokenSource = new CancellationTokenSource();
             var commandCancellationTokenSource = new CancellationTokenSource();
             var completionSource = new TaskCompletionSource<string>();
-            var queuedCommand = new QueuedCommand("cmd-1", "k", DateTime.UtcNow, completionSource, commandCancellationTokenSource);
+            var queuedCommand = new QueuedCommand("cmd-1", "k", DateTime.Now, completionSource, commandCancellationTokenSource);
 
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();
@@ -180,7 +180,7 @@ namespace mcp_nexus_tests.CommandQueue
             var serviceCancellationTokenSource = new CancellationTokenSource();
             var commandCancellationTokenSource = new CancellationTokenSource();
             var completionSource = new TaskCompletionSource<string>();
-            var queuedCommand = new QueuedCommand("cmd-1", "k", DateTime.UtcNow, completionSource, commandCancellationTokenSource);
+            var queuedCommand = new QueuedCommand("cmd-1", "k", DateTime.Now, completionSource, commandCancellationTokenSource);
 
             commandQueue.Add(queuedCommand);
             commandQueue.CompleteAdding();
@@ -232,7 +232,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
-            var oldCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow.AddHours(-2), completionSource, cancellationTokenSource, CommandState.Completed);
+            var oldCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now.AddHours(-2), completionSource, cancellationTokenSource, CommandState.Completed);
 
             m_ActiveCommands["cmd-1"] = oldCommand;
 
@@ -249,7 +249,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
-            var recentCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow, completionSource, cancellationTokenSource, CommandState.Completed);
+            var recentCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now, completionSource, cancellationTokenSource, CommandState.Completed);
 
             m_ActiveCommands["cmd-1"] = recentCommand;
 
@@ -266,7 +266,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
-            var executingCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.UtcNow.AddHours(-2), completionSource, cancellationTokenSource, CommandState.Executing);
+            var executingCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now.AddHours(-2), completionSource, cancellationTokenSource, CommandState.Executing);
 
             m_ActiveCommands["cmd-1"] = executingCommand;
 

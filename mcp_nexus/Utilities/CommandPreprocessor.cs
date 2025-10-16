@@ -10,8 +10,9 @@ namespace mcp_nexus.Utilities
     /// </summary>
     public partial class CommandPreprocessor : ICommandPreprocessor
     {
-        private static readonly Regex s_PathPattern = MyRegex();
+        private static readonly Regex m_PathPattern = MyRegex();
         private readonly IPathHandler m_PathHandler;
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> m_CommandCache = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CommandPreprocessor"/> class.
@@ -35,8 +36,14 @@ namespace mcp_nexus.Utilities
                 return command;
             }
 
+            // Cache exact command string to avoid repeated regex/IO for identical inputs
+            return m_CommandCache.GetOrAdd(command, ProcessInternal);
+        }
+
+        private string ProcessInternal(string original)
+        {
             // Find and convert all WSL paths in the command (generic /mnt/<drive>/...)
-            var result = s_PathPattern.Replace(command, match =>
+            var result = m_PathPattern.Replace(original, match =>
             {
                 var wslPath = match.Value;
                 var windowsPath = m_PathHandler.ConvertToWindowsPath(wslPath);

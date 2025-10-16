@@ -24,7 +24,7 @@ namespace mcp_nexus.Session
         private readonly ConcurrentDictionary<string, SessionInfo> m_sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
         private readonly SessionLifecycleManager m_lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
         private readonly SessionMonitoringService m_monitoringService = monitoringService ?? throw new ArgumentNullException(nameof(monitoringService));
-        private readonly DateTime m_startTime = DateTime.UtcNow;
+        private readonly DateTime m_startTime = DateTime.Now;
 
         // Performance counters
         private long m_totalCommandsProcessed = 0;
@@ -40,7 +40,7 @@ namespace mcp_nexus.Session
             {
                 var activeSessionCount = m_sessions.Count;
                 var (Created, Closed, Expired) = m_lifecycleManager.GetLifecycleStats();
-                var uptime = DateTime.UtcNow - m_startTime;
+                var uptime = DateTime.Now - m_startTime;
 
                 // Update peak concurrent sessions
                 if (activeSessionCount > m_peakConcurrentSessions)
@@ -77,7 +77,7 @@ namespace mcp_nexus.Session
                 m_logger.LogError(ex, "Error calculating session statistics");
                 return new SessionStatistics
                 {
-                    Uptime = DateTime.UtcNow - m_startTime
+                    Uptime = DateTime.Now - m_startTime
                 };
             }
         }
@@ -215,7 +215,7 @@ namespace mcp_nexus.Session
                 // This would need access to session configuration for timeout
                 // For now, use a default 30-minute timeout
                 var sessionTimeout = TimeSpan.FromMinutes(30);
-                var timeUntilExpiry = sessionTimeout - (DateTime.UtcNow - sessionInfo.LastActivity);
+                var timeUntilExpiry = sessionTimeout - (DateTime.Now - sessionInfo.LastActivity);
                 return timeUntilExpiry > TimeSpan.Zero ? timeUntilExpiry : null;
             }
             catch (Exception ex)

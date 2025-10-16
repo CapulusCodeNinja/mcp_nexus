@@ -19,7 +19,7 @@ namespace mcp_nexus.CommandQueue
         private long m_CommandsProcessed = 0;
         private long m_CommandsFailed = 0;
         private long m_CommandsCancelled = 0;
-        private DateTime m_LastStatsLog = DateTime.UtcNow;
+        private DateTime m_LastStatsLog = DateTime.Now;
 
         // Cleanup timer
         private readonly Timer m_CleanupTimer;
@@ -101,7 +101,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>A task representing the asynchronous operation</returns>
         private async Task ProcessSingleCommandAsync(QueuedCommand queuedCommand, CancellationToken cancellationToken)
         {
-            var startTime = DateTime.UtcNow;
+            var startTime = DateTime.Now;
 
             try
             {
@@ -116,14 +116,14 @@ namespace mcp_nexus.CommandQueue
                 var result = await m_CdbSession.ExecuteCommand(queuedCommand.Command ?? string.Empty, queuedCommand.Id ?? string.Empty, tokenToUse);
 
                 // Store result in cache for session persistence
-                var commandResult = CommandResult.Success(result, DateTime.UtcNow - startTime);
+                var commandResult = CommandResult.Success(result, DateTime.Now - startTime);
                 m_ResultCache?.StoreResult(queuedCommand.Id ?? string.Empty, commandResult);
 
                 // Complete successfully
                 CompleteCommand(queuedCommand, result, CommandState.Completed);
                 Interlocked.Increment(ref m_CommandsProcessed);
 
-                var elapsed = DateTime.UtcNow - startTime;
+                var elapsed = DateTime.Now - startTime;
                 m_Logger.LogInformation("✅ Command {CommandId} completed in {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
             }
@@ -131,7 +131,7 @@ namespace mcp_nexus.CommandQueue
             {
                 // Command was specifically cancelled
                 var errorMessage = "Command was cancelled";
-                var elapsed = DateTime.UtcNow - startTime;
+                var elapsed = DateTime.Now - startTime;
 
                 // Store cancelled result in cache
                 var cancelledResult = CommandResult.Failure(errorMessage, elapsed);
@@ -147,7 +147,7 @@ namespace mcp_nexus.CommandQueue
             {
                 // Service shutdown
                 var errorMessage = "Service is shutting down";
-                var elapsed = DateTime.UtcNow - startTime;
+                var elapsed = DateTime.Now - startTime;
 
                 // Store cancelled result in cache
                 var cancelledResult = CommandResult.Failure(errorMessage, elapsed);
@@ -160,7 +160,7 @@ namespace mcp_nexus.CommandQueue
             {
                 // Command failed
                 var errorMessage = $"Command execution failed: {ex.Message}";
-                var elapsed = DateTime.UtcNow - startTime;
+                var elapsed = DateTime.Now - startTime;
 
                 // Store failed result in cache
                 var failedResult = CommandResult.Failure(errorMessage, elapsed);
@@ -261,7 +261,7 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         private void LogPeriodicStatistics()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             if (now - m_LastStatsLog >= m_Config.StatsLogInterval)
             {
                 var (Processed, Failed, Cancelled) = GetPerformanceStats();
@@ -287,7 +287,7 @@ namespace mcp_nexus.CommandQueue
         {
             try
             {
-                var cutoffTime = DateTime.UtcNow - m_Config.CommandRetentionTime;
+                var cutoffTime = DateTime.Now - m_Config.CommandRetentionTime;
                 var commandsToRemove = new List<string>();
 
                 foreach (var kvp in m_ActiveCommands)

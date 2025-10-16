@@ -20,7 +20,7 @@ namespace mcp_nexus.Recovery
         private readonly ICdbSession m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
         private readonly ILogger m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly RecoveryConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
-        private DateTime m_lastHealthCheck = DateTime.UtcNow;
+        private DateTime m_lastHealthCheck = DateTime.Now;
         private bool m_lastHealthResult = true;
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace mcp_nexus.Recovery
             try
             {
                 // Use cached result if within cooldown period (30 seconds)
-                var now = DateTime.UtcNow;
+                var now = DateTime.Now;
                 if (now - m_lastHealthCheck < TimeSpan.FromSeconds(30))
                 {
                     return m_lastHealthResult;
@@ -88,7 +88,7 @@ namespace mcp_nexus.Recovery
         /// <returns>Time since last health check</returns>
         public TimeSpan TimeSinceLastHealthCheck()
         {
-            return DateTime.UtcNow - m_lastHealthCheck;
+            return DateTime.Now - m_lastHealthCheck;
         }
 
         /// <summary>

@@ -317,7 +317,7 @@ namespace mcp_nexus_tests.Notifications
             Assert.Equal("Analysis complete", statusParams.Message);
             Assert.Equal("Process analysis results...", statusParams.Result);
             Assert.Null(statusParams.Error);
-            Assert.True(statusParams.Timestamp <= DateTime.UtcNow);
+            Assert.True(statusParams.Timestamp <= DateTime.Now);
         }
     }
 }

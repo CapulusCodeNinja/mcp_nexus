@@ -25,7 +25,7 @@ namespace mcp_nexus.Session
         ICommandQueueService CommandQueue { get; }
 
         /// <summary>
-        /// Gets the session creation time (UTC).
+        /// Gets the session creation time (local).
         /// </summary>
         DateTime CreatedAt { get; }
 

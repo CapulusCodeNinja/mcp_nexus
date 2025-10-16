@@ -20,7 +20,7 @@ namespace mcp_nexus.Session
         private readonly CancellationTokenSource m_shutdownCts;
         private readonly Task m_monitoringTask;
         private volatile bool m_disposed = false;
-        private DateTime m_lastHealthLogTime = DateTime.UtcNow;
+        private DateTime m_lastHealthLogTime = DateTime.Now;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SessionMonitoringService"/> class.
@@ -81,7 +81,7 @@ namespace mcp_nexus.Session
 
             if (m_sessions.TryGetValue(sessionId, out var sessionInfo))
             {
-                sessionInfo.LastActivity = DateTime.UtcNow;
+                sessionInfo.LastActivity = DateTime.Now;
                 m_logger.LogTrace("📝 Updated activity for session {SessionId}", sessionId);
             }
             else
@@ -173,7 +173,7 @@ namespace mcp_nexus.Session
                         }
 
                         // Check for sessions that might be stuck
-                        var timeSinceActivity = DateTime.UtcNow - sessionInfo.LastActivity;
+                        var timeSinceActivity = DateTime.Now - sessionInfo.LastActivity;
                         if (timeSinceActivity > TimeSpan.FromHours(1))
                         {
                             m_logger.LogWarning("⏰ Session {SessionId} has been inactive for {Duration}",
@@ -193,7 +193,7 @@ namespace mcp_nexus.Session
                 {
                     needsLog = true;
                 }
-                else if ((DateTime.UtcNow - m_lastHealthLogTime) > TimeSpan.FromMinutes(15))
+                else if ((DateTime.Now - m_lastHealthLogTime) > TimeSpan.FromMinutes(15))
                 {
                     needsLog = true;
                 }
@@ -203,12 +203,12 @@ namespace mcp_nexus.Session
                 {
                     m_logger.LogInformation("💊 Health check: {Total} sessions ({Active} active, {Inactive} inactive, {Unhealthy} unhealthy)",
                         sessionCount, activeCount, inactiveCount, unhealthyCount);
-                    m_lastHealthLogTime = DateTime.UtcNow;
+                    m_lastHealthLogTime = DateTime.Now;
                 }
                 else if (needsLog && sessionCount <= 0)
                 {
                     m_logger.LogInformation("💊 Health check: Server idle (0 sessions)");
-                    m_lastHealthLogTime = DateTime.UtcNow;
+                    m_lastHealthLogTime = DateTime.Now;
                 }
 
                 // Send health notification (automatically skipped in HTTP mode by notification service)
@@ -275,8 +275,8 @@ namespace mcp_nexus.Session
 
             try
             {
-                var sessionAge = DateTime.UtcNow - session.CreatedAt;
-                var timeSinceActivity = DateTime.UtcNow - session.LastActivity;
+                var sessionAge = DateTime.Now - session.CreatedAt;
+                var timeSinceActivity = DateTime.Now - session.LastActivity;
 
                 // Age-based hints
                 if (sessionAge < TimeSpan.FromMinutes(5))
@@ -338,7 +338,7 @@ namespace mcp_nexus.Session
         {
             try
             {
-                var now = DateTime.UtcNow;
+                var now = DateTime.Now;
                 var lifetimes = m_sessions.Values
                     .Select(s => now - s.CreatedAt)
                     .ToList();

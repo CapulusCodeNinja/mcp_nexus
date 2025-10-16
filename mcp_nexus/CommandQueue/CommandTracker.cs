@@ -120,7 +120,7 @@ namespace mcp_nexus.CommandQueue
             var command = GetCommand(commandId);
             if (command == null) return null;
 
-            var elapsed = DateTime.UtcNow - command.QueueTime;
+            var elapsed = DateTime.Now - command.QueueTime;
             var queuePosition = GetQueuePosition(commandId);
             var remaining = CalculateRemainingTime(queuePosition);
 

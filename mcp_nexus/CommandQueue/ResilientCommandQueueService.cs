@@ -87,7 +87,7 @@ namespace mcp_nexus.CommandQueue
             var queuedCommand = new QueuedCommand(
                 commandId,
                 command,
-                DateTime.UtcNow,
+                DateTime.Now,
                 new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously),
                 new CancellationTokenSource()
             );

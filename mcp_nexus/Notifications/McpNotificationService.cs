@@ -417,7 +417,7 @@ namespace mcp_nexus.Notifications
                 CdbSessionActive = cdbSessionActive,
                 QueueSize = queueSize,
                 ActiveCommands = activeCommands,
-                Timestamp = DateTimeOffset.UtcNow
+                Timestamp = DateTimeOffset.Now
             };
             await PublishNotificationAsync("ServerHealth", notification);
         }
@@ -576,7 +576,7 @@ namespace mcp_nexus.Notifications
                 Message = result,
                 Result = error,
                 Error = context?.ToString(),
-                Timestamp = DateTimeOffset.UtcNow
+                Timestamp = DateTimeOffset.Now
             };
             await PublishNotificationAsync("CommandStatus", notification);
         }
@@ -603,7 +603,7 @@ namespace mcp_nexus.Notifications
                 Progress = progress,
                 Message = result,
                 Result = error,
-                Timestamp = DateTimeOffset.UtcNow
+                Timestamp = DateTimeOffset.Now
             };
             await PublishNotificationAsync("CommandStatus", notification);
         }
@@ -628,7 +628,7 @@ namespace mcp_nexus.Notifications
                 Status = status,
                 Progress = progress,
                 Message = result,
-                Timestamp = DateTimeOffset.UtcNow
+                Timestamp = DateTimeOffset.Now
             };
             await PublishNotificationAsync("CommandStatus", notification);
         }
@@ -672,7 +672,7 @@ namespace mcp_nexus.Notifications
                 ElapsedSeconds = elapsed.TotalSeconds,
                 ElapsedDisplay = FormatElapsedTime(elapsed),
                 Details = details,
-                Timestamp = DateTimeOffset.UtcNow
+                Timestamp = DateTimeOffset.Now
             };
             await PublishNotificationAsync("CommandHeartbeat", heartbeatNotification);
         }
@@ -695,7 +695,7 @@ namespace mcp_nexus.Notifications
                 ElapsedSeconds = elapsed.TotalSeconds,
                 ElapsedDisplay = FormatElapsedTime(elapsed),
                 Details = null,
-                Timestamp = DateTimeOffset.UtcNow
+                Timestamp = DateTimeOffset.Now
             };
             await PublishNotificationAsync("CommandHeartbeat", heartbeatNotification);
         }
@@ -735,7 +735,7 @@ namespace mcp_nexus.Notifications
                 Success = success,
                 Message = message,
                 AffectedCommands = affectedCommands,
-                Timestamp = DateTimeOffset.UtcNow
+                Timestamp = DateTimeOffset.Now
             };
             await PublishNotificationAsync("SessionRecovery", notification);
         }

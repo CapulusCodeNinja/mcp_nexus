@@ -19,7 +19,7 @@ namespace mcp_nexus.Session.Models
         /// <summary>Command queue service for this session</summary>
         private readonly ICommandQueueService m_commandQueue;
 
-        /// <summary>Session creation time (UTC)</summary>
+        /// <summary>Session creation time (local)</summary>
         private readonly DateTime m_createdAt;
 
         /// <summary>Path to the dump file being debugged</summary>
@@ -53,7 +53,7 @@ namespace mcp_nexus.Session.Models
         /// <summary>Command queue service for this session</summary>
         public ICommandQueueService CommandQueue { get => m_commandQueue; set { } } // Read-only from external perspective
 
-        /// <summary>Session creation time (UTC)</summary>
+        /// <summary>Session creation time (local)</summary>
         public DateTime CreatedAt { get => m_createdAt; set { } } // Read-only from external perspective
 
         /// <summary>Path to the dump file being debugged</summary>
@@ -94,11 +94,11 @@ namespace mcp_nexus.Session.Models
             m_sessionId = string.Empty;
             m_cdbSession = null!;
             m_commandQueue = null!;
-            m_createdAt = DateTime.UtcNow;
+            m_createdAt = DateTime.Now;
             m_dumpPath = string.Empty;
             m_symbolsPath = null;
             m_processId = null;
-            LastActivity = DateTime.UtcNow;
+            LastActivity = DateTime.Now;
         }
 
         /// <summary>
@@ -116,11 +116,11 @@ namespace mcp_nexus.Session.Models
             m_sessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
             m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
             m_commandQueue = commandQueue ?? throw new ArgumentNullException(nameof(commandQueue));
-            m_createdAt = DateTime.UtcNow;
+            m_createdAt = DateTime.Now;
             m_dumpPath = dumpPath ?? throw new ArgumentNullException(nameof(dumpPath));
             m_symbolsPath = symbolsPath;
             m_processId = processId;
-            LastActivity = DateTime.UtcNow;
+            LastActivity = DateTime.Now;
         }
 
         #endregion

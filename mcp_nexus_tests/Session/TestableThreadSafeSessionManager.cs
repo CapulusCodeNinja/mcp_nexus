@@ -68,7 +68,7 @@ namespace mcp_nexus_tests.Session
                 SessionId = sessionId,
                 DumpPath = dumpPath,
                 SymbolsPath = symbolsPath,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 Status = SessionStatus.Active,
                 CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object
@@ -79,8 +79,8 @@ namespace mcp_nexus_tests.Session
             {
                 SessionId = sessionId,
                 DumpPath = dumpPath,
-                CreatedAt = DateTime.UtcNow,
-                LastActivity = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
+                LastActivity = DateTime.Now,
                 Status = "Active",
                 Description = $"Mock session for {Path.GetFileName(dumpPath)}"
             };
@@ -165,7 +165,7 @@ namespace mcp_nexus_tests.Session
         {
             if (m_MockSessionContexts.TryGetValue(sessionId, out var context))
             {
-                context.LastActivity = DateTime.UtcNow;
+                context.LastActivity = DateTime.Now;
             }
         }
 

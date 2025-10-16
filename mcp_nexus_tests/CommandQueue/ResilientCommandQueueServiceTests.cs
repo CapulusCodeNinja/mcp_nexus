@@ -162,8 +162,8 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var expectedStatus = new[]
             {
-                ("cmd-1", "version", DateTime.UtcNow, "Executing"),
-                ("cmd-2", "analyze", DateTime.UtcNow, "Queued")
+                ("cmd-1", "version", DateTime.Now, "Executing"),
+                ("cmd-2", "analyze", DateTime.Now, "Queued")
             };
             m_MockService.Setup(s => s.GetQueueStatus()).Returns(expectedStatus);
 
@@ -196,7 +196,7 @@ namespace mcp_nexus_tests.CommandQueue
             var expectedCommand = new QueuedCommand(
                 "cmd-current",
                 "test-command",
-                DateTime.UtcNow,
+                DateTime.Now,
                 new TaskCompletionSource<string>(),
                 new CancellationTokenSource());
             m_MockService.Setup(s => s.GetCurrentCommand()).Returns(expectedCommand);

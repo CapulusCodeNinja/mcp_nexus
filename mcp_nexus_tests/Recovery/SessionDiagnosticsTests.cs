@@ -68,7 +68,7 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             var diagnostics = new SessionDiagnostics();
-            var testTime = DateTime.UtcNow;
+            var testTime = DateTime.Now;
 
             // Act
             diagnostics.LastHealthCheck = testTime;
@@ -110,7 +110,7 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             var diagnostics = new SessionDiagnostics();
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             // Act
             diagnostics.LastHealthCheck = now;
@@ -441,7 +441,7 @@ namespace mcp_nexus_tests.Recovery
             {
                 // Act
                 IsActive = true,
-                LastHealthCheck = DateTime.UtcNow,
+                LastHealthCheck = DateTime.Now,
                 TimeSinceLastCheck = TimeSpan.FromMinutes(5),
                 IsHealthCheckDue = true,
                 ErrorMessage = "Test error",
@@ -470,7 +470,7 @@ namespace mcp_nexus_tests.Recovery
             diagnostics.IsActive = false;
             Assert.False(diagnostics.IsActive);
 
-            var time1 = DateTime.UtcNow;
+            var time1 = DateTime.Now;
             var time2 = time1.AddMinutes(1);
             diagnostics.LastHealthCheck = time1;
             Assert.Equal(time1, diagnostics.LastHealthCheck);
@@ -511,7 +511,7 @@ namespace mcp_nexus_tests.Recovery
 
             // Act
             diagnostics1.IsActive = true;
-            diagnostics1.LastHealthCheck = DateTime.UtcNow;
+            diagnostics1.LastHealthCheck = DateTime.Now;
             diagnostics1.TimeSinceLastCheck = TimeSpan.FromMinutes(5);
             diagnostics1.IsHealthCheckDue = true;
             diagnostics1.ErrorMessage = "Error 1";
@@ -579,7 +579,7 @@ namespace mcp_nexus_tests.Recovery
             var diagnostics = new SessionDiagnostics
             {
                 IsActive = true,
-                LastHealthCheck = DateTime.UtcNow,
+                LastHealthCheck = DateTime.Now,
                 TimeSinceLastCheck = TimeSpan.FromMinutes(30),
                 IsHealthCheckDue = true,
                 ErrorMessage = "Test error",

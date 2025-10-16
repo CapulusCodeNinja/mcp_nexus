@@ -71,7 +71,7 @@ namespace mcp_nexus.Recovery
                 }
 
                 m_recoveryAttempts++;
-                m_lastRecoveryAttempt = DateTime.UtcNow;
+                m_lastRecoveryAttempt = DateTime.Now;
                 m_logger.LogWarning("🔧 Starting recovery attempt #{Attempt}: {Reason}", m_recoveryAttempts, reason);
             }
             finally
@@ -286,7 +286,7 @@ namespace mcp_nexus.Recovery
                     RecoveryAttempts = m_recoveryAttempts,
                     LastRecoveryAttempt = m_lastRecoveryAttempt,
                     TimeSinceLastAttempt = m_lastRecoveryAttempt == DateTime.MinValue ?
-                        TimeSpan.Zero : DateTime.UtcNow - m_lastRecoveryAttempt,
+                        TimeSpan.Zero : DateTime.Now - m_lastRecoveryAttempt,
                     CanAttemptRecovery = m_config.ShouldAttemptRecovery(m_recoveryAttempts, m_lastRecoveryAttempt)
                 };
             }

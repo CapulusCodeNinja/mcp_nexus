@@ -192,7 +192,7 @@ namespace mcp_nexus_tests.Resources
         public void GetCommandStatus_WithDifferentStates_ReturnsCorrectStatus()
         {
             // Arrange
-            var queuedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Queued);
+            var queuedCommand = new QueuedCommand("test", "command", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Queued);
             var method = typeof(McpNexusResources).GetMethod("GetCommandStatus",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
@@ -204,7 +204,7 @@ namespace mcp_nexus_tests.Resources
         public void GetQueuePositionForCommand_WithExecutingCommand_ReturnsZero()
         {
             // Arrange
-            var executingCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
+            var executingCommand = new QueuedCommand("test", "command", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
             var allCommands = new List<QueuedCommand> { executingCommand };
             var method = typeof(McpNexusResources).GetMethod("GetQueuePositionForCommand",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
@@ -220,7 +220,7 @@ namespace mcp_nexus_tests.Resources
         public void GetQueuePositionForCommand_WithQueuedCommand_ReturnsPosition()
         {
             // Arrange
-            var queuedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Queued);
+            var queuedCommand = new QueuedCommand("test", "command", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Queued);
             var allCommands = new List<QueuedCommand> { queuedCommand };
             var method = typeof(McpNexusResources).GetMethod("GetQueuePositionForCommand",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
@@ -236,7 +236,7 @@ namespace mcp_nexus_tests.Resources
         public void GetProgressPercentageForCommand_WithCompletedCommand_Returns100()
         {
             // Arrange
-            var completedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Completed);
+            var completedCommand = new QueuedCommand("test", "command", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Completed);
             var allCommands = new List<QueuedCommand> { completedCommand };
             var method = typeof(McpNexusResources).GetMethod("GetProgressPercentageForCommand",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
@@ -252,7 +252,7 @@ namespace mcp_nexus_tests.Resources
         public void GetProgressPercentageForCommand_WithFailedCommand_Returns0()
         {
             // Arrange
-            var failedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Failed);
+            var failedCommand = new QueuedCommand("test", "command", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Failed);
             var allCommands = new List<QueuedCommand> { failedCommand };
             var method = typeof(McpNexusResources).GetMethod("GetProgressPercentageForCommand",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
@@ -268,7 +268,7 @@ namespace mcp_nexus_tests.Resources
         public void GetCommandMessage_WithCompletedCommand_ReturnsSuccessMessage()
         {
             // Arrange
-            var completedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Completed);
+            var completedCommand = new QueuedCommand("test", "command", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Completed);
             var allCommands = new List<QueuedCommand> { completedCommand };
             var method = typeof(McpNexusResources).GetMethod("GetCommandMessage",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
@@ -284,7 +284,7 @@ namespace mcp_nexus_tests.Resources
         public void GetCommandMessage_WithFailedCommand_ReturnsFailureMessage()
         {
             // Arrange
-            var failedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Failed);
+            var failedCommand = new QueuedCommand("test", "command", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Failed);
             var allCommands = new List<QueuedCommand> { failedCommand };
             var method = typeof(McpNexusResources).GetMethod("GetCommandMessage",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
@@ -300,7 +300,7 @@ namespace mcp_nexus_tests.Resources
         public void GetCommandMessage_WithCancelledCommand_ReturnsCancelledMessage()
         {
             // Arrange
-            var cancelledCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Cancelled);
+            var cancelledCommand = new QueuedCommand("test", "command", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Cancelled);
             var allCommands = new List<QueuedCommand> { cancelledCommand };
             var method = typeof(McpNexusResources).GetMethod("GetCommandMessage",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
@@ -316,7 +316,7 @@ namespace mcp_nexus_tests.Resources
         public void GetElapsedTimeForCommand_WithCompletedCommand_ReturnsNull()
         {
             // Arrange
-            var completedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Completed);
+            var completedCommand = new QueuedCommand("test", "command", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Completed);
             var method = typeof(McpNexusResources).GetMethod("GetElapsedTimeForCommand",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
@@ -331,7 +331,7 @@ namespace mcp_nexus_tests.Resources
         public void GetElapsedTimeForCommand_WithExecutingCommand_ReturnsElapsedTime()
         {
             // Arrange
-            var executingCommand = new QueuedCommand("test", "command", DateTime.UtcNow.AddMinutes(-5), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
+            var executingCommand = new QueuedCommand("test", "command", DateTime.Now.AddMinutes(-5), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
             var method = typeof(McpNexusResources).GetMethod("GetElapsedTimeForCommand",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
@@ -347,7 +347,7 @@ namespace mcp_nexus_tests.Resources
         public void GetEtaTimeForCommand_WithCompletedCommand_ReturnsNull()
         {
             // Arrange
-            var completedCommand = new QueuedCommand("test", "command", DateTime.UtcNow, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Completed);
+            var completedCommand = new QueuedCommand("test", "command", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Completed);
             var method = typeof(McpNexusResources).GetMethod("GetEtaTimeForCommand",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
@@ -362,7 +362,7 @@ namespace mcp_nexus_tests.Resources
         public void GetEtaTimeForCommand_WithExecutingCommand_ReturnsEtaTime()
         {
             // Arrange
-            var executingCommand = new QueuedCommand("test", "command", DateTime.UtcNow.AddMinutes(-2), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
+            var executingCommand = new QueuedCommand("test", "command", DateTime.Now.AddMinutes(-2), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
             var method = typeof(McpNexusResources).GetMethod("GetEtaTimeForCommand",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
@@ -428,7 +428,7 @@ namespace mcp_nexus_tests.Resources
         public void GetCommandMessage_WithExecutingCommand_ShowsElapsedTime()
         {
             // Arrange
-            var executingCommand = new QueuedCommand("test", "!analyze -v", DateTime.UtcNow.AddMinutes(-2), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
+            var executingCommand = new QueuedCommand("test", "!analyze -v", DateTime.Now.AddMinutes(-2), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
             var allCommands = new List<QueuedCommand> { executingCommand };
             var method = typeof(McpNexusResources).GetMethod("GetCommandMessage",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
@@ -446,7 +446,7 @@ namespace mcp_nexus_tests.Resources
         public void GetCommandMessage_WithExecutingCommand_ShowsLongElapsedTime()
         {
             // Arrange
-            var executingCommand = new QueuedCommand("test", "!analyze -v", DateTime.UtcNow.AddMinutes(-15), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
+            var executingCommand = new QueuedCommand("test", "!analyze -v", DateTime.Now.AddMinutes(-15), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Executing);
             var allCommands = new List<QueuedCommand> { executingCommand };
             var method = typeof(McpNexusResources).GetMethod("GetCommandMessage",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
@@ -464,7 +464,7 @@ namespace mcp_nexus_tests.Resources
         public void GetCommandMessage_WithQueuedCommand_ShowsQueueInfo()
         {
             // Arrange
-            var queuedCommand = new QueuedCommand("test", "!analyze -v", DateTime.UtcNow.AddMinutes(-1), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Queued);
+            var queuedCommand = new QueuedCommand("test", "!analyze -v", DateTime.Now.AddMinutes(-1), new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Queued);
             var allCommands = new List<QueuedCommand> { queuedCommand };
             var method = typeof(McpNexusResources).GetMethod("GetCommandMessage",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);

@@ -30,7 +30,7 @@ namespace mcp_nexus_tests.CommandQueue
         public void CommandInfo_WithValues_SetsProperties()
         {
             // Arrange
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var elapsed = TimeSpan.FromSeconds(5);
             var remaining = TimeSpan.FromSeconds(10);
 
@@ -72,8 +72,8 @@ namespace mcp_nexus_tests.CommandQueue
         public void CommandInfo_WithNullValues_HandlesGracefully()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new CommandInfo(null!, "test", CommandState.Queued, DateTime.UtcNow));
-            Assert.Throws<ArgumentNullException>(() => new CommandInfo("test", null!, CommandState.Queued, DateTime.UtcNow));
+            Assert.Throws<ArgumentNullException>(() => new CommandInfo(null!, "test", CommandState.Queued, DateTime.Now));
+            Assert.Throws<ArgumentNullException>(() => new CommandInfo("test", null!, CommandState.Queued, DateTime.Now));
         }
 
         [Fact]

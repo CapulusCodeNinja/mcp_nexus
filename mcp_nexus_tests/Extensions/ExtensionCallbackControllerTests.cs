@@ -150,7 +150,7 @@ namespace mcp_nexus_tests.Extensions
             ICommandQueueService? outQueue = mockQueue.Object;
             m_MockSessionManager.Setup(s => s.TryGetCommandQueue("sess-1", out outQueue)).Returns(true);
 
-            var cmdInfo = new CommandInfo("cmd-123", "!analyze -v", CommandState.Completed, DateTime.UtcNow, 0)
+            var cmdInfo = new CommandInfo("cmd-123", "!analyze -v", CommandState.Completed, DateTime.Now, 0)
             {
                 IsCompleted = true
             };
@@ -231,7 +231,7 @@ namespace mcp_nexus_tests.Extensions
             controller.HttpContext.Request.Headers.Authorization = "tok"; // No Bearer prefix
             m_MockTokenValidator.Setup(v => v.ValidateToken("tok")).Returns((true, "sess-1", null));
 
-            var cmdInfo = new CommandInfo("cmd-1", "!analyze -v", CommandState.Completed, DateTime.UtcNow, 0)
+            var cmdInfo = new CommandInfo("cmd-1", "!analyze -v", CommandState.Completed, DateTime.Now, 0)
             {
                 IsCompleted = true
             };

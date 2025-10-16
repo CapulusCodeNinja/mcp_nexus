@@ -240,7 +240,7 @@ namespace mcp_nexus
                     try
                     {
                         var logFile = Path.Combine(Environment.CurrentDirectory, "mcp_nexus_crash.log");
-                        await File.WriteAllTextAsync(logFile, $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss UTC} - FATAL ERROR: {ex}");
+                        await File.WriteAllTextAsync(logFile, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - FATAL ERROR: {ex}");
                     }
                     catch
                     {
@@ -1006,7 +1006,7 @@ namespace mcp_nexus
                 // For service mode, also handle process exit
                 AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
                 {
-                    Console.Error.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss UTC}] Process exiting...");
+                    Console.Error.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Process exiting...");
                 };
             }
         }
@@ -1019,7 +1019,7 @@ namespace mcp_nexus
         {
             try
             {
-                var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC");
+                var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
                 // IMMEDIATE console output with flushing
                 Console.Error.WriteLine("################################################################################");

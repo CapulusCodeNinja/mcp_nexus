@@ -298,7 +298,7 @@ namespace mcp_nexus_tests.Notifications
                 id = 123,
                 name = "test",
                 items = new[] { "a", "b", "c" },
-                metadata = new { created = DateTime.UtcNow, version = "1.0" }
+                metadata = new { created = DateTime.Now, version = "1.0" }
             };
 
             // Act
@@ -578,7 +578,7 @@ namespace mcp_nexus_tests.Notifications
             // Arrange
             var sessionId = "session-123";
             var eventType = "created";
-            var data = new { timestamp = DateTime.UtcNow, user = "test" };
+            var data = new { timestamp = DateTime.Now, user = "test" };
 
             // Act
             var builder = NotificationMessageBuilder.CreateSessionEventNotification(sessionId, eventType, data);
@@ -631,7 +631,7 @@ namespace mcp_nexus_tests.Notifications
             // Arrange
             var sessionId = "会话-123";
             var eventType = "已创建";
-            var data = new { 时间 = DateTime.UtcNow, 用户 = "测试" };
+            var data = new { 时间 = DateTime.Now, 用户 = "测试" };
 
             // Act
             var builder = NotificationMessageBuilder.CreateSessionEventNotification(sessionId, eventType, data);

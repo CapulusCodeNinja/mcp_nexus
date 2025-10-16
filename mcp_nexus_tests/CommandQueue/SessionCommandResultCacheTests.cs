@@ -12,8 +12,8 @@ namespace mcp_nexus_tests.CommandQueue
     {
         private readonly Mock<ILogger<SessionCommandResultCache>> m_MockLogger;
         private readonly SessionCommandResultCache m_Cache;
-        private sealed class FakeMem : IMemoryPressureProvider { public long MemoryLoadBytes; public long HighMemoryLoadThresholdBytes; }
-        private sealed class FakeProc : IProcessMemoryProvider { public long PrivateBytes; }
+        private sealed class FakeMem : IMemoryPressureProvider { public long MemoryLoadBytes { get; set; } public long HighMemoryLoadThresholdBytes { get; set; } }
+        private sealed class FakeProc : IProcessMemoryProvider { public long PrivateBytes { get; set; } }
         private sealed class ThrowMem : IMemoryPressureProvider { public long MemoryLoadBytes => throw new Exception("boom"); public long HighMemoryLoadThresholdBytes => throw new Exception("boom"); }
         private sealed class ThrowProc : IProcessMemoryProvider { public long PrivateBytes => throw new Exception("boom"); }
 

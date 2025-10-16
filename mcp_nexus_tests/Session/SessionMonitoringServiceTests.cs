@@ -156,8 +156,8 @@ namespace mcp_nexus_tests.Session
                 DumpPath = "C:\\Test\\dump.dmp",
                 CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-10),
-                LastActivity = DateTime.UtcNow.AddMinutes(-5),
+                CreatedAt = DateTime.Now.AddMinutes(-10),
+                LastActivity = DateTime.Now.AddMinutes(-5),
                 Status = SessionStatus.Active
             };
             m_Sessions[sessionId] = sessionInfo;
@@ -247,8 +247,8 @@ namespace mcp_nexus_tests.Session
                 DumpPath = "C:\\Test\\dump.dmp",
                 CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-2), // New session
-                LastActivity = DateTime.UtcNow.AddMinutes(-1),
+                CreatedAt = DateTime.Now.AddMinutes(-2), // New session
+                LastActivity = DateTime.Now.AddMinutes(-1),
                 Status = SessionStatus.Active
             };
 
@@ -282,7 +282,7 @@ namespace mcp_nexus_tests.Session
                 null,
                 null)
             {
-                LastActivity = DateTime.UtcNow.AddMinutes(-45), // Idle session
+                LastActivity = DateTime.Now.AddMinutes(-45), // Idle session
                 Status = SessionStatus.Active
             };
 
@@ -314,8 +314,8 @@ namespace mcp_nexus_tests.Session
                 DumpPath = "C:\\Test\\dump.dmp",
                 CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-10),
-                LastActivity = DateTime.UtcNow.AddMinutes(-1),
+                CreatedAt = DateTime.Now.AddMinutes(-10),
+                LastActivity = DateTime.Now.AddMinutes(-1),
                 Status = SessionStatus.Active
             };
 
@@ -347,19 +347,19 @@ namespace mcp_nexus_tests.Session
                 DumpPath = "C:\\Test\\dump.dmp",
                 CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-10),
-                LastActivity = DateTime.UtcNow.AddMinutes(-1),
+                CreatedAt = DateTime.Now.AddMinutes(-10),
+                LastActivity = DateTime.Now.AddMinutes(-1),
                 Status = SessionStatus.Active
             };
 
             var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>
             {
-                ("1", "k", DateTime.UtcNow, "Queued"),
-                ("2", "lm", DateTime.UtcNow, "Queued"),
-                ("3", "!analyze", DateTime.UtcNow, "Queued"),
-                ("4", "g", DateTime.UtcNow, "Queued"),
-                ("5", "r", DateTime.UtcNow, "Queued"),
-                ("6", "x", DateTime.UtcNow, "Queued")
+                ("1", "k", DateTime.Now, "Queued"),
+                ("2", "lm", DateTime.Now, "Queued"),
+                ("3", "!analyze", DateTime.Now, "Queued"),
+                ("4", "g", DateTime.Now, "Queued"),
+                ("5", "r", DateTime.Now, "Queued"),
+                ("6", "x", DateTime.Now, "Queued")
             };
 
             var service = new SessionMonitoringService(
@@ -391,7 +391,7 @@ namespace mcp_nexus_tests.Session
                 null,
                 null)
             {
-                LastActivity = DateTime.UtcNow.AddMinutes(-1),
+                LastActivity = DateTime.Now.AddMinutes(-1),
                 Status = SessionStatus.Active
             };
 
@@ -427,8 +427,8 @@ namespace mcp_nexus_tests.Session
                 DumpPath = "C:\\Test\\dump1.dmp",
                 CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-20),
-                LastActivity = DateTime.UtcNow.AddMinutes(-1),
+                CreatedAt = DateTime.Now.AddMinutes(-20),
+                LastActivity = DateTime.Now.AddMinutes(-1),
                 Status = SessionStatus.Active
             };
 
@@ -438,8 +438,8 @@ namespace mcp_nexus_tests.Session
                 DumpPath = "C:\\Test\\dump2.dmp",
                 CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-10),
-                LastActivity = DateTime.UtcNow.AddMinutes(-2),
+                CreatedAt = DateTime.Now.AddMinutes(-10),
+                LastActivity = DateTime.Now.AddMinutes(-2),
                 Status = SessionStatus.Active
             };
 

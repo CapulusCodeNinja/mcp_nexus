@@ -17,7 +17,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "cmd-123";
             var command = "test-command";
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var queuePosition = 5;
 
             // Act
@@ -42,7 +42,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "cmd-456";
             var command = "test-command";
             var state = CommandState.Executing;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
 
             // Act
             var result = factory.CreateCommandInfo(commandId, command, state, queueTime);
@@ -59,7 +59,7 @@ namespace mcp_nexus_tests.CommandQueue
             string? commandId = null;
             var command = "test-command";
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
@@ -74,7 +74,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "cmd-123";
             string? command = null;
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
@@ -89,7 +89,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = string.Empty;
             var command = "test-command";
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
 
             // Act
             var result = factory.CreateCommandInfo(commandId, command, state, queueTime);
@@ -107,7 +107,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "cmd-123";
             var command = string.Empty;
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
 
             // Act
             var result = factory.CreateCommandInfo(commandId, command, state, queueTime);
@@ -124,7 +124,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             var commandId = "cmd-123";
             var command = "test-command";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
 
             // Act & Assert
             foreach (CommandState state in Enum.GetValues<CommandState>())
@@ -142,7 +142,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "cmd-123";
             var command = "test-command";
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var queuePosition = -1;
 
             // Act
@@ -160,7 +160,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "cmd-123";
             var command = "test-command";
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var queuePosition = int.MaxValue;
 
             // Act
@@ -215,7 +215,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             var commandId = "cmd-789";
             var command = "test-command";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
             var state = CommandState.Executing;
@@ -242,7 +242,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             var commandId = "cmd-789";
             var command = "test-command";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
             var state = CommandState.Queued;
@@ -263,7 +263,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             string? commandId = null;
             var command = "test-command";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -284,7 +284,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             var commandId = "cmd-789";
             string? command = null;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -305,7 +305,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             string? commandId = null;
             string? command = null;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -326,7 +326,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             var commandId = "cmd-789";
             var command = "test-command";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -346,7 +346,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             var commandId = "cmd-789";
             var command = "test-command";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
             var state = CommandState.Queued;
@@ -368,7 +368,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             var commandId = "cmd-789";
             var command = "test-command";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
             var state = CommandState.Queued;
@@ -449,7 +449,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = new string('A', 10000);
             var command = "test-command";
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
 
             // Act
             var result = factory.CreateCommandInfo(commandId, command, state, queueTime);
@@ -466,7 +466,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "cmd-123";
             var command = new string('B', 10000);
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
 
             // Act
             var result = factory.CreateCommandInfo(commandId, command, state, queueTime);
@@ -483,7 +483,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "命令-123-测试";
             var command = "test-command";
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
 
             // Act
             var result = factory.CreateCommandInfo(commandId, command, state, queueTime);
@@ -500,7 +500,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "cmd-123";
             var command = "测试命令-你好世界";
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
 
             // Act
             var result = factory.CreateCommandInfo(commandId, command, state, queueTime);
@@ -517,7 +517,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "cmd-123!@#$%^&*()";
             var command = "test-command !@#$%^&*()_+-=[]{}|;':\",./<>?";
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
 
             // Act
             var result = factory.CreateCommandInfo(commandId, command, state, queueTime);
@@ -534,7 +534,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             var commandId = new string('A', 10000);
             var command = "test-command";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -554,7 +554,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             var commandId = "cmd-123";
             var command = new string('B', 10000);
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -574,7 +574,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             var commandId = "命令-123-测试";
             var command = "测试命令-你好世界";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -595,7 +595,7 @@ namespace mcp_nexus_tests.CommandQueue
             var factory = new CommandInfoFactory();
             var commandId = "cmd-123!@#$%^&*()";
             var command = "test-command !@#$%^&*()_+-=[]{}|;':\",./<>?";
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -644,7 +644,7 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId2 = "cmd-2";
             var command = "test-command";
             var state = CommandState.Queued;
-            var queueTime = DateTime.UtcNow;
+            var queueTime = DateTime.Now;
 
             // Act
             var result1 = factory1.CreateCommandInfo(commandId1, command, state, queueTime);

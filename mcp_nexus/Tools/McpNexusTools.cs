@@ -893,13 +893,13 @@ namespace mcp_nexus.Tools
 
                 _ = Task.Run(async () =>
                 {
-                    var queueTime = DateTime.UtcNow;
+                    var queueTime = DateTime.Now;
                     DateTime? startTime = null;
 
                     try
                     {
                         extensionTracker.UpdateState(commandId, CommandState.Executing);
-                        startTime = DateTime.UtcNow;
+                        startTime = DateTime.Now;
 
                         var result = await extensionExecutor.ExecuteAsync(
                             extensionName,
@@ -926,7 +926,7 @@ namespace mcp_nexus.Tools
                                     originalCommand: $"Extension: {extensionName}",
                                     queueTime: queueTime,
                                     startTime: startTime,
-                                    endTime: DateTime.UtcNow);
+                                    endTime: DateTime.Now);
 
                                 logger.LogDebug("📦 Stored extension {Extension} result in session cache for session {SessionId}", extensionName, sessionId);
                             }
@@ -966,7 +966,7 @@ namespace mcp_nexus.Tools
                                     originalCommand: $"Extension: {extensionName}",
                                     queueTime: queueTime,
                                     startTime: startTime,
-                                    endTime: DateTime.UtcNow);
+                                    endTime: DateTime.Now);
                             }
                         }
                         catch (Exception cacheEx)

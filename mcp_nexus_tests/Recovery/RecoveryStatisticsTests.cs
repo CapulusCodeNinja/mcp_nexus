@@ -87,7 +87,7 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             var stats = new RecoveryStatistics();
-            var expectedValue = DateTime.UtcNow;
+            var expectedValue = DateTime.Now;
 
             // Act
             stats.LastRecoveryAttempt = expectedValue;
@@ -129,7 +129,7 @@ namespace mcp_nexus_tests.Recovery
         {
             // Arrange
             var stats = new RecoveryStatistics();
-            var utcNow = DateTime.UtcNow;
+            var utcNow = DateTime.Now;
 
             // Act
             stats.LastRecoveryAttempt = utcNow;
@@ -283,7 +283,7 @@ namespace mcp_nexus_tests.Recovery
             // Arrange
             var stats = new RecoveryStatistics();
             var recoveryAttempts = 5;
-            var lastAttempt = DateTime.UtcNow.AddMinutes(-10);
+            var lastAttempt = DateTime.Now.AddMinutes(-10);
             var timeSince = TimeSpan.FromMinutes(10);
             var canAttempt = true;
 
@@ -308,7 +308,7 @@ namespace mcp_nexus_tests.Recovery
             {
                 // Act & Assert - First set
                 RecoveryAttempts = 1,
-                LastRecoveryAttempt = DateTime.UtcNow.AddMinutes(-5),
+                LastRecoveryAttempt = DateTime.Now.AddMinutes(-5),
                 TimeSinceLastAttempt = TimeSpan.FromMinutes(5),
                 CanAttemptRecovery = true
             };
@@ -318,7 +318,7 @@ namespace mcp_nexus_tests.Recovery
 
             // Act & Assert - Second set
             stats.RecoveryAttempts = 10;
-            stats.LastRecoveryAttempt = DateTime.UtcNow.AddMinutes(-30);
+            stats.LastRecoveryAttempt = DateTime.Now.AddMinutes(-30);
             stats.TimeSinceLastAttempt = TimeSpan.FromMinutes(30);
             stats.CanAttemptRecovery = false;
 
@@ -387,7 +387,7 @@ namespace mcp_nexus_tests.Recovery
             var stats = new RecoveryStatistics
             {
                 RecoveryAttempts = 42,
-                LastRecoveryAttempt = DateTime.UtcNow,
+                LastRecoveryAttempt = DateTime.Now,
                 TimeSinceLastAttempt = TimeSpan.FromMinutes(15),
                 CanAttemptRecovery = true
             };

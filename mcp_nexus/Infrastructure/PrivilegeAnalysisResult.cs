@@ -47,6 +47,6 @@ namespace mcp_nexus.Infrastructure
         /// <summary>
         /// Gets or sets the date and time when the privilege analysis was performed.
         /// </summary>
-        public DateTime AnalysisTime { get; set; } = DateTime.UtcNow;
+        public DateTime AnalysisTime { get; set; } = DateTime.Now;
     }
 }

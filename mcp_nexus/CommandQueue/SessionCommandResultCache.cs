@@ -77,7 +77,7 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                var cachedResult = new CachedCommandResult(result, DateTime.UtcNow,
+                var cachedResult = new CachedCommandResult(result, DateTime.Now,
                     originalCommand, queueTime, startTime, endTime);
                 var resultSize = EstimateResultSize(cachedResult);
 
@@ -424,7 +424,7 @@ namespace mcp_nexus.CommandQueue
 
         public void UpdateAccessTime()
         {
-            LastAccessTime = DateTime.UtcNow;
+            LastAccessTime = DateTime.Now;
         }
     }
 

@@ -254,10 +254,10 @@ namespace mcp_nexus.Extensions
             string commandId,
             TimeSpan timeout)
         {
-            var startTime = DateTime.UtcNow;
+            var startTime = DateTime.Now;
             var pollInterval = TimeSpan.FromMilliseconds(100);
 
-            while (DateTime.UtcNow - startTime < timeout)
+            while (DateTime.Now - startTime < timeout)
             {
                 var (commandInfo, commandResult) = await m_SessionManager.GetCommandInfoAndResultAsync(
                     sessionId, commandId);

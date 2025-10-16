@@ -49,7 +49,7 @@ namespace mcp_nexus.Extensions
         private readonly ILogger<ExtensionTokenValidator> m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly ConcurrentDictionary<string, ExtensionTokenInfo> m_Tokens = new();
         private readonly object m_CleanupLock = new();
-        private DateTime m_LastCleanup = DateTime.UtcNow;
+        private DateTime m_LastCleanup = DateTime.Now;
 
         /// <summary>
         /// Creates and registers a new extension token.
@@ -81,8 +81,8 @@ namespace mcp_nexus.Extensions
                 Token = token,
                 SessionId = sessionId,
                 CommandId = commandId,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddHours(2), // 2 hour expiration
+                CreatedAt = DateTime.Now,
+                ExpiresAt = DateTime.Now.AddHours(2), // 2 hour expiration
                 IsRevoked = false
             };
 
@@ -123,7 +123,7 @@ namespace mcp_nexus.Extensions
                 return (false, null, null);
             }
 
-            if (tokenInfo.ExpiresAt < DateTime.UtcNow)
+            if (tokenInfo.ExpiresAt < DateTime.Now)
             {
                 m_Logger.LogWarning("Token validation failed: Token expired for session {SessionId}",
                     tokenInfo.SessionId);
@@ -187,11 +187,11 @@ namespace mcp_nexus.Extensions
             lock (m_CleanupLock)
             {
                 // Only cleanup every 5 minutes
-                if ((DateTime.UtcNow - m_LastCleanup).TotalMinutes < 5)
+                if ((DateTime.Now - m_LastCleanup).TotalMinutes < 5)
                     return;
 
                 var expiredTokens = m_Tokens
-                    .Where(kvp => kvp.Value.ExpiresAt < DateTime.UtcNow || kvp.Value.IsRevoked)
+                    .Where(kvp => kvp.Value.ExpiresAt < DateTime.Now || kvp.Value.IsRevoked)
                     .Select(kvp => kvp.Key)
                     .ToList();
 
@@ -205,7 +205,7 @@ namespace mcp_nexus.Extensions
                     m_Logger.LogDebug("Cleaned up {Count} expired/revoked tokens", expiredTokens.Count);
                 }
 
-                m_LastCleanup = DateTime.UtcNow;
+                m_LastCleanup = DateTime.Now;
             }
         }
     }

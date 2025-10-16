@@ -63,7 +63,7 @@ namespace mcp_nexus.Utilities
                 }
 
                 // Cache lookup (only conversions are cached, not passthrough)
-                if (m_ConversionCache.TryGetValue(path, out var cached) && cached.ExpiresUtc > DateTime.UtcNow)
+                if (m_ConversionCache.TryGetValue(path, out var cached) && cached.ExpiresUtc > DateTime.Now)
                 {
                     return cached.Converted;
                 }
@@ -71,14 +71,14 @@ namespace mcp_nexus.Utilities
                 // Use fstab mapping (cached) before invoking wslpath
                 if (TryConvertWithFstabMapping(path, out var fstabConverted))
                 {
-                    m_ConversionCache[path] = (fstabConverted, DateTime.UtcNow + m_ConversionTtl);
+                    m_ConversionCache[path] = (fstabConverted, DateTime.Now + m_ConversionTtl);
                     return fstabConverted;
                 }
 
                 // Fallback: wslpath call with short timeout (only for /mnt/<letter>/...)
                 if (path.StartsWith("/mnt/", StringComparison.OrdinalIgnoreCase) && m_WslConverter.TryConvertToWindowsPath(path, out var wslConverted))
                 {
-                    m_ConversionCache[path] = (wslConverted, DateTime.UtcNow + m_ConversionTtl);
+                    m_ConversionCache[path] = (wslConverted, DateTime.Now + m_ConversionTtl);
                     return wslConverted;
                 }
 
@@ -153,12 +153,12 @@ namespace mcp_nexus.Utilities
         private void EnsureFstabMountMapLoaded()
         {
             // Refresh map at most every 5 minutes
-            if ((DateTime.UtcNow - m_FstabLastLoadedUtc) < TimeSpan.FromMinutes(5) && m_FstabMountMap.Count > 0)
+            if ((DateTime.Now - m_FstabLastLoadedUtc) < TimeSpan.FromMinutes(5) && m_FstabMountMap.Count > 0)
                 return;
 
             lock (m_FstabLock)
             {
-                if ((DateTime.UtcNow - m_FstabLastLoadedUtc) < TimeSpan.FromMinutes(5) && m_FstabMountMap.Count > 0)
+                if ((DateTime.Now - m_FstabLastLoadedUtc) < TimeSpan.FromMinutes(5) && m_FstabMountMap.Count > 0)
                     return;
 
                 try
@@ -169,7 +169,7 @@ namespace mcp_nexus.Utilities
                     foreach (var kvp in newMappings)
                         m_FstabMountMap[kvp.Key] = kvp.Value;
 
-                    m_FstabLastLoadedUtc = DateTime.UtcNow;
+                    m_FstabLastLoadedUtc = DateTime.Now;
                 }
                 catch
                 {

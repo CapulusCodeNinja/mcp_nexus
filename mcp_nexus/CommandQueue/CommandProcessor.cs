@@ -135,7 +135,7 @@ namespace mcp_nexus.CommandQueue
 
                     // Store result in cache with complete metadata for session persistence
                     var commandResult = CommandResult.Success(result ?? string.Empty, stopwatch.Elapsed);
-                    var endTime = DateTime.UtcNow;
+                    var endTime = DateTime.Now;
                     var startTime = endTime.Add(-stopwatch.Elapsed);
                     m_Logger.LogDebug("Storing result in cache for command {CommandId}", command.Id);
                     m_ResultCache?.StoreResult(command.Id ?? string.Empty, commandResult,
@@ -168,7 +168,7 @@ namespace mcp_nexus.CommandQueue
                     // Command was explicitly cancelled
                     var errorMessage = "Command was cancelled by user request";
                     var cancelledResult = CommandResult.Failure(errorMessage, stopwatch.Elapsed);
-                    var endTime = DateTime.UtcNow;
+                    var endTime = DateTime.Now;
                     var startTime = endTime.Add(-stopwatch.Elapsed);
                     m_ResultCache?.StoreResult(command.Id ?? string.Empty, cancelledResult,
                         command.Command, command.QueueTime, startTime, endTime);
@@ -191,7 +191,7 @@ namespace mcp_nexus.CommandQueue
                         : "Command cancelled due to service shutdown";
 
                     var failedResult = CommandResult.Failure(message, stopwatch.Elapsed);
-                    var endTime = DateTime.UtcNow;
+                    var endTime = DateTime.Now;
                     var startTime = endTime.Add(-stopwatch.Elapsed);
                     m_ResultCache?.StoreResult(command.Id ?? string.Empty, failedResult,
                         command.Command, command.QueueTime, startTime, endTime);
@@ -218,7 +218,7 @@ namespace mcp_nexus.CommandQueue
                 // Unexpected error during execution
                 var errorMessage = $"Command execution failed: {ex.Message}";
                 var failedResult = CommandResult.Failure(errorMessage, stopwatch.Elapsed);
-                var endTime = DateTime.UtcNow;
+                var endTime = DateTime.Now;
                 var startTime = endTime.Add(-stopwatch.Elapsed);
                 m_ResultCache?.StoreResult(command.Id ?? string.Empty, failedResult,
                     command.Command, command.QueueTime, startTime, endTime);

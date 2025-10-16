@@ -350,7 +350,7 @@ namespace mcp_nexus.Resources
                     isFinished = cmd.State == CommandState.Completed || cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled,
                     createdAt = cmd.QueueTime,
                     completedAt = (DateTime?)null, // QueuedCommand doesn't have CompletedAt
-                    duration = DateTime.UtcNow - cmd.QueueTime,
+                    duration = DateTime.Now - cmd.QueueTime,
                     error = (string?)null, // QueuedCommand doesn't have Error property
                     progress = new
                     {
@@ -377,7 +377,7 @@ namespace mcp_nexus.Resources
                     command = "Error",
                     status = "Error",
                     isFinished = true,
-                    createdAt = DateTime.UtcNow,
+                    createdAt = DateTime.Now,
                     completedAt = (DateTime?)null,
                     duration = TimeSpan.Zero
                 };
@@ -444,7 +444,7 @@ namespace mcp_nexus.Resources
                 return 0;
 
             var queuePosition = GetQueuePositionForCommand(cmd, allCommands);
-            var elapsed = DateTime.UtcNow - cmd.QueueTime;
+            var elapsed = DateTime.Now - cmd.QueueTime;
 
             // Base progress from queue position (0-50%)
             var queueProgress = Math.Max(0, Math.Min(50, (10 - queuePosition) * 5));
@@ -480,14 +480,14 @@ namespace mcp_nexus.Resources
 
             if (cmd.State == CommandState.Executing)
             {
-                var elapsed = DateTime.UtcNow - cmd.QueueTime;
+                var elapsed = DateTime.Now - cmd.QueueTime;
                 return $"Command is currently executing (elapsed: {elapsed.TotalMinutes:F1} minutes)";
             }
 
             if (cmd.State == CommandState.Queued)
             {
                 var queuePosition = GetQueuePositionForCommand(cmd, allCommands);
-                var elapsed = DateTime.UtcNow - cmd.QueueTime;
+                var elapsed = DateTime.Now - cmd.QueueTime;
                 var progressPercentage = GetProgressPercentageForCommand(cmd, allCommands);
 
                 var baseMessage = queuePosition switch
@@ -517,7 +517,7 @@ namespace mcp_nexus.Resources
             if (cmd.State == CommandState.Completed || cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled)
                 return null;
 
-            var elapsed = DateTime.UtcNow - cmd.QueueTime;
+            var elapsed = DateTime.Now - cmd.QueueTime;
             return $"{elapsed.TotalMinutes:F1}min";
         }
 
@@ -529,7 +529,7 @@ namespace mcp_nexus.Resources
             if (cmd.State == CommandState.Completed || cmd.State == CommandState.Failed || cmd.State == CommandState.Cancelled)
                 return null;
 
-            var elapsed = DateTime.UtcNow - cmd.QueueTime;
+            var elapsed = DateTime.Now - cmd.QueueTime;
             var remaining = TimeSpan.FromMinutes(10) - elapsed;
 
             if (remaining.TotalMinutes <= 0)
@@ -549,7 +549,7 @@ namespace mcp_nexus.Resources
             if (cmd.State != CommandState.Completed)
                 return null;
 
-            var elapsed = DateTime.UtcNow - cmd.QueueTime;
+            var elapsed = DateTime.Now - cmd.QueueTime;
             return FormatDuration(elapsed);
         }
 

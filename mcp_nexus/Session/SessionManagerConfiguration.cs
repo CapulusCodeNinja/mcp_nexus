@@ -58,7 +58,7 @@ namespace mcp_nexus.Session
         public static string GenerateSessionId(long sessionCounter)
         {
             var guid = Guid.NewGuid().ToString("N");
-            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             var processId = Environment.ProcessId;
             return $"sess-{sessionCounter:D6}-{guid[..8]}-{timestamp:X8}-{processId:X4}";
         }
@@ -140,7 +140,7 @@ namespace mcp_nexus.Session
         /// <returns>True if the session is expired</returns>
         public bool IsSessionExpired(DateTime lastActivity)
         {
-            return DateTime.UtcNow - lastActivity > Config.SessionTimeout;
+            return DateTime.Now - lastActivity > Config.SessionTimeout;
         }
 
         /// <summary>

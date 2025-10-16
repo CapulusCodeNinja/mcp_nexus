@@ -382,7 +382,7 @@ namespace mcp_nexus_tests.Metrics
             // Assert
             Assert.NotNull(snapshot);
             Assert.True(snapshot.Timestamp > DateTime.MinValue);
-            Assert.True(snapshot.Timestamp <= DateTime.UtcNow);
+            Assert.True(snapshot.Timestamp <= DateTime.Now);
             Assert.NotNull(snapshot.Counters);
             Assert.NotNull(snapshot.Histograms);
             Assert.NotNull(snapshot.Gauges);

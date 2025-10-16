@@ -142,9 +142,9 @@ namespace mcp_nexus.Session
                 // Wait for command queue to be ready before marking session as Active
                 m_Logger.LogInformation("⏳ Waiting for command queue to be ready for session {SessionId}", sessionId);
                 var maxWaitTime = TimeSpan.FromSeconds(5);
-                var waitStart = DateTime.UtcNow;
+                var waitStart = DateTime.Now;
 
-                while (DateTime.UtcNow - waitStart < maxWaitTime)
+                while (DateTime.Now - waitStart < maxWaitTime)
                 {
                     if (commandQueue is IsolatedCommandQueueService isolatedQueue && isolatedQueue.IsReady())
                     {
@@ -153,7 +153,7 @@ namespace mcp_nexus.Session
                     }
 
                     // Use exponential backoff instead of fixed delay
-                    var elapsed = DateTime.UtcNow - waitStart;
+                    var elapsed = DateTime.Now - waitStart;
                     var delayMs = Math.Min(500, 50 * (int)Math.Pow(1.5, elapsed.TotalSeconds));
                     await Task.Delay(delayMs, cancellationToken);
                 }
@@ -327,7 +327,7 @@ namespace mcp_nexus.Session
         public async Task<int> CleanupExpiredSessionsAsync()
         {
             var expiredSessions = new List<string>();
-            _ = DateTime.UtcNow;
+            _ = DateTime.Now;
 
             // Find expired sessions
             foreach (var kvp in m_Sessions)

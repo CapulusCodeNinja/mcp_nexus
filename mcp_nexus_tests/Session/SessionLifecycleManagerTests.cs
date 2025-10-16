@@ -158,7 +158,7 @@ namespace mcp_nexus_tests.Session
             var sessionId = "test-session-4";
             var sessionInfo = new SessionInfo(sessionId, m_RealisticCdbSession, m_MockCommandQueue.Object, "C:\\Test\\dump.dmp")
             {
-                LastActivity = DateTime.UtcNow,
+                LastActivity = DateTime.Now,
                 Status = SessionStatus.Active
             };
             m_Sessions[sessionId] = sessionInfo;
@@ -235,8 +235,8 @@ namespace mcp_nexus_tests.Session
                 DumpPath = "C:\\Test\\dump.dmp",
                 CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow,
-                LastActivity = DateTime.UtcNow, // Recent activity
+                CreatedAt = DateTime.Now,
+                LastActivity = DateTime.Now, // Recent activity
                 Status = SessionStatus.Active
             };
             m_Sessions[sessionId] = sessionInfo;
@@ -259,8 +259,8 @@ namespace mcp_nexus_tests.Session
                 DumpPath = "C:\\Test\\dump.dmp",
                 CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow.AddHours(-2),
-                LastActivity = DateTime.UtcNow.AddHours(-2), // Old activity
+                CreatedAt = DateTime.Now.AddHours(-2),
+                LastActivity = DateTime.Now.AddHours(-2), // Old activity
                 Status = SessionStatus.Active
             };
             m_Sessions[sessionId] = sessionInfo;
@@ -331,8 +331,8 @@ namespace mcp_nexus_tests.Session
                 DumpPath = "C:\\Test\\dump.dmp",
                 CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow,
-                LastActivity = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
+                LastActivity = DateTime.Now,
                 Status = SessionStatus.Active
             };
             m_Sessions[sessionId] = sessionInfo;
@@ -400,8 +400,8 @@ namespace mcp_nexus_tests.Session
                 DumpPath = "C:\\Test\\dump.dmp",
                 CdbSession = m_RealisticCdbSession,
                 CommandQueue = m_MockCommandQueue.Object,
-                CreatedAt = DateTime.UtcNow,
-                LastActivity = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
+                LastActivity = DateTime.Now,
                 Status = SessionStatus.Active
             };
             m_Sessions[sessionId] = sessionInfo;
