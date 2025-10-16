@@ -961,6 +961,7 @@ namespace mcp_nexus
         /// Formats JSON string for better human readability in logs.
         /// </summary>
         internal static readonly System.Text.Json.JsonSerializerOptions IndentedJson = new() { WriteIndented = true };
+        internal static readonly System.Text.Json.JsonSerializerOptions CompactJson = new();
 
         private static string FormatJsonForLogging(string json)
         {
