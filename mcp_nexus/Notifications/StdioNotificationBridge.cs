@@ -50,15 +50,20 @@ namespace mcp_nexus.Notifications
 
             try
             {
-                // Serialize directly to a memory stream using compact options to reduce allocations
                 var options = new System.Text.Json.JsonSerializerOptions();
-                using var ms = new System.IO.MemoryStream();
-                await System.Text.Json.JsonSerializer.SerializeAsync(ms, notification, options);
-                ms.TryGetBuffer(out var buffer);
-                if (buffer.Array != null)
+                if (Console.Out is StreamWriter sw)
                 {
-                    await Console.Out.WriteAsync(new string(System.Text.Encoding.UTF8.GetChars(buffer.Array, buffer.Offset, buffer.Count)));
-                    await Console.Out.WriteLineAsync();
+                    // Fast path: write UTF-8 bytes directly to underlying stream
+                    var stream = sw.BaseStream;
+                    await System.Text.Json.JsonSerializer.SerializeAsync(stream, notification, options);
+                    await stream.WriteAsync(new byte[] { (byte)'\n' }, 0, 1);
+                    await stream.FlushAsync();
+                }
+                else
+                {
+                    // Fallback for test harnesses that replace Console.Out with a TextWriter (e.g., StringWriter)
+                    var json = System.Text.Json.JsonSerializer.Serialize(notification, options);
+                    await Console.Out.WriteLineAsync(json);
                     await Console.Out.FlushAsync();
                 }
             }

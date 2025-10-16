@@ -48,6 +48,9 @@ namespace mcp_nexus
             try
             {
                 Console.Error.WriteLine($" Setting environment variables...");
+                // Guarantee UTF-8 encoding for stdio (prevents AI client decoding issues)
+                try { Console.OutputEncoding = System.Text.Encoding.UTF8; } catch { }
+                try { Console.InputEncoding = System.Text.Encoding.UTF8; } catch { }
 
                 // Pre-warm ThreadPool to reduce cold-start thread acquisition under bursty load
                 mcp_nexus.Infrastructure.ThreadPoolTuning.Apply();
