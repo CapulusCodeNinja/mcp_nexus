@@ -99,11 +99,20 @@ namespace mcp_nexus_tests.CommandQueue
             m_Service = new CommandQueueService(m_RealisticCdbSession, m_MockLogger.Object, m_MockLoggerFactory.Object);
             var commandId = m_Service!.QueueCommand("test command");
 
-            // Wait for command to be processed
-            await Task.Delay(200);
+            // Wait for command to be processed by polling
+            string result;
+            var maxWaitTime = TimeSpan.FromSeconds(5);
+            var startTime = DateTime.Now;
+            
+            do
+            {
+                result = await m_Service.GetCommandResult(commandId);
+                if (!result.Contains("Command is still executing"))
+                    break;
+                await Task.Delay(50); // Small delay for polling
+            } while (DateTime.Now - startTime < maxWaitTime);
 
-            // Act
-            var result = await m_Service.GetCommandResult(commandId);
+            // Act - result is already retrieved above
 
             // Assert - Should return the mock result (the exception handling might be different)
             Assert.Equal("Mock result", result);

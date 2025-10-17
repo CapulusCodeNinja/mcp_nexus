@@ -141,29 +141,23 @@ namespace mcp_nexus_tests.CommandQueue
             var command = "!analyze -v";
             var status = "executing";
 
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             // Act
             m_Manager.NotifyCommandStatusFireAndForget(commandId, command, status);
 
             // Assert
-            // Wait for the Task.Run to complete with a reasonable timeout
-            var maxWaitTime = TimeSpan.FromSeconds(2);
-            var startTime = DateTime.Now;
-
-            while (DateTime.Now - startTime < maxWaitTime)
-            {
-                try
-                {
-                    m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
-                    return; // Test passed
-                }
-                catch (MockException)
-                {
-                    // Verification failed, wait a bit more
-                    await Task.Delay(50);
-                }
-            }
-
-            // If we get here, the verification failed within the timeout
+            // Wait for notification to be received deterministically
+            await notificationReceived.Task;
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
@@ -258,13 +252,21 @@ namespace mcp_nexus_tests.CommandQueue
             var eventType = "TestEvent";
             var message = "Test message";
             var data = new { test = "data" };
+            var logReceived = new TaskCompletionSource<bool>();
+            
+            m_MockLogger.Setup(x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Queue Event [{eventType}]: {message}")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+                .Callback(() => logReceived.SetResult(true));
 
             // Act
             m_Manager.NotifyQueueEvent(eventType, message, data);
 
             // Assert
-            // Give the Task.Run a moment to execute
-            await Task.Delay(500);
+            await logReceived.Task;
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -280,34 +282,21 @@ namespace mcp_nexus_tests.CommandQueue
             var eventType = "TestEvent";
             var message = "Test message";
 
+            var logReceived = new TaskCompletionSource<bool>();
+            m_MockLogger.Setup(x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Queue Event [{eventType}]: {message}")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+                .Callback(() => logReceived.SetResult(true));
+
             // Act
             m_Manager.NotifyQueueEvent(eventType, message, null);
 
             // Assert
-            // Wait for the Task.Run to complete with retries
-            var maxWaitTime = TimeSpan.FromSeconds(5);
-            var startTime = DateTime.Now;
-
-            while (DateTime.Now - startTime < maxWaitTime)
-            {
-                try
-                {
-                    m_MockLogger.Verify(x => x.Log(
-                        LogLevel.Information,
-                        It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Queue Event [{eventType}]: {message}")),
-                        It.IsAny<Exception>(),
-                        It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
-                    return; // Success
-                }
-                catch (MockException)
-                {
-                    // Verification failed, wait a bit and try again
-                    await Task.Delay(100);
-                }
-            }
-
-            // Final verification - this will throw if it still fails
+            // Wait for log message to be received deterministically
+            await logReceived.Task;
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -342,7 +331,7 @@ namespace mcp_nexus_tests.CommandQueue
             m_Manager.NotifyServiceShutdown(reason);
 
             // Assert - Wait for the async operation to complete with timeout
-            var completed = await Task.WhenAny(tcs.Task, Task.Delay(5000));
+            var completed = await Task.WhenAny(tcs.Task, Task.Delay(1000));
             Assert.True(completed == tcs.Task, "Expected log message was not received within timeout");
 
             m_MockLogger.Verify(x => x.Log(
@@ -358,13 +347,21 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Arrange
             var sessionId = m_Config.SessionId;
+            var logReceived = new TaskCompletionSource<bool>();
+            
+            m_MockLogger.Setup(x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Command queue service started for session {sessionId}")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+                .Callback(() => logReceived.SetResult(true));
 
             // Act
             m_Manager.NotifyServiceStartup();
 
             // Assert
-            // Wait for the Task.Run to complete
-            await Task.Delay(1000);
+            await logReceived.Task;
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -380,34 +377,21 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "cmd-1";
             var reason = "User requested";
 
+            var logReceived = new TaskCompletionSource<bool>();
+            m_MockLogger.Setup(x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Command {commandId} cancelled: {reason}")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+                .Callback(() => logReceived.SetResult(true));
+
             // Act
             m_Manager.NotifyCommandCancellation(commandId, reason);
 
             // Assert
-            // Wait for the Task.Run to complete with retries
-            var maxWaitTime = TimeSpan.FromSeconds(5);
-            var startTime = DateTime.Now;
-
-            while (DateTime.Now - startTime < maxWaitTime)
-            {
-                try
-                {
-                    m_MockLogger.Verify(x => x.Log(
-                        LogLevel.Information,
-                        It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Command {commandId} cancelled: {reason}")),
-                        It.IsAny<Exception>(),
-                        It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
-                    return; // Success
-                }
-                catch (MockException)
-                {
-                    // Verification failed, wait a bit and try again
-                    await Task.Delay(100);
-                }
-            }
-
-            // Final verification - this will throw if it still fails
+            // Wait for log message to be received deterministically
+            await logReceived.Task;
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -457,34 +441,21 @@ namespace mcp_nexus_tests.CommandQueue
             m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(commandId, command, status, 0, string.Empty, string.Empty))
                 .ThrowsAsync(new Exception("Notification failed"));
 
+            var logReceived = new TaskCompletionSource<bool>();
+            m_MockLogger.Setup(x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to send command status notification for")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+                .Callback(() => logReceived.SetResult(true));
+
             // Act
             m_Manager.NotifyCommandStatusFireAndForget(commandId, command, status);
 
             // Assert
-            // Wait for the Task.Run to complete with retries
-            var maxWaitTime = TimeSpan.FromSeconds(5);
-            var startTime = DateTime.Now;
-
-            while (DateTime.Now - startTime < maxWaitTime)
-            {
-                try
-                {
-                    m_MockLogger.Verify(x => x.Log(
-                        LogLevel.Warning,
-                        It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to send command status notification for")),
-                        It.IsAny<Exception>(),
-                        It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
-                    return; // Success
-                }
-                catch (MockException)
-                {
-                    // Verification failed, wait a bit and try again
-                    await Task.Delay(100);
-                }
-            }
-
-            // Final verification - this will throw if it still fails
+            // Wait for log message to be received deterministically
+            await logReceived.Task;
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),

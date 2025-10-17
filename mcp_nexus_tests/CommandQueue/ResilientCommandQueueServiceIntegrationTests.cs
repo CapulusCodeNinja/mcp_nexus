@@ -180,11 +180,18 @@ namespace mcp_nexus_tests.CommandQueue
 
             var commandId = m_Service.QueueCommand("version");
 
-            // Wait for command to complete
-            await Task.Delay(1000);
+            // Wait for command to complete by polling
+            string result;
+            do
+            {
+                result = await m_Service.GetCommandResult(commandId);
+                if (!result.Contains("Command is still executing"))
+                    break;
+                await Task.Delay(50); // Small delay for polling
+            } while (true);
 
             // Act
-            var result = await m_Service.GetCommandResult(commandId);
+            // result is already retrieved above
 
             // Assert
             // The result should contain either "Mock result" or execution status
@@ -572,7 +579,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public async Task QueueCommand_WithComplexCommand_StartsTimeout()
+        public void QueueCommand_WithComplexCommand_StartsTimeout()
         {
             // Arrange
             m_Service = new ResilientCommandQueueService(
@@ -585,9 +592,6 @@ namespace mcp_nexus_tests.CommandQueue
             // Act
             var commandId = m_Service.QueueCommand("complex-command");
 
-            // Wait for timeout to be started
-            await Task.Delay(100);
-
             // Assert - Just verify that the service doesn't throw and command was queued
             // The timeout service call might be flaky due to timing issues
             Assert.NotNull(commandId);
@@ -595,7 +599,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public async Task QueueCommand_WithSimpleCommand_StartsDefaultTimeout()
+        public void QueueCommand_WithSimpleCommand_StartsDefaultTimeout()
         {
             // Arrange
             m_Service = new ResilientCommandQueueService(
@@ -607,9 +611,6 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Act
             var commandId = m_Service.QueueCommand("version");
-
-            // Wait for timeout to be started
-            await Task.Delay(50);
 
             // Assert - "version" is a simple command, so it gets 2 minutes timeout
             m_MockTimeoutService.Verify(

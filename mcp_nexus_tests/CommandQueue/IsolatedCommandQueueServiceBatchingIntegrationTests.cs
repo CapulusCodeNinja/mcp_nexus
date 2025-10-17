@@ -452,10 +452,16 @@ namespace mcp_nexus_tests.CommandQueue
             var id = m_Service.QueueCommand("lm");
             commandIds.Add(id);
 
-            // Wait for batch timeout (1 second) plus a small buffer
-            await Task.Delay(1200);
+            // Wait for batch timeout by polling
+            string result;
+            do
+            {
+                result = await m_Service.GetCommandResult(id);
+                if (!result.Contains("Command is still executing"))
+                    break;
+                await Task.Delay(50); // Small delay for polling
+            } while (true);
 
-            var result = await m_Service.GetCommandResult(id);
             commandResults.Add(result);
 
             // Assert

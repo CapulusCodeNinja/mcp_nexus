@@ -439,7 +439,7 @@ namespace mcp_nexus_tests.CommandQueue
             {
                 Enabled = true,
                 MaxBatchSize = 2,
-                BatchWaitTimeoutMs = 1000,
+                BatchWaitTimeoutMs = 10, // Very small timeout for immediate execution
                 BatchTimeoutMultiplier = 1.0,
                 MaxBatchTimeoutMinutes = 10,
                 ExcludedCommands = new string[0] // Empty exclusions
@@ -457,6 +457,7 @@ namespace mcp_nexus_tests.CommandQueue
             var command1 = new QueuedCommand("cmd-1", "!analyze", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
             var command2 = new QueuedCommand("cmd-2", "lm", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
 
+            var batchExecutionTcs = new TaskCompletionSource<string>();
             m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns<string, CancellationToken>((cmd, token) =>
                 {
@@ -464,15 +465,18 @@ namespace mcp_nexus_tests.CommandQueue
                     Assert.Contains("MCP_NEXUS_BATCH_START", cmd);
                     Assert.Contains("!analyze", cmd);
                     Assert.Contains("lm", cmd);
-                    return Task.FromResult("Batch output");
+                    return batchExecutionTcs.Task;
                 });
 
             // Act
             await processor.ProcessCommandAsync(command1);
             await processor.ProcessCommandAsync(command2);
 
-            // Wait for batch processing
-            await Task.Delay(1100);
+            // Wait for the batch timer to fire (BatchWaitTimeoutMs = 10ms)
+            await Task.Delay(50);
+
+            // Complete the batch execution immediately
+            batchExecutionTcs.SetResult("Batch output");
 
             // Assert
             m_MockCdbSession.Verify(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -486,7 +490,7 @@ namespace mcp_nexus_tests.CommandQueue
             {
                 Enabled = true,
                 MaxBatchSize = 2,
-                BatchWaitTimeoutMs = 1000,
+                BatchWaitTimeoutMs = 10, // Very small timeout for immediate execution
                 BatchTimeoutMultiplier = 1.0,
                 MaxBatchTimeoutMinutes = 10,
                 ExcludedCommands = null! // Null exclusions
@@ -504,6 +508,7 @@ namespace mcp_nexus_tests.CommandQueue
             var command1 = new QueuedCommand("cmd-1", "!analyze", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
             var command2 = new QueuedCommand("cmd-2", "lm", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource());
 
+            var batchExecutionTcs = new TaskCompletionSource<string>();
             m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns<string, CancellationToken>((cmd, token) =>
                 {
@@ -511,15 +516,18 @@ namespace mcp_nexus_tests.CommandQueue
                     Assert.Contains("MCP_NEXUS_BATCH_START", cmd);
                     Assert.Contains("!analyze", cmd);
                     Assert.Contains("lm", cmd);
-                    return Task.FromResult("Batch output");
+                    return batchExecutionTcs.Task;
                 });
 
             // Act
             await processor.ProcessCommandAsync(command1);
             await processor.ProcessCommandAsync(command2);
 
-            // Wait for batch processing
-            await Task.Delay(1100);
+            // Wait for the batch timer to fire (BatchWaitTimeoutMs = 10ms)
+            await Task.Delay(50);
+
+            // Complete the batch execution immediately
+            batchExecutionTcs.SetResult("Batch output");
 
             // Assert
             m_MockCdbSession.Verify(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);

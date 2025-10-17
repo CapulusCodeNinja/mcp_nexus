@@ -86,6 +86,16 @@ namespace mcp_nexus_tests.CommandQueue
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
                 .ThrowsAsync(new Exception("Notification failed"));
 
+            // Arrange - Setup mock callback BEFORE calling the method
+            var logReceived = new TaskCompletionSource<bool>();
+            m_MockLogger.Setup(x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to send")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+                .Callback(() => logReceived.SetResult(true));
+
             // Act
             NotificationHelper.NotifyCommandStatusFireAndForget(
                 m_MockNotificationService.Object,
@@ -96,8 +106,7 @@ namespace mcp_nexus_tests.CommandQueue
                 status);
 
             // Assert
-            // Wait for the Task.Run to complete
-            await Task.Delay(2000);
+            await logReceived.Task;
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
@@ -115,6 +124,15 @@ namespace mcp_nexus_tests.CommandQueue
             var command = "test-command";
             var elapsed = TimeSpan.FromMinutes(5);
 
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifyCommandHeartbeatAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<TimeSpan>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             // Act
             NotificationHelper.NotifyCommandHeartbeatFireAndForget(
                 m_MockNotificationService.Object,
@@ -125,10 +143,8 @@ namespace mcp_nexus_tests.CommandQueue
                 elapsed);
 
             // Assert
-            // Give the fire-and-forget task a moment to execute
-            // Note: This is testing fire-and-forget behavior, so we use a small delay
-            // In production, notifications are sent asynchronously and we don't wait for them
-            await Task.Delay(500);
+            // Wait for the fire-and-forget notification to complete
+            await notificationReceived.Task;
 
             // Verify was called at least once (may not be called if system is under heavy load)
             // This is acceptable for fire-and-forget notifications
@@ -149,6 +165,16 @@ namespace mcp_nexus_tests.CommandQueue
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>()))
                 .ThrowsAsync(new Exception("Heartbeat failed"));
 
+            // Arrange - Setup mock callback BEFORE calling the method
+            var logReceived = new TaskCompletionSource<bool>();
+            m_MockLogger.Setup(x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to send heartbeat")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+                .Callback(() => logReceived.SetResult(true));
+
             // Act
             NotificationHelper.NotifyCommandHeartbeatFireAndForget(
                 m_MockNotificationService.Object,
@@ -159,8 +185,7 @@ namespace mcp_nexus_tests.CommandQueue
                 elapsed);
 
             // Assert
-            // Wait for the Task.Run to complete
-            await Task.Delay(2000);
+            await logReceived.Task;
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
@@ -181,6 +206,14 @@ namespace mcp_nexus_tests.CommandQueue
             var result = "test-result";
             var error = "test-error";
 
+            // Arrange - Setup mock callback BEFORE calling the method
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             // Act
             NotificationHelper.NotifyCommandStatusDetailedFireAndForget(
                 m_MockNotificationService.Object,
@@ -194,8 +227,7 @@ namespace mcp_nexus_tests.CommandQueue
                 error);
 
             // Assert
-            // Wait for the Task.Run to complete
-            await Task.Delay(2000);
+            await notificationReceived.Task;
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
                 commandId, command, status, It.IsAny<int>(), message, result, error), Times.Once);
         }
@@ -213,6 +245,16 @@ namespace mcp_nexus_tests.CommandQueue
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
                 .ThrowsAsync(new Exception("Notification failed"));
 
+            // Arrange - Setup mock callback BEFORE calling the method
+            var logReceived = new TaskCompletionSource<bool>();
+            m_MockLogger.Setup(x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to send")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+                .Callback(() => logReceived.SetResult(true));
+
             // Act
             NotificationHelper.NotifyCommandStatusFireAndForget(
                 m_MockNotificationService.Object,
@@ -223,8 +265,7 @@ namespace mcp_nexus_tests.CommandQueue
                 status);
 
             // Assert
-            // Wait for the Task.Run to complete
-            await Task.Delay(2000);
+            await logReceived.Task;
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
@@ -242,6 +283,14 @@ namespace mcp_nexus_tests.CommandQueue
             var command = "test-command";
             var status = "executing";
 
+            // Arrange - Setup mock callback BEFORE calling the method
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             // Act
             NotificationHelper.NotifyCommandStatusFireAndForget(
                 m_MockNotificationService.Object,
@@ -253,8 +302,7 @@ namespace mcp_nexus_tests.CommandQueue
                 null);
 
             // Assert
-            // Wait for the Task.Run to complete
-            await Task.Delay(2000);
+            await notificationReceived.Task;
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
                 sessionId, commandId, status, string.Empty, string.Empty, 0), Times.Once);
         }
@@ -290,7 +338,7 @@ namespace mcp_nexus_tests.CommandQueue
                 status);
 
             // Assert - Wait for the async operation to complete with timeout
-            var completed = await Task.WhenAny(tcs.Task, Task.Delay(5000));
+            var completed = await Task.WhenAny(tcs.Task, Task.Delay(1000));
             Assert.True(completed == tcs.Task, "Expected notification call was not received within timeout");
 
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(

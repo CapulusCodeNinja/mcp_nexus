@@ -76,8 +76,21 @@ namespace mcp_nexus_tests.CommandQueue
             var isolatedId = _isolatedService.QueueCommand("test command");
             var queueId = _queueService.QueueCommand("test command");
 
-            // Wait for commands to complete
-            await Task.Delay(100);
+            // Wait for commands to complete by polling
+            var maxWaitTime = TimeSpan.FromSeconds(5);
+            var startTime = DateTime.Now;
+            
+            while (DateTime.Now - startTime < maxWaitTime)
+            {
+                var isolatedStatus = await _isolatedService.GetCommandResult(isolatedId);
+                var queueStatus = await _queueService.GetCommandResult(queueId);
+                
+                if (!isolatedStatus.Contains("Command is still executing") && 
+                    !queueStatus.Contains("Command is still executing"))
+                    break;
+                    
+                await Task.Delay(50); // Small delay for polling
+            }
 
             // Act - Try to get results with wrong service
             var isolatedResult = await _isolatedService.GetCommandResult(isolatedId);
@@ -102,16 +115,22 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange
             var commandId = _isolatedService.QueueCommand("test command");
 
-            // Wait for completion
-            await Task.Delay(100);
+            // Wait for completion by polling
+            var maxWaitTime = TimeSpan.FromSeconds(5);
+            var startTime = DateTime.Now;
+            
+            while (DateTime.Now - startTime < maxWaitTime)
+            {
+                var result = await _isolatedService.GetCommandResult(commandId);
+                if (!result.Contains("Command is still executing"))
+                    break;
+                await Task.Delay(50); // Small delay for polling
+            }
 
             // Act - Get result immediately
             var result1 = await _isolatedService.GetCommandResult(commandId);
 
             // Simulate cleanup (command removed from active tracker but still in cache)
-            // Wait a bit more
-            await Task.Delay(100);
-
             // Try to get result again (should work from cache)
             var result2 = await _isolatedService.GetCommandResult(commandId);
 

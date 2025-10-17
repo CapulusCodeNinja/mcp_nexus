@@ -93,13 +93,11 @@ namespace mcp_nexus_tests.Notifications
 
             await m_Bridge.InitializeAsync();
 
-            // Clear any existing output and add stabilization delays
+            // Clear any existing output
             m_StringWriter.GetStringBuilder().Clear();
-            await Task.Delay(50);
 
             // Act
             await registeredHandler!((object)notification);
-            await Task.Delay(50);
 
             // Assert
             var output = m_StringWriter.ToString();

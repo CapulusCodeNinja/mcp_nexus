@@ -194,6 +194,15 @@ namespace mcp_nexus_tests.Recovery
         public async Task RecoverStuckSession_WithNotificationService_SendsNotification()
         {
             // Arrange
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifySessionRecoveryAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<bool>(),
+                It.IsAny<string>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             m_Service = new CdbSessionRecoveryService(
                 m_RealisticCdbSession,
                 m_MockLogger.Object,
@@ -204,7 +213,7 @@ namespace mcp_nexus_tests.Recovery
             await m_Service.RecoverStuckSession("test reason");
 
             // Wait for notification to be sent
-            await Task.Delay(500);
+            await notificationReceived.Task;
 
             // Assert - Expect the 4-parameter version (without affectedCommands array)
             m_MockNotificationService.Verify(
@@ -333,6 +342,15 @@ namespace mcp_nexus_tests.Recovery
         public async Task ForceRestartSession_WithNotificationService_SendsNotification()
         {
             // Arrange
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifySessionRecoveryAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<bool>(),
+                It.IsAny<string>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             m_Service = new CdbSessionRecoveryService(
                 m_RealisticCdbSession,
                 m_MockLogger.Object,
@@ -343,7 +361,7 @@ namespace mcp_nexus_tests.Recovery
             await m_Service.ForceRestartSession("test reason");
 
             // Wait for notification to be sent
-            await Task.Delay(500);
+            await notificationReceived.Task;
 
             // Assert - Check for the notification that was actually sent (4-parameter version)
             m_MockNotificationService.Verify(

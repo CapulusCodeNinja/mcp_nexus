@@ -59,10 +59,21 @@ namespace mcp_nexus_tests.CommandQueue
             // Arrange - ensure session is started
             await m_RealisticCdbSession.StartSession("test.dmp", null);
             var commandId = m_Service.QueueCommand("!analyze -v");
-            await Task.Delay(200); // Wait for realistic command execution
+            
+            // Wait for command to complete by polling
+            string result;
+            var maxWaitTime = TimeSpan.FromSeconds(5);
+            var startTime = DateTime.Now;
+            
+            do
+            {
+                result = await m_Service.GetCommandResult(commandId);
+                if (!result.Contains("Command is still executing"))
+                    break;
+                await Task.Delay(50); // Small delay for polling
+            } while (DateTime.Now - startTime < maxWaitTime);
 
-            // Act
-            var result = await m_Service.GetCommandResult(commandId);
+            // Act - result is already retrieved above
 
             // Assert
             Assert.Contains("DBGENG:", result); // Realistic output from !analyze -v

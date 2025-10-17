@@ -179,9 +179,6 @@ namespace mcp_nexus_tests.Session
             // Act
             var result = await m_Manager.CloseSessionAsync(sessionId);
 
-            // Wait a bit for async operations to complete
-            await Task.Delay(100);
-
             // Assert
             Assert.True(result);
             Assert.False(m_Sessions.ContainsKey(sessionId));
