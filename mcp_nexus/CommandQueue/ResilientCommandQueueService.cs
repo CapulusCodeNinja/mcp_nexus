@@ -11,17 +11,17 @@ namespace mcp_nexus.CommandQueue
     /// </summary>
     public class ResilientCommandQueueService : IDisposable, ICommandQueueService
     {
-        private readonly ILogger<ResilientCommandQueueService> m_logger;
-        private readonly BlockingCollection<QueuedCommand> m_commandQueue;
-        private readonly CancellationTokenSource m_serviceCts = new();
-        private readonly Task m_processingTask;
-        private bool m_disposed;
+        private readonly ILogger<ResilientCommandQueueService> m_Logger;
+        private readonly BlockingCollection<QueuedCommand> m_CommandQueue;
+        private readonly CancellationTokenSource m_ServiceCts = new();
+        private readonly Task m_ProcessingTask;
+        private bool m_Disposed;
 
         // Focused components
-        private readonly ResilientQueueConfiguration m_config;
-        private readonly CommandRecoveryManager m_recoveryManager;
-        private readonly ResilientCommandProcessor m_processor;
-        private readonly IMcpNotificationService? m_notificationService;
+        private readonly ResilientQueueConfiguration m_Config;
+        private readonly CommandRecoveryManager m_RecoveryManager;
+        private readonly ResilientCommandProcessor m_Processor;
+        private readonly IMcpNotificationService? m_NotificationService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ResilientCommandQueueService"/> class.
@@ -42,30 +42,30 @@ namespace mcp_nexus.CommandQueue
             IMcpNotificationService? notificationService = null,
             string? sessionId = null)
         {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_notificationService = notificationService;
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_NotificationService = notificationService;
 
             // Create focused components
-            m_config = new ResilientQueueConfiguration(sessionId: sessionId ?? "unknown");
-            m_recoveryManager = new CommandRecoveryManager(
-                cdbSession, logger, timeoutService, recoveryService, m_config, notificationService);
-            m_processor = new ResilientCommandProcessor(
-                loggerFactory.CreateLogger<ResilientCommandProcessor>(), m_recoveryManager, m_config, notificationService);
+            m_Config = new ResilientQueueConfiguration(sessionId: sessionId ?? "unknown");
+            m_RecoveryManager = new CommandRecoveryManager(
+                cdbSession, logger, timeoutService, recoveryService, m_Config, notificationService);
+            m_Processor = new ResilientCommandProcessor(
+                loggerFactory.CreateLogger<ResilientCommandProcessor>(), m_RecoveryManager, m_Config, notificationService);
 
             // Initialize command queue
-            m_commandQueue = [];
+            m_CommandQueue = [];
 
-            m_logger.LogInformation("🚀 Starting resilient command queue with automated recovery");
+            m_Logger.LogInformation("🚀 Starting resilient command queue with automated recovery");
 
             // Start the background processing task
             try
             {
-                m_processingTask = Task.Run(() => m_processor.ProcessCommandQueueAsync(m_commandQueue, m_serviceCts.Token), m_serviceCts.Token);
-                m_logger.LogDebug("✅ Resilient command queue background task started successfully");
+                m_ProcessingTask = Task.Run(() => m_Processor.ProcessCommandQueueAsync(m_CommandQueue, m_ServiceCts.Token), m_ServiceCts.Token);
+                m_Logger.LogDebug("✅ Resilient command queue background task started successfully");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "💥 Failed to start resilient command queue background task");
+                m_Logger.LogError(ex, "💥 Failed to start resilient command queue background task");
                 throw;
             }
         }
@@ -77,7 +77,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The unique command ID</returns>
         public string QueueCommand(string command)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
 
             if (string.IsNullOrWhiteSpace(command))
@@ -92,26 +92,26 @@ namespace mcp_nexus.CommandQueue
                 new CancellationTokenSource()
             );
 
-            m_commandQueue.Add(queuedCommand);
+            m_CommandQueue.Add(queuedCommand);
 
             // Register command for tracking immediately
-            m_processor.RegisterQueuedCommand(queuedCommand);
+            m_Processor.RegisterQueuedCommand(queuedCommand);
 
-            m_logger.LogInformation("📝 Queued resilient command {CommandId}: {Command}", commandId, command);
-            m_logger.LogDebug("📊 Queue depth: {QueueDepth}", m_commandQueue.Count);
+            m_Logger.LogInformation("📝 Queued resilient command {CommandId}: {Command}", commandId, command);
+            m_Logger.LogDebug("📊 Queue depth: {QueueDepth}", m_CommandQueue.Count);
 
             // Send queued notification
-            if (m_notificationService != null)
+            if (m_NotificationService != null)
             {
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        await m_notificationService.NotifyCommandStatusAsync(commandId, command, "queued", 0, "Command queued for execution", string.Empty, string.Empty);
+                        await m_NotificationService.NotifyCommandStatusAsync(commandId, command, "queued", 0, "Command queued for execution", string.Empty, string.Empty);
                     }
                     catch (Exception ex)
                     {
-                        m_logger.LogWarning(ex, "Failed to send queued notification for command {CommandId}", commandId);
+                        m_Logger.LogWarning(ex, "Failed to send queued notification for command {CommandId}", commandId);
                     }
                 });
             }
@@ -126,15 +126,15 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The command result</returns>
         public async Task<string> GetCommandResult(string commandId)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
 
             if (string.IsNullOrWhiteSpace(commandId))
                 throw new ArgumentException("Command ID cannot be null or empty", nameof(commandId));
 
-            m_logger.LogTrace("⏳ Waiting for resilient command {CommandId} result", commandId);
+            m_Logger.LogTrace("⏳ Waiting for resilient command {CommandId} result", commandId);
 
-            return await m_processor.GetCommandResult(commandId);
+            return await m_Processor.GetCommandResult(commandId);
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>A task that represents the asynchronous operation and contains the cached result with metadata.</returns>
         public async Task<CachedCommandResult?> GetCachedResultWithMetadata(string commandId)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
 
             if (string.IsNullOrWhiteSpace(commandId))
@@ -152,11 +152,11 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                return await Task.FromResult(m_processor.GetCachedResultWithMetadata(commandId));
+                return await Task.FromResult(m_Processor.GetCachedResultWithMetadata(commandId));
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error getting cached result with metadata for command {CommandId}", commandId);
+                m_Logger.LogError(ex, "Error getting cached result with metadata for command {CommandId}", commandId);
                 return null;
             }
         }
@@ -168,10 +168,10 @@ namespace mcp_nexus.CommandQueue
         /// <returns>True if the command was cancelled</returns>
         public bool CancelCommand(string commandId)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(ResilientCommandQueueService));
 
-            return m_processor.CancelCommand(commandId, "User requested cancellation");
+            return m_Processor.CancelCommand(commandId, "User requested cancellation");
         }
 
         /// <summary>
@@ -181,10 +181,10 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The number of commands cancelled</returns>
         public int CancelAllCommands(string? reason = null)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return 0;
 
-            return m_processor.CancelAllCommands(reason ?? "Bulk cancellation");
+            return m_Processor.CancelAllCommands(reason ?? "Bulk cancellation");
         }
 
         /// <summary>
@@ -193,10 +193,10 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The current command, or null if none is executing</returns>
         public QueuedCommand? GetCurrentCommand()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return null;
 
-            return m_processor.GetCurrentCommand();
+            return m_Processor.GetCurrentCommand();
         }
 
         /// <summary>
@@ -205,10 +205,10 @@ namespace mcp_nexus.CommandQueue
         /// <returns>Collection of command status information</returns>
         public IEnumerable<(string Id, string Command, DateTime QueueTime, string Status)> GetQueueStatus()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return [];
 
-            return m_processor.GetQueueStatus();
+            return m_Processor.GetQueueStatus();
         }
 
         /// <summary>
@@ -217,10 +217,10 @@ namespace mcp_nexus.CommandQueue
         /// <returns>Performance statistics tuple</returns>
         public (long Processed, long Failed, long Cancelled) GetPerformanceStats()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return (0, 0, 0);
 
-            return m_processor.GetPerformanceStats();
+            return m_Processor.GetPerformanceStats();
         }
 
         /// <summary>
@@ -230,10 +230,10 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The command state, or null if not found</returns>
         public CommandState? GetCommandState(string commandId)
         {
-            if (m_disposed || string.IsNullOrWhiteSpace(commandId))
+            if (m_Disposed || string.IsNullOrWhiteSpace(commandId))
                 return null;
 
-            return m_processor.GetCommandState(commandId);
+            return m_Processor.GetCommandState(commandId);
         }
 
         /// <summary>
@@ -243,10 +243,10 @@ namespace mcp_nexus.CommandQueue
         /// <returns>Command information, or null if not found</returns>
         public CommandInfo? GetCommandInfo(string commandId)
         {
-            if (m_disposed || string.IsNullOrWhiteSpace(commandId))
+            if (m_Disposed || string.IsNullOrWhiteSpace(commandId))
                 return null;
 
-            return m_processor.GetCommandInfo(commandId);
+            return m_Processor.GetCommandInfo(commandId);
         }
 
         /// <summary>
@@ -254,48 +254,48 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public void Dispose()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return;
 
-            m_disposed = true;
+            m_Disposed = true;
 
             try
             {
-                m_logger.LogInformation("🛑 Shutting down resilient command queue service");
+                m_Logger.LogInformation("🛑 Shutting down resilient command queue service");
 
                 // Signal shutdown
-                m_serviceCts.Cancel();
+                m_ServiceCts.Cancel();
 
                 // Complete the queue to stop accepting new commands
-                m_commandQueue.CompleteAdding();
+                m_CommandQueue.CompleteAdding();
 
                 // Wait for processing task to complete
-                if (m_processingTask != null && !m_processingTask.IsCompleted)
+                if (m_ProcessingTask != null && !m_ProcessingTask.IsCompleted)
                 {
                     try
                     {
-                        m_processingTask.Wait(TimeSpan.FromSeconds(10));
+                        m_ProcessingTask.Wait(TimeSpan.FromSeconds(10));
                     }
                     catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is TaskCanceledException))
                     {
                         // Expected during shutdown
-                        m_logger.LogDebug("Processing task cancelled during shutdown (expected)");
+                        m_Logger.LogDebug("Processing task cancelled during shutdown (expected)");
                     }
                 }
 
                 // Dispose components
-                m_processor?.Dispose();
-                m_recoveryManager?.Cleanup();
+                m_Processor?.Dispose();
+                m_RecoveryManager?.Cleanup();
 
                 // Dispose resources
-                m_commandQueue?.Dispose();
-                m_serviceCts?.Dispose();
+                m_CommandQueue?.Dispose();
+                m_ServiceCts?.Dispose();
 
-                m_logger.LogInformation("✅ Resilient command queue service shutdown complete");
+                m_Logger.LogInformation("✅ Resilient command queue service shutdown complete");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "💥 Error during resilient command queue service disposal");
+                m_Logger.LogError(ex, "💥 Error during resilient command queue service disposal");
             }
         }
     }

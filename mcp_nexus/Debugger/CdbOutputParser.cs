@@ -14,11 +14,11 @@ namespace mcp_nexus.Debugger
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
     public partial class CdbOutputParser(ILogger<CdbOutputParser> logger)
     {
-        private readonly ILogger<CdbOutputParser> m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger<CdbOutputParser> m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         // State tracking for context-aware parsing
-        private string? m_currentCommand;
-        private readonly List<string> m_outputBuffer = [];
+        private string? m_CurrentCommand;
+        private readonly List<string> m_OutputBuffer = [];
 
         /// <summary>
         /// Sets the current command context for stateful parsing.
@@ -27,9 +27,9 @@ namespace mcp_nexus.Debugger
         /// <param name="command">The command being executed. Can be null.</param>
         public void SetCurrentCommand(string command)
         {
-            m_currentCommand = command?.Trim();
-            m_outputBuffer.Clear();
-            m_logger.LogTrace("🎯 Set command context: '{Command}'", m_currentCommand);
+            m_CurrentCommand = command?.Trim();
+            m_OutputBuffer.Clear();
+            m_Logger.LogTrace("🎯 Set command context: '{Command}'", m_CurrentCommand);
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace mcp_nexus.Debugger
         /// </summary>
         private void AddLineToBuffer(string line)
         {
-            m_outputBuffer.Add(line);
+            m_OutputBuffer.Add(line);
         }
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace mcp_nexus.Debugger
         /// </summary>
         private void LogCompletionDetected(string detectionType, string line)
         {
-            m_logger.LogTrace("✅ COMPLETION detected via {DetectionType}: '{Line}'", detectionType, line);
+            m_Logger.LogTrace("✅ COMPLETION detected via {DetectionType}: '{Line}'", detectionType, line);
         }
 
         /// <summary>
@@ -136,8 +136,8 @@ namespace mcp_nexus.Debugger
         /// </summary>
         private void LogCommandStillExecuting(string line)
         {
-            m_logger.LogTrace("⏳ Command still executing: '{Line}' (Buffer: {BufferSize} lines)",
-                line, m_outputBuffer.Count);
+            m_Logger.LogTrace("⏳ Command still executing: '{Line}' (Buffer: {BufferSize} lines)",
+                line, m_OutputBuffer.Count);
         }
 
         /// <summary>
@@ -145,8 +145,8 @@ namespace mcp_nexus.Debugger
         /// </summary>
         private void ResetParserState()
         {
-            m_currentCommand = null;
-            m_outputBuffer.Clear();
+            m_CurrentCommand = null;
+            m_OutputBuffer.Clear();
         }
 
         /// <summary>
@@ -216,7 +216,7 @@ namespace mcp_nexus.Debugger
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error reading available lines from {StreamName}", streamName);
+                m_Logger.LogError(ex, "Error reading available lines from {StreamName}", streamName);
             }
 
             return sb.Length > 0 ? sb.ToString() : string.Empty;

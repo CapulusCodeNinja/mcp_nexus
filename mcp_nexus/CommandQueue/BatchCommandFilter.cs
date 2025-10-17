@@ -7,7 +7,7 @@ namespace mcp_nexus.CommandQueue
     /// </summary>
     public class BatchCommandFilter
     {
-        private readonly HashSet<string> m_excludedCommands;
+        private readonly HashSet<string> m_ExcludedCommands;
 
         /// <summary>
         /// Initializes a new instance of the BatchCommandFilter class
@@ -20,7 +20,7 @@ namespace mcp_nexus.CommandQueue
                 throw new ArgumentNullException(nameof(options));
 
             var excludedCommands = options.Value.ExcludedCommands ?? Array.Empty<string>();
-            m_excludedCommands = new HashSet<string>(excludedCommands, StringComparer.OrdinalIgnoreCase);
+            m_ExcludedCommands = new HashSet<string>(excludedCommands, StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace mcp_nexus.CommandQueue
             var trimmedCommand = command.Trim();
 
             // Check if command starts with any excluded pattern
-            foreach (var excluded in m_excludedCommands)
+            foreach (var excluded in m_ExcludedCommands)
             {
                 if (trimmedCommand.StartsWith(excluded, StringComparison.OrdinalIgnoreCase))
                     return false;
@@ -51,7 +51,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>A read-only collection of excluded command patterns</returns>
         public IReadOnlyCollection<string> GetExcludedCommands()
         {
-            return m_excludedCommands.ToList().AsReadOnly();
+            return m_ExcludedCommands.ToList().AsReadOnly();
         }
     }
 }

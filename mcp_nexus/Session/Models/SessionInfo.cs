@@ -11,22 +11,22 @@ namespace mcp_nexus.Session.Models
         #region Private Fields
 
         /// <summary>Unique session identifier</summary>
-        private readonly string m_sessionId;
+        private readonly string m_SessionId;
 
         /// <summary>CDB session for this debugging session</summary>
-        private readonly ICdbSession m_cdbSession;
+        private readonly ICdbSession m_CdbSession;
 
         /// <summary>Command queue service for this session</summary>
-        private readonly ICommandQueueService m_commandQueue;
+        private readonly ICommandQueueService m_CommandQueue;
 
         /// <summary>Session creation time (local)</summary>
-        private readonly DateTime m_createdAt;
+        private readonly DateTime m_CreatedAt;
 
         /// <summary>Path to the dump file being debugged</summary>
-        private readonly string m_dumpPath;
+        private readonly string m_DumpPath;
 
         /// <summary>Optional path to symbol files</summary>
-        private readonly string? m_symbolsPath;
+        private readonly string? m_SymbolsPath;
 
         /// <summary>Process ID of the CDB debugger process</summary>
         private readonly int? m_processId;
@@ -45,22 +45,22 @@ namespace mcp_nexus.Session.Models
         #region Public Properties
 
         /// <summary>Unique session identifier</summary>
-        public string SessionId { get => m_sessionId; set { } } // Read-only from external perspective
+        public string SessionId { get => m_SessionId; set { } } // Read-only from external perspective
 
         /// <summary>CDB session for this debugging session</summary>
-        public ICdbSession CdbSession { get => m_cdbSession; set { } } // Read-only from external perspective
+        public ICdbSession CdbSession { get => m_CdbSession; set { } } // Read-only from external perspective
 
         /// <summary>Command queue service for this session</summary>
-        public ICommandQueueService CommandQueue { get => m_commandQueue; set { } } // Read-only from external perspective
+        public ICommandQueueService CommandQueue { get => m_CommandQueue; set { } } // Read-only from external perspective
 
         /// <summary>Session creation time (local)</summary>
-        public DateTime CreatedAt { get => m_createdAt; set { } } // Read-only from external perspective
+        public DateTime CreatedAt { get => m_CreatedAt; set { } } // Read-only from external perspective
 
         /// <summary>Path to the dump file being debugged</summary>
-        public string DumpPath { get => m_dumpPath; set { } } // Read-only from external perspective
+        public string DumpPath { get => m_DumpPath; set { } } // Read-only from external perspective
 
         /// <summary>Optional path to symbol files</summary>
-        public string? SymbolsPath { get => m_symbolsPath; set { } } // Read-only from external perspective
+        public string? SymbolsPath { get => m_SymbolsPath; set { } } // Read-only from external perspective
 
         /// <summary>Process ID of the CDB debugger process</summary>
         public int? ProcessId { get => m_processId; set { } } // Read-only from external perspective
@@ -91,12 +91,12 @@ namespace mcp_nexus.Session.Models
         /// </summary>
         public SessionInfo()
         {
-            m_sessionId = string.Empty;
-            m_cdbSession = null!;
-            m_commandQueue = null!;
-            m_createdAt = DateTime.Now;
-            m_dumpPath = string.Empty;
-            m_symbolsPath = null;
+            m_SessionId = string.Empty;
+            m_CdbSession = null!;
+            m_CommandQueue = null!;
+            m_CreatedAt = DateTime.Now;
+            m_DumpPath = string.Empty;
+            m_SymbolsPath = null;
             m_processId = null;
             LastActivity = DateTime.Now;
         }
@@ -113,12 +113,12 @@ namespace mcp_nexus.Session.Models
         public SessionInfo(string sessionId, ICdbSession cdbSession, ICommandQueueService commandQueue,
             string dumpPath, string? symbolsPath = null, int? processId = null)
         {
-            m_sessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
-            m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
-            m_commandQueue = commandQueue ?? throw new ArgumentNullException(nameof(commandQueue));
-            m_createdAt = DateTime.Now;
-            m_dumpPath = dumpPath ?? throw new ArgumentNullException(nameof(dumpPath));
-            m_symbolsPath = symbolsPath;
+            m_SessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
+            m_CdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
+            m_CommandQueue = commandQueue ?? throw new ArgumentNullException(nameof(commandQueue));
+            m_CreatedAt = DateTime.Now;
+            m_DumpPath = dumpPath ?? throw new ArgumentNullException(nameof(dumpPath));
+            m_SymbolsPath = symbolsPath;
             m_processId = processId;
             LastActivity = DateTime.Now;
         }
@@ -140,10 +140,10 @@ namespace mcp_nexus.Session.Models
             try
             {
                 // Dispose command queue first to stop new commands
-                m_commandQueue?.Dispose();
+                m_CommandQueue?.Dispose();
 
                 // Then dispose CDB session
-                m_cdbSession?.Dispose();
+                m_CdbSession?.Dispose();
 
                 Status = SessionStatus.Disposed;
             }

@@ -14,7 +14,7 @@ namespace mcp_nexus.Protocol
     /// <param name="notificationService">Optional notification service for publishing tool events.</param>
     public class McpToolDefinitionService(IMcpNotificationService? notificationService = null) : IMcpToolDefinitionService
     {
-        private readonly IMcpNotificationService? m_notificationService = notificationService;
+        private readonly IMcpNotificationService? m_NotificationService = notificationService;
         /// <summary>
         /// Gets all available MCP tools.
         /// </summary>
@@ -36,9 +36,9 @@ namespace mcp_nexus.Protocol
         /// </summary>
         public async Task NotifyToolsChanged()
         {
-            if (m_notificationService != null)
+            if (m_NotificationService != null)
             {
-                await m_notificationService.NotifyToolsListChangedAsync();
+                await m_NotificationService.NotifyToolsListChangedAsync();
             }
         }
 

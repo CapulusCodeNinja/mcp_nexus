@@ -322,6 +322,13 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task QueueCommand_WithNotificationService_SendsNotification()
         {
             // Arrange
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             m_Service = new ResilientCommandQueueService(
                 m_RealisticCdbSession,
                 m_MockLogger.Object,
@@ -333,8 +340,8 @@ namespace mcp_nexus_tests.CommandQueue
             // Act
             var commandId = m_Service.QueueCommand("version");
 
-            // Wait briefly for async fire-and-forget notification to complete
-            await Task.Delay(200);
+            // Wait for notification to be received deterministically
+            await notificationReceived.Task;
 
             // Assert - The actual call uses the commandId, command, status, progress, message, result, error order
             m_MockNotificationService.Verify(
@@ -550,12 +557,15 @@ namespace mcp_nexus_tests.CommandQueue
 
             var commandId = m_Service.QueueCommand("failing-command");
 
-            // Wait for command to complete (failing-command has 50ms execution + 10ms completion delay)
-            // Increased delay to 500ms to ensure command completion even under system load
-            await Task.Delay(500);
-
-            // Act
-            var result = await m_Service.GetCommandResult(commandId);
+            // Wait for command to complete by polling until we get a result that's not "still executing"
+            var result = "";
+            var attempts = 0;
+            do
+            {
+                await Task.Delay(50);
+                attempts++;
+                result = await m_Service.GetCommandResult(commandId);
+            } while (result.Contains("Command is still executing") && attempts < 20);
 
             // Assert
             Assert.Contains("Command execution failed: Command failed: failing-command", result);

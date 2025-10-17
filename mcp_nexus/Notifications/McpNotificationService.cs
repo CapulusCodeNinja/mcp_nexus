@@ -12,14 +12,14 @@ namespace mcp_nexus.Notifications
     {
         #region Private Fields
 
-        private readonly Dictionary<string, List<Func<object, Task>>> m_handlers = [];
-        private readonly Dictionary<string, string> m_subscriptionIds = []; // Maps subscription ID to event type
-        private readonly object m_lock = new();
-        private readonly ILogger<McpNotificationService>? m_logger;
+        private readonly Dictionary<string, List<Func<object, Task>>> m_Handlers = [];
+        private readonly Dictionary<string, string> m_SubscriptionIds = []; // Maps subscription ID to event type
+        private readonly object m_Lock = new();
+        private readonly ILogger<McpNotificationService>? m_Logger;
 
-        private bool m_notificationsEnabled = true; // Enabled by default for testing compatibility
+        private bool m_NotificationsEnabled = true; // Enabled by default for testing compatibility
 
-        private bool m_disposed = false;
+        private bool m_Disposed = false;
 
         #endregion
 
@@ -38,7 +38,7 @@ namespace mcp_nexus.Notifications
         /// <param name="logger">The logger instance for recording notification operations and errors.</param>
         public McpNotificationService(ILogger<McpNotificationService> logger)
         {
-            m_logger = logger;
+            m_Logger = logger;
         }
 
         #endregion
@@ -57,19 +57,19 @@ namespace mcp_nexus.Notifications
         public async Task PublishNotificationAsync(string eventType, object data)
         {
             // Skip notifications entirely if not enabled (HTTP mode)
-            if (!m_notificationsEnabled)
+            if (!m_NotificationsEnabled)
                 return;
 
             if (string.IsNullOrEmpty(eventType))
                 return;
 
             List<Func<object, Task>>? handlers;
-            lock (m_lock)
+            lock (m_Lock)
             {
-                if (!m_handlers.TryGetValue(eventType, out handlers) || handlers?.Count == 0)
+                if (!m_Handlers.TryGetValue(eventType, out handlers) || handlers?.Count == 0)
                 {
                     // Log warning when no handlers are registered
-                    m_logger?.LogTrace("No notification handlers registered for event type: {EventType}", eventType);
+                    m_Logger?.LogTrace("No notification handlers registered for event type: {EventType}", eventType);
                     return;
                 }
                 // Copy only when there are multiple handlers to avoid mutation issues
@@ -121,16 +121,16 @@ namespace mcp_nexus.Notifications
 
             var subscriptionId = Guid.NewGuid().ToString();
 
-            lock (m_lock)
+            lock (m_Lock)
             {
-                if (!m_handlers.ContainsKey(eventType))
-                    m_handlers[eventType] = [];
+                if (!m_Handlers.ContainsKey(eventType))
+                    m_Handlers[eventType] = [];
 
-                m_handlers[eventType].Add(handler);
-                m_subscriptionIds[subscriptionId] = eventType;
+                m_Handlers[eventType].Add(handler);
+                m_SubscriptionIds[subscriptionId] = eventType;
 
                 // Enable notifications when first subscriber registers (stdio mode)
-                m_notificationsEnabled = true;
+                m_NotificationsEnabled = true;
             }
 
             return subscriptionId;
@@ -155,10 +155,10 @@ namespace mcp_nexus.Notifications
 
             var subscriptionId = Guid.NewGuid().ToString();
 
-            lock (m_lock)
+            lock (m_Lock)
             {
-                if (!m_handlers.ContainsKey(eventType))
-                    m_handlers[eventType] = [];
+                if (!m_Handlers.ContainsKey(eventType))
+                    m_Handlers[eventType] = [];
 
                 // Convert McpNotification handler to object handler
                 async Task objectHandler(object obj)
@@ -168,11 +168,11 @@ namespace mcp_nexus.Notifications
                         await handler(notification);
                     }
                 }
-                m_handlers[eventType].Add(objectHandler);
-                m_subscriptionIds[subscriptionId] = eventType;
+                m_Handlers[eventType].Add(objectHandler);
+                m_SubscriptionIds[subscriptionId] = eventType;
 
                 // Enable notifications when first subscriber registers (stdio mode)
-                m_notificationsEnabled = true;
+                m_NotificationsEnabled = true;
             }
             return subscriptionId;
         }
@@ -189,16 +189,16 @@ namespace mcp_nexus.Notifications
             if (string.IsNullOrEmpty(subscriptionId))
                 return false;
 
-            lock (m_lock)
+            lock (m_Lock)
             {
-                if (m_subscriptionIds.TryGetValue(subscriptionId, out var eventType))
+                if (m_SubscriptionIds.TryGetValue(subscriptionId, out var eventType))
                 {
-                    m_subscriptionIds.Remove(subscriptionId);
+                    m_SubscriptionIds.Remove(subscriptionId);
 
                     // Disable notifications when last subscriber unsubscribes
-                    if (m_subscriptionIds.Count == 0)
+                    if (m_SubscriptionIds.Count == 0)
                     {
-                        m_notificationsEnabled = false;
+                        m_NotificationsEnabled = false;
                     }
 
                     // Note: We don't remove the handler from the list as we don't track which handler belongs to which subscription
@@ -824,13 +824,13 @@ namespace mcp_nexus.Notifications
         /// </summary>
         public void Dispose()
         {
-            if (m_disposed) return;
-            m_disposed = true;
+            if (m_Disposed) return;
+            m_Disposed = true;
 
-            lock (m_lock)
+            lock (m_Lock)
             {
-                m_handlers.Clear();
-                m_subscriptionIds.Clear();
+                m_Handlers.Clear();
+                m_SubscriptionIds.Clear();
             }
         }
 

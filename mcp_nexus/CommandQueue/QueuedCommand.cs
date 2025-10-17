@@ -7,42 +7,42 @@ namespace mcp_nexus.CommandQueue
     {
         #region Private Fields
 
-        private readonly string? m_id;
-        private readonly string? m_command;
-        private readonly DateTime m_queueTime;
-        private readonly TaskCompletionSource<string>? m_completionSource;
-        private readonly CancellationTokenSource? m_cancellationTokenSource;
-        private CommandState m_state;
-        private volatile bool m_disposed = false;
+        private readonly string? m_Id;
+        private readonly string? m_Command;
+        private readonly DateTime m_QueueTime;
+        private readonly TaskCompletionSource<string>? m_CompletionSource;
+        private readonly CancellationTokenSource? m_CancellationTokenSource;
+        private CommandState m_State;
+        private volatile bool m_Disposed = false;
 
         #endregion
 
         #region Public Properties
 
         /// <summary>Gets the command identifier</summary>
-        public string? Id => m_id;
+        public string? Id => m_Id;
 
         /// <summary>Gets the command text</summary>
-        public string? Command => m_command;
+        public string? Command => m_Command;
 
         /// <summary>Gets the queue time</summary>
-        public DateTime QueueTime => m_queueTime;
+        public DateTime QueueTime => m_QueueTime;
 
         /// <summary>Gets the completion source</summary>
-        public TaskCompletionSource<string>? CompletionSource => m_completionSource;
+        public TaskCompletionSource<string>? CompletionSource => m_CompletionSource;
 
         /// <summary>Gets the cancellation token source</summary>
-        public CancellationTokenSource? CancellationTokenSource => m_cancellationTokenSource;
+        public CancellationTokenSource? CancellationTokenSource => m_CancellationTokenSource;
 
         /// <summary>Gets or sets the command state</summary>
         public CommandState State
         {
-            get => m_state;
-            set => m_state = value;
+            get => m_State;
+            set => m_State = value;
         }
 
         /// <summary>Gets whether the command is disposed</summary>
-        public bool IsDisposed => m_disposed;
+        public bool IsDisposed => m_Disposed;
 
         #endregion
 
@@ -61,12 +61,12 @@ namespace mcp_nexus.CommandQueue
             TaskCompletionSource<string> completionSource, CancellationTokenSource cancellationTokenSource,
             CommandState state = CommandState.Queued)
         {
-            m_id = id ?? throw new ArgumentNullException(nameof(id));
-            m_command = command ?? throw new ArgumentNullException(nameof(command));
-            m_queueTime = queueTime;
-            m_completionSource = completionSource ?? throw new ArgumentNullException(nameof(completionSource));
-            m_cancellationTokenSource = cancellationTokenSource ?? throw new ArgumentNullException(nameof(cancellationTokenSource));
-            m_state = state;
+            m_Id = id ?? throw new ArgumentNullException(nameof(id));
+            m_Command = command ?? throw new ArgumentNullException(nameof(command));
+            m_QueueTime = queueTime;
+            m_CompletionSource = completionSource ?? throw new ArgumentNullException(nameof(completionSource));
+            m_CancellationTokenSource = cancellationTokenSource ?? throw new ArgumentNullException(nameof(cancellationTokenSource));
+            m_State = state;
         }
 
 
@@ -81,12 +81,12 @@ namespace mcp_nexus.CommandQueue
         public QueuedCommand(string? id, string? command, DateTime queueTime,
             TaskCompletionSource<string>? completionSource, CancellationTokenSource? cancellationTokenSource)
         {
-            m_id = id; // Allow null for test compatibility
-            m_command = command; // Allow null for test compatibility
-            m_queueTime = queueTime;
-            m_completionSource = completionSource; // Allow null for test compatibility
-            m_cancellationTokenSource = cancellationTokenSource; // Allow null for test compatibility
-            m_state = CommandState.Queued;
+            m_Id = id; // Allow null for test compatibility
+            m_Command = command; // Allow null for test compatibility
+            m_QueueTime = queueTime;
+            m_CompletionSource = completionSource; // Allow null for test compatibility
+            m_CancellationTokenSource = cancellationTokenSource; // Allow null for test compatibility
+            m_State = CommandState.Queued;
         }
 
         #endregion
@@ -99,8 +99,8 @@ namespace mcp_nexus.CommandQueue
         /// <param name="newState">New command state</param>
         public void UpdateState(CommandState newState)
         {
-            if (m_disposed) return;
-            m_state = newState;
+            if (m_Disposed) return;
+            m_State = newState;
         }
 
         /// <summary>
@@ -108,9 +108,9 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public void Cancel()
         {
-            if (m_disposed) return;
-            m_cancellationTokenSource?.Cancel();
-            m_state = CommandState.Cancelled;
+            if (m_Disposed) return;
+            m_CancellationTokenSource?.Cancel();
+            m_State = CommandState.Cancelled;
         }
 
         /// <summary>
@@ -119,9 +119,9 @@ namespace mcp_nexus.CommandQueue
         /// <param name="result">Command result</param>
         public void SetResult(string result)
         {
-            if (m_disposed) return;
-            m_completionSource?.SetResult(result);
-            m_state = CommandState.Completed;
+            if (m_Disposed) return;
+            m_CompletionSource?.SetResult(result);
+            m_State = CommandState.Completed;
         }
 
         /// <summary>
@@ -130,9 +130,9 @@ namespace mcp_nexus.CommandQueue
         /// <param name="exception">Exception to set</param>
         public void SetException(Exception exception)
         {
-            if (m_disposed) return;
-            m_completionSource?.SetException(exception);
-            m_state = CommandState.Failed;
+            if (m_Disposed) return;
+            m_CompletionSource?.SetException(exception);
+            m_State = CommandState.Failed;
         }
 
         #endregion
@@ -146,12 +146,12 @@ namespace mcp_nexus.CommandQueue
         {
             if (obj is QueuedCommand other)
             {
-                return m_id == other.m_id &&
-                       m_command == other.m_command &&
-                       m_queueTime == other.m_queueTime &&
-                       m_state == other.m_state &&
-                       ReferenceEquals(m_completionSource, other.m_completionSource) &&
-                       ReferenceEquals(m_cancellationTokenSource, other.m_cancellationTokenSource);
+                return m_Id == other.m_Id &&
+                       m_Command == other.m_Command &&
+                       m_QueueTime == other.m_QueueTime &&
+                       m_State == other.m_State &&
+                       ReferenceEquals(m_CompletionSource, other.m_CompletionSource) &&
+                       ReferenceEquals(m_CancellationTokenSource, other.m_CancellationTokenSource);
             }
             return false;
         }
@@ -161,7 +161,7 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public override int GetHashCode()
         {
-            return HashCode.Combine(m_id, m_command, m_queueTime, m_state, m_completionSource, m_cancellationTokenSource);
+            return HashCode.Combine(m_Id, m_Command, m_QueueTime, m_State, m_CompletionSource, m_CancellationTokenSource);
         }
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public override string ToString()
         {
-            return $"QueuedCommand(Id={m_id}, Command={m_command}, State={m_state}, QueueTime={m_queueTime:yyyy-MM-dd HH:mm:ss})";
+            return $"QueuedCommand(Id={m_Id}, Command={m_Command}, State={m_State}, QueueTime={m_QueueTime:yyyy-MM-dd HH:mm:ss})";
         }
 
         #endregion
@@ -199,12 +199,12 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public void Dispose()
         {
-            if (m_disposed) return;
-            m_disposed = true;
+            if (m_Disposed) return;
+            m_Disposed = true;
 
             try
             {
-                m_cancellationTokenSource?.Dispose();
+                m_CancellationTokenSource?.Dispose();
             }
             catch
             {
@@ -218,12 +218,12 @@ namespace mcp_nexus.CommandQueue
         public QueuedCommand With(string? id = null, string? command = null, DateTime? queueTime = null, TaskCompletionSource<string>? completionSource = null, CancellationTokenSource? cancellationTokenSource = null, CommandState? state = null)
         {
             return new QueuedCommand(
-                id ?? m_id ?? string.Empty,
-                command ?? m_command ?? string.Empty,
-                queueTime ?? m_queueTime,
-                completionSource ?? m_completionSource ?? new TaskCompletionSource<string>(),
-                cancellationTokenSource ?? m_cancellationTokenSource ?? new CancellationTokenSource(),
-                state ?? m_state
+                id ?? m_Id ?? string.Empty,
+                command ?? m_Command ?? string.Empty,
+                queueTime ?? m_QueueTime,
+                completionSource ?? m_CompletionSource ?? new TaskCompletionSource<string>(),
+                cancellationTokenSource ?? m_CancellationTokenSource ?? new CancellationTokenSource(),
+                state ?? m_State
             );
         }
 
@@ -233,11 +233,11 @@ namespace mcp_nexus.CommandQueue
         public QueuedCommand WithState(CommandState newState)
         {
             return new QueuedCommand(
-                m_id ?? string.Empty,
-                m_command ?? string.Empty,
-                m_queueTime,
-                m_completionSource ?? new TaskCompletionSource<string>(),
-                m_cancellationTokenSource ?? new CancellationTokenSource(),
+                m_Id ?? string.Empty,
+                m_Command ?? string.Empty,
+                m_QueueTime,
+                m_CompletionSource ?? new TaskCompletionSource<string>(),
+                m_CancellationTokenSource ?? new CancellationTokenSource(),
                 newState);
         }
 
@@ -247,12 +247,12 @@ namespace mcp_nexus.CommandQueue
         public QueuedCommand WithCompletionSource(TaskCompletionSource<string> newCompletionSource)
         {
             return new QueuedCommand(
-                m_id ?? string.Empty,
-                m_command ?? string.Empty,
-                m_queueTime,
+                m_Id ?? string.Empty,
+                m_Command ?? string.Empty,
+                m_QueueTime,
                 newCompletionSource,
-                m_cancellationTokenSource ?? new CancellationTokenSource(),
-                m_state);
+                m_CancellationTokenSource ?? new CancellationTokenSource(),
+                m_State);
         }
 
         #endregion

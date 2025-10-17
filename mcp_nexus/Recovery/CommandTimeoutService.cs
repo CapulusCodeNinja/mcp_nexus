@@ -53,9 +53,9 @@ namespace mcp_nexus.Recovery
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
     public class CommandTimeoutService(ILogger<CommandTimeoutService> logger) : ICommandTimeoutService, IDisposable, IAsyncDisposable
     {
-        private readonly ILogger<CommandTimeoutService> m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly ConcurrentDictionary<string, TimeoutInfo> m_timeouts = new();
-        private bool m_disposed;
+        private readonly ILogger<CommandTimeoutService> m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ConcurrentDictionary<string, TimeoutInfo> m_Timeouts = new();
+        private bool m_Disposed;
 
         /// <summary>
         /// Starts a timeout for a command.
@@ -68,7 +68,7 @@ namespace mcp_nexus.Recovery
         /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout"/> is negative.</exception>
         public void StartCommandTimeout(string commandId, TimeSpan timeout, Func<Task> onTimeout)
         {
-            if (m_disposed) return;
+            if (m_Disposed) return;
 
             // Validate parameters
             ArgumentNullException.ThrowIfNull(commandId);
@@ -79,7 +79,7 @@ namespace mcp_nexus.Recovery
             ArgumentNullException.ThrowIfNull(onTimeout);
 
             // Cancel existing timeout if it exists
-            if (m_timeouts.TryRemove(commandId, out var existingInfo))
+            if (m_Timeouts.TryRemove(commandId, out var existingInfo))
             {
                 existingInfo.CancellationTokenSource.Cancel();
                 // Don't dispose immediately - let the task handle its own cleanup
@@ -87,9 +87,9 @@ namespace mcp_nexus.Recovery
 
             var cts = new CancellationTokenSource();
             var timeoutInfo = new TimeoutInfo(cts, onTimeout, DateTime.Now);
-            m_timeouts[commandId] = timeoutInfo;
+            m_Timeouts[commandId] = timeoutInfo;
 
-            m_logger.LogDebug("Starting timeout for command {CommandId}: {TimeoutMinutes:F1} minutes",
+            m_Logger.LogDebug("Starting timeout for command {CommandId}: {TimeoutMinutes:F1} minutes",
                 commandId, timeout.TotalMinutes);
 
             // Start timeout task
@@ -100,28 +100,28 @@ namespace mcp_nexus.Recovery
                     await Task.Delay(timeout, cts.Token);
 
                     // Check if we're still the active timeout
-                    if (!m_timeouts.TryGetValue(commandId, out var currentInfo) || currentInfo.CancellationTokenSource != cts)
+                    if (!m_Timeouts.TryGetValue(commandId, out var currentInfo) || currentInfo.CancellationTokenSource != cts)
                     {
-                        m_logger.LogTrace("Timeout superseded for command {CommandId}", commandId);
+                        m_Logger.LogTrace("Timeout superseded for command {CommandId}", commandId);
                         return;
                     }
 
-                    m_logger.LogError("Command {CommandId} timed out after {TimeoutMinutes:F1} minutes",
+                    m_Logger.LogError("Command {CommandId} timed out after {TimeoutMinutes:F1} minutes",
                         commandId, timeout.TotalMinutes);
 
                     await onTimeout();
                 }
                 catch (OperationCanceledException)
                 {
-                    m_logger.LogTrace("Timeout cancelled for command {CommandId}", commandId);
+                    m_Logger.LogTrace("Timeout cancelled for command {CommandId}", commandId);
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogError(ex, "Error in timeout handler for command {CommandId}", commandId);
+                    m_Logger.LogError(ex, "Error in timeout handler for command {CommandId}", commandId);
                 }
                 finally
                 {
-                    m_timeouts.TryRemove(commandId, out _);
+                    m_Timeouts.TryRemove(commandId, out _);
                     cts.Dispose();
                 }
             });
@@ -139,9 +139,9 @@ namespace mcp_nexus.Recovery
             if (commandId.Length == 0)
                 throw new ArgumentException("Command ID cannot be empty", nameof(commandId));
 
-            if (m_timeouts.TryRemove(commandId, out var timeoutInfo))
+            if (m_Timeouts.TryRemove(commandId, out var timeoutInfo))
             {
-                m_logger.LogTrace("Cancelling timeout for command {CommandId}", commandId);
+                m_Logger.LogTrace("Cancelling timeout for command {CommandId}", commandId);
                 timeoutInfo.CancellationTokenSource.Cancel();
                 timeoutInfo.CancellationTokenSource.Dispose();
             }
@@ -163,18 +163,18 @@ namespace mcp_nexus.Recovery
             if (additionalTime < TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException(nameof(additionalTime), "Additional time cannot be negative");
 
-            if (m_timeouts.TryRemove(commandId, out var existingInfo))
+            if (m_Timeouts.TryRemove(commandId, out var existingInfo))
             {
                 var originalHandler = existingInfo.OnTimeout;
                 var totalElapsed = DateTime.Now - existingInfo.StartTime;
 
-                m_logger.LogDebug("Extending timeout for command {CommandId} by {AdditionalMinutes:F1} minutes (already running for {ElapsedMinutes:F1} minutes)",
+                m_Logger.LogDebug("Extending timeout for command {CommandId} by {AdditionalMinutes:F1} minutes (already running for {ElapsedMinutes:F1} minutes)",
                     commandId, additionalTime.TotalMinutes, totalElapsed.TotalMinutes);
 
                 // Cancel existing timeout immediately to prevent it from firing
-                m_logger.LogDebug("Cancelling existing timeout for command {CommandId}", commandId);
+                m_Logger.LogDebug("Cancelling existing timeout for command {CommandId}", commandId);
                 existingInfo.CancellationTokenSource.Cancel();
-                m_logger.LogDebug("Existing timeout cancelled for command {CommandId}", commandId);
+                m_Logger.LogDebug("Existing timeout cancelled for command {CommandId}", commandId);
 
                 // Note: We don't dispose the CancellationTokenSource here to avoid race conditions
                 // The original task will dispose it in its finally block
@@ -182,7 +182,7 @@ namespace mcp_nexus.Recovery
                 // Create new timeout with the additional time, preserving the original handler
                 var newCts = new CancellationTokenSource();
                 var newTimeoutInfo = new TimeoutInfo(newCts, originalHandler, existingInfo.StartTime);
-                m_timeouts[commandId] = newTimeoutInfo;
+                m_Timeouts[commandId] = newTimeoutInfo;
 
                 _ = Task.Run(async () =>
                 {
@@ -194,7 +194,7 @@ namespace mcp_nexus.Recovery
                         if (!newCts.Token.IsCancellationRequested)
                         {
                             var finalElapsed = DateTime.Now - existingInfo.StartTime;
-                            m_logger.LogError("Command {CommandId} exceeded extended timeout after {TotalMinutes:F1} minutes",
+                            m_Logger.LogError("Command {CommandId} exceeded extended timeout after {TotalMinutes:F1} minutes",
                                 commandId, finalElapsed.TotalMinutes);
 
                             // Now we can call the original timeout handler!
@@ -203,15 +203,15 @@ namespace mcp_nexus.Recovery
                     }
                     catch (OperationCanceledException)
                     {
-                        m_logger.LogTrace("Extended timeout cancelled for command {CommandId}", commandId);
+                        m_Logger.LogTrace("Extended timeout cancelled for command {CommandId}", commandId);
                     }
                     catch (Exception ex)
                     {
-                        m_logger.LogError(ex, "Error in extended timeout handler for command {CommandId}", commandId);
+                        m_Logger.LogError(ex, "Error in extended timeout handler for command {CommandId}", commandId);
                     }
                     finally
                     {
-                        m_timeouts.TryRemove(commandId, out _);
+                        m_Timeouts.TryRemove(commandId, out _);
                         newCts.Dispose();
                     }
                 }, newCts.Token);
@@ -223,15 +223,15 @@ namespace mcp_nexus.Recovery
         /// </summary>
         public void Dispose()
         {
-            if (m_disposed) return;
-            m_disposed = true;
+            if (m_Disposed) return;
+            m_Disposed = true;
 
-            foreach (var timeoutInfo in m_timeouts.Values)
+            foreach (var timeoutInfo in m_Timeouts.Values)
             {
                 timeoutInfo.CancellationTokenSource.Cancel();
                 timeoutInfo.CancellationTokenSource.Dispose();
             }
-            m_timeouts.Clear();
+            m_Timeouts.Clear();
         }
 
         /// <summary>
@@ -240,17 +240,17 @@ namespace mcp_nexus.Recovery
         /// <returns>A <see cref="ValueTask"/> representing the asynchronous disposal operation.</returns>
         public ValueTask DisposeAsync()
         {
-            if (m_disposed) return ValueTask.CompletedTask;
-            m_disposed = true;
+            if (m_Disposed) return ValueTask.CompletedTask;
+            m_Disposed = true;
 
             // Cancel all timeouts first
-            foreach (var timeoutInfo in m_timeouts.Values)
+            foreach (var timeoutInfo in m_Timeouts.Values)
             {
                 timeoutInfo.CancellationTokenSource.Cancel();
             }
 
             // Dispose cancellation tokens synchronously
-            foreach (var timeoutInfo in m_timeouts.Values)
+            foreach (var timeoutInfo in m_Timeouts.Values)
             {
                 try
                 {
@@ -258,11 +258,11 @@ namespace mcp_nexus.Recovery
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogError(ex, "Error disposing cancellation token");
+                    m_Logger.LogError(ex, "Error disposing cancellation token");
                 }
             }
 
-            m_timeouts.Clear();
+            m_Timeouts.Clear();
             return ValueTask.CompletedTask;
         }
     }

@@ -12,21 +12,21 @@ namespace mcp_nexus.CommandQueue
     {
         #region Private Fields
 
-        private readonly ICdbSession m_cdbSession;
-        private readonly SessionCommandResultCache? m_resultCache;
-        private readonly ILogger<BatchCommandProcessor> m_logger;
-        private readonly BatchingConfiguration m_config;
-        private readonly BatchCommandFilter m_filter;
-        private readonly CommandBatchBuilder m_batchBuilder;
-        private readonly BatchResultParser m_resultParser;
-        private readonly BatchTimeoutCalculator m_timeoutCalculator;
+        private readonly ICdbSession m_CdbSession;
+        private readonly SessionCommandResultCache? m_ResultCache;
+        private readonly ILogger<BatchCommandProcessor> m_Logger;
+        private readonly BatchingConfiguration m_Config;
+        private readonly BatchCommandFilter m_Filter;
+        private readonly CommandBatchBuilder m_BatchBuilder;
+        private readonly BatchResultParser m_ResultParser;
+        private readonly BatchTimeoutCalculator m_TimeoutCalculator;
 
         // Batch management
-        private readonly Queue<QueuedCommand> m_batchableCommands;
-        private readonly object m_batchLock = new();
-        private readonly Timer m_batchTimer;
-        private DateTime m_lastBatchTime = DateTime.Now;
-        private volatile bool m_disposed = false;
+        private readonly Queue<QueuedCommand> m_BatchableCommands;
+        private readonly object m_BatchLock = new();
+        private readonly Timer m_BatchTimer;
+        private DateTime m_LastBatchTime = DateTime.Now;
+        private volatile bool m_Disposed = false;
 
         #endregion
 
@@ -46,30 +46,30 @@ namespace mcp_nexus.CommandQueue
             ILogger<BatchCommandProcessor> logger,
             IOptions<BatchingConfiguration> options)
         {
-            m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
-            m_resultCache = resultCache;
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_CdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
+            m_ResultCache = resultCache;
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             if (options?.Value == null)
                 throw new ArgumentNullException(nameof(options));
 
-            m_config = options.Value;
+            m_Config = options.Value;
 
             // Initialize components
-            m_filter = new BatchCommandFilter(options);
-            m_batchBuilder = new CommandBatchBuilder();
-            m_resultParser = new BatchResultParser();
-            m_timeoutCalculator = new BatchTimeoutCalculator(600000, options); // 10 minutes base timeout
+            m_Filter = new BatchCommandFilter(options);
+            m_BatchBuilder = new CommandBatchBuilder();
+            m_ResultParser = new BatchResultParser();
+            m_TimeoutCalculator = new BatchTimeoutCalculator(600000, options); // 10 minutes base timeout
 
             // Initialize batch management
-            m_batchableCommands = new Queue<QueuedCommand>();
+            m_BatchableCommands = new Queue<QueuedCommand>();
 
             // Create timer for batch timeout (ensure timeout is valid)
-            var timeoutMs = Math.Max(1, m_config.BatchWaitTimeoutMs); // Minimum 1ms to avoid invalid timer values
-            m_batchTimer = new Timer(OnBatchTimeout, null, TimeSpan.FromMilliseconds(timeoutMs), TimeSpan.FromMilliseconds(timeoutMs));
+            var timeoutMs = Math.Max(1, m_Config.BatchWaitTimeoutMs); // Minimum 1ms to avoid invalid timer values
+            m_BatchTimer = new Timer(OnBatchTimeout, null, TimeSpan.FromMilliseconds(timeoutMs), TimeSpan.FromMilliseconds(timeoutMs));
 
-            m_logger.LogInformation("🚀 BatchCommandProcessor initialized - Enabled: {Enabled}, MaxBatchSize: {MaxBatchSize}, WaitTimeout: {WaitTimeout}ms",
-                m_config.Enabled, m_config.MaxBatchSize, m_config.BatchWaitTimeoutMs);
+            m_Logger.LogInformation("🚀 BatchCommandProcessor initialized - Enabled: {Enabled}, MaxBatchSize: {MaxBatchSize}, WaitTimeout: {WaitTimeout}ms",
+                m_Config.Enabled, m_Config.MaxBatchSize, m_Config.BatchWaitTimeoutMs);
         }
 
         #endregion
@@ -88,26 +88,26 @@ namespace mcp_nexus.CommandQueue
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
 
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(BatchCommandProcessor));
 
             // If batching is disabled, command cannot be batched, batch size is invalid, or timeout is invalid, execute immediately
-            if (!m_config.Enabled || !m_filter.CanBatchCommand(command.Command ?? string.Empty) ||
-                m_config.MaxBatchSize <= 0 || m_config.BatchWaitTimeoutMs <= 0)
+            if (!m_Config.Enabled || !m_Filter.CanBatchCommand(command.Command ?? string.Empty) ||
+                m_Config.MaxBatchSize <= 0 || m_Config.BatchWaitTimeoutMs <= 0)
             {
                 await ExecuteSingleCommandAsync(command);
                 return;
             }
 
             // Add to batch queue
-            lock (m_batchLock)
+            lock (m_BatchLock)
             {
-                m_batchableCommands.Enqueue(command);
-                m_logger.LogDebug("📝 Added command {CommandId} to batch queue. Queue size: {QueueSize}",
-                    command.Id, m_batchableCommands.Count);
+                m_BatchableCommands.Enqueue(command);
+                m_Logger.LogDebug("📝 Added command {CommandId} to batch queue. Queue size: {QueueSize}",
+                    command.Id, m_BatchableCommands.Count);
 
                 // Execute batch if we've reached the maximum size
-                if (m_batchableCommands.Count >= m_config.MaxBatchSize)
+                if (m_BatchableCommands.Count >= m_Config.MaxBatchSize)
                 {
                     _ = Task.Run(ExecuteBatchAsync);
                 }
@@ -129,24 +129,24 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                m_logger.LogInformation("⚡ Executing single command {CommandId}: {Command}", command.Id, command.Command);
+                m_Logger.LogInformation("⚡ Executing single command {CommandId}: {Command}", command.Id, command.Command);
 
-                var result = await m_cdbSession.ExecuteCommand(command.Command ?? string.Empty, command.CancellationTokenSource?.Token ?? CancellationToken.None);
+                var result = await m_CdbSession.ExecuteCommand(command.Command ?? string.Empty, command.CancellationTokenSource?.Token ?? CancellationToken.None);
 
                 var commandResult = CommandResult.Success(result, DateTime.Now - startTime);
-                m_resultCache?.StoreResult(command.Id ?? string.Empty, commandResult);
+                m_ResultCache?.StoreResult(command.Id ?? string.Empty, commandResult);
 
                 command.SetResult(result);
 
-                m_logger.LogDebug("✅ Single command {CommandId} completed in {Duration}ms",
+                m_Logger.LogDebug("✅ Single command {CommandId} completed in {Duration}ms",
                     command.Id, (DateTime.Now - startTime).TotalMilliseconds);
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "❌ Single command {CommandId} failed: {Error}", command.Id, ex.Message);
+                m_Logger.LogError(ex, "❌ Single command {CommandId} failed: {Error}", command.Id, ex.Message);
 
                 var errorResult = CommandResult.Failure(ex.Message, DateTime.Now - startTime);
-                m_resultCache?.StoreResult(command.Id ?? string.Empty, errorResult);
+                m_ResultCache?.StoreResult(command.Id ?? string.Empty, errorResult);
 
                 command.SetResult(string.Empty);
             }
@@ -160,14 +160,14 @@ namespace mcp_nexus.CommandQueue
         {
             List<QueuedCommand> commandsToBatch;
 
-            lock (m_batchLock)
+            lock (m_BatchLock)
             {
-                if (m_batchableCommands.Count == 0)
+                if (m_BatchableCommands.Count == 0)
                     return;
 
-                commandsToBatch = m_batchableCommands.ToList();
-                m_batchableCommands.Clear();
-                m_lastBatchTime = DateTime.Now;
+                commandsToBatch = m_BatchableCommands.ToList();
+                m_BatchableCommands.Clear();
+                m_LastBatchTime = DateTime.Now;
             }
 
             if (commandsToBatch.Count == 0)
@@ -177,20 +177,20 @@ namespace mcp_nexus.CommandQueue
 
             try
             {
-                m_logger.LogInformation("🔄 Executing batch of {CommandCount} commands", commandsToBatch.Count);
+                m_Logger.LogInformation("🔄 Executing batch of {CommandCount} commands", commandsToBatch.Count);
 
                 // Create batch command
-                var batchCommand = m_batchBuilder.CreateBatchCommand(commandsToBatch);
+                var batchCommand = m_BatchBuilder.CreateBatchCommand(commandsToBatch);
 
                 // Calculate timeout
-                var batchTimeout = m_timeoutCalculator.CalculateBatchTimeout(commandsToBatch);
+                var batchTimeout = m_TimeoutCalculator.CalculateBatchTimeout(commandsToBatch);
 
                 // Execute batch command
                 using var timeoutCts = new CancellationTokenSource(batchTimeout);
-                var result = await m_cdbSession.ExecuteCommand(batchCommand, timeoutCts.Token);
+                var result = await m_CdbSession.ExecuteCommand(batchCommand, timeoutCts.Token);
 
                 // Parse individual results
-                var individualResults = m_resultParser.SplitBatchResults(result, commandsToBatch);
+                var individualResults = m_ResultParser.SplitBatchResults(result, commandsToBatch);
 
                 // Store results and complete commands
                 for (int i = 0; i < commandsToBatch.Count; i++)
@@ -198,35 +198,35 @@ namespace mcp_nexus.CommandQueue
                     var command = commandsToBatch[i];
                     var commandResult = individualResults[i];
 
-                    m_resultCache?.StoreResult(command.Id ?? string.Empty, commandResult);
+                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, commandResult);
                     command.SetResult(commandResult.Output);
                 }
 
                 var duration = DateTime.Now - startTime;
-                m_logger.LogInformation("✅ Batch of {CommandCount} commands completed in {Duration}ms",
+                m_Logger.LogInformation("✅ Batch of {CommandCount} commands completed in {Duration}ms",
                     commandsToBatch.Count, duration.TotalMilliseconds);
             }
             catch (OperationCanceledException) when (startTime.AddMinutes(30) < DateTime.Now)
             {
-                m_logger.LogWarning("⏰ Batch command timed out after {Duration}ms", (DateTime.Now - startTime).TotalMilliseconds);
+                m_Logger.LogWarning("⏰ Batch command timed out after {Duration}ms", (DateTime.Now - startTime).TotalMilliseconds);
 
                 // Complete all commands with timeout error
                 foreach (var command in commandsToBatch)
                 {
-                    var timeoutResult = CommandResult.Failure($"Batch command timed out after {m_timeoutCalculator.CalculateBatchTimeout(commandsToBatch).TotalMinutes:F1} minutes");
-                    m_resultCache?.StoreResult(command.Id ?? string.Empty, timeoutResult);
+                    var timeoutResult = CommandResult.Failure($"Batch command timed out after {m_TimeoutCalculator.CalculateBatchTimeout(commandsToBatch).TotalMinutes:F1} minutes");
+                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, timeoutResult);
                     command.SetResult(string.Empty);
                 }
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "❌ Batch execution failed: {Error}", ex.Message);
+                m_Logger.LogError(ex, "❌ Batch execution failed: {Error}", ex.Message);
 
                 // Complete all commands with error
                 foreach (var command in commandsToBatch)
                 {
                     var errorResult = CommandResult.Failure($"Batch execution failed: {ex.Message}");
-                    m_resultCache?.StoreResult(command.Id ?? string.Empty, errorResult);
+                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, errorResult);
                     command.SetResult(string.Empty);
                 }
             }
@@ -238,14 +238,14 @@ namespace mcp_nexus.CommandQueue
         /// <param name="state">Timer state (unused)</param>
         private void OnBatchTimeout(object? state)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return;
 
-            lock (m_batchLock)
+            lock (m_BatchLock)
             {
                 // Execute batch if we've been waiting too long and have commands
-                if (m_batchableCommands.Count > 0 &&
-                    DateTime.Now - m_lastBatchTime > TimeSpan.FromMilliseconds(m_config.BatchWaitTimeoutMs))
+                if (m_BatchableCommands.Count > 0 &&
+                    DateTime.Now - m_LastBatchTime > TimeSpan.FromMilliseconds(m_Config.BatchWaitTimeoutMs))
                 {
                     _ = Task.Run(ExecuteBatchAsync);
                 }
@@ -261,15 +261,15 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public void Dispose()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return;
 
-            m_disposed = true;
+            m_Disposed = true;
 
             // Execute any remaining commands in the batch
-            lock (m_batchLock)
+            lock (m_BatchLock)
             {
-                if (m_batchableCommands.Count > 0)
+                if (m_BatchableCommands.Count > 0)
                 {
                     _ = Task.Run(async () =>
                     {
@@ -279,15 +279,15 @@ namespace mcp_nexus.CommandQueue
                         }
                         catch (Exception ex)
                         {
-                            m_logger.LogError(ex, "❌ Error executing final batch during disposal");
+                            m_Logger.LogError(ex, "❌ Error executing final batch during disposal");
                         }
                     });
                 }
             }
 
-            m_batchTimer?.Dispose();
+            m_BatchTimer?.Dispose();
 
-            m_logger.LogDebug("🏁 BatchCommandProcessor disposed");
+            m_Logger.LogDebug("🏁 BatchCommandProcessor disposed");
         }
 
         #endregion

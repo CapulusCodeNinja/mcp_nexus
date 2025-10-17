@@ -36,13 +36,13 @@ namespace mcp_nexus.Recovery
     /// </summary>
     public class CdbSessionRecoveryService : ICdbSessionRecoveryService, IDisposable
     {
-        private readonly ILogger<CdbSessionRecoveryService> m_logger;
-        private bool m_disposed = false;
+        private readonly ILogger<CdbSessionRecoveryService> m_Logger;
+        private bool m_Disposed = false;
 
         // Focused components
-        private readonly RecoveryConfiguration m_config;
-        private readonly SessionHealthMonitor m_healthMonitor;
-        private readonly RecoveryOrchestrator m_orchestrator;
+        private readonly RecoveryConfiguration m_Config;
+        private readonly SessionHealthMonitor m_HealthMonitor;
+        private readonly RecoveryOrchestrator m_Orchestrator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CdbSessionRecoveryService"/> class.
@@ -57,15 +57,15 @@ namespace mcp_nexus.Recovery
             Func<string, int> cancelAllCommandsCallback,
             IMcpNotificationService? notificationService = null)
         {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Create focused components
-            m_config = new RecoveryConfiguration();
-            m_healthMonitor = new SessionHealthMonitor(cdbSession, logger, m_config);
-            m_orchestrator = new RecoveryOrchestrator(
-                cdbSession, logger, cancelAllCommandsCallback, m_config, m_healthMonitor, notificationService);
+            m_Config = new RecoveryConfiguration();
+            m_HealthMonitor = new SessionHealthMonitor(cdbSession, logger, m_Config);
+            m_Orchestrator = new RecoveryOrchestrator(
+                cdbSession, logger, cancelAllCommandsCallback, m_Config, m_HealthMonitor, notificationService);
 
-            m_logger.LogInformation("🔧 CdbSessionRecoveryService initialized with focused components");
+            m_Logger.LogInformation("🔧 CdbSessionRecoveryService initialized with focused components");
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace mcp_nexus.Recovery
         /// <returns>True if recovery was successful</returns>
         public async Task<bool> RecoverStuckSession(string reason)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CdbSessionRecoveryService));
 
             ArgumentNullException.ThrowIfNull(reason);
@@ -83,15 +83,15 @@ namespace mcp_nexus.Recovery
             if (string.IsNullOrWhiteSpace(reason))
                 throw new ArgumentException("Reason cannot be empty or whitespace", nameof(reason));
 
-            m_logger.LogInformation("🔧 Recovery requested: {Reason}", reason);
+            m_Logger.LogInformation("🔧 Recovery requested: {Reason}", reason);
 
             try
             {
-                return await m_orchestrator.RecoverStuckSessionAsync(reason);
+                return await m_Orchestrator.RecoverStuckSessionAsync(reason);
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "🔧 Recovery operation failed");
+                m_Logger.LogError(ex, "🔧 Recovery operation failed");
                 return false;
             }
         }
@@ -103,7 +103,7 @@ namespace mcp_nexus.Recovery
         /// <returns>True if restart was successful</returns>
         public async Task<bool> ForceRestartSession(string reason)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CdbSessionRecoveryService));
 
             ArgumentNullException.ThrowIfNull(reason);
@@ -111,15 +111,15 @@ namespace mcp_nexus.Recovery
             if (string.IsNullOrWhiteSpace(reason))
                 throw new ArgumentException("Reason cannot be empty or whitespace", nameof(reason));
 
-            m_logger.LogWarning("🔧 Force restart requested: {Reason}", reason);
+            m_Logger.LogWarning("🔧 Force restart requested: {Reason}", reason);
 
             try
             {
-                return await m_orchestrator.ForceRestartSessionAsync(reason);
+                return await m_Orchestrator.ForceRestartSessionAsync(reason);
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "🔧 Force restart operation failed");
+                m_Logger.LogError(ex, "🔧 Force restart operation failed");
                 return false;
             }
         }
@@ -130,16 +130,16 @@ namespace mcp_nexus.Recovery
         /// <returns>True if the session is healthy</returns>
         public bool IsSessionHealthy()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CdbSessionRecoveryService));
 
             try
             {
-                return m_healthMonitor.IsSessionHealthy();
+                return m_HealthMonitor.IsSessionHealthy();
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "🔧 Health check failed");
+                m_Logger.LogError(ex, "🔧 Health check failed");
                 return false;
             }
         }
@@ -150,16 +150,16 @@ namespace mcp_nexus.Recovery
         /// <returns>Session diagnostic information</returns>
         public SessionDiagnostics GetSessionDiagnostics()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return new SessionDiagnostics { ErrorMessage = "Service is disposed" };
 
             try
             {
-                return m_healthMonitor.GetSessionDiagnostics();
+                return m_HealthMonitor.GetSessionDiagnostics();
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "🔧 Error getting session diagnostics");
+                m_Logger.LogError(ex, "🔧 Error getting session diagnostics");
                 return new SessionDiagnostics { ErrorMessage = ex.Message };
             }
         }
@@ -170,16 +170,16 @@ namespace mcp_nexus.Recovery
         /// <returns>Recovery operation statistics</returns>
         public RecoveryStatistics GetRecoveryStatistics()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return new RecoveryStatistics();
 
             try
             {
-                return m_orchestrator.GetRecoveryStatistics();
+                return m_Orchestrator.GetRecoveryStatistics();
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "🔧 Error getting recovery statistics");
+                m_Logger.LogError(ex, "🔧 Error getting recovery statistics");
                 return new RecoveryStatistics();
             }
         }
@@ -190,22 +190,22 @@ namespace mcp_nexus.Recovery
         /// <returns>True if health check passed or wasn't due</returns>
         public async Task<bool> PerformScheduledHealthCheckAsync()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return false;
 
             try
             {
-                if (m_healthMonitor.IsHealthCheckDue())
+                if (m_HealthMonitor.IsHealthCheckDue())
                 {
-                    m_logger.LogTrace("🔧 Performing scheduled health check");
-                    return await m_healthMonitor.IsSessionResponsive();
+                    m_Logger.LogTrace("🔧 Performing scheduled health check");
+                    return await m_HealthMonitor.IsSessionResponsive();
                 }
 
                 return true; // Not due, assume healthy
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "🔧 Scheduled health check failed");
+                m_Logger.LogError(ex, "🔧 Scheduled health check failed");
                 return false;
             }
         }
@@ -215,23 +215,23 @@ namespace mcp_nexus.Recovery
         /// </summary>
         public void Dispose()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return;
 
-            m_disposed = true;
+            m_Disposed = true;
 
             try
             {
-                m_logger.LogInformation("🔧 Shutting down CdbSessionRecoveryService");
+                m_Logger.LogInformation("🔧 Shutting down CdbSessionRecoveryService");
 
                 // Dispose components
-                m_orchestrator?.Dispose();
+                m_Orchestrator?.Dispose();
 
-                m_logger.LogInformation("✅ CdbSessionRecoveryService shutdown complete");
+                m_Logger.LogInformation("✅ CdbSessionRecoveryService shutdown complete");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "💥 Error during CdbSessionRecoveryService disposal");
+                m_Logger.LogError(ex, "💥 Error during CdbSessionRecoveryService disposal");
             }
         }
     }

@@ -92,8 +92,8 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Arrange
             m_Service = CreateServiceWithBatching();
-            var commandResults = new List<string>();
-            var commandIds = new List<string>();
+            var commandResults = new System.Collections.Concurrent.ConcurrentBag<string>();
+            var commandIds = new System.Collections.Concurrent.ConcurrentBag<string>();
 
             // Setup CDB session to return batch output with actual command IDs
             m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -163,8 +163,8 @@ namespace mcp_nexus_tests.CommandQueue
             await Task.WhenAll(task1, task2, task3);
 
             // Assert
-            Assert.Equal(3, commandIds.Count);
-            Assert.Equal(3, commandResults.Count);
+            Assert.Equal(3, commandIds.Count());
+            Assert.Equal(3, commandResults.Count());
 
             // Verify all commands completed successfully
             foreach (var result in commandResults)
@@ -182,8 +182,8 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Arrange
             m_Service = CreateServiceWithBatching();
-            var commandResults = new List<string>();
-            var commandIds = new List<string>();
+            var commandResults = new System.Collections.Concurrent.ConcurrentBag<string>();
+            var commandIds = new System.Collections.Concurrent.ConcurrentBag<string>();
             var executeCallCount = 0;
 
             m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -251,8 +251,8 @@ namespace mcp_nexus_tests.CommandQueue
             await Task.WhenAll(task1, task2, task3);
 
             // Assert
-            Assert.Equal(3, commandIds.Count);
-            Assert.Equal(3, commandResults.Count);
+            Assert.Equal(3, commandIds.Count());
+            Assert.Equal(3, commandResults.Count());
 
             // Verify all commands completed successfully
             foreach (var result in commandResults)
@@ -361,8 +361,16 @@ namespace mcp_nexus_tests.CommandQueue
                 commandIds.Add(id);
             }
 
-            // Wait for first batch to complete
-            await Task.Delay(100);
+            // Wait for first batch to complete by checking results
+            var firstBatchCompleted = false;
+            var attempts = 0;
+            while (!firstBatchCompleted && attempts < 50)
+            {
+                await Task.Delay(50);
+                attempts++;
+                var results = commandIds.Take(3).Select(id => m_Service.GetCommandResult(id).Result).ToList();
+                firstBatchCompleted = results.All(r => !string.IsNullOrEmpty(r));
+            }
 
             // Then queue 2 more commands (should form second batch after timeout)
             for (int cmdIndex = 3; cmdIndex < 5; cmdIndex++)
@@ -371,8 +379,16 @@ namespace mcp_nexus_tests.CommandQueue
                 commandIds.Add(id);
             }
 
-            // Wait for second batch timeout + processing time
-            await Task.Delay(1500); // Wait longer than BatchWaitTimeoutMs (1000ms)
+            // Wait for second batch to complete by checking results
+            var secondBatchCompleted = false;
+            attempts = 0;
+            while (!secondBatchCompleted && attempts < 50)
+            {
+                await Task.Delay(50);
+                attempts++;
+                var results = commandIds.Skip(3).Select(id => m_Service.GetCommandResult(id).Result).ToList();
+                secondBatchCompleted = results.All(r => !string.IsNullOrEmpty(r));
+            }
 
             // Get results for all commands
             for (int i = 0; i < commandIds.Count; i++)

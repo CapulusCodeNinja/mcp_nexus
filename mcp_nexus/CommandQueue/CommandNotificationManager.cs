@@ -17,9 +17,9 @@ namespace mcp_nexus.CommandQueue
         ILogger logger,
         CommandQueueConfiguration config)
     {
-        private readonly IMcpNotificationService m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
-        private readonly ILogger m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly CommandQueueConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
+        private readonly IMcpNotificationService m_NotificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+        private readonly ILogger m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly CommandQueueConfiguration m_Config = config ?? throw new ArgumentNullException(nameof(config));
 
         /// <summary>
         /// Sends a command status notification (fire and forget).
@@ -52,22 +52,22 @@ namespace mcp_nexus.CommandQueue
                 {
                     try
                     {
-                        await m_notificationService.NotifyCommandStatusAsync(commandId, command, status, progress, result ?? string.Empty, string.Empty);
+                        await m_NotificationService.NotifyCommandStatusAsync(commandId, command, status, progress, result ?? string.Empty, string.Empty);
                     }
                     catch (OperationCanceledException)
                     {
                         // Expected when cancellation is requested
-                        m_logger.LogDebug("Command status notification cancelled for {CommandId}", commandId);
+                        m_Logger.LogDebug("Command status notification cancelled for {CommandId}", commandId);
                     }
                     catch (Exception ex)
                     {
-                        m_logger.LogWarning(ex, "Failed to send command status notification for {CommandId}", commandId);
+                        m_Logger.LogWarning(ex, "Failed to send command status notification for {CommandId}", commandId);
                     }
                 }, cancellationToken);
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error starting command status notification task for {CommandId}", commandId);
+                m_Logger.LogWarning(ex, "Error starting command status notification task for {CommandId}", commandId);
             }
         }
 
@@ -86,7 +86,7 @@ namespace mcp_nexus.CommandQueue
                 {
                     try
                     {
-                        await m_notificationService.NotifyCommandHeartbeatAsync(
+                        await m_NotificationService.NotifyCommandHeartbeatAsync(
                             command.Id ?? string.Empty,
                             command.Command ?? string.Empty,
                             elapsed);
@@ -94,17 +94,17 @@ namespace mcp_nexus.CommandQueue
                     catch (OperationCanceledException)
                     {
                         // Expected when cancellation is requested
-                        m_logger.LogDebug("Command heartbeat notification cancelled for {CommandId}", command.Id);
+                        m_Logger.LogDebug("Command heartbeat notification cancelled for {CommandId}", command.Id);
                     }
                     catch (Exception ex)
                     {
-                        m_logger.LogWarning(ex, "Failed to send heartbeat notification for {CommandId}", command.Id);
+                        m_Logger.LogWarning(ex, "Failed to send heartbeat notification for {CommandId}", command.Id);
                     }
                 }, cancellationToken);
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error starting heartbeat notification task for {CommandId}", command.Id);
+                m_Logger.LogWarning(ex, "Error starting heartbeat notification task for {CommandId}", command.Id);
             }
         }
 
@@ -119,7 +119,7 @@ namespace mcp_nexus.CommandQueue
             var remainingMinutes = Math.Max(3, queuePosition * 2); // Estimate
             var remainingSeconds = Math.Max(5, queuePosition * 10); // Estimate
 
-            return m_config.GetQueuedStatusMessage(queuePosition, elapsed, remainingMinutes, remainingSeconds);
+            return m_Config.GetQueuedStatusMessage(queuePosition, elapsed, remainingMinutes, remainingSeconds);
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public int CalculateQueueProgress(int queuePosition, TimeSpan elapsed)
         {
-            return m_config.CalculateProgressPercentage(queuePosition, elapsed);
+            return m_Config.CalculateProgressPercentage(queuePosition, elapsed);
         }
 
         /// <summary>
@@ -142,25 +142,25 @@ namespace mcp_nexus.CommandQueue
                     try
                     {
                         // This could be extended to send queue-level notifications
-                        m_logger.LogInformation("Queue Event [{EventType}]: {Message}", eventType, message);
+                        m_Logger.LogInformation("Queue Event [{EventType}]: {Message}", eventType, message);
 
                         // If we had a queue event notification method, we'd call it here
-                        // await m_notificationService.NotifyQueueEventAsync(eventType, message, data);
+                        // await m_NotificationService.NotifyQueueEventAsync(eventType, message, data);
                     }
                     catch (OperationCanceledException)
                     {
                         // Expected when cancellation is requested
-                        m_logger.LogDebug("Queue event notification cancelled for {EventType}", eventType);
+                        m_Logger.LogDebug("Queue event notification cancelled for {EventType}", eventType);
                     }
                     catch (Exception ex)
                     {
-                        m_logger.LogWarning(ex, "Failed to send queue event notification: {EventType}", eventType);
+                        m_Logger.LogWarning(ex, "Failed to send queue event notification: {EventType}", eventType);
                     }
                 }, cancellationToken);
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error starting queue event notification task: {EventType}", eventType);
+                m_Logger.LogWarning(ex, "Error starting queue event notification task: {EventType}", eventType);
             }
         }
 
@@ -180,7 +180,7 @@ namespace mcp_nexus.CommandQueue
         /// <param name="cancellationToken">Cancellation token for the notification task.</param>
         public void NotifyServiceStartup(CancellationToken cancellationToken = default)
         {
-            NotifyQueueEvent("ServiceStartup", $"Command queue service started for session {m_config.SessionId}", null, cancellationToken);
+            NotifyQueueEvent("ServiceStartup", $"Command queue service started for session {m_Config.SessionId}", null, cancellationToken);
         }
 
         /// <summary>

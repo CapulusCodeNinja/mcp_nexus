@@ -8,10 +8,10 @@ namespace mcp_nexus.Notifications
     /// </summary>
     public class StdioNotificationBridge : IStdioNotificationBridge, IDisposable
     {
-        private bool m_isRunning = false;
-        private readonly IMcpNotificationService m_notificationService;
-        private readonly List<string> m_subscriptionIds = [];
-        private bool m_isInitialized = false;
+        private bool m_IsRunning = false;
+        private readonly IMcpNotificationService m_NotificationService;
+        private readonly List<string> m_SubscriptionIds = [];
+        private bool m_IsInitialized = false;
         private readonly ILogger<StdioNotificationBridge>? m_Logger;
 
         /// <summary>
@@ -21,7 +21,7 @@ namespace mcp_nexus.Notifications
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="notificationService"/> is null.</exception>
         public StdioNotificationBridge(IMcpNotificationService notificationService)
         {
-            m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            m_NotificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace mcp_nexus.Notifications
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="notificationService"/> is null.</exception>
         public StdioNotificationBridge(ILogger<StdioNotificationBridge> logger, IMcpNotificationService notificationService)
         {
-            m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            m_NotificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             m_Logger = logger;
         }
 
@@ -46,7 +46,7 @@ namespace mcp_nexus.Notifications
         /// </returns>
         public async Task SendNotificationAsync(object notification)
         {
-            if (!m_isRunning) return;
+            if (!m_IsRunning) return;
 
             try
             {
@@ -71,7 +71,7 @@ namespace mcp_nexus.Notifications
         /// </returns>
         public Task StartAsync()
         {
-            m_isRunning = true;
+            m_IsRunning = true;
             return Task.CompletedTask;
         }
 
@@ -84,7 +84,7 @@ namespace mcp_nexus.Notifications
         /// </returns>
         public Task StopAsync()
         {
-            m_isRunning = false;
+            m_IsRunning = false;
             return Task.CompletedTask;
         }
 
@@ -97,42 +97,42 @@ namespace mcp_nexus.Notifications
         /// </returns>
         public Task InitializeAsync()
         {
-            if (!m_isInitialized)
+            if (!m_IsInitialized)
             {
                 // Subscribe to all notification types
-                m_subscriptionIds.Add(m_notificationService.Subscribe("CommandStatus", async notification =>
+                m_SubscriptionIds.Add(m_NotificationService.Subscribe("CommandStatus", async notification =>
                 {
                     await SendNotificationAsync(notification);
                 }));
 
                 // Subscribe to other notification types
-                m_subscriptionIds.Add(m_notificationService.Subscribe("CommandHeartbeat", async notification =>
+                m_SubscriptionIds.Add(m_NotificationService.Subscribe("CommandHeartbeat", async notification =>
                 {
                     await SendNotificationAsync(notification);
                 }));
 
-                m_subscriptionIds.Add(m_notificationService.Subscribe("SessionEvent", async notification =>
+                m_SubscriptionIds.Add(m_NotificationService.Subscribe("SessionEvent", async notification =>
                 {
                     await SendNotificationAsync(notification);
                 }));
 
-                m_subscriptionIds.Add(m_notificationService.Subscribe("SessionRecovery", async notification =>
+                m_SubscriptionIds.Add(m_NotificationService.Subscribe("SessionRecovery", async notification =>
                 {
                     await SendNotificationAsync(notification);
                 }));
 
-                m_subscriptionIds.Add(m_notificationService.Subscribe("ServerHealth", async notification =>
+                m_SubscriptionIds.Add(m_NotificationService.Subscribe("ServerHealth", async notification =>
                 {
                     await SendNotificationAsync(notification);
                 }));
 
-                m_subscriptionIds.Add(m_notificationService.Subscribe("ToolsListChanged", async notification =>
+                m_SubscriptionIds.Add(m_NotificationService.Subscribe("ToolsListChanged", async notification =>
                 {
                     await SendNotificationAsync(notification);
                 }));
 
-                m_isRunning = true; // Start the bridge when initialized
-                m_isInitialized = true;
+                m_IsRunning = true; // Start the bridge when initialized
+                m_IsInitialized = true;
             }
             return Task.CompletedTask;
         }
@@ -143,12 +143,12 @@ namespace mcp_nexus.Notifications
         /// </summary>
         public void Dispose()
         {
-            foreach (var subscriptionId in m_subscriptionIds)
+            foreach (var subscriptionId in m_SubscriptionIds)
             {
-                m_notificationService.Unsubscribe(subscriptionId);
+                m_NotificationService.Unsubscribe(subscriptionId);
             }
-            m_subscriptionIds.Clear();
-            m_isRunning = false;
+            m_SubscriptionIds.Clear();
+            m_IsRunning = false;
         }
     }
 }

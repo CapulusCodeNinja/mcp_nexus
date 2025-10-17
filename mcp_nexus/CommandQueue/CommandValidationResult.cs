@@ -13,22 +13,22 @@ namespace mcp_nexus.CommandQueue
     {
         #region Private Fields
 
-        private readonly bool m_isValid = isValid;
-        private readonly List<string> m_errors = errors ?? [];
-        private readonly List<string> m_warnings = warnings ?? [];
+        private readonly bool m_IsValid = isValid;
+        private readonly List<string> m_Errors = errors ?? [];
+        private readonly List<string> m_Warnings = warnings ?? [];
 
         #endregion
 
         #region Public Properties
 
         /// <summary>Gets whether the command is valid</summary>
-        public bool IsValid => m_isValid;
+        public bool IsValid => m_IsValid;
 
         /// <summary>Gets validation error messages</summary>
-        public IReadOnlyList<string> Errors => m_errors.AsReadOnly();
+        public IReadOnlyList<string> Errors => m_Errors.AsReadOnly();
 
         /// <summary>Gets validation warnings</summary>
-        public IReadOnlyList<string> Warnings => m_warnings.AsReadOnly();
+        public IReadOnlyList<string> Warnings => m_Warnings.AsReadOnly();
 
         #endregion
         #region Constructor

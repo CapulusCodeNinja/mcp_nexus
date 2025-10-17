@@ -12,8 +12,8 @@ namespace mcp_nexus.Middleware
     /// <param name="logger">The logger instance for recording JSON-RPC operations.</param>
     public class JsonRpcLoggingMiddleware(RequestDelegate next, ILogger<JsonRpcLoggingMiddleware> logger)
     {
-        private readonly RequestDelegate m_next = next;
-        private readonly ILogger<JsonRpcLoggingMiddleware> m_logger = logger;
+        private readonly RequestDelegate m_Next = next;
+        private readonly ILogger<JsonRpcLoggingMiddleware> m_Logger = logger;
 
         /// <summary>
         /// Invokes the middleware to log JSON-RPC requests and responses.
@@ -28,7 +28,7 @@ namespace mcp_nexus.Middleware
             }
             else
             {
-                await m_next(context);
+                await m_Next(context);
             }
         }
 
@@ -57,7 +57,7 @@ namespace mcp_nexus.Middleware
             using var responseBody = new MemoryStream();
             context.Response.Body = responseBody;
 
-            await m_next(context);
+            await m_Next(context);
 
             // Log the response
             await ReadAndLogResponseAsync(context, responseBody);
@@ -82,10 +82,10 @@ namespace mcp_nexus.Middleware
             }
             context.Request.Body.Position = 0;
 
-            if (m_logger.IsEnabled(LogLevel.Debug))
+            if (m_Logger.IsEnabled(LogLevel.Debug))
             {
                 var formattedRequest = FormatJsonForLogging(requestBody);
-                m_logger.LogDebug("📨 JSON-RPC Request:\n{RequestBody}", formattedRequest);
+                m_Logger.LogDebug("📨 JSON-RPC Request:\n{RequestBody}", formattedRequest);
             }
 
             return requestBody;
@@ -108,19 +108,19 @@ namespace mcp_nexus.Middleware
             }
             responseBody.Seek(0, SeekOrigin.Begin);
 
-            if (m_logger.IsEnabled(LogLevel.Debug))
+            if (m_Logger.IsEnabled(LogLevel.Debug))
             {
                 var formattedResponse = FormatSseResponseForLogging(responseBodyText);
                 var (_, decodeSuccess) = DecodeJsonText(responseBodyText, shouldTruncate: false);
                 if (decodeSuccess)
                 {
-                    m_logger.LogTrace("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
+                    m_Logger.LogTrace("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
                     var (truncatedDecodedText, _) = DecodeJsonText(responseBodyText, shouldTruncate: true);
-                    m_logger.LogDebug("📤 JSON-RPC Response Text:\n{DecodedText}", truncatedDecodedText);
+                    m_Logger.LogDebug("📤 JSON-RPC Response Text:\n{DecodedText}", truncatedDecodedText);
                 }
                 else
                 {
-                    m_logger.LogDebug("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
+                    m_Logger.LogDebug("📤 JSON-RPC Response:\n{ResponseBody}", formattedResponse);
                 }
             }
         }

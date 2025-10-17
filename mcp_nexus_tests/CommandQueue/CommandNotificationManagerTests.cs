@@ -288,13 +288,30 @@ namespace mcp_nexus_tests.CommandQueue
         {
             // Arrange
             var reason = "System maintenance";
+            var tcs = new TaskCompletionSource<bool>();
+            var verificationCount = 0;
+
+            // Set up the mock to signal when the expected log is called
+            m_MockLogger.Setup(x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Queue Event [ServiceShutdown]: Command queue service shutting down: {reason}")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+                .Callback(() =>
+                {
+                    verificationCount++;
+                    if (verificationCount == 1)
+                        tcs.SetResult(true);
+                });
 
             // Act
             m_Manager.NotifyServiceShutdown(reason);
 
-            // Assert
-            // Give the Task.Run a moment to execute
-            await Task.Delay(1000);
+            // Assert - Wait for the async operation to complete with timeout
+            var completed = await Task.WhenAny(tcs.Task, Task.Delay(5000));
+            Assert.True(completed == tcs.Task, "Expected log message was not received within timeout");
+
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),

@@ -121,7 +121,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Give the fire-and-forget task a moment to execute
             // Note: This is testing fire-and-forget behavior, so we use a small delay
             // In production, notifications are sent asynchronously and we don't wait for them
-            await Task.Delay(100);
+            await Task.Delay(500);
 
             // Verify was called at least once (may not be called if system is under heavy load)
             // This is acceptable for fire-and-forget notifications
@@ -259,6 +259,19 @@ namespace mcp_nexus_tests.CommandQueue
             var commandId = "cmd-456";
             var command = "test-command";
             var status = "executing";
+            var tcs = new TaskCompletionSource<bool>();
+            var verificationCount = 0;
+
+            // Set up the mock to signal when the expected call is made
+            m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
+                "session-123", commandId, status, string.Empty, string.Empty, 0))
+                .Returns(Task.CompletedTask)
+                .Callback(() =>
+                {
+                    verificationCount++;
+                    if (verificationCount == 1)
+                        tcs.SetResult(true);
+                });
 
             // Act
             NotificationHelper.NotifyCommandStatusFireAndForget(
@@ -269,9 +282,10 @@ namespace mcp_nexus_tests.CommandQueue
                 command,
                 status);
 
-            // Assert
-            // Wait for the Task.Run to complete
-            await Task.Delay(2000);
+            // Assert - Wait for the async operation to complete with timeout
+            var completed = await Task.WhenAny(tcs.Task, Task.Delay(5000));
+            Assert.True(completed == tcs.Task, "Expected notification call was not received within timeout");
+
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
                 "session-123", commandId, status, string.Empty, string.Empty, 0), Times.Once);
         }

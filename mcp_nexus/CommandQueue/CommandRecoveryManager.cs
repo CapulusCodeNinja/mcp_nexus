@@ -25,12 +25,12 @@ namespace mcp_nexus.CommandQueue
         ResilientQueueConfiguration config,
         IMcpNotificationService? notificationService = null)
     {
-        private readonly ICdbSession m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
-        private readonly ILogger m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly ICommandTimeoutService m_timeoutService = timeoutService ?? throw new ArgumentNullException(nameof(timeoutService));
-        private readonly ICdbSessionRecoveryService m_recoveryService = recoveryService ?? throw new ArgumentNullException(nameof(recoveryService));
-        private readonly IMcpNotificationService? m_notificationService = notificationService;
-        private readonly ResilientQueueConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
+        private readonly ICdbSession m_CdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
+        private readonly ILogger m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ICommandTimeoutService m_TimeoutService = timeoutService ?? throw new ArgumentNullException(nameof(timeoutService));
+        private readonly ICdbSessionRecoveryService m_RecoveryService = recoveryService ?? throw new ArgumentNullException(nameof(recoveryService));
+        private readonly IMcpNotificationService? m_NotificationService = notificationService;
+        private readonly ResilientQueueConfiguration m_Config = config ?? throw new ArgumentNullException(nameof(config));
 
         /// <summary>
         /// Executes a command with comprehensive recovery and timeout handling
@@ -40,10 +40,10 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The command result</returns>
         public async Task<string> ExecuteCommandWithRecoveryAsync(QueuedCommand queuedCommand, CancellationToken cancellationToken)
         {
-            var commandTimeout = m_config.DetermineCommandTimeout(queuedCommand.Command ?? string.Empty);
+            var commandTimeout = m_Config.DetermineCommandTimeout(queuedCommand.Command ?? string.Empty);
             var startTime = DateTime.Now;
 
-            m_logger.LogInformation("🔄 Executing resilient command {CommandId}: {Command} (timeout: {Timeout})",
+            m_Logger.LogInformation("🔄 Executing resilient command {CommandId}: {Command} (timeout: {Timeout})",
                 queuedCommand.Id, queuedCommand.Command, commandTimeout);
 
             try
@@ -60,20 +60,20 @@ namespace mcp_nexus.CommandQueue
                 // Stop heartbeat (task will be cancelled by the cancellation token)
 
                 var elapsed = DateTime.Now - startTime;
-                m_logger.LogInformation("✅ Command {CommandId} completed successfully in {Elapsed}ms",
+                m_Logger.LogInformation("✅ Command {CommandId} completed successfully in {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
 
                 return result;
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                m_logger.LogWarning("🚫 Command {CommandId} was cancelled", queuedCommand.Id);
+                m_Logger.LogWarning("🚫 Command {CommandId} was cancelled", queuedCommand.Id);
                 throw;
             }
             catch (TimeoutException ex)
             {
                 var elapsed = DateTime.Now - startTime;
-                m_logger.LogError("⏰ Command {CommandId} timed out after {Elapsed}ms: {Error}",
+                m_Logger.LogError("⏰ Command {CommandId} timed out after {Elapsed}ms: {Error}",
                     queuedCommand.Id, elapsed.TotalMilliseconds, ex.Message);
 
                 // Attempt recovery
@@ -83,7 +83,7 @@ namespace mcp_nexus.CommandQueue
             catch (Exception ex)
             {
                 var elapsed = DateTime.Now - startTime;
-                m_logger.LogError(ex, "❌ Command {CommandId} failed after {Elapsed}ms: {Error}",
+                m_Logger.LogError(ex, "❌ Command {CommandId} failed after {Elapsed}ms: {Error}",
                     queuedCommand.Id, elapsed.TotalMilliseconds, ex.Message);
 
                 // Attempt recovery for certain types of failures
@@ -107,26 +107,26 @@ namespace mcp_nexus.CommandQueue
             try
             {
                 // Start command timeout
-                var commandTimeout = m_config.DetermineCommandTimeout(queuedCommand.Command ?? string.Empty);
-                m_timeoutService.StartCommandTimeout(queuedCommand.Id ?? string.Empty, commandTimeout, () =>
+                var commandTimeout = m_Config.DetermineCommandTimeout(queuedCommand.Command ?? string.Empty);
+                m_TimeoutService.StartCommandTimeout(queuedCommand.Id ?? string.Empty, commandTimeout, () =>
                 {
-                    m_logger.LogError("Command {CommandId} timed out", queuedCommand.Id);
+                    m_Logger.LogError("Command {CommandId} timed out", queuedCommand.Id);
                     // The timeout will be handled by the calling method
                     return Task.CompletedTask;
                 });
 
                 // Execute the command
-                var result = await m_cdbSession.ExecuteCommand(queuedCommand.Command ?? string.Empty, cancellationToken);
+                var result = await m_CdbSession.ExecuteCommand(queuedCommand.Command ?? string.Empty, cancellationToken);
 
                 // Cancel timeout since command completed
-                m_timeoutService.CancelCommandTimeout(queuedCommand.Id ?? string.Empty);
+                m_TimeoutService.CancelCommandTimeout(queuedCommand.Id ?? string.Empty);
 
                 return result;
             }
             catch (Exception)
             {
                 // Ensure cleanup even on failure
-                m_timeoutService.CancelCommandTimeout(queuedCommand.Id ?? string.Empty);
+                m_TimeoutService.CancelCommandTimeout(queuedCommand.Id ?? string.Empty);
                 throw;
             }
         }
@@ -140,7 +140,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>A task representing the heartbeat operation, or null if not needed</returns>
         private Task? StartHeartbeatAsync(QueuedCommand queuedCommand, DateTime startTime, CancellationToken cancellationToken)
         {
-            var commandTimeout = m_config.DetermineCommandTimeout(queuedCommand.Command ?? string.Empty);
+            var commandTimeout = m_Config.DetermineCommandTimeout(queuedCommand.Command ?? string.Empty);
 
             // Only start heartbeat for commands that might take longer than 30 seconds
             if (commandTimeout <= TimeSpan.FromSeconds(30))
@@ -152,18 +152,18 @@ namespace mcp_nexus.CommandQueue
                 {
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        await Task.Delay(m_config.HeartbeatInterval, cancellationToken);
+                        await Task.Delay(m_Config.HeartbeatInterval, cancellationToken);
 
                         var elapsed = DateTime.Now - startTime;
                         var heartbeatDetails = ResilientQueueConfiguration.GenerateHeartbeatDetails(queuedCommand.Command ?? string.Empty, elapsed);
 
-                        m_logger.LogDebug("💓 Heartbeat for command {CommandId}: {Details} (elapsed: {Elapsed})",
+                        m_Logger.LogDebug("💓 Heartbeat for command {CommandId}: {Details} (elapsed: {Elapsed})",
                             queuedCommand.Id, heartbeatDetails, elapsed);
 
                         // Send notification if service is available
-                        if (m_notificationService != null)
+                        if (m_NotificationService != null)
                         {
-                            await m_notificationService.NotifyCommandHeartbeatAsync(queuedCommand.Id ?? string.Empty, queuedCommand.Command ?? string.Empty, elapsed, heartbeatDetails);
+                            await m_NotificationService.NotifyCommandHeartbeatAsync(queuedCommand.Id ?? string.Empty, queuedCommand.Command ?? string.Empty, elapsed, heartbeatDetails);
                         }
                     }
                 }
@@ -173,7 +173,7 @@ namespace mcp_nexus.CommandQueue
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogWarning(ex, "Heartbeat task failed for command {CommandId}", queuedCommand.Id);
+                    m_Logger.LogWarning(ex, "Heartbeat task failed for command {CommandId}", queuedCommand.Id);
                 }
             }, cancellationToken);
         }
@@ -201,24 +201,24 @@ namespace mcp_nexus.CommandQueue
         {
             try
             {
-                m_logger.LogWarning("🔧 Attempting recovery for command {CommandId} after {ExceptionType}: {Message}",
+                m_Logger.LogWarning("🔧 Attempting recovery for command {CommandId} after {ExceptionType}: {Message}",
                     queuedCommand.Id, originalException.GetType().Name, originalException.Message);
 
                 // Use the recovery service to attempt session recovery
-                var recoveryResult = await m_recoveryService.RecoverStuckSession($"Command {queuedCommand.Id} failed: {originalException.Message}");
+                var recoveryResult = await m_RecoveryService.RecoverStuckSession($"Command {queuedCommand.Id} failed: {originalException.Message}");
 
                 if (recoveryResult)
                 {
-                    m_logger.LogInformation("✅ Recovery successful for command {CommandId}", queuedCommand.Id);
+                    m_Logger.LogInformation("✅ Recovery successful for command {CommandId}", queuedCommand.Id);
                 }
                 else
                 {
-                    m_logger.LogError("❌ Recovery failed for command {CommandId}", queuedCommand.Id);
+                    m_Logger.LogError("❌ Recovery failed for command {CommandId}", queuedCommand.Id);
                 }
             }
             catch (Exception recoveryEx)
             {
-                m_logger.LogError(recoveryEx, "💥 Recovery attempt failed for command {CommandId}", queuedCommand.Id);
+                m_Logger.LogError(recoveryEx, "💥 Recovery attempt failed for command {CommandId}", queuedCommand.Id);
             }
         }
 
@@ -232,16 +232,16 @@ namespace mcp_nexus.CommandQueue
         {
             try
             {
-                m_logger.LogInformation("🚫 Cancelling command {CommandId}: {Reason}", commandId, reason ?? "User requested");
+                m_Logger.LogInformation("🚫 Cancelling command {CommandId}: {Reason}", commandId, reason ?? "User requested");
 
                 // Cancel timeout for this command
-                m_timeoutService.CancelCommandTimeout(commandId);
+                m_TimeoutService.CancelCommandTimeout(commandId);
 
                 return true;
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error cancelling command {CommandId}", commandId);
+                m_Logger.LogError(ex, "Error cancelling command {CommandId}", commandId);
                 return false;
             }
         }
@@ -253,12 +253,12 @@ namespace mcp_nexus.CommandQueue
         {
             try
             {
-                m_logger.LogDebug("🧹 Performing recovery manager cleanup");
+                m_Logger.LogDebug("🧹 Performing recovery manager cleanup");
                 // Any cleanup operations needed
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error during recovery manager cleanup");
+                m_Logger.LogError(ex, "Error during recovery manager cleanup");
             }
         }
     }

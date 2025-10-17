@@ -17,11 +17,11 @@ namespace mcp_nexus.Recovery
         ILogger logger,
         RecoveryConfiguration config)
     {
-        private readonly ICdbSession m_cdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
-        private readonly ILogger m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly RecoveryConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
-        private DateTime m_lastHealthCheck = DateTime.Now;
-        private bool m_lastHealthResult = true;
+        private readonly ICdbSession m_CdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
+        private readonly ILogger m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly RecoveryConfiguration m_Config = config ?? throw new ArgumentNullException(nameof(config));
+        private DateTime m_LastHealthCheck = DateTime.Now;
+        private bool m_LastHealthResult = true;
 
         /// <summary>
         /// Checks if the session is currently healthy.
@@ -33,27 +33,27 @@ namespace mcp_nexus.Recovery
             {
                 // Use cached result if within cooldown period (30 seconds)
                 var now = DateTime.Now;
-                if (now - m_lastHealthCheck < TimeSpan.FromSeconds(30))
+                if (now - m_LastHealthCheck < TimeSpan.FromSeconds(30))
                 {
-                    return m_lastHealthResult;
+                    return m_LastHealthResult;
                 }
 
                 // Perform actual health check
-                m_lastHealthCheck = now;
+                m_LastHealthCheck = now;
 
                 // Basic health check: is the session active?
-                if (!m_cdbSession.IsActive)
+                if (!m_CdbSession.IsActive)
                 {
-                    m_lastHealthResult = false;
+                    m_LastHealthResult = false;
                     return false;
                 }
 
-                m_lastHealthResult = true;
+                m_LastHealthResult = true;
                 return true;
             }
             catch (Exception)
             {
-                m_lastHealthResult = false;
+                m_LastHealthResult = false;
                 return false;
             }
         }
@@ -88,7 +88,7 @@ namespace mcp_nexus.Recovery
         /// <returns>Time since last health check</returns>
         public TimeSpan TimeSinceLastHealthCheck()
         {
-            return DateTime.Now - m_lastHealthCheck;
+            return DateTime.Now - m_LastHealthCheck;
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace mcp_nexus.Recovery
         /// <returns>True if a health check should be performed</returns>
         public bool IsHealthCheckDue()
         {
-            return TimeSinceLastHealthCheck() >= m_config.HealthCheckInterval;
+            return TimeSinceLastHealthCheck() >= m_Config.HealthCheckInterval;
         }
 
         /// <summary>
@@ -110,8 +110,8 @@ namespace mcp_nexus.Recovery
             {
                 var diagnostics = new SessionDiagnostics
                 {
-                    IsActive = m_cdbSession.IsActive,
-                    LastHealthCheck = m_lastHealthCheck,
+                    IsActive = m_CdbSession.IsActive,
+                    LastHealthCheck = m_LastHealthCheck,
                     TimeSinceLastCheck = TimeSinceLastHealthCheck(),
                     IsHealthCheckDue = IsHealthCheckDue()
                 };
@@ -124,7 +124,7 @@ namespace mcp_nexus.Recovery
                 return new SessionDiagnostics
                 {
                     IsActive = false,
-                    LastHealthCheck = m_lastHealthCheck,
+                    LastHealthCheck = m_LastHealthCheck,
                     TimeSinceLastCheck = TimeSinceLastHealthCheck(),
                     IsHealthCheckDue = true,
                     ErrorMessage = ex.Message

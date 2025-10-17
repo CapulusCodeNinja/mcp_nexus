@@ -7,8 +7,8 @@ namespace mcp_nexus.CommandQueue
     /// </summary>
     public class BatchTimeoutCalculator
     {
-        private readonly int m_baseTimeoutMs;
-        private readonly BatchingConfiguration m_config;
+        private readonly int m_BaseTimeoutMs;
+        private readonly BatchingConfiguration m_Config;
 
         /// <summary>
         /// Initializes a new instance of the BatchTimeoutCalculator class
@@ -25,8 +25,8 @@ namespace mcp_nexus.CommandQueue
             if (baseTimeoutMs <= 0)
                 throw new ArgumentOutOfRangeException(nameof(baseTimeoutMs), "Base timeout must be positive");
 
-            m_baseTimeoutMs = baseTimeoutMs;
-            m_config = options.Value;
+            m_BaseTimeoutMs = baseTimeoutMs;
+            m_Config = options.Value;
         }
 
         /// <summary>
@@ -45,10 +45,10 @@ namespace mcp_nexus.CommandQueue
                 throw new ArgumentException("Commands list cannot be empty", nameof(commands));
 
             // Calculate timeout: base timeout * number of commands * multiplier
-            var batchTimeoutMs = (int)(m_baseTimeoutMs * commands.Count * m_config.BatchTimeoutMultiplier);
+            var batchTimeoutMs = (int)(m_BaseTimeoutMs * commands.Count * m_Config.BatchTimeoutMultiplier);
 
             // Cap at maximum configured timeout
-            var maxTimeoutMs = m_config.MaxBatchTimeoutMinutes * 60 * 1000;
+            var maxTimeoutMs = m_Config.MaxBatchTimeoutMinutes * 60 * 1000;
             batchTimeoutMs = Math.Min(batchTimeoutMs, maxTimeoutMs);
 
             return TimeSpan.FromMilliseconds(batchTimeoutMs);
@@ -60,7 +60,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The base timeout in milliseconds</returns>
         public int GetBaseTimeoutMs()
         {
-            return m_baseTimeoutMs;
+            return m_BaseTimeoutMs;
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The maximum batch timeout in minutes</returns>
         public int GetMaxBatchTimeoutMinutes()
         {
-            return m_config.MaxBatchTimeoutMinutes;
+            return m_Config.MaxBatchTimeoutMinutes;
         }
     }
 }

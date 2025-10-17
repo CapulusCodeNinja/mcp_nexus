@@ -7,61 +7,61 @@ namespace mcp_nexus.CommandQueue
     {
         #region Private Fields
 
-        private readonly string m_commandId;
-        private readonly string m_command;
-        private CommandState m_state;
-        private readonly DateTime m_queueTime;
-        private TimeSpan m_elapsed;
-        private TimeSpan m_remaining;
-        private int m_queuePosition;
-        private bool m_isCompleted;
+        private readonly string m_CommandId;
+        private readonly string m_Command;
+        private CommandState m_State;
+        private readonly DateTime m_QueueTime;
+        private TimeSpan m_Elapsed;
+        private TimeSpan m_Remaining;
+        private int m_QueuePosition;
+        private bool m_IsCompleted;
 
         #endregion
 
         #region Public Properties
 
         /// <summary>Gets or sets the command identifier</summary>
-        public string CommandId { get => m_commandId; set { } } // Read-only from external perspective
+        public string CommandId { get => m_CommandId; set { } } // Read-only from external perspective
 
         /// <summary>Gets or sets the command text</summary>
-        public string Command { get => m_command; set { } } // Read-only from external perspective
+        public string Command { get => m_Command; set { } } // Read-only from external perspective
 
         /// <summary>Gets or sets the command state</summary>
         public CommandState State
         {
-            get => m_state;
-            set => m_state = value;
+            get => m_State;
+            set => m_State = value;
         }
 
         /// <summary>Gets or sets the queue time</summary>
-        public DateTime QueueTime { get => m_queueTime; set { } } // Read-only from external perspective
+        public DateTime QueueTime { get => m_QueueTime; set { } } // Read-only from external perspective
 
         /// <summary>Gets or sets the elapsed time</summary>
         public TimeSpan Elapsed
         {
-            get => m_elapsed;
-            set => m_elapsed = value;
+            get => m_Elapsed;
+            set => m_Elapsed = value;
         }
 
         /// <summary>Gets or sets the remaining time</summary>
         public TimeSpan Remaining
         {
-            get => m_remaining;
-            set => m_remaining = value;
+            get => m_Remaining;
+            set => m_Remaining = value;
         }
 
         /// <summary>Gets or sets the queue position</summary>
         public int QueuePosition
         {
-            get => m_queuePosition;
-            set => m_queuePosition = value;
+            get => m_QueuePosition;
+            set => m_QueuePosition = value;
         }
 
         /// <summary>Gets or sets whether the command is completed</summary>
         public bool IsCompleted
         {
-            get => m_isCompleted;
-            set => m_isCompleted = value;
+            get => m_IsCompleted;
+            set => m_IsCompleted = value;
         }
 
         #endregion
@@ -73,14 +73,14 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public CommandInfo()
         {
-            m_commandId = string.Empty;
-            m_command = string.Empty;
-            m_state = CommandState.Queued;
-            m_queueTime = DateTime.Now;
-            m_queuePosition = 0;
-            m_elapsed = TimeSpan.Zero;
-            m_remaining = TimeSpan.Zero;
-            m_isCompleted = false;
+            m_CommandId = string.Empty;
+            m_Command = string.Empty;
+            m_State = CommandState.Queued;
+            m_QueueTime = DateTime.Now;
+            m_QueuePosition = 0;
+            m_Elapsed = TimeSpan.Zero;
+            m_Remaining = TimeSpan.Zero;
+            m_IsCompleted = false;
         }
 
         /// <summary>
@@ -93,14 +93,14 @@ namespace mcp_nexus.CommandQueue
         /// <param name="queuePosition">Queue position</param>
         public CommandInfo(string commandId, string command, CommandState state, DateTime queueTime, int queuePosition = 0)
         {
-            m_commandId = commandId ?? throw new ArgumentNullException(nameof(commandId));
-            m_command = command ?? throw new ArgumentNullException(nameof(command));
-            m_state = state;
-            m_queueTime = queueTime;
-            m_queuePosition = queuePosition;
-            m_elapsed = TimeSpan.Zero;
-            m_remaining = TimeSpan.Zero;
-            m_isCompleted = false;
+            m_CommandId = commandId ?? throw new ArgumentNullException(nameof(commandId));
+            m_Command = command ?? throw new ArgumentNullException(nameof(command));
+            m_State = state;
+            m_QueueTime = queueTime;
+            m_QueuePosition = queuePosition;
+            m_Elapsed = TimeSpan.Zero;
+            m_Remaining = TimeSpan.Zero;
+            m_IsCompleted = false;
         }
 
         #endregion
@@ -114,8 +114,8 @@ namespace mcp_nexus.CommandQueue
         /// <param name="remaining">Remaining time</param>
         public void UpdateTiming(TimeSpan elapsed, TimeSpan remaining)
         {
-            m_elapsed = elapsed;
-            m_remaining = remaining;
+            m_Elapsed = elapsed;
+            m_Remaining = remaining;
         }
 
         /// <summary>
@@ -123,8 +123,8 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public void MarkCompleted()
         {
-            m_isCompleted = true;
-            m_state = CommandState.Completed;
+            m_IsCompleted = true;
+            m_State = CommandState.Completed;
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace mcp_nexus.CommandQueue
         /// <param name="position">New queue position</param>
         public void UpdateQueuePosition(int position)
         {
-            m_queuePosition = position;
+            m_QueuePosition = position;
         }
 
         #endregion

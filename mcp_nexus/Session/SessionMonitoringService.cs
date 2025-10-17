@@ -9,18 +9,18 @@ namespace mcp_nexus.Session
     /// </summary>
     public class SessionMonitoringService
     {
-        private readonly ILogger m_logger;
-        private readonly IMcpNotificationService m_notificationService;
-        private readonly SessionManagerConfiguration m_config;
-        private readonly ConcurrentDictionary<string, SessionInfo> m_sessions;
-        private readonly SessionLifecycleManager m_lifecycleManager;
+        private readonly ILogger m_Logger;
+        private readonly IMcpNotificationService m_NotificationService;
+        private readonly SessionManagerConfiguration m_Config;
+        private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions;
+        private readonly SessionLifecycleManager m_LifecycleManager;
 
         // Monitoring state
-        private readonly Timer m_cleanupTimer;
-        private readonly CancellationTokenSource m_shutdownCts;
-        private readonly Task m_monitoringTask;
-        private volatile bool m_disposed = false;
-        private DateTime m_lastHealthLogTime = DateTime.Now;
+        private readonly Timer m_CleanupTimer;
+        private readonly CancellationTokenSource m_ShutdownCts;
+        private readonly Task m_MonitoringTask;
+        private volatile bool m_Disposed = false;
+        private DateTime m_LastHealthLogTime = DateTime.Now;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SessionMonitoringService"/> class.
@@ -40,15 +40,15 @@ namespace mcp_nexus.Session
             SessionLifecycleManager lifecycleManager,
             CancellationTokenSource shutdownCts)
         {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
-            m_config = config ?? throw new ArgumentNullException(nameof(config));
-            m_sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
-            m_lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
-            m_shutdownCts = shutdownCts ?? throw new ArgumentNullException(nameof(shutdownCts));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_NotificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            m_Config = config ?? throw new ArgumentNullException(nameof(config));
+            m_Sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
+            m_LifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
+            m_ShutdownCts = shutdownCts ?? throw new ArgumentNullException(nameof(shutdownCts));
 
             // Initialize cleanup timer
-            m_cleanupTimer = new Timer(_ =>
+            m_CleanupTimer = new Timer(_ =>
             {
                 // Fire-and-forget with proper exception handling
                 _ = Task.Run(async () =>
@@ -59,15 +59,15 @@ namespace mcp_nexus.Session
                     }
                     catch (Exception ex)
                     {
-                        m_logger.LogError(ex, "Error during scheduled session cleanup");
+                        m_Logger.LogError(ex, "Error during scheduled session cleanup");
                     }
                 }, CancellationToken.None);
-            }, null, m_config.GetCleanupInterval(), m_config.GetCleanupInterval());
+            }, null, m_Config.GetCleanupInterval(), m_Config.GetCleanupInterval());
 
             // Start session health monitoring
-            m_monitoringTask = Task.Run(MonitorSessionHealthAsync, m_shutdownCts.Token);
+            m_MonitoringTask = Task.Run(MonitorSessionHealthAsync, m_ShutdownCts.Token);
 
-            m_logger.LogDebug("✅ Session monitoring service initialized");
+            m_Logger.LogDebug("✅ Session monitoring service initialized");
         }
 
         /// <summary>
@@ -76,17 +76,17 @@ namespace mcp_nexus.Session
         /// <param name="sessionId">Session ID to update</param>
         public void UpdateActivity(string sessionId)
         {
-            if (m_disposed || string.IsNullOrWhiteSpace(sessionId))
+            if (m_Disposed || string.IsNullOrWhiteSpace(sessionId))
                 return;
 
-            if (m_sessions.TryGetValue(sessionId, out var sessionInfo))
+            if (m_Sessions.TryGetValue(sessionId, out var sessionInfo))
             {
                 sessionInfo.LastActivity = DateTime.Now;
-                m_logger.LogTrace("📝 Updated activity for session {SessionId}", sessionId);
+                m_Logger.LogTrace("📝 Updated activity for session {SessionId}", sessionId);
             }
             else
             {
-                m_logger.LogWarning("Cannot update activity for unknown session {SessionId}", sessionId);
+                m_Logger.LogWarning("Cannot update activity for unknown session {SessionId}", sessionId);
             }
         }
 
@@ -95,20 +95,20 @@ namespace mcp_nexus.Session
         /// </summary>
         private async Task SafeCleanupExpiredSessions()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return;
 
             try
             {
-                var cleanedCount = await m_lifecycleManager.CleanupExpiredSessionsAsync();
+                var cleanedCount = await m_LifecycleManager.CleanupExpiredSessionsAsync();
                 if (cleanedCount > 0)
                 {
-                    m_logger.LogInformation("🧹 Periodic cleanup removed {Count} expired sessions", cleanedCount);
+                    m_Logger.LogInformation("🧹 Periodic cleanup removed {Count} expired sessions", cleanedCount);
                 }
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error during safe session cleanup");
+                m_Logger.LogError(ex, "Error during safe session cleanup");
             }
         }
 
@@ -120,11 +120,11 @@ namespace mcp_nexus.Session
 
             try
             {
-                while (!m_shutdownCts.Token.IsCancellationRequested)
+                while (!m_ShutdownCts.Token.IsCancellationRequested)
                 {
-                    await Task.Delay(TimeSpan.FromMinutes(5), m_shutdownCts.Token);
+                    await Task.Delay(TimeSpan.FromMinutes(5), m_ShutdownCts.Token);
 
-                    if (m_disposed)
+                    if (m_Disposed)
                         break;
 
                     await PerformHealthCheck();
@@ -132,15 +132,15 @@ namespace mcp_nexus.Session
             }
             catch (OperationCanceledException)
             {
-                m_logger.LogInformation("🛑 Session health monitoring stopped due to cancellation");
+                m_Logger.LogInformation("🛑 Session health monitoring stopped due to cancellation");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "💥 Fatal error in session health monitoring");
+                m_Logger.LogError(ex, "💥 Fatal error in session health monitoring");
             }
             finally
             {
-                m_logger.LogInformation("🏁 Session health monitoring shutdown complete");
+                m_Logger.LogInformation("🏁 Session health monitoring shutdown complete");
             }
         }
 
@@ -151,12 +151,12 @@ namespace mcp_nexus.Session
         {
             try
             {
-                var sessionCount = m_sessions.Count;
+                var sessionCount = m_Sessions.Count;
                 var activeCount = 0;
                 var inactiveCount = 0;
                 var unhealthyCount = 0;
 
-                foreach (var kvp in m_sessions)
+                foreach (var kvp in m_Sessions)
                 {
                     var sessionInfo = kvp.Value;
 
@@ -169,21 +169,21 @@ namespace mcp_nexus.Session
                         else
                         {
                             inactiveCount++;
-                            m_logger.LogWarning("⚠️ Session {SessionId} has inactive CDB session", kvp.Key);
+                            m_Logger.LogWarning("⚠️ Session {SessionId} has inactive CDB session", kvp.Key);
                         }
 
                         // Check for sessions that might be stuck
                         var timeSinceActivity = DateTime.Now - sessionInfo.LastActivity;
                         if (timeSinceActivity > TimeSpan.FromHours(1))
                         {
-                            m_logger.LogWarning("⏰ Session {SessionId} has been inactive for {Duration}",
+                            m_Logger.LogWarning("⏰ Session {SessionId} has been inactive for {Duration}",
                                 kvp.Key, timeSinceActivity);
                         }
                     }
                     catch (Exception ex)
                     {
                         unhealthyCount++;
-                        m_logger.LogError(ex, "💥 Health check failed for session {SessionId}", kvp.Key);
+                        m_Logger.LogError(ex, "💥 Health check failed for session {SessionId}", kvp.Key);
                     }
                 }
 
@@ -193,7 +193,7 @@ namespace mcp_nexus.Session
                 {
                     needsLog = true;
                 }
-                else if ((DateTime.Now - m_lastHealthLogTime) > TimeSpan.FromMinutes(15))
+                else if ((DateTime.Now - m_LastHealthLogTime) > TimeSpan.FromMinutes(15))
                 {
                     needsLog = true;
                 }
@@ -201,18 +201,18 @@ namespace mcp_nexus.Session
                 // Log health summary based on session count and need
                 if (needsLog && sessionCount > 0)
                 {
-                    m_logger.LogInformation("💊 Health check: {Total} sessions ({Active} active, {Inactive} inactive, {Unhealthy} unhealthy)",
+                    m_Logger.LogInformation("💊 Health check: {Total} sessions ({Active} active, {Inactive} inactive, {Unhealthy} unhealthy)",
                         sessionCount, activeCount, inactiveCount, unhealthyCount);
-                    m_lastHealthLogTime = DateTime.Now;
+                    m_LastHealthLogTime = DateTime.Now;
                 }
                 else if (needsLog && sessionCount <= 0)
                 {
-                    m_logger.LogInformation("💊 Health check: Server idle (0 sessions)");
-                    m_lastHealthLogTime = DateTime.Now;
+                    m_Logger.LogInformation("💊 Health check: Server idle (0 sessions)");
+                    m_LastHealthLogTime = DateTime.Now;
                 }
 
                 // Send health notification (automatically skipped in HTTP mode by notification service)
-                await m_notificationService.NotifyServerHealthAsync(
+                await m_NotificationService.NotifyServerHealthAsync(
                     status: unhealthyCount > 0 ? "Warning" : "Healthy",
                     cdbSessionActive: activeCount > 0,
                     queueSize: GetTotalQueueSize(),
@@ -221,7 +221,7 @@ namespace mcp_nexus.Session
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error during health check");
+                m_Logger.LogError(ex, "Error during health check");
             }
         }
 
@@ -234,7 +234,7 @@ namespace mcp_nexus.Session
             try
             {
                 var total = 0;
-                foreach (var s in m_sessions.Values)
+                foreach (var s in m_Sessions.Values)
                 {
                     var qs = s.CommandQueue.GetQueueStatus();
                     // Avoid materialization: iterate and count
@@ -246,7 +246,7 @@ namespace mcp_nexus.Session
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error calculating total queue size");
+                m_Logger.LogWarning(ex, "Error calculating total queue size");
                 return 0;
             }
         }
@@ -260,7 +260,7 @@ namespace mcp_nexus.Session
             try
             {
                 var total = 0;
-                foreach (var s in m_sessions.Values)
+                foreach (var s in m_Sessions.Values)
                 {
                     if (s.CommandQueue.GetCurrentCommand() != null)
                     {
@@ -271,7 +271,7 @@ namespace mcp_nexus.Session
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error calculating total active commands");
+                m_Logger.LogWarning(ex, "Error calculating total active commands");
                 return 0;
             }
         }
@@ -336,7 +336,7 @@ namespace mcp_nexus.Session
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error generating usage hints for session {SessionId}", session.SessionId);
+                m_Logger.LogWarning(ex, "Error generating usage hints for session {SessionId}", session.SessionId);
                 hints.Add("💡 Use standard WinDbg commands for debugging");
             }
 
@@ -354,7 +354,7 @@ namespace mcp_nexus.Session
                 var now = DateTime.Now;
                 long totalTicks = 0;
                 int n = 0;
-                foreach (var s in m_sessions.Values)
+                foreach (var s in m_Sessions.Values)
                 {
                     totalTicks += (now - s.CreatedAt).Ticks;
                     n++;
@@ -364,7 +364,7 @@ namespace mcp_nexus.Session
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error calculating average session lifetime");
+                m_Logger.LogWarning(ex, "Error calculating average session lifetime");
                 return TimeSpan.Zero;
             }
         }
@@ -374,37 +374,37 @@ namespace mcp_nexus.Session
         /// </summary>
         public void Dispose()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return;
 
-            m_disposed = true;
+            m_Disposed = true;
 
             try
             {
-                m_logger.LogInformation("🛑 Shutting down session monitoring service");
+                m_Logger.LogInformation("🛑 Shutting down session monitoring service");
 
                 // Stop cleanup timer
-                m_cleanupTimer?.Dispose();
+                m_CleanupTimer?.Dispose();
 
                 // Wait for monitoring task to complete
-                if (m_monitoringTask != null && !m_monitoringTask.IsCompleted)
+                if (m_MonitoringTask != null && !m_MonitoringTask.IsCompleted)
                 {
                     try
                     {
-                        m_monitoringTask.Wait(TimeSpan.FromSeconds(5));
+                        m_MonitoringTask.Wait(TimeSpan.FromSeconds(5));
                     }
                     catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is TaskCanceledException))
                     {
                         // Expected during shutdown
-                        m_logger.LogDebug("Monitoring task cancelled during shutdown (expected)");
+                        m_Logger.LogDebug("Monitoring task cancelled during shutdown (expected)");
                     }
                 }
 
-                m_logger.LogInformation("✅ Session monitoring service shutdown complete");
+                m_Logger.LogInformation("✅ Session monitoring service shutdown complete");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "💥 Error during session monitoring service disposal");
+                m_Logger.LogError(ex, "💥 Error during session monitoring service disposal");
             }
         }
     }

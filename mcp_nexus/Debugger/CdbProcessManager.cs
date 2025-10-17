@@ -18,32 +18,32 @@ namespace mcp_nexus.Debugger
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> or <paramref name="config"/> is null.</exception>
     public class CdbProcessManager(ILogger<CdbProcessManager> logger, CdbSessionConfiguration config) : IDisposable
     {
-        private readonly ILogger<CdbProcessManager> m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly CdbSessionConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
-        private readonly object m_lifecycleLock = new();
-        private string? m_sessionId;
+        private readonly ILogger<CdbProcessManager> m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly CdbSessionConfiguration m_Config = config ?? throw new ArgumentNullException(nameof(config));
+        private readonly object m_LifecycleLock = new();
+        private string? m_SessionId;
 
-        private Process? m_debuggerProcess;
-        private StreamWriter? m_debuggerInput;
-        private volatile bool m_isActive;  // CRITICAL: volatile ensures visibility across threads
-        private volatile bool m_disposed;  // CRITICAL: volatile ensures visibility across threads
-        private volatile bool m_initOutputConsumed;  // CRITICAL: ensures init output is consumed before commands execute
+        private Process? m_DebuggerProcess;
+        private StreamWriter? m_DebuggerInput;
+        private volatile bool m_IsActive;  // CRITICAL: volatile ensures visibility across threads
+        private volatile bool m_Disposed;  // CRITICAL: volatile ensures visibility across threads
+        private volatile bool m_InitOutputConsumed;  // CRITICAL: ensures init output is consumed before commands execute
         private volatile bool m_isStopping;  // Track when we're intentionally stopping the process
 
         /// <summary>
         /// Gets the CDB debugger process instance.
         /// </summary>
-        public virtual Process? DebuggerProcess => m_debuggerProcess;
+        public virtual Process? DebuggerProcess => m_DebuggerProcess;
 
         /// <summary>
         /// Gets the input stream writer for sending commands to the CDB process.
         /// </summary>
-        public virtual StreamWriter? DebuggerInput => m_debuggerInput;
+        public virtual StreamWriter? DebuggerInput => m_DebuggerInput;
 
         /// <summary>
         /// Gets a value indicating whether the CDB process is active and ready for commands.
         /// </summary>
-        public virtual bool IsActive => m_isActive && !m_disposed && m_initOutputConsumed;
+        public virtual bool IsActive => m_IsActive && !m_Disposed && m_InitOutputConsumed;
 
         /// <summary>
         /// Sets the session ID for this process manager instance.
@@ -52,7 +52,7 @@ namespace mcp_nexus.Debugger
         /// <param name="sessionId">The unique session identifier.</param>
         public virtual void SetSessionId(string sessionId)
         {
-            m_sessionId = sessionId;
+            m_SessionId = sessionId;
         }
 
         /// <summary>
@@ -73,26 +73,26 @@ namespace mcp_nexus.Debugger
             {
                 // Check if we need to stop existing process OUTSIDE the lock
                 bool needsStop = false;
-                lock (m_lifecycleLock)
+                lock (m_LifecycleLock)
                 {
-                    needsStop = m_isActive;
+                    needsStop = m_IsActive;
                 }
 
                 // Stop process WITHOUT holding lock to avoid blocking other threads for 5-7 seconds
                 if (needsStop)
                 {
-                    m_logger.LogWarning("Process is already active - stopping current process before starting new one");
+                    m_Logger.LogWarning("Process is already active - stopping current process before starting new one");
                     StopProcess(); // This calls StopProcessInternal with its own lock
                 }
 
-                lock (m_lifecycleLock)
+                lock (m_LifecycleLock)
                 {
-                    m_logger.LogDebug("Acquired lifecycle lock for StartProcess");
+                    m_Logger.LogDebug("Acquired lifecycle lock for StartProcess");
 
                     var cdbPath = !string.IsNullOrWhiteSpace(cdbPathOverride) ? cdbPathOverride : FindCdbExecutable();
                     if (!File.Exists(cdbPath))
                     {
-                        m_logger.LogError("❌ Configured CDB path does not exist: {CdbPath}", cdbPath);
+                        m_Logger.LogError("❌ Configured CDB path does not exist: {CdbPath}", cdbPath);
                         return false;
                     }
                     var processInfo = CreateProcessStartInfo(cdbPath, target);
@@ -102,7 +102,7 @@ namespace mcp_nexus.Debugger
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Failed to start CDB process with target: {Target}", target);
+                m_Logger.LogError(ex, "Failed to start CDB process with target: {Target}", target);
                 return false;
             }
         }
@@ -135,14 +135,14 @@ namespace mcp_nexus.Debugger
 
             try
             {
-                lock (m_lifecycleLock)
+                lock (m_LifecycleLock)
                 {
                     return StopProcessInternal();
                 }
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error stopping CDB process");
+                m_Logger.LogError(ex, "Error stopping CDB process");
                 return false;
             }
         }
@@ -156,31 +156,31 @@ namespace mcp_nexus.Debugger
         {
             try
             {
-                var process = m_debuggerProcess;
+                var process = m_DebuggerProcess;
                 if (process == null)
                 {
-                    m_logger.LogDebug("[{Context}] No debugger process", context);
+                    m_Logger.LogDebug("[{Context}] No debugger process", context);
                     return;
                 }
 
-                m_logger.LogDebug("[{Context}] Process diagnostics:", context);
-                m_logger.LogDebug("  - Process ID: {ProcessId}", process.Id);
-                m_logger.LogDebug("  - Process Name: {ProcessName}", process.ProcessName);
-                m_logger.LogDebug("  - Has Exited: {HasExited}", process.HasExited);
+                m_Logger.LogDebug("[{Context}] Process diagnostics:", context);
+                m_Logger.LogDebug("  - Process ID: {ProcessId}", process.Id);
+                m_Logger.LogDebug("  - Process Name: {ProcessName}", process.ProcessName);
+                m_Logger.LogDebug("  - Has Exited: {HasExited}", process.HasExited);
 
                 if (!process.HasExited)
                 {
-                    m_logger.LogDebug("  - Start Time: {StartTime}", process.StartTime);
-                    m_logger.LogDebug("  - CPU Time: {TotalProcessorTime}", process.TotalProcessorTime);
-                    m_logger.LogDebug("  - Memory Usage: {WorkingSet64} bytes", process.WorkingSet64);
+                    m_Logger.LogDebug("  - Start Time: {StartTime}", process.StartTime);
+                    m_Logger.LogDebug("  - CPU Time: {TotalProcessorTime}", process.TotalProcessorTime);
+                    m_Logger.LogDebug("  - Memory Usage: {WorkingSet64} bytes", process.WorkingSet64);
 
                     var commandLine = GetProcessCommandLine(process.Id);
-                    m_logger.LogDebug("  - Command Line: {CommandLine}", commandLine ?? "[Unable to retrieve]");
+                    m_Logger.LogDebug("  - Command Line: {CommandLine}", commandLine ?? "[Unable to retrieve]");
                 }
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error logging process diagnostics for context: {Context}", context);
+                m_Logger.LogWarning(ex, "Error logging process diagnostics for context: {Context}", context);
             }
         }
 
@@ -195,17 +195,17 @@ namespace mcp_nexus.Debugger
         /// </remarks>
         private string FindCdbExecutable()
         {
-            m_logger.LogDebug("Searching for CDB executable...");
+            m_Logger.LogDebug("Searching for CDB executable...");
 
             try
             {
                 // Use the resolved CDB path from configuration (already resolved by DI)
-                var cdbPath = m_config.CustomCdbPath;
+                var cdbPath = m_Config.CustomCdbPath;
                 if (string.IsNullOrEmpty(cdbPath))
                 {
                     var errorMessage = "❌ CDB path not configured. This should have been resolved during service startup.";
-                    m_logger.LogError(errorMessage);
-                    m_logger.LogError("💡 This indicates a configuration or DI issue - CDB path should be auto-detected during service registration.");
+                    m_Logger.LogError(errorMessage);
+                    m_Logger.LogError("💡 This indicates a configuration or DI issue - CDB path should be auto-detected during service registration.");
                     throw new FileNotFoundException(errorMessage);
                 }
 
@@ -213,17 +213,17 @@ namespace mcp_nexus.Debugger
                 if (!File.Exists(cdbPath))
                 {
                     var errorMessage = $"❌ Configured CDB path does not exist: {cdbPath}";
-                    m_logger.LogError(errorMessage);
-                    m_logger.LogError("💡 The CDB path was resolved during startup but the file is no longer accessible.");
+                    m_Logger.LogError(errorMessage);
+                    m_Logger.LogError("💡 The CDB path was resolved during startup but the file is no longer accessible.");
                     throw new FileNotFoundException(errorMessage);
                 }
 
-                m_logger.LogInformation("✅ Using CDB at: {CdbPath}", cdbPath);
+                m_Logger.LogInformation("✅ Using CDB at: {CdbPath}", cdbPath);
                 return cdbPath;
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "❌ Failed to find CDB executable - this will prevent debugging sessions from starting");
+                m_Logger.LogError(ex, "❌ Failed to find CDB executable - this will prevent debugging sessions from starting");
                 throw;
             }
         }
@@ -249,7 +249,7 @@ namespace mcp_nexus.Debugger
             // Run from CDB directory to avoid path issues
             var workingDirectory = Path.GetDirectoryName(cdbPath) ?? Environment.CurrentDirectory;
 
-            m_logger.LogDebug("CDB call: {CdbPath} {Arguments}", cdbPath, target);
+            m_Logger.LogDebug("CDB call: {CdbPath} {Arguments}", cdbPath, target);
 
             // Use centralized UTF-8 encoding configuration for all CDB streams
             var startInfo = EncodingConfiguration.CreateUnicodeProcessStartInfo(cdbPath, target);
@@ -270,50 +270,50 @@ namespace mcp_nexus.Debugger
         /// </remarks>
         private bool StartProcessInternal(ProcessStartInfo processInfo, string target)
         {
-            m_logger.LogDebug("Starting CDB process...");
+            m_Logger.LogDebug("Starting CDB process...");
             m_isStopping = false; // Reset stopping flag when starting new process
 
-            m_debuggerProcess = Process.Start(processInfo);
-            if (m_debuggerProcess == null)
+            m_DebuggerProcess = Process.Start(processInfo);
+            if (m_DebuggerProcess == null)
             {
-                m_logger.LogError("Failed to start CDB process");
+                m_Logger.LogError("Failed to start CDB process");
                 return false;
             }
 
             // Set up streams
-            m_debuggerInput = m_debuggerProcess.StandardInput;
+            m_DebuggerInput = m_DebuggerProcess.StandardInput;
 
             // Configure streams
-            m_debuggerInput.AutoFlush = true;
+            m_DebuggerInput.AutoFlush = true;
 
             // Monitor process exit to detect crashes
-            m_debuggerProcess.EnableRaisingEvents = true;
-            m_debuggerProcess.Exited += (sender, e) =>
+            m_DebuggerProcess.EnableRaisingEvents = true;
+            m_DebuggerProcess.Exited += (sender, e) =>
             {
-                if (m_isActive && !m_isStopping)
+                if (m_IsActive && !m_isStopping)
                 {
-                    m_logger.LogError("🔥 CDB process exited unexpectedly! Exit code: {ExitCode}, Was active: {WasActive}",
-                        m_debuggerProcess?.ExitCode ?? -1, m_isActive);
+                    m_Logger.LogError("🔥 CDB process exited unexpectedly! Exit code: {ExitCode}, Was active: {WasActive}",
+                        m_DebuggerProcess?.ExitCode ?? -1, m_IsActive);
                     CleanupResources();
                 }
                 else if (m_isStopping)
                 {
-                    m_logger.LogInformation("✅ CDB process stopped as expected during session closure. Exit code: {ExitCode}",
-                        m_debuggerProcess?.ExitCode ?? -1);
+                    m_Logger.LogInformation("✅ CDB process stopped as expected during session closure. Exit code: {ExitCode}",
+                        m_DebuggerProcess?.ExitCode ?? -1);
                 }
             };
 
-            m_isActive = true;
-            m_logger.LogInformation("Successfully started CDB process with target: {Target}", target);
-            m_logger.LogInformation("Process ID: {ProcessId}, Active: {IsActive}", m_debuggerProcess.Id, m_isActive);
+            m_IsActive = true;
+            m_Logger.LogInformation("Successfully started CDB process with target: {Target}", target);
+            m_Logger.LogInformation("Process ID: {ProcessId}, Active: {IsActive}", m_DebuggerProcess.Id, m_IsActive);
 
             // CRITICAL DECISION: DO NOT consume init output!
             // StreamReader buffering makes it impossible to reliably consume partial output
             // Instead, the FIRST command will see the init output + its own output
             // The command executor's completion detection will handle this correctly
 
-            m_logger.LogDebug("⚡ CDB process started - skipping init consumer (first command will see init output)");
-            m_initOutputConsumed = true; // Mark as ready immediately
+            m_Logger.LogDebug("⚡ CDB process started - skipping init consumer (first command will see init output)");
+            m_InitOutputConsumed = true; // Mark as ready immediately
 
             return true;
         }
@@ -328,46 +328,46 @@ namespace mcp_nexus.Debugger
         /// </remarks>
         private bool StopProcessInternal()
         {
-            if (!m_isActive || m_debuggerProcess == null)
+            if (!m_IsActive || m_DebuggerProcess == null)
             {
-                m_logger.LogDebug("No active process to stop");
+                m_Logger.LogDebug("No active process to stop");
                 return false; // Return false when nothing to stop for test compatibility
             }
 
-            m_logger.LogDebug("Stopping CDB process...");
+            m_Logger.LogDebug("Stopping CDB process...");
             m_isStopping = true; // Mark that we're intentionally stopping the process
 
             try
             {
                 // Send quit command if input stream is available
-                if (m_debuggerInput != null && !m_debuggerInput.BaseStream.CanWrite == false)
+                if (m_DebuggerInput != null && !m_DebuggerInput.BaseStream.CanWrite == false)
                 {
                     try
                     {
-                        m_debuggerInput.WriteLine("q");
-                        m_debuggerInput.Flush();
-                        m_logger.LogDebug("Sent quit command to CDB");
+                        m_DebuggerInput.WriteLine("q");
+                        m_DebuggerInput.Flush();
+                        m_Logger.LogDebug("Sent quit command to CDB");
                     }
                     catch (Exception ex)
                     {
-                        m_logger.LogWarning(ex, "Failed to send quit command to CDB");
+                        m_Logger.LogWarning(ex, "Failed to send quit command to CDB");
                     }
                 }
 
                 // Wait for graceful exit
-                if (!m_debuggerProcess.WaitForExit(5000))
+                if (!m_DebuggerProcess.WaitForExit(5000))
                 {
-                    m_logger.LogWarning("CDB process did not exit gracefully, forcing termination");
-                    m_debuggerProcess.Kill();
-                    m_debuggerProcess.WaitForExit(2000);
+                    m_Logger.LogWarning("CDB process did not exit gracefully, forcing termination");
+                    m_DebuggerProcess.Kill();
+                    m_DebuggerProcess.WaitForExit(2000);
                 }
 
-                m_logger.LogInformation("CDB process stopped successfully");
+                m_Logger.LogInformation("CDB process stopped successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error stopping CDB process");
+                m_Logger.LogError(ex, "Error stopping CDB process");
                 return false;
             }
             finally
@@ -385,27 +385,27 @@ namespace mcp_nexus.Debugger
         /// </remarks>
         private void CleanupResources()
         {
-            var wasActive = m_isActive;
-            m_isActive = false;
+            var wasActive = m_IsActive;
+            m_IsActive = false;
 
             if (wasActive)
             {
-                m_logger.LogWarning("⚠️ CDB session became inactive - CleanupResources called while session was active");
+                m_Logger.LogWarning("⚠️ CDB session became inactive - CleanupResources called while session was active");
             }
 
             try
             {
-                m_debuggerInput?.Dispose();
-                m_debuggerProcess?.Dispose();
+                m_DebuggerInput?.Dispose();
+                m_DebuggerProcess?.Dispose();
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error disposing process resources");
+                m_Logger.LogWarning(ex, "Error disposing process resources");
             }
             finally
             {
-                m_debuggerInput = null;
-                m_debuggerProcess = null;
+                m_DebuggerInput = null;
+                m_DebuggerProcess = null;
             }
         }
 
@@ -444,7 +444,7 @@ namespace mcp_nexus.Debugger
         /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
         private void ThrowIfDisposed()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CdbProcessManager));
         }
 
@@ -454,7 +454,7 @@ namespace mcp_nexus.Debugger
         /// </summary>
         public void Dispose()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return;
 
             try
@@ -463,11 +463,11 @@ namespace mcp_nexus.Debugger
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error during disposal");
+                m_Logger.LogWarning(ex, "Error during disposal");
             }
             finally
             {
-                m_disposed = true;
+                m_Disposed = true;
             }
         }
     }

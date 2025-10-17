@@ -8,16 +8,16 @@ namespace mcp_nexus.CommandQueue
     /// </summary>
     public class CommandQueueService : IDisposable, ICommandQueueService
     {
-        private readonly ILogger<CommandQueueService> m_logger;
-        private readonly BlockingCollection<QueuedCommand> m_commandQueue;
-        private readonly CancellationTokenSource m_serviceCts = new();
-        private readonly Task m_processingTask;
-        private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands = new();
-        private bool m_disposed;
+        private readonly ILogger<CommandQueueService> m_Logger;
+        private readonly BlockingCollection<QueuedCommand> m_CommandQueue;
+        private readonly CancellationTokenSource m_ServiceCts = new();
+        private readonly Task m_ProcessingTask;
+        private readonly ConcurrentDictionary<string, QueuedCommand> m_ActiveCommands = new();
+        private bool m_Disposed;
 
         // Focused components
-        private readonly BasicQueueConfiguration m_config;
-        private readonly BasicCommandProcessor m_processor;
+        private readonly BasicQueueConfiguration m_Config;
+        private readonly BasicCommandProcessor m_Processor;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CommandQueueService"/> class.
@@ -28,30 +28,30 @@ namespace mcp_nexus.CommandQueue
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public CommandQueueService(ICdbSession cdbSession, ILogger<CommandQueueService> logger, ILoggerFactory loggerFactory)
         {
-            m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Create focused components
-            m_config = new BasicQueueConfiguration();
-            m_processor = new BasicCommandProcessor(cdbSession, loggerFactory.CreateLogger<BasicCommandProcessor>(), m_config, m_activeCommands);
+            m_Config = new BasicQueueConfiguration();
+            m_Processor = new BasicCommandProcessor(cdbSession, loggerFactory.CreateLogger<BasicCommandProcessor>(), m_Config, m_ActiveCommands);
 
             // Initialize command queue
-            m_commandQueue = [];
+            m_CommandQueue = [];
 
-            m_logger.LogInformation("🚀 CommandQueueService initializing with focused components");
+            m_Logger.LogInformation("🚀 CommandQueueService initializing with focused components");
 
             // Start the background processing task
             try
             {
-                m_processingTask = Task.Run(() => m_processor.ProcessCommandQueueAsync(m_commandQueue, m_serviceCts.Token), m_serviceCts.Token);
-                m_logger.LogInformation("✅ CommandQueueService background task started successfully");
+                m_ProcessingTask = Task.Run(() => m_Processor.ProcessCommandQueueAsync(m_CommandQueue, m_ServiceCts.Token), m_ServiceCts.Token);
+                m_Logger.LogInformation("✅ CommandQueueService background task started successfully");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "❌ Failed to start CommandQueueService background task");
+                m_Logger.LogError(ex, "❌ Failed to start CommandQueueService background task");
                 throw;
             }
 
-            m_logger.LogInformation("🎯 CommandQueueService fully initialized with focused components");
+            m_Logger.LogInformation("🎯 CommandQueueService fully initialized with focused components");
         }
 
         /// <summary>
@@ -61,28 +61,28 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The unique command ID</returns>
         public string QueueCommand(string command)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
 
             if (string.IsNullOrWhiteSpace(command))
                 throw new ArgumentException("Command cannot be null or empty", nameof(command));
 
             var commandId = Guid.NewGuid().ToString();
-            m_logger.LogInformation("🔄 QueueCommand START: {CommandId} for command: {Command}", commandId, command);
+            m_Logger.LogInformation("🔄 QueueCommand START: {CommandId} for command: {Command}", commandId, command);
 
             var tcs = new TaskCompletionSource<string>();
             var cts = new CancellationTokenSource();
 
             var queuedCommand = new QueuedCommand(commandId, command, DateTime.Now, tcs, cts);
 
-            m_logger.LogInformation("📝 Adding to activeCommands dictionary: {CommandId}", commandId);
-            m_activeCommands[commandId] = queuedCommand;
+            m_Logger.LogInformation("📝 Adding to activeCommands dictionary: {CommandId}", commandId);
+            m_ActiveCommands[commandId] = queuedCommand;
 
-            m_logger.LogInformation("📋 Adding command to queue: {CommandId}", commandId);
-            m_commandQueue.Add(queuedCommand);
+            m_Logger.LogInformation("📋 Adding command to queue: {CommandId}", commandId);
+            m_CommandQueue.Add(queuedCommand);
 
-            m_logger.LogDebug("📊 Queue depth: {QueueDepth}", m_commandQueue.Count);
-            m_logger.LogInformation("✅ QueueCommand END: {CommandId}", commandId);
+            m_Logger.LogDebug("📊 Queue depth: {QueueDepth}", m_CommandQueue.Count);
+            m_Logger.LogInformation("✅ QueueCommand END: {CommandId}", commandId);
 
             return commandId;
         }
@@ -94,26 +94,26 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The command result</returns>
         public async Task<string> GetCommandResult(string commandId)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
 
             if (string.IsNullOrWhiteSpace(commandId))
                 throw new ArgumentException("Command ID cannot be null or empty", nameof(commandId));
 
-            if (!m_activeCommands.TryGetValue(commandId, out var queuedCommand))
+            if (!m_ActiveCommands.TryGetValue(commandId, out var queuedCommand))
                 return $"Command not found: {commandId}";
 
-            m_logger.LogTrace("⏳ Waiting for command {CommandId} result", commandId);
+            m_Logger.LogTrace("⏳ Waiting for command {CommandId} result", commandId);
 
             try
             {
                 var result = await (queuedCommand.CompletionSource?.Task ?? Task.FromResult(string.Empty));
-                m_logger.LogTrace("✅ Command {CommandId} result retrieved", commandId);
+                m_Logger.LogTrace("✅ Command {CommandId} result retrieved", commandId);
                 return result;
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "❌ Error getting result for command {CommandId}", commandId);
+                m_Logger.LogError(ex, "❌ Error getting result for command {CommandId}", commandId);
                 throw;
             }
         }
@@ -125,7 +125,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>A task that represents the asynchronous operation and contains the cached result with metadata.</returns>
         public async Task<CachedCommandResult?> GetCachedResultWithMetadata(string commandId)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
 
             if (string.IsNullOrWhiteSpace(commandId))
@@ -142,27 +142,27 @@ namespace mcp_nexus.CommandQueue
         /// <returns>True if the command was cancelled</returns>
         public bool CancelCommand(string commandId)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
 
             if (string.IsNullOrWhiteSpace(commandId))
                 return false;
 
-            if (!m_activeCommands.TryGetValue(commandId, out var command))
+            if (!m_ActiveCommands.TryGetValue(commandId, out var command))
             {
-                m_logger.LogWarning("Cannot cancel command {CommandId} - command not found", commandId);
+                m_Logger.LogWarning("Cannot cancel command {CommandId} - command not found", commandId);
                 return false;
             }
 
             try
             {
                 command.CancellationTokenSource?.Cancel();
-                m_logger.LogInformation("🚫 Cancelled command {CommandId}", commandId);
+                m_Logger.LogInformation("🚫 Cancelled command {CommandId}", commandId);
                 return true;
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "Error cancelling command {CommandId}", commandId);
+                m_Logger.LogError(ex, "Error cancelling command {CommandId}", commandId);
                 return false;
             }
         }
@@ -174,18 +174,18 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The number of commands cancelled</returns>
         public int CancelAllCommands(string? reason = null)
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return 0;
 
             var cancelledCount = 0;
             // Enumerate snapshot of keys from ConcurrentDictionary without materializing a list
-            foreach (var commandId in m_activeCommands.Keys)
+            foreach (var commandId in m_ActiveCommands.Keys)
             {
                 if (CancelCommand(commandId))
                     cancelledCount++;
             }
 
-            m_logger.LogInformation("🚫 Cancelled {Count} commands: {Reason}", cancelledCount, reason ?? "Bulk cancellation");
+            m_Logger.LogInformation("🚫 Cancelled {Count} commands: {Reason}", cancelledCount, reason ?? "Bulk cancellation");
             return cancelledCount;
         }
 
@@ -195,20 +195,20 @@ namespace mcp_nexus.CommandQueue
         /// <returns>Collection of command status information</returns>
         public IEnumerable<(string Id, string Command, DateTime QueueTime, string Status)> GetQueueStatus()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return [];
 
             var results = new List<(string, string, DateTime, string)>();
 
             // Add current command
-            var current = m_processor.GetCurrentCommand();
+            var current = m_Processor.GetCurrentCommand();
             if (current != null)
             {
                 results.Add((current.Id ?? string.Empty, current.Command ?? string.Empty, current.QueueTime, "Executing"));
             }
 
             // Add other active commands
-            foreach (var kvp in m_activeCommands)
+            foreach (var kvp in m_ActiveCommands)
             {
                 var command = kvp.Value;
                 if (command != current)
@@ -235,10 +235,10 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The current command, or null if none is executing</returns>
         public QueuedCommand? GetCurrentCommand()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return null;
 
-            return m_processor.GetCurrentCommand();
+            return m_Processor.GetCurrentCommand();
         }
 
         /// <summary>
@@ -248,10 +248,10 @@ namespace mcp_nexus.CommandQueue
         /// <returns>The command state, or null if not found</returns>
         public CommandState? GetCommandState(string commandId)
         {
-            if (m_disposed || string.IsNullOrWhiteSpace(commandId))
+            if (m_Disposed || string.IsNullOrWhiteSpace(commandId))
                 return null;
 
-            if (m_activeCommands.TryGetValue(commandId, out var command))
+            if (m_ActiveCommands.TryGetValue(commandId, out var command))
                 return command.State;
 
             return null;
@@ -264,10 +264,10 @@ namespace mcp_nexus.CommandQueue
         /// <returns>Command information, or null if not found</returns>
         public CommandInfo? GetCommandInfo(string commandId)
         {
-            if (m_disposed || string.IsNullOrWhiteSpace(commandId))
+            if (m_Disposed || string.IsNullOrWhiteSpace(commandId))
                 return null;
 
-            if (m_activeCommands.TryGetValue(commandId, out var command))
+            if (m_ActiveCommands.TryGetValue(commandId, out var command))
             {
                 return new CommandInfo(
                     command.Id ?? string.Empty,
@@ -291,10 +291,10 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public void TriggerCleanup()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CommandQueueService));
 
-            m_processor.TriggerCleanup();
+            m_Processor.TriggerCleanup();
         }
 
         /// <summary>
@@ -302,47 +302,47 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public void Dispose()
         {
-            if (m_disposed)
+            if (m_Disposed)
                 return;
 
-            m_disposed = true;
+            m_Disposed = true;
 
             try
             {
-                m_logger.LogInformation("🛑 Shutting down CommandQueueService");
+                m_Logger.LogInformation("🛑 Shutting down CommandQueueService");
 
                 // Signal shutdown
-                m_serviceCts.Cancel();
+                m_ServiceCts.Cancel();
 
                 // Complete the queue to stop accepting new commands
-                m_commandQueue.CompleteAdding();
+                m_CommandQueue.CompleteAdding();
 
                 // Wait for processing task to complete
-                if (m_processingTask != null && !m_processingTask.IsCompleted)
+                if (m_ProcessingTask != null && !m_ProcessingTask.IsCompleted)
                 {
                     try
                     {
-                        m_processingTask.Wait(TimeSpan.FromSeconds(10));
+                        m_ProcessingTask.Wait(TimeSpan.FromSeconds(10));
                     }
                     catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is TaskCanceledException))
                     {
                         // Expected during shutdown
-                        m_logger.LogDebug("Processing task cancelled during shutdown (expected)");
+                        m_Logger.LogDebug("Processing task cancelled during shutdown (expected)");
                     }
                 }
 
                 // Dispose components
-                m_processor?.Dispose();
+                m_Processor?.Dispose();
 
                 // Dispose resources
-                m_commandQueue?.Dispose();
-                m_serviceCts?.Dispose();
+                m_CommandQueue?.Dispose();
+                m_ServiceCts?.Dispose();
 
-                m_logger.LogInformation("✅ CommandQueueService shutdown complete");
+                m_Logger.LogInformation("✅ CommandQueueService shutdown complete");
             }
             catch (Exception ex)
             {
-                m_logger.LogError(ex, "💥 Error during CommandQueueService disposal");
+                m_Logger.LogError(ex, "💥 Error during CommandQueueService disposal");
             }
         }
     }

@@ -16,30 +16,30 @@ namespace mcp_nexus.CommandQueue
     {
         #region Private Fields
 
-        private readonly bool m_isSuccess = isSuccess;
-        private readonly string m_output = output ?? string.Empty;
-        private readonly string? m_errorMessage = errorMessage;
-        private readonly TimeSpan m_duration = duration;
-        private readonly Dictionary<string, object> m_data = data ?? [];
+        private readonly bool m_IsSuccess = isSuccess;
+        private readonly string m_Output = output ?? string.Empty;
+        private readonly string? m_ErrorMessage = errorMessage;
+        private readonly TimeSpan m_Duration = duration;
+        private readonly Dictionary<string, object> m_Data = data ?? [];
 
         #endregion
 
         #region Public Properties
 
         /// <summary>Gets whether the command executed successfully</summary>
-        public bool IsSuccess => m_isSuccess;
+        public bool IsSuccess => m_IsSuccess;
 
         /// <summary>Gets the command output</summary>
-        public string Output => m_output;
+        public string Output => m_Output;
 
         /// <summary>Gets the error message if execution failed</summary>
-        public string? ErrorMessage => m_errorMessage;
+        public string? ErrorMessage => m_ErrorMessage;
 
         /// <summary>Gets the execution duration</summary>
-        public TimeSpan Duration => m_duration;
+        public TimeSpan Duration => m_Duration;
 
         /// <summary>Gets additional result data</summary>
-        public IReadOnlyDictionary<string, object> Data => m_data.AsReadOnly();
+        public IReadOnlyDictionary<string, object> Data => m_Data.AsReadOnly();
 
         #endregion
         #region Constructor

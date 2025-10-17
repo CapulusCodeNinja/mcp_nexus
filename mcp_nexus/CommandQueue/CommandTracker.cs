@@ -14,29 +14,29 @@ namespace mcp_nexus.CommandQueue
     /// <exception cref="ArgumentNullException">Thrown when any of the parameters are null.</exception>
     public class CommandTracker(ILogger logger, CommandQueueConfiguration config, BlockingCollection<QueuedCommand> commandQueue)
     {
-        private readonly ILogger m_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly CommandQueueConfiguration m_config = config ?? throw new ArgumentNullException(nameof(config));
+        private readonly ILogger m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly CommandQueueConfiguration m_Config = config ?? throw new ArgumentNullException(nameof(config));
 
         // Thread-safe collections and counters
-        private readonly ConcurrentDictionary<string, QueuedCommand> m_activeCommands = new();
-        private readonly BlockingCollection<QueuedCommand> m_commandQueue = commandQueue ?? throw new ArgumentNullException(nameof(commandQueue));
-        private volatile QueuedCommand? m_currentCommand;
+        private readonly ConcurrentDictionary<string, QueuedCommand> m_ActiveCommands = new();
+        private readonly BlockingCollection<QueuedCommand> m_CommandQueue = commandQueue ?? throw new ArgumentNullException(nameof(commandQueue));
+        private volatile QueuedCommand? m_CurrentCommand;
 
         // Performance counters
-        private long m_commandCounter = 0;
-        private long m_completedCommands = 0;
-        private long m_failedCommands = 0;
-        private long m_cancelledCommands = 0;
+        private long m_CommandCounter = 0;
+        private long m_CompletedCommands = 0;
+        private long m_FailedCommands = 0;
+        private long m_CancelledCommands = 0;
 
         /// <summary>
         /// Gets the current command being executed
         /// </summary>
-        public QueuedCommand? GetCurrentCommand() => m_currentCommand;
+        public QueuedCommand? GetCurrentCommand() => m_CurrentCommand;
 
         /// <summary>
         /// Sets the current command being executed
         /// </summary>
-        public void SetCurrentCommand(QueuedCommand? command) => m_currentCommand = command;
+        public void SetCurrentCommand(QueuedCommand? command) => m_CurrentCommand = command;
 
         /// <summary>
         /// Generates a unique command ID and increments the counter.
@@ -44,8 +44,8 @@ namespace mcp_nexus.CommandQueue
         /// <returns>A unique command ID string.</returns>
         public string GenerateCommandId()
         {
-            var commandNumber = Interlocked.Increment(ref m_commandCounter);
-            return m_config.GenerateCommandId(commandNumber);
+            var commandNumber = Interlocked.Increment(ref m_CommandCounter);
+            return m_Config.GenerateCommandId(commandNumber);
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>True if the command was added successfully; otherwise, false.</returns>
         public bool TryAddCommand(string commandId, QueuedCommand command)
         {
-            return m_activeCommands.TryAdd(commandId, command);
+            return m_ActiveCommands.TryAdd(commandId, command);
         }
 
         /// <summary>
@@ -68,11 +68,11 @@ namespace mcp_nexus.CommandQueue
         {
             if (string.IsNullOrWhiteSpace(commandId)) return;
 
-            if (m_activeCommands.TryGetValue(commandId, out var existing))
+            if (m_ActiveCommands.TryGetValue(commandId, out var existing))
             {
                 var updated = existing.WithState(newState);
-                m_activeCommands[commandId] = updated;
-                m_logger.LogTrace("Command {CommandId} state updated to {State}", commandId, newState);
+                m_ActiveCommands[commandId] = updated;
+                m_Logger.LogTrace("Command {CommandId} state updated to {State}", commandId, newState);
             }
         }
 
@@ -84,7 +84,7 @@ namespace mcp_nexus.CommandQueue
         /// <returns>True if the command was removed successfully; otherwise, false.</returns>
         public bool TryRemoveCommand(string commandId, out QueuedCommand? command)
         {
-            return m_activeCommands.TryRemove(commandId, out command);
+            return m_ActiveCommands.TryRemove(commandId, out command);
         }
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace mcp_nexus.CommandQueue
             if (string.IsNullOrWhiteSpace(commandId))
                 return null;
 
-            return m_activeCommands.TryGetValue(commandId, out var command) ? command : null;
+            return m_ActiveCommands.TryGetValue(commandId, out var command) ? command : null;
         }
 
         /// <summary>
@@ -147,12 +147,12 @@ namespace mcp_nexus.CommandQueue
         {
             try
             {
-                var currentCmd = m_currentCommand;
+                var currentCmd = m_CurrentCommand;
                 if (currentCmd?.Id == commandId)
                     return 0; // Currently executing
 
                 // Check if command is in queue
-                var queuedCommands = m_commandQueue.ToArray();
+                var queuedCommands = m_CommandQueue.ToArray();
                 for (int i = 0; i < queuedCommands.Length; i++)
                 {
                     if (queuedCommands[i].Id == commandId)
@@ -164,7 +164,7 @@ namespace mcp_nexus.CommandQueue
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error calculating queue position for command {CommandId}", commandId);
+                m_Logger.LogWarning(ex, "Error calculating queue position for command {CommandId}", commandId);
                 return -1;
             }
         }
@@ -177,7 +177,7 @@ namespace mcp_nexus.CommandQueue
             var results = new List<(string, string, DateTime, string)>();
 
             // Add current command
-            var current = m_currentCommand;
+            var current = m_CurrentCommand;
             if (current != null)
             {
                 results.Add((current.Id ?? string.Empty, current.Command ?? string.Empty, current.QueueTime, "Executing"));
@@ -186,7 +186,7 @@ namespace mcp_nexus.CommandQueue
             // Add queued commands
             try
             {
-                var queuedCommands = m_commandQueue.ToArray();
+                var queuedCommands = m_CommandQueue.ToArray();
                 for (int i = 0; i < queuedCommands.Length; i++)
                 {
                     var cmd = queuedCommands[i];
@@ -195,7 +195,7 @@ namespace mcp_nexus.CommandQueue
             }
             catch (Exception ex)
             {
-                m_logger.LogWarning(ex, "Error getting queue status");
+                m_Logger.LogWarning(ex, "Error getting queue status");
             }
 
             return results;
@@ -206,9 +206,9 @@ namespace mcp_nexus.CommandQueue
         /// </summary>
         public (long Total, long Completed, long Failed, long Cancelled) GetPerformanceStats()
         {
-            var completed = Interlocked.Read(ref m_completedCommands);
-            var failed = Interlocked.Read(ref m_failedCommands);
-            var cancelled = Interlocked.Read(ref m_cancelledCommands);
+            var completed = Interlocked.Read(ref m_CompletedCommands);
+            var failed = Interlocked.Read(ref m_FailedCommands);
+            var cancelled = Interlocked.Read(ref m_CancelledCommands);
 
             return (
                 Total: completed + failed + cancelled, // Total = sum of completed operations, not queued
@@ -221,17 +221,17 @@ namespace mcp_nexus.CommandQueue
         /// <summary>
         /// Increments the completed commands counter
         /// </summary>
-        public void IncrementCompleted() => Interlocked.Increment(ref m_completedCommands);
+        public void IncrementCompleted() => Interlocked.Increment(ref m_CompletedCommands);
 
         /// <summary>
         /// Increments the failed commands counter
         /// </summary>
-        public void IncrementFailed() => Interlocked.Increment(ref m_failedCommands);
+        public void IncrementFailed() => Interlocked.Increment(ref m_FailedCommands);
 
         /// <summary>
         /// Increments the cancelled commands counter
         /// </summary>
-        public void IncrementCancelled() => Interlocked.Increment(ref m_cancelledCommands);
+        public void IncrementCancelled() => Interlocked.Increment(ref m_CancelledCommands);
 
         /// <summary>
         /// Cancels all commands with an optional reason.
@@ -243,10 +243,10 @@ namespace mcp_nexus.CommandQueue
             var cancelledCount = 0;
             var reasonText = reason ?? "Service shutdown";
 
-            m_logger.LogWarning("Cancelling ALL commands. Reason: {Reason}", reasonText);
+            m_Logger.LogWarning("Cancelling ALL commands. Reason: {Reason}", reasonText);
 
             // Cancel all active commands
-            foreach (var kvp in m_activeCommands.ToArray())
+            foreach (var kvp in m_ActiveCommands.ToArray())
             {
                 var command = kvp.Value;
                 try
@@ -263,11 +263,11 @@ namespace mcp_nexus.CommandQueue
                 }
                 catch (Exception ex)
                 {
-                    m_logger.LogWarning(ex, "Error cancelling command {CommandId}", command.Id);
+                    m_Logger.LogWarning(ex, "Error cancelling command {CommandId}", command.Id);
                 }
             }
 
-            m_logger.LogInformation("Cancelled {Count} command(s)", cancelledCount);
+            m_Logger.LogInformation("Cancelled {Count} command(s)", cancelledCount);
             return cancelledCount;
         }
 
