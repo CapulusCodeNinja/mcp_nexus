@@ -583,6 +583,130 @@ exit 0
             Assert.Contains("cancelled", result.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
         }
 
+        [Fact]
+        public void GetExtensionInfo_WithValidCommandId_ReturnsInfo()
+        {
+            // Arrange
+            var mockTokenValidator = new Mock<IExtensionTokenValidator>();
+            var executor = new ExtensionExecutor(
+                m_MockLogger.Object,
+                m_MockExtensionManager.Object,
+                m_CallbackUrl,
+                new ExtensionConfiguration { Enabled = true, ExtensionsPath = m_TestExtensionsPath },
+                null,
+                mockTokenValidator.Object
+            );
+
+            // Act
+            var info = executor.GetExtensionInfo("test-cmd-123");
+
+            // Assert - Should return null for non-running extension
+            Assert.Null(info);
+        }
+
+        [Fact]
+        public void GetExtensionInfo_WithNullCommandId_ReturnsNull()
+        {
+            // Arrange
+            var mockTokenValidator = new Mock<IExtensionTokenValidator>();
+            var executor = new ExtensionExecutor(
+                m_MockLogger.Object,
+                m_MockExtensionManager.Object,
+                m_CallbackUrl,
+                new ExtensionConfiguration { Enabled = true, ExtensionsPath = m_TestExtensionsPath },
+                null,
+                mockTokenValidator.Object
+            );
+
+            // Act
+            var info = executor.GetExtensionInfo(null!);
+
+            // Assert
+            Assert.Null(info);
+        }
+
+        [Fact]
+        public void GetExtensionInfo_WithEmptyCommandId_ReturnsNull()
+        {
+            // Arrange
+            var mockTokenValidator = new Mock<IExtensionTokenValidator>();
+            var executor = new ExtensionExecutor(
+                m_MockLogger.Object,
+                m_MockExtensionManager.Object,
+                m_CallbackUrl,
+                new ExtensionConfiguration { Enabled = true, ExtensionsPath = m_TestExtensionsPath },
+                null,
+                mockTokenValidator.Object
+            );
+
+            // Act
+            var info = executor.GetExtensionInfo("");
+
+            // Assert
+            Assert.Null(info);
+        }
+
+        [Fact]
+        public void KillExtension_WithNonExistentCommandId_ReturnsFalse()
+        {
+            // Arrange
+            var mockTokenValidator = new Mock<IExtensionTokenValidator>();
+            var executor = new ExtensionExecutor(
+                m_MockLogger.Object,
+                m_MockExtensionManager.Object,
+                m_CallbackUrl,
+                new ExtensionConfiguration { Enabled = true, ExtensionsPath = m_TestExtensionsPath },
+                null,
+                mockTokenValidator.Object
+            );
+
+            // Act
+            var result = executor.KillExtension("non-existent-cmd");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void KillExtension_WithNullCommandId_ReturnsFalse()
+        {
+            // Arrange
+            var mockTokenValidator = new Mock<IExtensionTokenValidator>();
+            var executor = new ExtensionExecutor(
+                m_MockLogger.Object,
+                m_MockExtensionManager.Object,
+                m_CallbackUrl,
+                new ExtensionConfiguration { Enabled = true, ExtensionsPath = m_TestExtensionsPath },
+                null,
+                mockTokenValidator.Object
+            );
+
+            // Act
+            var result = executor.KillExtension(null!);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void Dispose_CanBeCalledMultipleTimes()
+        {
+            // Arrange
+            var mockTokenValidator = new Mock<IExtensionTokenValidator>();
+            var executor = new ExtensionExecutor(
+                m_MockLogger.Object,
+                m_MockExtensionManager.Object,
+                m_CallbackUrl,
+                new ExtensionConfiguration { Enabled = true, ExtensionsPath = m_TestExtensionsPath },
+                null,
+                mockTokenValidator.Object
+            );
+
+            // Act & Assert - Should not throw
+            executor.Dispose();
+            executor.Dispose();
+        }
+
     }
 }
 

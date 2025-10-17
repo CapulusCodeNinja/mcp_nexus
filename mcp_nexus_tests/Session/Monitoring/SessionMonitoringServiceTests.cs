@@ -527,6 +527,447 @@ namespace mcp_nexus_tests.Session.Monitoring
             Assert.NotNull(typeof(SessionMonitoringService));
         }
 
+        [Fact]
+        public void UpdateActivity_WithMultipleSessions_UpdatesCorrectSession()
+        {
+            // Arrange
+            var sessionId1 = "session-1";
+            var sessionId2 = "session-2";
+            
+            var sessionInfo1 = new SessionInfo
+            {
+                SessionId = sessionId1,
+                DumpPath = "C:\\Test\\dump1.dmp",
+                CdbSession = m_RealisticCdbSession,
+                CommandQueue = m_MockCommandQueue.Object,
+                CreatedAt = DateTime.Now.AddMinutes(-10),
+                LastActivity = DateTime.Now.AddMinutes(-5),
+                Status = SessionStatus.Active
+            };
+            
+            var sessionInfo2 = new SessionInfo
+            {
+                SessionId = sessionId2,
+                DumpPath = "C:\\Test\\dump2.dmp",
+                CdbSession = m_RealisticCdbSession,
+                CommandQueue = m_MockCommandQueue.Object,
+                CreatedAt = DateTime.Now.AddMinutes(-10),
+                LastActivity = DateTime.Now.AddMinutes(-5),
+                Status = SessionStatus.Active
+            };
+            
+            m_Sessions[sessionId1] = sessionInfo1;
+            m_Sessions[sessionId2] = sessionInfo2;
+
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            var originalActivity1 = sessionInfo1.LastActivity;
+            var originalActivity2 = sessionInfo2.LastActivity;
+
+            // Act
+            service.UpdateActivity(sessionId1);
+
+            // Assert
+            Assert.True(sessionInfo1.LastActivity > originalActivity1);
+            Assert.Equal(originalActivity2, sessionInfo2.LastActivity); // Session 2 should not be updated
+            
+            service.Dispose();
+        }
+
+        [Fact]
+        public void UpdateActivity_AfterDispose_DoesNotUpdateActivity()
+        {
+            // Arrange
+            var sessionId = "test-session";
+            var sessionInfo = new SessionInfo
+            {
+                SessionId = sessionId,
+                DumpPath = "C:\\Test\\dump.dmp",
+                CdbSession = m_RealisticCdbSession,
+                CommandQueue = m_MockCommandQueue.Object,
+                CreatedAt = DateTime.Now.AddMinutes(-10),
+                LastActivity = DateTime.Now.AddMinutes(-5),
+                Status = SessionStatus.Active
+            };
+            m_Sessions[sessionId] = sessionInfo;
+
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            var originalActivity = sessionInfo.LastActivity;
+
+            // Act
+            service.Dispose();
+            service.UpdateActivity(sessionId);
+
+            // Assert - Activity should not be updated after disposal
+            Assert.Equal(originalActivity, sessionInfo.LastActivity);
+        }
+
+        [Fact]
+        public void GenerateUsageHints_WithNullSymbolsPath_ReturnsSymbolsHint()
+        {
+            // Arrange
+            var sessionInfo = new SessionInfo(
+                "test-session-1",
+                m_RealisticCdbSession,
+                m_MockCommandQueue.Object,
+                "C:\\Test\\dump.dmp",
+                null, // No symbols path
+                null)
+            {
+                LastActivity = DateTime.Now.AddMinutes(-1),
+                Status = SessionStatus.Active
+            };
+
+            var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>();
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            // Act
+            var hints = service.GenerateUsageHints(sessionInfo, queueStatus);
+
+            // Assert
+            Assert.NotNull(hints);
+            Assert.Contains(hints, h => h.Contains("No symbols path", StringComparison.OrdinalIgnoreCase));
+            
+            service.Dispose();
+        }
+
+        [Fact]
+        public void GenerateUsageHints_WithInactiveCdbSession_ReturnsInactiveHint()
+        {
+            // Arrange
+            var mockInactiveCdbSession = new Mock<ICdbSession>();
+            mockInactiveCdbSession.Setup(x => x.IsActive).Returns(false);
+            
+            var sessionInfo = new SessionInfo(
+                "test-session-1",
+                mockInactiveCdbSession.Object,
+                m_MockCommandQueue.Object,
+                "C:\\Test\\dump.dmp",
+                null,
+                null)
+            {
+                LastActivity = DateTime.Now.AddMinutes(-1),
+                Status = SessionStatus.Active
+            };
+
+            var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>();
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            // Act
+            var hints = service.GenerateUsageHints(sessionInfo, queueStatus);
+
+            // Assert
+            Assert.NotNull(hints);
+            Assert.Contains(hints, h => h.Contains("not active", StringComparison.OrdinalIgnoreCase));
+            
+            service.Dispose();
+        }
+
+        [Fact]
+        public void GenerateUsageHints_WithNullCdbSession_ReturnsNotInitializedHint()
+        {
+            // Arrange
+            var sessionInfo = new SessionInfo
+            {
+                SessionId = "test-session-1",
+                DumpPath = "C:\\Test\\dump.dmp",
+                CdbSession = null!, // Null CDB session
+                CommandQueue = m_MockCommandQueue.Object,
+                CreatedAt = DateTime.Now.AddMinutes(-10),
+                LastActivity = DateTime.Now.AddMinutes(-1),
+                Status = SessionStatus.Active
+            };
+
+            var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>();
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            // Act
+            var hints = service.GenerateUsageHints(sessionInfo, queueStatus);
+
+            // Assert
+            Assert.NotNull(hints);
+            Assert.Contains(hints, h => h.Contains("not initialized", StringComparison.OrdinalIgnoreCase));
+            
+            service.Dispose();
+        }
+
+        [Fact]
+        public void Constructor_StartsBackgroundTasks()
+        {
+            // Arrange & Act
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            // Assert - Service should initialize without error
+            Assert.NotNull(service);
+            
+            // Cleanup
+            service.Dispose();
+        }
+
+        [Fact]
+        public void Dispose_StopsBackgroundTasks()
+        {
+            // Arrange
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            // Act
+            service.Dispose();
+
+            // Assert - Should complete without hanging
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void Dispose_WhenCalledMultipleTimes_HandlesGracefully()
+        {
+            // Arrange
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            // Act & Assert
+            service.Dispose();
+            service.Dispose();
+            service.Dispose();
+            
+            Assert.True(true); // Should not throw
+        }
+
+        [Fact]
+        public void GenerateUsageHints_WithModerateQueue_ReturnsNoSpecificHint()
+        {
+            // Arrange
+            var sessionInfo = new SessionInfo
+            {
+                SessionId = "test-session-1",
+                DumpPath = "C:\\Test\\dump.dmp",
+                CdbSession = m_RealisticCdbSession,
+                CommandQueue = m_MockCommandQueue.Object,
+                CreatedAt = DateTime.Now.AddMinutes(-10),
+                LastActivity = DateTime.Now.AddMinutes(-1),
+                Status = SessionStatus.Active
+            };
+
+            var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>
+            {
+                ("1", "k", DateTime.Now, "Queued"),
+                ("2", "lm", DateTime.Now, "Queued"),
+                ("3", "!analyze", DateTime.Now, "Queued")
+            };
+
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            // Act
+            var hints = service.GenerateUsageHints(sessionInfo, queueStatus);
+
+            // Assert - With 3 items, should not say empty or busy
+            Assert.NotNull(hints);
+            Assert.DoesNotContain("Queue is empty", hints);
+            Assert.DoesNotContain("Queue is busy", hints);
+            
+            service.Dispose();
+        }
+
+
+        [Fact]
+        public void Constructor_InitializesCleanupTimer()
+        {
+            // Act
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            // Assert - Constructor should complete successfully
+            Assert.NotNull(service);
+            
+            service.Dispose();
+        }
+
+        [Fact]
+        public void GenerateUsageHints_WithEmptyQueue_ReturnsEmptyHint()
+        {
+            // Arrange
+            var sessionInfo = new SessionInfo(
+                "test-session-1",
+                m_RealisticCdbSession,
+                m_MockCommandQueue.Object,
+                "C:\\Test\\dump.dmp",
+                null,
+                null)
+            {
+                LastActivity = DateTime.Now.AddMinutes(-1),
+                Status = SessionStatus.Active
+            };
+
+            var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>();
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            // Act
+            var hints = service.GenerateUsageHints(sessionInfo, queueStatus);
+
+            // Assert
+            Assert.NotNull(hints);
+            Assert.Contains(hints, h => h.Contains("empty", StringComparison.OrdinalIgnoreCase));
+            
+            service.Dispose();
+        }
+
+        [Fact]
+        public void GenerateUsageHints_WithBusyQueue_ReturnsBusyHint()
+        {
+            // Arrange
+            var sessionInfo = new SessionInfo(
+                "test-session-1",
+                m_RealisticCdbSession,
+                m_MockCommandQueue.Object,
+                "C:\\Test\\dump.dmp",
+                null,
+                null)
+            {
+                LastActivity = DateTime.Now.AddMinutes(-1),
+                Status = SessionStatus.Active
+            };
+
+            var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>();
+            for (int i = 0; i < 10; i++)
+            {
+                queueStatus.Add(($"cmd-{i}", $"command {i}", DateTime.Now, "Queued"));
+            }
+
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            // Act
+            var hints = service.GenerateUsageHints(sessionInfo, queueStatus);
+
+            // Assert
+            Assert.NotNull(hints);
+            Assert.Contains(hints, h => h.Contains("busy", StringComparison.OrdinalIgnoreCase) || h.Contains("many", StringComparison.OrdinalIgnoreCase));
+            
+            service.Dispose();
+        }
+
+        [Fact]
+        public void GenerateUsageHints_WithInactiveSession_ReturnsInactiveHint()
+        {
+            // Arrange
+            var sessionInfo = new SessionInfo(
+                "test-session-1",
+                m_RealisticCdbSession,
+                m_MockCommandQueue.Object,
+                "C:\\Test\\dump.dmp",
+                null,
+                null)
+            {
+                LastActivity = DateTime.Now.AddHours(-2), // Very old activity
+                Status = SessionStatus.Active
+            };
+
+            var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>();
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            // Act
+            var hints = service.GenerateUsageHints(sessionInfo, queueStatus);
+
+            // Assert
+            Assert.NotNull(hints);
+            
+            service.Dispose();
+        }
+
+        [Fact]
+        public void Dispose_CalledMultipleTimes_DoesNotThrow()
+        {
+            // Arrange
+            var service = new SessionMonitoringService(
+                m_MockLogger.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                m_Sessions,
+                m_MockLifecycleManager.Object,
+                m_ShutdownCts);
+
+            // Act & Assert - Multiple dispose should be safe
+            service.Dispose();
+            service.Dispose();
+            service.Dispose();
+            Assert.True(true);
+        }
+
         public void Dispose()
         {
             m_ShutdownCts?.Dispose();

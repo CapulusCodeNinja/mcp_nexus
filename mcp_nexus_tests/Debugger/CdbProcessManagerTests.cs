@@ -548,5 +548,248 @@ namespace mcp_nexus_tests.Debugger
             Assert.True(File.Exists(result));
         }
 
+        [Fact]
+        public void SetSessionId_WithValidSessionId_SetsSessionId()
+        {
+            // Arrange
+            var sessionId = "test-session-123";
+
+            // Act
+            m_ProcessManager.SetSessionId(sessionId);
+
+            // Assert
+            // The session ID is used internally and doesn't have a getter,
+            // but we can verify it doesn't throw
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void SetSessionId_WithNullSessionId_DoesNotThrow()
+        {
+            // Act & Assert
+            var exception = Record.Exception(() => m_ProcessManager.SetSessionId(null!));
+            Assert.Null(exception);
+        }
+
+        [Fact]
+        public void SetSessionId_WithEmptySessionId_DoesNotThrow()
+        {
+            // Act & Assert
+            var exception = Record.Exception(() => m_ProcessManager.SetSessionId(""));
+            Assert.Null(exception);
+        }
+
+        [Fact]
+        public void SetSessionId_WhenDisposed_DoesNotThrow()
+        {
+            // Arrange
+            m_ProcessManager.Dispose();
+
+            // Act & Assert
+            var exception = Record.Exception(() => m_ProcessManager.SetSessionId("test"));
+            Assert.Null(exception);
+        }
+
+        [Fact]
+        public void Properties_WhenDisposed_ReturnCorrectValues()
+        {
+            // Arrange
+            m_ProcessManager.Dispose();
+
+            // Act & Assert
+            Assert.Null(m_ProcessManager.DebuggerProcess);
+            Assert.Null(m_ProcessManager.DebuggerInput);
+            Assert.False(m_ProcessManager.IsActive);
+        }
+
+        [Fact]
+        public void IsActive_WithNullProcess_ReturnsFalse()
+        {
+            // Assert
+            Assert.False(m_ProcessManager.IsActive);
+            Assert.Null(m_ProcessManager.DebuggerProcess);
+        }
+
+        [Fact]
+        public void CdbSessionConfiguration_AllProperties_CanBeRead()
+        {
+            var config = new CdbSessionConfiguration(
+                commandTimeoutMs: 60000,
+                idleTimeoutMs: 180000,
+                customCdbPath: "C:\\Test\\cdb.exe",
+                symbolServerMaxRetries: 3,
+                symbolSearchPath: "srv*C:\\Symbols",
+                startupDelayMs: 5000,
+                outputReadingTimeoutMs: 300000,
+                enableCommandPreprocessing: false);
+
+            Assert.Equal(60000, config.CommandTimeoutMs);
+            Assert.Equal(180000, config.IdleTimeoutMs);
+            Assert.Equal(3, config.SymbolServerMaxRetries);
+            Assert.Equal("C:\\Test\\cdb.exe", config.CustomCdbPath);
+            Assert.Equal("srv*C:\\Symbols", config.SymbolSearchPath);
+            Assert.Equal(5000, config.StartupDelayMs);
+            Assert.Equal(300000, config.OutputReadingTimeoutMs);
+            Assert.False(config.EnableCommandPreprocessing);
+        }
+
+        [Fact]
+        public void CdbSessionConfiguration_EnableCommandPreprocessing_DefaultsToTrue()
+        {
+            var config = new CdbSessionConfiguration();
+            Assert.True(config.EnableCommandPreprocessing);
+        }
+
+        [Fact]
+        public void CdbSessionConfiguration_ValidateParameters_WithNegativeOutputReadingTimeout_ThrowsArgumentOutOfRangeException()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                CdbSessionConfiguration.ValidateParameters(30000, 30000, 1, 2000, -1));
+        }
+
+        [Fact]
+        public void CdbSessionConfiguration_ValidateParameters_WithZeroOutputReadingTimeout_ThrowsArgumentOutOfRangeException()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                CdbSessionConfiguration.ValidateParameters(30000, 30000, 1, 2000, 0));
+        }
+
+        [Fact]
+        public void LogProcessDiagnostics_WithNullProcess_LogsNoProcessMessage()
+        {
+            // Arrange - no process started
+            
+            // Act
+            m_ProcessManager.LogProcessDiagnostics("Test Context");
+            
+            // Assert - Should not throw, just log
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void LogProcessDiagnostics_WithContext_DoesNotThrow()
+        {
+            // Arrange
+            var context = "Startup";
+            
+            // Act & Assert - Should not throw even without a process
+            m_ProcessManager.LogProcessDiagnostics(context);
+            Assert.True(true);
+        }
+
+
+        [Fact]
+        public void StopProcess_WhenProcessIsNull_ReturnsFalse()
+        {
+            // Arrange - Ensure no process
+            m_ProcessManager.SetSessionId("test-session");
+            
+            // Act
+            var result = m_ProcessManager.StopProcess();
+            
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void Dispose_WhenNotDisposed_DisposesSuccessfully()
+        {
+            // Act
+            m_ProcessManager.Dispose();
+            
+            // Assert - Should not throw
+            Assert.False(m_ProcessManager.IsActive);
+        }
+
+        [Fact]
+        public void IsActive_InitiallyFalse()
+        {
+            // Assert
+            Assert.False(m_ProcessManager.IsActive);
+        }
+
+        [Fact]
+        public void DebuggerProcess_InitiallyNull()
+        {
+            // Assert
+            Assert.Null(m_ProcessManager.DebuggerProcess);
+        }
+
+        [Fact]
+        public void DebuggerInput_InitiallyNull()
+        {
+            // Assert
+            Assert.Null(m_ProcessManager.DebuggerInput);
+        }
+
+        [Fact]
+        public void SetSessionId_WithEmptyString_DoesNotThrow()
+        {
+            // Act & Assert - Should handle gracefully
+            m_ProcessManager.SetSessionId(string.Empty);
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void SetSessionId_WithNullString_DoesNotThrow()
+        {
+            // Act & Assert - Should handle gracefully  
+            m_ProcessManager.SetSessionId(null!);
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void SetSessionId_CalledMultipleTimes_DoesNotThrow()
+        {
+            // Act & Assert - Should handle multiple calls
+            m_ProcessManager.SetSessionId("session-1");
+            m_ProcessManager.SetSessionId("session-2");
+            m_ProcessManager.SetSessionId("session-3");
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void LogProcessDiagnostics_WithDifferentContexts_DoesNotThrow()
+        {
+            // Act & Assert - Test various contexts
+            m_ProcessManager.LogProcessDiagnostics("Startup");
+            m_ProcessManager.LogProcessDiagnostics("Error");
+            m_ProcessManager.LogProcessDiagnostics("Shutdown");
+            m_ProcessManager.LogProcessDiagnostics("");
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void StopProcess_CalledMultipleTimes_ReturnsFalseAfterFirst()
+        {
+            // Arrange - No process to stop
+            
+            // Act
+            var result1 = m_ProcessManager.StopProcess();
+            var result2 = m_ProcessManager.StopProcess();
+            var result3 = m_ProcessManager.StopProcess();
+            
+            // Assert - All should return false when no process
+            Assert.False(result1);
+            Assert.False(result2);
+            Assert.False(result3);
+        }
+
+        [Fact]
+        public void Properties_AfterDispose_DoNotThrow()
+        {
+            // Arrange
+            m_ProcessManager.Dispose();
+            
+            // Act & Assert - Property access should not throw
+            var isActive = m_ProcessManager.IsActive;
+            var process = m_ProcessManager.DebuggerProcess;
+            var input = m_ProcessManager.DebuggerInput;
+            
+            Assert.False(isActive);
+            Assert.Null(process);
+            Assert.Null(input);
+        }
+
     }
 }

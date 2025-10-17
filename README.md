@@ -2,8 +2,8 @@
 
 **AI-Powered Windows Crash Dump Analysis Platform**
 
-[![Tests](https://img.shields.io/badge/tests-2,049%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
-[![Coverage](https://img.shields.io/badge/coverage-87.22%25-excellent?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Tests](https://img.shields.io/badge/tests-2,151%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Coverage](https://img.shields.io/badge/coverage-61.7%25-yellow?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Build](https://img.shields.io/badge/build-0%20warnings-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
 
@@ -345,10 +345,11 @@ dotnet test --filter "Notification"
 
 ### Test Statistics
 
-- ✅ **2,049 total tests** (2,049 passing)
-- ✅ **87.22% line coverage** with comprehensive analysis testing
+- ✅ **2,151 total tests** (all passing)
+- ✅ **61.7% line coverage** (10,148/16,429 lines)
+- ✅ **51.5% branch coverage** (2,700/5,235 branches)
 - ✅ **0 warnings** in build (clean codebase)
-- ✅ **Fast execution** (~50 seconds for full suite)
+- ✅ **Fast execution** (~90 seconds for full suite)
 - ✅ **Comprehensive mocking** for reliable testing
 
 ### Test Categories
