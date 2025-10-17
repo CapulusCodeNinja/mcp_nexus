@@ -38,7 +38,8 @@ namespace mcp_nexus.Tools
                     "TOOLS: Use tools/call method to execute debugging operations (open session, run commands, close session)",
                     "RESOURCES: Use resources/read method to access data (command lists, session lists, documentation, metrics)",
                     "After opening an analyze session, WinDBG commands can be asynchronously executed.",
-                    "Command results can be accessed via the 'nexus_read_dump_analyze_command_result' tool or 'List Commands' resource.",
+                    "You can queue multiple commands at once and use 'nexus_get_dump_analyze_commands_status' to poll status of ALL commands in one call.",
+                    "Command results can be accessed via the 'nexus_read_dump_analyze_command_result' tool when status shows 'Completed'.",
                     "Opening a session without executing commands will not have any effect."
                 },
                 available_tools = new object[]
@@ -78,6 +79,15 @@ namespace mcp_nexus.Tools
                         input = new { sessionId = "string (required)", commandId = "string (required)" },
                         output = (string?)"command result and status",
                         note = (string?)"Use this tool to retrieve results from commands executed with nexus_enqueue_async_dump_analyze_command or nexus_enqueue_async_extension_command"
+                    },
+                    new
+                    {
+                        step_title = "Tooling - Get Commands Status",
+                        tool_name = "nexus_get_dump_analyze_commands_status",
+                        action = "Get status of ALL commands for a specific session. Use this to poll command progress efficiently.",
+                        input = new { sessionId = "string (required)" },
+                        output = (string?)"status of all commands in the session with timing information",
+                        note = (string?)"Returns ALL commands for the session (not just one). Queue multiple commands and poll this once to see status of all. Use nexus_read_dump_analyze_command_result to get individual results when completed."
                     },
                     new
                     {

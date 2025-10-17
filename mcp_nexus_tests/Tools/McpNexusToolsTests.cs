@@ -891,5 +891,147 @@ namespace mcp_nexus_tests.Tools
         }
 
         #endregion
+
+        #region nexus_get_dump_analyze_commands_status Tests
+
+        [Fact]
+        public async Task nexus_get_dump_analyze_commands_status_WithValidSessionId_ReturnsCommandStatus()
+        {
+            // Arrange
+            var sessionId = "test-session-123";
+            var mockCommandQueue = new Mock<ICommandQueueService>();
+            var mockQueuedCommand = new Mock<IQueuedCommand>();
+            
+            mockQueuedCommand.Setup(c => c.Id).Returns("cmd-001");
+            mockQueuedCommand.Setup(c => c.Command).Returns("!analyze -v");
+            mockQueuedCommand.Setup(c => c.State).Returns(CommandState.Completed);
+            
+            mockCommandQueue.Setup(q => q.GetCurrentCommand()).Returns((QueuedCommand?)null);
+            mockCommandQueue.Setup(q => q.GetQueueStatus()).Returns(new List<(string Id, string Command, DateTime QueueTime, string Status)> 
+            { 
+                ("cmd-001", "!analyze -v", DateTime.Now, "Completed") 
+            });
+            
+            m_MockSessionManager.Setup(sm => sm.SessionExists(sessionId)).Returns(true);
+            m_MockSessionManager.Setup(sm => sm.GetCommandQueue(sessionId)).Returns(mockCommandQueue.Object);
+
+            // Act
+            var result = await McpNexusTools.nexus_get_dump_analyze_commands_status(m_ServiceProvider, sessionId);
+
+            // Assert
+            Assert.NotNull(result);
+            var resultJson = JsonSerializer.Serialize(result);
+            var resultObj = JsonSerializer.Deserialize<JsonElement>(resultJson);
+            
+            Assert.Equal(sessionId, resultObj.GetProperty("sessionId").GetString());
+            Assert.True(resultObj.TryGetProperty("commands", out var commands));
+            Assert.True(resultObj.TryGetProperty("commandCount", out var commandCount));
+            Assert.Equal(1, commandCount.GetInt32());
+            Assert.True(resultObj.TryGetProperty("timestamp", out var timestamp));
+            Assert.True(resultObj.TryGetProperty("note", out var note));
+        }
+
+        [Fact]
+        public async Task nexus_get_dump_analyze_commands_status_WithEmptySessionId_ReturnsError()
+        {
+            // Act
+            var result = await McpNexusTools.nexus_get_dump_analyze_commands_status(m_ServiceProvider, "");
+
+            // Assert
+            Assert.NotNull(result);
+            var resultJson = JsonSerializer.Serialize(result);
+            var resultObj = JsonSerializer.Deserialize<JsonElement>(resultJson);
+            
+            Assert.Equal("Failed", resultObj.GetProperty("status").GetString());
+            Assert.Equal("Session ID cannot be null or empty", resultObj.GetProperty("error").GetString());
+            Assert.Equal("nexus_get_dump_analyze_commands_status", resultObj.GetProperty("operation").GetString());
+        }
+
+        [Fact]
+        public async Task nexus_get_dump_analyze_commands_status_WithNullSessionId_ReturnsError()
+        {
+            // Act
+            var result = await McpNexusTools.nexus_get_dump_analyze_commands_status(m_ServiceProvider, null!);
+
+            // Assert
+            Assert.NotNull(result);
+            var resultJson = JsonSerializer.Serialize(result);
+            var resultObj = JsonSerializer.Deserialize<JsonElement>(resultJson);
+            
+            Assert.Equal("Failed", resultObj.GetProperty("status").GetString());
+            Assert.Equal("Session ID cannot be null or empty", resultObj.GetProperty("error").GetString());
+        }
+
+        [Fact]
+        public async Task nexus_get_dump_analyze_commands_status_WithNonExistentSession_ReturnsError()
+        {
+            // Arrange
+            var sessionId = "non-existent-session";
+
+            m_MockSessionManager.Setup(sm => sm.SessionExists(sessionId)).Returns(false);
+
+            // Act
+            var result = await McpNexusTools.nexus_get_dump_analyze_commands_status(m_ServiceProvider, sessionId);
+
+            // Assert
+            Assert.NotNull(result);
+            var resultJson = JsonSerializer.Serialize(result);
+            var resultObj = JsonSerializer.Deserialize<JsonElement>(resultJson);
+            
+            Assert.Equal("Failed", resultObj.GetProperty("status").GetString());
+            Assert.Contains("not found", resultObj.GetProperty("error").GetString());
+            Assert.Equal("nexus_get_dump_analyze_commands_status", resultObj.GetProperty("operation").GetString());
+        }
+
+        [Fact]
+        public async Task nexus_get_dump_analyze_commands_status_WithMultipleCommands_ReturnsAllCommands()
+        {
+            // Arrange
+            var sessionId = "test-session-123";
+            var mockCommandQueue = new Mock<ICommandQueueService>();
+            
+            var mockCommand1 = new Mock<IQueuedCommand>();
+            mockCommand1.Setup(c => c.Id).Returns("cmd-001");
+            mockCommand1.Setup(c => c.Command).Returns("!analyze -v");
+            mockCommand1.Setup(c => c.State).Returns(CommandState.Completed);
+            
+            var mockCommand2 = new Mock<IQueuedCommand>();
+            mockCommand2.Setup(c => c.Id).Returns("cmd-002");
+            mockCommand2.Setup(c => c.Command).Returns("lm");
+            mockCommand2.Setup(c => c.State).Returns(CommandState.Executing);
+            
+            var queueStatus = new List<(string Id, string Command, DateTime QueueTime, string Status)>
+            {
+                ("cmd-001", "!analyze -v", DateTime.Now, "Completed"),
+                ("cmd-002", "lm", DateTime.Now, "Executing")
+            };
+            
+            mockCommandQueue.Setup(q => q.GetCurrentCommand()).Returns((QueuedCommand?)null);
+            mockCommandQueue.Setup(q => q.GetQueueStatus()).Returns(queueStatus);
+            
+            m_MockSessionManager.Setup(sm => sm.SessionExists(sessionId)).Returns(true);
+            m_MockSessionManager.Setup(sm => sm.GetCommandQueue(sessionId)).Returns(mockCommandQueue.Object);
+
+            // Act
+            var result = await McpNexusTools.nexus_get_dump_analyze_commands_status(m_ServiceProvider, sessionId);
+
+            // Assert
+            Assert.NotNull(result);
+            var resultJson = JsonSerializer.Serialize(result);
+            var resultObj = JsonSerializer.Deserialize<JsonElement>(resultJson);
+            
+            Assert.Equal(sessionId, resultObj.GetProperty("sessionId").GetString());
+            Assert.True(resultObj.TryGetProperty("commands", out var commandsObj));
+            Assert.True(resultObj.TryGetProperty("commandCount", out var commandCount));
+            Assert.Equal(2, commandCount.GetInt32());
+            
+            // Verify both commands are present
+            Assert.True(commandsObj.TryGetProperty("cmd-001", out var cmd1));
+            Assert.True(commandsObj.TryGetProperty("cmd-002", out var cmd2));
+            Assert.Equal("!analyze -v", cmd1.GetProperty("command").GetString());
+            Assert.Equal("lm", cmd2.GetProperty("command").GetString());
+        }
+
+        #endregion
     }
 }

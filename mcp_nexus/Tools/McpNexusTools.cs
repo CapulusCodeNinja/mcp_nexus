@@ -9,6 +9,7 @@ using mcp_nexus.Utilities;
 using mcp_nexus.Constants;
 using mcp_nexus.Models;
 using mcp_nexus.Extensions;
+using mcp_nexus.Resources;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text;
@@ -327,7 +328,7 @@ namespace mcp_nexus.Tools
                     command,
                     status = "Queued",
                     operation = "nexus_enqueue_async_dump_analyze_command",
-                    message = $"Command queued successfully. Queue position: {queuePosition + 1} of {totalInQueue}. Use the 'commands' resource to monitor all commands or the 'nexus_read_dump_analyze_command_result' tool to get specific results.",
+                    message = $"Command queued successfully. Queue position: {queuePosition + 1} of {totalInQueue}. You can queue multiple commands and then use 'nexus_get_dump_analyze_commands_status' to poll status of ALL commands at once, then 'nexus_read_dump_analyze_command_result' to get individual results when completed.",
                     timeoutMinutes = 10,
                     queuePosition = queuePosition + 1,
                     totalInQueue
@@ -1027,5 +1028,75 @@ namespace mcp_nexus.Tools
 
         [System.Text.RegularExpressions.GeneratedRegex(@"ETA: (<1min)")]
         private static partial System.Text.RegularExpressions.Regex EtaLtOneMinRegex();
+
+        /// <summary>
+        /// Get status of ALL commands for a specific session (not just one command).
+        /// Returns same format as 'commands' resource but filtered by sessionId.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection.</param>
+        /// <param name="sessionId">Session ID to get ALL commands for.</param>
+        /// <returns>Status of all commands in the session with timing information.</returns>
+        [McpServerTool, Description("GET COMMAND STATUS: Get status of ALL commands for a specific session (not just one command). Returns same format as 'commands' resource but filtered by sessionId.")]
+        public static Task<object> nexus_get_dump_analyze_commands_status(
+            IServiceProvider serviceProvider,
+            [Description("Session ID to get ALL commands for")] string sessionId)
+        {
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("McpNexusTools");
+            var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
+            
+            logger.LogInformation("Getting command status for session: {SessionId}", sessionId);
+            
+            try
+            {
+                // Validate sessionId
+                if (string.IsNullOrWhiteSpace(sessionId))
+                {
+                    return Task.FromResult((object)new
+                    {
+                        sessionId,
+                        status = "Failed",
+                        error = "Session ID cannot be null or empty",
+                        operation = "nexus_get_dump_analyze_commands_status"
+                    });
+                }
+                
+                if (!sessionManager.SessionExists(sessionId))
+                {
+                    return Task.FromResult((object)new
+                    {
+                        sessionId,
+                        status = "Failed",
+                        error = $"Session {sessionId} not found. Use 'sessions' resource to see available sessions.",
+                        operation = "nexus_get_dump_analyze_commands_status"
+                    });
+                }
+                
+                // Get command queue for this session
+                var commandQueue = sessionManager.GetCommandQueue(sessionId);
+                var sessionCommands = McpNexusResources.GetSessionCommandsFromQueue(commandQueue, sessionId);
+                
+                var result = new
+                {
+                    sessionId,
+                    commands = sessionCommands,
+                    commandCount = sessionCommands.Count,
+                    timestamp = DateTimeOffset.Now,
+                    note = "All commands for this session. Poll this tool to monitor command progress."
+                };
+                
+                return Task.FromResult((object)result);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to get command status for session: {SessionId}", sessionId);
+                return Task.FromResult((object)new
+                {
+                    sessionId,
+                    status = "Failed",
+                    error = ex.Message,
+                    operation = "nexus_get_dump_analyze_commands_status"
+                });
+            }
+        }
     }
 }

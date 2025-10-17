@@ -256,6 +256,13 @@ namespace mcp_nexus.Resources
                         description = "📋 READ COMMAND RESULT: Get the full WinDBG output and status of a specific async command",
                         parameters = new[] { "sessionId (required)", "commandId (required)" },
                         returns = "Complete command output, status, and execution details"
+                    },
+                    new
+                    {
+                        name = "nexus_get_dump_analyze_commands_status",
+                        description = "GET COMMAND STATUS: Get status of ALL commands for a specific session",
+                        parameters = new[] { "sessionId (required)" },
+                        returns = "Status of all commands in the session with timing information"
                     }
                 },
                 available_resources = new[]
@@ -292,16 +299,17 @@ namespace mcp_nexus.Resources
                 example_workflow = new[]
                 {
                     "1. Use 'nexus_open_dump_analyze_session' to create a session (get sessionId)",
-                    "2. Use 'nexus_enqueue_async_dump_analyze_command' to queue WinDBG commands (get commandId)",
-                    "3. Use 'nexus_read_dump_analyze_command_result' to get command results",
-                    "4. Use 'sessions' or 'commands' resources to monitor activity",
+                    "2. Use 'nexus_enqueue_async_dump_analyze_command' multiple times to queue many commands at once (get commandIds)",
+                    "3. Use 'nexus_get_dump_analyze_commands_status' to poll status of ALL commands in the session",
+                    "4. Use 'nexus_read_dump_analyze_command_result' to get results when status shows 'Completed'",
                     "5. Use 'nexus_close_dump_analyze_session' when done"
                 },
                 important_notes = new[]
                 {
                     "All commands are asynchronous - use the commandId to track progress",
-                    "Resources are parameterless and return all available data",
-                    "Use 'commands' resource to monitor command status",
+                    "Use 'nexus_get_dump_analyze_commands_status' to get status of ALL commands in a session (one call per session)",
+                    "Use 'nexus_read_dump_analyze_command_result' to get results of a SPECIFIC command when completed",
+                    "Resources are parameterless and return all available data across all sessions",
                     "Always close sessions when no longer needed to free resources"
                 },
                 transport_limitations = new
@@ -317,7 +325,7 @@ namespace mcp_nexus.Resources
         /// <summary>
         /// Gets commands from a command queue service
         /// </summary>
-        private static Dictionary<string, object> GetSessionCommandsFromQueue(ICommandQueueService commandQueue, string sessionId)
+        internal static Dictionary<string, object> GetSessionCommandsFromQueue(ICommandQueueService commandQueue, string sessionId)
         {
             var commands = new Dictionary<string, object>();
 

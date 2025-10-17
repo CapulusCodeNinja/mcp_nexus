@@ -156,6 +156,64 @@
 
 **Note**: This tool also retrieves results from extension commands (commandId starting with "ext-").
 
+#### `nexus_get_dump_analyze_commands_status`
+**Purpose**: Get status of ALL commands for a specific session
+**Category**: Command Monitoring
+**Real-time**: Yes - Provides current status of all commands
+
+**Description**: Returns status of ALL commands in a session, not just one command. This is the recommended tool for polling command progress. You can queue multiple commands and then call this tool once to check status of all queued commands at once, then use nexus_read_dump_analyze_command_result to get specific command results when completed.
+
+**Parameters**:
+- `sessionId` (string, required): Active session ID
+
+**Example**:
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "nexus_get_dump_analyze_commands_status",
+    "arguments": {
+      "sessionId": "sess-000001-abc12345-12345678-0001"
+    }
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "sessionId": "sess-000001-abc12345-12345678-0001",
+  "commands": {
+    "cmd-000001": {
+      "commandId": "cmd-000001",
+      "command": "!analyze -v",
+      "status": "Completed",
+      "isFinished": true,
+      "eta": null,
+      "elapsed": "2min 15s"
+    },
+    "cmd-000002": {
+      "commandId": "cmd-000002",
+      "command": "lm",
+      "status": "Executing",
+      "isFinished": false,
+      "eta": "30s",
+      "elapsed": "5s"
+    }
+  },
+  "commandCount": 2,
+  "timestamp": "2024-01-15T10:00:00Z",
+  "note": "All commands for this session. Poll this tool to monitor command progress."
+}
+```
+
+**Key Points**:
+- Returns ALL commands for the session (not just one)
+- Use this for polling command status
+- AI clients should call this once per session to get all command statuses
+- Contains timing information (eta, elapsed) to help AI decide when to poll again
+- When isFinished is true, use nexus_read_dump_analyze_command_result to get the actual output
+
 ### Extension Execution
 
 #### `nexus_enqueue_async_extension_command`
@@ -317,7 +375,8 @@ Use `nexus_read_dump_analyze_command_result` with the returned `commandId` (pref
    }
    ```
 
-3. **Monitor Progress** (via notifications or polling):
+3. **Poll Command Status**:
+   Use `nexus_get_dump_analyze_commands_status` to check status of all commands
    ```json
    {
      "method": "tools/call",

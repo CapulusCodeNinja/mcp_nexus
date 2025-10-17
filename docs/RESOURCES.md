@@ -69,6 +69,8 @@ MCP Nexus provides resources for session management, command tracking, and docum
 }
 ```
 
+**Note**: For polling command status in a specific session, use the `nexus_get_dump_analyze_commands_status` tool instead. The `commands` resource returns data from ALL sessions and is intended for overview purposes, not frequent polling.
+
 ## 📚 Documentation Resources
 
 ### `extensions`
@@ -152,7 +154,7 @@ MCP Nexus provides resources for session management, command tracking, and docum
 2. **Create session if needed**: `nexus_open_dump_analyze_session`
 3. **Queue command**: `nexus_enqueue_async_dump_analyze_command`
 4. **Monitor progress**: `nexus_read_dump_analyze_command_result` (poll until completed)
-5. **List all commands**: `commands`
+5. **Monitor commands**: Use tool `nexus_get_dump_analyze_commands_status` for polling session-specific commands
 6. **Clean up**: `nexus_close_dump_analyze_session`
 
 ### Resource Discovery
