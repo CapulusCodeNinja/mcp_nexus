@@ -277,20 +277,6 @@ Use `nexus_read_dump_analyze_command_result` with the returned `commandId` (pref
 
 ### Documentation Resources
 
-#### `workflows`
-**Purpose**: Access crash analysis workflows and patterns
-**Category**: Documentation
-**Parameters**: None
-
-**Example**:
-```json
-{
-  "method": "resources/read",
-  "params": {
-    "uri": "workflows"
-  }
-}
-```
 
 #### `usage`
 **Purpose**: Access complete usage guide and examples
@@ -307,27 +293,6 @@ Use `nexus_read_dump_analyze_command_result` with the returned `commandId` (pref
 }
 ```
 
-### System Resources
-
-#### `metrics`
-**Purpose**: Get performance metrics and statistics
-**Category**: System Data
-**Parameters**: None
-
-#### `circuits`
-**Purpose**: Get circuit breaker status
-**Category**: System Data
-**Parameters**: None
-
-#### `health`
-**Purpose**: Get system health status
-**Category**: System Data
-**Parameters**: None
-
-#### `cache`
-**Purpose**: Get cache statistics
-**Category**: System Data
-**Parameters**: None
 
 ## 🔄 Complete Analysis Workflow
 

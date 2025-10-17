@@ -103,14 +103,6 @@ namespace mcp_nexus.Tools
                 {
                     new
                     {
-                        uri = "workflows",
-                        name = "Crash Analysis Workflows",
-                        description = "Comprehensive step-by-step analysis workflows for Windows crash dump investigation",
-                        input = (object?)null,
-                        note = (string?)"Access via MCP resources/read method"
-                    },
-                    new
-                    {
                         uri = "usage",
                         name = "Usage",
                         description = "Essential tool usage information for MCP Nexus server",

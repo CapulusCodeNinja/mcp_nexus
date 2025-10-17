@@ -16,10 +16,6 @@ MCP Nexus provides resources for session management, command tracking, and docum
 | `commands` | List commands with status and timing |
 | `extensions` | List available extension scripts |
 | `usage` | Get complete usage guide |
-| `metrics` | Get performance metrics |
-| `circuits` | Get circuit breaker status |
-| `health` | Get system health status |
-| `cache` | Get cache statistics |
 
 ## 📋 Session Management Resources
 
@@ -123,23 +119,6 @@ MCP Nexus provides resources for session management, command tracking, and docum
 }
 ```
 
-## 📊 System Resources
-
-### `metrics`
-
-**Purpose**: Get comprehensive performance metrics and statistics
-
-### `circuits`
-
-**Purpose**: Get circuit breaker status and health information
-
-### `health`
-
-**Purpose**: Get comprehensive system health status
-
-### `cache`
-
-**Purpose**: Get cache statistics and memory usage information
 
 ## 🚨 Error Handling
 
@@ -202,7 +181,6 @@ MCP Nexus provides resources for session management, command tracking, and docum
 3. **Use `commands`** to track command history
 4. **Reference `extensions`** to discover available automated analysis scripts
 5. **Use `usage`** for API reference and examples
-6. **Monitor `health`** for system status
 
 ## 📊 Resource Lifecycle
 
@@ -210,7 +188,6 @@ MCP Nexus provides resources for session management, command tracking, and docum
 - **Commands**: Queued via `nexus_enqueue_async_dump_analyze_command` or `nexus_enqueue_async_extension_command`, tracked via `commands`
 - **Extensions**: Dynamically discovered scripts listed via `extensions`, executed via `nexus_enqueue_async_extension_command`
 - **Documentation**: Static resources available anytime via `usage`
-- **System**: Dynamic resources updated as system runs via `metrics`, `circuits`, `health`, `cache`
 
 All resources return JSON data wrapped in MCP's standard `contents` array format for consistent integration with MCP clients.
 
