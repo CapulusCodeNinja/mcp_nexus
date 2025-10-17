@@ -9,7 +9,9 @@ using Microsoft.Extensions.Options;
 
 using mcp_nexus.Constants;
 using mcp_nexus.Notifications;
-using mcp_nexus.Infrastructure;
+using mcp_nexus.Infrastructure.Installation;
+using mcp_nexus.Infrastructure.Validation;
+using mcp_nexus.Infrastructure.Core;
 using mcp_nexus.Middleware;
 using mcp_nexus.Configuration;
 
@@ -53,7 +55,7 @@ namespace mcp_nexus
                 try { Console.InputEncoding = System.Text.Encoding.UTF8; } catch { }
 
                 // Pre-warm ThreadPool to reduce cold-start thread acquisition under bursty load
-                mcp_nexus.Infrastructure.ThreadPoolTuning.Apply();
+                mcp_nexus.Infrastructure.Core.ThreadPoolTuning.Apply();
 
                 // Set environment based on configuration if not already set
                 if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")))

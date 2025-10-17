@@ -1,6 +1,6 @@
 using System;
 
-namespace mcp_nexus.Infrastructure
+namespace mcp_nexus.Infrastructure.Core
 {
     /// <summary>
     /// Represents the elevation type of a token

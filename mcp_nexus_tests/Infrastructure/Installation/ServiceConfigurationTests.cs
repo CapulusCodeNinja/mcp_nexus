@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using mcp_nexus.Infrastructure;
+using mcp_nexus.Infrastructure.Installation;
 using System.Runtime.Versioning;
 
-namespace mcp_nexus_tests.Infrastructure
+namespace mcp_nexus_tests.Infrastructure.Installation
 {
     /// <summary>
     /// Tests for ServiceConfiguration

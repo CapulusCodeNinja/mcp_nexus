@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace mcp_nexus.Infrastructure
+namespace mcp_nexus.Infrastructure.Core
 {
     /// <summary>
     /// Manages file operations for the service.

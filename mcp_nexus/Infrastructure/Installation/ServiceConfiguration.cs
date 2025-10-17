@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.ServiceProcess;
 
-namespace mcp_nexus.Infrastructure
+namespace mcp_nexus.Infrastructure.Installation
 {
     /// <summary>
     /// Configuration for Windows service installation and management.

@@ -1,6 +1,6 @@
 using System;
 
-namespace mcp_nexus.Infrastructure
+namespace mcp_nexus.Infrastructure.Core
 {
     /// <summary>
     /// Information about a backup operation.

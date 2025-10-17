@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using mcp_nexus.Notifications;
 
-namespace mcp_nexus.Infrastructure
+namespace mcp_nexus.Infrastructure.Validation
 {
     /// <summary>
     /// Validates dependency injection configuration for completeness and correctness.

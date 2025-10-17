@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace mcp_nexus.Infrastructure
+namespace mcp_nexus.Infrastructure.Validation
 {
     /// <summary>
     /// Result of privilege analysis for service installation.

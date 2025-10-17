@@ -1,6 +1,6 @@
 using System.Threading;
 
-namespace mcp_nexus.Infrastructure
+namespace mcp_nexus.Infrastructure.Core
 {
     /// <summary>
     /// Provides thread pool tuning functionality for optimal performance.

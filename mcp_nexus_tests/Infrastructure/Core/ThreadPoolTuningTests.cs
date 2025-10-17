@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
 using Xunit;
-using mcp_nexus.Infrastructure;
+using mcp_nexus.Infrastructure.Core;
 
-namespace mcp_nexus_tests.Infrastructure
+namespace mcp_nexus_tests.Infrastructure.Core
 {
     public class ThreadPoolTuningTests
     {

@@ -4,7 +4,7 @@ using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Notifications;
 using mcp_nexus.Protocol;
 using mcp_nexus.Recovery;
-using mcp_nexus.Infrastructure;
+using mcp_nexus.Infrastructure.Adapters;
 using mcp_nexus.Session;
 
 namespace mcp_nexus.Session

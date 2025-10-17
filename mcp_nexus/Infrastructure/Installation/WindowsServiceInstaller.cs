@@ -2,7 +2,7 @@ using System.Runtime.Versioning;
 using System.ServiceProcess;
 using Microsoft.Extensions.Logging;
 
-namespace mcp_nexus.Infrastructure
+namespace mcp_nexus.Infrastructure.Installation
 {
     /// <summary>
     /// Windows service installer - maintains compatibility with existing code.

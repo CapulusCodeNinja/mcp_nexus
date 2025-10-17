@@ -1,4 +1,4 @@
-namespace mcp_nexus.Infrastructure
+namespace mcp_nexus.Infrastructure.Adapters
 {
     /// <summary>
     /// Infrastructure adapter for debugger - maintains compatibility with existing code

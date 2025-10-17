@@ -1,12 +1,12 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using mcp_nexus.Infrastructure;
+using mcp_nexus.Infrastructure.Core;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace mcp_nexus_tests.Infrastructure
+namespace mcp_nexus_tests.Infrastructure.Core
 {
     /// <summary>
     /// Tests for FileOperationsManager
