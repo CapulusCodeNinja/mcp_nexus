@@ -1,5 +1,5 @@
 using mcp_nexus.Debugger;
-using mcp_nexus.Recovery;
+using mcp_nexus.CommandQueue.Recovery;
 using mcp_nexus.Notifications;
 using mcp_nexus.CommandQueue.Core;
 

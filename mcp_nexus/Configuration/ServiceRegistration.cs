@@ -5,7 +5,6 @@ using mcp_nexus.CommandQueue.Recovery;
 using mcp_nexus.CommandQueue.Validation;
 using mcp_nexus.CommandQueue.Notification;
 using mcp_nexus.Notifications;
-using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure.Adapters;
 using mcp_nexus.Infrastructure.Installation;
 using mcp_nexus.Infrastructure.Validation;

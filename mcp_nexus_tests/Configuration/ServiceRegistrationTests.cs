@@ -14,7 +14,7 @@ using mcp_nexus.Notifications;
 using mcp_nexus.Session;
 using mcp_nexus.Session.Core.Models;
 using mcp_nexus.Session.Lifecycle;
-using mcp_nexus.Recovery;
+using mcp_nexus.CommandQueue.Recovery;
 using mcp_nexus.Protocol;
 using mcp_nexus.Tools;
 using NLog;

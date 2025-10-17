@@ -1,7 +1,7 @@
 using mcp_nexus.Debugger;
 using mcp_nexus.Notifications;
 
-namespace mcp_nexus.Recovery
+namespace mcp_nexus.CommandQueue.Recovery
 {
     /// <summary>
     /// Orchestrates CDB session recovery operations with comprehensive error handling.

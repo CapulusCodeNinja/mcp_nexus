@@ -2,7 +2,7 @@ using System.Linq;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Notifications;
 using mcp_nexus.Protocol;
-using mcp_nexus.Recovery;
+using mcp_nexus.CommandQueue.Recovery;
 using mcp_nexus.Infrastructure.Adapters;
 using mcp_nexus.Session;
 using Xunit;

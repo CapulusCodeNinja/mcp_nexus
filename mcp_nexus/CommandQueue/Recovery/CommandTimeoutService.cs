@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace mcp_nexus.Recovery
+namespace mcp_nexus.CommandQueue.Recovery
 {
     /// <summary>
     /// Interface for managing command timeouts.

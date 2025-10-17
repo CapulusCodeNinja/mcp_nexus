@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using mcp_nexus.Session;
+using mcp_nexus.Session.Core;
 
 namespace mcp_nexus_tests.Session.Core
 {

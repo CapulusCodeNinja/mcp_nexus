@@ -1,6 +1,6 @@
 using mcp_nexus.Debugger;
 
-namespace mcp_nexus.Recovery
+namespace mcp_nexus.CommandQueue.Recovery
 {
     /// <summary>
     /// Monitors CDB session health and responsiveness

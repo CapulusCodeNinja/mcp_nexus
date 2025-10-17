@@ -1,8 +1,8 @@
 using System;
 using Xunit;
-using mcp_nexus.Recovery;
+using mcp_nexus.CommandQueue.Recovery;
 
-namespace mcp_nexus_tests.Recovery
+namespace mcp_nexus_tests.CommandQueue.Recovery
 {
     public class RecoveryStatisticsTests
     {

@@ -1,4 +1,4 @@
-namespace mcp_nexus.Recovery
+namespace mcp_nexus.CommandQueue.Recovery
 {
     /// <summary>
     /// Configuration settings for CDB session recovery operations

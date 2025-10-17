@@ -7,7 +7,7 @@ using Xunit;
 using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Debugger;
 using mcp_nexus.Notifications;
-using mcp_nexus.Recovery;
+using mcp_nexus.CommandQueue.Recovery;
 using mcp_nexus.Constants;
 using mcp_nexus_tests.Mocks;
 
