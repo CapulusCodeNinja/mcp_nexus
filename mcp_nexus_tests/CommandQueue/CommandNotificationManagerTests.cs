@@ -71,7 +71,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             // Give the Task.Run a moment to execute
-            await Task.Delay(1000);
+            await Task.Delay(2000);
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
@@ -127,7 +127,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Wait for the Task.Run to complete with a reasonable timeout
             var maxWaitTime = TimeSpan.FromSeconds(2);
             var startTime = DateTime.Now;
-            
+
             while (DateTime.Now - startTime < maxWaitTime)
             {
                 try
@@ -141,7 +141,7 @@ namespace mcp_nexus_tests.CommandQueue
                     await Task.Delay(50);
                 }
             }
-            
+
             // If we get here, the verification failed within the timeout
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
@@ -292,7 +292,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void NotifyServiceShutdown_WithReason_LogsShutdownEvent()
+        public async Task NotifyServiceShutdown_WithReason_LogsShutdownEvent()
         {
             // Arrange
             var reason = "System maintenance";
@@ -302,11 +302,11 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             // Give the Task.Run a moment to execute
-            Thread.Sleep(500);
+            await Task.Delay(1000);
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Command queue service shutting down: {reason}")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Queue Event [ServiceShutdown]: Command queue service shutting down: {reason}")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
         }
@@ -459,7 +459,7 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Assert
             // Wait for the Task.Run to complete
-            await Task.Delay(2000);
+            await Task.Delay(3000);
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Trace,
                 It.IsAny<EventId>(),

@@ -49,8 +49,9 @@ namespace mcp_nexus.CommandQueue
             {
                 try
                 {
+                    var status = $"Executing for {elapsed.TotalMinutes:F1} minutes...";
                     await notificationService.NotifyCommandHeartbeatAsync(
-                        sessionId, commandId, elapsed);
+                        sessionId, commandId, status, elapsed);
                 }
                 catch (Exception ex)
                 {

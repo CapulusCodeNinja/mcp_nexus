@@ -126,7 +126,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Verify was called at least once (may not be called if system is under heavy load)
             // This is acceptable for fire-and-forget notifications
             m_MockNotificationService.Verify(x => x.NotifyCommandHeartbeatAsync(
-                sessionId, commandId, elapsed), Times.AtLeastOnce());
+                sessionId, commandId, It.IsAny<string>(), elapsed), Times.AtLeastOnce());
         }
 
         [Fact]
@@ -139,7 +139,7 @@ namespace mcp_nexus_tests.CommandQueue
             var elapsed = TimeSpan.FromMinutes(5);
 
             m_MockNotificationService.Setup(x => x.NotifyCommandHeartbeatAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>()))
                 .ThrowsAsync(new Exception("Heartbeat failed"));
 
             // Act
