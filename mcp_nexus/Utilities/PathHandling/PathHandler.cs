@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 
-namespace mcp_nexus.Utilities
+namespace mcp_nexus.Utilities.PathHandling
 {
     /// <summary>
     /// Service for handling path conversions between WSL and Windows formats.

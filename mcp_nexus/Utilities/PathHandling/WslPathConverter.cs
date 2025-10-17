@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
-namespace mcp_nexus.Utilities
+namespace mcp_nexus.Utilities.PathHandling
 {
     /// <summary>
     /// Real implementation of WSL path conversion using wsl.exe.
@@ -148,7 +148,7 @@ namespace mcp_nexus.Utilities
     }
 }
 
-namespace mcp_nexus.Utilities
+namespace mcp_nexus.Utilities.PathHandling
 {
     public partial class WslPathConverter
     {

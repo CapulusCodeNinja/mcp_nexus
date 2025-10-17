@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace mcp_nexus.Utilities
+namespace mcp_nexus.Utilities.Json
 {
     /// <summary>
     /// Centralized JSON serializer options for consistent configuration across the application.

@@ -1,6 +1,7 @@
 using mcp_nexus.Models;
 using mcp_nexus.Notifications;
 using mcp_nexus.Tools;
+using mcp_nexus.Utilities.Json;
 
 namespace mcp_nexus.Protocol
 {
@@ -49,7 +50,7 @@ namespace mcp_nexus.Protocol
         /// <returns>The MCP tool schema for the open dump analyze session tool.</returns>
         private static readonly string m_ToolUsageJson = System.Text.Json.JsonSerializer.Serialize(
             SessionAwareWindbgTool.USAGE_EXPLANATION,
-            mcp_nexus.Utilities.JsonOptions.JsonIndented);
+            JsonOptions.JsonIndented);
 
         private static McpToolSchema CreateNexusOpenDumpAnalyzeSessionTool()
         {

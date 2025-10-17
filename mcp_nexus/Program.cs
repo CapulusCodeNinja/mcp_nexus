@@ -12,6 +12,7 @@ using mcp_nexus.Notifications;
 using mcp_nexus.Infrastructure.Installation;
 using mcp_nexus.Infrastructure.Validation;
 using mcp_nexus.Infrastructure.Core;
+using mcp_nexus.Utilities.Json;
 using mcp_nexus.Middleware;
 using mcp_nexus.Configuration;
 
@@ -964,7 +965,7 @@ namespace mcp_nexus
             {
                 // Try to parse and pretty-print the JSON
                 using var document = JsonDocument.Parse(json);
-                return System.Text.Json.JsonSerializer.Serialize(document.RootElement, mcp_nexus.Utilities.JsonOptions.JsonIndented);
+                return System.Text.Json.JsonSerializer.Serialize(document.RootElement, JsonOptions.JsonIndented);
             }
             catch (JsonException ex)
             {

@@ -7,7 +7,7 @@ using mcp_nexus.Notifications;
 using mcp_nexus.Protocol;
 using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure.Adapters;
-using mcp_nexus.Utilities;
+using mcp_nexus.Utilities.Json;
 using mcp_nexus.Constants;
 using mcp_nexus.Models;
 using mcp_nexus.Extensions;
@@ -61,7 +61,7 @@ namespace mcp_nexus.Resources
                     timestamp = DateTimeOffset.Now
                 };
 
-                return Task.FromResult(JsonSerializer.Serialize(result, mcp_nexus.Utilities.JsonOptions.JsonIndented));
+                return Task.FromResult(JsonSerializer.Serialize(result, JsonOptions.JsonIndented));
             }
             catch (Exception ex)
             {
@@ -117,7 +117,7 @@ namespace mcp_nexus.Resources
                     note = "Commands from all sessions"
                 };
 
-                return Task.FromResult(JsonSerializer.Serialize(result, mcp_nexus.Utilities.JsonOptions.JsonIndented));
+                return Task.FromResult(JsonSerializer.Serialize(result, JsonOptions.JsonIndented));
             }
             catch (Exception ex)
             {
@@ -153,7 +153,7 @@ namespace mcp_nexus.Resources
                         timestamp = DateTimeOffset.Now
                     };
 
-                    return Task.FromResult(JsonSerializer.Serialize(disabledResult, mcp_nexus.Utilities.JsonOptions.JsonIndented));
+                    return Task.FromResult(JsonSerializer.Serialize(disabledResult, JsonOptions.JsonIndented));
                 }
 
                 var allExtensions = extensionManager.GetAllExtensions();
@@ -199,7 +199,7 @@ namespace mcp_nexus.Resources
                     }
                 };
 
-                return Task.FromResult(JsonSerializer.Serialize(result, mcp_nexus.Utilities.JsonOptions.JsonIndented));
+                return Task.FromResult(JsonSerializer.Serialize(result, JsonOptions.JsonIndented));
             }
             catch (Exception ex)
             {
@@ -319,7 +319,7 @@ namespace mcp_nexus.Resources
                 }
             };
 
-            return JsonSerializer.Serialize(usage, mcp_nexus.Utilities.JsonOptions.JsonIndented);
+            return JsonSerializer.Serialize(usage, JsonOptions.JsonIndented);
         }
 
         /// <summary>

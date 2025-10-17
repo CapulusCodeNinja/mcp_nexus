@@ -1,4 +1,5 @@
-using mcp_nexus.Utilities;
+using mcp_nexus.Utilities.Validation;
+using mcp_nexus.Utilities.PathHandling;
 using mcp_nexus_tests.Mocks;
 using System.IO;
 using Xunit;

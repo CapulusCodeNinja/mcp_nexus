@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using mcp_nexus.Utilities.Json;
 
 namespace mcp_nexus.Extensions
 {
@@ -404,7 +405,7 @@ namespace mcp_nexus.Extensions
             else
             {
                 m_Logger.LogDebug("Parameters is an object, serializing to JSON");
-                json = JsonSerializer.Serialize(parameters, mcp_nexus.Utilities.JsonOptions.JsonIndented);
+                json = JsonSerializer.Serialize(parameters, JsonOptions.JsonIndented);
                 m_Logger.LogDebug("Serialized JSON: {Json}", json);
             }
 

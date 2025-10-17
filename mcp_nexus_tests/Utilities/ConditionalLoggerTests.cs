@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using mcp_nexus.Utilities;
+using mcp_nexus.Utilities.Logging;
 
 namespace mcp_nexus_tests.Utilities
 {

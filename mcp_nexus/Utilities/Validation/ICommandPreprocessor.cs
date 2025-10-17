@@ -1,4 +1,4 @@
-namespace mcp_nexus.Utilities
+namespace mcp_nexus.Utilities.Validation
 {
     /// <summary>
     /// Interface for preprocessing WinDBG commands before execution.

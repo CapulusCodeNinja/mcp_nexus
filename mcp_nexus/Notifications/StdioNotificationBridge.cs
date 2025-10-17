@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using mcp_nexus.Utilities.Json;
 
 namespace mcp_nexus.Notifications
 {
@@ -52,7 +53,7 @@ namespace mcp_nexus.Notifications
             {
                 // Always write through Console.Out to respect test harness redirections.
                 // Program startup guarantees UTF-8 encoding for stdio.
-                var json = System.Text.Json.JsonSerializer.Serialize(notification, mcp_nexus.Utilities.JsonOptions.JsonCompact);
+                var json = System.Text.Json.JsonSerializer.Serialize(notification, JsonOptions.JsonCompact);
                 await Console.Out.WriteLineAsync(json);
                 await Console.Out.FlushAsync();
             }

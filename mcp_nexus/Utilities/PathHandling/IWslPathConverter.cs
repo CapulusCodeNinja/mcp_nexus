@@ -1,4 +1,4 @@
-namespace mcp_nexus.Utilities
+namespace mcp_nexus.Utilities.PathHandling
 {
     /// <summary>
     /// Interface for WSL path conversion operations.

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using mcp_nexus.Utilities.Validation;
 
 namespace mcp_nexus.Debugger
 {
@@ -13,7 +14,7 @@ namespace mcp_nexus.Debugger
         private readonly CdbProcessManager m_ProcessManager;
         private readonly CdbCommandExecutor m_CommandExecutor;
         private readonly CdbOutputParser m_OutputParser;
-        private readonly mcp_nexus.Utilities.ICommandPreprocessor? m_CommandPreprocessor;
+        private readonly ICommandPreprocessor? m_CommandPreprocessor;
 
         // CRITICAL: Semaphore to ensure only ONE command executes at a time in CDB
         // CDB is single-threaded and cannot handle concurrent commands
@@ -48,7 +49,7 @@ namespace mcp_nexus.Debugger
             int outputReadingTimeoutMs = 300000,
             bool enableCommandPreprocessing = true,
             string? sessionId = null,
-            mcp_nexus.Utilities.ICommandPreprocessor? commandPreprocessor = null)
+            ICommandPreprocessor? commandPreprocessor = null)
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_CommandPreprocessor = commandPreprocessor;
@@ -96,7 +97,7 @@ namespace mcp_nexus.Debugger
             ILogger<CdbSession> logger,
             CdbSessionConfiguration config,
             string? sessionId = null,
-            mcp_nexus.Utilities.ICommandPreprocessor? commandPreprocessor = null)
+            ICommandPreprocessor? commandPreprocessor = null)
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_Config = config ?? throw new ArgumentNullException(nameof(config));

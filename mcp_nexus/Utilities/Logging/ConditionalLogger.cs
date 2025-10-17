@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace mcp_nexus.Utilities;
+namespace mcp_nexus.Utilities.Logging;
 
 /// <summary>
 /// Provides conditional logging that respects both compilation symbols and environment settings.

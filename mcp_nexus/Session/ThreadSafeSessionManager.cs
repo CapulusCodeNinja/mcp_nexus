@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using mcp_nexus.Session.Models;
 using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Notifications;
+using mcp_nexus.Utilities.Validation;
 
 namespace mcp_nexus.Session
 {
@@ -52,7 +53,7 @@ namespace mcp_nexus.Session
 
             // Create focused components
             m_Config = new SessionManagerConfiguration(config, cdbOptions);
-            var commandPreprocessor = serviceProvider.GetRequiredService<mcp_nexus.Utilities.ICommandPreprocessor>();
+            var commandPreprocessor = serviceProvider.GetRequiredService<ICommandPreprocessor>();
             m_LifecycleManager = new SessionLifecycleManager(
                 logger, serviceProvider, loggerFactory, notificationService, m_Config, m_Sessions, commandPreprocessor);
             m_MonitoringService = new SessionMonitoringService(

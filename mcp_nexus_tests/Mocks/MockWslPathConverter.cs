@@ -1,4 +1,4 @@
-using mcp_nexus.Utilities;
+using mcp_nexus.Utilities.PathHandling;
 
 namespace mcp_nexus_tests.Mocks
 {

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using mcp_nexus.Utilities.Json;
 
 namespace mcp_nexus.Middleware
 {
@@ -130,7 +131,7 @@ namespace mcp_nexus.Middleware
         /// </summary>
         /// <param name="json">The JSON string to format.</param>
         /// <returns>A formatted JSON string.</returns>
-        private static readonly JsonSerializerOptions m_Indented = mcp_nexus.Utilities.JsonOptions.JsonIndented;
+        private static readonly JsonSerializerOptions m_Indented = JsonOptions.JsonIndented;
 
         private static string FormatJsonForLogging(string json)
         {
@@ -226,7 +227,7 @@ namespace mcp_nexus.Middleware
                             truncatedObject[property.Name] = TruncateLargeFields(property.Value, maxFieldLength, shouldTruncate);
                         }
                     }
-                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedObject, mcp_nexus.Utilities.JsonOptions.JsonIndented)).RootElement;
+                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedObject, JsonOptions.JsonIndented)).RootElement;
 
                 case JsonValueKind.Array:
                     var truncatedArray = new List<object>();
@@ -234,7 +235,7 @@ namespace mcp_nexus.Middleware
                     {
                         truncatedArray.Add(TruncateLargeFields(item, maxFieldLength, shouldTruncate));
                     }
-                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedArray, mcp_nexus.Utilities.JsonOptions.JsonIndented)).RootElement;
+                    return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedArray, JsonOptions.JsonIndented)).RootElement;
 
                 case JsonValueKind.String:
                     var stringValue = element.GetString() ?? "";

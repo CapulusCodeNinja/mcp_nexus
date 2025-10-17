@@ -7,6 +7,7 @@ using mcp_nexus.CommandQueue.Batching;
 using mcp_nexus.Session.Models;
 using mcp_nexus.Notifications;
 using mcp_nexus.Extensions;
+using mcp_nexus.Utilities.Validation;
 
 namespace mcp_nexus.Session
 {
@@ -32,7 +33,7 @@ namespace mcp_nexus.Session
         IMcpNotificationService notificationService,
         SessionManagerConfiguration config,
         ConcurrentDictionary<string, SessionInfo> sessions,
-        mcp_nexus.Utilities.ICommandPreprocessor commandPreprocessor)
+        ICommandPreprocessor commandPreprocessor)
     {
         private readonly ILogger m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly IServiceProvider m_ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
@@ -40,7 +41,7 @@ namespace mcp_nexus.Session
         private readonly IMcpNotificationService m_NotificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         private readonly SessionManagerConfiguration m_Config = config ?? throw new ArgumentNullException(nameof(config));
         private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
-        private readonly mcp_nexus.Utilities.ICommandPreprocessor m_CommandPreprocessor = commandPreprocessor ?? throw new ArgumentNullException(nameof(commandPreprocessor));
+        private readonly ICommandPreprocessor m_CommandPreprocessor = commandPreprocessor ?? throw new ArgumentNullException(nameof(commandPreprocessor));
         private readonly ConcurrentDictionary<string, SessionCommandResultCache> m_SessionCaches = new ConcurrentDictionary<string, SessionCommandResultCache>();
         private readonly IExtensionCommandTracker? m_ExtensionTracker = serviceProvider.GetService<IExtensionCommandTracker>();
         private readonly IExtensionExecutor? m_ExtensionExecutor = serviceProvider.GetService<IExtensionExecutor>();

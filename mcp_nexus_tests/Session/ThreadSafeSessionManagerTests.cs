@@ -10,6 +10,7 @@ using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Notifications;
 using Xunit;
+using mcp_nexus.Utilities.Validation;
 
 namespace mcp_nexus_tests.Session
 {
@@ -65,8 +66,8 @@ namespace mcp_nexus_tests.Session
                 .Returns(sessions);
 
             // Setup command preprocessor
-            var mockCommandPreprocessor = new Mock<mcp_nexus.Utilities.ICommandPreprocessor>();
-            m_MockServiceProvider.Setup(sp => sp.GetService(typeof(mcp_nexus.Utilities.ICommandPreprocessor)))
+            var mockCommandPreprocessor = new Mock<ICommandPreprocessor>();
+            m_MockServiceProvider.Setup(sp => sp.GetService(typeof(ICommandPreprocessor)))
                 .Returns(mockCommandPreprocessor.Object);
 
             mm_MockLoggerFactory.Setup(lf => lf.CreateLogger(It.IsAny<string>()))

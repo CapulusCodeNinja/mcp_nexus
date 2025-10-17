@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
+using mcp_nexus.Utilities.PathHandling;
 
-namespace mcp_nexus.Utilities
+namespace mcp_nexus.Utilities.Validation
 {
     /// <summary>
     /// Service for preprocessing WinDBG commands for path conversion and directory creation.

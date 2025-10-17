@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace mcp_nexus.Utilities
+namespace mcp_nexus.Utilities.Validation
 {
     /// <summary>
     /// Provides utilities for validating and cleaning symbol search paths to prevent warnings.

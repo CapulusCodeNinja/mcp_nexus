@@ -12,6 +12,7 @@ using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Notifications;
 using mcp_nexus_tests.Mocks;
+using mcp_nexus.Utilities.Validation;
 
 namespace mcp_nexus_tests.Session
 {
@@ -24,7 +25,7 @@ namespace mcp_nexus_tests.Session
         private readonly Mock<IServiceProvider> m_MockServiceProvider;
         private readonly Mock<ILoggerFactory> mm_MockLoggerFactory;
         private readonly Mock<IMcpNotificationService> m_MockNotificationService;
-        private readonly Mock<mcp_nexus.Utilities.ICommandPreprocessor> m_MockCommandPreprocessor;
+        private readonly Mock<ICommandPreprocessor> m_MockCommandPreprocessor;
         private readonly SessionLifecycleManager m_LifecycleManager;
         private readonly SessionMonitoringService m_MonitoringService;
         private readonly ConcurrentDictionary<string, SessionInfo> m_Sessions;
@@ -35,7 +36,7 @@ namespace mcp_nexus_tests.Session
             m_MockServiceProvider = new Mock<IServiceProvider>();
             mm_MockLoggerFactory = new Mock<ILoggerFactory>();
             m_MockNotificationService = new Mock<IMcpNotificationService>();
-            m_MockCommandPreprocessor = new Mock<mcp_nexus.Utilities.ICommandPreprocessor>();
+            m_MockCommandPreprocessor = new Mock<ICommandPreprocessor>();
             m_Sessions = new ConcurrentDictionary<string, SessionInfo>();
 
             // Create real instances with proper mocks

@@ -10,6 +10,8 @@ using mcp_nexus.Infrastructure.Adapters;
 using mcp_nexus.Infrastructure.Installation;
 using mcp_nexus.Infrastructure.Validation;
 using mcp_nexus.Infrastructure.Core;
+using mcp_nexus.Utilities.PathHandling;
+using mcp_nexus.Utilities.Validation;
 using mcp_nexus.Session;
 using mcp_nexus.Session.Models;
 using mcp_nexus.Protocol;
@@ -149,9 +151,9 @@ namespace mcp_nexus.Configuration
             services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
 
             // Register utility services for path handling and command preprocessing
-            services.AddSingleton<mcp_nexus.Utilities.IWslPathConverter, mcp_nexus.Utilities.WslPathConverter>();
-            services.AddSingleton<mcp_nexus.Utilities.IPathHandler, mcp_nexus.Utilities.PathHandler>();
-            services.AddSingleton<mcp_nexus.Utilities.ICommandPreprocessor, mcp_nexus.Utilities.CommandPreprocessor>();
+            services.AddSingleton<IWslPathConverter, WslPathConverter>();
+            services.AddSingleton<IPathHandler, PathHandler>();
+            services.AddSingleton<ICommandPreprocessor, CommandPreprocessor>();
 
             logger.Info("Registered core services (CDB, Session, Notifications, Protocol, Utilities)");
         }

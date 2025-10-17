@@ -9,6 +9,7 @@ using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue.Core;
 using System.Collections.Concurrent;
 using mcp_nexus_tests.Mocks;
+using mcp_nexus.Utilities.Validation;
 
 namespace mcp_nexus_tests.Session
 {
@@ -19,7 +20,7 @@ namespace mcp_nexus_tests.Session
     {
         private readonly Mock<ILogger> m_MockLogger;
         private readonly Mock<IMcpNotificationService> m_MockNotificationService;
-        private readonly Mock<mcp_nexus.Utilities.ICommandPreprocessor> m_MockCommandPreprocessor;
+        private readonly Mock<ICommandPreprocessor> m_MockCommandPreprocessor;
         private readonly Mock<SessionLifecycleManager> m_MockLifecycleManager;
         private readonly ICdbSession m_RealisticCdbSession;
         private readonly Mock<ICommandQueueService> m_MockCommandQueue;
@@ -31,7 +32,7 @@ namespace mcp_nexus_tests.Session
         {
             m_MockLogger = new Mock<ILogger>();
             m_MockNotificationService = new Mock<IMcpNotificationService>();
-            m_MockCommandPreprocessor = new Mock<mcp_nexus.Utilities.ICommandPreprocessor>();
+            m_MockCommandPreprocessor = new Mock<ICommandPreprocessor>();
             m_RealisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
             m_MockCommandQueue = new Mock<ICommandQueueService>();
             m_Sessions = new ConcurrentDictionary<string, SessionInfo>();

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using mcp_nexus.Configuration;
+using mcp_nexus.Utilities.Json;
 
 namespace mcp_nexus.Middleware
 {
@@ -80,7 +81,7 @@ namespace mcp_nexus.Middleware
             };
 
             // Tests expect compact JSON (no whitespace changes). Use CompactJson to match.
-            await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, mcp_nexus.Utilities.JsonOptions.JsonCompact));
+            await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, JsonOptions.JsonCompact));
         }
     }
 }

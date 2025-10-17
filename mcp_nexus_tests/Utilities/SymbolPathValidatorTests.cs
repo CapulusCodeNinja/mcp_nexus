@@ -1,4 +1,4 @@
-using mcp_nexus.Utilities;
+using mcp_nexus.Utilities.Validation;
 
 namespace mcp_nexus_tests.Utilities
 {
