@@ -54,7 +54,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
         public void Constructor_WithValidParameters_ShouldCreateInstance()
         {
             // Act
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -105,7 +105,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
         public async Task ProcessCommandAsync_WithNullCommand_ShouldThrowArgumentNullException()
         {
             // Arrange
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -119,7 +119,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
         public async Task ProcessCommandAsync_WithExcludedCommand_ShouldExecuteImmediately()
         {
             // Arrange
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -147,7 +147,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
         public async Task ProcessCommandAsync_WithBatchableCommand_ShouldAddToBatch()
         {
             // Arrange
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -173,7 +173,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
         public async Task ProcessCommandAsync_WithMaxBatchSize_ShouldExecuteBatch()
         {
             // Arrange
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -200,8 +200,8 @@ namespace mcp_nexus_tests.CommandQueue.Batching
                 await processor.ProcessCommandAsync(command);
             }
 
-            // Wait a bit for batch processing
-            await Task.Delay(100);
+            // Wait for all commands to complete
+            await Task.WhenAll(commands.Select(c => c.CompletionSource!.Task)).WaitAsync(TimeSpan.FromSeconds(2));
 
             // Assert
             m_MockCdbSession.Verify(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -215,7 +215,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
         public void Dispose_ShouldDisposeResources()
         {
             // Arrange
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -233,7 +233,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
         public async Task ProcessCommandAsync_AfterDispose_ShouldThrowObjectDisposedException()
         {
             // Arrange
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -274,7 +274,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
             mockOptions.Setup(x => x.Value).Returns(configWithBatchingDisabled);
 
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -309,7 +309,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
             mockOptions.Setup(x => x.Value).Returns(configWithZeroBatchSize);
 
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -344,7 +344,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
             mockOptions.Setup(x => x.Value).Returns(configWithNegativeBatchSize);
 
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -379,7 +379,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
             mockOptions.Setup(x => x.Value).Returns(configWithZeroTimeout);
 
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -414,7 +414,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
             mockOptions.Setup(x => x.Value).Returns(configWithNegativeTimeout);
 
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -449,7 +449,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
             mockOptions.Setup(x => x.Value).Returns(configWithEmptyExclusions);
 
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -500,7 +500,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
             mockOptions.Setup(x => x.Value).Returns(configWithNullExclusions);
 
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
@@ -530,6 +530,9 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             // Complete the batch execution immediately
             batchExecutionTcs.SetResult("Batch output");
 
+            // Wait for commands to complete
+            await Task.WhenAll(command1.CompletionSource!.Task, command2.CompletionSource!.Task).WaitAsync(TimeSpan.FromSeconds(2));
+
             // Assert
             m_MockCdbSession.Verify(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -551,7 +554,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             var mockOptions = new Mock<IOptions<BatchingConfiguration>>();
             mockOptions.Setup(x => x.Value).Returns(configWithExtremeValues);
 
-            var processor = new BatchCommandProcessor(
+            using var processor = new BatchCommandProcessor(
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,

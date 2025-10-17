@@ -476,11 +476,7 @@ namespace mcp_nexus_tests.CommandQueue.Notification
             m_MockNotificationService.Setup(x => x.NotifyCommandHeartbeatAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>()))
                 .ThrowsAsync(new Exception("Notification failed"));
 
-            // Act
-            m_Manager.NotifyCommandHeartbeatFireAndForget(queuedCommand, elapsed);
-
-            // Assert
-            // Wait for warning log to be received deterministically
+            // Setup warning log BEFORE Act
             var logReceived = new TaskCompletionSource<bool>();
             m_MockLogger.Setup(x => x.Log(
                 LogLevel.Warning,
@@ -490,6 +486,11 @@ namespace mcp_nexus_tests.CommandQueue.Notification
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
                 .Callback(() => logReceived.SetResult(true));
 
+            // Act
+            m_Manager.NotifyCommandHeartbeatFireAndForget(queuedCommand, elapsed);
+
+            // Assert
+            // Wait for warning log to be received deterministically
             await logReceived.Task;
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Warning,

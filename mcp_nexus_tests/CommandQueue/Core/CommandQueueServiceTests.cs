@@ -39,6 +39,7 @@ namespace mcp_nexus_tests.CommandQueue.Core
 
         public void Dispose()
         {
+            m_Service?.Dispose();
             m_RealisticCdbSession?.Dispose();
         }
 

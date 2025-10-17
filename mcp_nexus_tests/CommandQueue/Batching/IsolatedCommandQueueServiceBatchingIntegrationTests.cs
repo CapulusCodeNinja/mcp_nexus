@@ -224,28 +224,31 @@ namespace mcp_nexus_tests.CommandQueue.Batching
                     return Task.FromResult("Unknown command output");
                 });
 
-            // Act - Queue mixed commands
+            // Act - Queue mixed commands (queue all first, then wait for results)
+            // This ensures commands are queued together and can be batched
+            var id1 = m_Service.QueueCommand("lm");
+            var id2 = m_Service.QueueCommand("!analyze"); // Excluded
+            var id3 = m_Service.QueueCommand("!threads");
+            commandIds.Add(id1);
+            commandIds.Add(id2);
+            commandIds.Add(id3);
+
+            // Wait for all results concurrently
             var task1 = Task.Run(async () =>
             {
-                var id = m_Service.QueueCommand("lm");
-                commandIds.Add(id);
-                var result = await m_Service.GetCommandResult(id);
+                var result = await m_Service.GetCommandResult(id1);
                 commandResults.Add(result);
             });
 
             var task2 = Task.Run(async () =>
             {
-                var id = m_Service.QueueCommand("!analyze"); // Excluded
-                commandIds.Add(id);
-                var result = await m_Service.GetCommandResult(id);
+                var result = await m_Service.GetCommandResult(id2);
                 commandResults.Add(result);
             });
 
             var task3 = Task.Run(async () =>
             {
-                var id = m_Service.QueueCommand("!threads");
-                commandIds.Add(id);
-                var result = await m_Service.GetCommandResult(id);
+                var result = await m_Service.GetCommandResult(id3);
                 commandResults.Add(result);
             });
 
@@ -481,27 +484,22 @@ namespace mcp_nexus_tests.CommandQueue.Batching
         public void Dispose_WithQueuedCommands_ShouldCompleteGracefully()
         {
             // Arrange
-            m_Service = CreateServiceWithBatching();
+            var service = CreateServiceWithBatching();  // Use local variable instead of m_Service
             var commandIds = new List<string>();
 
             m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns<string, CancellationToken>((cmd, token) =>
-                {
-                    // Simulate some processing time
-                    Thread.Sleep(100);
-                    return Task.FromResult("Command output");
-                });
+                .ReturnsAsync("Command output");  // Use async instead of Thread.Sleep
 
             // Act - Queue commands and immediately dispose
-            var id1 = m_Service.QueueCommand("lm");
-            var id2 = m_Service.QueueCommand("!threads");
+            var id1 = service.QueueCommand("lm");
+            var id2 = service.QueueCommand("!threads");
             commandIds.AddRange(new[] { id1, id2 });
 
             // Dispose immediately (commands may still be processing)
-            m_Service.Dispose();
+            service.Dispose();
 
             // Assert - Should not throw
-            Assert.NotNull(m_Service);
+            Assert.NotNull(service);
         }
 
         [Fact]

@@ -325,24 +325,27 @@ namespace mcp_nexus_tests.CommandQueue.Core
         }
 
         [Fact]
-        public async Task GetQueueStatus_WithQueuedCommands_ReturnsCorrectStatus()
+        public void GetQueueStatus_WithQueuedCommands_ReturnsCorrectStatus()
         {
             // Arrange
             var commandId1 = m_Service.QueueCommand("version");
             var commandId2 = m_Service.QueueCommand("help");
 
-            // Act
-            // Add a small delay to ensure both commands are still in the queue
-            await Task.Delay(10);
+            // Act - Get status immediately while commands are queued/executing
             var status = m_Service.GetQueueStatus().ToList();
 
             // Assert
-            // The commands might be processed very quickly, so we check for at least 1
-            Assert.True(status.Count >= 1);
-            // Check that at least one of the commands is in the queue
-            var hasCommand1 = status.Any(s => s.Id == commandId1 && s.Command == "version");
-            var hasCommand2 = status.Any(s => s.Id == commandId2 && s.Command == "help");
-            Assert.True(hasCommand1 || hasCommand2, "At least one command should be in the queue");
+            // At least one command should be in the queue (either Queued or Executing)
+            Assert.True(status.Count >= 1, "At least one command should be in the queue");
+
+            // Verify the commands exist in the status
+            var commandIds = status.Select(s => s.Id).ToList();
+            Assert.True(commandIds.Contains(commandId1) || commandIds.Contains(commandId2),
+                "At least one of the queued commands should be in the status");
+
+            // Cleanup - cancel commands to stop background processing
+            m_Service.CancelCommand(commandId1);
+            m_Service.CancelCommand(commandId2);
         }
 
         [Fact]

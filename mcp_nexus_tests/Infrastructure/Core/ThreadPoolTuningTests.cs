@@ -359,7 +359,7 @@ namespace mcp_nexus_tests.Infrastructure.Core
 
             // Act
             // Submit some work to the thread pool to verify it's working
-            var task = Task.Run(() => Task.Delay(10).Wait());
+            var task = Task.Run(async () => await Task.Delay(10));
 
             // Assert
             await task.WaitAsync(TimeSpan.FromSeconds(1));
