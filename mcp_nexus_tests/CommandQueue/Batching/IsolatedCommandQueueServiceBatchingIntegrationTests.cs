@@ -362,16 +362,19 @@ namespace mcp_nexus_tests.CommandQueue.Batching
                 commandIds.Add(id);
             }
 
-            // Wait for first batch to complete by checking results
-            var firstBatchCompleted = false;
-            var attempts = 0;
-            while (!firstBatchCompleted && attempts < 50)
+            // Wait for first batch to complete with timeout
+            var firstBatchTask = Task.WhenAll(
+                commandIds.Take(3).Select(id => m_Service.GetCommandResult(id))
+            );
+            var firstBatchCompleted = await Task.WhenAny(firstBatchTask, Task.Delay(5000));
+            Assert.Same(firstBatchTask, firstBatchCompleted);
+            var firstBatchResults = await firstBatchTask;
+
+            Assert.All(firstBatchResults, result =>
             {
-                await Task.Delay(50);
-                attempts++;
-                var results = commandIds.Take(3).Select(id => m_Service.GetCommandResult(id).Result).ToList();
-                firstBatchCompleted = results.All(r => !string.IsNullOrEmpty(r));
-            }
+                Assert.NotNull(result);
+                Assert.NotEmpty(result);
+            });
 
             // Then queue 2 more commands (should form second batch after timeout)
             for (int cmdIndex = 3; cmdIndex < 5; cmdIndex++)
@@ -380,16 +383,19 @@ namespace mcp_nexus_tests.CommandQueue.Batching
                 commandIds.Add(id);
             }
 
-            // Wait for second batch to complete by checking results
-            var secondBatchCompleted = false;
-            attempts = 0;
-            while (!secondBatchCompleted && attempts < 50)
+            // Wait for second batch to complete with timeout
+            var secondBatchTask = Task.WhenAll(
+                commandIds.Skip(3).Select(id => m_Service.GetCommandResult(id))
+            );
+            var secondBatchCompleted = await Task.WhenAny(secondBatchTask, Task.Delay(5000));
+            Assert.Same(secondBatchTask, secondBatchCompleted);
+            var secondBatchResults = await secondBatchTask;
+
+            Assert.All(secondBatchResults, result =>
             {
-                await Task.Delay(50);
-                attempts++;
-                var results = commandIds.Skip(3).Select(id => m_Service.GetCommandResult(id).Result).ToList();
-                secondBatchCompleted = results.All(r => !string.IsNullOrEmpty(r));
-            }
+                Assert.NotNull(result);
+                Assert.NotEmpty(result);
+            });
 
             // Get results for all commands
             for (int i = 0; i < commandIds.Count; i++)
@@ -453,15 +459,11 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             var id = m_Service.QueueCommand("lm");
             commandIds.Add(id);
 
-            // Wait for batch timeout by polling
-            string result;
-            do
-            {
-                result = await m_Service.GetCommandResult(id);
-                if (!result.Contains("Command is still executing"))
-                    break;
-                await Task.Delay(50); // Small delay for polling
-            } while (true);
+            // Wait for batch timeout by awaiting the result with a timeout
+            var resultTask = m_Service.GetCommandResult(id);
+            var completedTask = await Task.WhenAny(resultTask, Task.Delay(5000));
+            Assert.Same(resultTask, completedTask);
+            var result = await resultTask;
 
             commandResults.Add(result);
 
