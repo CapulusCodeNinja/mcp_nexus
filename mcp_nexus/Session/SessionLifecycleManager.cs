@@ -154,9 +154,9 @@ namespace mcp_nexus.Session
                         break;
                     }
 
-                    // Use exponential backoff instead of fixed delay
+                    // Use optimized exponential backoff with smaller maximum delay
                     var elapsed = DateTime.Now - waitStart;
-                    var delayMs = Math.Min(500, 50 * (int)Math.Pow(1.5, elapsed.TotalSeconds));
+                    var delayMs = Math.Min(100, 25 * (int)Math.Pow(1.2, elapsed.TotalSeconds));
                     await Task.Delay(delayMs, cancellationToken);
                 }
 

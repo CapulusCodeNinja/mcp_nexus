@@ -476,7 +476,8 @@ namespace mcp_nexus.Extensions
             TimeSpan timeout)
         {
             var startTime = DateTime.Now;
-            var pollInterval = TimeSpan.FromMilliseconds(100);
+            var pollInterval = TimeSpan.FromMilliseconds(50); // Start with smaller interval
+            var maxPollInterval = TimeSpan.FromMilliseconds(500); // Cap the maximum interval
 
             while (DateTime.Now - startTime < timeout)
             {
@@ -489,6 +490,9 @@ namespace mcp_nexus.Extensions
                 }
 
                 await Task.Delay(pollInterval);
+                
+                // Exponential backoff: increase interval up to maximum
+                pollInterval = TimeSpan.FromMilliseconds(Math.Min(pollInterval.TotalMilliseconds * 1.2, maxPollInterval.TotalMilliseconds));
             }
 
             throw new TimeoutException($"Command {commandId} did not complete within {timeout.TotalSeconds} seconds");

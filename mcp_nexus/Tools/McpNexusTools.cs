@@ -252,8 +252,8 @@ namespace mcp_nexus.Tools
                     // Background processing task needs time to initialize after session creation
                     for (int attempt = 1; attempt <= 20; attempt++)
                     {
-                        // Use exponential backoff instead of fixed delay
-                        var delayMs = Math.Min(1000, 50 * (int)Math.Pow(1.5, attempt - 1));
+                        // Use optimized exponential backoff with smaller maximum delay
+                        var delayMs = Math.Min(200, 25 * (int)Math.Pow(1.3, attempt - 1));
                         await Task.Delay(delayMs);
 
                         if (sessionManager.TryGetCommandQueue(sessionId, out commandQueue) && commandQueue != null)

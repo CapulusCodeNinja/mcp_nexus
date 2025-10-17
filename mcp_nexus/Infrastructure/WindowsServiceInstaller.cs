@@ -20,6 +20,48 @@ namespace mcp_nexus.Infrastructure
         private const string m_InstallFolder = "C:\\Program Files\\MCP-Nexus";
 
         /// <summary>
+        /// Waits for a service to reach the specified status with timeout
+        /// </summary>
+        /// <param name="serviceName">The name of the service</param>
+        /// <param name="targetStatus">The target service status to wait for</param>
+        /// <param name="timeout">Maximum time to wait</param>
+        /// <param name="logger">Logger instance</param>
+        /// <returns>True if service reached target status, false if timeout</returns>
+        private static async Task<bool> WaitForServiceStatusAsync(string serviceName, ServiceControllerStatus targetStatus, TimeSpan timeout, ILogger? logger = null)
+        {
+            var startTime = DateTime.Now;
+            var pollInterval = TimeSpan.FromMilliseconds(100); // Small polling interval
+
+            while (DateTime.Now - startTime < timeout)
+            {
+                try
+                {
+                    using var service = new ServiceController(serviceName);
+                    var currentStatus = service.Status;
+                    
+                    if (currentStatus == targetStatus)
+                    {
+                        logger?.LogDebug("Service {ServiceName} reached target status {Status}", serviceName, targetStatus);
+                        return true;
+                    }
+                    
+                    logger?.LogDebug("Service {ServiceName} status: {CurrentStatus}, waiting for {TargetStatus}", 
+                        serviceName, currentStatus, targetStatus);
+                }
+                catch (Exception ex)
+                {
+                    logger?.LogDebug(ex, "Error checking service {ServiceName} status", serviceName);
+                }
+                
+                await Task.Delay(pollInterval);
+            }
+            
+            logger?.LogWarning("Service {ServiceName} did not reach status {Status} within {Timeout}ms", 
+                serviceName, targetStatus, timeout.TotalMilliseconds);
+            return false;
+        }
+
+        /// <summary>
         /// Installs the Windows service asynchronously
         /// </summary>
         /// <param name="logger">Logger instance</param>
@@ -95,7 +137,12 @@ namespace mcp_nexus.Infrastructure
                 if (stopResult)
                 {
                     logger?.LogInformation("Service stopped successfully");
-                    await Task.Delay(2000); // Wait for service to fully stop
+                    // Wait for service to fully stop with proper status checking
+                    var stopped = await WaitForServiceStatusAsync(m_ServiceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(10), logger);
+                    if (!stopped)
+                    {
+                        logger?.LogWarning("Service did not stop within timeout, continuing with uninstall");
+                    }
                 }
                 else
                 {
@@ -113,9 +160,13 @@ namespace mcp_nexus.Infrastructure
                 }
                 else
                 {
-                    // If delete failed, wait a bit and try again (handles "marked for deletion" state)
-                    logger?.LogWarning("Service delete failed, waiting and retrying...");
-                    await Task.Delay(3000);
+                    // If delete failed, wait for service to be fully stopped and try again (handles "marked for deletion" state)
+                    logger?.LogWarning("Service delete failed, waiting for service to be fully stopped and retrying...");
+                    var stopped = await WaitForServiceStatusAsync(m_ServiceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(5), logger);
+                    if (!stopped)
+                    {
+                        logger?.LogWarning("Service still not stopped after waiting, retrying delete anyway");
+                    }
 
                     var retryDeleteResult = await RunScCommandAsync(deleteCommand, logger);
                     if (retryDeleteResult)
@@ -194,7 +245,13 @@ namespace mcp_nexus.Infrastructure
                         {
                             Console.WriteLine("✓ Service stopped successfully");
                             wasRunning = true;
-                            await Task.Delay(2000); // Wait for service to fully stop
+                            // Wait for service to fully stop with proper status checking
+                            var stopped = await WaitForServiceStatusAsync(m_ServiceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(10), logger);
+                            if (!stopped)
+                            {
+                                Console.WriteLine("⚠ Service did not stop within timeout, continuing with update");
+                                logger?.LogWarning("Service did not stop within timeout during update");
+                            }
                         }
                         else
                         {
@@ -249,7 +306,17 @@ namespace mcp_nexus.Infrastructure
                     if (startResult)
                     {
                         Console.WriteLine("✓ Service started successfully");
-                        await Task.Delay(3000); // Wait for service to fully start
+                        // Wait for service to fully start with proper status checking
+                        var started = await WaitForServiceStatusAsync(m_ServiceName, ServiceControllerStatus.Running, TimeSpan.FromSeconds(15), logger);
+                        if (!started)
+                        {
+                            Console.WriteLine("⚠ Service did not start within timeout, check service status manually");
+                            logger?.LogWarning("Service did not start within timeout after update");
+                        }
+                        else
+                        {
+                            Console.WriteLine("✓ Service is running and ready");
+                        }
                     }
                     else
                     {
