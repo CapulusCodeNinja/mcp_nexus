@@ -36,64 +36,75 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 
 **❌ VIOLATIONS WILL RESULT IN IMMEDIATE REJECTION ❌**
 
+**🚫 NO EXCEPTIONS ARE ALLOWED - ALL RULES ARE ABSOLUTE 🚫**
+
 ### 🔥 IMMEDIATE REQUIREMENTS (Check These FIRST!)
 
-1. **✅ ALL TESTS MUST PASS**: Run `dotnet test` - ALL tests must be green before any submission
-2. **✅ VERSION MUST BE UPDATED**: Increment the build version in `mcp_nexus.csproj` (e.g., 1.0.6.12 → 1.0.6.13)
-   - The following version fields MUST exist and MUST have the same value: `Version`, `AssemblyVersion`, and `FileVersion`. Update all three together.
-3. **✅ README.md MUST BE UPDATED**: Update test count and coverage in README.md badges AND Test Statistics section
-4. **✅ NO COMPILATION ERRORS**: Code must build with zero warnings and zero errors
-5. **✅ NO DEAD CODE**: Remove unused code, methods, or files
-6. **✅ FORMATTING & HYGIENE VERIFIED (SOLUTION-WIDE)**:
+1. **✅ ALL TESTS MUST PASS**: Run `dotnet test` - ALL tests must be green before any submission. NO EXCEPTIONS.
+2. **✅ VERSION MUST BE UPDATED**: Increment the build version in `mcp_nexus.csproj` (e.g., 1.0.6.12 → 1.0.6.13). MANDATORY.
+   - The following version fields MUST exist and MUST have the same value: `Version`, `AssemblyVersion`, and `FileVersion`. Update all three together. NO EXCEPTIONS.
+3. **✅ README.md MUST BE UPDATED**: Update test count and coverage in README.md badges AND Test Statistics section. MANDATORY.
+4. **✅ NO COMPILATION ERRORS**: Code must build with zero warnings and zero errors. ABSOLUTE REQUIREMENT.
+5. **✅ NO DEAD CODE**: Remove unused code, methods, or files. NO EXCEPTIONS.
+6. **✅ FORMATTING & HYGIENE VERIFIED (SOLUTION-WIDE)**: MANDATORY.
    - Run repository-wide formatting and style enforcement before submitting any change:
      - `dotnet format style`
      - `dotnet format analyzers`
      - `dotnet format whitespace`
-   - There MUST be no formatting diffs left. Use `--verify-no-changes` in CI.
-   - Absolutely NO commented-out code or commented-out `using` directives anywhere.
-   - Absolutely NO unused `using` directives. Remove them.
-   - This rule applies to ALL files in the repository, not just edited ones.
+   - There MUST be no formatting diffs left. Use `--verify-no-changes` in CI. NO EXCEPTIONS.
+   - Absolutely NO commented-out code or commented-out `using` directives anywhere. ABSOLUTE.
+   - Absolutely NO unused `using` directives. Remove them. MANDATORY.
+   - This rule applies to ALL files in the repository, not just edited ones. NO EXCEPTIONS.
 
 ### 📋 DETAILED GROUND RULES
 
 #### Code Structure and Quality
-* **Atomicity and Clarity:** Methods must be **atomic, focused, and build successfully with zero warnings** in all configurations.
-* **Code Cleanliness:** There must be **no unused code**, **dead code**, **commented-out code**, or **unused import/using directives** within any file.
-* **File-Class Parity:** Each **top-level class or interface must reside in its own dedicated file**, with the filename matching the class/interface name.
-* **Standardized Formatting:** All code must be **perfectly formatted and aligned** according to the project's established standards (enforced by `dotnet format` or equivalent tooling). Apply this across the entire solution for every change.
-* **Concurrency and Performance Integrity:** As this is a **server application**, code must adhere to **proper concurrency practices**. Introduction of **blocking operations, excessive/long `Thread.Sleep` calls, or potential deadlocks/livelocks is strictly prohibited**. The code must be performant and thread-safe.
+* **Atomicity and Clarity:** Methods must be **atomic, focused, and build successfully with zero warnings** in all configurations. NO EXCEPTIONS.
+* **Code Cleanliness:** There must be **no unused code**, **dead code**, **commented-out code**, or **unused import/using directives** within any file. ABSOLUTE REQUIREMENT.
+* **File-Class Parity:** Each **top-level class or interface must reside in its own dedicated file**, with the filename matching the class/interface name. MANDATORY.
+* **Standardized Formatting:** All code must be **perfectly formatted and aligned** according to the project's established standards (enforced by `dotnet format` or equivalent tooling). Apply this across the entire solution for every change. NO EXCEPTIONS.
+* **Concurrency and Performance Integrity:** As this is a **server application**, code must adhere to **proper concurrency practices**. Introduction of **blocking operations, excessive/long `Thread.Sleep` calls, or potential deadlocks/livelocks is strictly prohibited**. The code must be performant and thread-safe. ABSOLUTE REQUIREMENT.
 
 #### Testing and Documentation
-* **100% Test Pass Rate:** **All unit tests must pass** (be "green") before submission.
-* **Testing Integrity:** **No existing or new tests may be excluded, ignored, or removed** without prior architectural review and approval.
-* **Documentation Synchronization:** All relevant **documentation** (e.g., Markdown documentation, README, or designated build manifest files) must be **up-to-date and reflect the current state** of the codebase and tests.
+* **100% Test Pass Rate:** **All unit tests must pass** (be "green") before submission. NO EXCEPTIONS.
+* **Testing Integrity:** **No existing or new tests may be excluded, ignored, or removed** without prior architectural review and approval. ABSOLUTE REQUIREMENT.
+* **Flaky Tests Are NOT Acceptable:** **Flaky tests are NOT acceptable!** Tests that pass sometimes and fail other times indicate poor test design and must be fixed immediately. NO EXCEPTIONS.
+* **Test Isolation Is Mandatory:** **Isolation issues in tests are NOT acceptable!** Tests must be completely isolated from each other and must not depend on execution order or shared state. ABSOLUTE REQUIREMENT.
+* **Zero Tolerance for Test Failures:** **Failing test is a failing test independent of the reason, there are no exceptions and no acceptable failure interpretation!** All tests must pass consistently, every time, without any excuses. NO EXCEPTIONS.
+* **Documentation Synchronization:** All relevant **documentation** (e.g., Markdown documentation, README, or designated build manifest files) must be **up-to-date and reflect the current state** of the codebase and tests. MANDATORY.
 
 #### Versioning and Scope
-* **Version Increment:** Only the **build version component** (the last digit/identifier) in the project's versioning scheme must be incremented for this change. (Assuming a **Major.Minor.Patch.Build** semantic versioning standard.)
-* **Version Field Equality:** In `mcp_nexus.csproj`, the `Version`, `AssemblyVersion`, and `FileVersion` values MUST be identical at all times. When bumping the version, update all three fields to the same value.
+* **Version Increment:** Only the **build version component** (the last digit/identifier) in the project's versioning scheme must be incremented for this change. (Assuming a **Major.Minor.Patch.Build** semantic versioning standard.) NO EXCEPTIONS.
+* **Version Field Equality:** In `mcp_nexus.csproj`, the `Version`, `AssemblyVersion`, and `FileVersion` values MUST be identical at all times. When bumping the version, update all three fields to the same value. ABSOLUTE REQUIREMENT.
 
 ### 🎯 COMMON VIOLATIONS TO AVOID
 
-**❌ DON'T FORGET:**
-- Running tests before submission
-- Updating version numbers
-- Updating README.md with new test counts and Test Statistics section
-- Removing dead/unused code
-- Checking for compilation errors
+**❌ DON'T FORGET (ALL MANDATORY - NO EXCEPTIONS):**
+- Running tests before submission - ABSOLUTE REQUIREMENT
+- Updating version numbers - MANDATORY
+- Updating README.md with new test counts and Test Statistics section - ABSOLUTE REQUIREMENT
+- Removing dead/unused code - NO EXCEPTIONS
+- Checking for compilation errors - MANDATORY
+- **Fixing flaky tests immediately** - ABSOLUTE REQUIREMENT
+- **Ensuring test isolation** - NO EXCEPTIONS
+- **Making tests pass consistently every time** - MANDATORY
 
-**✅ ALWAYS DO:**
-- Run `dotnet test` and verify all tests pass
-- Update version in `mcp_nexus.csproj`
-- Update test count and Test Statistics section in README.md
-- Remove any unused code or files
-- Verify zero compilation warnings/errors
+**✅ ALWAYS DO (ALL MANDATORY - NO EXCEPTIONS):**
+- Run `dotnet test` and verify all tests pass - ABSOLUTE REQUIREMENT
+- Update version in `mcp_nexus.csproj` - MANDATORY
+- Update test count and Test Statistics section in README.md - NO EXCEPTIONS
+- Remove any unused code or files - ABSOLUTE REQUIREMENT
+- Verify zero compilation warnings/errors - MANDATORY
+- **Fix any test that fails intermittently** - NO EXCEPTIONS
+- **Ensure tests are completely isolated** - ABSOLUTE REQUIREMENT
+- **Make tests deterministic and reliable** - MANDATORY
 
 ---
 
 ## Coding Standards
 
 ### XML Documentation Requirements
-**CRITICAL**: Every public and private method, property, constructor, enum, and class MUST have complete XML documentation:
+**CRITICAL - ABSOLUTE REQUIREMENT**: Every public and private method, property, constructor, enum, and class MUST have complete XML documentation. NO EXCEPTIONS.
 
 ```csharp
 /// <summary>
@@ -106,37 +117,37 @@ public ReturnType MethodName(ParameterType paramName)
 ```
 
 ### Naming Conventions
-- **Classes**: PascalCase (e.g., `SessionManager`, `CommandQueueService`)
-- **Methods**: PascalCase (e.g., `CreateSessionAsync`, `QueueCommand`)
-- **Properties**: PascalCase (e.g., `SessionId`, `IsHealthy`)
-- **Fields (including static fields)**: camelCase with `m_` prefix followed by PascalCase (e.g., `m_Logger`, `m_Sessions`, `m_CommandQueue`).
-  - Static fields are treated as member variables for naming purposes and MUST also use the `m_` prefix (NOT `s_`).
-  - Example: use `m_PathPattern` instead of `s_PathPattern`.
-- **Constants**: PascalCase (e.g., `MaxSessions`, `DefaultTimeout`)
+- **Classes**: PascalCase (e.g., `SessionManager`, `CommandQueueService`) - MANDATORY
+- **Methods**: PascalCase (e.g., `CreateSessionAsync`, `QueueCommand`) - ABSOLUTE REQUIREMENT
+- **Properties**: PascalCase (e.g., `SessionId`, `IsHealthy`) - NO EXCEPTIONS
+- **Fields (including static fields)**: camelCase with `m_` prefix followed by PascalCase (e.g., `m_Logger`, `m_Sessions`, `m_CommandQueue`) - MANDATORY.
+  - Static fields are treated as member variables for naming purposes and MUST also use the `m_` prefix (NOT `s_`) - ABSOLUTE REQUIREMENT.
+  - Example: use `m_PathPattern` instead of `s_PathPattern` - NO EXCEPTIONS.
+- **Constants**: PascalCase (e.g., `MaxSessions`, `DefaultTimeout`) - MANDATORY
 
-**IMPORTANT**: Member variables must follow the pattern `m_PascalCase` where the first letter after the underscore is uppercase. This ensures consistency with C# naming conventions and improves code readability.
-- **Enums**: PascalCase (e.g., `CommandState`, `CircuitState`)
+**IMPORTANT - ABSOLUTE REQUIREMENT**: Member variables must follow the pattern `m_PascalCase` where the first letter after the underscore is uppercase. This ensures consistency with C# naming conventions and improves code readability. NO EXCEPTIONS.
+- **Enums**: PascalCase (e.g., `CommandState`, `CircuitState`) - MANDATORY
 
 ### Time Policy
-- Use local time consistently across the codebase.
-- Prefer `DateTime.Now` over `DateTime.UtcNow` and `DateTimeOffset.Now` over `DateTimeOffset.UtcNow` in any possible case.
-- Logs, timestamps, metrics, and persisted times should all use local time to avoid confusion.
+- Use local time consistently across the codebase - ABSOLUTE REQUIREMENT.
+- Prefer `DateTime.Now` over `DateTime.UtcNow` and `DateTimeOffset.Now` over `DateTimeOffset.UtcNow` in any possible case - NO EXCEPTIONS.
+- Logs, timestamps, metrics, and persisted times should all use local time to avoid confusion - MANDATORY.
 
 ### Code Organization
-- **One class per file**: Each class in its own file
-- **Namespace structure**: `mcp_nexus.{Category}` (e.g., `mcp_nexus.Session`, `mcp_nexus.CommandQueue`)
-- **Using statements**: Grouped by system, third-party, then project namespaces
-- **Member variable placement**: **ALL member variables (fields, properties, constants) MUST be declared at the TOP of the class definition, before any methods or constructors**
-- **Method ordering**: Constructors, public methods, private methods, dispose pattern
+- **One class per file**: Each class in its own file - ABSOLUTE REQUIREMENT
+- **Namespace structure**: `mcp_nexus.{Category}` (e.g., `mcp_nexus.Session`, `mcp_nexus.CommandQueue`) - MANDATORY
+- **Using statements**: Grouped by system, third-party, then project namespaces - NO EXCEPTIONS
+- **Member variable placement**: **ALL member variables (fields, properties, constants) MUST be declared at the TOP of the class definition, before any methods or constructors** - ABSOLUTE REQUIREMENT
+- **Method ordering**: Constructors, public methods, private methods, dispose pattern - MANDATORY
 
 ### Error Handling
-- **Exception types**: Use specific exception types (`SessionNotFoundException`, `CircuitBreakerOpenException`)
-- **Logging levels**: 
-  - `LogError` for exceptions and failures
-  - `LogWarning` for recoverable issues
-  - `LogInformation` for important events
-  - `LogDebug` for detailed debugging
-- **Graceful degradation**: Always provide fallback behavior
+- **Exception types**: Use specific exception types (`SessionNotFoundException`, `CircuitBreakerOpenException`) - ABSOLUTE REQUIREMENT
+- **Logging levels**: MANDATORY
+  - `LogError` for exceptions and failures - NO EXCEPTIONS
+  - `LogWarning` for recoverable issues - ABSOLUTE REQUIREMENT
+  - `LogInformation` for important events - MANDATORY
+  - `LogDebug` for detailed debugging - NO EXCEPTIONS
+- **Graceful degradation**: Always provide fallback behavior - ABSOLUTE REQUIREMENT
 
 ## Domain Knowledge
 
@@ -185,21 +196,21 @@ public ReturnType MethodName(ParameterType paramName)
 ## Testing Requirements
 
 ### Test File Organization
-- **One-to-One Correspondence**: Every test file MUST correspond to exactly one production source file
-- **Naming Convention**: Test files must follow the pattern `{ProductionFileName}Tests.cs`
-- **No Orphaned Tests**: All tests for a production class must be in the corresponding test file
-- **No Generic Test Files**: Test files with generic names (e.g., `UtilityTests.cs`, `HelperTests.cs`) are prohibited
-- **Consolidation Required**: If multiple test files exist for the same production class, they must be consolidated
+- **One-to-One Correspondence**: Every test file MUST correspond to exactly one production source file - ABSOLUTE REQUIREMENT
+- **Naming Convention**: Test files must follow the pattern `{ProductionFileName}Tests.cs` - MANDATORY
+- **No Orphaned Tests**: All tests for a production class must be in the corresponding test file - NO EXCEPTIONS
+- **No Generic Test Files**: Test files with generic names (e.g., `UtilityTests.cs`, `HelperTests.cs`) are prohibited - ABSOLUTE REQUIREMENT
+- **Consolidation Required**: If multiple test files exist for the same production class, they must be consolidated - MANDATORY
 
 ### Unit Tests
-- **Coverage**: Aim for 100% code coverage
-- **Mocking**: Use mocks for external dependencies
-- **Edge cases**: Test error conditions and boundary values
+- **Coverage**: Aim for 100% code coverage - ABSOLUTE REQUIREMENT
+- **Mocking**: Use mocks for external dependencies - MANDATORY
+- **Edge cases**: Test error conditions and boundary values - NO EXCEPTIONS
 
 ### Integration Tests
-- **End-to-end workflows**: Test complete debugging sessions
-- **Error scenarios**: Test failure recovery and circuit breaker behavior
-- **Performance tests**: Verify memory usage and response times
+- **End-to-end workflows**: Test complete debugging sessions - ABSOLUTE REQUIREMENT
+- **Error scenarios**: Test failure recovery and circuit breaker behavior - MANDATORY
+- **Performance tests**: Verify memory usage and response times - NO EXCEPTIONS
 
 ## Security Considerations
 
@@ -250,47 +261,42 @@ public ReturnType MethodName(ParameterType paramName)
 ## Development Workflow
 
 ### Before Making Changes
-1. Read and understand the existing code structure
-2. Check for existing XML documentation
-3. Verify test coverage for affected areas
-4. Consider impact on session isolation
+1. Read and understand the existing code structure - MANDATORY
+2. Check for existing XML documentation - ABSOLUTE REQUIREMENT
+3. Verify test coverage for affected areas - NO EXCEPTIONS
+4. Consider impact on session isolation - MANDATORY
 
 ### During Development
-1. Follow the XML documentation standards strictly
-2. Use appropriate logging levels
-3. Handle exceptions gracefully
-4. Consider performance implications
-5. Maintain thread safety
+1. Follow the XML documentation standards strictly - ABSOLUTE REQUIREMENT
+2. Use appropriate logging levels - MANDATORY
+3. Handle exceptions gracefully - NO EXCEPTIONS
+4. Consider performance implications - ABSOLUTE REQUIREMENT
+5. Maintain thread safety - MANDATORY
 
 ### After Changes
-1. Verify all XML documentation is complete
-2. Run existing tests
-3. Add new tests for new functionality
-4. Check for memory leaks
-5. Verify session isolation is maintained
-6. Run `dotnet format` (style, analyzers, whitespace) solution-wide and ensure no changes remain (`--verify-no-changes`).
+1. Verify all XML documentation is complete - ABSOLUTE REQUIREMENT
+2. Run existing tests - MANDATORY
+3. Add new tests for new functionality - NO EXCEPTIONS
+4. Check for memory leaks - ABSOLUTE REQUIREMENT
+5. Verify session isolation is maintained - MANDATORY
+6. Run `dotnet format` (style, analyzers, whitespace) solution-wide and ensure no changes remain (`--verify-no-changes`) - ABSOLUTE REQUIREMENT.
 
 ## Special Considerations
 
 ### Session Management
-- **Isolation**: Each session must be completely isolated
-- **Cleanup**: Always clean up resources when sessions close
-- **Limits**: Respect maximum session limits
-- **Context**: Maintain session context for notifications
+- **Isolation**: Each session must be completely isolated - ABSOLUTE REQUIREMENT
+- **Cleanup**: Always clean up resources when sessions close - MANDATORY
+- **Limits**: Respect maximum session limits - NO EXCEPTIONS
+- **Context**: Maintain session context for notifications - ABSOLUTE REQUIREMENT
 
 ### Command Execution
-- **Asynchronous**: All command execution must be asynchronous
-- **Timeout**: Implement proper timeout handling
-- **Recovery**: Provide recovery mechanisms for failures
-- **Status**: Always provide clear status information
+- **Asynchronous**: All command execution must be asynchronous - MANDATORY
+- **Timeout**: Implement proper timeout handling - NO EXCEPTIONS
+- **Recovery**: Provide recovery mechanisms for failures - ABSOLUTE REQUIREMENT
+- **Status**: Always provide clear status information - MANDATORY
 
-### Error Recovery
-- **Circuit breakers**: Use for external dependencies
-- **Retry logic**: Implement exponential backoff
-- **Graceful degradation**: Provide fallback behavior
-- **User feedback**: Always inform users of issues
 
-This project represents a sophisticated debugging platform that requires careful attention to documentation, error handling, and resource management. Every change should maintain the high standards established for XML documentation and system reliability.
+This project represents a sophisticated debugging platform that requires careful attention to documentation, error handling, and resource management. Every change should maintain the high standards established for XML documentation and system reliability. ALL REQUIREMENTS ARE ABSOLUTE - NO EXCEPTIONS ARE ALLOWED.
 
 ---
 
@@ -1054,21 +1060,21 @@ Time  | Event
 ## For Future AI Assistants
 
 When working on this project:
-1. **Read AGENTS.md first** - Understand the architecture before making changes
-2. **Follow the established patterns** - Especially for extensions and batching
-3. **PowerShell-only for extension scripts** - No Python
-4. **Add tests for new features** - Maintain test coverage
-5. **Zero-regression policy** - All existing tests must pass
-6. **Update this document** - If architecture changes significantly
+1. **Read AGENTS.md first** - Understand the architecture before making changes - ABSOLUTE REQUIREMENT
+2. **Follow the established patterns** - Especially for extensions and batching - MANDATORY
+3. **PowerShell-only for extension scripts** - No Python - NO EXCEPTIONS
+4. **Add tests for new features** - Maintain test coverage - ABSOLUTE REQUIREMENT
+5. **Zero-regression policy** - All existing tests must pass - MANDATORY
+6. **Update this document** - If architecture changes significantly - NO EXCEPTIONS
 
 ### Extension System Key Principle
 
-**Extensions orchestrate workflows externally, using callbacks for individual commands.**
+**Extensions orchestrate workflows externally, using callbacks for individual commands. - ABSOLUTE REQUIREMENT**
 
-This design prevents deadlocks, maintains session isolation, and gives AI agents a reliable way to execute complex debugging workflows.
+This design prevents deadlocks, maintains session isolation, and gives AI agents a reliable way to execute complex debugging workflows. NO EXCEPTIONS.
 
 ### Command Batching Key Principle
 
-**Batching improves throughput internally, while being completely transparent to AI clients.**
+**Batching improves throughput internally, while being completely transparent to AI clients. - MANDATORY**
 
-This design maintains command dependencies, prevents race conditions, and provides configurable performance optimization without requiring changes to AI integration.
+This design maintains command dependencies, prevents race conditions, and provides configurable performance optimization without requiring changes to AI integration. ABSOLUTE REQUIREMENT.

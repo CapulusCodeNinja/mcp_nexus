@@ -202,7 +202,7 @@ namespace mcp_nexus_tests.CommandQueue
             var status = "executing";
 
             m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
                 .ThrowsAsync(new Exception("Notification failed"));
 
