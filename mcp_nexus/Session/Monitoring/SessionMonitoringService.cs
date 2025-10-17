@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Core.Models;
 using mcp_nexus.Notifications;
+using mcp_nexus.Session.Core;
+using mcp_nexus.Session.Lifecycle;
 
-namespace mcp_nexus.Session
+namespace mcp_nexus.Session.Monitoring
 {
     /// <summary>
     /// Monitors session health, activity, and provides periodic cleanup

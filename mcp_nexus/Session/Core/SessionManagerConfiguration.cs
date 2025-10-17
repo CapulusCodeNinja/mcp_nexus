@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Options;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Core.Models;
 using NLog;
 
-namespace mcp_nexus.Session
+namespace mcp_nexus.Session.Core
 {
     /// <summary>
     /// Configuration settings and validation for session management

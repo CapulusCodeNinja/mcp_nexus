@@ -1,7 +1,7 @@
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue.Core;
 
-namespace mcp_nexus.Session.Models
+namespace mcp_nexus.Session.Core.Models
 {
     /// <summary>
     /// Thread-safe session information container with proper encapsulation

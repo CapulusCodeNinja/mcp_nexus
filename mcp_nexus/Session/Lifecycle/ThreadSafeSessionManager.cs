@@ -1,11 +1,14 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Options;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Core.Models;
 using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Notifications;
 using mcp_nexus.Utilities.Validation;
+using mcp_nexus.Session.Core;
+using mcp_nexus.Session.Monitoring;
+using mcp_nexus.Session.Statistics;
 
-namespace mcp_nexus.Session
+namespace mcp_nexus.Session.Lifecycle
 {
     /// <summary>
     /// Refactored thread-safe, deadlock-free multi-session manager

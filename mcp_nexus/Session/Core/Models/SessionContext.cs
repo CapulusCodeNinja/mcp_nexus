@@ -1,4 +1,4 @@
-namespace mcp_nexus.Session.Models
+namespace mcp_nexus.Session.Core.Models
 {
     /// <summary>
     /// Context information about a session for AI client guidance

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using mcp_nexus.Session;
+using mcp_nexus.Session.Lifecycle;
 using mcp_nexus.CommandQueue.Core;
 using System.Net;
 

@@ -780,7 +780,7 @@ namespace mcp_nexus
             ConfigureHttpPipeline(app);
 
             // Log the resolved CDB path after service registration
-            var cdbOptions = app.Services.GetService<IOptions<mcp_nexus.Session.Models.CdbSessionOptions>>()?.Value;
+            var cdbOptions = app.Services.GetService<IOptions<mcp_nexus.Session.Core.Models.CdbSessionOptions>>()?.Value;
             var resolvedCdbPath = cdbOptions?.CustomCdbPath ?? "Auto-detection failed";
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
             logger.LogInformation("🔧 CDB Path resolved: {CdbPath}", resolvedCdbPath);

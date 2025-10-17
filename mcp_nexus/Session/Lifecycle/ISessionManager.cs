@@ -1,13 +1,14 @@
 using mcp_nexus.Models;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Core.Models;
 using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Notifications;
 using mcp_nexus.Protocol;
 using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure.Adapters;
-using mcp_nexus.Session;
+using mcp_nexus.Session.Core;
+using mcp_nexus.Session.Statistics;
 
-namespace mcp_nexus.Session
+namespace mcp_nexus.Session.Lifecycle
 {
     /// <summary>
     /// Interface for managing multiple debugging sessions with thread-safe operations.
@@ -132,88 +133,5 @@ namespace mcp_nexus.Session
         Task<(CommandInfo? CommandInfo, ICommandResult? Result)> GetCommandInfoAndResultAsync(string sessionId, string commandId);
     }
 
-    /// <summary>
-    /// Session manager statistics.
-    /// Contains information about session usage, performance, and resource consumption.
-    /// </summary>
-    public class SessionStatistics
-    {
-        /// <summary>
-        /// Gets or sets the current number of active sessions.
-        /// </summary>
-        public int ActiveSessions { get; set; }
-
-        /// <summary>
-        /// Gets or sets the total number of sessions created since startup.
-        /// </summary>
-        public long TotalSessionsCreated { get; set; }
-
-        /// <summary>
-        /// Gets or sets the total number of sessions closed.
-        /// </summary>
-        public long TotalSessionsClosed { get; set; }
-
-        /// <summary>
-        /// Gets or sets the total number of sessions that expired.
-        /// </summary>
-        public long TotalSessionsExpired { get; set; }
-
-        /// <summary>
-        /// Gets or sets the total number of commands processed across all sessions.
-        /// </summary>
-        public long TotalCommandsProcessed { get; set; }
-
-        /// <summary>
-        /// Gets or sets the average session lifetime.
-        /// </summary>
-        public TimeSpan AverageSessionLifetime { get; set; }
-
-        /// <summary>
-        /// Gets or sets the session manager uptime.
-        /// </summary>
-        public TimeSpan Uptime { get; set; }
-
-        /// <summary>
-        /// Gets or sets the memory usage information.
-        /// </summary>
-        public MemoryUsageInfo MemoryUsage { get; set; } = new();
-    }
-
-    /// <summary>
-    /// Memory usage information.
-    /// Contains details about memory consumption and garbage collection statistics.
-    /// </summary>
-    public class MemoryUsageInfo
-    {
-        /// <summary>
-        /// Gets or sets the working set memory in bytes.
-        /// </summary>
-        public long WorkingSetBytes { get; set; }
-
-        /// <summary>
-        /// Gets or sets the private memory in bytes.
-        /// </summary>
-        public long PrivateMemoryBytes { get; set; }
-
-        /// <summary>
-        /// Gets or sets the GC total memory in bytes.
-        /// </summary>
-        public long GCTotalMemoryBytes { get; set; }
-
-        /// <summary>
-        /// Gets or sets the number of Gen 0 collections.
-        /// </summary>
-        public int Gen0Collections { get; set; }
-
-        /// <summary>
-        /// Gets or sets the number of Gen 1 collections.
-        /// </summary>
-        public int Gen1Collections { get; set; }
-
-        /// <summary>
-        /// Gets or sets the number of Gen 2 collections.
-        /// </summary>
-        public int Gen2Collections { get; set; }
-    }
 }
 

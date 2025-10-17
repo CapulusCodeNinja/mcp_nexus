@@ -4,15 +4,16 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using mcp_nexus.Session;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Lifecycle;
+using mcp_nexus.Session.Core;
+using mcp_nexus.Session.Core.Models;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Notifications;
 using Xunit;
 using mcp_nexus.Utilities.Validation;
 
-namespace mcp_nexus_tests.Session
+namespace mcp_nexus_tests.Session.Lifecycle
 {
     public class ThreadSafeSessionManagerTests : IDisposable
     {

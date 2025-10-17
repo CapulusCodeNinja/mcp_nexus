@@ -4,12 +4,13 @@ using Microsoft.Extensions.Options;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.CommandQueue.Batching;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Core.Models;
 using mcp_nexus.Notifications;
 using mcp_nexus.Extensions;
 using mcp_nexus.Utilities.Validation;
+using mcp_nexus.Session.Core;
 
-namespace mcp_nexus.Session
+namespace mcp_nexus.Session.Lifecycle
 {
     /// <summary>
     /// Manages the lifecycle of debugging sessions including creation, closure, and cleanup.

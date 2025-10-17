@@ -1,4 +1,4 @@
-namespace mcp_nexus.Session.Models
+namespace mcp_nexus.Session.Core.Models
 {
     /// <summary>
     /// Exception thrown when a session is not found

@@ -1,4 +1,4 @@
-namespace mcp_nexus.Session.Models
+namespace mcp_nexus.Session.Core.Models
 {
     /// <summary>
     /// Represents the current status of a debugging session

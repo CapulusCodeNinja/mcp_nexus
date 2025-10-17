@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Core.Models;
 
 namespace mcp_nexus.Models
 {

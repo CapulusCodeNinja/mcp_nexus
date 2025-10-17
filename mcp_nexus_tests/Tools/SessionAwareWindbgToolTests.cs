@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using mcp_nexus.Tools;
-using mcp_nexus.Session;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Lifecycle;
+using mcp_nexus.Session.Core.Models;
 using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Exceptions;
 using System.Text.Json;

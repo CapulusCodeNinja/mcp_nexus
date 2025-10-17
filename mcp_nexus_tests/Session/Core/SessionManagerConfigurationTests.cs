@@ -3,7 +3,7 @@ using Moq;
 using Xunit;
 using mcp_nexus.Session;
 
-namespace mcp_nexus_tests.Session
+namespace mcp_nexus_tests.Session.Core
 {
     /// <summary>
     /// Tests for SessionManagerConfiguration

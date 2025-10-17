@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Extensions;
-using mcp_nexus.Session;
+using mcp_nexus.Session.Lifecycle;
 using Xunit;
 
 namespace mcp_nexus_tests.Extensions

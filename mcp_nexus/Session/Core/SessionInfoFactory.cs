@@ -1,8 +1,8 @@
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue.Core;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Core.Models;
 
-namespace mcp_nexus.Session
+namespace mcp_nexus.Session.Core
 {
     /// <summary>
     /// Factory for creating session information objects using Factory Pattern.

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Core.Models;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Notifications;
@@ -12,7 +12,7 @@ using Moq;
 using mcp_nexus_tests.Mocks;
 using Microsoft.Extensions.Logging;
 
-namespace mcp_nexus_tests.Session.Models
+namespace mcp_nexus_tests.Session.Core.Models
 {
     /// <summary>
     /// Tests for Session model classes - simple data containers

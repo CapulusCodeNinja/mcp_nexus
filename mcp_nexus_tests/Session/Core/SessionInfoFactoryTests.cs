@@ -1,14 +1,14 @@
 using System;
 using Moq;
 using Xunit;
-using mcp_nexus.Session;
+using mcp_nexus.Session.Core;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue.Core;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Core.Models;
 using mcp_nexus_tests.Mocks;
 using Microsoft.Extensions.Logging;
 
-namespace mcp_nexus_tests.Session
+namespace mcp_nexus_tests.Session.Core
 {
     public class SessionInfoFactoryTests : IDisposable
     {

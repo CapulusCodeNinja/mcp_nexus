@@ -6,15 +6,18 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
-using mcp_nexus.Session;
-using mcp_nexus.Session.Models;
+using mcp_nexus.Session.Lifecycle;
+using mcp_nexus.Session.Monitoring;
+using mcp_nexus.Session.Core.Models;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Notifications;
 using mcp_nexus_tests.Mocks;
 using mcp_nexus.Utilities.Validation;
+using mcp_nexus.Session.Statistics;
+using mcp_nexus.Session.Core;
 
-namespace mcp_nexus_tests.Session
+namespace mcp_nexus_tests.Session.Statistics
 {
     /// <summary>
     /// Tests for SessionStatisticsCollector and related data classes
