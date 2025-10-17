@@ -5,7 +5,7 @@ using Moq;
 using mcp_nexus.Tools;
 using mcp_nexus.Session;
 using mcp_nexus.Session.Models;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.CommandQueue.Core;
 using System.Text.Json;
 
 namespace mcp_nexus_tests.Tools

@@ -9,7 +9,7 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using mcp_nexus.Debugger;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Notifications;
 using mcp_nexus.Session;
 using mcp_nexus.Session.Models;

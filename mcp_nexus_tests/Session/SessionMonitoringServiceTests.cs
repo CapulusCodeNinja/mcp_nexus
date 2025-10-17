@@ -6,7 +6,7 @@ using mcp_nexus.Session;
 using mcp_nexus.Session.Models;
 using mcp_nexus.Notifications;
 using mcp_nexus.Debugger;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.CommandQueue.Core;
 using System.Collections.Concurrent;
 using mcp_nexus_tests.Mocks;
 

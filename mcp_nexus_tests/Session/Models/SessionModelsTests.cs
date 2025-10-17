@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Xunit;
 using mcp_nexus.Session.Models;
 using mcp_nexus.Debugger;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Notifications;
 using mcp_nexus.Protocol;
 using mcp_nexus.Recovery;

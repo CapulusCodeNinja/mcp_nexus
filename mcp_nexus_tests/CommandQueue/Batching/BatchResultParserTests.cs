@@ -1,0 +1,177 @@
+using mcp_nexus.Debugger;
+using mcp_nexus.CommandQueue.Batching;
+using mcp_nexus.CommandQueue.Core;
+
+namespace mcp_nexus_tests.CommandQueue.Batching
+{
+    /// <summary>
+    /// Unit tests for BatchResultParser
+    /// </summary>
+    public class BatchResultParserTests
+    {
+        #region SplitBatchResults Tests
+
+        [Fact]
+        public void SplitBatchResults_WithValidBatchOutput_ShouldParseCorrectly()
+        {
+            // Arrange
+            var parser = new BatchResultParser();
+            var commands = new List<QueuedCommand>
+            {
+                CreateTestCommand("cmd-1", "lm"),
+                CreateTestCommand("cmd-2", "!threads"),
+                CreateTestCommand("cmd-3", "!peb")
+            };
+
+            var batchOutput = CreateMockBatchOutput(commands);
+
+            // Act
+            var results = parser.SplitBatchResults(batchOutput, commands);
+
+            // Assert
+            Assert.NotNull(results);
+            Assert.Equal(3, results.Count);
+            Assert.True(results.All(r => r.IsSuccess));
+        }
+
+        [Fact]
+        public void SplitBatchResults_WithNullBatchOutput_ShouldThrowArgumentNullException()
+        {
+            // Arrange
+            var parser = new BatchResultParser();
+            var commands = new List<QueuedCommand>
+            {
+                CreateTestCommand("cmd-1", "lm")
+            };
+
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => parser.SplitBatchResults(null!, commands));
+        }
+
+        [Fact]
+        public void SplitBatchResults_WithNullCommands_ShouldThrowArgumentNullException()
+        {
+            // Arrange
+            var parser = new BatchResultParser();
+            var batchOutput = "Some batch output";
+
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => parser.SplitBatchResults(batchOutput, null!));
+        }
+
+        [Fact]
+        public void SplitBatchResults_WithEmptyBatchOutput_ShouldReturnEmptyResults()
+        {
+            // Arrange
+            var parser = new BatchResultParser();
+            var commands = new List<QueuedCommand>
+            {
+                CreateTestCommand("cmd-1", "lm")
+            };
+
+            // Act
+            var results = parser.SplitBatchResults("", commands);
+
+            // Assert
+            Assert.NotNull(results);
+            Assert.Single(results);
+            Assert.False(results[0].IsSuccess);
+        }
+
+        [Fact]
+        public void SplitBatchResults_WithMissingSeparators_ShouldReturnErrorResults()
+        {
+            // Arrange
+            var parser = new BatchResultParser();
+            var commands = new List<QueuedCommand>
+            {
+                CreateTestCommand("cmd-1", "lm"),
+                CreateTestCommand("cmd-2", "!threads")
+            };
+
+            var batchOutput = "Some output without proper separators";
+
+            // Act
+            var results = parser.SplitBatchResults(batchOutput, commands);
+
+            // Assert
+            Assert.NotNull(results);
+            Assert.Equal(2, results.Count);
+            Assert.True(results.All(r => !r.IsSuccess));
+        }
+
+        [Fact]
+        public void SplitBatchResults_WithSingleCommand_ShouldParseCorrectly()
+        {
+            // Arrange
+            var parser = new BatchResultParser();
+            var commands = new List<QueuedCommand>
+            {
+                CreateTestCommand("cmd-1", "lm")
+            };
+
+            var batchOutput = CreateMockBatchOutput(commands);
+
+            // Act
+            var results = parser.SplitBatchResults(batchOutput, commands);
+
+            // Assert
+            Assert.NotNull(results);
+            Assert.Single(results);
+            Assert.True(results[0].IsSuccess);
+            Assert.Contains("Module list", results[0].Output);
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private static QueuedCommand CreateTestCommand(string id, string command)
+        {
+            return new QueuedCommand(
+                id,
+                command,
+                DateTime.Now,
+                new TaskCompletionSource<string>(),
+                new CancellationTokenSource(),
+                CommandState.Queued);
+        }
+
+        private static string CreateMockBatchOutput(List<QueuedCommand> commands)
+        {
+            var output = new List<string>();
+
+            foreach (var command in commands)
+            {
+                // Create start and end markers for this command
+                var startMarker = $"{CdbSentinels.CommandSeparator}_{command.Id}";
+                var endMarker = $"{CdbSentinels.CommandSeparator}_{command.Id}_END";
+
+                output.Add($"echo {startMarker}");
+
+                // Add mock output based on command
+                switch (command.Command)
+                {
+                    case "lm":
+                        output.Add("Module list output");
+                        break;
+                    case "!threads":
+                        output.Add("Thread information");
+                        break;
+                    case "!peb":
+                        output.Add("Process Environment Block");
+                        break;
+                    default:
+                        output.Add($"Output for {command.Command}");
+                        break;
+                }
+
+                output.Add($"echo {endMarker}");
+            }
+
+            return string.Join("\n", output);
+        }
+
+        #endregion
+    }
+}

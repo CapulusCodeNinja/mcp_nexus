@@ -10,7 +10,7 @@ using Xunit;
 using mcp_nexus.Resources;
 using mcp_nexus.Session;
 using mcp_nexus.Session.Models;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.CommandQueue.Core;
 using mcp_nexus;
 using mcp_nexus.Extensions;
 using System.Text.Json;

@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.CommandQueue.Core;
 using Microsoft.Extensions.Logging;
 
 namespace mcp_nexus.Extensions

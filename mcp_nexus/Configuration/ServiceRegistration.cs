@@ -1,5 +1,9 @@
 using mcp_nexus.Debugger;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.CommandQueue.Core;
+using mcp_nexus.CommandQueue.Batching;
+using mcp_nexus.CommandQueue.Recovery;
+using mcp_nexus.CommandQueue.Validation;
+using mcp_nexus.CommandQueue.Notification;
 using mcp_nexus.Notifications;
 using mcp_nexus.Recovery;
 using mcp_nexus.Infrastructure;

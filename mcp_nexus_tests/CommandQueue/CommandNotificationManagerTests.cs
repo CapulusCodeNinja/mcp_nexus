@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.CommandQueue.Core;
+using mcp_nexus.CommandQueue.Notification;
 using mcp_nexus.Notifications;
 
 namespace mcp_nexus_tests.CommandQueue

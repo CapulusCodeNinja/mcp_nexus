@@ -1,5 +1,5 @@
 using mcp_nexus.Debugger;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Session.Models;
 
 namespace mcp_nexus.Session

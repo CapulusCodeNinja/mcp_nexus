@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Moq;
-using mcp_nexus.CommandQueue;
+using mcp_nexus.CommandQueue.Core;
 using mcp_nexus.Extensions;
 using Xunit;
 
