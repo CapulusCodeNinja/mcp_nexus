@@ -1,20 +1,10 @@
 using mcp_nexus.Session;
 using mcp_nexus.Session.Models;
 using mcp_nexus.CommandQueue;
-using mcp_nexus.Notifications;
-using mcp_nexus.Protocol;
-using mcp_nexus.Recovery;
-using mcp_nexus.Infrastructure;
 using mcp_nexus.Utilities;
-using mcp_nexus.Constants;
-using mcp_nexus.Models;
-using mcp_nexus.Extensions;
 using mcp_nexus.Resources;
 using ModelContextProtocol.Server;
-using System.ComponentModel;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
