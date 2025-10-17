@@ -113,7 +113,7 @@ namespace mcp_nexus_tests.CommandQueue
         }
 
         [Fact]
-        public void NotifyCommandStatusFireAndForget_WithDefaultProgress_CallsNotificationServiceWithZeroProgress()
+        public async Task NotifyCommandStatusFireAndForget_WithDefaultProgress_CallsNotificationServiceWithZeroProgress()
         {
             // Arrange
             var commandId = "cmd-1";
@@ -124,8 +124,25 @@ namespace mcp_nexus_tests.CommandQueue
             m_Manager.NotifyCommandStatusFireAndForget(commandId, command, status);
 
             // Assert
-            // Give the Task.Run a moment to execute
-            Thread.Sleep(500);
+            // Wait for the Task.Run to complete with a reasonable timeout
+            var maxWaitTime = TimeSpan.FromSeconds(2);
+            var startTime = DateTime.Now;
+            
+            while (DateTime.Now - startTime < maxWaitTime)
+            {
+                try
+                {
+                    m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+                    return; // Test passed
+                }
+                catch (MockException)
+                {
+                    // Verification failed, wait a bit more
+                    await Task.Delay(50);
+                }
+            }
+            
+            // If we get here, the verification failed within the timeout
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 

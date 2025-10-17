@@ -3,7 +3,9 @@ using mcp_nexus.Session.Models;
 using mcp_nexus.CommandQueue;
 using mcp_nexus.Utilities;
 using mcp_nexus.Resources;
+using mcp_nexus.Extensions;
 using ModelContextProtocol.Server;
+using System.ComponentModel;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -1033,9 +1035,9 @@ namespace mcp_nexus.Tools
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("McpNexusTools");
             var sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
-            
+
             logger.LogInformation("Getting command status for session: {SessionId}", sessionId);
-            
+
             try
             {
                 // Validate sessionId
@@ -1049,7 +1051,7 @@ namespace mcp_nexus.Tools
                         operation = "nexus_get_dump_analyze_commands_status"
                     });
                 }
-                
+
                 if (!sessionManager.SessionExists(sessionId))
                 {
                     return Task.FromResult((object)new
@@ -1060,11 +1062,11 @@ namespace mcp_nexus.Tools
                         operation = "nexus_get_dump_analyze_commands_status"
                     });
                 }
-                
+
                 // Get command queue for this session
                 var commandQueue = sessionManager.GetCommandQueue(sessionId);
                 var sessionCommands = McpNexusResources.GetSessionCommandsFromQueue(commandQueue, sessionId);
-                
+
                 var result = new
                 {
                     sessionId,
@@ -1073,7 +1075,7 @@ namespace mcp_nexus.Tools
                     timestamp = DateTimeOffset.Now,
                     note = "All commands for this session. Poll this tool to monitor command progress."
                 };
-                
+
                 return Task.FromResult((object)result);
             }
             catch (Exception ex)

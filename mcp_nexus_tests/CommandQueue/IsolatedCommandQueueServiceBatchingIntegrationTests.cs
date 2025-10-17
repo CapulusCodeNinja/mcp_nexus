@@ -412,13 +412,21 @@ namespace mcp_nexus_tests.CommandQueue
 
                     if (cmd.Contains("MCP_NEXUS_BATCH_START"))
                     {
-                        return Task.FromResult(
-                            "MCP_NEXUS_BATCH_START\n" +
-                            "echo MCP_NEXUS_CMD_SEP_cmd-1\n" +
-                            "Timeout batch output\n" +
-                            "echo MCP_NEXUS_CMD_SEP_cmd-1_END\n" +
-                            "MCP_NEXUS_BATCH_END"
-                        );
+                        // Extract command IDs from the batch command
+                        var cmdIdMatches = System.Text.RegularExpressions.Regex.Matches(cmd, @"MCP_NEXUS_CMD_SEP_([^_\r\n]+)");
+                        var cmdIds = cmdIdMatches.Select(m => m.Groups[1].Value).Distinct().ToList();
+
+                        // Build batch output with actual command IDs
+                        var output = "MCP_NEXUS_BATCH_START\n";
+                        if (cmdIds.Count >= 1)
+                        {
+                            output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[0]}\n";
+                            output += "Timeout batch output\n";
+                            output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[0]}_END\n";
+                        }
+                        output += "MCP_NEXUS_BATCH_END";
+
+                        return Task.FromResult(output);
                     }
 
                     return Task.FromResult("Individual command output");
