@@ -21,3 +21,4 @@ namespace mcp_nexus.Extensions
         public string? Message { get; set; }
     }
 }
+

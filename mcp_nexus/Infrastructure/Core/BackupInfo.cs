@@ -55,3 +55,4 @@ namespace mcp_nexus.Infrastructure.Core
         public long SizeBytes { get; set; }
     }
 }
+

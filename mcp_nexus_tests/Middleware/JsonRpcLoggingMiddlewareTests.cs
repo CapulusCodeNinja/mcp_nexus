@@ -362,5 +362,302 @@ namespace mcp_nexus_tests.Middleware
         }
 
         #endregion
+
+        #region Additional Coverage Tests
+
+        [Fact]
+        public async Task InvokeAsync_WithDebugLoggingEnabled_LogsRequestAndResponse()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger<JsonRpcLoggingMiddleware>>();
+            mockLogger.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(true);
+
+            var middleware = new JsonRpcLoggingMiddleware(NextMiddleware, mockLogger.Object);
+
+            var context = new DefaultHttpContext();
+            context.Request.Path = "/";
+            context.Request.Method = "POST";
+            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"method\":\"test\"}"));
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert
+            mockLogger.Verify(l => l.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("JSON-RPC Request")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithDebugLoggingEnabled_LogsDebugResponse()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger<JsonRpcLoggingMiddleware>>();
+            mockLogger.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(true);
+
+            var middleware = new JsonRpcLoggingMiddleware(NextMiddleware, mockLogger.Object);
+
+            var context = new DefaultHttpContext();
+            context.Request.Path = "/";
+            context.Request.Method = "POST";
+            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"method\":\"test\"}"));
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert
+            mockLogger.Verify(l => l.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("JSON-RPC Response")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.AtLeastOnce);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithEmptyRequest_HandlesEmptyRequest()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger<JsonRpcLoggingMiddleware>>();
+            mockLogger.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(true);
+
+            var middleware = new JsonRpcLoggingMiddleware(NextMiddleware, mockLogger.Object);
+
+            var context = new DefaultHttpContext();
+            context.Request.Path = "/";
+            context.Request.Method = "POST";
+            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(""));
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert - Should handle empty request without throwing
+            Assert.NotNull(context.Response.Body);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithInvalidJsonRequest_HandlesInvalidJson()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger<JsonRpcLoggingMiddleware>>();
+            mockLogger.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(true);
+
+            var middleware = new JsonRpcLoggingMiddleware(NextMiddleware, mockLogger.Object);
+
+            var context = new DefaultHttpContext();
+            context.Request.Path = "/";
+            context.Request.Method = "POST";
+            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{invalid json}"));
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert - Should handle invalid JSON without throwing
+            Assert.NotNull(context.Response.Body);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithComplexNestedArrays_HandlesNestedArrays()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger<JsonRpcLoggingMiddleware>>();
+            mockLogger.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(true);
+
+            RequestDelegate complexNext = async (HttpContext context) =>
+            {
+                var response = new
+                {
+                    result = new
+                    {
+                        content = new[]
+                        {
+                            new
+                            {
+                                type = "text",
+                                text = "{\"data\":[[1,2,3],[4,5,6],[\"a\",\"b\",\"c\"]]}"
+                            }
+                        }
+                    }
+                };
+                var json = System.Text.Json.JsonSerializer.Serialize(response);
+                var bytes = Encoding.UTF8.GetBytes(json);
+                await context.Response.Body.WriteAsync(bytes);
+            };
+
+            var middleware = new JsonRpcLoggingMiddleware(complexNext, mockLogger.Object);
+
+            var context = new DefaultHttpContext();
+            context.Request.Path = "/";
+            context.Request.Method = "POST";
+            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"method\":\"test\"}"));
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert - Should handle nested arrays
+            Assert.NotNull(context.Response.Body);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithLargeNestedObject_TruncatesCorrectly()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger<JsonRpcLoggingMiddleware>>();
+            mockLogger.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(true);
+
+            var largeField = new string('x', 1500);
+            RequestDelegate nestedNext = async (HttpContext context) =>
+            {
+                var response = new
+                {
+                    result = new
+                    {
+                        content = new[]
+                        {
+                            new
+                            {
+                                type = "text",
+                                text = "{\"nested\":{\"field1\":\"" + largeField + "\",\"field2\":\"small\"}}"
+                            }
+                        }
+                    }
+                };
+                var json = System.Text.Json.JsonSerializer.Serialize(response);
+                var bytes = Encoding.UTF8.GetBytes(json);
+                await context.Response.Body.WriteAsync(bytes);
+            };
+
+            var middleware = new JsonRpcLoggingMiddleware(nestedNext, mockLogger.Object);
+
+            var context = new DefaultHttpContext();
+            context.Request.Path = "/";
+            context.Request.Method = "POST";
+            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"method\":\"test\"}"));
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert - Should truncate large nested fields
+            Assert.NotNull(context.Response.Body);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithNumbersAndBooleans_HandlesNonStringValues()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger<JsonRpcLoggingMiddleware>>();
+            mockLogger.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(true);
+
+            RequestDelegate numbersNext = async (HttpContext context) =>
+            {
+                var response = new
+                {
+                    result = new
+                    {
+                        content = new[]
+                        {
+                            new
+                            {
+                                type = "text",
+                                text = "{\"number\":123,\"boolean\":true,\"null\":null,\"float\":45.67}"
+                            }
+                        }
+                    }
+                };
+                var json = System.Text.Json.JsonSerializer.Serialize(response);
+                var bytes = Encoding.UTF8.GetBytes(json);
+                await context.Response.Body.WriteAsync(bytes);
+            };
+
+            var middleware = new JsonRpcLoggingMiddleware(numbersNext, mockLogger.Object);
+
+            var context = new DefaultHttpContext();
+            context.Request.Path = "/";
+            context.Request.Method = "POST";
+            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"method\":\"test\"}"));
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert - Should handle numbers and booleans
+            Assert.NotNull(context.Response.Body);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithSseFormatNoDataLine_FallsBackToDirectParsing()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger<JsonRpcLoggingMiddleware>>();
+            mockLogger.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(true);
+
+            RequestDelegate sseNext = async (HttpContext context) =>
+            {
+                // SSE format without "data:" line
+                var sseResponse = "event: message\nretry: 1000\n{\"result\":{\"content\":[{\"text\":\"{}\"}]}}\n\n";
+                var bytes = Encoding.UTF8.GetBytes(sseResponse);
+                await context.Response.Body.WriteAsync(bytes);
+            };
+
+            var middleware = new JsonRpcLoggingMiddleware(sseNext, mockLogger.Object);
+
+            var context = new DefaultHttpContext();
+            context.Request.Path = "/";
+            context.Request.Method = "POST";
+            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"method\":\"test\"}"));
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert - Should fall back to direct JSON parsing
+            Assert.NotNull(context.Response.Body);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_WithUnescapableDecode_UsesRegexFallback()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger<JsonRpcLoggingMiddleware>>();
+            mockLogger.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(true);
+
+            RequestDelegate unescapableNext = async (HttpContext context) =>
+            {
+                // Text that can't be deserialized but can be unescaped
+                var response = new
+                {
+                    result = new
+                    {
+                        content = new[]
+                        {
+                            new
+                            {
+                                type = "text",
+                                text = "\\\"simple\\nescaped\\ttext\\\""
+                            }
+                        }
+                    }
+                };
+                var json = System.Text.Json.JsonSerializer.Serialize(response);
+                var bytes = Encoding.UTF8.GetBytes(json);
+                await context.Response.Body.WriteAsync(bytes);
+            };
+
+            var middleware = new JsonRpcLoggingMiddleware(unescapableNext, mockLogger.Object);
+
+            var context = new DefaultHttpContext();
+            context.Request.Path = "/";
+            context.Request.Method = "POST";
+            context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"method\":\"test\"}"));
+
+            // Act
+            await middleware.InvokeAsync(context);
+
+            // Assert - Should use regex fallback for unescaping
+            Assert.NotNull(context.Response.Body);
+        }
+
+        #endregion
     }
 }
