@@ -709,6 +709,48 @@ $output2 = Invoke-NexusCommand "lm"
 
 ---
 
+## Async Command Execution (v1.0.7.5)
+
+### Problem
+
+Extension scripts using synchronous `Invoke-NexusCommand` cannot leverage command batching because each command blocks until completion, preventing multiple commands from being queued together.
+
+### Solution
+
+Added async command execution functions that queue commands without blocking, enabling the internal command batching system to improve throughput.
+
+### New PowerShell Functions
+
+- `Start-NexusCommand` - Queue a command, returns command ID immediately
+- `Wait-NexusCommand` - Block until queued command completes
+- `Get-NexusCommandResult` - Check command status without blocking
+- `Start-NexusCommands` - Queue multiple commands at once
+
+### New HTTP Endpoint
+
+- `POST /extension-callback/queue` - Queue command without waiting (enables batching)
+
+### Usage Example
+
+```powershell
+# Queue multiple commands (enables batching)
+$ids = Start-NexusCommands -Commands @("lm", "!threads", "!peb")
+
+# Wait for all to complete
+foreach ($id in $ids) {
+    $result = Wait-NexusCommand -CommandId $id
+    Process-Result $result
+}
+```
+
+### Benefits
+
+- Commands queued together can be batched automatically by `BatchCommandProcessor`
+- Better throughput for bulk operations
+- Backward compatible with existing `Invoke-NexusCommand` (synchronous)
+
+---
+
 ## Command Batching System Architecture
 
 ### Overview

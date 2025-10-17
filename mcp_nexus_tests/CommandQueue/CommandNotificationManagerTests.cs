@@ -245,7 +245,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Wait for the Task.Run to complete with retries
             var maxWaitTime = TimeSpan.FromSeconds(5);
             var startTime = DateTime.Now;
-            
+
             while (DateTime.Now - startTime < maxWaitTime)
             {
                 try
@@ -264,7 +264,7 @@ namespace mcp_nexus_tests.CommandQueue
                     await Task.Delay(100);
                 }
             }
-            
+
             // Final verification - this will throw if it still fails
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Information,
@@ -328,7 +328,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Wait for the Task.Run to complete with retries
             var maxWaitTime = TimeSpan.FromSeconds(5);
             var startTime = DateTime.Now;
-            
+
             while (DateTime.Now - startTime < maxWaitTime)
             {
                 try
@@ -347,7 +347,7 @@ namespace mcp_nexus_tests.CommandQueue
                     await Task.Delay(100);
                 }
             }
-            
+
             // Final verification - this will throw if it still fails
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Information,
@@ -396,7 +396,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Wait for the Task.Run to complete with retries
             var maxWaitTime = TimeSpan.FromSeconds(5);
             var startTime = DateTime.Now;
-            
+
             while (DateTime.Now - startTime < maxWaitTime)
             {
                 try
@@ -415,7 +415,7 @@ namespace mcp_nexus_tests.CommandQueue
                     await Task.Delay(100);
                 }
             }
-            
+
             // Final verification - this will throw if it still fails
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Warning,

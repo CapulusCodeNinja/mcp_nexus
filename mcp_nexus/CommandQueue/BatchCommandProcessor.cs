@@ -92,7 +92,7 @@ namespace mcp_nexus.CommandQueue
                 throw new ObjectDisposedException(nameof(BatchCommandProcessor));
 
             // If batching is disabled, command cannot be batched, batch size is invalid, or timeout is invalid, execute immediately
-            if (!m_config.Enabled || !m_filter.CanBatchCommand(command.Command ?? string.Empty) || 
+            if (!m_config.Enabled || !m_filter.CanBatchCommand(command.Command ?? string.Empty) ||
                 m_config.MaxBatchSize <= 0 || m_config.BatchWaitTimeoutMs <= 0)
             {
                 await ExecuteSingleCommandAsync(command);

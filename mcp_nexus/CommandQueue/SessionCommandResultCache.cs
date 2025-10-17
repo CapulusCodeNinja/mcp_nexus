@@ -302,7 +302,7 @@ namespace mcp_nexus.CommandQueue
                 // Create a priority queue to find the oldest items
                 // Use a min-heap by default, so oldest items (smaller DateTime) have highest priority
                 var pq = new PriorityQueue<KeyValuePair<string, CachedCommandResult>, DateTime>();
-                
+
                 // Add all items to the priority queue (min-heap by default, so oldest first)
                 foreach (var kv in m_Results)
                 {
@@ -312,7 +312,7 @@ namespace mcp_nexus.CommandQueue
                 var evictedCount = 0;
                 var freedMemory = 0L;
                 var evictedKeys = new List<string>();
-                
+
                 // Remove the oldest items (up to targetCount)
                 var itemsToRemove = Math.Min(targetCount, pq.Count);
                 for (int i = 0; i < itemsToRemove; i++)

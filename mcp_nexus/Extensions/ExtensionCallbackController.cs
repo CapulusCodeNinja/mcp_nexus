@@ -151,6 +151,110 @@ namespace mcp_nexus.Extensions
         }
 
         /// <summary>
+        /// Queues a WinDBG command for asynchronous execution (enables batching).
+        /// Extensions use this endpoint to queue commands without waiting for completion.
+        /// </summary>
+        /// <param name="request">The command execution request.</param>
+        /// <returns>The command ID and status.</returns>
+        [HttpPost("queue")]
+        [ProducesResponseType(typeof(ExtensionCallbackQueueResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ExtensionCallbackErrorResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ExtensionCallbackErrorResponse), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ExtensionCallbackErrorResponse), StatusCodes.Status400BadRequest)]
+        public IActionResult QueueCommand([FromBody] ExtensionCallbackExecuteRequest request)
+        {
+            // Validate request is from localhost
+            if (!IsLocalhost())
+            {
+                m_Logger.LogWarning("Extension callback denied from non-localhost IP: {IP}",
+                    HttpContext.Connection.RemoteIpAddress);
+                return StatusCode(403, new ExtensionCallbackErrorResponse
+                {
+                    Error = "Forbidden",
+                    Message = "Extension callbacks are only accessible from localhost",
+                    Hint = "This endpoint is for internal extension use only"
+                });
+            }
+
+            // Extract and validate token
+            var token = ExtractBearerToken();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                m_Logger.LogWarning("Extension callback missing authorization token");
+                return StatusCode(401, new ExtensionCallbackErrorResponse
+                {
+                    Error = "Unauthorized",
+                    Message = "Missing or invalid authorization token"
+                });
+            }
+
+            var (isValid, sessionId, commandId) = m_TokenValidator.ValidateToken(token);
+            if (!isValid || string.IsNullOrWhiteSpace(sessionId))
+            {
+                m_Logger.LogWarning("Extension callback invalid token");
+                return StatusCode(401, new ExtensionCallbackErrorResponse
+                {
+                    Error = "Unauthorized",
+                    Message = "Invalid extension token"
+                });
+            }
+
+            // Validate request
+            if (request == null || string.IsNullOrWhiteSpace(request.Command))
+            {
+                return BadRequest(new ExtensionCallbackErrorResponse
+                {
+                    Error = "Bad Request",
+                    Message = "Command cannot be null or empty"
+                });
+            }
+
+            try
+            {
+                m_Logger.LogDebug("Extension callback queue command: {Command} for session {SessionId}",
+                    request.Command, sessionId);
+
+                // Increment callback count
+                if (!string.IsNullOrWhiteSpace(commandId))
+                {
+                    m_ExtensionTracker.IncrementCallbackCount(commandId);
+                }
+
+                // Get command queue for the session
+                if (!m_SessionManager.TryGetCommandQueue(sessionId, out var commandQueue) || commandQueue == null)
+                {
+                    return StatusCode(400, new ExtensionCallbackErrorResponse
+                    {
+                        Error = "Bad Request",
+                        Message = $"Session {sessionId} not found or command queue not available"
+                    });
+                }
+
+                // Queue the command (this enables batching!)
+                var queuedCommandId = commandQueue.QueueCommand(request.Command);
+
+                m_Logger.LogInformation("Extension queued command {CommandId} for session {SessionId}",
+                    queuedCommandId, sessionId);
+
+                return Ok(new ExtensionCallbackQueueResponse
+                {
+                    CommandId = queuedCommandId,
+                    Status = "Queued",
+                    Message = "Command queued for execution"
+                });
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogError(ex, "Extension callback queue failed for session {SessionId}", sessionId);
+                return StatusCode(500, new ExtensionCallbackErrorResponse
+                {
+                    Error = "Internal Server Error",
+                    Message = $"Failed to queue command: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
         /// Reads the result of a previously executed command.
         /// Extensions use this endpoint to check command status and retrieve results.
         /// </summary>

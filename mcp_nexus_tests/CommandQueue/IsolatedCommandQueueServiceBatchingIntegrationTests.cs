@@ -165,7 +165,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Assert
             Assert.Equal(3, commandIds.Count);
             Assert.Equal(3, commandResults.Count);
-            
+
             // Verify all commands completed successfully
             foreach (var result in commandResults)
             {
@@ -190,7 +190,7 @@ namespace mcp_nexus_tests.CommandQueue
                 .Returns<string, CancellationToken>((cmd, token) =>
                 {
                     executeCallCount++;
-                    
+
                     if (cmd.Contains("!analyze")) // Excluded command
                     {
                         return Task.FromResult("Analysis output");
@@ -219,7 +219,7 @@ namespace mcp_nexus_tests.CommandQueue
 
                         return Task.FromResult(output);
                     }
-                    
+
                     return Task.FromResult("Unknown command output");
                 });
 
@@ -253,7 +253,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Assert
             Assert.Equal(3, commandIds.Count);
             Assert.Equal(3, commandResults.Count);
-            
+
             // Verify all commands completed successfully
             foreach (var result in commandResults)
             {
@@ -303,7 +303,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Assert
             Assert.Equal(2, commandIds.Count);
             Assert.Equal(2, commandResults.Count);
-            
+
             // Verify all commands completed successfully
             foreach (var result in commandResults)
             {
@@ -328,15 +328,15 @@ namespace mcp_nexus_tests.CommandQueue
                 .Returns<string, CancellationToken>((cmd, token) =>
                 {
                     executeCallCount++;
-                    
+
                     if (cmd.Contains("MCP_NEXUS_BATCH_START"))
                     {
                         // Extract command IDs from the batch command
                         var cmdIdMatches = System.Text.RegularExpressions.Regex.Matches(cmd, @"MCP_NEXUS_CMD_SEP_([^_\r\n]+)");
                         var cmdIds = cmdIdMatches.Select(m => m.Groups[1].Value).Distinct().ToList();
-                        
+
                         Assert.True(cmdIds.Count <= 3, $"Batch should not exceed MaxBatchSize (3), but had {cmdIds.Count} commands");
-                        
+
                         // Build batch output with actual command IDs
                         var output = "MCP_NEXUS_BATCH_START\n";
                         for (int i = 0; i < cmdIds.Count; i++)
@@ -346,10 +346,10 @@ namespace mcp_nexus_tests.CommandQueue
                             output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[i]}_END\n";
                         }
                         output += "MCP_NEXUS_BATCH_END";
-                        
+
                         return Task.FromResult(output);
                     }
-                    
+
                     return Task.FromResult("Individual command output");
                 });
 
@@ -360,17 +360,17 @@ namespace mcp_nexus_tests.CommandQueue
                 var id = m_Service.QueueCommand($"command-{cmdIndex}");
                 commandIds.Add(id);
             }
-            
+
             // Wait for first batch to complete
             await Task.Delay(100);
-            
+
             // Then queue 2 more commands (should form second batch after timeout)
             for (int cmdIndex = 3; cmdIndex < 5; cmdIndex++)
             {
                 var id = m_Service.QueueCommand($"command-{cmdIndex}");
                 commandIds.Add(id);
             }
-            
+
             // Wait for second batch timeout + processing time
             await Task.Delay(1500); // Wait longer than BatchWaitTimeoutMs (1000ms)
 
@@ -384,7 +384,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Assert
             Assert.Equal(5, commandIds.Count);
             Assert.Equal(5, commandResults.Count);
-            
+
             // Verify all commands completed successfully
             foreach (var result in commandResults)
             {
@@ -409,7 +409,7 @@ namespace mcp_nexus_tests.CommandQueue
                 .Returns<string, CancellationToken>((cmd, token) =>
                 {
                     executeCallCount++;
-                    
+
                     if (cmd.Contains("MCP_NEXUS_BATCH_START"))
                     {
                         return Task.FromResult(
@@ -420,7 +420,7 @@ namespace mcp_nexus_tests.CommandQueue
                             "MCP_NEXUS_BATCH_END"
                         );
                     }
-                    
+
                     return Task.FromResult("Individual command output");
                 });
 

@@ -276,7 +276,7 @@ namespace mcp_nexus.CommandQueue
 
             // First, try to get result from cache (for completed commands that may have been cleaned up)
             ICommandResult? cachedResult = null;
-            
+
             if (m_BatchProcessor != null)
             {
                 // When batching is enabled, results are stored directly in the SessionCommandResultCache

@@ -7,7 +7,7 @@ Provides simple helper functions for extension scripts to interact with the MCP 
 This module handles all the complexity of HTTP callbacks, token management, and command execution.
 
 .NOTES
-Version: 1.0.0
+Version: 1.1.0
 Author: MCP Nexus Team
 #>
 
@@ -125,6 +125,278 @@ function Invoke-NexusCommand {
         Write-Error "Failed to execute command '$Command': $_"
         throw
     }
+}
+
+<#
+.SYNOPSIS
+Queues a WinDBG command for asynchronous execution.
+
+.DESCRIPTION
+Queues a command without waiting for it to complete. This enables command batching
+for improved throughput. Use Wait-NexusCommand or Get-NexusCommandResult to retrieve results.
+
+.PARAMETER Command
+The WinDBG command to execute (e.g., "lm", "!threads", "lsa 00007ff8`12345678").
+
+.PARAMETER TimeoutSeconds
+Maximum time to wait for command completion when later calling Wait-NexusCommand (default: 300 seconds).
+
+.EXAMPLE
+$cmdId = Start-NexusCommand "lm"
+$result = Wait-NexusCommand -CommandId $cmdId
+
+.EXAMPLE
+$ids = @()
+$ids += Start-NexusCommand "lm"
+$ids += Start-NexusCommand "!threads"
+$ids += Start-NexusCommand "!peb"
+foreach ($id in $ids) {
+    $result = Wait-NexusCommand -CommandId $id
+    Write-Output $result
+}
+
+.OUTPUTS
+String - The command ID that can be used to retrieve results.
+
+.NOTES
+This function enables command batching by queuing multiple commands before they execute.
+#>
+function Start-NexusCommand {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, Position=0)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Command,
+
+        [Parameter(Mandatory=$false)]
+        [int]$TimeoutSeconds = 300
+    )
+
+    if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
+        Initialize-McpNexusExtension
+    }
+
+    $script:RequestCounter++
+    Write-Verbose "Queueing command #$script:RequestCounter: $Command"
+
+    # Output marker for MCP Nexus to count callbacks
+    Write-Output "[CALLBACK] Queueing: $Command"
+
+    try {
+        $body = @{
+            command = $Command
+            timeoutSeconds = $TimeoutSeconds
+        } | ConvertTo-Json
+
+        $headers = @{
+            "Authorization" = "Bearer $script:CallbackToken"
+            "Content-Type" = "application/json"
+        }
+
+        $response = Invoke-RestMethod `
+            -Uri "$script:CallbackUrl/queue" `
+            -Method POST `
+            -Headers $headers `
+            -Body $body `
+            -TimeoutSec 30
+
+        Write-Verbose "Command queued with ID: $($response.commandId)"
+        return $response.commandId
+    }
+    catch {
+        Write-Error "Failed to queue command '$Command': $_"
+        throw
+    }
+}
+
+<#
+.SYNOPSIS
+Gets the status and result of a previously queued command.
+
+.DESCRIPTION
+Retrieves the current status and result of a command queued with Start-NexusCommand.
+Returns immediately with the current state without waiting.
+
+.PARAMETER CommandId
+The command ID returned by Start-NexusCommand.
+
+.EXAMPLE
+$cmdId = Start-NexusCommand "lm"
+Start-Sleep -Seconds 2
+$status = Get-NexusCommandResult -CommandId $cmdId
+if ($status.isCompleted) {
+    Write-Output $status.output
+}
+
+.OUTPUTS
+PSCustomObject - An object with properties: commandId, status, isCompleted, output, error
+
+.NOTES
+This function does not wait for command completion. Use Wait-NexusCommand for blocking behavior.
+#>
+function Get-NexusCommandResult {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$CommandId
+    )
+
+    if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
+        Initialize-McpNexusExtension
+    }
+
+    try {
+        $body = @{ commandId = $CommandId } | ConvertTo-Json
+        $headers = @{
+            "Authorization" = "Bearer $script:CallbackToken"
+            "Content-Type" = "application/json"
+        }
+
+        $response = Invoke-RestMethod `
+            -Uri "$script:CallbackUrl/read" `
+            -Method POST `
+            -Headers $headers `
+            -Body $body `
+            -TimeoutSec 10
+
+        return $response
+    }
+    catch {
+        Write-Error "Failed to get result for command '$CommandId': $_"
+        throw
+    }
+}
+
+<#
+.SYNOPSIS
+Waits for a queued command to complete and returns the result.
+
+.DESCRIPTION
+Polls a queued command until it completes or times out. This is a blocking operation
+that waits for the command to finish executing.
+
+.PARAMETER CommandId
+The command ID returned by Start-NexusCommand.
+
+.PARAMETER TimeoutSeconds
+Maximum time to wait for command completion (default: 300 seconds).
+
+.PARAMETER PollIntervalMs
+Milliseconds to wait between status checks (default: 1000ms).
+
+.EXAMPLE
+$cmdId = Start-NexusCommand "lm"
+$result = Wait-NexusCommand -CommandId $cmdId
+
+.EXAMPLE
+$cmdId = Start-NexusCommand "!analyze -v"
+$result = Wait-NexusCommand -CommandId $cmdId -TimeoutSeconds 600 -PollIntervalMs 2000
+
+.OUTPUTS
+String - The output from the WinDBG command.
+
+.NOTES
+This function blocks until the command completes. For non-blocking checks, use Get-NexusCommandResult.
+#>
+function Wait-NexusCommand {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$CommandId,
+
+        [Parameter(Mandatory=$false)]
+        [int]$TimeoutSeconds = 300,
+
+        [Parameter(Mandatory=$false)]
+        [int]$PollIntervalMs = 1000
+    )
+
+    if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
+        Initialize-McpNexusExtension
+    }
+
+    Write-Verbose "Waiting for command $CommandId to complete (timeout: ${TimeoutSeconds}s)..."
+
+    $startTime = Get-Date
+    $timeout = [TimeSpan]::FromSeconds($TimeoutSeconds)
+
+    do {
+        try {
+            $result = Get-NexusCommandResult -CommandId $CommandId
+
+            if ($result.isCompleted) {
+                if ($result.status -eq "Success" -or $result.status -eq "Completed") {
+                    Write-Verbose "Command $CommandId completed successfully"
+                    return $result.output
+                }
+                else {
+                    $errorMsg = if ($result.error) { $result.error } else { "Command failed with status: $($result.status)" }
+                    Write-Error "Command $CommandId failed: $errorMsg"
+                    throw $errorMsg
+                }
+            }
+
+            Write-Verbose "Command $CommandId status: $($result.status), waiting..."
+            Start-Sleep -Milliseconds $PollIntervalMs
+        }
+        catch {
+            Write-Error "Error while waiting for command $CommandId: $_"
+            throw
+        }
+    } while ((Get-Date) - $startTime -lt $timeout)
+
+    throw "Command $CommandId timed out after $TimeoutSeconds seconds"
+}
+
+<#
+.SYNOPSIS
+Queues multiple commands and returns their command IDs.
+
+.DESCRIPTION
+Convenience function to queue multiple commands at once. This enables optimal batching
+as all commands are queued before any execute.
+
+.PARAMETER Commands
+Array of WinDBG commands to execute.
+
+.PARAMETER TimeoutSeconds
+Maximum time to wait for each command completion (default: 300 seconds).
+
+.EXAMPLE
+$commands = @("lm", "!threads", "!peb", "!teb")
+$commandIds = Start-NexusCommands -Commands $commands
+foreach ($id in $commandIds) {
+    $result = Wait-NexusCommand -CommandId $id
+    Write-Output $result
+}
+
+.OUTPUTS
+Array of String - The command IDs that can be used to retrieve results.
+
+.NOTES
+This function queues all commands immediately, maximizing batching opportunities.
+#>
+function Start-NexusCommands {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$Commands,
+
+        [Parameter(Mandatory=$false)]
+        [int]$TimeoutSeconds = 300
+    )
+
+    $commandIds = @()
+    foreach ($cmd in $Commands) {
+        $id = Start-NexusCommand -Command $cmd -TimeoutSeconds $TimeoutSeconds
+        $commandIds += $id
+        Write-Verbose "Queued command '$cmd' with ID: $id"
+    }
+
+    return $commandIds
 }
 
 <#

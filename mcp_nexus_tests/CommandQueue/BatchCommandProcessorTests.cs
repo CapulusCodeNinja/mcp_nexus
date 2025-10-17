@@ -559,7 +559,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Assert - Should not throw and should add to batch (not execute immediately with extreme but valid values)
             // The command should be queued for batching since the values are extreme but valid
             m_MockCdbSession.Verify(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-            
+
             // Clean up
             processor.Dispose();
         }

@@ -427,13 +427,13 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Add delay to ensure different LastAccessTime values
             Thread.Sleep(50);
-            
+
             // Refresh access for b and d (making them more recently accessed)
             var resultB = cache.GetResult("b");
             Assert.NotNull(resultB);
-            
+
             Thread.Sleep(50);
-            
+
             var resultD = cache.GetResult("d");
             Assert.NotNull(resultD);
 
@@ -442,14 +442,14 @@ namespace mcp_nexus_tests.CommandQueue
 
             // Trigger eviction by exceeding max results
             cache.StoreResult("e", CommandResult.Success("5"));
-            
+
             // After adding "e", we should have 4 items (one evicted)
             // The evicted item should be "a" or "c" (oldest LastAccessTime)
             stats = cache.GetStatistics();
             Assert.Equal(4, stats.TotalResults);
-            
+
             cache.StoreResult("f", CommandResult.Success("6"));
-            
+
             // After adding "f", we should still have 4 items (another one evicted)
             stats = cache.GetStatistics();
             Assert.Equal(4, stats.TotalResults);
