@@ -253,24 +253,16 @@ Use `nexus_read_dump_analyze_command_result` with the returned `commandId` (pref
 ### Command Management Resources
 
 #### `commands`
-**Purpose**: List commands with filtering options
+**Purpose**: List commands from all sessions with status and timing information
 **Category**: Command Data
-**Parameters**: All optional
-- `sessionId`: Filter by specific session
-- `command`: Filter by command text
-- `from`: Filter by start time
-- `to`: Filter by end time
-- `limit`: Maximum results
-- `offset`: Skip results
-- `sortBy`: Sort field (command, status, createdAt)
-- `order`: Sort order (asc, desc)
+**Parameters**: None
 
 **Example**:
 ```json
 {
   "method": "resources/read",
   "params": {
-    "uri": "commands?sessionId=sess-000001-abc12345&limit=10&sortBy=createdAt&order=desc"
+    "uri": "commands"
   }
 }
 ```
