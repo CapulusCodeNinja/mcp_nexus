@@ -16,26 +16,47 @@ namespace mcp_nexus.Utilities
         /// <exception cref="ArgumentException">Thrown when the symbol path is null or empty after cleaning.</exception>
         public static string CleanSymbolPath(string? symbolPath)
         {
-            if (string.IsNullOrWhiteSpace(symbolPath))
-                throw new ArgumentException("Symbol path cannot be null or empty", nameof(symbolPath));
-
-            // Split by semicolon and clean each path element
-            var pathElements = symbolPath.Split(';', StringSplitOptions.RemoveEmptyEntries);
-            var cleanedElements = new List<string>();
-
-            foreach (var element in pathElements)
+            try
             {
-                var cleanedElement = CleanPathElement(element);
-                if (!string.IsNullOrWhiteSpace(cleanedElement))
+                if (string.IsNullOrWhiteSpace(symbolPath))
+                    throw new ArgumentException("Symbol path cannot be null or empty", nameof(symbolPath));
+
+                // Split by semicolon and clean each path element
+                var pathElements = symbolPath.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                var cleanedElements = new List<string>();
+
+                foreach (var element in pathElements)
                 {
-                    cleanedElements.Add(cleanedElement);
+                    try
+                    {
+                        var cleanedElement = CleanPathElement(element);
+                        if (!string.IsNullOrWhiteSpace(cleanedElement))
+                        {
+                            cleanedElements.Add(cleanedElement);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the specific element that failed and continue processing others
+                        throw new ArgumentException($"Failed to clean path element '{element}': {ex.Message}", nameof(symbolPath), ex);
+                    }
                 }
+
+                if (cleanedElements.Count == 0)
+                    throw new ArgumentException($"No valid path elements found after cleaning. Original path: '{symbolPath}'", nameof(symbolPath));
+
+                return string.Join(";", cleanedElements);
             }
-
-            if (cleanedElements.Count == 0)
-                throw new ArgumentException("No valid path elements found after cleaning", nameof(symbolPath));
-
-            return string.Join(";", cleanedElements);
+            catch (ArgumentException)
+            {
+                // Re-throw ArgumentException as-is
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Wrap unexpected exceptions with context
+                throw new ArgumentException($"Unexpected error while cleaning symbol path '{symbolPath}': {ex.Message}", nameof(symbolPath), ex);
+            }
         }
 
         /// <summary>
@@ -43,38 +64,56 @@ namespace mcp_nexus.Utilities
         /// </summary>
         /// <param name="pathElement">The path element to clean.</param>
         /// <returns>A cleaned path element.</returns>
+        /// <exception cref="ArgumentException">Thrown when the path element contains invalid characters or format.</exception>
         private static string CleanPathElement(string pathElement)
         {
-            if (string.IsNullOrWhiteSpace(pathElement))
-                return string.Empty;
+            try
+            {
+                if (string.IsNullOrWhiteSpace(pathElement))
+                    return string.Empty;
 
-            // Remove leading and trailing whitespace
-            var cleaned = pathElement.Trim();
+                // Remove leading and trailing whitespace
+                var cleaned = pathElement.Trim();
 
-            // Remove any double separators but preserve the original separator type
-            if (cleaned.Contains('\\'))
-            {
-                // Windows path - normalize backslashes
-                cleaned = MyRegex().Replace(cleaned, "\\");
-            }
-            else if (cleaned.Contains("://"))
-            {
-                // URL - preserve :// and normalize other slashes
-                cleaned = SingleSlashNotUrlRegex().Replace(cleaned, "/");
-            }
-            else if (cleaned.Contains("cache*") || cleaned.Contains("srv*"))
-            {
-                // Symbol path - convert to Windows format with backslashes
-                cleaned = cleaned.Replace('/', '\\');
-                cleaned = MyRegex().Replace(cleaned, "\\");
-            }
-            else
-            {
-                // Regular path - normalize all forward slashes
-                cleaned = MultiSlashRegex().Replace(cleaned, "/");
-            }
+                // Validate path element length
+                if (cleaned.Length > 260) // Windows MAX_PATH limit
+                    throw new ArgumentException($"Path element too long ({cleaned.Length} characters): '{pathElement}'");
 
-            return cleaned;
+                // Remove any double separators but preserve the original separator type
+                if (cleaned.Contains('\\'))
+                {
+                    // Windows path - normalize backslashes
+                    cleaned = MyRegex().Replace(cleaned, "\\");
+                }
+                else if (cleaned.Contains("://"))
+                {
+                    // URL - preserve :// and normalize other slashes
+                    cleaned = SingleSlashNotUrlRegex().Replace(cleaned, "/");
+                }
+                else if (cleaned.Contains("cache*") || cleaned.Contains("srv*"))
+                {
+                    // Symbol path - convert to Windows format with backslashes
+                    cleaned = cleaned.Replace('/', '\\');
+                    cleaned = MyRegex().Replace(cleaned, "\\");
+                }
+                else
+                {
+                    // Regular path - normalize all forward slashes
+                    cleaned = MultiSlashRegex().Replace(cleaned, "/");
+                }
+
+                return cleaned;
+            }
+            catch (ArgumentException)
+            {
+                // Re-throw ArgumentException as-is
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Wrap unexpected exceptions with context
+                throw new ArgumentException($"Unexpected error while cleaning path element '{pathElement}': {ex.Message}", nameof(pathElement), ex);
+            }
         }
 
         /// <summary>

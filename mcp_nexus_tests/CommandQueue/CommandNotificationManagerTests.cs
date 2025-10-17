@@ -161,14 +161,10 @@ namespace mcp_nexus_tests.CommandQueue
             // Assert
             // Wait for the Task.Run to complete
             await Task.Delay(2000);
-            m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
+            m_MockNotificationService.Verify(x => x.NotifyCommandHeartbeatAsync(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.Is<string>(s => s.Contains("Executing for 5") && s.Contains("minutes")),
-                It.IsAny<int>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>()), Times.Once);
+                It.IsAny<TimeSpan>()), Times.Once);
         }
 
         [Fact]
@@ -186,14 +182,10 @@ namespace mcp_nexus_tests.CommandQueue
             // Assert
             // Wait for the Task.Run to complete
             await Task.Delay(1000);
-            m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
+            m_MockNotificationService.Verify(x => x.NotifyCommandHeartbeatAsync(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.Is<int>(p => p <= 95),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>()), Times.Once);
+                It.IsAny<TimeSpan>()), Times.Once);
         }
 
         [Fact]
@@ -451,7 +443,7 @@ namespace mcp_nexus_tests.CommandQueue
             var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now, completionSource, cancellationTokenSource);
             var elapsed = TimeSpan.FromMinutes(5);
 
-            m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            m_MockNotificationService.Setup(x => x.NotifyCommandHeartbeatAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>()))
                 .ThrowsAsync(new Exception("Notification failed"));
 
             // Act
@@ -461,7 +453,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Wait for the Task.Run to complete
             await Task.Delay(3000);
             m_MockLogger.Verify(x => x.Log(
-                LogLevel.Trace,
+                LogLevel.Warning,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to send heartbeat notification for")),
                 It.IsAny<Exception>(),

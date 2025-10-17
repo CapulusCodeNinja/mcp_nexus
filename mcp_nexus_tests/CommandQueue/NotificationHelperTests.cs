@@ -175,7 +175,7 @@ namespace mcp_nexus_tests.CommandQueue
             var error = "test-error";
 
             // Act
-            NotificationHelper.NotifyCommandStatusFireAndForget(
+            NotificationHelper.NotifyCommandStatusDetailedFireAndForget(
                 m_MockNotificationService.Object,
                 m_MockLogger.Object,
                 commandId,
@@ -202,14 +202,15 @@ namespace mcp_nexus_tests.CommandQueue
             var status = "executing";
 
             m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
                 .ThrowsAsync(new Exception("Notification failed"));
 
             // Act
             NotificationHelper.NotifyCommandStatusFireAndForget(
                 m_MockNotificationService.Object,
                 m_MockLogger.Object,
+                "session-123",
                 commandId,
                 command,
                 status);
@@ -263,6 +264,7 @@ namespace mcp_nexus_tests.CommandQueue
             NotificationHelper.NotifyCommandStatusFireAndForget(
                 m_MockNotificationService.Object,
                 m_MockLogger.Object,
+                "session-123",
                 commandId,
                 command,
                 status);
@@ -271,7 +273,7 @@ namespace mcp_nexus_tests.CommandQueue
             // Wait for the Task.Run to complete
             await Task.Delay(2000);
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
-                commandId, command, status, It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+                "session-123", commandId, status, string.Empty, string.Empty, 0), Times.Once);
         }
     }
 }

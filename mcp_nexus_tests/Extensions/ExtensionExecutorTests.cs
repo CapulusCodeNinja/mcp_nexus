@@ -145,6 +145,7 @@ namespace mcp_nexus_tests.Extensions
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 new ProcessWrapper(),
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
@@ -161,6 +162,7 @@ namespace mcp_nexus_tests.Extensions
                     null!,
                     m_MockExtensionManager.Object,
                     m_CallbackUrl,
+                    new ExtensionConfiguration(),
                     new ProcessWrapper(),
                     new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>())));
         }
@@ -174,6 +176,7 @@ namespace mcp_nexus_tests.Extensions
                     m_MockLogger.Object,
                     null!,
                     m_CallbackUrl,
+                    new ExtensionConfiguration(),
                     new ProcessWrapper(),
                     new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>())));
         }
@@ -187,6 +190,7 @@ namespace mcp_nexus_tests.Extensions
                     m_MockLogger.Object,
                     m_MockExtensionManager.Object,
                     null!,
+                    new ExtensionConfiguration(),
                     new ProcessWrapper(),
                     new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>())));
         }
@@ -200,6 +204,7 @@ namespace mcp_nexus_tests.Extensions
                     m_MockLogger.Object,
                     m_MockExtensionManager.Object,
                     string.Empty,
+                    new ExtensionConfiguration(),
                     new ProcessWrapper(),
                     new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>())));
         }
@@ -212,6 +217,7 @@ namespace mcp_nexus_tests.Extensions
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 new ProcessWrapper(),
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
@@ -228,6 +234,7 @@ namespace mcp_nexus_tests.Extensions
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 new ProcessWrapper(),
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
@@ -244,6 +251,7 @@ namespace mcp_nexus_tests.Extensions
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 new ProcessWrapper(),
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
@@ -260,6 +268,7 @@ namespace mcp_nexus_tests.Extensions
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 new ProcessWrapper(),
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
@@ -276,6 +285,7 @@ namespace mcp_nexus_tests.Extensions
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 new ProcessWrapper(),
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
@@ -296,6 +306,7 @@ namespace mcp_nexus_tests.Extensions
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 new ProcessWrapper(),
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
@@ -334,6 +345,7 @@ namespace mcp_nexus_tests.Extensions
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 mockWrapper.Object,
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
@@ -365,6 +377,7 @@ namespace mcp_nexus_tests.Extensions
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 new ProcessWrapper(),
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
@@ -401,6 +414,7 @@ exit 1
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 new ProcessWrapper(),
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
@@ -448,6 +462,7 @@ exit 0
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 new ProcessWrapper(),
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
@@ -489,6 +504,7 @@ exit 0
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 new ProcessWrapper(),
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
@@ -533,6 +549,7 @@ exit 0
                 m_MockLogger.Object,
                 m_MockExtensionManager.Object,
                 m_CallbackUrl,
+                new ExtensionConfiguration(),
                 new ProcessWrapper(),
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
