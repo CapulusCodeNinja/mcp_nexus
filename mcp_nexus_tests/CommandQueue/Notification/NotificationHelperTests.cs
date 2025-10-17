@@ -42,7 +42,7 @@ namespace mcp_nexus_tests.CommandQueue.Notification
             // Arrange
             var notificationReceived = new TaskCompletionSource<bool>();
             m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(Task.CompletedTask)
                 .Callback(() => notificationReceived.SetResult(true));
@@ -209,7 +209,7 @@ namespace mcp_nexus_tests.CommandQueue.Notification
             // Arrange - Setup mock callback BEFORE calling the method
             var notificationReceived = new TaskCompletionSource<bool>();
             m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.CompletedTask)
                 .Callback(() => notificationReceived.SetResult(true));
@@ -286,7 +286,7 @@ namespace mcp_nexus_tests.CommandQueue.Notification
             // Arrange - Setup mock callback BEFORE calling the method
             var notificationReceived = new TaskCompletionSource<bool>();
             m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(Task.CompletedTask)
                 .Callback(() => notificationReceived.SetResult(true));

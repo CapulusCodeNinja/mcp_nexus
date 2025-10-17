@@ -65,7 +65,7 @@ namespace mcp_nexus_tests.CommandQueue.Notification
             // Arrange
             var notificationReceived = new TaskCompletionSource<bool>();
             m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.CompletedTask)
                 .Callback(() => notificationReceived.SetResult(true));
@@ -89,7 +89,7 @@ namespace mcp_nexus_tests.CommandQueue.Notification
             // Arrange
             var notificationReceived = new TaskCompletionSource<bool>();
             m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.CompletedTask)
                 .Callback(() => notificationReceived.SetResult(true));
@@ -115,7 +115,7 @@ namespace mcp_nexus_tests.CommandQueue.Notification
             // Arrange
             var notificationReceived = new TaskCompletionSource<bool>();
             m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.CompletedTask)
                 .Callback(() => notificationReceived.SetResult(true));
@@ -254,7 +254,7 @@ namespace mcp_nexus_tests.CommandQueue.Notification
             var message = "Test message";
             var data = new { test = "data" };
             var logReceived = new TaskCompletionSource<bool>();
-            
+
             m_MockLogger.Setup(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -348,7 +348,7 @@ namespace mcp_nexus_tests.CommandQueue.Notification
             // Arrange
             var sessionId = m_Config.SessionId;
             var logReceived = new TaskCompletionSource<bool>();
-            
+
             m_MockLogger.Setup(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),

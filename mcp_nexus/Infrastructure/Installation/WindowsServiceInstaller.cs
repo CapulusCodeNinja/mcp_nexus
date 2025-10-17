@@ -38,25 +38,25 @@ namespace mcp_nexus.Infrastructure.Installation
                 {
                     using var service = new ServiceController(serviceName);
                     var currentStatus = service.Status;
-                    
+
                     if (currentStatus == targetStatus)
                     {
                         logger?.LogDebug("Service {ServiceName} reached target status {Status}", serviceName, targetStatus);
                         return true;
                     }
-                    
-                    logger?.LogDebug("Service {ServiceName} status: {CurrentStatus}, waiting for {TargetStatus}", 
+
+                    logger?.LogDebug("Service {ServiceName} status: {CurrentStatus}, waiting for {TargetStatus}",
                         serviceName, currentStatus, targetStatus);
                 }
                 catch (Exception ex)
                 {
                     logger?.LogDebug(ex, "Error checking service {ServiceName} status", serviceName);
                 }
-                
+
                 await Task.Delay(pollInterval);
             }
-            
-            logger?.LogWarning("Service {ServiceName} did not reach status {Status} within {Timeout}ms", 
+
+            logger?.LogWarning("Service {ServiceName} did not reach status {Status} within {Timeout}ms",
                 serviceName, targetStatus, timeout.TotalMilliseconds);
             return false;
         }

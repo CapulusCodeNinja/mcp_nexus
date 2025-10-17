@@ -490,7 +490,7 @@ namespace mcp_nexus.Extensions
                 }
 
                 await Task.Delay(pollInterval);
-                
+
                 // Exponential backoff: increase interval up to maximum
                 pollInterval = TimeSpan.FromMilliseconds(Math.Min(pollInterval.TotalMilliseconds * 1.2, maxPollInterval.TotalMilliseconds));
             }

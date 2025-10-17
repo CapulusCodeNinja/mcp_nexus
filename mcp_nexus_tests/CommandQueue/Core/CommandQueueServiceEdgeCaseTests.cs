@@ -103,7 +103,7 @@ namespace mcp_nexus_tests.CommandQueue.Core
             string result;
             var maxWaitTime = TimeSpan.FromSeconds(5);
             var startTime = DateTime.Now;
-            
+
             do
             {
                 result = await m_Service.GetCommandResult(commandId);

@@ -331,7 +331,7 @@ namespace mcp_nexus_tests.CommandQueue.Recovery
             // Arrange
             var notificationReceived = new TaskCompletionSource<bool>();
             m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.CompletedTask)
                 .Callback(() => notificationReceived.SetResult(true));

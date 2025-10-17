@@ -79,16 +79,16 @@ namespace mcp_nexus_tests.CommandQueue.Core
             // Wait for commands to complete by polling
             var maxWaitTime = TimeSpan.FromSeconds(5);
             var startTime = DateTime.Now;
-            
+
             while (DateTime.Now - startTime < maxWaitTime)
             {
                 var isolatedStatus = await _isolatedService.GetCommandResult(isolatedId);
                 var queueStatus = await _queueService.GetCommandResult(queueId);
-                
-                if (!isolatedStatus.Contains("Command is still executing") && 
+
+                if (!isolatedStatus.Contains("Command is still executing") &&
                     !queueStatus.Contains("Command is still executing"))
                     break;
-                    
+
                 await Task.Delay(50); // Small delay for polling
             }
 
@@ -118,7 +118,7 @@ namespace mcp_nexus_tests.CommandQueue.Core
             // Wait for completion by polling
             var maxWaitTime = TimeSpan.FromSeconds(5);
             var startTime = DateTime.Now;
-            
+
             while (DateTime.Now - startTime < maxWaitTime)
             {
                 var result = await _isolatedService.GetCommandResult(commandId);

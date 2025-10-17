@@ -59,12 +59,12 @@ namespace mcp_nexus_tests.CommandQueue.Core
             // Arrange - ensure session is started
             await m_RealisticCdbSession.StartSession("test.dmp", null);
             var commandId = m_Service.QueueCommand("!analyze -v");
-            
+
             // Wait for command to complete by polling
             string result;
             var maxWaitTime = TimeSpan.FromSeconds(5);
             var startTime = DateTime.Now;
-            
+
             do
             {
                 result = await m_Service.GetCommandResult(commandId);
