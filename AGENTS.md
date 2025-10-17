@@ -96,6 +96,10 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 - **Using proper concurrency patterns** - ABSOLUTE REQUIREMENT
 - **Maintaining proper encapsulation** - MANDATORY
 - **Using mocking for all external dependencies** - NO EXCEPTIONS
+- **Organizing namespaces correctly** - ABSOLUTE REQUIREMENT
+- **Splitting large directories into logical sub-namespaces** - NO EXCEPTIONS
+- **Mirroring test structure to production structure** - ABSOLUTE REQUIREMENT
+- **Maintaining test namespace alignment with production** - NO EXCEPTIONS
 
 **✅ ALWAYS DO (ALL MANDATORY - NO EXCEPTIONS):**
 - Run `dotnet test` and verify all tests pass - ABSOLUTE REQUIREMENT
@@ -110,6 +114,10 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 - **Implement proper async/await patterns** - ABSOLUTE REQUIREMENT
 - **Maintain strict encapsulation boundaries** - MANDATORY
 - **Mock all external dependencies in tests** - NO EXCEPTIONS
+- **Organize classes in logical, cohesive namespaces** - ABSOLUTE REQUIREMENT
+- **Split directories with more than 5-7 classes into sub-namespaces** - NO EXCEPTIONS
+- **Ensure test project structure mirrors production structure exactly** - ABSOLUTE REQUIREMENT
+- **Use `.Tests` suffix for test namespaces matching production namespaces** - NO EXCEPTIONS
 
 ---
 
@@ -151,6 +159,61 @@ public ReturnType MethodName(ParameterType paramName)
 - **Using statements**: Grouped by system, third-party, then project namespaces - NO EXCEPTIONS
 - **Member variable placement**: **ALL member variables (fields, properties, constants) MUST be declared at the TOP of the class definition, before any methods or constructors** - ABSOLUTE REQUIREMENT
 - **Method ordering**: Constructors, public methods, private methods, dispose pattern - MANDATORY
+
+#### Namespace Organization Requirements
+- **Strict Namespace Management**: **All project code files MUST be correctly organized in namespaces without exception**. NO EXCEPTIONS.
+- **Directory-Namespace Alignment**: **Directory structure MUST match namespace structure exactly**. Each directory should contain only related classes that belong to the same logical domain. ABSOLUTE REQUIREMENT.
+- **No Mixed Concerns**: **Directories MUST NOT contain unrelated classes**. Each directory should represent a single, cohesive domain or feature area. NO EXCEPTIONS.
+- **Logical Grouping**: **Classes must be grouped by functionality, not by technical similarity**. For example:
+  - ✅ **GOOD**: `mcp_nexus.CommandQueue.Batching` (all batching-related classes)
+  - ✅ **GOOD**: `mcp_nexus.CommandQueue.Recovery` (all recovery-related classes)
+  - ❌ **BAD**: `mcp_nexus.CommandQueue` (mixing batching, recovery, validation, etc.)
+  - ❌ **BAD**: `mcp_nexus.Infrastructure` (mixing adapters, validators, installers, etc.)
+- **Sub-namespace Creation**: **When a directory contains more than 5-7 related classes, create sub-namespaces**. Break down large directories into logical sub-domains. MANDATORY.
+- **Interface Segregation**: **Interfaces should be co-located with their implementations** unless they represent cross-cutting concerns. NO EXCEPTIONS.
+- **Configuration Classes**: **All configuration classes must be in `mcp_nexus.Configuration` namespace** with appropriate sub-namespaces. ABSOLUTE REQUIREMENT.
+- **Utility Classes**: **Utility classes must be in specific domain namespaces**, not generic `Utilities` namespace. NO EXCEPTIONS.
+- **Exception Classes**: **Custom exceptions must be in `mcp_nexus.Exceptions` namespace** with appropriate sub-namespaces. MANDATORY.
+- **Test Structure Mirroring**: **Test project structure MUST exactly mirror production code structure**. Test directories and namespaces must follow the same organization as production code. ABSOLUTE REQUIREMENT.
+- **Test Namespace Alignment**: **Test namespaces must match production namespaces with `.Tests` suffix**. For example: `mcp_nexus.CommandQueue.Batching` → `mcp_nexus.CommandQueue.Batching.Tests`. NO EXCEPTIONS.
+
+#### Current Namespace Violations (Must be Fixed)
+- **❌ CommandQueue Directory**: Contains 33 files mixing batching, recovery, validation, notification, and core queue functionality
+  - **Should be split into**: `CommandQueue.Batching`, `CommandQueue.Recovery`, `CommandQueue.Validation`, `CommandQueue.Notification`, `CommandQueue.Core`
+- **❌ Infrastructure Directory**: Contains 11 files mixing adapters, validators, installers, and utilities
+  - **Should be split into**: `Infrastructure.Adapters`, `Infrastructure.Installation`, `Infrastructure.Validation`, `Infrastructure.Core`
+- **❌ Utilities Directory**: Contains 9 files mixing path handling, logging, JSON, and validation
+  - **Should be split into**: `Utilities.PathHandling`, `Utilities.Logging`, `Utilities.Json`, `Utilities.Validation`
+- **❌ Session Directory**: Contains 16 files mixing lifecycle, monitoring, statistics, and core session functionality
+  - **Should be split into**: `Session.Lifecycle`, `Session.Monitoring`, `Session.Statistics`, `Session.Core`
+- **❌ Recovery Directory**: Contains 5 files that should be moved to `CommandQueue.Recovery`
+- **❌ Notifications Directory**: Contains 6 files that should be moved to `CommandQueue.Notification`
+
+#### Current Test Structure Violations (Must be Fixed)
+- **❌ Test CommandQueue Directory**: Contains 30 files mixing all command queue concerns without sub-namespaces
+  - **Should be split into**: `CommandQueue.Batching.Tests`, `CommandQueue.Recovery.Tests`, `CommandQueue.Validation.Tests`, `CommandQueue.Notification.Tests`, `CommandQueue.Core.Tests`
+- **❌ Test Infrastructure Directory**: Contains 7 files mixing all infrastructure concerns
+  - **Should be split into**: `Infrastructure.Adapters.Tests`, `Infrastructure.Installation.Tests`, `Infrastructure.Validation.Tests`, `Infrastructure.Core.Tests`
+- **❌ Test Utilities Directory**: Contains 4 files mixing all utility concerns
+  - **Should be split into**: `Utilities.PathHandling.Tests`, `Utilities.Logging.Tests`, `Utilities.Json.Tests`, `Utilities.Validation.Tests`
+- **❌ Test Session Directory**: Contains 8 files mixing all session concerns
+  - **Should be split into**: `Session.Lifecycle.Tests`, `Session.Monitoring.Tests`, `Session.Statistics.Tests`, `Session.Core.Tests`
+- **❌ Test Recovery Directory**: Contains 7 files that should be moved to `CommandQueue.Recovery.Tests`
+- **❌ Test Notifications Directory**: Contains 5 files that should be moved to `CommandQueue.Notification.Tests`
+
+#### Namespace Refactoring Priority
+1. **HIGH PRIORITY**: Split CommandQueue directory (33 files) - most critical violation
+2. **HIGH PRIORITY**: Split Infrastructure directory (11 files) - mixed concerns
+3. **HIGH PRIORITY**: Split Test CommandQueue directory (30 files) - mirror production structure
+4. **HIGH PRIORITY**: Split Test Infrastructure directory (7 files) - mirror production structure
+5. **MEDIUM PRIORITY**: Split Utilities directory (9 files) - generic namespace
+6. **MEDIUM PRIORITY**: Split Session directory (16 files) - mixed concerns
+7. **MEDIUM PRIORITY**: Split Test Utilities directory (4 files) - mirror production structure
+8. **MEDIUM PRIORITY**: Split Test Session directory (8 files) - mirror production structure
+9. **LOW PRIORITY**: Move Recovery files to CommandQueue.Recovery
+10. **LOW PRIORITY**: Move Notification files to CommandQueue.Notification
+11. **LOW PRIORITY**: Move Test Recovery files to CommandQueue.Recovery.Tests
+12. **LOW PRIORITY**: Move Test Notification files to CommandQueue.Notification.Tests
 
 ### Error Handling
 - **Exception types**: Use specific exception types (`SessionNotFoundException`, `CircuitBreakerOpenException`) - ABSOLUTE REQUIREMENT
@@ -213,6 +276,12 @@ public ReturnType MethodName(ParameterType paramName)
 - **No Orphaned Tests**: All tests for a production class must be in the corresponding test file - NO EXCEPTIONS
 - **No Generic Test Files**: Test files with generic names (e.g., `UtilityTests.cs`, `HelperTests.cs`) are prohibited - ABSOLUTE REQUIREMENT
 - **Consolidation Required**: If multiple test files exist for the same production class, they must be consolidated - MANDATORY
+
+#### Test Structure Requirements
+- **Test Project Mirroring**: **Test project structure MUST exactly mirror production code structure**. Test directories and namespaces must follow the same organization as production code. ABSOLUTE REQUIREMENT.
+- **Test Namespace Convention**: **Test namespaces must match production namespaces with `.Tests` suffix**. For example: `mcp_nexus.CommandQueue.Batching` → `mcp_nexus.CommandQueue.Batching.Tests`. NO EXCEPTIONS.
+- **Test Directory Alignment**: **Test directories must mirror production directories exactly**. If production has `CommandQueue/Batching/`, tests must have `CommandQueue/Batching/` with `.Tests` namespace. MANDATORY.
+- **Test Class Organization**: **Test classes must be organized in the same sub-namespaces as their production counterparts**. NO EXCEPTIONS.
 
 ### Unit Tests
 - **Coverage**: Aim for 100% code coverage - ABSOLUTE REQUIREMENT
