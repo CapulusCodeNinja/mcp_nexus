@@ -64,6 +64,9 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 * **File-Class Parity:** Each **top-level class or interface must reside in its own dedicated file**, with the filename matching the class/interface name. MANDATORY.
 * **Standardized Formatting:** All code must be **perfectly formatted and aligned** according to the project's established standards (enforced by `dotnet format` or equivalent tooling). Apply this across the entire solution for every change. NO EXCEPTIONS.
 * **Concurrency and Performance Integrity:** As this is a **server application**, code must adhere to **proper concurrency practices**. Introduction of **blocking operations, excessive/long `Thread.Sleep` calls, or potential deadlocks/livelocks is strictly prohibited**. The code must be performant and thread-safe. ABSOLUTE REQUIREMENT.
+* **No Arbitrary Delays:** **Sleeps, `Task.Delay`, `Thread.Sleep`, and similar blocking delays should be avoided as much as possible**. Use deterministic synchronization mechanisms like `TaskCompletionSource`, `SemaphoreSlim`, `CancellationToken`, or proper async/await patterns instead. NO EXCEPTIONS.
+* **Proper Concurrency is Mandatory:** **Proper concurrency practices are mandatory and there is no exception**. All asynchronous operations must use proper async/await patterns, cancellation tokens, and thread-safe synchronization primitives. Blocking operations, race conditions, and improper synchronization are strictly prohibited. ABSOLUTE REQUIREMENT.
+* **Proper Encapsulation is Mandatory:** **Proper encapsulation is mandatory and there is no exception**. All private fields must be properly encapsulated, public APIs must be minimal and well-defined, and internal implementation details must not leak through public interfaces. NO EXCEPTIONS.
 
 #### Testing and Documentation
 * **100% Test Pass Rate:** **All unit tests must pass** (be "green") before submission. NO EXCEPTIONS.
@@ -71,6 +74,7 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 * **Flaky Tests Are NOT Acceptable:** **Flaky tests are NOT acceptable!** Tests that pass sometimes and fail other times indicate poor test design and must be fixed immediately. NO EXCEPTIONS.
 * **Test Isolation Is Mandatory:** **Isolation issues in tests are NOT acceptable!** Tests must be completely isolated from each other and must not depend on execution order or shared state. ABSOLUTE REQUIREMENT.
 * **Zero Tolerance for Test Failures:** **Failing test is a failing test independent of the reason, there are no exceptions and no acceptable failure interpretation!** All tests must pass consistently, every time, without any excuses. NO EXCEPTIONS.
+* **Mocking is Mandatory:** **Mocking should be used for testing without exception**. All external dependencies, services, and collaborators must be mocked to ensure test isolation and deterministic behavior. NO EXCEPTIONS.
 * **Documentation Synchronization:** All relevant **documentation** (e.g., Markdown documentation, README, or designated build manifest files) must be **up-to-date and reflect the current state** of the codebase and tests. MANDATORY.
 
 #### Versioning and Scope
@@ -88,6 +92,10 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 - **Fixing flaky tests immediately** - ABSOLUTE REQUIREMENT
 - **Ensuring test isolation** - NO EXCEPTIONS
 - **Making tests pass consistently every time** - MANDATORY
+- **Avoiding arbitrary delays (`Task.Delay`, `Thread.Sleep`)** - NO EXCEPTIONS
+- **Using proper concurrency patterns** - ABSOLUTE REQUIREMENT
+- **Maintaining proper encapsulation** - MANDATORY
+- **Using mocking for all external dependencies** - NO EXCEPTIONS
 
 **✅ ALWAYS DO (ALL MANDATORY - NO EXCEPTIONS):**
 - Run `dotnet test` and verify all tests pass - ABSOLUTE REQUIREMENT
@@ -98,6 +106,10 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 - **Fix any test that fails intermittently** - NO EXCEPTIONS
 - **Ensure tests are completely isolated** - ABSOLUTE REQUIREMENT
 - **Make tests deterministic and reliable** - MANDATORY
+- **Use deterministic synchronization instead of delays** - NO EXCEPTIONS
+- **Implement proper async/await patterns** - ABSOLUTE REQUIREMENT
+- **Maintain strict encapsulation boundaries** - MANDATORY
+- **Mock all external dependencies in tests** - NO EXCEPTIONS
 
 ---
 
@@ -205,6 +217,7 @@ public ReturnType MethodName(ParameterType paramName)
 ### Unit Tests
 - **Coverage**: Aim for 100% code coverage - ABSOLUTE REQUIREMENT
 - **Mocking**: Use mocks for external dependencies - MANDATORY
+- **Mocking is Mandatory**: **Mocking should be used for testing without exception**. All external dependencies, services, and collaborators must be mocked to ensure test isolation and deterministic behavior. NO EXCEPTIONS.
 - **Edge cases**: Test error conditions and boundary values - NO EXCEPTIONS
 
 ### Integration Tests
