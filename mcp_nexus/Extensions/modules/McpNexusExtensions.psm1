@@ -166,7 +166,7 @@ function Start-NexusCommand {
     param(
         [Parameter(Mandatory=$true, Position=0)]
         [ValidateNotNullOrEmpty()]
-        [string]$Command,
+        [string[]]$Command,
 
         [Parameter(Mandatory=$false)]
         [int]$TimeoutSeconds = 300
@@ -176,37 +176,47 @@ function Start-NexusCommand {
         Initialize-McpNexusExtension
     }
 
-    $script:RequestCounter++
-    Write-Verbose "Queueing command #$script:RequestCounter: $Command"
+    $commandIds = @()
+    
+    foreach ($cmd in $Command) {
+        $script:RequestCounter++
+        Write-Verbose "Queueing command #$script:RequestCounter: $cmd"
 
-    # Output marker for MCP Nexus to count callbacks
-    Write-Output "[CALLBACK] Queueing: $Command"
+        # Output marker for MCP Nexus to count callbacks
+        Write-Output "[CALLBACK] Queueing: $cmd"
 
-    try {
-        $body = @{
-            command = $Command
-            timeoutSeconds = $TimeoutSeconds
-        } | ConvertTo-Json
+        try {
+            $body = @{
+                command = $cmd
+                timeoutSeconds = $TimeoutSeconds
+            } | ConvertTo-Json
 
-        $headers = @{
-            "Authorization" = "Bearer $script:CallbackToken"
-            "Content-Type" = "application/json"
+            $headers = @{
+                "Authorization" = "Bearer $script:CallbackToken"
+                "Content-Type" = "application/json"
+            }
+
+            $response = Invoke-RestMethod `
+                -Uri "$script:CallbackUrl/queue" `
+                -Method POST `
+                -Headers $headers `
+                -Body $body `
+                -TimeoutSec 30
+
+            Write-Verbose "Command queued with ID: $($response.commandId)"
+            $commandIds += $response.commandId
         }
-
-        $response = Invoke-RestMethod `
-            -Uri "$script:CallbackUrl/queue" `
-            -Method POST `
-            -Headers $headers `
-            -Body $body `
-            -TimeoutSec 30
-
-        Write-Verbose "Command queued with ID: $($response.commandId)"
-        return $response.commandId
+        catch {
+            Write-Error "Failed to queue command '$cmd': $_"
+            throw
+        }
     }
-    catch {
-        Write-Error "Failed to queue command '$Command': $_"
-        throw
+
+    # Return single ID if only one command, array if multiple
+    if ($commandIds.Count -eq 1) {
+        return $commandIds[0]
     }
+    return $commandIds
 }
 
 <#
@@ -304,100 +314,105 @@ function Wait-NexusCommand {
     param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
-        [string]$CommandId,
+        [string[]]$CommandId,
 
         [Parameter(Mandatory=$false)]
         [int]$TimeoutSeconds = 300,
 
         [Parameter(Mandatory=$false)]
-        [int]$PollIntervalMs = 1000
+        [int]$PollIntervalMs = 1000,
+
+        [Parameter(Mandatory=$false)]
+        [bool]$ReturnResults = $false
     )
 
     if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
         Initialize-McpNexusExtension
     }
 
-    Write-Verbose "Waiting for command $CommandId to complete (timeout: ${TimeoutSeconds}s)..."
+    if ($CommandId.Count -eq 0) {
+        return if ($ReturnResults) { @{} } else { @() }
+    }
+
+    $isSingleCommand = $CommandId.Count -eq 1
+    $commandDisplay = if ($isSingleCommand) { $CommandId[0] } else { "$($CommandId.Count) commands" }
+    Write-Verbose "Waiting for $commandDisplay to complete (timeout: ${TimeoutSeconds}s)..."
 
     $startTime = Get-Date
     $timeout = [TimeSpan]::FromSeconds($TimeoutSeconds)
+    $completedCommands = @{}
+    $results = if ($ReturnResults) { @{} } else { @() }
 
     do {
-        try {
-            $result = Get-NexusCommandResult -CommandId $CommandId
+        $allCompleted = $true
+        $remainingCommands = @()
 
-            if ($result.isCompleted) {
-                if ($result.status -eq "Success" -or $result.status -eq "Completed") {
-                    Write-Verbose "Command $CommandId completed successfully"
-                    return $result.output
+        try {
+            # Use bulk status endpoint for efficient polling
+            $bulkResults = Get-NexusCommandStatus -CommandIds $CommandId
+
+            foreach ($cmdId in $CommandId) {
+                if ($completedCommands.ContainsKey($cmdId)) {
+                    continue
+                }
+
+                if ($bulkResults.ContainsKey($cmdId)) {
+                    $result = $bulkResults[$cmdId]
+
+                    if ($result.isCompleted) {
+                        $completedCommands[$cmdId] = $true
+                        
+                        if ($result.status -eq "Success" -or $result.status -eq "Completed") {
+                            Write-Verbose "Command $cmdId completed successfully"
+                            if ($ReturnResults) {
+                                $results[$cmdId] = $result.output
+                            } else {
+                                $results += $result.output
+                            }
+                        }
+                        else {
+                            $errorMsg = if ($result.error) { $result.error } else { "Command failed with status: $($result.status)" }
+                            Write-Error "Command $cmdId failed: $errorMsg"
+                            throw "Command $cmdId failed: $errorMsg"
+                        }
+                    }
+                    else {
+                        $allCompleted = $false
+                        $remainingCommands += $cmdId
+                    }
                 }
                 else {
-                    $errorMsg = if ($result.error) { $result.error } else { "Command failed with status: $($result.status)" }
-                    Write-Error "Command $CommandId failed: $errorMsg"
-                    throw $errorMsg
+                    Write-Warning "Command $cmdId not found in status response"
+                    $allCompleted = $false
+                    $remainingCommands += $cmdId
                 }
             }
-
-            Write-Verbose "Command $CommandId status: $($result.status), waiting..."
-            Start-Sleep -Milliseconds $PollIntervalMs
         }
         catch {
-            Write-Error "Error while waiting for command $CommandId: $_"
+            Write-Error "Error while checking bulk command status: $_"
             throw
         }
+
+        if ($allCompleted) {
+            Write-Verbose "All $($CommandId.Count) commands completed successfully"
+            # For single command, return just the output; for multiple, return array/hashtable
+            if ($isSingleCommand) {
+                return if ($ReturnResults) { $results[$CommandId[0]] } else { $results[0] }
+            }
+            return $results
+        }
+
+        $completedCount = $completedCommands.Count
+        Write-Verbose "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')"
+        Start-Sleep -Milliseconds $PollIntervalMs
+
     } while ((Get-Date) - $startTime -lt $timeout)
 
-    throw "Command $CommandId timed out after $TimeoutSeconds seconds"
+    $completedCount = $completedCommands.Count
+    $remainingCount = $CommandId.Count - $completedCount
+    throw "Timeout: Only $completedCount of $($CommandId.Count) commands completed within $TimeoutSeconds seconds. $remainingCount commands still running."
 }
 
-<#
-.SYNOPSIS
-Queues multiple commands and returns their command IDs.
-
-.DESCRIPTION
-Convenience function to queue multiple commands at once. This enables optimal batching
-as all commands are queued before any execute.
-
-.PARAMETER Commands
-Array of WinDBG commands to execute.
-
-.PARAMETER TimeoutSeconds
-Maximum time to wait for each command completion (default: 300 seconds).
-
-.EXAMPLE
-$commands = @("lm", "!threads", "!peb", "!teb")
-$commandIds = Start-NexusCommands -Commands $commands
-foreach ($id in $commandIds) {
-    $result = Wait-NexusCommand -CommandId $id
-    Write-Output $result
-}
-
-.OUTPUTS
-Array of String - The command IDs that can be used to retrieve results.
-
-.NOTES
-This function queues all commands immediately, maximizing batching opportunities.
-#>
-function Start-NexusCommands {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string[]]$Commands,
-
-        [Parameter(Mandatory=$false)]
-        [int]$TimeoutSeconds = 300
-    )
-
-    $commandIds = @()
-    foreach ($cmd in $Commands) {
-        $id = Start-NexusCommand -Command $cmd -TimeoutSeconds $TimeoutSeconds
-        $commandIds += $id
-        Write-Verbose "Queued command '$cmd' with ID: $id"
-    }
-
-    return $commandIds
-}
 
 <#
 .SYNOPSIS
@@ -548,9 +563,217 @@ catch {
     Write-Warning "McpNexusExtensions module: Not running in MCP Nexus extension context: $_"
 }
 
+<#
+.SYNOPSIS
+Gets the status of multiple commands in a single request.
+
+.DESCRIPTION
+Efficiently retrieves the status and results of multiple commands using the bulk status endpoint.
+This is much more efficient than calling Get-NexusCommandResult multiple times.
+
+.PARAMETER CommandIds
+Array of command IDs to check.
+
+.EXAMPLE
+$commandIds = @("cmd-123", "cmd-124", "cmd-125")
+$results = Get-NexusCommandStatus -CommandIds $commandIds
+foreach ($cmdId in $commandIds) {
+    if ($results[$cmdId].isCompleted) {
+        Write-Output "Command $cmdId completed: $($results[$cmdId].output)"
+    }
+}
+
+.OUTPUTS
+Hashtable - Dictionary with command IDs as keys and status objects as values.
+
+.NOTES
+This function uses the bulk status endpoint for optimal performance.
+#>
+function Get-NexusCommandStatus {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$CommandIds
+    )
+
+    if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
+        Initialize-McpNexusExtension
+    }
+
+    if ($CommandIds.Count -eq 0) {
+        return @{}
+    }
+
+    try {
+        $body = @{ commandIds = $CommandIds } | ConvertTo-Json
+        $headers = @{
+            "Authorization" = "Bearer $script:CallbackToken"
+            "Content-Type" = "application/json"
+        }
+
+        $response = Invoke-RestMethod `
+            -Uri "$script:CallbackUrl/status" `
+            -Method POST `
+            -Headers $headers `
+            -Body $body `
+            -TimeoutSec 10
+
+        return $response.results
+    }
+    catch {
+        Write-Error "Failed to get bulk status for commands: $_"
+        throw
+    }
+}
+
+<#
+.SYNOPSIS
+Waits for multiple queued commands to complete and returns their results.
+
+.DESCRIPTION
+Efficiently polls multiple queued commands until they all complete or timeout.
+This function optimizes the waiting process by checking all commands in a single
+polling loop rather than waiting for each command individually.
+
+.PARAMETER CommandIds
+Array of command IDs returned by Start-NexusCommand or Start-NexusCommands.
+
+.PARAMETER TimeoutSeconds
+Maximum time to wait for all commands to complete (default: 300 seconds).
+
+.PARAMETER PollIntervalMs
+Milliseconds to wait between status checks (default: 1000ms).
+
+.PARAMETER ReturnResults
+If true, returns a hashtable with command IDs as keys and outputs as values.
+If false, returns an array of outputs in the same order as input command IDs.
+
+.EXAMPLE
+$commandIds = Start-NexusCommands -Commands @("lm", "!threads", "!peb")
+$results = Wait-NexusCommands -CommandIds $commandIds -ReturnResults $true
+Write-Output "Modules: $($results['cmd-123'])"
+Write-Output "Threads: $($results['cmd-124'])"
+
+.EXAMPLE
+$commandIds = Start-NexusCommands -Commands @("lm", "!threads", "!peb")
+$outputs = Wait-NexusCommands -CommandIds $commandIds -ReturnResults $false
+$modules = $outputs[0]
+$threads = $outputs[1]
+$peb = $outputs[2]
+
+.OUTPUTS
+Hashtable or Array - Command results based on ReturnResults parameter.
+
+.NOTES
+This function is much more efficient than calling Wait-NexusCommand in a loop
+because it polls all commands together rather than waiting for each individually.
+#>
+function Wait-NexusCommands {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$CommandIds,
+
+        [Parameter(Mandatory=$false)]
+        [int]$TimeoutSeconds = 300,
+
+        [Parameter(Mandatory=$false)]
+        [int]$PollIntervalMs = 1000,
+
+        [Parameter(Mandatory=$false)]
+        [bool]$ReturnResults = $false
+    )
+
+    if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
+        Initialize-McpNexusExtension
+    }
+
+    if ($CommandIds.Count -eq 0) {
+        return if ($ReturnResults) { @{} } else { @() }
+    }
+
+    Write-Verbose "Waiting for $($CommandIds.Count) commands to complete (timeout: ${TimeoutSeconds}s)..."
+
+    $startTime = Get-Date
+    $timeout = [TimeSpan]::FromSeconds($TimeoutSeconds)
+    $completedCommands = @{}
+    $results = if ($ReturnResults) { @{} } else { @() }
+
+    do {
+        $allCompleted = $true
+        $remainingCommands = @()
+
+        try {
+            # Use bulk status endpoint for efficient polling
+            $bulkResults = Get-NexusCommandStatus -CommandIds $CommandIds
+
+            foreach ($cmdId in $CommandIds) {
+                if ($completedCommands.ContainsKey($cmdId)) {
+                    continue
+                }
+
+                if ($bulkResults.ContainsKey($cmdId)) {
+                    $result = $bulkResults[$cmdId]
+
+                    if ($result.isCompleted) {
+                        $completedCommands[$cmdId] = $true
+                        
+                        if ($result.status -eq "Success" -or $result.status -eq "Completed") {
+                            Write-Verbose "Command $cmdId completed successfully"
+                            if ($ReturnResults) {
+                                $results[$cmdId] = $result.output
+                            } else {
+                                $results += $result.output
+                            }
+                        }
+                        else {
+                            $errorMsg = if ($result.error) { $result.error } else { "Command failed with status: $($result.status)" }
+                            Write-Error "Command $cmdId failed: $errorMsg"
+                            throw "Command $cmdId failed: $errorMsg"
+                        }
+                    }
+                    else {
+                        $allCompleted = $false
+                        $remainingCommands += $cmdId
+                    }
+                }
+                else {
+                    Write-Warning "Command $cmdId not found in bulk status response"
+                    $allCompleted = $false
+                    $remainingCommands += $cmdId
+                }
+            }
+        }
+        catch {
+            Write-Error "Error while checking bulk command status: $_"
+            throw
+        }
+
+        if ($allCompleted) {
+            Write-Verbose "All $($CommandIds.Count) commands completed successfully"
+            return $results
+        }
+
+        $completedCount = $completedCommands.Count
+        Write-Verbose "Commands completed: $completedCount/$($CommandIds.Count), remaining: $($remainingCommands -join ', ')"
+        Start-Sleep -Milliseconds $PollIntervalMs
+
+    } while ((Get-Date) - $startTime -lt $timeout)
+
+    $completedCount = $completedCommands.Count
+    $remainingCount = $CommandIds.Count - $completedCount
+    throw "Timeout: Only $completedCount of $($CommandIds.Count) commands completed within $TimeoutSeconds seconds. $remainingCount commands still running."
+}
+
 # Export functions
 Export-ModuleMember -Function @(
     'Invoke-NexusCommand',
+    'Start-NexusCommand',
+    'Get-NexusCommandResult',
+    'Get-NexusCommandStatus',
+    'Wait-NexusCommand',
     'Write-NexusProgress',
     'Write-NexusLog',
     'Get-NexusSessionId',

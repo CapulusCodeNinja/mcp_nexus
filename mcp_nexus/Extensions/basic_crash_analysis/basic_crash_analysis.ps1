@@ -27,16 +27,17 @@ try {
     # Step 2-5: Queue multiple commands for batching
     Write-NexusProgress "Queueing multiple commands for batch execution..."
     $batchCommands = @("!threads", "~*k", "!locks", "!runaway")
-    $commandIds = Start-NexusCommands -Commands $batchCommands
+    $commandIds = Start-NexusCommand -Command $batchCommands
     
     Write-NexusProgress "Waiting for $($commandIds.Count) commands to complete..."
     Write-NexusLog "Executing $($commandIds.Count) commands using async batching" -Level Information
 
-    # Wait for all results
-    $results["threads"] = Wait-NexusCommand -CommandId $commandIds[0]
-    $results["allStacks"] = Wait-NexusCommand -CommandId $commandIds[1]
-    $results["locks"] = Wait-NexusCommand -CommandId $commandIds[2]
-    $results["runaway"] = Wait-NexusCommand -CommandId $commandIds[3]
+    # Wait for all results efficiently using bulk polling
+    $outputs = Wait-NexusCommand -CommandId $commandIds -ReturnResults $false
+    $results["threads"] = $outputs[0]
+    $results["allStacks"] = $outputs[1]
+    $results["locks"] = $outputs[2]
+    $results["runaway"] = $outputs[3]
 
     Write-NexusProgress "Basic crash analysis complete"
     Write-NexusLog "Basic crash analysis completed successfully (5 commands executed, 4 using async batching)" -Level Information

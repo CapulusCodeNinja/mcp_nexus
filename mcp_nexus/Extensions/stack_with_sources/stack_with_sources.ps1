@@ -123,16 +123,15 @@ try {
     }
     
     Write-NexusProgress "[$threadDisplay] Executing first pass source downloads using async batching..."
-    $downloadCommandIds = Start-NexusCommands -Commands $downloadCommands
+    $downloadCommandIds = Start-NexusCommand -Command $downloadCommands
     
     Write-NexusProgress "[$threadDisplay] Waiting for first pass downloads to complete..."
-    foreach ($cmdId in $downloadCommandIds) {
-        try {
-            $null = Wait-NexusCommand -CommandId $cmdId
-        }
-        catch {
-            Write-NexusLog "Failed to execute lsa command in first pass: $_" -Level Warning
-        }
+    try {
+        $null = Wait-NexusCommand -CommandId $downloadCommandIds -ReturnResults $false
+        Write-NexusLog "First pass source downloads completed successfully" -Level Information
+    }
+    catch {
+        Write-NexusLog "Failed to execute lsa commands in first pass: $_" -Level Warning
     }
     
     # Step 4: Verify downloaded sources (second pass) - using async batching

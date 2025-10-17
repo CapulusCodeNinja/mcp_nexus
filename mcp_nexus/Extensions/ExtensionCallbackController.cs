@@ -255,6 +255,123 @@ namespace mcp_nexus.Extensions
         }
 
         /// <summary>
+        /// Reads the status of multiple commands in a single request.
+        /// Extensions use this endpoint to efficiently check multiple command statuses.
+        /// </summary>
+        /// <param name="request">The bulk status request with multiple command IDs.</param>
+        /// <returns>The status of all requested commands.</returns>
+        [HttpPost("status")]
+        [ProducesResponseType(typeof(ExtensionCallbackBulkStatusResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ExtensionCallbackErrorResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ExtensionCallbackErrorResponse), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ExtensionCallbackErrorResponse), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetBulkCommandStatus([FromBody] ExtensionCallbackBulkStatusRequest request)
+        {
+            // Validate request is from localhost
+            if (!IsLocalhost())
+            {
+                m_Logger.LogWarning("Extension callback denied from non-localhost IP: {IP}",
+                    HttpContext.Connection.RemoteIpAddress);
+                return StatusCode(403, new ExtensionCallbackErrorResponse
+                {
+                    Error = "Forbidden",
+                    Message = "Extension callbacks are only accessible from localhost"
+                });
+            }
+
+            // Extract and validate token
+            var token = ExtractBearerToken();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return StatusCode(401, new ExtensionCallbackErrorResponse
+                {
+                    Error = "Unauthorized",
+                    Message = "Missing or invalid authorization token"
+                });
+            }
+
+            var (isValid, sessionId, _) = m_TokenValidator.ValidateToken(token);
+            if (!isValid || string.IsNullOrWhiteSpace(sessionId))
+            {
+                return StatusCode(401, new ExtensionCallbackErrorResponse
+                {
+                    Error = "Unauthorized",
+                    Message = "Invalid extension token"
+                });
+            }
+
+            if (request == null || request.CommandIds == null || request.CommandIds.Count == 0)
+            {
+                return BadRequest(new ExtensionCallbackErrorResponse
+                {
+                    Error = "Bad Request",
+                    Message = "CommandIds cannot be null or empty"
+                });
+            }
+
+            try
+            {
+                var results = new Dictionary<string, ExtensionCallbackReadResponse>();
+
+                foreach (var commandId in request.CommandIds)
+                {
+                    try
+                    {
+                        var (commandInfo, commandResult) = await m_SessionManager.GetCommandInfoAndResultAsync(
+                            sessionId, commandId);
+
+                        if (commandInfo != null)
+                        {
+                            results[commandId] = new ExtensionCallbackReadResponse
+                            {
+                                CommandId = commandId,
+                                Status = commandInfo.State.ToString(),
+                                IsCompleted = commandInfo.IsCompleted,
+                                Output = commandResult?.Output,
+                                Error = commandResult?.ErrorMessage
+                            };
+                        }
+                        else
+                        {
+                            results[commandId] = new ExtensionCallbackReadResponse
+                            {
+                                CommandId = commandId,
+                                Status = "NotFound",
+                                IsCompleted = false,
+                                Error = $"Command {commandId} not found"
+                            };
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        m_Logger.LogWarning(ex, "Failed to get status for command {CommandId}", commandId);
+                        results[commandId] = new ExtensionCallbackReadResponse
+                        {
+                            CommandId = commandId,
+                            Status = "Error",
+                            IsCompleted = false,
+                            Error = ex.Message
+                        };
+                    }
+                }
+
+                return Ok(new ExtensionCallbackBulkStatusResponse
+                {
+                    Results = results
+                });
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogError(ex, "Extension callback bulk status failed for session {SessionId}", sessionId);
+                return StatusCode(500, new ExtensionCallbackErrorResponse
+                {
+                    Error = "Internal Server Error",
+                    Message = $"Failed to get bulk status: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
         /// Reads the result of a previously executed command.
         /// Extensions use this endpoint to check command status and retrieve results.
         /// </summary>
