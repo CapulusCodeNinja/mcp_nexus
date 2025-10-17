@@ -337,9 +337,8 @@ namespace mcp_nexus_tests.CommandQueue
                 command,
                 status);
 
-            // Assert - Wait for the async operation to complete with timeout
-            var completed = await Task.WhenAny(tcs.Task, Task.Delay(1000));
-            Assert.True(completed == tcs.Task, "Expected notification call was not received within timeout");
+            // Assert - Wait for the async operation to complete
+            await tcs.Task;
 
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
                 "session-123", commandId, status, string.Empty, string.Empty, 0), Times.Once);

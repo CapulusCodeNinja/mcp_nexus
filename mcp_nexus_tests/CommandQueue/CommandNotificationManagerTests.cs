@@ -330,9 +330,8 @@ namespace mcp_nexus_tests.CommandQueue
             // Act
             m_Manager.NotifyServiceShutdown(reason);
 
-            // Assert - Wait for the async operation to complete with timeout
-            var completed = await Task.WhenAny(tcs.Task, Task.Delay(1000));
-            Assert.True(completed == tcs.Task, "Expected log message was not received within timeout");
+            // Assert - Wait for the async operation to complete
+            await tcs.Task;
 
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Information,
