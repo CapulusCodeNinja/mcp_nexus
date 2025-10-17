@@ -62,6 +62,13 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task NotifyCommandStatusFireAndForget_WithQueuedCommand_CallsNotificationService()
         {
             // Arrange
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
             var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now, completionSource, cancellationTokenSource);
@@ -70,8 +77,8 @@ namespace mcp_nexus_tests.CommandQueue
             m_Manager.NotifyCommandStatusFireAndForget(queuedCommand, "executing", "result", 50);
 
             // Assert
-            // Give the Task.Run a moment to execute
-            await Task.Delay(2000);
+            // Wait for notification to be received deterministically
+            await notificationReceived.Task;
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
@@ -79,6 +86,13 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task NotifyCommandStatusFireAndForget_WithParameters_CallsNotificationService()
         {
             // Arrange
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             var commandId = "cmd-1";
             var command = "!analyze -v";
             var status = "executing";
@@ -89,15 +103,22 @@ namespace mcp_nexus_tests.CommandQueue
             m_Manager.NotifyCommandStatusFireAndForget(commandId, command, status, result, progress);
 
             // Assert
-            // Give the Task.Run a moment to execute
-            await Task.Delay(500);
+            // Wait for notification to be received deterministically
+            await notificationReceived.Task;
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
         }
 
         [Fact]
-        public void NotifyCommandStatusFireAndForget_WithNullResult_CallsNotificationServiceWithNullResult()
+        public async Task NotifyCommandStatusFireAndForget_WithNullResult_CallsNotificationServiceWithNullResult()
         {
             // Arrange
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             var commandId = "cmd-1";
             var command = "!analyze -v";
             var status = "executing";
@@ -107,8 +128,8 @@ namespace mcp_nexus_tests.CommandQueue
             m_Manager.NotifyCommandStatusFireAndForget(commandId, command, status, null, progress);
 
             // Assert
-            // Give the Task.Run a moment to execute
-            Thread.Sleep(1000);
+            // Wait for notification to be received deterministically
+            await notificationReceived.Task;
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
@@ -150,6 +171,12 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task NotifyCommandHeartbeatFireAndForget_WithQueuedCommand_CallsNotificationService()
         {
             // Arrange
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifyCommandHeartbeatAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
             var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now, completionSource, cancellationTokenSource);
@@ -159,8 +186,8 @@ namespace mcp_nexus_tests.CommandQueue
             m_Manager.NotifyCommandHeartbeatFireAndForget(queuedCommand, elapsed);
 
             // Assert
-            // Wait for the Task.Run to complete
-            await Task.Delay(2000);
+            // Wait for notification to be received deterministically
+            await notificationReceived.Task;
             m_MockNotificationService.Verify(x => x.NotifyCommandHeartbeatAsync(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
@@ -171,6 +198,12 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task NotifyCommandHeartbeatFireAndForget_WithLongElapsedTime_CapsProgressAt95()
         {
             // Arrange
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifyCommandHeartbeatAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             var completionSource = new TaskCompletionSource<string>();
             var cancellationTokenSource = new CancellationTokenSource();
             var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now, completionSource, cancellationTokenSource);
@@ -180,8 +213,8 @@ namespace mcp_nexus_tests.CommandQueue
             m_Manager.NotifyCommandHeartbeatFireAndForget(queuedCommand, elapsed);
 
             // Assert
-            // Wait for the Task.Run to complete
-            await Task.Delay(1000);
+            // Wait for notification to be received deterministically
+            await notificationReceived.Task;
             m_MockNotificationService.Verify(x => x.NotifyCommandHeartbeatAsync(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
@@ -387,6 +420,15 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task NotifyBulkCommandCancellation_WithCountAndReason_LogsBulkCancellationEvent()
         {
             // Arrange
+            var logReceived = new TaskCompletionSource<bool>();
+            m_MockLogger.Setup(x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Cancelled {5} commands: Service shutdown")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+                .Callback(() => logReceived.SetResult(true));
+
             var count = 5;
             var reason = "Service shutdown";
 
@@ -394,8 +436,8 @@ namespace mcp_nexus_tests.CommandQueue
             m_Manager.NotifyBulkCommandCancellation(count, reason);
 
             // Assert
-            // Give the Task.Run a moment to execute
-            await Task.Delay(2000);
+            // Wait for log to be received deterministically
+            await logReceived.Task;
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -467,8 +509,17 @@ namespace mcp_nexus_tests.CommandQueue
             m_Manager.NotifyCommandHeartbeatFireAndForget(queuedCommand, elapsed);
 
             // Assert
-            // Wait for the Task.Run to complete
-            await Task.Delay(3000);
+            // Wait for warning log to be received deterministically
+            var logReceived = new TaskCompletionSource<bool>();
+            m_MockLogger.Setup(x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to send heartbeat notification for")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+                .Callback(() => logReceived.SetResult(true));
+
+            await logReceived.Task;
             m_MockLogger.Verify(x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),

@@ -40,6 +40,13 @@ namespace mcp_nexus_tests.CommandQueue
         public async Task NotifyCommandStatusFireAndForget_WithSessionId_CallsNotificationService()
         {
             // Arrange
+            var notificationReceived = new TaskCompletionSource<bool>();
+            m_MockNotificationService.Setup(x => x.NotifyCommandStatusAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => notificationReceived.SetResult(true));
+
             var sessionId = "session-123";
             var commandId = "cmd-456";
             var command = "test-command";
@@ -59,8 +66,8 @@ namespace mcp_nexus_tests.CommandQueue
                 progress);
 
             // Assert
-            // Wait for the Task.Run to complete
-            await Task.Delay(2000);
+            // Wait for notification to be received deterministically
+            await notificationReceived.Task;
             m_MockNotificationService.Verify(x => x.NotifyCommandStatusAsync(
                 sessionId, commandId, status, result ?? string.Empty, string.Empty, progress), Times.AtLeastOnce);
         }
