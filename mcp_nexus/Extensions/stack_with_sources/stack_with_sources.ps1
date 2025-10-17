@@ -115,38 +115,49 @@ try {
     Write-NexusLog "Found $($addresses.Count) return addresses to process" -Level Information
     Write-NexusProgress "Found $($addresses.Count) return addresses to process"
 
-    # Step 3: Download sources for each address (first pass)
-    Write-NexusProgress "[$threadDisplay] Downloading sources for $($addresses.Count) addresses..."
-    $processedCount = 0
-    
+    # Step 3: Download sources for each address (first pass) - using async batching
+    Write-NexusProgress "[$threadDisplay] Queueing source downloads for $($addresses.Count) addresses..."
+    $downloadCommands = @()
     foreach ($addr in $addresses) {
-        $processedCount++
-        $percent = [int](($processedCount / $addresses.Count) * 100)
-        Write-NexusProgress "[$threadDisplay] Downloading source for address $addr ($processedCount of $($addresses.Count), $percent%)"
-        
+        $downloadCommands += "lsa $addr"
+    }
+    
+    Write-NexusProgress "[$threadDisplay] Executing first pass source downloads using async batching..."
+    $downloadCommandIds = Start-NexusCommands -Commands $downloadCommands
+    
+    Write-NexusProgress "[$threadDisplay] Waiting for first pass downloads to complete..."
+    foreach ($cmdId in $downloadCommandIds) {
         try {
-            # First pass: Just download, don't verify yet
-            $null = Invoke-NexusCommand "lsa $addr"
+            $null = Wait-NexusCommand -CommandId $cmdId
         }
         catch {
-            Write-NexusLog "Failed to execute lsa for address $addr`: $_" -Level Warning
+            Write-NexusLog "Failed to execute lsa command in first pass: $_" -Level Warning
         }
     }
     
-    # Step 4: Verify downloaded sources (second pass)
-    Write-NexusProgress "[$threadDisplay] Verifying downloaded sources..."
+    # Step 4: Verify downloaded sources (second pass) - using async batching
+    Write-NexusProgress "[$threadDisplay] Queueing source verification for $($addresses.Count) addresses..."
+    $verifyCommands = @()
+    foreach ($addr in $addresses) {
+        $verifyCommands += "lsa $addr"
+    }
+    
+    Write-NexusProgress "[$threadDisplay] Executing second pass source verification using async batching..."
+    $verifyCommandIds = Start-NexusCommands -Commands $verifyCommands
+    
+    Write-NexusProgress "[$threadDisplay] Waiting for verification to complete and processing results..."
     $downloadedCount = 0
     $failedAddresses = @()
-    $processedCount = 0
     $sourceOutputs = @{}  # Collect all lsa outputs
     
-    foreach ($addr in $addresses) {
-        $processedCount++
-        $percent = [int](($processedCount / $addresses.Count) * 100)
-        Write-NexusProgress "[$threadDisplay] Verifying source for address $addr ($processedCount of $($addresses.Count), $percent%)"
+    for ($i = 0; $i -lt $addresses.Count; $i++) {
+        $addr = $addresses[$i]
+        $cmdId = $verifyCommandIds[$i]
+        $percent = [int]((($i + 1) / $addresses.Count) * 100)
+        Write-NexusProgress "[$threadDisplay] Processing verification result for address $addr ($($i + 1) of $($addresses.Count), $percent%)"
         
         try {
-            $verifyOutput = Invoke-NexusCommand "lsa $addr"
+            $verifyOutput = Wait-NexusCommand -CommandId $cmdId
             $sourceOutputs[$addr] = $verifyOutput
             
             # Check if source was found in cache (with .srcnoisy 3, should show "already loaded")
@@ -187,7 +198,7 @@ try {
         successRate = $successRate
         addresses = $addresses
         failedAddresses = $failedAddresses
-        message = "Successfully downloaded and verified $downloadedCount of $($addresses.Count) source files"
+        message = "Successfully downloaded and verified $downloadedCount of $($addresses.Count) source files using async batching"
         stackTrace = $stackOutput
         sourceOutputs = $sourceOutputs
     } | ConvertTo-Json -Depth 10
