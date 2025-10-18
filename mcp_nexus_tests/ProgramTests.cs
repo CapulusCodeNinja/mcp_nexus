@@ -586,6 +586,258 @@ namespace mcp_nexus.Tests
         }
 
         #endregion
+
+        #region IsHelpRequest Tests
+
+        /// <summary>
+        /// Verifies that IsHelpRequest returns true for --help flag.
+        /// </summary>
+        [Fact]
+        public void IsHelpRequest_WithHelpFlag_ReturnsTrue()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("IsHelpRequest", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Act
+            var result = (bool)method.Invoke(null, new object[] { new[] { "--help" } })!;
+
+            // Assert
+            Assert.True(result);
+        }
+
+        /// <summary>
+        /// Verifies that IsHelpRequest returns true for -h flag.
+        /// </summary>
+        [Fact]
+        public void IsHelpRequest_WithShortHelpFlag_ReturnsTrue()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("IsHelpRequest", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Act
+            var result = (bool)method.Invoke(null, new object[] { new[] { "-h" } })!;
+
+            // Assert
+            Assert.True(result);
+        }
+
+        /// <summary>
+        /// Verifies that IsHelpRequest returns true for help command.
+        /// </summary>
+        [Fact]
+        public void IsHelpRequest_WithHelpCommand_ReturnsTrue()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("IsHelpRequest", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Act
+            var result = (bool)method.Invoke(null, new object[] { new[] { "help" } })!;
+
+            // Assert
+            Assert.True(result);
+        }
+
+        /// <summary>
+        /// Verifies that IsHelpRequest returns false for empty args.
+        /// </summary>
+        [Fact]
+        public void IsHelpRequest_WithEmptyArgs_ReturnsFalse()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("IsHelpRequest", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Act
+            var result = (bool)method.Invoke(null, new object[] { Array.Empty<string>() })!;
+
+            // Assert
+            Assert.False(result);
+        }
+
+        /// <summary>
+        /// Verifies that IsHelpRequest returns false for non-help args.
+        /// </summary>
+        [Fact]
+        public void IsHelpRequest_WithNonHelpArgs_ReturnsFalse()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("IsHelpRequest", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Act
+            var result = (bool)method.Invoke(null, new object[] { new[] { "--service" } })!;
+
+            // Assert
+            Assert.False(result);
+        }
+
+        #endregion
+
+        #region ValidateServiceModeOnWindows Tests
+
+        /// <summary>
+        /// Verifies that ValidateServiceModeOnWindows returns true when service mode is false.
+        /// </summary>
+        [Fact]
+        public void ValidateServiceModeOnWindows_WithServiceModeFalse_ReturnsTrue()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("ValidateServiceModeOnWindows", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Act
+            var result = (bool)method.Invoke(null, new object[] { false })!;
+
+            // Assert
+            Assert.True(result);
+        }
+
+        /// <summary>
+        /// Verifies that ValidateServiceModeOnWindows returns true on Windows with service mode.
+        /// </summary>
+        [Fact]
+        public void ValidateServiceModeOnWindows_OnWindowsWithServiceMode_ReturnsTrue()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("ValidateServiceModeOnWindows", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Act
+            var result = (bool)method.Invoke(null, new object[] { true })!;
+
+            // Assert - On Windows, should return true; on other platforms, false
+            if (OperatingSystem.IsWindows())
+            {
+                Assert.True(result);
+            }
+            else
+            {
+                Assert.False(result);
+            }
+        }
+
+        #endregion
+
+        #region SetEnvironmentForServiceMode Tests
+
+        /// <summary>
+        /// Verifies that SetEnvironmentForServiceMode sets Service environment for --service flag.
+        /// </summary>
+        [Fact]
+        public void SetEnvironmentForServiceMode_WithServiceFlag_SetsServiceEnvironment()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("SetEnvironmentForServiceMode", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Clear environment variable first
+            var originalEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", null);
+
+            try
+            {
+                // Act
+                method.Invoke(null, new object[] { new[] { "--service" } });
+
+                // Assert
+                Assert.Equal("Service", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+            }
+            finally
+            {
+                // Restore original environment
+                Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", originalEnv);
+            }
+        }
+
+        /// <summary>
+        /// Verifies that SetEnvironmentForServiceMode sets Production environment for normal args.
+        /// </summary>
+        [Fact]
+        public void SetEnvironmentForServiceMode_WithNormalArgs_SetsProductionEnvironment()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("SetEnvironmentForServiceMode", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Clear environment variable first
+            var originalEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", null);
+
+            try
+            {
+                // Act
+                method.Invoke(null, new object[] { new[] { "--http" } });
+
+                // Assert
+                Assert.Equal("Production", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+            }
+            finally
+            {
+                // Restore original environment
+                Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", originalEnv);
+            }
+        }
+
+        /// <summary>
+        /// Verifies that SetEnvironmentForServiceMode doesn't override existing environment.
+        /// </summary>
+        [Fact]
+        public void SetEnvironmentForServiceMode_WithExistingEnvironment_DoesNotOverride()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("SetEnvironmentForServiceMode", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Set environment variable first
+            var originalEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+
+            try
+            {
+                // Act
+                method.Invoke(null, new object[] { new[] { "--service" } });
+
+                // Assert - Should still be Development
+                Assert.Equal("Development", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+            }
+            finally
+            {
+                // Restore original environment
+                Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", originalEnv);
+            }
+        }
+
+        /// <summary>
+        /// Verifies that SetEnvironmentForServiceMode sets Service for --install flag.
+        /// </summary>
+        [Fact]
+        public void SetEnvironmentForServiceMode_WithInstallFlag_SetsServiceEnvironment()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("SetEnvironmentForServiceMode", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            var originalEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", null);
+
+            try
+            {
+                // Act
+                method.Invoke(null, new object[] { new[] { "--install" } });
+
+                // Assert
+                Assert.Equal("Service", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", originalEnv);
+            }
+        }
+
+        #endregion
     }
 }
 
