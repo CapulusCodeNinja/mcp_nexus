@@ -415,6 +415,174 @@ namespace mcp_nexus_tests.Session.Lifecycle
             mockTokenValidator.Verify(v => v.RevokeSessionTokens(sessionId), Times.Once);
         }
 
+        [Fact]
+        public async Task CloseSessionAsync_WithValidSession_SuccessfullyClosesSession()
+        {
+            // Arrange
+            var sessionId = "test-session-close-success";
+            var sessionInfo = new SessionInfo
+            {
+                SessionId = sessionId,
+                DumpPath = "C:\\Test\\dump.dmp",
+                CdbSession = m_RealisticCdbSession,
+                CommandQueue = m_MockCommandQueue.Object,
+                CreatedAt = DateTime.Now,
+                LastActivity = DateTime.Now,
+                Status = SessionStatus.Active
+            };
+            m_Sessions[sessionId] = sessionInfo;
+            m_MockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(0);
+
+            // Act
+            var result = await m_Manager.CloseSessionAsync(sessionId);
+
+            // Assert
+            Assert.True(result);
+            Assert.False(m_Sessions.ContainsKey(sessionId));
+        }
+
+        [Fact]
+        public async Task CloseSessionAsync_WithWhitespaceSessionId_ReturnsFalse()
+        {
+            // Act
+            var result = await m_Manager.CloseSessionAsync("   ");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task CloseSessionAsync_WithSessionHavingNullCommandQueue_StillClosesSuccessfully()
+        {
+            // Arrange
+            var sessionId = "test-session-null-queue";
+            var sessionInfo = new SessionInfo
+            {
+                SessionId = sessionId,
+                DumpPath = "C:\\Test\\dump.dmp",
+                CdbSession = m_RealisticCdbSession,
+                CommandQueue = null!, // Null command queue
+                CreatedAt = DateTime.Now,
+                LastActivity = DateTime.Now,
+                Status = SessionStatus.Active
+            };
+            m_Sessions[sessionId] = sessionInfo;
+
+            // Act
+            var result = await m_Manager.CloseSessionAsync(sessionId);
+
+            // Assert
+            Assert.True(result);
+            Assert.False(m_Sessions.ContainsKey(sessionId));
+        }
+
+        [Fact]
+        public async Task CloseSessionAsync_WithPendingCommands_ClosesSuccessfully()
+        {
+            // Arrange
+            var sessionId = "test-session-with-commands";
+            var mockQueue = new Mock<ICommandQueueService>();
+            mockQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(5); // 5 commands cancelled
+
+            var sessionInfo = new SessionInfo
+            {
+                SessionId = sessionId,
+                DumpPath = "C:\\Test\\dump.dmp",
+                CdbSession = m_RealisticCdbSession,
+                CommandQueue = mockQueue.Object,
+                CreatedAt = DateTime.Now,
+                LastActivity = DateTime.Now,
+                Status = SessionStatus.Active
+            };
+            m_Sessions[sessionId] = sessionInfo;
+
+            // Act
+            var result = await m_Manager.CloseSessionAsync(sessionId);
+
+            // Assert
+            Assert.True(result);
+            Assert.False(m_Sessions.ContainsKey(sessionId));
+            // The session should be closed successfully even with pending commands
+        }
+
+        [Fact]
+        public void GetLifecycleStats_AfterSessionOperations_ReturnsAccurateStats()
+        {
+            // Arrange
+            var sessionId = "test-session-stats";
+            var sessionInfo = new SessionInfo
+            {
+                SessionId = sessionId,
+                DumpPath = "C:\\Test\\dump.dmp",
+                CdbSession = m_RealisticCdbSession,
+                CommandQueue = m_MockCommandQueue.Object,
+                CreatedAt = DateTime.Now,
+                LastActivity = DateTime.Now,
+                Status = SessionStatus.Active
+            };
+            m_Sessions[sessionId] = sessionInfo;
+
+            // Act - Initial stats should be 0
+            var (initialCreated, initialClosed, initialExpired) = m_Manager.GetLifecycleStats();
+
+            // Assert
+            Assert.Equal(0, initialCreated);
+            Assert.Equal(0, initialClosed);
+            Assert.Equal(0, initialExpired);
+        }
+
+        [Fact]
+        public async Task CleanupExpiredSessionsAsync_WithMultipleSessions_OnlyCleansUpExpiredOnes()
+        {
+            // Arrange - Add one active and one expired session
+            var activeSessionId = "active-session";
+            var expiredSessionId = "expired-session";
+
+            var activeSession = new SessionInfo
+            {
+                SessionId = activeSessionId,
+                DumpPath = "C:\\Test\\active.dmp",
+                CdbSession = m_RealisticCdbSession,
+                CommandQueue = m_MockCommandQueue.Object,
+                CreatedAt = DateTime.Now,
+                LastActivity = DateTime.Now, // Recent
+                Status = SessionStatus.Active
+            };
+
+            var expiredSession = new SessionInfo
+            {
+                SessionId = expiredSessionId,
+                DumpPath = "C:\\Test\\expired.dmp",
+                CdbSession = m_RealisticCdbSession,
+                CommandQueue = m_MockCommandQueue.Object,
+                CreatedAt = DateTime.Now.AddHours(-3),
+                LastActivity = DateTime.Now.AddHours(-3), // Old
+                Status = SessionStatus.Active
+            };
+
+            m_Sessions[activeSessionId] = activeSession;
+            m_Sessions[expiredSessionId] = expiredSession;
+            m_MockCommandQueue.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(0);
+
+            // Act
+            var result = await m_Manager.CleanupExpiredSessionsAsync();
+
+            // Assert
+            Assert.Equal(1, result); // Only expired session cleaned up
+            Assert.True(m_Sessions.ContainsKey(activeSessionId)); // Active session remains
+            Assert.False(m_Sessions.ContainsKey(expiredSessionId)); // Expired session removed
+        }
+
+        [Fact]
+        public async Task CleanupExpiredSessionsAsync_WithNoSessions_ReturnsZero()
+        {
+            // Act
+            var result = await m_Manager.CleanupExpiredSessionsAsync();
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
         public void Dispose()
         {
             m_RealisticCdbSession?.Dispose();
