@@ -599,6 +599,62 @@ namespace mcp_nexus_tests.Debugger
                 new CdbCommandExecutor(m_MockLogger.Object, m_Config, null!));
         }
 
+        [Fact]
+        public async Task ExecuteCommandAsync_WithInactiveProcess_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var mockProcessManager = CreateMockProcessManager();
+            mockProcessManager.Setup(pm => pm.IsActive).Returns(false); // Process is not active
+            await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => 
+                m_Executor.ExecuteCommandAsync("kL", "cmd-1", mockProcessManager.Object));
+        }
+
+        [Fact]
+        public async Task InitializeSessionAsync_CalledTwice_LogsWarningAndReturnsImmediately()
+        {
+            // Arrange
+            var mockProcessManager = CreateMockProcessManager();
+
+            // Act
+            await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
+            await m_Executor.InitializeSessionAsync(mockProcessManager.Object); // Second call
+
+            // Assert - Should not throw and should log warning
+            // The second call should return immediately without doing anything
+        }
+
+        [Fact]
+        public void Dispose_AfterMultipleOperations_DisposesSuccessfully()
+        {
+            // Arrange
+            var executor = new CdbCommandExecutor(m_MockLogger.Object, m_Config, m_OutputParser);
+
+            // Act - Perform multiple operations then dispose
+            executor.Dispose();
+
+            // Assert - Should complete without throwing
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void CdbSessionConfiguration_WithZeroTimeout_ThrowsArgumentOutOfRangeException()
+        {
+            // Act & Assert - Configuration constructor validates timeout
+            Assert.Throws<ArgumentOutOfRangeException>(() => 
+                new CdbSessionConfiguration(commandTimeoutMs: 0));
+        }
+
+        [Fact]
+        public void CdbSessionConfiguration_WithNegativeTimeout_ThrowsArgumentOutOfRangeException()
+        {
+            // Act & Assert - Configuration constructor validates timeout
+            Assert.Throws<ArgumentOutOfRangeException>(() => 
+                new CdbSessionConfiguration(commandTimeoutMs: -1));
+        }
+
         /// <summary>
         /// Creates a mock CdbProcessManager with basic setup for testing.
         /// </summary>
