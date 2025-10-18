@@ -583,6 +583,77 @@ namespace mcp_nexus_tests.Session.Lifecycle
             Assert.Equal(0, result);
         }
 
+
+        [Fact]
+        public void GetSessionCache_WithNullSessionId_ReturnsNull()
+        {
+            // Act
+            var result = m_Manager.GetSessionCache(null!);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetSessionCache_WithEmptySessionId_ReturnsNull()
+        {
+            // Act
+            var result = m_Manager.GetSessionCache("");
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetSessionCache_WithWhitespaceSessionId_ReturnsNull()
+        {
+            // Act
+            var result = m_Manager.GetSessionCache("   ");
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetSessionCache_WithNonExistentSessionId_ReturnsNull()
+        {
+            // Act
+            var result = m_Manager.GetSessionCache("non-existent-session");
+
+            // Assert
+            Assert.Null(result);
+        }
+
+
+        [Fact]
+        public void RemoveSessionCache_WithNullSessionId_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw
+            m_Manager.RemoveSessionCache(null!);
+        }
+
+        [Fact]
+        public void RemoveSessionCache_WithEmptySessionId_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw
+            m_Manager.RemoveSessionCache("");
+        }
+
+        [Fact]
+        public void RemoveSessionCache_WithWhitespaceSessionId_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw
+            m_Manager.RemoveSessionCache("   ");
+        }
+
+        [Fact]
+        public void RemoveSessionCache_WithNonExistentSessionId_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw
+            m_Manager.RemoveSessionCache("non-existent-session");
+        }
+
+
         public void Dispose()
         {
             m_RealisticCdbSession?.Dispose();
