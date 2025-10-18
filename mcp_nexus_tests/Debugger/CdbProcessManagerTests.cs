@@ -791,5 +791,78 @@ namespace mcp_nexus_tests.Debugger
             Assert.Null(input);
         }
 
+        [Fact]
+        public void IsActive_InitiallyFalse_BeforeProcessStart()
+        {
+            // Act
+            var isActive = m_ProcessManager.IsActive;
+
+            // Assert
+            Assert.False(isActive);
+        }
+
+        [Fact]
+        public void DebuggerProcess_InitiallyNull_BeforeProcessStart()
+        {
+            // Act
+            var process = m_ProcessManager.DebuggerProcess;
+
+            // Assert
+            Assert.Null(process);
+        }
+
+        [Fact]
+        public void DebuggerInput_InitiallyNull_BeforeProcessStart()
+        {
+            // Act
+            var input = m_ProcessManager.DebuggerInput;
+
+            // Assert
+            Assert.Null(input);
+        }
+
+        [Fact]
+        public void SetSessionId_WithValidId_SetsIdWithoutError()
+        {
+            // Arrange
+            var sessionId = "test-session-456";
+
+            // Act - Should not throw
+            m_ProcessManager.SetSessionId(sessionId);
+
+            // Assert - Method should complete without error
+            Assert.True(true); // If we get here, no exception was thrown
+        }
+
+        [Fact]
+        public void Dispose_WithNoProcessStarted_DoesNotThrow()
+        {
+            // Act & Assert - Should not throw when no process was started
+            m_ProcessManager.Dispose();
+        }
+
+        [Fact]
+        public void StopProcess_WithNoProcessRunning_ReturnsFalse()
+        {
+            // Act
+            var result = m_ProcessManager.StopProcess();
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsActive_ReturnsFalse_WhenDisposed()
+        {
+            // Arrange
+            m_ProcessManager.Dispose();
+
+            // Act
+            var isActive = m_ProcessManager.IsActive;
+
+            // Assert
+            Assert.False(isActive);
+        }
+
     }
 }
