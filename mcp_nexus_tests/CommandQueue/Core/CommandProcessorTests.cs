@@ -504,6 +504,359 @@ namespace mcp_nexus_tests.CommandQueue.Core
             Assert.True(result.CurrentMemoryUsage > 0);
         }
 
+        [Fact]
+        public async Task ProcessCommandQueueAsync_WithSingleCommand_ProcessesSuccessfully()
+        {
+            // Arrange
+            m_MockCdbSession.Setup(s => s.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Command output");
+
+            var processor = new CommandProcessor(
+                m_MockCdbSession.Object,
+                m_MockLogger.Object,
+                m_Config,
+                m_Tracker,
+                m_CommandQueue,
+                m_ProcessingCts,
+                m_ResultCache);
+
+            var command = new QueuedCommand(
+                "cmd-1",
+                "test command",
+                DateTime.Now,
+                new TaskCompletionSource<string>(),
+                new CancellationTokenSource());
+
+            m_Tracker.TryAddCommand("cmd-1", command);
+            m_CommandQueue.Add(command);
+            m_CommandQueue.CompleteAdding(); // Signal no more commands
+
+            // Act
+            var processingTask = processor.ProcessCommandQueueAsync();
+            var result = await command.CompletionSource!.Task;
+
+            await processingTask;
+
+            // Assert
+            Assert.Equal("Command output", result);
+            m_MockCdbSession.Verify(s => s.ExecuteCommand("test command", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_WithMultipleCommands_ProcessesInOrder()
+        {
+            // Arrange
+            var outputs = new[] { "Output 1", "Output 2", "Output 3" };
+            var callCount = 0;
+            m_MockCdbSession.Setup(s => s.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => outputs[callCount++]);
+
+            var processor = new CommandProcessor(
+                m_MockCdbSession.Object,
+                m_MockLogger.Object,
+                m_Config,
+                m_Tracker,
+                m_CommandQueue,
+                m_ProcessingCts,
+                m_ResultCache);
+
+            var commands = new[]
+            {
+                new QueuedCommand("cmd-1", "command 1", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource()),
+                new QueuedCommand("cmd-2", "command 2", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource()),
+                new QueuedCommand("cmd-3", "command 3", DateTime.Now, new TaskCompletionSource<string>(), new CancellationTokenSource())
+            };
+
+            foreach (var cmd in commands)
+            {
+                m_Tracker.TryAddCommand(cmd.Id!, cmd);
+                m_CommandQueue.Add(cmd);
+            }
+            m_CommandQueue.CompleteAdding();
+
+            // Act
+            var processingTask = processor.ProcessCommandQueueAsync();
+            var results = await Task.WhenAll(commands.Select(c => c.CompletionSource!.Task));
+            await processingTask;
+
+            // Assert
+            Assert.Equal("Output 1", results[0]);
+            Assert.Equal("Output 2", results[1]);
+            Assert.Equal("Output 3", results[2]);
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_WithCancellation_StopsProcessing()
+        {
+            // Arrange
+            var taskSource = new TaskCompletionSource<string>();
+            m_MockCdbSession.Setup(s => s.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(taskSource.Task);
+
+            var processor = new CommandProcessor(
+                m_MockCdbSession.Object,
+                m_MockLogger.Object,
+                m_Config,
+                m_Tracker,
+                m_CommandQueue,
+                m_ProcessingCts,
+                m_ResultCache);
+
+            var command = new QueuedCommand(
+                "cmd-1",
+                "test command",
+                DateTime.Now,
+                new TaskCompletionSource<string>(),
+                new CancellationTokenSource());
+
+            m_Tracker.TryAddCommand("cmd-1", command);
+            m_CommandQueue.Add(command);
+
+            // Act
+            var processingTask = processor.ProcessCommandQueueAsync();
+            
+            // Cancel processing
+            m_ProcessingCts.Cancel();
+            
+            // Complete the command so it can finish
+            taskSource.SetResult("output");
+
+            // Wait for processing to stop
+            await processingTask;
+
+            // Assert - Processing stopped (no exception thrown)
+            Assert.True(m_ProcessingCts.IsCancellationRequested);
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_WithCommandExecutionFailure_CompletesWithError()
+        {
+            // Arrange
+            m_MockCdbSession.Setup(s => s.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Test error"));
+
+            var processor = new CommandProcessor(
+                m_MockCdbSession.Object,
+                m_MockLogger.Object,
+                m_Config,
+                m_Tracker,
+                m_CommandQueue,
+                m_ProcessingCts,
+                m_ResultCache);
+
+            var command = new QueuedCommand(
+                "cmd-1",
+                "test command",
+                DateTime.Now,
+                new TaskCompletionSource<string>(),
+                new CancellationTokenSource());
+
+            m_Tracker.TryAddCommand("cmd-1", command);
+            m_CommandQueue.Add(command);
+            m_CommandQueue.CompleteAdding();
+
+            // Act
+            var processingTask = processor.ProcessCommandQueueAsync();
+            var result = await command.CompletionSource!.Task;
+            await processingTask;
+
+            // Assert
+            Assert.Contains("Test error", result);
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_WithCommandCancellation_MarksCancelled()
+        {
+            // Arrange
+            var cts = new CancellationTokenSource();
+            m_MockCdbSession.Setup(s => s.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            var processor = new CommandProcessor(
+                m_MockCdbSession.Object,
+                m_MockLogger.Object,
+                m_Config,
+                m_Tracker,
+                m_CommandQueue,
+                m_ProcessingCts,
+                m_ResultCache);
+
+            var command = new QueuedCommand(
+                "cmd-1",
+                "test command",
+                DateTime.Now,
+                new TaskCompletionSource<string>(),
+                cts);
+
+            m_Tracker.TryAddCommand("cmd-1", command);
+            m_CommandQueue.Add(command);
+            m_CommandQueue.CompleteAdding();
+
+            // Cancel the command before it executes
+            cts.Cancel();
+
+            // Act
+            var processingTask = processor.ProcessCommandQueueAsync();
+            var result = await command.CompletionSource!.Task;
+            await processingTask;
+
+            // Assert
+            Assert.Contains("cancelled", result, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_WithTimeout_CompletesWithTimeoutMessage()
+        {
+            // Arrange
+            var shortTimeoutConfig = new CommandQueueConfiguration(
+                sessionId: "test-session",
+                defaultCommandTimeout: TimeSpan.FromMilliseconds(100), // Very short timeout
+                heartbeatInterval: TimeSpan.FromSeconds(30));
+
+            var shortTimeoutTracker = new CommandTracker(m_MockLogger.Object, shortTimeoutConfig, m_CommandQueue);
+
+            // Setup command that takes longer than timeout
+            m_MockCdbSession.Setup(s => s.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(async (string cmd, CancellationToken ct) =>
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10), ct); // Will be cancelled by timeout
+                    return "Should not reach here";
+                });
+
+            var processor = new CommandProcessor(
+                m_MockCdbSession.Object,
+                m_MockLogger.Object,
+                shortTimeoutConfig,
+                shortTimeoutTracker,
+                m_CommandQueue,
+                m_ProcessingCts,
+                m_ResultCache);
+
+            var command = new QueuedCommand(
+                "cmd-1",
+                "slow command",
+                DateTime.Now,
+                new TaskCompletionSource<string>(),
+                new CancellationTokenSource());
+
+            shortTimeoutTracker.TryAddCommand("cmd-1", command);
+            m_CommandQueue.Add(command);
+            m_CommandQueue.CompleteAdding();
+
+            // Act
+            var processingTask = processor.ProcessCommandQueueAsync();
+            var result = await command.CompletionSource!.Task;
+            await processingTask;
+
+            // Assert
+            Assert.Contains("timed out", result, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_StoresResultInCache()
+        {
+            // Arrange
+            m_MockCdbSession.Setup(s => s.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Cached output");
+
+            var processor = new CommandProcessor(
+                m_MockCdbSession.Object,
+                m_MockLogger.Object,
+                m_Config,
+                m_Tracker,
+                m_CommandQueue,
+                m_ProcessingCts,
+                m_ResultCache);
+
+            var command = new QueuedCommand(
+                "cmd-cache-1",
+                "test command",
+                DateTime.Now,
+                new TaskCompletionSource<string>(),
+                new CancellationTokenSource());
+
+            m_Tracker.TryAddCommand("cmd-cache-1", command);
+            m_CommandQueue.Add(command);
+            m_CommandQueue.CompleteAdding();
+
+            // Act
+            var processingTask = processor.ProcessCommandQueueAsync();
+            await command.CompletionSource!.Task;
+            await processingTask;
+
+            // Assert
+            var cachedResult = processor.GetCommandResult("cmd-cache-1");
+            Assert.NotNull(cachedResult);
+            Assert.Equal("Cached output", cachedResult.Output);
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_WithEmptyQueue_CompletesImmediately()
+        {
+            // Arrange
+            var processor = new CommandProcessor(
+                m_MockCdbSession.Object,
+                m_MockLogger.Object,
+                m_Config,
+                m_Tracker,
+                m_CommandQueue,
+                m_ProcessingCts,
+                m_ResultCache);
+
+            m_CommandQueue.CompleteAdding(); // No commands
+
+            // Act
+            await processor.ProcessCommandQueueAsync();
+
+            // Assert - Should complete without errors
+            Assert.True(true);
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_ContinuesAfterSingleCommandFailure()
+        {
+            // Arrange
+            var callCount = 0;
+            m_MockCdbSession.Setup(s => s.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new InvalidOperationException("First command fails");
+                    return Task.FromResult("Second command succeeds");
+                });
+
+            var processor = new CommandProcessor(
+                m_MockCdbSession.Object,
+                m_MockLogger.Object,
+                m_Config,
+                m_Tracker,
+                m_CommandQueue,
+                m_ProcessingCts,
+                m_ResultCache);
+
+            var command1 = new QueuedCommand("cmd-1", "command 1", DateTime.Now, 
+                new TaskCompletionSource<string>(), new CancellationTokenSource());
+            var command2 = new QueuedCommand("cmd-2", "command 2", DateTime.Now, 
+                new TaskCompletionSource<string>(), new CancellationTokenSource());
+
+            m_Tracker.TryAddCommand("cmd-1", command1);
+            m_Tracker.TryAddCommand("cmd-2", command2);
+            m_CommandQueue.Add(command1);
+            m_CommandQueue.Add(command2);
+            m_CommandQueue.CompleteAdding();
+
+            // Act
+            var processingTask = processor.ProcessCommandQueueAsync();
+            var result1 = await command1.CompletionSource!.Task;
+            var result2 = await command2.CompletionSource!.Task;
+            await processingTask;
+
+            // Assert
+            Assert.Contains("First command fails", result1);
+            Assert.Equal("Second command succeeds", result2);
+        }
+
         public void Dispose()
         {
             m_CommandQueue?.Dispose();

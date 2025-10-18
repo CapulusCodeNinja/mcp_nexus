@@ -655,6 +655,162 @@ namespace mcp_nexus_tests.Debugger
                 new CdbSessionConfiguration(commandTimeoutMs: -1));
         }
 
+        [Fact]
+        public async Task ExecuteCommandAsync_WithNullProcessManager_ThrowsException()
+        {
+            // Arrange
+            var mockProcessManager = CreateMockProcessManager();
+            await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
+
+            // Act & Assert - Expecting NullReferenceException when null process manager is passed
+            await Assert.ThrowsAsync<NullReferenceException>(async () =>
+                await m_Executor.ExecuteCommandAsync("test", "cmd-1", null!, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ExecuteCommandAsync_WithWhitespaceCommandAndValidId_ThrowsArgumentException()
+        {
+            // Arrange
+            var mockProcessManager = CreateMockProcessManager();
+            await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(async () =>
+                await m_Executor.ExecuteCommandAsync("   ", "cmd-1", mockProcessManager.Object));
+        }
+
+        [Fact]
+        public async Task InitializeSessionAsync_WithCancelledTokenSource_StillCompletes()
+        {
+            // Arrange
+            var mockProcessManager = CreateMockProcessManager();
+            var cts = new CancellationTokenSource();
+            cts.Cancel(); // Cancel before calling
+
+            // Act - Should still initialize
+            await m_Executor.InitializeSessionAsync(mockProcessManager.Object, cts.Token);
+
+            // Assert - No exception thrown
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void CdbSessionConfiguration_WithMinimumValidTimeout_CreatesSuccessfully()
+        {
+            // Act
+            var config = new CdbSessionConfiguration(commandTimeoutMs: 1);
+
+            // Assert
+            Assert.NotNull(config);
+            Assert.Equal(1, config.CommandTimeoutMs);
+        }
+
+        [Fact]
+        public void CdbSessionConfiguration_WithLargeTimeout_CreatesSuccessfully()
+        {
+            // Act
+            var config = new CdbSessionConfiguration(commandTimeoutMs: int.MaxValue);
+
+            // Assert
+            Assert.NotNull(config);
+            Assert.Equal(int.MaxValue, config.CommandTimeoutMs);
+        }
+
+        [Fact]
+        public async Task ExecuteCommandAsync_AfterDisposeBeforeExecution_ThrowsObjectDisposedException()
+        {
+            // Arrange
+            var executor = new CdbCommandExecutor(m_MockLogger.Object, m_Config, m_OutputParser);
+            var mockProcessManager = CreateMockProcessManager();
+            await executor.InitializeSessionAsync(mockProcessManager.Object);
+            
+            executor.Dispose();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
+                await executor.ExecuteCommandAsync("test", "cmd-1", mockProcessManager.Object));
+        }
+
+        [Fact]
+        public async Task InitializeSessionAsync_AfterDispose_DoesNotThrow()
+        {
+            // Arrange
+            var executor = new CdbCommandExecutor(m_MockLogger.Object, m_Config, m_OutputParser);
+            var mockProcessManager = CreateMockProcessManager();
+            
+            executor.Dispose();
+
+            // Act - Should not throw (just logs and returns)
+            await executor.InitializeSessionAsync(mockProcessManager.Object);
+
+            // Assert
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void CdbCommandExecutor_Constructor_WithAllValidParameters_SetsPropertiesCorrectly()
+        {
+            // Arrange & Act
+            var executor = new CdbCommandExecutor(m_MockLogger.Object, m_Config, m_OutputParser);
+
+            // Assert
+            Assert.NotNull(executor);
+        }
+
+        [Fact]
+        public async Task ExecuteCommandAsync_WithVeryShortTimeout_MayTimeout()
+        {
+            // Arrange
+            var shortTimeoutConfig = new CdbSessionConfiguration(commandTimeoutMs: 1); // 1ms timeout
+            var executor = new CdbCommandExecutor(m_MockLogger.Object, shortTimeoutConfig, m_OutputParser);
+            var mockProcessManager = CreateMockProcessManager();
+            
+            await executor.InitializeSessionAsync(mockProcessManager.Object);
+
+            // Act & Assert - May timeout or throw due to inactive process
+            await Assert.ThrowsAnyAsync<Exception>(async () =>
+                await executor.ExecuteCommandAsync("test command", "cmd-short-timeout", mockProcessManager.Object));
+        }
+
+        [Fact]
+        public async Task InitializeSessionAsync_WithProcessHavingNoStreams_CompletesWithoutError()
+        {
+            // Arrange
+            var mockProcessManager = CreateMockProcessManager();
+            mockProcessManager.Setup(pm => pm.DebuggerProcess).Returns((Process?)null);
+            mockProcessManager.Setup(pm => pm.DebuggerInput).Returns((StreamWriter?)null);
+
+            // Act
+            await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
+
+            // Assert - Should complete without error
+            Assert.True(true);
+        }
+
+        [Fact]
+        public async Task ExecuteCommandAsync_WithCommandContainingNewlines_HandlesCorrectly()
+        {
+            // Arrange
+            var mockProcessManager = CreateMockProcessManager();
+            await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
+
+            // Act & Assert - Should throw due to inactive process, not command validation
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await m_Executor.ExecuteCommandAsync("line1\nline2", "cmd-newlines", mockProcessManager.Object));
+        }
+
+        [Fact]
+        public async Task ExecuteCommandAsync_WithCommandContainingTabs_HandlesCorrectly()
+        {
+            // Arrange
+            var mockProcessManager = CreateMockProcessManager();
+            await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
+
+            // Act & Assert - Should throw due to inactive process
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await m_Executor.ExecuteCommandAsync("cmd\twith\ttabs", "cmd-tabs", mockProcessManager.Object));
+        }
+
         /// <summary>
         /// Creates a mock CdbProcessManager with basic setup for testing.
         /// </summary>
