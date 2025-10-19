@@ -44,9 +44,14 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 2. **✅ VERSION MUST BE UPDATED**: Increment the build version in `mcp_nexus.csproj` (e.g., 1.0.6.12 → 1.0.6.13). MANDATORY.
    - The following version fields MUST exist and MUST have the same value: `Version`, `AssemblyVersion`, and `FileVersion`. Update all three together. NO EXCEPTIONS.
 3. **✅ README.md MUST BE UPDATED**: Update test count and coverage in README.md badges AND Test Statistics section. MANDATORY.
-4. **✅ NO COMPILATION ERRORS**: Code must build with zero warnings and zero errors. ABSOLUTE REQUIREMENT.
-5. **✅ NO DEAD CODE**: Remove unused code, methods, or files. NO EXCEPTIONS.
-6. **✅ FORMATTING & HYGIENE VERIFIED (SOLUTION-WIDE)**: MANDATORY.
+4. **✅ MINIMUM COVERAGE THRESHOLDS MUST BE MAINTAINED**: ABSOLUTE REQUIREMENT.
+   - **Line Coverage**: Must NEVER fall below **75%**. NO EXCEPTIONS.
+   - **Branch Coverage**: Must NEVER fall below **70%**. NO EXCEPTIONS.
+   - Run `dotnet test --collect:"XPlat Code Coverage"` to verify coverage before submission. MANDATORY.
+   - If any change causes coverage to drop below these thresholds, add tests to restore coverage. ABSOLUTE REQUIREMENT.
+5. **✅ NO COMPILATION ERRORS**: Code must build with zero warnings and zero errors. ABSOLUTE REQUIREMENT.
+6. **✅ NO DEAD CODE**: Remove unused code, methods, or files. NO EXCEPTIONS.
+7. **✅ FORMATTING & HYGIENE VERIFIED (SOLUTION-WIDE)**: MANDATORY.
    - Run repository-wide formatting and style enforcement before submitting any change:
      - `dotnet format style`
      - `dotnet format analyzers`
@@ -70,6 +75,11 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 
 #### Testing and Documentation
 * **100% Test Pass Rate:** **All unit tests must pass** (be "green") before submission. NO EXCEPTIONS.
+* **Minimum Coverage Thresholds:** **Code coverage must NEVER fall below the mandatory thresholds**. ABSOLUTE REQUIREMENT.
+  - **Line Coverage**: Must be **≥75%** at all times. NO EXCEPTIONS.
+  - **Branch Coverage**: Must be **≥70%** at all times. NO EXCEPTIONS.
+  - If any code change causes coverage to drop below these thresholds, additional tests MUST be added before submission. MANDATORY.
+  - Run `dotnet test --collect:"XPlat Code Coverage"` to verify coverage before any submission. ABSOLUTE REQUIREMENT.
 * **Testing Integrity:** **No existing or new tests may be excluded, ignored, or removed** without prior architectural review and approval. ABSOLUTE REQUIREMENT.
 * **Flaky Tests Are NOT Acceptable:** **Flaky tests are NOT acceptable!** Tests that pass sometimes and fail other times indicate poor test design and must be fixed immediately. NO EXCEPTIONS.
 * **Test Isolation Is Mandatory:** **Isolation issues in tests are NOT acceptable!** Tests must be completely isolated from each other and must not depend on execution order or shared state. ABSOLUTE REQUIREMENT.
@@ -87,6 +97,7 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 - Running tests before submission - ABSOLUTE REQUIREMENT
 - Updating version numbers - MANDATORY
 - Updating README.md with new test counts and Test Statistics section - ABSOLUTE REQUIREMENT
+- **Verifying coverage thresholds (≥75% line, ≥70% branch)** - ABSOLUTE REQUIREMENT
 - Removing dead/unused code - NO EXCEPTIONS
 - Checking for compilation errors - MANDATORY
 - **Fixing flaky tests immediately** - ABSOLUTE REQUIREMENT
@@ -105,6 +116,7 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 - Run `dotnet test` and verify all tests pass - ABSOLUTE REQUIREMENT
 - Update version in `mcp_nexus.csproj` - MANDATORY
 - Update test count and Test Statistics section in README.md - NO EXCEPTIONS
+- **Run coverage and verify ≥75% line coverage and ≥70% branch coverage** - ABSOLUTE REQUIREMENT
 - Remove any unused code or files - ABSOLUTE REQUIREMENT
 - Verify zero compilation warnings/errors - MANDATORY
 - **Fix any test that fails intermittently** - NO EXCEPTIONS
@@ -229,7 +241,10 @@ public ReturnType MethodName(ParameterType paramName)
 - **Test Class Organization**: **Test classes must be organized in the same sub-namespaces as their production counterparts**. NO EXCEPTIONS.
 
 ### Unit Tests
-- **Coverage**: Aim for 100% code coverage - ABSOLUTE REQUIREMENT
+- **Coverage Thresholds**: **Mandatory minimum coverage requirements** - ABSOLUTE REQUIREMENT
+  - **Line Coverage**: Must be **≥75%** at all times. NO EXCEPTIONS.
+  - **Branch Coverage**: Must be **≥70%** at all times. NO EXCEPTIONS.
+  - Aim for 100% coverage where feasible, but never drop below these mandatory thresholds. MANDATORY.
 - **Mocking**: Use mocks for external dependencies - MANDATORY
 - **Mocking is Mandatory**: **Mocking should be used for testing without exception**. All external dependencies, services, and collaborators must be mocked to ensure test isolation and deterministic behavior. NO EXCEPTIONS.
 - **Edge cases**: Test error conditions and boundary values - NO EXCEPTIONS

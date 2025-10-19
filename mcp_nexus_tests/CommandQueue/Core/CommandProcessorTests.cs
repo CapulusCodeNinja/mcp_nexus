@@ -26,7 +26,7 @@ namespace mcp_nexus_tests.CommandQueue.Core
             m_MockLogger = new Mock<ILogger>();
             m_CommandQueue = new BlockingCollection<QueuedCommand>();
             m_ProcessingCts = new CancellationTokenSource();
-            
+
             m_Config = new CommandQueueConfiguration(
                 sessionId: "test-session",
                 defaultCommandTimeout: TimeSpan.FromMinutes(5),
@@ -350,7 +350,7 @@ namespace mcp_nexus_tests.CommandQueue.Core
 
             var commandId = "cmd-1";
             var commandResult = CommandResult.Success("test output", TimeSpan.FromSeconds(1));
-            m_ResultCache.StoreResult(commandId, commandResult, "test command", 
+            m_ResultCache.StoreResult(commandId, commandResult, "test command",
                 DateTime.Now, DateTime.Now, DateTime.Now);
 
             // Act
@@ -421,7 +421,7 @@ namespace mcp_nexus_tests.CommandQueue.Core
             var startTime = DateTime.Now.AddSeconds(1);
             var endTime = DateTime.Now.AddSeconds(2);
 
-            m_ResultCache.StoreResult(commandId, commandResult, "test command", 
+            m_ResultCache.StoreResult(commandId, commandResult, "test command",
                 queueTime, startTime, endTime);
 
             // Act
@@ -492,7 +492,7 @@ namespace mcp_nexus_tests.CommandQueue.Core
             // Store a result
             var commandId = "cmd-1";
             var commandResult = CommandResult.Success("test output", TimeSpan.FromSeconds(1));
-            m_ResultCache.StoreResult(commandId, commandResult, "test command", 
+            m_ResultCache.StoreResult(commandId, commandResult, "test command",
                 DateTime.Now, DateTime.Now, DateTime.Now);
 
             // Act
@@ -614,10 +614,10 @@ namespace mcp_nexus_tests.CommandQueue.Core
 
             // Act
             var processingTask = processor.ProcessCommandQueueAsync();
-            
+
             // Cancel processing
             m_ProcessingCts.Cancel();
-            
+
             // Complete the command so it can finish
             taskSource.SetResult("output");
 
@@ -835,9 +835,9 @@ namespace mcp_nexus_tests.CommandQueue.Core
                 m_ProcessingCts,
                 m_ResultCache);
 
-            var command1 = new QueuedCommand("cmd-1", "command 1", DateTime.Now, 
+            var command1 = new QueuedCommand("cmd-1", "command 1", DateTime.Now,
                 new TaskCompletionSource<string>(), new CancellationTokenSource());
-            var command2 = new QueuedCommand("cmd-2", "command 2", DateTime.Now, 
+            var command2 = new QueuedCommand("cmd-2", "command 2", DateTime.Now,
                 new TaskCompletionSource<string>(), new CancellationTokenSource());
 
             m_Tracker.TryAddCommand("cmd-1", command1);

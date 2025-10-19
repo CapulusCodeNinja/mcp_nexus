@@ -533,7 +533,7 @@ namespace mcp_nexus_tests.Session.Monitoring
             // Arrange
             var sessionId1 = "session-1";
             var sessionId2 = "session-2";
-            
+
             var sessionInfo1 = new SessionInfo
             {
                 SessionId = sessionId1,
@@ -544,7 +544,7 @@ namespace mcp_nexus_tests.Session.Monitoring
                 LastActivity = DateTime.Now.AddMinutes(-5),
                 Status = SessionStatus.Active
             };
-            
+
             var sessionInfo2 = new SessionInfo
             {
                 SessionId = sessionId2,
@@ -555,7 +555,7 @@ namespace mcp_nexus_tests.Session.Monitoring
                 LastActivity = DateTime.Now.AddMinutes(-5),
                 Status = SessionStatus.Active
             };
-            
+
             m_Sessions[sessionId1] = sessionInfo1;
             m_Sessions[sessionId2] = sessionInfo2;
 
@@ -576,7 +576,7 @@ namespace mcp_nexus_tests.Session.Monitoring
             // Assert
             Assert.True(sessionInfo1.LastActivity > originalActivity1);
             Assert.Equal(originalActivity2, sessionInfo2.LastActivity); // Session 2 should not be updated
-            
+
             service.Dispose();
         }
 
@@ -646,7 +646,7 @@ namespace mcp_nexus_tests.Session.Monitoring
             // Assert
             Assert.NotNull(hints);
             Assert.Contains(hints, h => h.Contains("No symbols path", StringComparison.OrdinalIgnoreCase));
-            
+
             service.Dispose();
         }
 
@@ -656,7 +656,7 @@ namespace mcp_nexus_tests.Session.Monitoring
             // Arrange
             var mockInactiveCdbSession = new Mock<ICdbSession>();
             mockInactiveCdbSession.Setup(x => x.IsActive).Returns(false);
-            
+
             var sessionInfo = new SessionInfo(
                 "test-session-1",
                 mockInactiveCdbSession.Object,
@@ -684,7 +684,7 @@ namespace mcp_nexus_tests.Session.Monitoring
             // Assert
             Assert.NotNull(hints);
             Assert.Contains(hints, h => h.Contains("not active", StringComparison.OrdinalIgnoreCase));
-            
+
             service.Dispose();
         }
 
@@ -718,7 +718,7 @@ namespace mcp_nexus_tests.Session.Monitoring
             // Assert
             Assert.NotNull(hints);
             Assert.Contains(hints, h => h.Contains("not initialized", StringComparison.OrdinalIgnoreCase));
-            
+
             service.Dispose();
         }
 
@@ -736,7 +736,7 @@ namespace mcp_nexus_tests.Session.Monitoring
 
             // Assert - Service should initialize without error
             Assert.NotNull(service);
-            
+
             // Cleanup
             service.Dispose();
         }
@@ -776,7 +776,7 @@ namespace mcp_nexus_tests.Session.Monitoring
             service.Dispose();
             service.Dispose();
             service.Dispose();
-            
+
             Assert.True(true); // Should not throw
         }
 
@@ -817,7 +817,7 @@ namespace mcp_nexus_tests.Session.Monitoring
             Assert.NotNull(hints);
             Assert.DoesNotContain("Queue is empty", hints);
             Assert.DoesNotContain("Queue is busy", hints);
-            
+
             service.Dispose();
         }
 
@@ -836,7 +836,7 @@ namespace mcp_nexus_tests.Session.Monitoring
 
             // Assert - Constructor should complete successfully
             Assert.NotNull(service);
-            
+
             service.Dispose();
         }
 
@@ -871,7 +871,7 @@ namespace mcp_nexus_tests.Session.Monitoring
             // Assert
             Assert.NotNull(hints);
             Assert.Contains(hints, h => h.Contains("empty", StringComparison.OrdinalIgnoreCase));
-            
+
             service.Dispose();
         }
 
@@ -911,7 +911,7 @@ namespace mcp_nexus_tests.Session.Monitoring
             // Assert
             Assert.NotNull(hints);
             Assert.Contains(hints, h => h.Contains("busy", StringComparison.OrdinalIgnoreCase) || h.Contains("many", StringComparison.OrdinalIgnoreCase));
-            
+
             service.Dispose();
         }
 
@@ -945,7 +945,7 @@ namespace mcp_nexus_tests.Session.Monitoring
 
             // Assert
             Assert.NotNull(hints);
-            
+
             service.Dispose();
         }
 

@@ -908,6 +908,284 @@ namespace mcp_nexus_tests.Tools
                 $"Expected error message but got: {json}");
         }
 
+        #region Additional Branch Coverage Tests
+
+        [Fact]
+        public async Task nexus_open_dump_analyze_session_WithNonExistentFile_ReturnsErrorResponse()
+        {
+            // Arrange
+            var dumpPath = @"C:\NonExistent\Path\dump.dmp";
+
+            // Act
+            var result = await m_Tool.nexus_open_dump_analyze_session(dumpPath, null);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            Assert.Contains("Failed", json);
+            Assert.Contains("does not exist", json);
+        }
+
+        [Fact]
+        public async Task nexus_open_dump_analyze_session_WithNullSessionId_ReturnsErrorResponse()
+        {
+            // Arrange
+            var tempDir = Path.GetTempPath();
+            var dumpPath = Path.Combine(tempDir, $"test_dump_{Guid.NewGuid()}.dmp");
+            File.WriteAllText(dumpPath, "fake dump content");
+
+            try
+            {
+                m_MockSessionManager.Setup(x => x.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(string.Empty); // Return empty session ID
+
+                // Act
+                var result = await m_Tool.nexus_open_dump_analyze_session(dumpPath, null);
+
+                // Assert
+                var json = JsonSerializer.Serialize(result);
+                Assert.Contains("Failed", json);
+            }
+            finally
+            {
+                if (File.Exists(dumpPath)) File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public async Task nexus_open_dump_analyze_session_WithNullContext_LogsWarning()
+        {
+            // Arrange
+            var tempDir = Path.GetTempPath();
+            var dumpPath = Path.Combine(tempDir, $"test_dump_{Guid.NewGuid()}.dmp");
+            var sessionId = "test-session-nullcontext";
+            File.WriteAllText(dumpPath, "fake dump content");
+
+            try
+            {
+                m_MockSessionManager.Setup(x => x.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(sessionId);
+                m_MockSessionManager.Setup(x => x.GetSessionContext(sessionId))
+                    .Returns((SessionContext)null!); // Return null context
+
+                // Act
+                var result = await m_Tool.nexus_open_dump_analyze_session(dumpPath, null);
+
+                // Assert - should throw InvalidOperationException and return error
+                var json = JsonSerializer.Serialize(result);
+                Assert.Contains("Failed", json);
+            }
+            finally
+            {
+                if (File.Exists(dumpPath)) File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public async Task nexus_open_dump_analyze_session_WithGetContextException_ContinuesSuccessfully()
+        {
+            // Arrange
+            var tempDir = Path.GetTempPath();
+            var dumpPath = Path.Combine(tempDir, $"test_dump_{Guid.NewGuid()}.dmp");
+            var sessionId = "test-session-exception";
+            File.WriteAllText(dumpPath, "fake dump content");
+
+            try
+            {
+                m_MockSessionManager.Setup(x => x.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(sessionId);
+                m_MockSessionManager.Setup(x => x.GetSessionContext(sessionId))
+                    .Throws(new TimeoutException("Test timeout")); // Non-InvalidOperationException
+
+                // Act
+                var result = await m_Tool.nexus_open_dump_analyze_session(dumpPath, null);
+
+                // Assert - should log warning but return success
+                var json = JsonSerializer.Serialize(result);
+                Assert.Contains(sessionId, json);
+                Assert.Contains("Success", json);
+            }
+            finally
+            {
+                if (File.Exists(dumpPath)) File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public async Task nexus_enqueue_async_dump_analyze_command_WithNullSessionId_ReturnsErrorResponse()
+        {
+            // Act
+            var result = await m_Tool.nexus_enqueue_async_dump_analyze_command(null!, "!analyze");
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            Assert.Contains("Failed", json);
+            Assert.Contains("null or empty", json);
+        }
+
+        [Fact]
+        public async Task nexus_enqueue_async_dump_analyze_command_WithEmptySessionId_ReturnsErrorResponse()
+        {
+            // Act
+            var result = await m_Tool.nexus_enqueue_async_dump_analyze_command("", "!analyze");
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            Assert.Contains("Failed", json);
+            Assert.Contains("null or empty", json);
+        }
+
+        [Fact]
+        public async Task nexus_enqueue_async_dump_analyze_command_WithWhitespaceSessionId_ReturnsErrorResponse()
+        {
+            // Act
+            var result = await m_Tool.nexus_enqueue_async_dump_analyze_command("   ", "!analyze");
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            Assert.Contains("Failed", json);
+            Assert.Contains("null or empty", json);
+        }
+
+        [Fact]
+        public async Task nexus_enqueue_async_dump_analyze_command_WithAnalyzeCommand_ReturnsEstimatedTime()
+        {
+            // Arrange
+            var sessionId = "test-session";
+            var command = "!analyze -v";
+            var commandId = "cmd-123";
+            var mockCommandQueue = new Mock<ICommandQueueService>();
+            mockCommandQueue.Setup(x => x.QueueCommand(command)).Returns(commandId);
+
+            m_MockSessionManager.Setup(x => x.GetCommandQueue(sessionId)).Returns(mockCommandQueue.Object);
+            m_MockSessionManager.Setup(x => x.SessionExists(sessionId)).Returns(true);
+            m_MockSessionManager.Setup(x => x.GetSessionContext(sessionId))
+                .Returns(new SessionContext { DumpPath = "test.dmp" });
+
+            // Act
+            var result = await m_Tool.nexus_enqueue_async_dump_analyze_command(sessionId, command);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            Assert.Contains("30-60 seconds", json); // Should match GetEstimatedExecutionTime for !analyze
+        }
+
+        [Fact]
+        public async Task nexus_enqueue_async_dump_analyze_command_WithLmCommand_ReturnsEstimatedTime()
+        {
+            // Arrange
+            var sessionId = "test-session";
+            var command = "lm";
+            var commandId = "cmd-124";
+            var mockCommandQueue = new Mock<ICommandQueueService>();
+            mockCommandQueue.Setup(x => x.QueueCommand(command)).Returns(commandId);
+
+            m_MockSessionManager.Setup(x => x.GetCommandQueue(sessionId)).Returns(mockCommandQueue.Object);
+            m_MockSessionManager.Setup(x => x.SessionExists(sessionId)).Returns(true);
+            m_MockSessionManager.Setup(x => x.GetSessionContext(sessionId))
+                .Returns(new SessionContext { DumpPath = "test.dmp" });
+
+            // Act
+            var result = await m_Tool.nexus_enqueue_async_dump_analyze_command(sessionId, command);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            Assert.Contains("1-3 seconds", json); // Should match GetEstimatedExecutionTime for lm
+        }
+
+        [Fact]
+        public async Task nexus_enqueue_async_dump_analyze_command_WithKCommand_ReturnsEstimatedTime()
+        {
+            // Arrange
+            var sessionId = "test-session";
+            var command = "k";
+            var commandId = "cmd-125";
+            var mockCommandQueue = new Mock<ICommandQueueService>();
+            mockCommandQueue.Setup(x => x.QueueCommand(command)).Returns(commandId);
+
+            m_MockSessionManager.Setup(x => x.GetCommandQueue(sessionId)).Returns(mockCommandQueue.Object);
+            m_MockSessionManager.Setup(x => x.SessionExists(sessionId)).Returns(true);
+            m_MockSessionManager.Setup(x => x.GetSessionContext(sessionId))
+                .Returns(new SessionContext { DumpPath = "test.dmp" });
+
+            // Act
+            var result = await m_Tool.nexus_enqueue_async_dump_analyze_command(sessionId, command);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            Assert.Contains("1-2 seconds", json); // Should match GetEstimatedExecutionTime for k
+        }
+
+        [Fact]
+        public async Task nexus_enqueue_async_dump_analyze_command_WithThreadsCommand_ReturnsEstimatedTime()
+        {
+            // Arrange
+            var sessionId = "test-session";
+            var command = "!threads";
+            var commandId = "cmd-126";
+            var mockCommandQueue = new Mock<ICommandQueueService>();
+            mockCommandQueue.Setup(x => x.QueueCommand(command)).Returns(commandId);
+
+            m_MockSessionManager.Setup(x => x.GetCommandQueue(sessionId)).Returns(mockCommandQueue.Object);
+            m_MockSessionManager.Setup(x => x.SessionExists(sessionId)).Returns(true);
+            m_MockSessionManager.Setup(x => x.GetSessionContext(sessionId))
+                .Returns(new SessionContext { DumpPath = "test.dmp" });
+
+            // Act
+            var result = await m_Tool.nexus_enqueue_async_dump_analyze_command(sessionId, command);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            Assert.Contains("2-5 seconds", json); // Should match GetEstimatedExecutionTime for !threads
+        }
+
+        [Fact]
+        public async Task nexus_enqueue_async_dump_analyze_command_WithHeapCommand_ReturnsEstimatedTime()
+        {
+            // Arrange
+            var sessionId = "test-session";
+            var command = "!heap";
+            var commandId = "cmd-127";
+            var mockCommandQueue = new Mock<ICommandQueueService>();
+            mockCommandQueue.Setup(x => x.QueueCommand(command)).Returns(commandId);
+
+            m_MockSessionManager.Setup(x => x.GetCommandQueue(sessionId)).Returns(mockCommandQueue.Object);
+            m_MockSessionManager.Setup(x => x.SessionExists(sessionId)).Returns(true);
+            m_MockSessionManager.Setup(x => x.GetSessionContext(sessionId))
+                .Returns(new SessionContext { DumpPath = "test.dmp" });
+
+            // Act
+            var result = await m_Tool.nexus_enqueue_async_dump_analyze_command(sessionId, command);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            Assert.Contains("5-15 seconds", json); // Should match GetEstimatedExecutionTime for !heap
+        }
+
+        [Fact]
+        public async Task nexus_enqueue_async_dump_analyze_command_WithUnknownCommand_ReturnsDefaultEstimatedTime()
+        {
+            // Arrange
+            var sessionId = "test-session";
+            var command = "some_unknown_command";
+            var commandId = "cmd-128";
+            var mockCommandQueue = new Mock<ICommandQueueService>();
+            mockCommandQueue.Setup(x => x.QueueCommand(command)).Returns(commandId);
+
+            m_MockSessionManager.Setup(x => x.GetCommandQueue(sessionId)).Returns(mockCommandQueue.Object);
+            m_MockSessionManager.Setup(x => x.SessionExists(sessionId)).Returns(true);
+            m_MockSessionManager.Setup(x => x.GetSessionContext(sessionId))
+                .Returns(new SessionContext { DumpPath = "test.dmp" });
+
+            // Act
+            var result = await m_Tool.nexus_enqueue_async_dump_analyze_command(sessionId, command);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            Assert.Contains("1-10 seconds", json); // Should match default GetEstimatedExecutionTime
+        }
+
+        #endregion
+
         #endregion
     }
 }

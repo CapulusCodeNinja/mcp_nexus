@@ -38,7 +38,7 @@ namespace mcp_nexus_tests.CommandQueue.Recovery
         public void Constructor_WithNullCdbSession_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new SessionHealthMonitor(null!, m_MockLogger.Object, m_Config));
         }
 
@@ -46,7 +46,7 @@ namespace mcp_nexus_tests.CommandQueue.Recovery
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new SessionHealthMonitor(m_MockCdbSession.Object, null!, m_Config));
         }
 
@@ -54,7 +54,7 @@ namespace mcp_nexus_tests.CommandQueue.Recovery
         public void Constructor_WithNullConfig_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new SessionHealthMonitor(m_MockCdbSession.Object, m_MockLogger.Object, null!));
         }
 
@@ -290,10 +290,10 @@ namespace mcp_nexus_tests.CommandQueue.Recovery
 
             // Act - First check (immediately after construction, not due yet)
             var diagnostics1 = monitor.GetSessionDiagnostics();
-            
+
             // Expire cache to make health check due
             ExpireCache(monitor);
-            
+
             var diagnostics2 = monitor.GetSessionDiagnostics();
 
             // Assert

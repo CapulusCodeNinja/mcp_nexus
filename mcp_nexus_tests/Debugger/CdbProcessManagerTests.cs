@@ -658,10 +658,10 @@ namespace mcp_nexus_tests.Debugger
         public void LogProcessDiagnostics_WithNullProcess_LogsNoProcessMessage()
         {
             // Arrange - no process started
-            
+
             // Act
             m_ProcessManager.LogProcessDiagnostics("Test Context");
-            
+
             // Assert - Should not throw, just log
             Assert.True(true);
         }
@@ -671,7 +671,7 @@ namespace mcp_nexus_tests.Debugger
         {
             // Arrange
             var context = "Startup";
-            
+
             // Act & Assert - Should not throw even without a process
             m_ProcessManager.LogProcessDiagnostics(context);
             Assert.True(true);
@@ -683,10 +683,10 @@ namespace mcp_nexus_tests.Debugger
         {
             // Arrange - Ensure no process
             m_ProcessManager.SetSessionId("test-session");
-            
+
             // Act
             var result = m_ProcessManager.StopProcess();
-            
+
             // Assert
             Assert.False(result);
         }
@@ -696,7 +696,7 @@ namespace mcp_nexus_tests.Debugger
         {
             // Act
             m_ProcessManager.Dispose();
-            
+
             // Assert - Should not throw
             Assert.False(m_ProcessManager.IsActive);
         }
@@ -763,12 +763,12 @@ namespace mcp_nexus_tests.Debugger
         public void StopProcess_CalledMultipleTimes_ReturnsFalseAfterFirst()
         {
             // Arrange - No process to stop
-            
+
             // Act
             var result1 = m_ProcessManager.StopProcess();
             var result2 = m_ProcessManager.StopProcess();
             var result3 = m_ProcessManager.StopProcess();
-            
+
             // Assert - All should return false when no process
             Assert.False(result1);
             Assert.False(result2);
@@ -780,12 +780,12 @@ namespace mcp_nexus_tests.Debugger
         {
             // Arrange
             m_ProcessManager.Dispose();
-            
+
             // Act & Assert - Property access should not throw
             var isActive = m_ProcessManager.IsActive;
             var process = m_ProcessManager.DebuggerProcess;
             var input = m_ProcessManager.DebuggerInput;
-            
+
             Assert.False(isActive);
             Assert.Null(process);
             Assert.Null(input);

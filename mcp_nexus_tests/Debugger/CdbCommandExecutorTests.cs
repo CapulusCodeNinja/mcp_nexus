@@ -487,9 +487,9 @@ namespace mcp_nexus_tests.Debugger
         {
             // Arrange
             var mockProcessManager = CreateMockProcessManager();
-            
+
             // Act & Assert
-            await Assert.ThrowsAnyAsync<Exception>(() => 
+            await Assert.ThrowsAnyAsync<Exception>(() =>
                 m_Executor.ExecuteCommandAsync("test command", string.Empty, mockProcessManager.Object));
         }
 
@@ -498,9 +498,9 @@ namespace mcp_nexus_tests.Debugger
         {
             // Arrange
             var mockProcessManager = CreateMockProcessManager();
-            
+
             // Act & Assert
-            await Assert.ThrowsAnyAsync<Exception>(() => 
+            await Assert.ThrowsAnyAsync<Exception>(() =>
                 m_Executor.ExecuteCommandAsync("test command", "   ", mockProcessManager.Object));
         }
 
@@ -509,9 +509,9 @@ namespace mcp_nexus_tests.Debugger
         {
             // Arrange
             var mockProcessManager = CreateMockProcessManager();
-            
+
             // Act & Assert
-            await Assert.ThrowsAnyAsync<Exception>(() => 
+            await Assert.ThrowsAnyAsync<Exception>(() =>
                 m_Executor.ExecuteCommandAsync(string.Empty, "cmd-123", mockProcessManager.Object));
         }
 
@@ -520,12 +520,12 @@ namespace mcp_nexus_tests.Debugger
         {
             // Arrange
             var executor = new CdbCommandExecutor(m_MockLogger.Object, m_Config, m_OutputParser);
-            
+
             // Act & Assert - Multiple dispose calls should be safe
             executor.Dispose();
             executor.Dispose();
             executor.Dispose();
-            
+
             Assert.True(true); // If we get here, no exception was thrown
         }
 
@@ -537,10 +537,10 @@ namespace mcp_nexus_tests.Debugger
             var mockProcessManager = CreateMockProcessManager();
             var cts = new CancellationTokenSource();
             cts.Cancel();
-            
+
             // Act - Should handle cancelled token gracefully
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object, cts.Token);
-            
+
             // Assert - If we get here, it handled cancellation gracefully
             Assert.True(cts.IsCancellationRequested);
         }
@@ -552,11 +552,11 @@ namespace mcp_nexus_tests.Debugger
             var shortTimeoutConfig = new CdbSessionConfiguration(commandTimeoutMs: 100); // Very short timeout
             var executor = new CdbCommandExecutor(m_MockLogger.Object, shortTimeoutConfig, m_OutputParser);
             var mockProcessManager = CreateMockProcessManager();
-            
+
             // Act & Assert - Should timeout
-            await Assert.ThrowsAnyAsync<Exception>(() => 
+            await Assert.ThrowsAnyAsync<Exception>(() =>
                 executor.ExecuteCommandAsync("!analyze -v", "cmd-timeout", mockProcessManager.Object));
-            
+
             executor.Dispose();
         }
 
@@ -566,11 +566,11 @@ namespace mcp_nexus_tests.Debugger
             // Arrange
             var mockProcessManager = CreateMockProcessManager();
             var cts = new CancellationTokenSource();
-            
+
             // Act - Start command then cancel immediately
             var task = m_Executor.ExecuteCommandAsync("test", "cmd-123", mockProcessManager.Object);
             cts.Cancel();
-            
+
             // Assert - Should eventually complete (with error)
             await Assert.ThrowsAnyAsync<Exception>(() => task);
         }
@@ -579,7 +579,7 @@ namespace mcp_nexus_tests.Debugger
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CdbCommandExecutor(null!, m_Config, m_OutputParser));
         }
 
@@ -587,7 +587,7 @@ namespace mcp_nexus_tests.Debugger
         public void Constructor_WithNullConfig_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CdbCommandExecutor(m_MockLogger.Object, null!, m_OutputParser));
         }
 
@@ -595,7 +595,7 @@ namespace mcp_nexus_tests.Debugger
         public void Constructor_WithNullOutputParser_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 new CdbCommandExecutor(m_MockLogger.Object, m_Config, null!));
         }
 
@@ -608,7 +608,7 @@ namespace mcp_nexus_tests.Debugger
             await m_Executor.InitializeSessionAsync(mockProcessManager.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 m_Executor.ExecuteCommandAsync("kL", "cmd-1", mockProcessManager.Object));
         }
 
@@ -643,7 +643,7 @@ namespace mcp_nexus_tests.Debugger
         public void CdbSessionConfiguration_WithZeroTimeout_ThrowsArgumentOutOfRangeException()
         {
             // Act & Assert - Configuration constructor validates timeout
-            Assert.Throws<ArgumentOutOfRangeException>(() => 
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
                 new CdbSessionConfiguration(commandTimeoutMs: 0));
         }
 
@@ -651,7 +651,7 @@ namespace mcp_nexus_tests.Debugger
         public void CdbSessionConfiguration_WithNegativeTimeout_ThrowsArgumentOutOfRangeException()
         {
             // Act & Assert - Configuration constructor validates timeout
-            Assert.Throws<ArgumentOutOfRangeException>(() => 
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
                 new CdbSessionConfiguration(commandTimeoutMs: -1));
         }
 
@@ -723,7 +723,7 @@ namespace mcp_nexus_tests.Debugger
             var executor = new CdbCommandExecutor(m_MockLogger.Object, m_Config, m_OutputParser);
             var mockProcessManager = CreateMockProcessManager();
             await executor.InitializeSessionAsync(mockProcessManager.Object);
-            
+
             executor.Dispose();
 
             // Act & Assert
@@ -737,7 +737,7 @@ namespace mcp_nexus_tests.Debugger
             // Arrange
             var executor = new CdbCommandExecutor(m_MockLogger.Object, m_Config, m_OutputParser);
             var mockProcessManager = CreateMockProcessManager();
-            
+
             executor.Dispose();
 
             // Act - Should not throw (just logs and returns)
@@ -764,7 +764,7 @@ namespace mcp_nexus_tests.Debugger
             var shortTimeoutConfig = new CdbSessionConfiguration(commandTimeoutMs: 1); // 1ms timeout
             var executor = new CdbCommandExecutor(m_MockLogger.Object, shortTimeoutConfig, m_OutputParser);
             var mockProcessManager = CreateMockProcessManager();
-            
+
             await executor.InitializeSessionAsync(mockProcessManager.Object);
 
             // Act & Assert - May timeout or throw due to inactive process

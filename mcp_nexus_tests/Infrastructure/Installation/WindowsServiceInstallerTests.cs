@@ -108,7 +108,7 @@ namespace mcp_nexus.Infrastructure.Installation.Tests
 
             // Assert - Should return a valid tuple result without throwing
             Assert.NotNull(result);
-            
+
             // Verify it's a ValueTuple<bool, bool>
             Assert.Equal("ValueTuple`2", result.GetType().Name);
         }
