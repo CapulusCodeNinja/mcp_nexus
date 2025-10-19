@@ -352,28 +352,6 @@ dotnet test --filter "Notification"
 - ✅ **Fast execution** (~90 seconds for full suite)
 - ✅ **Comprehensive mocking** for reliable testing
 
-### Test Categories
-
-| Category | Tests | Description |
-|----------|-------|-------------|
-| **Session Management** | ~300+ tests | Session lifecycle and resource management |
-| **Command Queue** | ~200+ tests | Async command execution and queuing |
-| **Notifications** | ~150+ tests | Real-time notification system |
-| **Extensions** | 120+ tests | Extension system for complex workflows |
-| **Command Batching** | 48 tests | Intelligent command batching for improved throughput |
-| **Infrastructure** | ~100+ tests | Windows service and infrastructure |
-| **Security** | ~80+ tests | Security validation and access control |
-| **Health & Metrics** | ~70+ tests | System health monitoring and metrics |
-| **Resilience** | ~60+ tests | Circuit breaker and error handling |
-| **Integration** | ~50+ tests | End-to-end workflow testing |
-| **Utilities** | ~40+ tests | Helper functions and utilities |
-| **Models** | ~30+ tests | Data models and validation |
-| **Recovery** | ~25+ tests | Session recovery and timeout handling |
-| **Tools** | ~20+ tests | MCP tool implementation |
-| **Resources** | ~15+ tests | MCP resource management |
-| **Protocol** | ~8+ tests | MCP protocol handling |
-| **Other** | ~650+ tests | Additional comprehensive test coverage |
-
 ### Quality Assurance
 
 - **Clean Codebase**: 0 warnings in build, following best practices
