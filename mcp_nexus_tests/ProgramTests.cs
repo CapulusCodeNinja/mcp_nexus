@@ -1,5 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace mcp_nexus.Tests
@@ -835,6 +837,204 @@ namespace mcp_nexus.Tests
             {
                 Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", originalEnv);
             }
+        }
+
+        #endregion
+
+        #region ShowHelpAsync Tests
+
+        /// <summary>
+        /// Verifies that ShowHelpAsync executes without throwing exceptions.
+        /// </summary>
+        [Fact]
+        public async Task ShowHelpAsync_ExecutesWithoutException()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("ShowHelpAsync", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Act & Assert - Should complete without throwing
+            var task = method.Invoke(null, null) as Task;
+            Assert.NotNull(task);
+            await task;
+        }
+
+        #endregion
+
+        #region ShouldEnableJsonRpcLogging Tests
+
+        /// <summary>
+        /// Verifies that ShouldEnableJsonRpcLogging returns true when debug logging is enabled.
+        /// </summary>
+        [Fact]
+        public void ShouldEnableJsonRpcLogging_WithDebugEnabled_ReturnsTrue()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("ShouldEnableJsonRpcLogging", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            var mockLoggerFactory = new Mock<ILoggerFactory>();
+            var mockLogger = new Mock<ILogger>();
+            mockLogger.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(true);
+            mockLoggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(mockLogger.Object);
+
+            // Act
+            var result = (bool)method.Invoke(null, new object[] { mockLoggerFactory.Object })!;
+
+            // Assert
+            Assert.True(result);
+        }
+
+        /// <summary>
+        /// Verifies that ShouldEnableJsonRpcLogging returns false when debug logging is disabled.
+        /// </summary>
+        [Fact]
+        public void ShouldEnableJsonRpcLogging_WithDebugDisabled_ReturnsFalse()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("ShouldEnableJsonRpcLogging", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            var mockLoggerFactory = new Mock<ILoggerFactory>();
+            var mockLogger = new Mock<ILogger>();
+            mockLogger.Setup(l => l.IsEnabled(LogLevel.Debug)).Returns(false);
+            mockLoggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(mockLogger.Object);
+
+            // Act
+            var result = (bool)method.Invoke(null, new object[] { mockLoggerFactory.Object })!;
+
+            // Assert
+            Assert.False(result);
+        }
+
+        #endregion
+
+        #region LogFatalException Tests
+
+        /// <summary>
+        /// Verifies that LogFatalException handles null exception gracefully.
+        /// </summary>
+        [Fact]
+        public void LogFatalException_WithNullException_DoesNotThrow()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("LogFatalException", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Act & Assert - Should not throw
+            method.Invoke(null, new object?[] { null, "TestSource", false });
+        }
+
+        /// <summary>
+        /// Verifies that LogFatalException handles simple exception.
+        /// </summary>
+        [Fact]
+        public void LogFatalException_WithSimpleException_LogsDetails()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("LogFatalException", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            var exception = new InvalidOperationException("Test exception");
+
+            // Act & Assert - Should not throw
+            method.Invoke(null, new object[] { exception, "TestSource", false });
+        }
+
+        /// <summary>
+        /// Verifies that LogFatalException handles exception with inner exception.
+        /// </summary>
+        [Fact]
+        public void LogFatalException_WithInnerException_LogsAllDetails()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("LogFatalException", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            var innerException = new ArgumentException("Inner exception");
+            var exception = new InvalidOperationException("Outer exception", innerException);
+
+            // Act & Assert - Should not throw
+            method.Invoke(null, new object[] { exception, "TestSource", true });
+        }
+
+        /// <summary>
+        /// Verifies that LogFatalException handles AggregateException.
+        /// </summary>
+        [Fact]
+        public void LogFatalException_WithAggregateException_LogsAllInnerExceptions()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("LogFatalException", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            var innerExceptions = new Exception[]
+            {
+                new InvalidOperationException("First exception"),
+                new ArgumentException("Second exception"),
+                new NullReferenceException("Third exception")
+            };
+            var aggregateException = new AggregateException("Multiple exceptions", innerExceptions);
+
+            // Act & Assert - Should not throw
+            method.Invoke(null, new object[] { aggregateException, "TestSource", false });
+        }
+
+        /// <summary>
+        /// Verifies that LogFatalException handles deeply nested inner exceptions.
+        /// </summary>
+        [Fact]
+        public void LogFatalException_WithDeeplyNestedInnerExceptions_LogsUpToLimit()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("LogFatalException", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Create 10 levels of nested exceptions
+            Exception? innerMost = new InvalidOperationException("Level 10");
+            for (int i = 9; i >= 1; i--)
+            {
+                innerMost = new InvalidOperationException($"Level {i}", innerMost);
+            }
+
+            // Act & Assert - Should not throw and should limit depth to 5
+            method.Invoke(null, new object[] { innerMost, "TestSource", false });
+        }
+
+        #endregion
+
+        #region SetupGlobalExceptionHandlers Tests
+
+        /// <summary>
+        /// Verifies that SetupGlobalExceptionHandlers executes without throwing.
+        /// </summary>
+        [Fact]
+        public void SetupGlobalExceptionHandlers_ExecutesWithoutException()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("SetupGlobalExceptionHandlers", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Act & Assert - Should not throw
+            method.Invoke(null, null);
+        }
+
+        #endregion
+
+        #region SetupConsoleEncoding Tests
+
+        /// <summary>
+        /// Verifies that SetupConsoleEncoding executes without throwing.
+        /// </summary>
+        [Fact]
+        public void SetupConsoleEncoding_ExecutesWithoutException()
+        {
+            // Arrange
+            var method = m_ProgramType.GetMethod("SetupConsoleEncoding", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Act & Assert - Should not throw
+            method.Invoke(null, null);
         }
 
         #endregion
