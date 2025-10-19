@@ -7,6 +7,7 @@ using mcp_nexus.Session.Lifecycle;
 using mcp_nexus.Session.Core;
 using mcp_nexus.Debugger;
 using mcp_nexus.CommandQueue.Core;
+using mcp_nexus.CommandQueue.Batching;
 using mcp_nexus.Notifications;
 using mcp_nexus.Session.Core.Models;
 using System.Collections.Concurrent;
@@ -652,6 +653,171 @@ namespace mcp_nexus_tests.Session.Lifecycle
             // Act & Assert - Should not throw
             m_Manager.RemoveSessionCache("non-existent-session");
         }
+
+        #region Helper Methods for Extension Tests
+
+        private IServiceProvider CreateServiceProvider(
+            IExtensionCommandTracker? extensionTracker,
+            IExtensionExecutor? extensionExecutor,
+            IExtensionTokenValidator? tokenValidator)
+        {
+            var mockServiceProvider = new Mock<IServiceProvider>();
+            mockServiceProvider.Setup(x => x.GetService(typeof(IExtensionCommandTracker))).Returns(extensionTracker);
+            mockServiceProvider.Setup(x => x.GetService(typeof(IExtensionExecutor))).Returns(extensionExecutor);
+            mockServiceProvider.Setup(x => x.GetService(typeof(IExtensionTokenValidator))).Returns(tokenValidator);
+            mockServiceProvider.Setup(x => x.GetService(typeof(IOptions<BatchingConfiguration>))).Returns((IOptions<BatchingConfiguration>?)null);
+            return mockServiceProvider.Object;
+        }
+
+        private SessionLifecycleManager CreateManager(
+            ConcurrentDictionary<string, SessionInfo> sessions,
+            IServiceProvider serviceProvider)
+        {
+            return new SessionLifecycleManager(
+                m_MockLogger.Object,
+                serviceProvider,
+                mm_MockLoggerFactory.Object,
+                m_MockNotificationService.Object,
+                m_Config,
+                sessions,
+                m_MockCommandPreprocessor.Object);
+        }
+
+        private Mock<ICdbSession> CreateMockCdbSession()
+        {
+            var mock = new Mock<ICdbSession>();
+            mock.Setup(x => x.StopSession()).Returns(Task.FromResult(true));
+            mock.Setup(x => x.Dispose());
+            return mock;
+        }
+
+        private Mock<ICommandQueueService> CreateMockCommandQueue()
+        {
+            var mock = new Mock<ICommandQueueService>();
+            mock.Setup(x => x.CancelAllCommands(It.IsAny<string>())).Returns(0);
+            mock.Setup(x => x.Dispose());
+            return mock;
+        }
+
+        #endregion
+
+        #region Additional Edge Case Tests
+
+        [Fact]
+        public async Task CloseSessionAsync_WhenExtensionKillFails_ContinuesWithCleanup()
+        {
+            // Arrange
+            var sessionId = "test-session";
+            var cdbSession = CreateMockCdbSession();
+            var commandQueue = CreateMockCommandQueue();
+            var sessions = new ConcurrentDictionary<string, SessionInfo>();
+            
+            var sessionInfo = new SessionInfo(
+                sessionId,
+                cdbSession.Object,
+                commandQueue.Object,
+                "test.dmp",
+                null,
+                1234
+            );
+            sessions.TryAdd(sessionId, sessionInfo);
+
+            // Mock extension tracking with a running extension
+            var mockExtensionTracker = new Mock<IExtensionCommandTracker>();
+            var extensionCommand = new mcp_nexus.Extensions.ExtensionCommandInfo
+            {
+                Id = "ext-1",
+                ExtensionName = "test-ext",
+                SessionId = sessionId,
+                State = mcp_nexus.CommandQueue.Core.CommandState.Executing,
+                IsCompleted = false
+            };
+            mockExtensionTracker.Setup(x => x.GetSessionCommands(sessionId))
+                .Returns([extensionCommand]);
+
+            // Mock extension executor that throws when killing
+            var mockExtensionExecutor = new Mock<IExtensionExecutor>();
+            mockExtensionExecutor.Setup(x => x.KillExtension("ext-1"))
+                .Throws(new InvalidOperationException("Process already exited"));
+
+            var serviceProvider = CreateServiceProvider(mockExtensionTracker.Object, mockExtensionExecutor.Object, null);
+            var manager = CreateManager(sessions, serviceProvider);
+
+            // Act
+            var result = await manager.CloseSessionAsync(sessionId);
+
+            // Assert - Should still succeed despite kill failure
+            Assert.True(result);
+            Assert.False(sessions.ContainsKey(sessionId));
+        }
+
+        [Fact]
+        public async Task CloseSessionAsync_WhenTokenRevocationFails_ContinuesWithCleanup()
+        {
+            // Arrange
+            var sessionId = "test-session";
+            var cdbSession = CreateMockCdbSession();
+            var commandQueue = CreateMockCommandQueue();
+            var sessions = new ConcurrentDictionary<string, SessionInfo>();
+            
+            var sessionInfo = new SessionInfo(
+                sessionId,
+                cdbSession.Object,
+                commandQueue.Object,
+                "test.dmp",
+                null,
+                1234
+            );
+            sessions.TryAdd(sessionId, sessionInfo);
+
+            // Mock token validator that throws
+            var mockTokenValidator = new Mock<IExtensionTokenValidator>();
+            mockTokenValidator.Setup(x => x.RevokeSessionTokens(sessionId))
+                .Throws(new InvalidOperationException("Token store unavailable"));
+
+            var serviceProvider = CreateServiceProvider(null, null, mockTokenValidator.Object);
+            var manager = CreateManager(sessions, serviceProvider);
+
+            // Act
+            var result = await manager.CloseSessionAsync(sessionId);
+
+            // Assert - Should still succeed despite token revocation failure
+            Assert.True(result);
+            Assert.False(sessions.ContainsKey(sessionId));
+        }
+
+        [Fact]
+        public async Task CloseSessionAsync_WithNoExtensionTracker_SkipsExtensionCleanup()
+        {
+            // Arrange
+            var sessionId = "test-session";
+            var cdbSession = CreateMockCdbSession();
+            var commandQueue = CreateMockCommandQueue();
+            var sessions = new ConcurrentDictionary<string, SessionInfo>();
+            
+            var sessionInfo = new SessionInfo(
+                sessionId,
+                cdbSession.Object,
+                commandQueue.Object,
+                "test.dmp",
+                null,
+                1234
+            );
+            sessions.TryAdd(sessionId, sessionInfo);
+
+            // Create service provider without extension tracker
+            var serviceProvider = CreateServiceProvider(null, null, null);
+            var manager = CreateManager(sessions, serviceProvider);
+
+            // Act
+            var result = await manager.CloseSessionAsync(sessionId);
+
+            // Assert - Should succeed and skip extension cleanup
+            Assert.True(result);
+            Assert.False(sessions.ContainsKey(sessionId));
+        }
+
+        #endregion
 
 
         public void Dispose()

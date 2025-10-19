@@ -1032,5 +1032,240 @@ namespace mcp_nexus_tests.Tools
         }
 
         #endregion
+
+        #region Additional Edge Case Tests for Branch Coverage
+
+        [Fact]
+        public async Task nexus_open_dump_analyze_session_WithStringLiteralNull_ConvertsToNull()
+        {
+            // Arrange - MCP framework sometimes sends "null" as string
+            var tempDir = Path.GetTempPath();
+            var uniqueFileName = $"test_dump_{Guid.NewGuid():N}.dmp";
+            var dumpPath = Path.Combine(tempDir, uniqueFileName);
+            var sessionId = "test-session-123";
+
+            File.WriteAllText(dumpPath, "fake dump content");
+
+            try
+            {
+                var sessionContext = new SessionContext
+                {
+                    SessionId = sessionId,
+                    DumpPath = dumpPath,
+                    Description = "Test session"
+                };
+
+                m_MockSessionManager
+                    .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(sessionId);
+
+                m_MockSessionManager
+                    .Setup(x => x.GetSessionContext(sessionId))
+                    .Returns(sessionContext);
+
+                // Act - Pass "null" as string
+                var result = await McpNexusTools.nexus_open_dump_analyze_session(
+                    m_ServiceProvider, dumpPath, "null");
+
+                // Assert - Should have converted "null" string to actual null
+                var json = JsonSerializer.Serialize(result);
+                var document = JsonDocument.Parse(json);
+
+                Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+                Assert.Equal("Success", statusElement.GetString());
+
+                // Verify CreateSessionAsync was called with null (not "null" string)
+                m_MockSessionManager.Verify(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()), Times.Once);
+            }
+            finally
+            {
+                if (File.Exists(dumpPath))
+                    File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public async Task nexus_open_dump_analyze_session_WhenSessionIdIsEmpty_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var tempDir = Path.GetTempPath();
+            var uniqueFileName = $"test_dump_{Guid.NewGuid():N}.dmp";
+            var dumpPath = Path.Combine(tempDir, uniqueFileName);
+
+            File.WriteAllText(dumpPath, "fake dump content");
+
+            try
+            {
+                // Setup mock to return empty string
+                m_MockSessionManager
+                    .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync("");
+
+                // Act
+                var result = await McpNexusTools.nexus_open_dump_analyze_session(
+                    m_ServiceProvider, dumpPath, null);
+
+                // Assert - Should return error response
+                var json = JsonSerializer.Serialize(result);
+                var document = JsonDocument.Parse(json);
+
+                Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+                Assert.Equal("Failed", statusElement.GetString());
+
+                Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
+                Assert.Contains("Session creation failed", messageElement.GetString());
+            }
+            finally
+            {
+                if (File.Exists(dumpPath))
+                    File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public async Task nexus_open_dump_analyze_session_WhenSessionContextIsNull_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var tempDir = Path.GetTempPath();
+            var uniqueFileName = $"test_dump_{Guid.NewGuid():N}.dmp";
+            var dumpPath = Path.Combine(tempDir, uniqueFileName);
+            var sessionId = "test-session-123";
+
+            File.WriteAllText(dumpPath, "fake dump content");
+
+            try
+            {
+                m_MockSessionManager
+                    .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(sessionId);
+
+                // Setup GetSessionContext to return null
+                m_MockSessionManager
+                    .Setup(x => x.GetSessionContext(sessionId))
+                    .Returns((SessionContext?)null!);
+
+                // Act
+                var result = await McpNexusTools.nexus_open_dump_analyze_session(
+                    m_ServiceProvider, dumpPath, null);
+
+                // Assert - Should return error response
+                var json = JsonSerializer.Serialize(result);
+                var document = JsonDocument.Parse(json);
+
+                Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+                Assert.Equal("Failed", statusElement.GetString());
+
+                Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
+                Assert.Contains("context is null", messageElement.GetString());
+            }
+            finally
+            {
+                if (File.Exists(dumpPath))
+                    File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public async Task nexus_open_dump_analyze_session_WhenGetSessionContextThrowsNonInvalidOperationException_LogsWarningButContinues()
+        {
+            // Arrange
+            var tempDir = Path.GetTempPath();
+            var uniqueFileName = $"test_dump_{Guid.NewGuid():N}.dmp";
+            var dumpPath = Path.Combine(tempDir, uniqueFileName);
+            var sessionId = "test-session-123";
+
+            File.WriteAllText(dumpPath, "fake dump content");
+
+            try
+            {
+                m_MockSessionManager
+                    .Setup(x => x.CreateSessionAsync(dumpPath, null, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(sessionId);
+
+                // Setup GetSessionContext to throw a different exception
+                m_MockSessionManager
+                    .Setup(x => x.GetSessionContext(sessionId))
+                    .Throws(new ArgumentException("Test exception"));
+
+                // Act
+                var result = await McpNexusTools.nexus_open_dump_analyze_session(
+                    m_ServiceProvider, dumpPath, null);
+
+                // Assert - Should return success despite GetSessionContext failing
+                var json = JsonSerializer.Serialize(result);
+                var document = JsonDocument.Parse(json);
+
+                Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+                Assert.Equal("Success", statusElement.GetString());
+
+                Assert.True(document.RootElement.TryGetProperty("sessionId", out var sessionIdElement));
+                Assert.Equal(sessionId, sessionIdElement.GetString());
+            }
+            finally
+            {
+                if (File.Exists(dumpPath))
+                    File.Delete(dumpPath);
+            }
+        }
+
+        [Fact]
+        public async Task nexus_close_dump_analyze_session_WithArgumentNullException_ReturnsErrorResponse()
+        {
+            // Arrange
+            var sessionId = "test-session";
+
+            m_MockSessionManager
+                .Setup(x => x.SessionExists(sessionId))
+                .Returns(true);
+
+            m_MockSessionManager
+                .Setup(x => x.CloseSessionAsync(sessionId, It.IsAny<CancellationToken>()))
+                .Throws(new ArgumentNullException("sessionId"));
+
+            // Act
+            var result = await McpNexusTools.nexus_close_dump_analyze_session(
+                m_ServiceProvider, sessionId);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            var document = JsonDocument.Parse(json);
+
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Failed", statusElement.GetString());
+
+            Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
+            Assert.Contains("cannot be null", messageElement.GetString());
+        }
+
+        [Fact]
+        public async Task nexus_close_dump_analyze_session_WithArgumentException_ReturnsErrorResponse()
+        {
+            // Arrange
+            var sessionId = "test-session";
+
+            m_MockSessionManager
+                .Setup(x => x.SessionExists(sessionId))
+                .Returns(true);
+
+            m_MockSessionManager
+                .Setup(x => x.CloseSessionAsync(sessionId, It.IsAny<CancellationToken>()))
+                .Throws(new ArgumentException("Session ID is empty"));
+
+            // Act
+            var result = await McpNexusTools.nexus_close_dump_analyze_session(
+                m_ServiceProvider, sessionId);
+
+            // Assert
+            var json = JsonSerializer.Serialize(result);
+            var document = JsonDocument.Parse(json);
+
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Failed", statusElement.GetString());
+
+            Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
+            Assert.Contains("cannot be empty or whitespace", messageElement.GetString());
+        }
+
+        #endregion
     }
 }
