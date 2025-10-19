@@ -129,6 +129,21 @@ namespace mcp_nexus.Tests.Startup
             // Act & Assert - Should not throw
             StartupBanner.LogStartupBanner(args, "localhost", null);
         }
+
+        [Fact]
+        public void FormatCenteredBannerLine_WithTooLongText_Truncates()
+        {
+            // Arrange - text longer than contentWidth
+            var text = new string('X', 100);
+            var contentWidth = 65;
+
+            // Act
+            var result = StartupBanner.FormatCenteredBannerLine(text, contentWidth);
+
+            // Assert - should truncate to contentWidth
+            Assert.Contains(new string('X', contentWidth), result);
+            Assert.DoesNotContain(new string('X', 66), result); // Not longer than contentWidth
+        }
     }
 }
 

@@ -79,6 +79,26 @@ namespace mcp_nexus_tests.Session.Core.Models
         }
 
         [Fact]
+        public void SessionInfo_Dispose_WithNonNullMembers_DisposesCorrectly()
+        {
+            // Arrange - Create fully initialized SessionInfo
+            var mockCdbSession = new Mock<ICdbSession>();
+            var mockCommandQueue = new Mock<ICommandQueueService>();
+            var sessionInfo = new SessionInfo(
+                "test-session",
+                mockCdbSession.Object,
+                mockCommandQueue.Object,
+                "C:\\test.dmp");
+
+            // Act
+            sessionInfo.Dispose();
+
+            // Assert - Verify Dispose was called on both
+            mockCommandQueue.Verify(x => x.Dispose(), Times.Once);
+            mockCdbSession.Verify(x => x.Dispose(), Times.Once);
+        }
+
+        [Fact]
         public void SessionContext_DefaultValues_AreCorrect()
         {
             // Act

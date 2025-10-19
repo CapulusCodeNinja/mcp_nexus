@@ -66,6 +66,34 @@ namespace mcp_nexus.Tests.Startup
             var result = LoggingFormatters.FormatSseResponseForLogging("");
             Assert.Equal("", result);
         }
+
+        [Fact]
+        public void FormatSseResponseForLogging_WithRegularLine_PassesThrough()
+        {
+            // Arrange - line that's not "event:" or "data:" but not whitespace
+            var sse = "event: test\nsome other content\ndata: {}";
+            
+            // Act
+            var result = LoggingFormatters.FormatSseResponseForLogging(sse);
+            
+            // Assert - should include the regular line
+            Assert.Contains("some other content", result);
+        }
+
+        [Fact]
+        public void FormatJsonForLogging_WithVeryLongInvalidJson_Truncates()
+        {
+            // Arrange - invalid JSON longer than 1000 characters
+            var longInvalidJson = "{invalid" + new string('X', 1500);
+            
+            // Act
+            var result = LoggingFormatters.FormatJsonForLogging(longInvalidJson);
+            
+            // Assert - should truncate to 1000 chars + "..."
+            Assert.Contains("Invalid JSON", result);
+            Assert.Contains("...", result);
+            Assert.DoesNotContain(new string('X', 1500), result); // Should be truncated
+        }
     }
 }
 

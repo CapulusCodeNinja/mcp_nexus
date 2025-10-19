@@ -214,6 +214,16 @@ namespace mcp_nexus_tests.Notifications
 
             Assert.Null(exception);
         }
+
+        [Fact]
+        public void Constructor_WithNullNotificationService_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>(() =>
+                new StdioNotificationBridge(
+                    Mock.Of<ILogger<StdioNotificationBridge>>(),
+                    null!));
+        }
     }
 }
 

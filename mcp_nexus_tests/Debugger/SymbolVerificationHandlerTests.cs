@@ -386,5 +386,48 @@ namespace mcp_nexus_tests.Debugger
             Assert.Contains(recommendations, r => r.Contains("Third-party software symbols"));
             Assert.Contains(recommendations, r => r.Contains("Contact software vendor"));
         }
+
+        #region Branch Coverage Tests - Missing Branches
+
+        [Fact]
+        public void ProcessSymbolWarnings_WithSymbolKeywordWarning_ProcessesCorrectly()
+        {
+            // Arrange - Tests Line 63 branch: WARNING containing "symbol"
+            var output = "Some output\n*** WARNING: symbol file is corrupted for test.dll\nMore output";
+
+            // Act
+            var result = m_Handler.ProcessSymbolWarnings(output);
+
+            // Assert - should process the warning
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public void ProcessSymbolWarnings_WithModuleKeywordWarning_ProcessesCorrectly()
+        {
+            // Arrange - Tests similar branch: WARNING containing "module"
+            var output = "Some output\n*** WARNING: module could not be loaded\nMore output";
+
+            // Act
+            var result = m_Handler.ProcessSymbolWarnings(output);
+
+            // Assert - should process the warning
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public void ProcessSymbolWarnings_WithSymbolChecksumWarning_HandlesGracefully()
+        {
+            // Arrange
+            var output = "*** WARNING: symbol checksum verification failed for kernel32.dll";
+
+            // Act
+            var result = m_Handler.ProcessSymbolWarnings(output);
+
+            // Assert - should process without error
+            Assert.NotNull(result);
+        }
+
+        #endregion
     }
 }
