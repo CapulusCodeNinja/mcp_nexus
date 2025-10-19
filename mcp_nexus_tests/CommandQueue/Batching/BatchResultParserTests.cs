@@ -221,14 +221,14 @@ namespace mcp_nexus_tests.CommandQueue.Batching
         {
             // Arrange - Test Line 33: command.Id ?? string.Empty (FALSE branch - null ID)
             var parser = new BatchResultParser();
-            
+
             // Create command with NULL ID using the nullable constructor
             var cts = new CancellationTokenSource();
             var tcs = new TaskCompletionSource<string>();
             var commandWithNullId = new QueuedCommand(null!, "lm", DateTime.Now, tcs, cts);
-            
+
             var commands = new List<QueuedCommand> { commandWithNullId };
-            
+
             var batchOutput = $"{CdbSentinels.BatchStart}\n" +
                              $"{CdbSentinels.CommandSeparator}\n" +
                              "test output\n" +

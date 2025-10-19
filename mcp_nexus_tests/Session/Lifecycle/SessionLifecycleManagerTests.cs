@@ -711,7 +711,7 @@ namespace mcp_nexus_tests.Session.Lifecycle
             var cdbSession = CreateMockCdbSession();
             var commandQueue = CreateMockCommandQueue();
             var sessions = new ConcurrentDictionary<string, SessionInfo>();
-            
+
             var sessionInfo = new SessionInfo(
                 sessionId,
                 cdbSession.Object,
@@ -759,7 +759,7 @@ namespace mcp_nexus_tests.Session.Lifecycle
             var cdbSession = CreateMockCdbSession();
             var commandQueue = CreateMockCommandQueue();
             var sessions = new ConcurrentDictionary<string, SessionInfo>();
-            
+
             var sessionInfo = new SessionInfo(
                 sessionId,
                 cdbSession.Object,
@@ -794,7 +794,7 @@ namespace mcp_nexus_tests.Session.Lifecycle
             var cdbSession = CreateMockCdbSession();
             var commandQueue = CreateMockCommandQueue();
             var sessions = new ConcurrentDictionary<string, SessionInfo>();
-            
+
             var sessionInfo = new SessionInfo(
                 sessionId,
                 cdbSession.Object,

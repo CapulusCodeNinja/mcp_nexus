@@ -372,7 +372,7 @@ namespace mcp_nexus_tests.Notifications
         public void Subscribe_WithNullEventType_ThrowsArgumentException()
         {
             // Act & Assert
-            var ex = Assert.Throws<ArgumentException>(() => 
+            var ex = Assert.Throws<ArgumentException>(() =>
                 m_Service.Subscribe(null!, _ => Task.CompletedTask));
             Assert.Contains("Event type cannot be null or empty", ex.Message);
         }
@@ -381,7 +381,7 @@ namespace mcp_nexus_tests.Notifications
         public void Subscribe_WithEmptyEventType_ThrowsArgumentException()
         {
             // Act & Assert
-            var ex = Assert.Throws<ArgumentException>(() => 
+            var ex = Assert.Throws<ArgumentException>(() =>
                 m_Service.Subscribe("", _ => Task.CompletedTask));
             Assert.Contains("Event type cannot be null or empty", ex.Message);
         }
@@ -390,7 +390,7 @@ namespace mcp_nexus_tests.Notifications
         public void Subscribe_WithNullHandler_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 m_Service.Subscribe("test-event", (Func<object, Task>)null!));
         }
 
@@ -398,7 +398,7 @@ namespace mcp_nexus_tests.Notifications
         public void Subscribe_StronglyTyped_WithNullEventType_ThrowsArgumentException()
         {
             // Act & Assert
-            var ex = Assert.Throws<ArgumentException>(() => 
+            var ex = Assert.Throws<ArgumentException>(() =>
                 m_Service.Subscribe(null!, (Func<McpNotification, Task>)(_ => Task.CompletedTask)));
             Assert.Contains("Event type cannot be null or empty", ex.Message);
         }
@@ -407,7 +407,7 @@ namespace mcp_nexus_tests.Notifications
         public void Subscribe_StronglyTyped_WithEmptyEventType_ThrowsArgumentException()
         {
             // Act & Assert
-            var ex = Assert.Throws<ArgumentException>(() => 
+            var ex = Assert.Throws<ArgumentException>(() =>
                 m_Service.Subscribe("", (Func<McpNotification, Task>)(_ => Task.CompletedTask)));
             Assert.Contains("Event type cannot be null or empty", ex.Message);
         }
@@ -416,7 +416,7 @@ namespace mcp_nexus_tests.Notifications
         public void Subscribe_StronglyTyped_WithNullHandler_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 m_Service.Subscribe("test-event", (Func<McpNotification, Task>)null!));
         }
 

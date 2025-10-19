@@ -461,7 +461,7 @@ namespace mcp_nexus_tests.Debugger
         {
             // Arrange - first complete with prompt
             m_Parser.IsCommandComplete("0:000>");
-            
+
             // Then regular output (no prompt, no sentinel, no ultra-safe)
             var line = "Regular output line";
 

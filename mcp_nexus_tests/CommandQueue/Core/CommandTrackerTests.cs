@@ -777,7 +777,7 @@ namespace mcp_nexus_tests.CommandQueue.Core
         {
             // Arrange - Test Line 257: command.CompletionSource?.TrySetResult (FALSE branch - null)
             var tracker = new CommandTracker(m_MockLogger.Object, m_Config, m_CommandQueue);
-            
+
             // Create command with NULL CompletionSource using nullable constructor
             var cts = new CancellationTokenSource();
             var commandWithNullTcs = new QueuedCommand("cmd-1", "lm", DateTime.Now, null, cts);
@@ -795,7 +795,7 @@ namespace mcp_nexus_tests.CommandQueue.Core
         {
             // Arrange - Test Line 259: command.Id ?? string.Empty (FALSE branch - null ID)
             var tracker = new CommandTracker(m_MockLogger.Object, m_Config, m_CommandQueue);
-            
+
             // Create command with NULL ID
             var cts = new CancellationTokenSource();
             var tcs = new TaskCompletionSource<string>();
