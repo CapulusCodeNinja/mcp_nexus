@@ -319,6 +319,19 @@ namespace mcp_nexus_tests.Debugger
             Assert.False(result);
         }
 
+        [Fact]
+        public void IsCdbPrompt_WithTextThatDoesntMatchAnyPattern_ReturnsFalse()
+        {
+            // Arrange - A line that will cause the AdditionalPromptPatterns loop to execute but not match
+            var line = "Some regular output text without any prompt pattern";
+
+            // Act
+            var result = CdbCompletionPatterns.IsCdbPrompt(line);
+
+            // Assert
+            Assert.False(result); // Should iterate through AdditionalPromptPatterns but find no match
+        }
+
         #endregion
     }
 }

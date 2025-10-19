@@ -378,6 +378,33 @@ namespace mcp_nexus_tests.Extensions
                 Assert.Equal(CommandState.Executing, commandInfo.State);
             }
         }
+
+        [Fact]
+        public void StoreResult_WithNullOutput_UsesEmptyString()
+        {
+            // Arrange
+            var tracker = new ExtensionCommandTracker(m_MockLogger.Object);
+            var commandId = "ext-test-null-output";
+            tracker.TrackExtension(commandId, "session-1", "test_extension", null);
+
+            var result = new ExtensionResult
+            {
+                Success = true,
+                Output = null!, // NULL output!
+                Error = null,
+                ExitCode = 0,
+                ExecutionTime = TimeSpan.FromSeconds(1)
+            };
+
+            // Act
+            tracker.StoreResult(commandId, result);
+            var commandResult = tracker.GetCommandResult(commandId);
+
+            // Assert
+            Assert.NotNull(commandResult);
+            Assert.Equal(string.Empty, commandResult.Output); // Should be empty string, not null
+            Assert.True(commandResult.IsSuccess);
+        }
     }
 }
 

@@ -347,7 +347,7 @@ dotnet test --filter "Notification"
 
 - ✅ **2,574 total tests** (all passing)
 - ✅ **78.7% line coverage** (exceeds ≥75% threshold)
-- ✅ **74.5% branch coverage** (exceeds ≥70% threshold)
+- ✅ **74.5% branch coverage** (exceeds ≥75% threshold)
 - ✅ **0 warnings** in build (clean codebase)
 - ✅ **Fast execution** (~90 seconds for full suite)
 - ✅ **Comprehensive mocking** for reliable testing
