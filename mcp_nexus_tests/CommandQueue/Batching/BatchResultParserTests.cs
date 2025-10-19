@@ -172,6 +172,52 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             return string.Join("\n", output);
         }
 
+        #region Branch Coverage Tests - Missing Branches
+
+        [Fact]
+        public void ExtractCommandOutput_WithMissingEndMarker_ReturnsError()
+        {
+            // Arrange
+            var parser = new BatchResultParser();
+            var batchOutput = $"{CdbSentinels.CommandSeparator}_cmd123\nCommand output without end marker";
+            var commands = new List<QueuedCommand>
+            {
+                CreateTestCommand("cmd123", "test")
+            };
+
+            // Act
+            var results = parser.SplitBatchResults(batchOutput, commands);
+
+            // Assert - should contain error result for missing end marker
+            Assert.Single(results);
+            var result = results[0];
+            Assert.False(result.IsSuccess);
+            Assert.Contains("End marker", result.ErrorMessage);
+        }
+
+        [Fact]
+        public void ExtractCommandOutput_WithMissingStartMarker_ReturnsError()
+        {
+            // Arrange
+            var parser = new BatchResultParser();
+            var batchOutput = "Some output without start marker";
+            var commands = new List<QueuedCommand>
+            {
+                CreateTestCommand("cmd123", "test")
+            };
+
+            // Act
+            var results = parser.SplitBatchResults(batchOutput, commands);
+
+            // Assert - should contain error result for missing start marker
+            Assert.Single(results);
+            var result = results[0];
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Start marker", result.ErrorMessage);
+        }
+
+        #endregion
+
         #endregion
     }
 }

@@ -414,5 +414,77 @@ namespace mcp_nexus_tests.Debugger
             public override void SetLength(long value) => throw new NotSupportedException();
             public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
         }
+
+        #region Branch Coverage Tests - Targeting Missing Branches
+
+        [Fact]
+        public void IsCommandComplete_WithNoSentinelNoPromptNoUltraSafe_ReturnsFalse()
+        {
+            // Arrange - line with no completion indicators
+            var line = "Just some regular debugger output";
+
+            // Act
+            var result = m_Parser.IsCommandComplete(line);
+
+            // Assert - should return false (no completion detected)
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsCommandComplete_WithOnlyStartMarker_ReturnsFalse()
+        {
+            // Arrange - line with START sentinel only (should not complete)
+            var line = $"Some output {CdbSentinels.StartMarker} more output";
+
+            // Act
+            var result = m_Parser.IsCommandComplete(line);
+
+            // Assert - should return false (start marker doesn't trigger completion)
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsCommandComplete_WithEndMarkerOnly_ReturnsTrue()
+        {
+            // Arrange - line with END sentinel (should complete)
+            var line = $"Some output {CdbSentinels.EndMarker}";
+
+            // Act
+            var result = m_Parser.IsCommandComplete(line);
+
+            // Assert - should return true (end marker triggers completion)
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void IsCommandComplete_WithRegularOutputAfterPrompt_ReturnsFalse()
+        {
+            // Arrange - first complete with prompt
+            m_Parser.IsCommandComplete("0:000>");
+            
+            // Then regular output (no prompt, no sentinel, no ultra-safe)
+            var line = "Regular output line";
+
+            // Act
+            var result = m_Parser.IsCommandComplete(line);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsCommandComplete_WithNonUltraSafePattern_ReturnsFalse()
+        {
+            // Arrange - line that looks like it might be special but isn't ultra-safe
+            var line = "Some random error message";
+
+            // Act
+            var result = m_Parser.IsCommandComplete(line);
+
+            // Assert - should return false (not an ultra-safe pattern)
+            Assert.False(result);
+        }
+
+        #endregion
     }
 }

@@ -362,6 +362,257 @@ namespace mcp_nexus_tests.Extensions
         }
 
         [Fact]
+        public async Task ExecuteCommand_WithCustomTimeout_UsesCustomTimeout()
+        {
+            // Arrange
+            var controller = CreateController();
+            controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+            controller.HttpContext.Request.Headers.Authorization = "Bearer valid-token";
+
+            var request = new ExtensionCallbackExecuteRequest
+            {
+                Command = "lm",
+                TimeoutSeconds = 120 // Custom timeout
+            };
+
+            m_MockTokenValidator.Setup(x => x.ValidateToken("valid-token"))
+                .Returns((true, "session-123", "cmd-456"));
+            m_MockCommandTracker.Setup(x => x.IncrementCallbackCount("cmd-456"));
+
+            var mockQueue = new Mock<ICommandQueueService>();
+            mockQueue.Setup(q => q.QueueCommand("lm")).Returns("cmd-789");
+            ICommandQueueService? outQueue = mockQueue.Object;
+            m_MockSessionManager.Setup(s => s.TryGetCommandQueue("session-123", out outQueue)).Returns(true);
+
+            var cmdInfo = new CommandInfo("cmd-789", "lm", CommandState.Completed, DateTime.Now, 0)
+            {
+                IsCompleted = true
+            };
+            var cmdResult = new CommandResult(true, "output", null);
+            m_MockSessionManager.Setup(s => s.GetCommandInfoAndResultAsync("session-123", "cmd-789"))
+                .ReturnsAsync((cmdInfo, (ICommandResult)cmdResult));
+
+            // Act
+            var result = await controller.ExecuteCommand(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ExtensionCallbackExecuteResponse>(okResult.Value);
+            Assert.Equal("Success", response.Status);
+        }
+
+        [Fact]
+        public async Task ExecuteCommand_WithZeroTimeout_UsesDefaultTimeout()
+        {
+            // Arrange
+            var controller = CreateController();
+            controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+            controller.HttpContext.Request.Headers.Authorization = "Bearer valid-token";
+
+            var request = new ExtensionCallbackExecuteRequest
+            {
+                Command = "lm",
+                TimeoutSeconds = 0 // Will use default (5 min)
+            };
+
+            m_MockTokenValidator.Setup(x => x.ValidateToken("valid-token"))
+                .Returns((true, "session-123", "cmd-456"));
+            m_MockCommandTracker.Setup(x => x.IncrementCallbackCount("cmd-456"));
+
+            var mockQueue = new Mock<ICommandQueueService>();
+            mockQueue.Setup(q => q.QueueCommand("lm")).Returns("cmd-789");
+            ICommandQueueService? outQueue = mockQueue.Object;
+            m_MockSessionManager.Setup(s => s.TryGetCommandQueue("session-123", out outQueue)).Returns(true);
+
+            var cmdInfo = new CommandInfo("cmd-789", "lm", CommandState.Completed, DateTime.Now, 0)
+            {
+                IsCompleted = true
+            };
+            var cmdResult = new CommandResult(true, "output", null);
+            m_MockSessionManager.Setup(s => s.GetCommandInfoAndResultAsync("session-123", "cmd-789"))
+                .ReturnsAsync((cmdInfo, (ICommandResult)cmdResult));
+
+            // Act
+            var result = await controller.ExecuteCommand(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.NotNull(okResult.Value);
+        }
+
+        [Fact]
+        public async Task ExecuteCommand_WithEmptyCommandId_SkipsIncrementCallback()
+        {
+            // Arrange
+            var controller = CreateController();
+            controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+            controller.HttpContext.Request.Headers.Authorization = "Bearer valid-token";
+
+            var request = new ExtensionCallbackExecuteRequest { Command = "lm" };
+
+            m_MockTokenValidator.Setup(x => x.ValidateToken("valid-token"))
+                .Returns((true, "session-123", "")); // Empty commandId
+
+            var mockQueue = new Mock<ICommandQueueService>();
+            mockQueue.Setup(q => q.QueueCommand("lm")).Returns("cmd-789");
+            ICommandQueueService? outQueue = mockQueue.Object;
+            m_MockSessionManager.Setup(s => s.TryGetCommandQueue("session-123", out outQueue)).Returns(true);
+
+            var cmdInfo = new CommandInfo("cmd-789", "lm", CommandState.Completed, DateTime.Now, 0)
+            {
+                IsCompleted = true
+            };
+            var cmdResult = new CommandResult(true, "output", null);
+            m_MockSessionManager.Setup(s => s.GetCommandInfoAndResultAsync("session-123", "cmd-789"))
+                .ReturnsAsync((cmdInfo, (ICommandResult)cmdResult));
+
+            // Act
+            var result = await controller.ExecuteCommand(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            m_MockCommandTracker.Verify(x => x.IncrementCallbackCount(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public void QueueCommand_WithEmptyCommandId_SkipsIncrementCallback()
+        {
+            // Arrange
+            var controller = CreateController();
+            controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+            controller.HttpContext.Request.Headers.Authorization = "Bearer valid-token";
+
+            var request = new ExtensionCallbackExecuteRequest { Command = "lm" };
+
+            m_MockTokenValidator.Setup(x => x.ValidateToken("valid-token"))
+                .Returns((true, "session-123", "")); // Empty commandId
+
+            var mockQueue = new Mock<ICommandQueueService>();
+            mockQueue.Setup(q => q.QueueCommand("lm")).Returns("cmd-789");
+            ICommandQueueService? outQueue = mockQueue.Object;
+            m_MockSessionManager.Setup(s => s.TryGetCommandQueue("session-123", out outQueue)).Returns(true);
+
+            // Act
+            var result = controller.QueueCommand(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            m_MockCommandTracker.Verify(x => x.IncrementCallbackCount(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public void QueueCommand_WithNullRequest_ReturnsBadRequest()
+        {
+            // Arrange
+            var controller = CreateController();
+            controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+            controller.HttpContext.Request.Headers.Authorization = "Bearer valid-token";
+
+            m_MockTokenValidator.Setup(x => x.ValidateToken("valid-token"))
+                .Returns((true, "session-123", "cmd-456"));
+
+            // Act
+            var result = controller.QueueCommand(null!);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task GetBulkCommandStatus_WithNullRequest_ReturnsBadRequest()
+        {
+            // Arrange
+            var controller = CreateController();
+            controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+            controller.HttpContext.Request.Headers.Authorization = "Bearer valid-token";
+
+            m_MockTokenValidator.Setup(x => x.ValidateToken("valid-token"))
+                .Returns((true, "session-123", "cmd-456"));
+
+            // Act
+            var result = await controller.GetBulkCommandStatus(null!);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task GetBulkCommandStatus_WithEmptyCommandIds_ReturnsBadRequest()
+        {
+            // Arrange
+            var controller = CreateController();
+            controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+            controller.HttpContext.Request.Headers.Authorization = "Bearer valid-token";
+
+            var request = new ExtensionCallbackBulkStatusRequest { CommandIds = [] };
+
+            m_MockTokenValidator.Setup(x => x.ValidateToken("valid-token"))
+                .Returns((true, "session-123", "cmd-456"));
+
+            // Act
+            var result = await controller.GetBulkCommandStatus(request);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task ReadCommandResult_WithNullRequest_ReturnsBadRequest()
+        {
+            // Arrange
+            var controller = CreateController();
+            controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+            controller.HttpContext.Request.Headers.Authorization = "Bearer valid-token";
+
+            m_MockTokenValidator.Setup(x => x.ValidateToken("valid-token"))
+                .Returns((true, "session-123", "cmd-456"));
+
+            // Act
+            var result = await controller.ReadCommandResult(null!);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task ReadCommandResult_WithEmptyCommandId_ReturnsBadRequest()
+        {
+            // Arrange
+            var controller = CreateController();
+            controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+            controller.HttpContext.Request.Headers.Authorization = "Bearer valid-token";
+
+            var request = new ExtensionCallbackReadRequest { CommandId = "" };
+
+            m_MockTokenValidator.Setup(x => x.ValidateToken("valid-token"))
+                .Returns((true, "session-123", "cmd-456"));
+
+            // Act
+            var result = await controller.ReadCommandResult(request);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public void WriteLog_WithNullRequest_ReturnsBadRequest()
+        {
+            // Arrange
+            var controller = CreateController();
+            controller.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+            controller.HttpContext.Request.Headers.Authorization = "Bearer valid-token";
+
+            m_MockTokenValidator.Setup(x => x.ValidateToken("valid-token"))
+                .Returns((true, "session-123", "cmd-456"));
+
+            // Act
+            var result = controller.WriteLog(null!);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
         public void QueueCommand_WithEmptyCommand_ReturnsBadRequest()
         {
             // Arrange
