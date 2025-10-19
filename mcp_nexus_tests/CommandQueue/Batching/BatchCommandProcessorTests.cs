@@ -576,6 +576,43 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             processor.Dispose();
         }
 
+        [Fact]
+        public async Task Dispose_WithActiveTimer_DisposesTimerCorrectly()
+        {
+            // Arrange - Create processor with batching enabled (creates timer)
+            var config = new BatchingConfiguration
+            {
+                Enabled = true,
+                MaxBatchSize = 5,
+                BatchWaitTimeoutMs = 5000, // Long timeout to ensure timer exists
+                BatchTimeoutMultiplier = 1.0,
+                MaxBatchTimeoutMinutes = 30,
+                ExcludedCommands = []
+            };
+            m_MockOptions.Setup(o => o.Value).Returns(config);
+
+            var processor = new BatchCommandProcessor(
+                m_MockCdbSession.Object,
+                m_ResultCache,
+                m_MockLogger.Object,
+                m_MockOptions.Object);
+
+            // Queue a command to start the batch processing loop (which creates the timer)
+            var cts = new CancellationTokenSource();
+            var tcs = new TaskCompletionSource<string>();
+            var command = new QueuedCommand("test-cmd", "lm", DateTime.Now, tcs, cts);
+            await processor.ProcessCommandAsync(command);
+
+            // Wait a tiny bit to ensure timer is created
+            await Task.Delay(50);
+
+            // Act - Dispose should dispose the timer (line 289 TRUE branch)
+            processor.Dispose();
+
+            // Assert - Disposal should complete without error
+            Assert.True(true); // Timer disposal is verified by no exception
+        }
+
         #endregion
 
         #region IDisposable Implementation

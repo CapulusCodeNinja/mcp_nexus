@@ -332,6 +332,19 @@ namespace mcp_nexus_tests.Debugger
             Assert.False(result); // Should iterate through AdditionalPromptPatterns but find no match
         }
 
+        [Theory]
+        [InlineData("  0:000>  ")]  // PromptSimple with whitespace
+        [InlineData("0:000> .echo test")]  // PromptWithText
+        [InlineData("output before 0:000> ")]  // PromptEnd at end
+        public void IsCdbPrompt_WithAdditionalPatternMatch_ReturnsTrue(string line)
+        {
+            // Act - These should match AdditionalPromptPatterns
+            var result = CdbCompletionPatterns.IsCdbPrompt(line);
+
+            // Assert - Should return true via foreach loop (line 74 TRUE branch)
+            Assert.True(result);
+        }
+
         #endregion
     }
 }

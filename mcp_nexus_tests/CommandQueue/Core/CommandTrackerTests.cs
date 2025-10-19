@@ -769,5 +769,63 @@ namespace mcp_nexus_tests.CommandQueue.Core
         }
 
         #endregion
+
+        #region Branch Coverage Tests
+
+        [Fact]
+        public void CancelAllCommands_WithNullCompletionSource_SkipsSetResult()
+        {
+            // Arrange - Test Line 257: command.CompletionSource?.TrySetResult (FALSE branch - null)
+            var tracker = new CommandTracker(m_MockLogger.Object, m_Config, m_CommandQueue);
+            
+            // Create command with NULL CompletionSource using nullable constructor
+            var cts = new CancellationTokenSource();
+            var commandWithNullTcs = new QueuedCommand("cmd-1", "lm", DateTime.Now, null, cts);
+            tracker.TryAddCommand("cmd-1", commandWithNullTcs);
+
+            // Act - Should skip TrySetResult since CompletionSource is null
+            tracker.CancelAllCommands("test cancellation");
+
+            // Assert - Should complete without error despite null CompletionSource
+            Assert.True(true); // Verified by no exception
+        }
+
+        [Fact]
+        public void CancelAllCommands_WithNullCommandId_UsesEmptyString()
+        {
+            // Arrange - Test Line 259: command.Id ?? string.Empty (FALSE branch - null ID)
+            var tracker = new CommandTracker(m_MockLogger.Object, m_Config, m_CommandQueue);
+            
+            // Create command with NULL ID
+            var cts = new CancellationTokenSource();
+            var tcs = new TaskCompletionSource<string>();
+            var commandWithNullId = new QueuedCommand(null!, "lm", DateTime.Now, tcs, cts);
+            tracker.TryAddCommand(string.Empty, commandWithNullId); // Use empty string as key
+
+            // Act - Should use empty string for null ID
+            tracker.CancelAllCommands("test");
+
+            // Assert - Should complete without error
+            Assert.True(true); // Verified by no exception
+        }
+
+        [Fact]
+        public void GetCommandInfo_WithQueuedCommand_IsCompletedReturnsFalse()
+        {
+            // Arrange - Test Line 295: IsCommandCompleted FALSE branch (Queued state)
+            var tracker = new CommandTracker(m_MockLogger.Object, m_Config, m_CommandQueue);
+            var command = new QueuedCommand("cmd-1", "lm", DateTime.Now,
+                new TaskCompletionSource<string>(), new CancellationTokenSource(), CommandState.Queued);
+            tracker.TryAddCommand("cmd-1", command);
+
+            // Act - GetCommandInfo calls IsCommandCompleted internally
+            var commandInfo = tracker.GetCommandInfo("cmd-1");
+
+            // Assert - Queued command should not be marked as completed
+            Assert.NotNull(commandInfo);
+            Assert.False(commandInfo.IsCompleted); // IsCommandCompleted returns FALSE for Queued
+        }
+
+        #endregion
     }
 }

@@ -578,6 +578,56 @@ namespace mcp_nexus_tests.CommandQueue.Core
             Assert.Same(newSource, updated.CompletionSource);
         }
 
+        [Fact]
+        public void WithState_WithNullFields_UsesDefaultValues()
+        {
+            // Arrange - Test null-coalescing operators in WithState (lines 236-241)
+            var commandWithNulls = new QueuedCommand(null, null, DateTime.Now, null, null);
+
+            // Act - WithState should use ?? operators to handle nulls
+            var updated = commandWithNulls.WithState(CommandState.Executing);
+
+            // Assert - Should use empty strings and create new TaskCompletionSource/CancellationTokenSource
+            Assert.Equal(string.Empty, updated.Id);
+            Assert.Equal(string.Empty, updated.Command);
+            Assert.NotNull(updated.CompletionSource);
+            Assert.NotNull(updated.CancellationTokenSource);
+            Assert.Equal(CommandState.Executing, updated.State);
+        }
+
+        [Fact]
+        public void WithCompletionSource_WithNullFields_UsesDefaultValues()
+        {
+            // Arrange - Test null-coalescing operators in WithCompletionSource (lines 250-254)
+            var commandWithNulls = new QueuedCommand(null, null, DateTime.Now, null, null);
+            var newSource = new TaskCompletionSource<string>();
+
+            // Act - WithCompletionSource should use ?? operators to handle nulls
+            var updated = commandWithNulls.WithCompletionSource(newSource);
+
+            // Assert - Should use empty strings and create new CancellationTokenSource
+            Assert.Equal(string.Empty, updated.Id);
+            Assert.Equal(string.Empty, updated.Command);
+            Assert.Same(newSource, updated.CompletionSource);
+            Assert.NotNull(updated.CancellationTokenSource);
+        }
+
+        [Fact]
+        public void With_WithNullFields_UsesDefaultValues()
+        {
+            // Arrange - Test null-coalescing operators in With (lines 221-225)
+            var commandWithNulls = new QueuedCommand(null, null, DateTime.Now, null, null);
+
+            // Act - With() without parameters should use ?? operators to handle nulls
+            var updated = commandWithNulls.With();
+
+            // Assert - Should use empty strings and create new instances
+            Assert.Equal(string.Empty, updated.Id);
+            Assert.Equal(string.Empty, updated.Command);
+            Assert.NotNull(updated.CompletionSource);
+            Assert.NotNull(updated.CancellationTokenSource);
+        }
+
         #endregion
 
         #region Helper Methods

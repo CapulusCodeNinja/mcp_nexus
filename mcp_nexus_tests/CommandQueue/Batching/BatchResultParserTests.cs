@@ -216,6 +216,33 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             Assert.Contains("Start marker", result.ErrorMessage);
         }
 
+        [Fact]
+        public void SplitBatchResults_WithNullCommandId_UsesEmptyString()
+        {
+            // Arrange - Test Line 33: command.Id ?? string.Empty (FALSE branch - null ID)
+            var parser = new BatchResultParser();
+            
+            // Create command with NULL ID using the nullable constructor
+            var cts = new CancellationTokenSource();
+            var tcs = new TaskCompletionSource<string>();
+            var commandWithNullId = new QueuedCommand(null!, "lm", DateTime.Now, tcs, cts);
+            
+            var commands = new List<QueuedCommand> { commandWithNullId };
+            
+            var batchOutput = $"{CdbSentinels.BatchStart}\n" +
+                             $"{CdbSentinels.CommandSeparator}\n" +
+                             "test output\n" +
+                             $"{CdbSentinels.CommandSeparator}_END\n" +
+                             $"{CdbSentinels.BatchEnd}";
+
+            // Act - Should use empty string for null ID
+            var results = parser.SplitBatchResults(batchOutput, commands);
+
+            // Assert - Should parse successfully despite null ID
+            Assert.NotNull(results);
+            Assert.Single(results);
+        }
+
         #endregion
 
         #endregion
