@@ -214,6 +214,11 @@ namespace mcp_nexus.Middleware
             switch (element.ValueKind)
             {
                 case JsonValueKind.Object:
+                    if(element.Name.EndsWith("usage"))
+                    {
+                        return JsonDocument.Parse($"...(truncated)").RootElement;
+                    }
+
                     var truncatedObject = new Dictionary<string, object>();
                     foreach (var property in element.EnumerateObject())
                     {

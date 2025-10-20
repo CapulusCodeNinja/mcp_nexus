@@ -169,18 +169,18 @@ namespace mcp_nexus.Session.Lifecycle
             if (string.IsNullOrWhiteSpace(sessionId))
                 throw new ArgumentException("Session ID cannot be empty or whitespace", nameof(sessionId));
 
-            m_Logger.LogInformation("SessionExists called for {SessionId}", sessionId);
+            m_Logger.LogDebug("SessionExists called for {SessionId}", sessionId);
 
             if (!m_Sessions.TryGetValue(sessionId, out var session))
             {
-                m_Logger.LogInformation("SessionExists: {SessionId} not found. ActiveCount={ActiveCount}", sessionId, m_Sessions.Count);
+                m_Logger.LogDebug("SessionExists: {SessionId} not found. ActiveCount={ActiveCount}", sessionId, m_Sessions.Count);
                 return false;
             }
 
             // Check if session is expired and schedule cleanup if needed
             if (m_Config.IsSessionExpired(session.LastActivity))
             {
-                m_Logger.LogInformation("SessionExists: {SessionId} expired. LastActivity={LastActivity}", sessionId, session.LastActivity);
+                m_Logger.LogWarning("SessionExists: {SessionId} expired. LastActivity={LastActivity}", sessionId, session.LastActivity);
                 // Schedule async cleanup without blocking caller
                 _ = Task.Run(async () =>
                 {
@@ -246,7 +246,7 @@ namespace mcp_nexus.Session.Lifecycle
                     commandQueue = session.CommandQueue;
                     var available = commandQueue != null;
 
-                    m_Logger.LogInformation("TryGetCommandQueue: {SessionId} found - Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}, QueueExists={QueueExists}",
+                    m_Logger.LogDebug("TryGetCommandQueue: {SessionId} found - Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}, QueueExists={QueueExists}",
                         sessionId, session.Status, session.IsDisposed, isActive, queueExists);
 
                     return available;

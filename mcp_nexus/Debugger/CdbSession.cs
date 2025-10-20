@@ -215,12 +215,12 @@ namespace mcp_nexus.Debugger
             if (string.IsNullOrWhiteSpace(target))
                 throw new ArgumentException("Target cannot be null or empty", nameof(target));
 
-            m_Logger.LogInformation("🔧 StartSession called with target: {Target}, arguments: {Arguments}", target, arguments);
-            m_Logger.LogInformation("🔧 ProcessManager is null: {IsNull}", m_ProcessManager == null);
+            m_Logger.LogInformation("🔧 StartSession called");
+            m_Logger.LogDebug("StartSession target: {Target}, arguments: {Arguments}, ProcessManager null: {IsNull}", target, arguments, m_ProcessManager == null);
 
             try
             {
-                m_Logger.LogInformation("🔧 About to call StartProcess directly");
+                m_Logger.LogDebug("About to call StartProcess directly");
                 var result = m_ProcessManager?.StartProcess(target, m_Config.CustomCdbPath) ?? throw new InvalidOperationException("Process manager not initialized");
                 m_Logger.LogInformation("🔧 StartProcess returned: {Result}", result);
 
@@ -236,7 +236,7 @@ namespace mcp_nexus.Debugger
             }
             catch (OperationCanceledException)
             {
-                m_Logger.LogError("❌ StartSession timed out after {TimeoutMs}ms for target: {Target}", m_Config.CommandTimeoutMs, target);
+                m_Logger.LogWarning("❌ StartSession timed out after {TimeoutMs}ms for target: {Target}", m_Config.CommandTimeoutMs, target);
                 return false;
             }
             catch (Exception ex)
@@ -316,7 +316,7 @@ namespace mcp_nexus.Debugger
                     throw new InvalidOperationException("No active debugging session");
                 }
 
-                m_Logger.LogInformation("🔒 SEMAPHORE: About to execute command '{Command}' (TRUE ASYNC)", command);
+                m_Logger.LogDebug("🔒 SEMAPHORE: About to execute command '{Command}'", command);
 
                 // Preprocess the command to fix common issues (e.g., .srcpath path conversion and directory creation)
                 // Only if preprocessing is enabled in configuration and preprocessor is available
@@ -326,7 +326,7 @@ namespace mcp_nexus.Debugger
                     preprocessedCommand = m_CommandPreprocessor.PreprocessCommand(command);
                     if (preprocessedCommand != command)
                     {
-                        m_Logger.LogInformation("🔧 Command preprocessed: '{Original}' -> '{Preprocessed}'", command, preprocessedCommand);
+                        m_Logger.LogDebug("🔧 Command preprocessed: '{Original}' -> '{Preprocessed}'", command, preprocessedCommand);
                     }
                 }
                 else if (m_Config.EnableCommandPreprocessing && m_CommandPreprocessor == null)
@@ -342,7 +342,7 @@ namespace mcp_nexus.Debugger
                 // Semaphore ensures serialization, no need for thread pool wrapper
                 var result = await m_CommandExecutor.ExecuteCommandAsync(preprocessedCommand, commandId, m_ProcessManager, externalCancellationToken).ConfigureAwait(false);
 
-                m_Logger.LogInformation("🔒 SEMAPHORE: Command '{Command}' completed, result length: {Length}", command, result?.Length ?? 0);
+                m_Logger.LogDebug("🔒 SEMAPHORE: Command '{Command}' completed, result length: {Length}", command, result?.Length ?? 0);
 
                 return result ?? string.Empty;
             }
@@ -385,12 +385,12 @@ namespace mcp_nexus.Debugger
                     throw new InvalidOperationException("No active debugging session");
                 }
 
-                m_Logger.LogInformation("🔒 SEMAPHORE: About to execute BATCH command (bypassing single command sentinels)");
+                m_Logger.LogDebug("🔒 SEMAPHORE: About to execute BATCH command (bypassing single command sentinels)");
 
                 // Call ExecuteBatchCommandAsync directly without sentinel wrapping
                 var result = await m_CommandExecutor.ExecuteBatchCommandAsync(batchCommand, m_ProcessManager, externalCancellationToken).ConfigureAwait(false);
 
-                m_Logger.LogInformation("🔒 SEMAPHORE: Batch command completed, result length: {Length}", result?.Length ?? 0);
+                m_Logger.LogDebug("🔒 SEMAPHORE: Batch command completed, result length: {Length}", result?.Length ?? 0);
 
                 return result ?? string.Empty;
             }

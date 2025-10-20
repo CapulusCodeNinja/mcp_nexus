@@ -130,7 +130,7 @@ namespace mcp_nexus.CommandQueue.Batching
 
             try
             {
-                m_Logger.LogInformation("⚡ Executing single command {CommandId}: {Command}", command.Id, command.Command);
+                m_Logger.LogDebug("⚡ Executing single command {CommandId}: {Command}", command.Id, command.Command);
 
                 var result = await m_CdbSession.ExecuteCommand(command.Command ?? string.Empty, command.CancellationTokenSource?.Token ?? CancellationToken.None);
 
@@ -144,7 +144,14 @@ namespace mcp_nexus.CommandQueue.Batching
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "❌ Single command {CommandId} failed: {Error}", command.Id, ex.Message);
+                if (ex is OperationCanceledException)
+                {
+                    m_Logger.LogWarning("❌ Single command {CommandId} cancelled: {Message}", command.Id, ex.Message);
+                }
+                else
+                {
+                    m_Logger.LogError(ex, "❌ Single command {CommandId} failed: {Error}", command.Id, ex.Message);
+                }
 
                 var errorResult = CommandResult.Failure(ex.Message, DateTime.Now - startTime);
                 m_ResultCache?.StoreResult(command.Id ?? string.Empty, errorResult);
@@ -207,9 +214,9 @@ namespace mcp_nexus.CommandQueue.Batching
                 m_Logger.LogInformation("✅ Batch of {CommandCount} commands completed in {Duration}ms",
                     commandsToBatch.Count, duration.TotalMilliseconds);
             }
-            catch (OperationCanceledException) when (startTime.AddMinutes(30) < DateTime.Now)
+            catch (OperationCanceledException)
             {
-                m_Logger.LogWarning("⏰ Batch command timed out after {Duration}ms", (DateTime.Now - startTime).TotalMilliseconds);
+                m_Logger.LogWarning("⏰ Batch command cancelled or timed out after {Duration}ms", (DateTime.Now - startTime).TotalMilliseconds);
 
                 // Complete all commands with timeout error
                 foreach (var command in commandsToBatch)
