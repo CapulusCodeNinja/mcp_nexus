@@ -255,8 +255,9 @@ namespace mcp_nexus.Debugger
                 {
                     try
                     {
-                        // Handle start sentinel - exact match only to avoid false positives from command text
-                        if (string.Equals(line, CdbSentinels.StartMarker, StringComparison.Ordinal))
+                        // Handle start sentinel
+                        if (string.Equals(line, CdbSentinels.StartMarker, StringComparison.Ordinal) ||
+                            line.Contains(CdbSentinels.StartMarker))
                         {
                             m_Logger.LogDebug("🧠 Start sentinel detected: {Line}", line);
 
@@ -277,8 +278,9 @@ namespace mcp_nexus.Debugger
                             continue;
                         }
 
-                        // Handle end sentinel - exact match only to avoid false positives from command text
-                        if (string.Equals(line, CdbSentinels.EndMarker, StringComparison.Ordinal))
+                        // Handle end sentinel
+                        if (string.Equals(line, CdbSentinels.EndMarker, StringComparison.Ordinal) ||
+                            line.Contains(CdbSentinels.EndMarker))
                         {
                             m_Logger.LogDebug("🧠 End sentinel detected - completing command: {Line}", line);
 

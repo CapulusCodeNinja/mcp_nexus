@@ -249,10 +249,6 @@ namespace mcp_nexus.Tools
                 // Try to get queue without throwing to avoid transient races, log details if missing
                 if (!sessionManager.TryGetCommandQueue(sessionId, out var commandQueue) || commandQueue == null)
                 {
-                    // Use optimized exponential backoff with smaller maximum delay
-                    var delayMs = Math.Min(200, 25 * (int)Math.Pow(1.3, attempt - 1));
-                    await Task.Delay(delayMs);
-
                     if (!sessionManager.TryGetCommandQueue(sessionId, out commandQueue))
                     {
 
