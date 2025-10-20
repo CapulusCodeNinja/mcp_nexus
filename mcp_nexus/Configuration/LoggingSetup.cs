@@ -112,6 +112,17 @@ namespace mcp_nexus.Configuration
                 rule.SetLoggingLevels(nlogLevel, NLog.LogLevel.Fatal);
             }
 
+            // Add specific rules for Microsoft categories based on log level
+            if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
+            {
+                // Suppress Microsoft categories when not in Trace mode
+                var microsoftRule = new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, fileTarget);
+                nlogConfig.LoggingRules.Add(microsoftRule);
+                
+                var microsoftStderrRule = new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, stderrTarget);
+                nlogConfig.LoggingRules.Add(microsoftStderrRule);
+            }
+
             // Apply the configuration
             LogManager.Configuration = nlogConfig;
 
