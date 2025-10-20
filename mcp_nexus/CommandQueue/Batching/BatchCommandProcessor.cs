@@ -188,7 +188,7 @@ namespace mcp_nexus.CommandQueue.Batching
 
                 // Execute batch command
                 using var timeoutCts = new CancellationTokenSource(batchTimeout);
-                var result = await m_CdbSession.ExecuteCommand(batchCommand, timeoutCts.Token);
+                var result = await m_CdbSession.ExecuteBatchCommand(batchCommand, timeoutCts.Token);
 
                 // Parse individual results
                 var individualResults = m_ResultParser.SplitBatchResults(result, commandsToBatch);

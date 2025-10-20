@@ -122,6 +122,68 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             Assert.Equal(4, separatorCount); // 2 commands * 2 separators each
         }
 
+        [Fact]
+        public void CreateBatchCommand_ShouldUseSemicolonSyntax()
+        {
+            // Arrange
+            var builder = new CommandBatchBuilder();
+            var commands = new List<QueuedCommand>
+            {
+                CreateTestCommand("cmd-1", "lm"),
+                CreateTestCommand("cmd-2", "!threads")
+            };
+
+            // Act
+            var batchCommand = builder.CreateBatchCommand(commands);
+
+            // Assert - should use semicolons, not newlines
+            Assert.DoesNotContain("\n", batchCommand);
+            Assert.Contains("; ", batchCommand);
+            Assert.Contains(".echo MCP_NEXUS_BATCH_START; ", batchCommand);
+            Assert.Contains("; .echo MCP_NEXUS_BATCH_END", batchCommand);
+        }
+
+        [Fact]
+        public void CreateBatchCommand_ShouldUseUppercaseCommandIds()
+        {
+            // Arrange
+            var builder = new CommandBatchBuilder();
+            var commands = new List<QueuedCommand>
+            {
+                CreateTestCommand("cmd-abc-123", "lm")
+            };
+
+            // Act
+            var batchCommand = builder.CreateBatchCommand(commands);
+
+            // Assert - command IDs should be uppercase
+            Assert.Contains("MCP_NEXUS_CMD_SEP_CMD-ABC-123_START", batchCommand);
+            Assert.Contains("MCP_NEXUS_CMD_SEP_CMD-ABC-123_END", batchCommand);
+            Assert.DoesNotContain("cmd-abc-123", batchCommand);
+        }
+
+        [Fact]
+        public void CreateBatchCommand_ShouldProduceValidCdbSyntax()
+        {
+            // Arrange
+            var builder = new CommandBatchBuilder();
+            var commands = new List<QueuedCommand>
+            {
+                CreateTestCommand("cmd-1", "lm"),
+                CreateTestCommand("cmd-2", "!threads")
+            };
+
+            // Act
+            var batchCommand = builder.CreateBatchCommand(commands);
+
+            // Assert - verify complete CDB syntax
+            var expected = ".echo MCP_NEXUS_BATCH_START; " +
+                           ".echo MCP_NEXUS_CMD_SEP_CMD-1_START; lm; .echo MCP_NEXUS_CMD_SEP_CMD-1_END; " +
+                           ".echo MCP_NEXUS_CMD_SEP_CMD-2_START; !threads; .echo MCP_NEXUS_CMD_SEP_CMD-2_END; " +
+                           ".echo MCP_NEXUS_BATCH_END";
+            Assert.Equal(expected, batchCommand);
+        }
+
         #endregion
 
         #region Helper Methods

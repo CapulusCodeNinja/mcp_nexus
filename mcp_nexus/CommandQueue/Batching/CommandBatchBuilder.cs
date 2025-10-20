@@ -24,22 +24,22 @@ namespace mcp_nexus.CommandQueue.Batching
             if (commands.Count == 0)
                 throw new ArgumentException("Commands list cannot be empty", nameof(commands));
 
-            var sb = new StringBuilder();
-            sb.AppendLine(CdbSentinels.BatchStart);
+            var commandParts = new List<string>();
+            commandParts.Add($".echo {CdbSentinels.BatchStart}");
 
             foreach (var command in commands)
             {
                 if (string.IsNullOrWhiteSpace(command.Command))
                     continue;
 
-                // Use echo commands with unique IDs to mark the start and end of each command's output within the batch
-                sb.AppendLine($"echo {CdbSentinels.CommandSeparator}_{command.Id}");
-                sb.AppendLine(command.Command);
-                sb.AppendLine($"echo {CdbSentinels.CommandSeparator}_{command.Id}_END");
+                var upperCommandId = command.Id?.ToUpperInvariant() ?? string.Empty;
+                commandParts.Add($".echo {CdbSentinels.CommandSeparator}_{upperCommandId}_START");
+                commandParts.Add(command.Command);
+                commandParts.Add($".echo {CdbSentinels.CommandSeparator}_{upperCommandId}_END");
             }
 
-            sb.AppendLine(CdbSentinels.BatchEnd);
-            return sb.ToString();
+            commandParts.Add($".echo {CdbSentinels.BatchEnd}");
+            return string.Join("; ", commandParts);
         }
     }
 }

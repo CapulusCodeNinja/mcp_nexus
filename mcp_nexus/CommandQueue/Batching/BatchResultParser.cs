@@ -53,8 +53,9 @@ namespace mcp_nexus.CommandQueue.Batching
         /// <returns>The output for the specific command</returns>
         private string ExtractCommandOutput(string batchOutput, string commandId)
         {
-            var startMarker = $"{CdbSentinels.CommandSeparator}_{commandId}";
-            var endMarker = $"{CdbSentinels.CommandSeparator}_{commandId}_END";
+            var upperCommandId = commandId.ToUpperInvariant();
+            var startMarker = $"{CdbSentinels.CommandSeparator}_{upperCommandId}_START";
+            var endMarker = $"{CdbSentinels.CommandSeparator}_{upperCommandId}_END";
 
             var startIndex = batchOutput.IndexOf(startMarker);
             if (startIndex == -1)

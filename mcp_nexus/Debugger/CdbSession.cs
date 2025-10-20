@@ -353,6 +353,54 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
+        /// Executes a batch command in the debugging session without single-command sentinel wrapping.
+        /// This method is specifically for batch commands that have their own sentinel system.
+        /// </summary>
+        /// <param name="batchCommand">The batch command to execute (with semicolon-separated commands).</param>
+        /// <param name="externalCancellationToken">The cancellation token for external cancellation.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
+        /// Returns the batch command output as a string, or an error message if execution fails.
+        /// </returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the instance has been disposed.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="batchCommand"/> is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no active debugging session is available.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
+        public async Task<string> ExecuteBatchCommand(string batchCommand, CancellationToken externalCancellationToken)
+        {
+            ThrowIfDisposed();
+
+            if (string.IsNullOrWhiteSpace(batchCommand))
+                throw new ArgumentException("Batch command cannot be null or empty", nameof(batchCommand));
+
+            // CRITICAL: Use semaphore to ensure ONLY ONE command executes at a time
+            // CDB is single-threaded and crashes/hangs if multiple commands run concurrently
+            await m_CommandSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
+
+            try
+            {
+                if (!IsActive)
+                {
+                    m_Logger.LogError("Cannot execute batch command - CDB session is not active (IsActive={IsActive})", IsActive);
+                    throw new InvalidOperationException("No active debugging session");
+                }
+
+                m_Logger.LogInformation("🔒 SEMAPHORE: About to execute BATCH command (bypassing single command sentinels)");
+
+                // Call ExecuteBatchCommandAsync directly without sentinel wrapping
+                var result = await m_CommandExecutor.ExecuteBatchCommandAsync(batchCommand, m_ProcessManager, externalCancellationToken).ConfigureAwait(false);
+
+                m_Logger.LogInformation("🔒 SEMAPHORE: Batch command completed, result length: {Length}", result?.Length ?? 0);
+
+                return result ?? string.Empty;
+            }
+            finally
+            {
+                m_CommandSemaphore.Release();
+            }
+        }
+
+        /// <summary>
         /// Stops the debugging session gracefully.
         /// This method stops the CDB process and cleans up associated resources.
         /// </summary>

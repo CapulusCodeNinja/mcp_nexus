@@ -442,6 +442,76 @@ namespace mcp_nexus.Debugger
         }
 
         /// <summary>
+        /// Executes a batch command in the CDB session without single-command sentinel wrapping.
+        /// This method is specifically for batch commands that have their own sentinel system.
+        /// </summary>
+        /// <param name="batchCommand">The batch command to execute (with semicolon-separated commands).</param>
+        /// <param name="processManager">The CDB process manager.</param>
+        /// <param name="externalCancellationToken">External cancellation token.</param>
+        /// <returns>The batch command output.</returns>
+        /// <exception cref="ArgumentException">Thrown when batchCommand is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no active session or session not initialized.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when operation is cancelled.</exception>
+        /// <exception cref="TimeoutException">Thrown when command execution times out.</exception>
+        public async Task<string> ExecuteBatchCommandAsync(
+            string batchCommand,
+            CdbProcessManager processManager,
+            CancellationToken externalCancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(batchCommand))
+                throw new ArgumentException("Batch command cannot be null or empty", nameof(batchCommand));
+
+            if (!processManager.IsActive)
+                throw new InvalidOperationException("No active debugging session");
+
+            if (m_SessionChannel == null)
+                throw new InvalidOperationException("Session not initialized. Call InitializeSessionAsync first.");
+
+            await m_CommandExecutionSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
+            try
+            {
+                m_Logger.LogInformation("🎯 CDB ExecuteBatchCommand START (no sentinel wrapping)");
+
+                var batchCommandId = $"BATCH-{Guid.NewGuid()}";
+                var completionSource = new TaskCompletionSource<string>();
+
+                lock (m_pendingCommandsLock)
+                {
+                    m_pendingCommands[batchCommandId] = completionSource;
+                    m_currentCommandId = batchCommandId;
+                }
+
+                // Send batch command directly without sentinel wrapping
+                await SendCommandToCdbAsync(processManager, batchCommand, externalCancellationToken).ConfigureAwait(false);
+
+                var timeoutMs = m_Config.CommandTimeoutMs;
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMs));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(externalCancellationToken, timeoutCts.Token);
+
+                try
+                {
+                    var result = await completionSource.Task.WaitAsync(linkedCts.Token).ConfigureAwait(false);
+                    m_Logger.LogInformation("✅ CDB ExecuteBatchCommand COMPLETED");
+                    return result;
+                }
+                catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
+                {
+                    m_Logger.LogError("⏰ CDB ExecuteBatchCommand TIMEOUT (timeout: {TimeoutMs}ms)", timeoutMs);
+                    throw new TimeoutException($"Batch command execution timed out after {timeoutMs}ms");
+                }
+                catch (OperationCanceledException)
+                {
+                    m_Logger.LogInformation("🚫 CDB ExecuteBatchCommand CANCELLED");
+                    throw;
+                }
+            }
+            finally
+            {
+                m_CommandExecutionSemaphore.Release();
+            }
+        }
+
+        /// <summary>
         /// Sends a command to the CDB process input stream.
         /// </summary>
         /// <param name="processManager">The CDB process manager.</param>

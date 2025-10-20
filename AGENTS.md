@@ -934,14 +934,7 @@ public const string CommandSeparator = "MCP_NEXUS_CMD_SEP";
 
 **Batch Command Format:**
 ```
-MCP_NEXUS_BATCH_START
-echo MCP_NEXUS_CMD_SEP_cmd-123
-<actual command>
-echo MCP_NEXUS_CMD_SEP_cmd-123_END
-echo MCP_NEXUS_CMD_SEP_cmd-456
-<actual command>
-echo MCP_NEXUS_CMD_SEP_cmd-456_END
-MCP_NEXUS_BATCH_END
+.echo MCP_NEXUS_BATCH_START; .echo MCP_NEXUS_CMD_SEP_CMD-123_START; <actual command>; .echo MCP_NEXUS_CMD_SEP_CMD-123_END; .echo MCP_NEXUS_CMD_SEP_CMD-456_START; <actual command>; .echo MCP_NEXUS_CMD_SEP_CMD-456_END; .echo MCP_NEXUS_BATCH_END
 ```
 
 **Why this works:**
