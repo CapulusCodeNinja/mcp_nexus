@@ -24,10 +24,7 @@ namespace mcp_nexus.Configuration
             var logLevel = GetLogLevelFromConfiguration(configuration);
             ConfigureNLogDynamically(configuration, logLevel, isServiceMode);
             ConfigureNlogProvider(logging, logLevel);
-            if (logLevel == Microsoft.Extensions.Logging.LogLevel.Trace)
-            {
-                ConfigureMicrosoftLogging(logging);
-            }
+            ConfigureMicrosoftLogging(logging, logLevel);
 
             LogConfigurationComplete(isServiceMode, logLevel);
         }
@@ -213,6 +210,9 @@ namespace mcp_nexus.Configuration
         /// <param name="logLevel">The log level to set</param>
         private static void ConfigureMicrosoftLogging(ILoggingBuilder logging, Microsoft.Extensions.Logging.LogLevel logLevel)
         {
+            if (logLevel != LogLevel.Trace)
+                return;
+
             logging.ClearProviders();
             logging.AddNLogWeb();
             logging.SetMinimumLevel(logLevel);
