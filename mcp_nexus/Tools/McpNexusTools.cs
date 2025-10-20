@@ -249,28 +249,32 @@ namespace mcp_nexus.Tools
                 // Try to get queue without throwing to avoid transient races, log details if missing
                 if (!sessionManager.TryGetCommandQueue(sessionId, out var commandQueue) || commandQueue == null)
                 {
-                    // Extended retry loop to handle command queue initialization race condition
-                    // Background processing task needs time to initialize after session creation
-                    for (int attempt = 1; attempt <= 20; attempt++)
+                    // Use optimized exponential backoff with smaller maximum delay
+                    var delayMs = Math.Min(200, 25 * (int)Math.Pow(1.3, attempt - 1));
+                    await Task.Delay(delayMs);
+
+                    if (!sessionManager.TryGetCommandQueue(sessionId, out commandQueue))
                     {
-                        // Use optimized exponential backoff with smaller maximum delay
-                        var delayMs = Math.Min(200, 25 * (int)Math.Pow(1.3, attempt - 1));
-                        await Task.Delay(delayMs);
 
-                        if (sessionManager.TryGetCommandQueue(sessionId, out commandQueue) && commandQueue != null)
+                        return Task.FromResult((object)new
                         {
-                            // Additional check: verify the queue is actually ready to accept commands
-                            if (commandQueue is IsolatedCommandQueueService isolatedQueue && !isolatedQueue.IsReady())
-                            {
-                                logger.LogTrace("Command queue found but not ready for {SessionId} after {Attempt} attempts", sessionId, attempt);
-                                commandQueue = null; // Reset to continue retry loop
-                                continue;
-                            }
+                            sessionId,
+                            status = "Failed",
+                            error = $"Session {sessionId} command queue is not available. Session may have been closed.",
+                            operation = "nexus_enqueue_async_dump_analyze_command"
+                        });
+                    }
 
-                            logger.LogTrace("Command queue became available for {SessionId} after {Attempt} attempts ({Ms}ms)",
-                                sessionId, attempt, delayMs);
-                            break;
-                        }
+                    // Additional check: verify the queue is actually ready to accept commands
+                    if (commandQueue is IsolatedCommandQueueService isolatedQueue && !isolatedQueue.IsReady())
+                    {
+                        return Task.FromResult((object)new
+                        {
+                            sessionId,
+                            status = "Failed",
+                            error = $"Session {sessionId} command queue is not ready.",
+                            operation = "nexus_enqueue_async_dump_analyze_command"
+                        });
                     }
 
                     if (commandQueue == null)
@@ -1065,7 +1069,16 @@ namespace mcp_nexus.Tools
                 }
 
                 // Get command queue for this session
-                var commandQueue = sessionManager.GetCommandQueue(sessionId);
+                if (!sessionManager.TryGetCommandQueue(sessionId, out var commandQueue) || commandQueue == null)
+                {
+                    return Task.FromResult((object)new
+                    {
+                        sessionId,
+                        status = "Failed",
+                        error = $"Session {sessionId} command queue is not available. Session may have been closed.",
+                        operation = "nexus_get_dump_analyze_commands_status"
+                    });
+                }
                 var sessionCommands = McpNexusResources.GetSessionCommandsFromQueue(commandQueue, sessionId);
 
                 var result = new

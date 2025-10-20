@@ -156,16 +156,16 @@ namespace mcp_nexus_unit_tests.Mocks
 
             // Parse the batch command to extract command IDs and generate appropriate output
             var result = "MCP_NEXUS_BATCH_START\n";
-            
+
             // Extract command IDs from the batch command using regex
             var commandIdRegex = new System.Text.RegularExpressions.Regex(@"MCP_NEXUS_CMD_SEP_([^_]+)_START");
             var matches = commandIdRegex.Matches(batchCommand);
-            
+
             foreach (System.Text.RegularExpressions.Match match in matches)
             {
                 var cmdId = match.Groups[1].Value;
                 result += $"echo MCP_NEXUS_CMD_SEP_{cmdId}_START\n";
-                
+
                 // Generate appropriate output based on command content
                 if (batchCommand.Contains("lm"))
                     result += "Module list output\n";
@@ -175,10 +175,10 @@ namespace mcp_nexus_unit_tests.Mocks
                     result += "Process Environment Block\n";
                 else
                     result += $"Output for command {cmdId}\n";
-                
+
                 result += $"echo MCP_NEXUS_CMD_SEP_{cmdId}_END\n";
             }
-            
+
             result += "MCP_NEXUS_BATCH_END";
 
             return result;

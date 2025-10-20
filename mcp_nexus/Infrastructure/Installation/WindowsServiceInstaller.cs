@@ -100,7 +100,7 @@ namespace mcp_nexus.Infrastructure.Installation
 
                     if (startResult)
                     {
-                    logger?.LogInformation("Service started successfully");
+                        logger?.LogInformation("Service started successfully");
                     }
                     else
                     {
@@ -213,7 +213,7 @@ namespace mcp_nexus.Infrastructure.Installation
                 if (!serviceExists)
                 {
                     Console.WriteLine("⚠ Service does not exist. Installing service first...");
-                        logger?.LogWarning("Service does not exist, installing first");
+                    logger?.LogWarning("Service does not exist, installing first");
 
                     var installResult = await InstallServiceAsync(logger);
                     if (!installResult)

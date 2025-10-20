@@ -429,13 +429,13 @@ namespace mcp_nexus_unit_tests.Tools
 
             Assert.True(document.RootElement.TryGetProperty("sessionId", out var sessionIdElement));
             Assert.Equal(sessionId, sessionIdElement.GetString());
-            
+
             Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
             Assert.Equal("Failed", statusElement.GetString());
-            
+
             Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
             Assert.Contains("not ready", messageElement.GetString());
-            
+
             Assert.True(document.RootElement.TryGetProperty("commandId", out var commandIdElement));
             Assert.True(commandIdElement.ValueKind == JsonValueKind.Null);
         }
@@ -470,7 +470,7 @@ namespace mcp_nexus_unit_tests.Tools
 
             Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
             Assert.Equal("Failed", statusElement.GetString());
-            
+
             Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
             Assert.Contains("not ready", messageElement.GetString());
         }

@@ -197,8 +197,8 @@ namespace mcp_nexus.Session.Lifecycle
             }
 
             var isActive = (session.Status == SessionStatus.Active || session.Status == SessionStatus.Initializing) && !session.IsDisposed;
-                m_Logger.LogTrace("SessionExists: {SessionId} found. Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}",
-                sessionId, session.Status, session.IsDisposed, isActive);
+            m_Logger.LogTrace("SessionExists: {SessionId} found. Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}",
+            sessionId, session.Status, session.IsDisposed, isActive);
             return isActive;
         }
 

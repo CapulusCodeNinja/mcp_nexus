@@ -118,7 +118,7 @@ namespace mcp_nexus.Configuration
                 // Suppress Microsoft categories when not in Trace mode
                 var microsoftRule = new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, fileTarget);
                 nlogConfig.LoggingRules.Add(microsoftRule);
-                
+
                 var microsoftStderrRule = new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, stderrTarget);
                 nlogConfig.LoggingRules.Add(microsoftStderrRule);
             }
@@ -235,7 +235,7 @@ namespace mcp_nexus.Configuration
         {
             if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
                 return;
-                
+
             logging.ClearProviders();
             logging.AddNLogWeb();
             logging.SetMinimumLevel(logLevel);

@@ -76,10 +76,10 @@ namespace mcp_nexus.CommandQueue.Core
 
             // Store batching configuration for simple batching logic
             m_BatchingConfig = batchingOptions?.Value;
-            
+
             if (batchingOptions?.Value?.Enabled == true)
             {
-                m_Logger.LogInformation("🚀 Simple command batching enabled for session {SessionId} (MinBatchSize: {MinBatchSize}, MaxBatchSize: {MaxBatchSize})", 
+                m_Logger.LogInformation("🚀 Simple command batching enabled for session {SessionId} (MinBatchSize: {MinBatchSize}, MaxBatchSize: {MaxBatchSize})",
                     sessionId, batchingOptions.Value.MinBatchSize, batchingOptions.Value.MaxBatchSize);
             }
             else
@@ -116,7 +116,7 @@ namespace mcp_nexus.CommandQueue.Core
                     {
                         // Collect available commands from queue
                         var commands = CollectAvailableCommands();
-                        
+
                         if (commands.Count == 0)
                         {
                             // No commands available, wait briefly and continue
@@ -136,7 +136,7 @@ namespace mcp_nexus.CommandQueue.Core
                             m_Logger.LogDebug("🔄 Processing {CommandCount} commands as batch", commands.Count);
                             await ExecuteBatch(commands);
                         }
-                        else 
+                        else
                         {
                             // Multiple commands that can't be batched - execute individually (excluded commands)
                             m_Logger.LogDebug("⚡ Processing {CommandCount} excluded commands individually", commands.Count);
@@ -260,7 +260,7 @@ namespace mcp_nexus.CommandQueue.Core
         private async Task ExecuteSingleCommand(QueuedCommand command)
         {
             m_Logger.LogDebug("⚡ Executing single command {CommandId}: {Command}", command.Id, command.Command);
-            
+
             // Use the existing CommandProcessor's safe execution logic
             await m_Processor.ExecuteCommandSafely(command);
         }
@@ -395,7 +395,7 @@ namespace mcp_nexus.CommandQueue.Core
             if (m_ProcessingTask.IsFaulted)
             {
                 m_Logger.LogWarning("⚠️ Processing task is faulted for session {SessionId}, attempting automatic recovery", m_Config.SessionId);
-                
+
                 try
                 {
                     var recovered = RestartProcessingTaskAsync().GetAwaiter().GetResult();
@@ -430,7 +430,7 @@ namespace mcp_nexus.CommandQueue.Core
             {
                 if (m_TaskRestartCount >= MaxTaskRestarts)
                 {
-                    m_Logger.LogError("❌ Cannot restart processing task for session {SessionId}: restart limit ({Limit}) reached", 
+                    m_Logger.LogError("❌ Cannot restart processing task for session {SessionId}: restart limit ({Limit}) reached",
                         m_Config.SessionId, MaxTaskRestarts);
                     return Task.FromResult(false);
                 }
@@ -439,21 +439,21 @@ namespace mcp_nexus.CommandQueue.Core
                 if (m_ProcessingTask.Exception != null)
                 {
                     m_LastTaskException = m_ProcessingTask.Exception;
-                    m_Logger.LogError(m_ProcessingTask.Exception, 
-                        "🔥 Processing task faulted for session {SessionId} (restart attempt {Count}/{Max})", 
+                    m_Logger.LogError(m_ProcessingTask.Exception,
+                        "🔥 Processing task faulted for session {SessionId} (restart attempt {Count}/{Max})",
                         m_Config.SessionId, m_TaskRestartCount + 1, MaxTaskRestarts);
                 }
 
                 try
                 {
                     // Create new processing task (old task is already faulted, no need to wait)
-                    m_Logger.LogInformation("🔄 Restarting processing task for session {SessionId} (attempt {Count}/{Max})", 
+                    m_Logger.LogInformation("🔄 Restarting processing task for session {SessionId} (attempt {Count}/{Max})",
                         m_Config.SessionId, m_TaskRestartCount + 1, MaxTaskRestarts);
-                    
+
                     m_ProcessingTask = Task.Run(ProcessCommandQueueAsync, m_ProcessingCts.Token);
                     m_TaskRestartCount++;
 
-                    m_Logger.LogInformation("✅ Processing task restarted successfully for session {SessionId} (restart count: {Count})", 
+                    m_Logger.LogInformation("✅ Processing task restarted successfully for session {SessionId} (restart count: {Count})",
                         m_Config.SessionId, m_TaskRestartCount);
 
                     return Task.FromResult(true);

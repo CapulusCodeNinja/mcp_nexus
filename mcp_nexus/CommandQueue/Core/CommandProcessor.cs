@@ -88,7 +88,7 @@ namespace mcp_nexus.CommandQueue.Core
             catch (Exception ex)
             {
                 // Enhanced error logging with full context
-                m_Logger.LogError(ex, 
+                m_Logger.LogError(ex,
                     "🔥 FATAL ERROR in command processing loop for session {SessionId}. " +
                     "Exception Type: {ExceptionType}, Message: {Message}, Stack Trace: {StackTrace}, " +
                     "Queue Count: {QueueCount}, Current Command: {CurrentCommand}",
@@ -104,7 +104,7 @@ namespace mcp_nexus.CommandQueue.Core
                 var innerLevel = 1;
                 while (innerEx != null && innerLevel <= 3)
                 {
-                    m_Logger.LogError("  Inner Exception {Level}: {Type} - {Message}", 
+                    m_Logger.LogError("  Inner Exception {Level}: {Type} - {Message}",
                         innerLevel, innerEx.GetType().FullName, innerEx.Message);
                     innerEx = innerEx.InnerException;
                     innerLevel++;
@@ -176,7 +176,7 @@ namespace mcp_nexus.CommandQueue.Core
                     var timeInQueue = (startTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                     var timeExecution = commandResult.Duration.TotalMilliseconds;
                     var totalDuration = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
-                    
+
                     Utilities.Statistics.CommandStats(
                         m_Logger,
                         Utilities.Statistics.CommandState.Success,
@@ -266,11 +266,11 @@ namespace mcp_nexus.CommandQueue.Core
                     var timeInQueueF = (startTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                     var timeExecutionF = failedResult.Duration.TotalMilliseconds;
                     var totalDurationF = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
-                    
+
                     Utilities.Statistics.CommandStats(
                         m_Logger,
-                        stopwatch.Elapsed >= m_Config.DefaultCommandTimeout ? 
-                    Utilities.Statistics.CommandState.Timeout : 
+                        stopwatch.Elapsed >= m_Config.DefaultCommandTimeout ?
+                    Utilities.Statistics.CommandState.Timeout :
                     Utilities.Statistics.CommandState.Cancelled,
                         m_Config.SessionId,
                         command.Id,
@@ -447,7 +447,7 @@ namespace mcp_nexus.CommandQueue.Core
                     return true;
                 }
 
-                    m_Logger.LogWarning("🚫 Cancelling command {CommandId}", commandId);
+                m_Logger.LogWarning("🚫 Cancelling command {CommandId}", commandId);
                 command.CancellationTokenSource?.Cancel();
 
                 // If it's not currently executing, complete it immediately

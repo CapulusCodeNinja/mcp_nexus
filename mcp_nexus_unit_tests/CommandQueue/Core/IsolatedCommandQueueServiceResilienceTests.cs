@@ -134,7 +134,7 @@ namespace mcp_nexus_unit_tests.CommandQueue.Core
 
             // Act
             service.Dispose();
-            
+
             // Assert - after disposal, GetDiagnostics should throw ObjectDisposedException
             Assert.Throws<ObjectDisposedException>(() => service.GetDiagnostics());
         }
@@ -225,7 +225,7 @@ namespace mcp_nexus_unit_tests.CommandQueue.Core
             // Act
             service.QueueCommand("test command 1");
             service.QueueCommand("test command 2");
-            
+
             // Poll briefly (<=100ms total) to allow background processor to record stats
             (long Total, long Completed, long Failed, long Cancelled) stats = default;
             for (int i = 0; i < 10; i++)
