@@ -208,6 +208,27 @@ namespace mcp_nexus.CommandQueue.Batching
 
                     m_ResultCache?.StoreResult(command.Id ?? string.Empty, commandResult);
                     command.SetResult(commandResult.Output);
+
+                    // INFO: statistical performance log after result is cached for each command in batch
+                    var queuedAt = command.QueueTime;
+                    var startedAt = startTime; // batch start approximates per-command start within batch
+                    var completedAt = DateTime.Now;
+                    var timeInQueue = (startedAt - (queuedAt == default ? startedAt : queuedAt)).TotalMilliseconds;
+                    var timeExecution = commandResult.Duration.TotalMilliseconds;
+                    var totalDuration = (completedAt - (queuedAt == default ? startedAt : queuedAt)).TotalMilliseconds;
+                    m_Logger.LogInformation(
+                        "COMMAND_STATS | SessionId: {SessionId} | CommandId: {CommandId} | Command: {Command} | State: Completed | " +
+                        "QueuedAt: {QueuedAt:yyyy-MM-dd HH:mm:ss.fff} | StartedAt: {StartedAt:yyyy-MM-dd HH:mm:ss.fff} | CompletedAt: {CompletedAt:yyyy-MM-dd HH:mm:ss.fff} | " +
+                        "TimeInQueue: {TimeInQueueMs}ms | TimeExecution: {TimeExecutionMs}ms | TotalDuration: {TotalDurationMs}ms",
+                        "N/A",
+                        command.Id,
+                        command.Command,
+                        queuedAt,
+                        startedAt,
+                        completedAt,
+                        timeInQueue,
+                        timeExecution,
+                        totalDuration);
                 }
 
                 var duration = DateTime.Now - startTime;
