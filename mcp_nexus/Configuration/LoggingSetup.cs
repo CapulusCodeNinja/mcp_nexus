@@ -210,7 +210,7 @@ namespace mcp_nexus.Configuration
         /// <param name="logLevel">The log level to set</param>
         private static void ConfigureMicrosoftLogging(ILoggingBuilder logging, Microsoft.Extensions.Logging.LogLevel logLevel)
         {
-            if (logLevel != LogLevel.Trace)
+            if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
                 return;
 
             logging.ClearProviders();

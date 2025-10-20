@@ -219,7 +219,7 @@ namespace mcp_nexus.CommandQueue.Batching
 
                     Utilities.Statistics.CommandStats(
                         m_Logger,
-                        "Batch command completed",
+                        Utilities::Statistics::CommandState::SuccessBatch,
                         m_Config.SessionId,
                         command.Id,
                         command.Command,

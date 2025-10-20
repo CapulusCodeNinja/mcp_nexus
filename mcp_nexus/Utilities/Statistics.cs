@@ -7,6 +7,15 @@ namespace mcp_nexus.Utilities
     /// </summary>
     public static class Statistics
     {
+        enum CommandState
+        {
+            Success,
+            SuccessBatch,
+            Cancelled,
+            Failed,
+            Timeout,
+        }
+
         /// <summary>
         /// Emits standardized command performance statistics at INFO level.
         /// </summary>
@@ -23,7 +32,7 @@ namespace mcp_nexus.Utilities
         /// <param name="totalDurationMs">Total milliseconds from queue entry to completion.</param>
         public static void CommandStats(
             ILogger logger,
-            string header,
+            CommandStatus status,
             string sessionId,
             string? commandId,
             string? command,

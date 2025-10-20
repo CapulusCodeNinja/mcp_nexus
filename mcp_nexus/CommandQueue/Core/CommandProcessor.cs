@@ -177,9 +177,9 @@ namespace mcp_nexus.CommandQueue.Core
                     var timeExecution = commandResult.Duration.TotalMilliseconds;
                     var totalDuration = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                     
-                    Utilities.Statistics.LogCommandStats(
+                    Utilities.Statistics.CommandStats(
                         m_Logger,
-                        "Command completed",
+                        Utilities::Statistics::CommandState::Success,
                         m_Config.SessionId,
                         command.Id,
                         command.Command,
@@ -225,9 +225,9 @@ namespace mcp_nexus.CommandQueue.Core
                     var timeInQueueC = (startTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                     var timeExecutionC = cancelledResult.Duration.TotalMilliseconds;
                     var totalDurationC = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
-                    Utilities.Logging.Statistics.LogCommandStats(
+                    Utilities.Logging.Statistics.CommandStats(
                         m_Logger,
-                        "Command cancelled",
+                        Utilities::Statistics::CommandState::Cancelled,
                         m_Config.SessionId,
                         command.Id,
                         command.Command,
@@ -268,7 +268,9 @@ namespace mcp_nexus.CommandQueue.Core
                     
                     Utilities.Logging.Statistics.CommandStats(
                         m_Logger,
-                        stopwatch.Elapsed >= m_Config.DefaultCommandTimeout ? "Command timed out" : "Command cancelled",
+                        stopwatch.Elapsed >= m_Config.DefaultCommandTimeout ? 
+                    Utilities::Statistics::CommandState::Timeout : 
+                    Utilities::Statistics::CommandState::Cancelled,
                         m_Config.SessionId,
                         command.Id,
                         command.Command,
@@ -310,9 +312,9 @@ namespace mcp_nexus.CommandQueue.Core
                 var timeInQueueX = (startTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                 var timeExecutionX = failedResult.Duration.TotalMilliseconds;
                 var totalDurationX = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
-                Utilities.Logging.Statistics.LogCommandStats(
+                Utilities.Logging.Statistics.CommandStats(
                     m_Logger,
-                    "Command failed",
+                    Utilities::Statistics::CommandState::Failed,
                     m_Config.SessionId,
                     command.Id,
                     command.Command,
