@@ -7,7 +7,7 @@ namespace mcp_nexus.Utilities
     /// </summary>
     public static class Statistics
     {
-        enum CommandState
+        public enum CommandState
         {
             Success,
             SuccessBatch,
@@ -20,7 +20,7 @@ namespace mcp_nexus.Utilities
         /// Emits standardized command performance statistics at INFO level.
         /// </summary>
         /// <param name="logger">Logger to write the statistics to.</param>
-        /// <param name="header">Short, human-readable label (for example, "Command completed").</param>
+        /// <param name="status">The current status of the command</param>
         /// <param name="sessionId">The session identifier associated with the command.</param>
         /// <param name="commandId">The unique command identifier.</param>
         /// <param name="command">The command text that was executed.</param>
@@ -32,7 +32,7 @@ namespace mcp_nexus.Utilities
         /// <param name="totalDurationMs">Total milliseconds from queue entry to completion.</param>
         public static void CommandStats(
             ILogger logger,
-            CommandStatus status,
+            CommandState status,
             string sessionId,
             string? commandId,
             string? command,
@@ -44,7 +44,7 @@ namespace mcp_nexus.Utilities
             double totalDurationMs)
         {
             logger.LogInformation(
-                "[STATISTICS] [{SessionId}] [{CommandId}] {Header}:" +
+                "[STATISTICS] [{SessionId}] [{CommandId}] {status}:" +
                 "Command: {Command}\r\n" +
                 "QueuedAt: {QueuedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
                 "StartedAt: {StartedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" +

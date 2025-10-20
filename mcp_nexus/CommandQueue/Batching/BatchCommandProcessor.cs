@@ -219,8 +219,8 @@ namespace mcp_nexus.CommandQueue.Batching
 
                     Utilities.Statistics.CommandStats(
                         m_Logger,
-                        Utilities::Statistics::CommandState::SuccessBatch,
-                        m_Config.SessionId,
+                        Utilities.Statistics.CommandState.SuccessBatch,
+                        m_CdbSession.SessionId,
                         command.Id,
                         command.Command,
                         queuedAt,

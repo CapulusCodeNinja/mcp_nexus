@@ -208,14 +208,30 @@ namespace mcp_nexus.Configuration
         /// </summary>
         /// <param name="logging">The logging builder to configure</param>
         /// <param name="logLevel">The log level to set</param>
-        private static void ConfigureMicrosoftLogging(ILoggingBuilder logging, Microsoft.Extensions.Logging.LogLevel logLevel)
+        private static void ConfigureNlogProvider(ILoggingBuilder logging, Microsoft.Extensions.Logging.LogLevel logLevel)
         {
-            if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
-                return;
-
             logging.ClearProviders();
             logging.AddNLogWeb();
             logging.SetMinimumLevel(logLevel);
+        }
+
+        private static void ConfigureMicrosoftLogging(ILoggingBuilder logging, Microsoft.Extensions.Logging.LogLevel logLevel)
+        {
+            // Show Microsoft/Kestrel logs only when Trace is enabled; otherwise suppress them
+            if (logLevel == Microsoft.Extensions.Logging.LogLevel.Trace)
+            {
+                // Allow Microsoft categories to flow at Trace if explicitly requested
+                logging.AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.Trace);
+                logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Trace);
+                logging.AddFilter("Microsoft.AspNetCore.Server.Kestrel", Microsoft.Extensions.Logging.LogLevel.Trace);
+            }
+            else
+            {
+                // Suppress Microsoft categories entirely for non-Trace configurations to avoid noise
+                logging.AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.None);
+                logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.None);
+                logging.AddFilter("Microsoft.AspNetCore.Server.Kestrel", Microsoft.Extensions.Logging.LogLevel.None);
+            }
         }
 
         /// <summary>
