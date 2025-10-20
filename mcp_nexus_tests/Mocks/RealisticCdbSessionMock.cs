@@ -138,6 +138,35 @@ namespace mcp_nexus_tests.Mocks
             return result;
         }
 
+        public async Task<string> ExecuteBatchCommand(string batchCommand, CancellationToken cancellationToken)
+        {
+            if (!_isActive)
+                throw new InvalidOperationException("Session is not active");
+
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(RealisticCdbSessionMock));
+
+            _logger.LogInformation("Executing realistic batch command: {BatchCommand}", batchCommand);
+
+            // Check for cancellation before starting
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // For batch commands, simulate a longer delay and return batch output
+            await Task.Delay(100, cancellationToken);
+
+            // Simulate batch output with proper sentinels
+            var result = "MCP_NEXUS_BATCH_START\n";
+            result += "echo MCP_NEXUS_CMD_SEP_CMD-1_START\n";
+            result += "Module list output\n";
+            result += "echo MCP_NEXUS_CMD_SEP_CMD-1_END\n";
+            result += "echo MCP_NEXUS_CMD_SEP_CMD-2_START\n";
+            result += "Thread information\n";
+            result += "echo MCP_NEXUS_CMD_SEP_CMD-2_END\n";
+            result += "MCP_NEXUS_BATCH_END";
+
+            return result;
+        }
+
         public void CancelCurrentOperation()
         {
             _logger.LogInformation("Cancelling current CDB operation");

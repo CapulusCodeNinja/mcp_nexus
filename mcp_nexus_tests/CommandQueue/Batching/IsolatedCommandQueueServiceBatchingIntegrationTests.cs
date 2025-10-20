@@ -107,27 +107,27 @@ namespace mcp_nexus_tests.CommandQueue.Batching
                     Assert.Contains("!threads", cmd);
                     Assert.Contains("!peb", cmd);
 
-                    // Extract command IDs from the batch command
-                    var cmdIdMatches = System.Text.RegularExpressions.Regex.Matches(cmd, @"MCP_NEXUS_CMD_SEP_([^_\r\n]+)");
+                    // Extract command IDs from the batch command (now with _START suffix)
+                    var cmdIdMatches = System.Text.RegularExpressions.Regex.Matches(cmd, @"MCP_NEXUS_CMD_SEP_([^_\r\n]+)_START");
                     var cmdIds = cmdIdMatches.Select(m => m.Groups[1].Value).Distinct().ToList();
 
-                    // Build batch output with actual command IDs
+                    // Build batch output with actual command IDs (uppercase)
                     var output = "MCP_NEXUS_BATCH_START\n";
                     if (cmdIds.Count >= 1)
                     {
-                        output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[0]}\n";
+                        output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[0]}_START\n";
                         output += "Module list output\n";
                         output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[0]}_END\n";
                     }
                     if (cmdIds.Count >= 2)
                     {
-                        output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[1]}\n";
+                        output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[1]}_START\n";
                         output += "Thread information\n";
                         output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[1]}_END\n";
                     }
                     if (cmdIds.Count >= 3)
                     {
-                        output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[2]}\n";
+                        output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[2]}_START\n";
                         output += "Process Environment Block\n";
                         output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[2]}_END\n";
                     }
@@ -199,20 +199,20 @@ namespace mcp_nexus_tests.CommandQueue.Batching
                     else if (cmd.Contains("MCP_NEXUS_BATCH_START")) // Batch command
                     {
                         // Extract command IDs from the batch command
-                        var cmdIdMatches = System.Text.RegularExpressions.Regex.Matches(cmd, @"MCP_NEXUS_CMD_SEP_([^_\r\n]+)");
+                        var cmdIdMatches = System.Text.RegularExpressions.Regex.Matches(cmd, @"MCP_NEXUS_CMD_SEP_([^_\r\n]+)_START");
                         var cmdIds = cmdIdMatches.Select(m => m.Groups[1].Value).Distinct().ToList();
 
-                        // Build batch output with actual command IDs
+                        // Build batch output with actual command IDs (uppercase)
                         var output = "MCP_NEXUS_BATCH_START\n";
                         if (cmdIds.Count >= 1)
                         {
-                            output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[0]}\n";
+                            output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[0]}_START\n";
                             output += "Module list output\n";
                             output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[0]}_END\n";
                         }
                         if (cmdIds.Count >= 2)
                         {
-                            output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[1]}\n";
+                            output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[1]}_START\n";
                             output += "Thread information\n";
                             output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[1]}_END\n";
                         }
@@ -335,17 +335,17 @@ namespace mcp_nexus_tests.CommandQueue.Batching
 
                     if (cmd.Contains("MCP_NEXUS_BATCH_START"))
                     {
-                        // Extract command IDs from the batch command
-                        var cmdIdMatches = System.Text.RegularExpressions.Regex.Matches(cmd, @"MCP_NEXUS_CMD_SEP_([^_\r\n]+)");
+                        // Extract command IDs from the batch command (now with _START suffix)
+                        var cmdIdMatches = System.Text.RegularExpressions.Regex.Matches(cmd, @"MCP_NEXUS_CMD_SEP_([^_\r\n]+)_START");
                         var cmdIds = cmdIdMatches.Select(m => m.Groups[1].Value).Distinct().ToList();
 
                         Assert.True(cmdIds.Count <= 3, $"Batch should not exceed MaxBatchSize (3), but had {cmdIds.Count} commands");
 
-                        // Build batch output with actual command IDs
+                        // Build batch output with actual command IDs (uppercase)
                         var output = "MCP_NEXUS_BATCH_START\n";
                         for (int i = 0; i < cmdIds.Count; i++)
                         {
-                            output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[i]}\n";
+                            output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[i]}_START\n";
                             output += $"Output {i + 1}\n";
                             output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[i]}_END\n";
                         }
@@ -438,15 +438,15 @@ namespace mcp_nexus_tests.CommandQueue.Batching
 
                     if (cmd.Contains("MCP_NEXUS_BATCH_START"))
                     {
-                        // Extract command IDs from the batch command
-                        var cmdIdMatches = System.Text.RegularExpressions.Regex.Matches(cmd, @"MCP_NEXUS_CMD_SEP_([^_\r\n]+)");
+                        // Extract command IDs from the batch command (now with _START suffix)
+                        var cmdIdMatches = System.Text.RegularExpressions.Regex.Matches(cmd, @"MCP_NEXUS_CMD_SEP_([^_\r\n]+)_START");
                         var cmdIds = cmdIdMatches.Select(m => m.Groups[1].Value).Distinct().ToList();
 
-                        // Build batch output with actual command IDs
+                        // Build batch output with actual command IDs (uppercase)
                         var output = "MCP_NEXUS_BATCH_START\n";
                         if (cmdIds.Count >= 1)
                         {
-                            output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[0]}\n";
+                            output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[0]}_START\n";
                             output += "Timeout batch output\n";
                             output += $"echo MCP_NEXUS_CMD_SEP_{cmdIds[0]}_END\n";
                         }
