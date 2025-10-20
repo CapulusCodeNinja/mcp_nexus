@@ -44,17 +44,18 @@ namespace mcp_nexus.Utilities
             double totalDurationMs)
         {
             logger.LogInformation("\r\n" +
-                "    ┌─ Statistics ──────────────────────────────────────────────────────\r\n" +
-                "    │ SessionId: {SessionId}\r\n" +
-                "    │ CommandId: CommandId}\r\n" +
-                "    │ Status: {status}\r\n" +
-                "    │ Command: {Command}\r\n" +
-                "    │ QueuedAt: {QueuedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
-                "    │ StartedAt: {StartedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
-                "    │ CompletedAt: {CompletedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
-                "    │ TimeInQueue: {TimeInQueueMs}ms\r\n" +
-                "    │ TimeExecution: {TimeExecutionMs}ms\r\n" +
-                "    │ TotalDuration: {TotalDurationMs}ms",
+                "┌─ Statistics ──────────────────────────────────────────────────────\r\n" +
+                "│ CommandId: {CommandId}\r\n" +
+                "│ SessionId: {SessionId}\r\n" +
+                "│ Status: {Status}\r\n" +
+                "│ Command: {Command}\r\n" +
+                "│ QueuedAt: {QueuedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
+                "│ StartedAt: {StartedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
+                "│ CompletedAt: {CompletedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
+                "│ TimeInQueue: {TimeInQueueMs}ms\r\n" +
+                "│ TimeExecution: {TimeExecutionMs}ms\r\n" +
+                "│ TotalDuration: {TotalDurationMs}ms\r\n" +
+                "└───────────────────────────────────────────────────────────────────",
                 commandId,
                 sessionId,
                 status,

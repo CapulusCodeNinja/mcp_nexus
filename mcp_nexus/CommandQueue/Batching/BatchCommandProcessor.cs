@@ -73,8 +73,8 @@ namespace mcp_nexus.CommandQueue.Batching
             var timeoutMs = Math.Max(1, m_Config.BatchWaitTimeoutMs); // Minimum 1ms to avoid invalid timer values
             m_BatchTimer = new Timer(OnBatchTimeout, null, TimeSpan.FromMilliseconds(timeoutMs), TimeSpan.FromMilliseconds(timeoutMs));
 
-            m_Logger.LogDebug("🚀 BatchCommandProcessor initialized - Enabled: {Enabled}, MaxBatchSize: {MaxBatchSize}, WaitTimeout: {WaitTimeout}ms",
-                m_Config.Enabled, m_Config.MaxBatchSize, m_Config.BatchWaitTimeoutMs);
+            m_Logger.LogDebug("🚀 BatchCommandProcessor initialized - Enabled: {Enabled}, MinBatchSize: {MinBatchSize}, MaxBatchSize: {MaxBatchSize}, WaitTimeout: {WaitTimeout}ms",
+                m_Config.Enabled, m_Config.MinBatchSize, m_Config.MaxBatchSize, m_Config.BatchWaitTimeoutMs);
         }
 
         #endregion
@@ -143,18 +143,71 @@ namespace mcp_nexus.CommandQueue.Batching
 
                 command.SetResult(result);
 
+                // Log statistics for single command execution
+                var queuedAt = command.QueueTime;
+                var startedAt = startTime;
+                var completedAt = DateTime.Now;
+                var timeInQueue = (startedAt - queuedAt).TotalMilliseconds;
+                var timeExecution = commandResult.Duration.TotalMilliseconds;
+                var totalDuration = (completedAt - queuedAt).TotalMilliseconds;
+
+                Utilities.Statistics.CommandStats(
+                    m_Logger,
+                    Utilities.Statistics.CommandState.Success,
+                    m_SessionId,
+                    command.Id,
+                    command.Command,
+                    queuedAt,
+                    startedAt,
+                    completedAt,
+                    timeInQueue,
+                    timeExecution,
+                    totalDuration);
+
                 m_Logger.LogDebug("✅ Single command {CommandId} completed in {Duration}ms",
                     command.Id, (DateTime.Now - startTime).TotalMilliseconds);
             }
             catch (Exception ex)
             {
+                var completedAt = DateTime.Now;
+                var queuedAt = command.QueueTime;
+                var timeInQueue = (startTime - queuedAt).TotalMilliseconds;
+                var timeExecution = (completedAt - startTime).TotalMilliseconds;
+                var totalDuration = (completedAt - queuedAt).TotalMilliseconds;
+
                 if (ex is OperationCanceledException)
                 {
                     m_Logger.LogWarning("❌ Single command {CommandId} cancelled: {Message}", command.Id, ex.Message);
+                    
+                    Utilities.Statistics.CommandStats(
+                        m_Logger,
+                        Utilities.Statistics.CommandState.Cancelled,
+                        m_SessionId,
+                        command.Id,
+                        command.Command,
+                        queuedAt,
+                        startTime,
+                        completedAt,
+                        timeInQueue,
+                        timeExecution,
+                        totalDuration);
                 }
                 else
                 {
                     m_Logger.LogError(ex, "❌ Single command {CommandId} failed: {Error}", command.Id, ex.Message);
+                    
+                    Utilities.Statistics.CommandStats(
+                        m_Logger,
+                        Utilities.Statistics.CommandState.Failed,
+                        m_SessionId,
+                        command.Id,
+                        command.Command,
+                        queuedAt,
+                        startTime,
+                        completedAt,
+                        timeInQueue,
+                        timeExecution,
+                        totalDuration);
                 }
 
                 var errorResult = CommandResult.Failure(ex.Message, DateTime.Now - startTime);
@@ -224,7 +277,7 @@ namespace mcp_nexus.CommandQueue.Batching
                     Utilities.Statistics.CommandStats(
                         m_Logger,
                         Utilities.Statistics.CommandState.SuccessBatch,
-                        m_Config.SessionId,
+                        m_SessionId,
                         command.Id,
                         command.Command,
                         queuedAt,
@@ -266,6 +319,47 @@ namespace mcp_nexus.CommandQueue.Batching
         }
 
         /// <summary>
+        /// Executes commands individually when below minimum batch size threshold
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation</returns>
+        private async Task ExecuteIndividualCommandsAsync()
+        {
+            List<QueuedCommand> commandsToExecute;
+
+            lock (m_BatchLock)
+            {
+                if (m_BatchableCommands.Count == 0)
+                    return;
+
+                commandsToExecute = m_BatchableCommands.ToList();
+                m_BatchableCommands.Clear();
+                m_LastBatchTime = DateTime.Now;
+            }
+
+            if (commandsToExecute.Count == 0)
+                return;
+
+            var startTime = DateTime.Now;
+            m_Logger.LogInformation("⚡ Executing {CommandCount} commands individually (below MinBatchSize: {MinBatchSize})",
+                commandsToExecute.Count, m_Config.MinBatchSize);
+
+            // Execute all commands in parallel for better performance
+            var tasks = commandsToExecute.Select(ExecuteSingleCommandAsync).ToList();
+
+            try
+            {
+                await Task.WhenAll(tasks);
+                var duration = DateTime.Now - startTime;
+                m_Logger.LogInformation("✅ Individual execution of {CommandCount} commands completed in {Duration}ms",
+                    commandsToExecute.Count, duration.TotalMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogError(ex, "❌ Individual command execution failed: {Error}", ex.Message);
+            }
+        }
+
+        /// <summary>
         /// Timer callback for batch timeout
         /// </summary>
         /// <param name="state">Timer state (unused)</param>
@@ -276,11 +370,24 @@ namespace mcp_nexus.CommandQueue.Batching
 
             lock (m_BatchLock)
             {
-                // Execute batch if we've been waiting too long and have commands
+                // Only proceed if we have commands and timeout has been exceeded
                 if (m_BatchableCommands.Count > 0 &&
                     DateTime.Now - m_LastBatchTime > TimeSpan.FromMilliseconds(m_Config.BatchWaitTimeoutMs))
                 {
-                    _ = Task.Run(ExecuteBatchAsync);
+                    // Execute as batch only if we have enough commands to justify batching overhead
+                    if (m_BatchableCommands.Count >= m_Config.MinBatchSize)
+                    {
+                        m_Logger.LogDebug("⏰ Batch timeout: Executing {CommandCount} commands as batch (≥ MinBatchSize: {MinBatchSize})",
+                            m_BatchableCommands.Count, m_Config.MinBatchSize);
+                        _ = Task.Run(ExecuteBatchAsync);
+                    }
+                    else
+                    {
+                        // Execute commands individually to avoid batching overhead
+                        m_Logger.LogDebug("⚡ Batch timeout: Executing {CommandCount} commands individually (< MinBatchSize: {MinBatchSize})",
+                            m_BatchableCommands.Count, m_Config.MinBatchSize);
+                        _ = Task.Run(ExecuteIndividualCommandsAsync);
+                    }
                 }
             }
         }

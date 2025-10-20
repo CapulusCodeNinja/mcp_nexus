@@ -24,6 +24,13 @@ namespace mcp_nexus.CommandQueue.Batching
         public int MaxBatchSize { get; set; } = 5;
 
         /// <summary>
+        /// Gets or sets the minimum number of commands required to execute a batch
+        /// Single commands below this threshold will be executed individually to avoid overhead
+        /// </summary>
+        [Range(1, 5, ErrorMessage = "MinBatchSize must be between 1 and 5")]
+        public int MinBatchSize { get; set; } = 2;
+
+        /// <summary>
         /// Gets or sets the timeout in milliseconds to wait for more commands before executing a partial batch
         /// </summary>
         [Range(100, 10000, ErrorMessage = "BatchWaitTimeoutMs must be between 100 and 10000 milliseconds")]

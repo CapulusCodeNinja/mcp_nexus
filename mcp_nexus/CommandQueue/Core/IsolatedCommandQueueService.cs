@@ -79,9 +79,7 @@ namespace mcp_nexus.CommandQueue.Core
             {
                 var batchLogger = loggerFactory.CreateLogger<BatchCommandProcessor>();
 
-                // Set the session ID in the batching configuration
-                batchingOptions.Value.SessionId = sessionId;
-                m_BatchProcessor = new BatchCommandProcessor(m_CdbSession, m_ResultCache, batchLogger, batchingOptions);
+                m_BatchProcessor = new BatchCommandProcessor(m_CdbSession, m_ResultCache, batchLogger, batchingOptions, sessionId);
 
                 m_Logger.LogInformation("🚀 Command batching enabled for session {SessionId}", sessionId);
             }
