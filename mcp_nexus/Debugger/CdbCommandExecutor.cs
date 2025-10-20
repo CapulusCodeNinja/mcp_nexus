@@ -249,21 +249,18 @@ namespace mcp_nexus.Debugger
                 var currentCommandOutput = new StringBuilder();
                 var currentCommandStderr = new List<string>();
                 var currentCommandId = string.Empty;
-                var inCommand = false;
-                var inBatch = false; // Track if we're processing a batch command
 
                 await foreach (var (line, isStderr, timestamp) in m_SessionChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
                 {
                     try
                     {
                         // Handle start sentinel
-                        if (string.Equals(line, CdbSentinels.StartMarker, StringComparison.Ordinal) ||
-                            line.Contains(CdbSentinels.StartMarker))
+                        if (string.Equals(line, CdbSentinels.StartMarker, StringComparison.Ordinal))
                         {
                             m_Logger.LogDebug("🧠 Start sentinel detected: {Line}", line);
 
                             // Complete previous command if any
-                            if (inCommand && !string.IsNullOrEmpty(currentCommandId))
+                            if (!string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
@@ -275,52 +272,15 @@ namespace mcp_nexus.Debugger
                             }
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();
-                            inCommand = true;
-                            inBatch = false; // Reset batch state for new command
-                            continue;
-                        }
-
-                        // Handle batch start sentinel FIRST (before end sentinel)
-                        if (string.Equals(line, CdbSentinels.BatchStart, StringComparison.Ordinal) ||
-                            line.Contains(CdbSentinels.BatchStart))
-                        {
-                            m_Logger.LogDebug("📦 Batch start detected: {Line}", line);
-                            inBatch = true;
-                            continue;
-                        }
-
-                        // Handle batch end sentinel (BEFORE general end sentinel) 
-                        if (string.Equals(line, CdbSentinels.BatchEnd, StringComparison.Ordinal) ||
-                            line.Contains(CdbSentinels.BatchEnd))
-                        {
-                            m_Logger.LogDebug("📦 Batch end detected - completing batch command: {Line}", line);
-                            
-                            if (inBatch && inCommand && !string.IsNullOrEmpty(currentCommandId))
-                            {
-                                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
-                                currentCommandOutput.Clear();
-                                currentCommandStderr.Clear();
-                                inCommand = false;
-                                inBatch = false;
-                            }
-                            continue;
-                        }
-
-                        // Handle end sentinel in batch mode (ignore it)
-                        if (inBatch && (string.Equals(line, CdbSentinels.EndMarker, StringComparison.Ordinal) ||
-                            line.Contains(CdbSentinels.EndMarker)))
-                        {
-                            m_Logger.LogDebug("📦 Ignoring end sentinel in batch mode - waiting for batch end: {Line}", line);
                             continue;
                         }
 
                         // Handle end sentinel (only for non-batch commands)
-                        if (!inBatch && (string.Equals(line, CdbSentinels.EndMarker, StringComparison.Ordinal) ||
-                            line.Contains(CdbSentinels.EndMarker)))
+                        if (string.Equals(line, CdbSentinels.EndMarker, StringComparison.Ordinal))
                         {
                             m_Logger.LogDebug("🧠 End sentinel detected - completing single command: {Line}", line);
 
-                            if (inCommand && !string.IsNullOrEmpty(currentCommandId))
+                            if (!string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
@@ -333,7 +293,6 @@ namespace mcp_nexus.Debugger
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();
-                            inCommand = false;
                             continue;
                         }
 
@@ -342,7 +301,7 @@ namespace mcp_nexus.Debugger
                         {
                             m_Logger.LogDebug("🧠 CDB prompt detected - completing command: {Line}", line);
 
-                            if (inCommand && !string.IsNullOrEmpty(currentCommandId))
+                            if (!string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
@@ -355,7 +314,6 @@ namespace mcp_nexus.Debugger
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();
-                            inCommand = false;
                             continue;
                         }
 
@@ -364,7 +322,7 @@ namespace mcp_nexus.Debugger
                         {
                             m_Logger.LogDebug("🧠 Ultra-safe completion pattern detected - completing command: {Line}", line);
 
-                            if (inCommand && !string.IsNullOrEmpty(currentCommandId))
+                            if (!string.IsNullOrEmpty(currentCommandId))
                             {
                                 await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
                             }
@@ -377,18 +335,13 @@ namespace mcp_nexus.Debugger
                             currentCommandId = string.Empty;
                             currentCommandOutput.Clear();
                             currentCommandStderr.Clear();
-                            inCommand = false;
                             continue;
                         }
 
-                        // Handle regular output
-                        if (inCommand)
-                        {
                             if (isStderr)
                                 currentCommandStderr.Add(line);
                             else
                                 currentCommandOutput.AppendLine(line);
-                        }
                     }
                     catch (OperationCanceledException)
                     {

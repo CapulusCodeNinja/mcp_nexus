@@ -27,7 +27,7 @@ namespace mcp_nexus.CommandQueue.Batching
             var commandParts = new List<string>
             {
                 // Start the batch
-                $".echo {CdbSentinels.BatchStart}"
+                $".echo {CdbSentinels.StartMarker}"
             };
 
             foreach (var command in commands)
@@ -42,7 +42,7 @@ namespace mcp_nexus.CommandQueue.Batching
             }
 
             // End the batch
-            commandParts.Add($".echo {CdbSentinels.BatchEnd}");
+            commandParts.Add($".echo {CdbSentinels.CommandSeparator}");
 
             return string.Join("; ", commandParts);
         }

@@ -20,18 +20,6 @@ namespace mcp_nexus.Debugger
         public const string EndMarker = "MCP_NEXUS_SENTINEL_COMMAND_END";
 
         /// <summary>
-        /// Batch start marker for command batching functionality.
-        /// Used to identify the beginning of a batch command execution.
-        /// </summary>
-        public const string BatchStart = "MCP_NEXUS_BATCH_START";
-
-        /// <summary>
-        /// Batch end marker for command batching functionality.
-        /// Used to identify the end of a batch command execution.
-        /// </summary>
-        public const string BatchEnd = "MCP_NEXUS_BATCH_END";
-
-        /// <summary>
         /// Command separator marker for command batching functionality.
         /// Used to separate individual command outputs within a batch.
         /// </summary>
