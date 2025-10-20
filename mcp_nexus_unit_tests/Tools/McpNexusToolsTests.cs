@@ -25,8 +25,11 @@ namespace mcp_nexus_unit_tests.Tools
             var services = new ServiceCollection();
             services.AddSingleton(m_MockSessionManager.Object);
 
-            // Add logging services
-            services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+            // Mock ILoggerFactory to avoid real logging
+            var mockLoggerFactory = new Mock<ILoggerFactory>();
+            mockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
+                .Returns(m_MockLogger.Object);
+            services.AddSingleton(mockLoggerFactory.Object);
 
             // Use NullLogger to avoid the internal Program class issue
             services.AddSingleton<ILogger<mcp_nexus.Program>>(NullLogger<mcp_nexus.Program>.Instance);
@@ -420,13 +423,21 @@ namespace mcp_nexus_unit_tests.Tools
                 result = await taskObject;
             }
 
-            // Use dynamic to access anonymous type properties
-            dynamic dynamicResult = result;
+            // Parse the result as JSON to access properties
+            var json = JsonSerializer.Serialize(result);
+            var document = JsonDocument.Parse(json);
 
-            Assert.Equal(sessionId, dynamicResult.sessionId);
-            Assert.Equal("Failed", dynamicResult.status);
-            Assert.Contains("not ready", (string)dynamicResult.message);
-            Assert.Null(dynamicResult.commandId);
+            Assert.True(document.RootElement.TryGetProperty("sessionId", out var sessionIdElement));
+            Assert.Equal(sessionId, sessionIdElement.GetString());
+            
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Failed", statusElement.GetString());
+            
+            Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
+            Assert.Contains("not ready", messageElement.GetString());
+            
+            Assert.True(document.RootElement.TryGetProperty("commandId", out var commandIdElement));
+            Assert.True(commandIdElement.ValueKind == JsonValueKind.Null);
         }
 
         [Fact]
@@ -453,11 +464,15 @@ namespace mcp_nexus_unit_tests.Tools
                 result = await taskObject;
             }
 
-            // Use dynamic to access anonymous type properties
-            dynamic dynamicResult = result;
+            // Parse the result as JSON to access properties
+            var json = JsonSerializer.Serialize(result);
+            var document = JsonDocument.Parse(json);
 
-            Assert.Equal("Failed", dynamicResult.status);
-            Assert.Contains("not ready", (string)dynamicResult.message);
+            Assert.True(document.RootElement.TryGetProperty("status", out var statusElement));
+            Assert.Equal("Failed", statusElement.GetString());
+            
+            Assert.True(document.RootElement.TryGetProperty("message", out var messageElement));
+            Assert.Contains("not ready", messageElement.GetString());
         }
 
         [Fact]

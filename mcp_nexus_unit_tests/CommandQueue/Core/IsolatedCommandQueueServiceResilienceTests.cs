@@ -134,10 +134,9 @@ namespace mcp_nexus_unit_tests.CommandQueue.Core
 
             // Act
             service.Dispose();
-            var diagnostics = service.GetDiagnostics();
-
-            // Assert
-            Assert.True(diagnostics.IsDisposed);
+            
+            // Assert - after disposal, GetDiagnostics should throw ObjectDisposedException
+            Assert.Throws<ObjectDisposedException>(() => service.GetDiagnostics());
         }
 
         /// <summary>
@@ -226,9 +225,11 @@ namespace mcp_nexus_unit_tests.CommandQueue.Core
             // Act
             service.QueueCommand("test command 1");
             service.QueueCommand("test command 2");
+            
             var stats = service.GetPerformanceStats();
 
-            // Assert
+            // Assert - commands are queued, so total should be at least 2
+            // Note: Commands may not be processed yet, but they should be tracked
             Assert.True(stats.Total >= 2);
         }
 
