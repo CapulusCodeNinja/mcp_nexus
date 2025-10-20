@@ -619,7 +619,13 @@ function Get-NexusCommandStatus {
             -Body $body `
             -TimeoutSec 10
 
-        return $response.results
+        # Convert PSCustomObject results to a Hashtable so callers can use ContainsKey/indexing reliably
+        $resultsTable = @{}
+        foreach ($prop in $response.results.PSObject.Properties) {
+            $resultsTable[$prop.Name] = $prop.Value
+        }
+
+        return $resultsTable
     }
     catch {
         Write-Error "Failed to get bulk status for commands: $_"

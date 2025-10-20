@@ -1215,3 +1215,21 @@ This design prevents deadlocks, maintains session isolation, and gives AI agents
 **Batching improves throughput internally, while being completely transparent to AI clients. - MANDATORY**
 
 This design maintains command dependencies, prevents race conditions, and provides configurable performance optimization without requiring changes to AI integration. ABSOLUTE REQUIREMENT.
+
+---
+
+## Logging Severity Policy (NO EXCEPTIONS)
+
+The following logging severity levels MUST be used consistently across the entire product. These definitions are binding and there are NO EXCEPTIONS.
+
+- ERROR: Fatal issue from which the product cannot recover.
+- WARN: Something unusual happened; the product can handle it autonomously.
+- INFO: Normal logs with interesting and helpful information for end users.
+- DEBUG: Normal logs with useful technical information for product developers only.
+- TRACE: Same as DEBUG but reserved for very high-frequency logs (more than once per second).
+
+Enforcement:
+- Choose the lowest severity that accurately conveys the situation per the definitions above.
+- Do not use ERROR for recoverable or expected conditions.
+- Prefer INFO for user-relevant milestones and state changes; prefer DEBUG/TRACE for internal details.
+- TRACE should be disabled by default in production configurations.
