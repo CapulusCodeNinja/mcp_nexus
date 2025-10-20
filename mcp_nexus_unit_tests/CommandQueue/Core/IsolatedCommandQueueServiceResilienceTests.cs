@@ -17,7 +17,7 @@ namespace mcp_nexus_unit_tests.CommandQueue.Core
         private readonly Mock<ILogger<IsolatedCommandQueueService>> m_MockLogger;
         private readonly Mock<IMcpNotificationService> m_MockNotificationService;
         private readonly Mock<ILoggerFactory> m_MockLoggerFactory;
-        private readonly Mock<ILogger<BatchCommandProcessor>> m_MockBatchLogger;
+        private readonly Mock<ILogger> m_MockBatchLogger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IsolatedCommandQueueServiceResilienceTests"/> class.
@@ -28,7 +28,7 @@ namespace mcp_nexus_unit_tests.CommandQueue.Core
             m_MockLogger = new Mock<ILogger<IsolatedCommandQueueService>>();
             m_MockNotificationService = new Mock<IMcpNotificationService>();
             m_MockLoggerFactory = new Mock<ILoggerFactory>();
-            m_MockBatchLogger = new Mock<ILogger<BatchCommandProcessor>>();
+            m_MockBatchLogger = new Mock<ILogger>();
 
             m_MockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
                 .Returns(m_MockBatchLogger.Object);

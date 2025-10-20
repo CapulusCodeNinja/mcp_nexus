@@ -24,7 +24,11 @@ namespace mcp_nexus.CommandQueue.Batching
             if (commands.Count == 0)
                 throw new ArgumentException("Commands list cannot be empty", nameof(commands));
 
-            var commandParts = new List<string>();
+            var commandParts = new List<string>
+            {
+                // Start the batch
+                $".echo {CdbSentinels.BatchStart}"
+            };
 
             foreach (var command in commands)
             {
@@ -36,6 +40,9 @@ namespace mcp_nexus.CommandQueue.Batching
                 commandParts.Add(command.Command);
                 commandParts.Add($".echo {CdbSentinels.CommandSeparator}_{upperCommandId}_END");
             }
+
+            // End the batch
+            commandParts.Add($".echo {CdbSentinels.BatchEnd}");
 
             return string.Join("; ", commandParts);
         }

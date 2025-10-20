@@ -444,7 +444,7 @@ namespace mcp_nexus.Session.Lifecycle
                 // Check cache first (for completed commands) - reduces pressure on queue
                 // Use non-blocking cache check instead of GetCommandResult which can block
                 var cachedResultWithMetadata = await commandQueue!.GetCachedResultWithMetadata(commandId);
-                m_Logger.LogDebug("Cache lookup for command {CommandId}: found={Found}", commandId, cachedResultWithMetadata != null);
+                m_Logger.LogTrace("Cache lookup for command {CommandId}: found={Found}", commandId, cachedResultWithMetadata != null);
                 if (cachedResultWithMetadata != null)
                 {
                     m_Logger.LogDebug("Command {CommandId} found in cache for session {SessionId}", commandId, sessionId);
@@ -473,7 +473,7 @@ namespace mcp_nexus.Session.Lifecycle
                 var commandInfo = commandQueue.GetCommandInfo(commandId);
                 if (commandInfo != null)
                 {
-                    m_Logger.LogDebug("Command {CommandId} found in tracker for session {SessionId}", commandId, sessionId);
+                    m_Logger.LogTrace("Command {CommandId} found in tracker for session {SessionId}", commandId, sessionId);
                     // For active commands, we don't have the result yet
                     return (commandInfo, null);
                 }

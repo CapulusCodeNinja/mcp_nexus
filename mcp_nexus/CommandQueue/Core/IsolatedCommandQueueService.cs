@@ -23,7 +23,7 @@ namespace mcp_nexus.CommandQueue.Core
         private readonly CommandTracker m_Tracker;
         private readonly CommandProcessor m_Processor;
         private readonly CommandNotificationManager m_NotificationManager;
-        private readonly BatchCommandProcessor? m_BatchProcessor;
+        private readonly BatchingConfiguration? m_BatchingConfig;
 
         // Core infrastructure
         private readonly BlockingCollection<QueuedCommand> m_CommandQueue;
@@ -74,14 +74,13 @@ namespace mcp_nexus.CommandQueue.Core
             m_Processor = new CommandProcessor(m_CdbSession, m_Logger, m_Config, m_Tracker, m_CommandQueue, m_ProcessingCts, m_ResultCache);
             m_NotificationManager = new CommandNotificationManager(m_NotificationService, m_Logger, m_Config);
 
-            // Create batch processor if batching is enabled
+            // Store batching configuration for simple batching logic
+            m_BatchingConfig = batchingOptions?.Value;
+            
             if (batchingOptions?.Value?.Enabled == true)
             {
-                var batchLogger = loggerFactory.CreateLogger<BatchCommandProcessor>();
-
-                m_BatchProcessor = new BatchCommandProcessor(m_CdbSession, m_ResultCache, batchLogger, batchingOptions, sessionId);
-
-                m_Logger.LogInformation("🚀 Command batching enabled for session {SessionId}", sessionId);
+                m_Logger.LogInformation("🚀 Simple command batching enabled for session {SessionId} (MinBatchSize: {MinBatchSize}, MaxBatchSize: {MaxBatchSize})", 
+                    sessionId, batchingOptions.Value.MinBatchSize, batchingOptions.Value.MaxBatchSize);
             }
             else
             {
@@ -102,7 +101,7 @@ namespace mcp_nexus.CommandQueue.Core
         }
 
         /// <summary>
-        /// Processes commands from the queue, using batching when available
+        /// Processes commands from the queue, using simple batching when multiple commands are available
         /// </summary>
         /// <returns>A task representing the asynchronous operation</returns>
         private async Task ProcessCommandQueueAsync()
@@ -115,18 +114,36 @@ namespace mcp_nexus.CommandQueue.Core
                 {
                     try
                     {
-                        // Take command from queue
-                        var command = m_CommandQueue.Take(m_ProcessingCts.Token);
-
-                        if (m_BatchProcessor != null)
+                        // Collect available commands from queue
+                        var commands = CollectAvailableCommands();
+                        
+                        if (commands.Count == 0)
                         {
-                            // Use batch processor for intelligent batching
-                            await m_BatchProcessor.ProcessCommandAsync(command);
+                            // No commands available, wait briefly and continue
+                            await Task.Delay(50, m_ProcessingCts.Token);
+                            continue;
                         }
-                        else
+
+                        if (commands.Count == 1)
                         {
-                            // Use traditional single-command processing
-                            await ExecuteSingleCommandDirectly(command);
+                            // Single command - execute individually (no batch overhead)
+                            m_Logger.LogDebug("⚡ Processing single command {CommandId}: {Command}", commands[0].Id, commands[0].Command);
+                            await ExecuteSingleCommand(commands[0]);
+                        }
+                        else if (ShouldBatch(commands))
+                        {
+                            // Multiple commands that can be batched - execute as batch (efficient)
+                            m_Logger.LogDebug("🔄 Processing {CommandCount} commands as batch", commands.Count);
+                            await ExecuteBatch(commands);
+                        }
+                        else 
+                        {
+                            // Multiple commands that can't be batched - execute individually (excluded commands)
+                            m_Logger.LogDebug("⚡ Processing {CommandCount} excluded commands individually", commands.Count);
+                            foreach (var command in commands)
+                            {
+                                await ExecuteSingleCommand(command);
+                            }
                         }
                     }
                     catch (OperationCanceledException)
@@ -153,6 +170,177 @@ namespace mcp_nexus.CommandQueue.Core
             finally
             {
                 m_Logger.LogDebug("🏁 Command processing loop ended for session {SessionId}", m_Config.SessionId);
+            }
+        }
+
+        /// <summary>
+        /// Collects available commands from the queue without blocking
+        /// </summary>
+        /// <returns>List of available commands</returns>
+        private List<QueuedCommand> CollectAvailableCommands()
+        {
+            var commands = new List<QueuedCommand>();
+            var maxBatchSize = m_BatchingConfig?.MaxBatchSize ?? 5;
+
+            try
+            {
+                // Try to get first command (this will block if queue is empty)
+                if (m_CommandQueue.TryTake(out var firstCommand, 100, m_ProcessingCts.Token))
+                {
+                    commands.Add(firstCommand);
+
+                    // Collect additional commands without blocking (up to max batch size)
+                    while (commands.Count < maxBatchSize && m_CommandQueue.TryTake(out var additionalCommand))
+                    {
+                        commands.Add(additionalCommand);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when shutting down
+            }
+
+            return commands;
+        }
+
+        /// <summary>
+        /// Determines if commands should be batched together
+        /// </summary>
+        /// <param name="commands">Commands to evaluate</param>
+        /// <returns>True if commands should be batched</returns>
+        private bool ShouldBatch(List<QueuedCommand> commands)
+        {
+            // Don't batch if batching is disabled
+            if (m_BatchingConfig?.Enabled != true)
+                return false;
+
+            // Need at least MinBatchSize commands to batch
+            var minBatchSize = m_BatchingConfig.MinBatchSize;
+            if (commands.Count < minBatchSize)
+                return false;
+
+            // Check if all commands can be batched (none are excluded)
+            foreach (var command in commands)
+            {
+                if (!CanCommandBeBatched(command.Command ?? string.Empty))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Checks if a command can be batched (not in excluded list)
+        /// </summary>
+        /// <param name="command">Command to check</param>
+        /// <returns>True if command can be batched</returns>
+        private bool CanCommandBeBatched(string command)
+        {
+            if (string.IsNullOrWhiteSpace(command))
+                return false;
+
+            var excludedCommands = m_BatchingConfig?.ExcludedCommands ?? Array.Empty<string>();
+            var trimmedCommand = command.Trim();
+
+            foreach (var excluded in excludedCommands)
+            {
+                if (trimmedCommand.StartsWith(excluded, StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Executes a single command using the existing CommandProcessor logic
+        /// </summary>
+        /// <param name="command">The command to execute</param>
+        /// <returns>A task representing the asynchronous operation</returns>
+        private async Task ExecuteSingleCommand(QueuedCommand command)
+        {
+            m_Logger.LogDebug("⚡ Executing single command {CommandId}: {Command}", command.Id, command.Command);
+            
+            // Use the existing CommandProcessor's safe execution logic
+            await m_Processor.ExecuteCommandSafely(command);
+        }
+
+        /// <summary>
+        /// Executes multiple commands as a batch
+        /// </summary>
+        /// <param name="commands">Commands to execute as batch</param>
+        /// <returns>A task representing the asynchronous operation</returns>
+        private async Task ExecuteBatch(List<QueuedCommand> commands)
+        {
+            var startTime = DateTime.Now;
+            m_Logger.LogInformation("🔄 Executing batch of {CommandCount} commands", commands.Count);
+
+            try
+            {
+                // Create batch command using existing logic
+                var batchBuilder = new CommandBatchBuilder();
+                var batchCommand = batchBuilder.CreateBatchCommand(commands);
+
+                // Calculate timeout
+                var baseTimeout = TimeSpan.FromMilliseconds(600000); // 10 minutes
+                var batchTimeout = TimeSpan.FromMilliseconds(baseTimeout.TotalMilliseconds * commands.Count);
+
+                // Execute batch command
+                using var timeoutCts = new CancellationTokenSource(batchTimeout);
+                using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                    timeoutCts.Token, m_ProcessingCts.Token);
+
+                var result = await m_CdbSession.ExecuteBatchCommand(batchCommand, combinedCts.Token);
+
+                // Parse individual results
+                var resultParser = new BatchResultParser();
+                var individualResults = resultParser.SplitBatchResults(result, commands);
+
+                // Store results and complete commands
+                for (int i = 0; i < commands.Count; i++)
+                {
+                    var command = commands[i];
+                    var commandResult = individualResults[i];
+
+                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, commandResult);
+                    command.SetResult(commandResult.Output);
+
+                    // Log statistics for each command in batch
+                    var queuedAt = command.QueueTime;
+                    var completedAt = DateTime.Now;
+                    var timeInQueue = (startTime - queuedAt).TotalMilliseconds;
+                    var timeExecution = commandResult.Duration.TotalMilliseconds;
+                    var totalDuration = (completedAt - queuedAt).TotalMilliseconds;
+
+                    Utilities.Statistics.CommandStats(
+                        m_Logger,
+                        Utilities.Statistics.CommandState.SuccessBatch,
+                        m_Config.SessionId,
+                        command.Id,
+                        command.Command,
+                        queuedAt,
+                        startTime,
+                        completedAt,
+                        timeInQueue,
+                        timeExecution,
+                        totalDuration);
+                }
+
+                var duration = DateTime.Now - startTime;
+                m_Logger.LogInformation("✅ Batch of {CommandCount} commands completed in {Duration}ms",
+                    commands.Count, duration.TotalMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogError(ex, "❌ Batch execution failed: {Error}", ex.Message);
+
+                // Complete all commands with error
+                foreach (var command in commands)
+                {
+                    var errorResult = CommandResult.Failure($"Batch execution failed: {ex.Message}");
+                    m_ResultCache?.StoreResult(command.Id ?? string.Empty, errorResult);
+                    command.SetResult(string.Empty);
+                }
             }
         }
 
@@ -366,7 +554,7 @@ namespace mcp_nexus.CommandQueue.Core
             // First, try to get result from cache (for completed commands that may have been cleaned up)
             ICommandResult? cachedResult = null;
 
-            if (m_BatchProcessor != null)
+            if (m_BatchingConfig?.Enabled == true)
             {
                 // When batching is enabled, results are stored directly in the SessionCommandResultCache
                 cachedResult = m_ResultCache?.GetResult(commandId);
@@ -604,7 +792,6 @@ namespace mcp_nexus.CommandQueue.Core
                 m_CommandQueue.Dispose();
                 m_ProcessingCts.Dispose();
                 m_ResultCache.Dispose();
-                m_BatchProcessor?.Dispose();
             }
             catch (Exception ex)
             {

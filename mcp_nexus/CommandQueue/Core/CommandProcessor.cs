@@ -131,7 +131,7 @@ namespace mcp_nexus.CommandQueue.Core
         /// </summary>
         /// <param name="command">The command to execute</param>
         /// <returns>A task representing the asynchronous operation</returns>
-        private async Task ExecuteCommandSafely(QueuedCommand command)
+        public async Task ExecuteCommandSafely(QueuedCommand command)
         {
             var stopwatch = Stopwatch.StartNew();
 

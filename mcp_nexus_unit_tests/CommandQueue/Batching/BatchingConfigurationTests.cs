@@ -45,7 +45,7 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
 
             // Assert
             Assert.Equal(invalidSize, config.MaxBatchSize);
-            // Note: The configuration itself doesn't validate, but the BatchCommandProcessor should handle this
+            // Note: The configuration itself doesn't validate, but the batching logic should handle this
         }
 
         [Theory]

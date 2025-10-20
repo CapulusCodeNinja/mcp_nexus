@@ -30,7 +30,7 @@ namespace mcp_nexus_unit_tests.CommandQueue.Core
             m_MockNotificationService = new Mock<IMcpNotificationService>();
             m_MockLoggerFactory = new Mock<ILoggerFactory>();
             m_MockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
-                .Returns(Mock.Of<ILogger<BatchCommandProcessor>>());
+                .Returns(Mock.Of<ILogger>());
 
             // Use realistic CDB mock instead of simple mock
             m_RealisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());

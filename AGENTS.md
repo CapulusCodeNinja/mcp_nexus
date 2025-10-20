@@ -895,7 +895,7 @@ foreach ($id in $ids) {
 
 ### Benefits
 
-- Commands queued together can be batched automatically by `BatchCommandProcessor`
+- Commands queued together can be batched automatically by simple queue processing logic
 - Better throughput for bulk operations
 - Backward compatible with existing `Invoke-NexusCommand` (synchronous)
 
@@ -1055,65 +1055,59 @@ public const string CommandSeparator = "MCP_NEXUS_CMD_SEP";
 │  │    │                                           │         │
 │  │    ├──> Take command from queue               │         │
 │  │    │                                           │         │
-│  │    └──> BatchCommandProcessor.ProcessCommand()│         │
+│  │    └──> Simple Batching Logic                 │         │
 │  └───────────────────────────────────────────────┘         │
 └───────────────────┬─────────────────────────────────────────┘
                     │
                     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              BatchCommandProcessor                          │
+│              Simple Queue Processing                        │
 │  ┌───────────────────────────────────────────────┐         │
-│  │  ProcessCommandAsync(command)                 │         │
+│  │  ProcessCommandQueueAsync()                   │         │
 │  │    │                                           │         │
-│  │    ├──> BatchCommandFilter.CanBatchCommand()  │         │
-│  │    │      (Check exclusion list)              │         │
+│  │    ├──> CollectAvailableCommands()            │         │
+│  │    │      (Grab what's available from queue)  │         │
 │  │    │                                           │         │
-│  │    ├──> If batchable: Queue internally        │         │
-│  │    │    If not: ExecuteSingleCommandAsync()   │         │
-│  │    │                                           │         │
-│  │    └──> BatchProcessingLoopAsync()            │         │
-│  │           (Background loop)                   │         │
+│  │    ├──> If 1 command: ExecuteSingleCommand()  │         │
+│  │    ├──> If multiple & batchable: ExecuteBatch()│         │
+│  │    └──> If multiple & excluded: Execute each  │         │
+│  │                                                 │         │
 │  └───────────────────────────────────────────────┘         │
 │                                                              │
-│  Background Loop:                                           │
+│  Simple Decision Making:                                    │
 │  ┌───────────────────────────────────────────────┐         │
-│  │  1. Wait for commands or timeout              │         │
-│  │  2. Collect up to MaxBatchSize commands       │         │
-│  │  3. CommandBatchBuilder.CreateBatchCommand()  │         │
-│  │  4. BatchTimeoutCalculator.CalculateTimeout() │         │
-│  │  5. CdbSession.ExecuteCommand(batch)          │         │
+│  │  1. Look at main queue immediately            │         │
+│  │  2. Collect available commands (up to max)    │         │
+│  │  3. ShouldBatch? Check excluded list & min    │         │
+│  │  4. CommandBatchBuilder.CreateBatchCommand()  │         │
+│  │  5. CdbSession.ExecuteCommand(batch/single)   │         │
 │  │  6. BatchResultParser.SplitBatchResults()     │         │
-│  │  7. Store results in SessionCommandResultCache│         │
-│  │  8. Complete QueuedCommand.SetResult()        │         │
+│  │  7. Store results & complete commands         │         │
 │  └───────────────────────────────────────────────┘         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Key Files
 
-**Batching Infrastructure:**
+**Simple Batching Infrastructure:**
 - `mcp_nexus/CommandQueue/BatchingConfiguration.cs` - Configuration model
 - `mcp_nexus/CommandQueue/BatchCommandBuilder.cs` - Builds combined command
 - `mcp_nexus/CommandQueue/BatchResultParser.cs` - Parses batch output
-- `mcp_nexus/CommandQueue/BatchCommandFilter.cs` - Exclusion list filtering
-- `mcp_nexus/CommandQueue/BatchTimeoutCalculator.cs` - Timeout calculation
-- `mcp_nexus/CommandQueue/BatchCommandProcessor.cs` - Main batching orchestration
 - `mcp_nexus/Debugger/CdbSentinels.cs` - Batch sentinel markers
 
 **Integration Points:**
-- `mcp_nexus/CommandQueue/IsolatedCommandQueueService.cs` - Integrated BatchCommandProcessor
+- `mcp_nexus/CommandQueue/IsolatedCommandQueueService.cs` - Simple batching logic in main processing loop
 - `mcp_nexus/Session/SessionLifecycleManager.cs` - Passes batching config to queue service
 - `mcp_nexus/Configuration/ServiceRegistration.cs` - DI registration for batching config
 - `mcp_nexus/appsettings.json` - Batching configuration
 
 **Tests:**
-- `mcp_nexus_tests/CommandQueue/BatchCommandProcessorTests.cs` - 16 tests
 - `mcp_nexus_tests/CommandQueue/BatchCommandBuilderTests.cs` - 8 tests
 - `mcp_nexus_tests/CommandQueue/BatchResultParserTests.cs` - 8 tests
-- `mcp_nexus_tests/CommandQueue/BatchCommandFilterTests.cs` - 8 tests
-- `mcp_nexus_tests/CommandQueue/BatchTimeoutCalculatorTests.cs` - 8 tests
+- `mcp_nexus_tests/CommandQueue/BatchingConfigurationTests.cs` - Configuration tests
+- Integration tests in `IsolatedCommandQueueServiceTests.cs` - Simple batching behavior
 
-**Total: 48 batching-specific tests**
+**Total: 16+ batching-specific tests**
 
 ### Performance Considerations
 
