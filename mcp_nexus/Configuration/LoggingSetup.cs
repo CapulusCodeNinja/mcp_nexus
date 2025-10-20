@@ -23,7 +23,11 @@ namespace mcp_nexus.Configuration
 
             var logLevel = GetLogLevelFromConfiguration(configuration);
             ConfigureNLogDynamically(configuration, logLevel, isServiceMode);
-            ConfigureMicrosoftLogging(logging, logLevel);
+            ConfigureNlogProvider(logging, logLevel);
+            if (logLevel == Microsoft.Extensions.Logging.LogLevel.Trace)
+            {
+                ConfigureMicrosoftLogging(logging);
+            }
 
             LogConfigurationComplete(isServiceMode, logLevel);
         }

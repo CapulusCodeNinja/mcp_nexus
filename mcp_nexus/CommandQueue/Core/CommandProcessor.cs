@@ -474,9 +474,8 @@ namespace mcp_nexus.CommandQueue.Core
         /// <returns>The cached command result, or null if not found</returns>
         public ICommandResult? GetCommandResult(string commandId)
         {
-            m_Logger.LogDebug("Getting result from cache for command {CommandId}", commandId);
             var result = m_ResultCache?.GetResult(commandId);
-            m_Logger.LogDebug("Cache lookup for command {CommandId}: found={Found}", commandId, result != null);
+            m_Logger.LogTrace("Cache lookup for command {CommandId}: found={Found}", commandId, result != null);
             return result;
         }
 
