@@ -144,8 +144,8 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             foreach (var command in commands)
             {
                 // Create start and end markers for this command
-                var startMarker = $"{CdbSentinels.CommandSeparator}_{command.Id}";
-                var endMarker = $"{CdbSentinels.CommandSeparator}_{command.Id}_END";
+                var startMarker = $"{CdbSentinels.CommandSeparator}_{command.Id?.ToUpperInvariant() ?? "UNKNOWN"}_START";
+                var endMarker = $"{CdbSentinels.CommandSeparator}_{command.Id?.ToUpperInvariant() ?? "UNKNOWN"}_END";
 
                 output.Add($"echo {startMarker}");
 
@@ -179,7 +179,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
         {
             // Arrange
             var parser = new BatchResultParser();
-            var batchOutput = $"{CdbSentinels.CommandSeparator}_cmd123\nCommand output without end marker";
+            var batchOutput = $"{CdbSentinels.CommandSeparator}_CMD123_START\nCommand output without end marker";
             var commands = new List<QueuedCommand>
             {
                 CreateTestCommand("cmd123", "test")
@@ -192,7 +192,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             Assert.Single(results);
             var result = results[0];
             Assert.False(result.IsSuccess);
-            Assert.Contains("End marker", result.ErrorMessage);
+            Assert.Contains("End marker for command", result.ErrorMessage);
         }
 
         [Fact]

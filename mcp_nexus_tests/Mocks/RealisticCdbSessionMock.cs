@@ -154,14 +154,31 @@ namespace mcp_nexus_tests.Mocks
             // For batch commands, simulate a longer delay and return batch output
             await Task.Delay(100, cancellationToken);
 
-            // Simulate batch output with proper sentinels
+            // Parse the batch command to extract command IDs and generate appropriate output
             var result = "MCP_NEXUS_BATCH_START\n";
-            result += "echo MCP_NEXUS_CMD_SEP_CMD-1_START\n";
-            result += "Module list output\n";
-            result += "echo MCP_NEXUS_CMD_SEP_CMD-1_END\n";
-            result += "echo MCP_NEXUS_CMD_SEP_CMD-2_START\n";
-            result += "Thread information\n";
-            result += "echo MCP_NEXUS_CMD_SEP_CMD-2_END\n";
+            
+            // Extract command IDs from the batch command using regex
+            var commandIdRegex = new System.Text.RegularExpressions.Regex(@"MCP_NEXUS_CMD_SEP_([^_]+)_START");
+            var matches = commandIdRegex.Matches(batchCommand);
+            
+            foreach (System.Text.RegularExpressions.Match match in matches)
+            {
+                var cmdId = match.Groups[1].Value;
+                result += $"echo MCP_NEXUS_CMD_SEP_{cmdId}_START\n";
+                
+                // Generate appropriate output based on command content
+                if (batchCommand.Contains("lm"))
+                    result += "Module list output\n";
+                else if (batchCommand.Contains("!threads"))
+                    result += "Thread information\n";
+                else if (batchCommand.Contains("!peb"))
+                    result += "Process Environment Block\n";
+                else
+                    result += $"Output for command {cmdId}\n";
+                
+                result += $"echo MCP_NEXUS_CMD_SEP_{cmdId}_END\n";
+            }
+            
             result += "MCP_NEXUS_BATCH_END";
 
             return result;

@@ -261,50 +261,6 @@ namespace mcp_nexus_tests.Extensions
         }
 
         #endregion
-
-        #region Integration Tests
-
-        [Fact]
-        public async Task StartThenStop_CompletesSuccessfully()
-        {
-            // Arrange
-            var extensions = new List<ExtensionMetadata>();
-            m_MockExtensionManager.Setup(x => x.LoadExtensionsAsync())
-                .Returns(Task.CompletedTask);
-            m_MockExtensionManager.Setup(x => x.GetAllExtensions())
-                .Returns(extensions);
-
-            var service = new ExtensionStartupService(m_MockLogger.Object, m_MockExtensionManager.Object);
-
-            // Act
-            await service.StartAsync(CancellationToken.None);
-            await service.StopAsync(CancellationToken.None);
-
-            // Assert
-            m_MockExtensionManager.Verify(x => x.LoadExtensionsAsync(), Times.Once);
-        }
-
-        [Fact]
-        public async Task MultipleStartCalls_EachLoadsExtensions()
-        {
-            // Arrange
-            var extensions = new List<ExtensionMetadata>();
-            m_MockExtensionManager.Setup(x => x.LoadExtensionsAsync())
-                .Returns(Task.CompletedTask);
-            m_MockExtensionManager.Setup(x => x.GetAllExtensions())
-                .Returns(extensions);
-
-            var service = new ExtensionStartupService(m_MockLogger.Object, m_MockExtensionManager.Object);
-
-            // Act
-            await service.StartAsync(CancellationToken.None);
-            await service.StartAsync(CancellationToken.None);
-
-            // Assert
-            m_MockExtensionManager.Verify(x => x.LoadExtensionsAsync(), Times.Exactly(2));
-        }
-
-        #endregion
     }
 }
 

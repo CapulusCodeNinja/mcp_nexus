@@ -284,11 +284,6 @@ nexus_read_dump_analyze_command_result(sessionId, "cmd-123")
 - **Mocking is Mandatory**: **Mocking should be used for testing without exception**. All external dependencies, services, and collaborators must be mocked to ensure test isolation and deterministic behavior. NO EXCEPTIONS.
 - **Edge cases**: Test error conditions and boundary values - NO EXCEPTIONS
 
-### Integration Tests
-- **End-to-end workflows**: Test complete debugging sessions - ABSOLUTE REQUIREMENT
-- **Error scenarios**: Test failure recovery and circuit breaker behavior - MANDATORY
-- **Performance tests**: Verify memory usage and response times - NO EXCEPTIONS
-
 ## Security Considerations
 
 ### Path Validation

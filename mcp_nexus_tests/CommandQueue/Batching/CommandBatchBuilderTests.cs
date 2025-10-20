@@ -94,10 +94,10 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             Assert.Contains("lm", batchCommand);
             Assert.Contains("!threads", batchCommand);
             // Verify that empty commands were skipped by checking that only 2 commands are in the batch
-            Assert.DoesNotContain("cmd-2", batchCommand);
-            Assert.DoesNotContain("cmd-3", batchCommand);
-            Assert.Contains("cmd-1", batchCommand);
-            Assert.Contains("cmd-4", batchCommand);
+            Assert.DoesNotContain("CMD-2", batchCommand);
+            Assert.DoesNotContain("CMD-3", batchCommand);
+            Assert.Contains("CMD-1", batchCommand);
+            Assert.Contains("CMD-4", batchCommand);
         }
 
         [Fact]

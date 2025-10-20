@@ -204,7 +204,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             await Task.WhenAll(commands.Select(c => c.CompletionSource!.Task)).WaitAsync(TimeSpan.FromSeconds(2));
 
             // Assert
-            m_MockCdbSession.Verify(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            m_MockCdbSession.Verify(x => x.ExecuteBatchCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #endregion
@@ -480,7 +480,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             batchExecutionTcs.SetResult("Batch output");
 
             // Assert
-            m_MockCdbSession.Verify(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            m_MockCdbSession.Verify(x => x.ExecuteBatchCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -534,7 +534,7 @@ namespace mcp_nexus_tests.CommandQueue.Batching
             await Task.WhenAll(command1.CompletionSource!.Task, command2.CompletionSource!.Task).WaitAsync(TimeSpan.FromSeconds(2));
 
             // Assert
-            m_MockCdbSession.Verify(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            m_MockCdbSession.Verify(x => x.ExecuteBatchCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

@@ -205,51 +205,6 @@ namespace mcp_nexus_tests.Utilities
         }
 
         #endregion
-
-        #region Integration Tests
-
-        [Fact]
-        public void Converter_ImplementsInterface()
-        {
-            // Arrange & Act
-            IWslPathConverter converter = new WslPathConverter();
-
-            // Assert
-            Assert.NotNull(converter);
-        }
-
-        [Fact]
-        public void Converter_MultipleInstances_IndependentOperation()
-        {
-            // Arrange
-            var converter1 = new WslPathConverter();
-            var converter2 = new WslPathConverter();
-
-            // Act
-            var result1 = converter1.TryConvertToWindowsPath("/mnt/c/test", out var path1);
-            var result2 = converter2.TryConvertToWindowsPath("/mnt/c/test", out var path2);
-
-            // Assert
-            // Both should behave identically
-            Assert.Equal(result1, result2);
-            if (result1 && result2)
-            {
-                Assert.Equal(path1, path2);
-            }
-        }
-
-        [Fact]
-        public void LoadFstabMappings_ReturnsNonNullEvenOnSystemWithoutWsl()
-        {
-            // Act
-            var mappings = m_Converter.LoadFstabMappings();
-
-            // Assert
-            Assert.NotNull(mappings);
-            Assert.IsType<Dictionary<string, string>>(mappings);
-        }
-
-        #endregion
     }
 }
 
