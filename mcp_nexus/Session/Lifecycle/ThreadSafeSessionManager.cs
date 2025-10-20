@@ -64,11 +64,11 @@ namespace mcp_nexus.Session.Lifecycle
             m_StatisticsCollector = new SessionStatisticsCollector(
                 logger, m_Sessions, m_LifecycleManager, m_MonitoringService);
 
-            m_Logger.LogInformation("🚀 ThreadSafeSessionManager initializing with config: MaxSessions={MaxSessions}, Timeout={Timeout}",
+            m_Logger.LogDebug("🚀 ThreadSafeSessionManager initializing with config: MaxSessions={MaxSessions}, Timeout={Timeout}",
                 m_Config.Config.MaxConcurrentSessions, m_Config.Config.SessionTimeout);
             m_Logger.LogTrace("Session store currently has {Count} session(s)", m_Sessions.Count);
 
-            m_Logger.LogInformation("✅ ThreadSafeSessionManager initialized successfully with focused components");
+            m_Logger.LogDebug("✅ ThreadSafeSessionManager initialized successfully with focused components");
         }
 
         /// <summary>
@@ -197,7 +197,7 @@ namespace mcp_nexus.Session.Lifecycle
             }
 
             var isActive = (session.Status == SessionStatus.Active || session.Status == SessionStatus.Initializing) && !session.IsDisposed;
-            m_Logger.LogTrace("SessionExists: {SessionId} found. Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}",
+                m_Logger.LogTrace("SessionExists: {SessionId} found. Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}",
                 sessionId, session.Status, session.IsDisposed, isActive);
             return isActive;
         }
@@ -246,7 +246,7 @@ namespace mcp_nexus.Session.Lifecycle
                     commandQueue = session.CommandQueue;
                     var available = commandQueue != null;
 
-                    m_Logger.LogDebug("TryGetCommandQueue: {SessionId} found - Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}, QueueExists={QueueExists}",
+                    m_Logger.LogTrace("TryGetCommandQueue: {SessionId} found - Status={Status}, IsDisposed={IsDisposed}, IsActive={IsActive}, QueueExists={QueueExists}",
                         sessionId, session.Status, session.IsDisposed, isActive, queueExists);
 
                     return available;
@@ -289,7 +289,7 @@ namespace mcp_nexus.Session.Lifecycle
                 return sessionContext;
 
             // Fallback: build a minimal context directly to avoid transient snapshot races
-            m_Logger.LogTrace("GetSessionContext: Using minimal context fallback for {SessionId}", sessionId);
+            m_Logger.LogDebug("GetSessionContext: Using minimal context fallback for {SessionId}", sessionId);
             return new SessionContext
             {
                 SessionId = session.SessionId,

@@ -108,7 +108,7 @@ namespace mcp_nexus.Debugger
                 return Task.CompletedTask;
             }
 
-            m_Logger.LogInformation("🚀 Initializing session-scoped event-based stream reading");
+            m_Logger.LogDebug("🚀 Initializing session-scoped event-based stream reading");
 
             // Create session-scoped channel
             m_SessionChannel = Channel.CreateUnbounded<(string Line, bool IsStderr, DateTime Timestamp)>(new UnboundedChannelOptions
@@ -134,11 +134,11 @@ namespace mcp_nexus.Debugger
                 debuggerProcess.BeginOutputReadLine();
                 debuggerProcess.BeginErrorReadLine();
 
-                m_Logger.LogInformation("🚀 Event-based stream reading started");
+                m_Logger.LogDebug("🚀 Event-based stream reading started");
             }
 
 
-            m_Logger.LogInformation("✅ Session-scoped event-based architecture initialized successfully");
+            m_Logger.LogDebug("✅ Session-scoped event-based architecture initialized successfully");
             return Task.CompletedTask;
         }
 
@@ -173,7 +173,7 @@ namespace mcp_nexus.Debugger
             await m_CommandExecutionSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
             try
             {
-                m_Logger.LogInformation("🎯 CDB ExecuteCommand START: {Command}", command);
+                m_Logger.LogDebug("🎯 CDB ExecuteCommand START: {Command}", command);
 
                 // Create command with sentinels
                 var commandWithSentinels = CreateCommandWithSentinels(command);
@@ -207,7 +207,7 @@ namespace mcp_nexus.Debugger
                 try
                 {
                     var result = await completionSource.Task.WaitAsync(linkedCts.Token).ConfigureAwait(false);
-                    m_Logger.LogInformation("✅ CDB ExecuteCommand COMPLETED: {Command}", command);
+                    m_Logger.LogDebug("✅ CDB ExecuteCommand COMPLETED: {Command}", command);
                     return result;
                 }
                 catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
@@ -217,7 +217,7 @@ namespace mcp_nexus.Debugger
                 }
                 catch (OperationCanceledException)
                 {
-                    m_Logger.LogInformation("🚫 CDB ExecuteCommand CANCELLED: {Command}", command);
+                    m_Logger.LogWarning("🚫 CDB ExecuteCommand CANCELLED: {Command}", command);
                     throw;
                 }
             }
@@ -236,7 +236,7 @@ namespace mcp_nexus.Debugger
         /// <exception cref="OperationCanceledException">Thrown when the consumer is cancelled via the cancellation token.</exception>
         private async Task StartConsumerAsync(CancellationToken cancellationToken)
         {
-            m_Logger.LogInformation("🧠 Starting consumer thread");
+            m_Logger.LogDebug("🧠 Starting consumer thread");
 
             try
             {
@@ -282,7 +282,7 @@ namespace mcp_nexus.Debugger
                         if (string.Equals(line, CdbSentinels.EndMarker, StringComparison.Ordinal) ||
                             line.Contains(CdbSentinels.EndMarker))
                         {
-                            m_Logger.LogInformation("🧠 End sentinel detected - completing command: {Line}", line);
+                            m_Logger.LogDebug("🧠 End sentinel detected - completing command: {Line}", line);
 
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
@@ -304,7 +304,7 @@ namespace mcp_nexus.Debugger
                         // FALLBACK: Check for CDB prompt patterns (100% reliable)
                         if (CdbCompletionPatterns.IsCdbPrompt(line))
                         {
-                            m_Logger.LogInformation("🧠 CDB prompt detected - completing command: {Line}", line);
+                            m_Logger.LogDebug("🧠 CDB prompt detected - completing command: {Line}", line);
 
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
@@ -326,7 +326,7 @@ namespace mcp_nexus.Debugger
                         // FALLBACK: Check for ultra-safe completion patterns
                         if (CdbCompletionPatterns.IsUltraSafeCompletion(line))
                         {
-                            m_Logger.LogInformation("🧠 Ultra-safe completion pattern detected - completing command: {Line}", line);
+                            m_Logger.LogDebug("🧠 Ultra-safe completion pattern detected - completing command: {Line}", line);
 
                             if (inCommand && !string.IsNullOrEmpty(currentCommandId))
                             {
@@ -368,7 +368,7 @@ namespace mcp_nexus.Debugger
             }
             catch (OperationCanceledException)
             {
-                m_Logger.LogInformation("🧠 Consumer thread cancelled");
+                m_Logger.LogWarning("🧠 Consumer thread cancelled");
             }
             catch (Exception ex)
             {
@@ -376,7 +376,7 @@ namespace mcp_nexus.Debugger
             }
             finally
             {
-                m_Logger.LogInformation("🧠 Consumer thread ended");
+                m_Logger.LogDebug("🧠 Consumer thread ended");
             }
         }
 
@@ -411,7 +411,7 @@ namespace mcp_nexus.Debugger
 
                 if (completionSource != null)
                 {
-                    m_Logger.LogInformation("🧠 Completing command {CommandId} with {OutputLength} chars", commandId, result.Length);
+                    m_Logger.LogDebug("🧠 Completing command {CommandId} with {OutputLength} chars", commandId, result.Length);
                     completionSource.SetResult(result);
                 }
                 else
@@ -470,7 +470,7 @@ namespace mcp_nexus.Debugger
             await m_CommandExecutionSemaphore.WaitAsync(externalCancellationToken).ConfigureAwait(false);
             try
             {
-                m_Logger.LogInformation("🎯 CDB ExecuteBatchCommand START (no sentinel wrapping)");
+                m_Logger.LogDebug("🎯 CDB ExecuteBatchCommand START (no sentinel wrapping)");
 
                 var batchCommandId = $"BATCH-{Guid.NewGuid()}";
                 var completionSource = new TaskCompletionSource<string>();
@@ -492,7 +492,7 @@ namespace mcp_nexus.Debugger
                 try
                 {
                     var result = await completionSource.Task.WaitAsync(linkedCts.Token).ConfigureAwait(false);
-                    m_Logger.LogInformation("✅ CDB ExecuteBatchCommand COMPLETED");
+                    m_Logger.LogDebug("✅ CDB ExecuteBatchCommand COMPLETED");
                     return result;
                 }
                 catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
@@ -502,7 +502,7 @@ namespace mcp_nexus.Debugger
                 }
                 catch (OperationCanceledException)
                 {
-                    m_Logger.LogInformation("🚫 CDB ExecuteBatchCommand CANCELLED");
+                    m_Logger.LogWarning("🚫 CDB ExecuteBatchCommand CANCELLED");
                     throw;
                 }
             }
@@ -550,7 +550,7 @@ namespace mcp_nexus.Debugger
         {
             if (disposing)
             {
-                m_Logger.LogInformation("🧹 Disposing CdbCommandExecutor");
+                m_Logger.LogDebug("🧹 Disposing CdbCommandExecutor");
 
                 // Cancel session
                 m_SessionCancellation?.Cancel();
@@ -586,7 +586,7 @@ namespace mcp_nexus.Debugger
                 m_SessionCancellation?.Dispose();
                 m_CommandExecutionSemaphore?.Dispose();
 
-                m_Logger.LogInformation("🧹 CdbCommandExecutor disposed");
+                m_Logger.LogDebug("🧹 CdbCommandExecutor disposed");
             }
         }
     }

@@ -69,7 +69,7 @@ namespace mcp_nexus.CommandQueue.Recovery
             }
             catch (OperationCanceledException)
             {
-                m_Logger.LogInformation("🛑 Command processor stopped due to cancellation");
+                m_Logger.LogWarning("🛑 Command processor stopped due to cancellation");
             }
             catch (Exception ex)
             {
@@ -103,7 +103,7 @@ namespace mcp_nexus.CommandQueue.Recovery
                 // Update command state
                 UpdateCommandState(queuedCommand, CommandState.Executing);
 
-                m_Logger.LogInformation("⚡ Processing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
+                m_Logger.LogDebug("⚡ Processing command {CommandId}: {Command}", queuedCommand.Id, queuedCommand.Command);
 
                 // Execute command with recovery
                 var result = await m_RecoveryManager.ExecuteCommandWithRecoveryAsync(queuedCommand, cancellationToken);
@@ -118,7 +118,7 @@ namespace mcp_nexus.CommandQueue.Recovery
                 // Log detailed command statistics
                 LogCommandStatistics(queuedCommand, startTime, completionTime, CommandState.Completed);
 
-                m_Logger.LogInformation("✅ Command {CommandId} completed in {Elapsed}ms",
+                m_Logger.LogDebug("✅ Command {CommandId} completed in {Elapsed}ms",
                     queuedCommand.Id, elapsed.TotalMilliseconds);
 
                 // Send completion notification
@@ -151,7 +151,7 @@ namespace mcp_nexus.CommandQueue.Recovery
                 var completionTime = DateTime.Now;
                 LogCommandStatistics(queuedCommand, startTime, completionTime, CommandState.Cancelled);
 
-                m_Logger.LogInformation("🛑 Command {CommandId} cancelled due to service shutdown", queuedCommand.Id);
+                m_Logger.LogWarning("🛑 Command {CommandId} cancelled due to service shutdown", queuedCommand.Id);
             }
             catch (Exception ex)
             {
@@ -453,7 +453,7 @@ namespace mcp_nexus.CommandQueue.Recovery
             if (now - m_LastStatsLog >= TimeSpan.FromMinutes(5))
             {
                 var (Processed, Failed, Cancelled) = GetPerformanceStats();
-                m_Logger.LogInformation("📊 Command stats - Processed: {Processed}, Failed: {Failed}, Cancelled: {Cancelled}, Active: {Active}",
+                m_Logger.LogDebug("📊 Command stats - Processed: {Processed}, Failed: {Failed}, Cancelled: {Cancelled}, Active: {Active}",
                     Processed, Failed, Cancelled, m_ActiveCommands.Count);
                 m_LastStatsLog = now;
             }
@@ -512,7 +512,7 @@ namespace mcp_nexus.CommandQueue.Recovery
                 var totalDuration = completionTime - command.QueueTime;
 
                 // Structured log for easy parsing - all times in milliseconds
-                m_Logger.LogInformation(
+                m_Logger.LogDebug(
                     "📊 COMMAND_STATS | SessionId: {SessionId} | CommandId: {CommandId} | Command: {Command} | " +
                     "State: {State} | QueuedAt: {QueuedAt:yyyy-MM-dd HH:mm:ss.fff} | " +
                     "StartedAt: {StartedAt:yyyy-MM-dd HH:mm:ss.fff} | CompletedAt: {CompletedAt:yyyy-MM-dd HH:mm:ss.fff} | " +

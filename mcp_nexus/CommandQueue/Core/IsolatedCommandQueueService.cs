@@ -105,7 +105,7 @@ namespace mcp_nexus.CommandQueue.Core
         /// <returns>A task representing the asynchronous operation</returns>
         private async Task ProcessCommandQueueAsync()
         {
-            m_Logger.LogInformation("🔄 Starting command queue processing for session {SessionId}", m_Config.SessionId);
+            m_Logger.LogDebug("🔄 Starting command queue processing for session {SessionId}", m_Config.SessionId);
 
             try
             {
@@ -150,7 +150,7 @@ namespace mcp_nexus.CommandQueue.Core
             }
             finally
             {
-                m_Logger.LogInformation("🏁 Command processing loop ended for session {SessionId}", m_Config.SessionId);
+                m_Logger.LogDebug("🏁 Command processing loop ended for session {SessionId}", m_Config.SessionId);
             }
         }
 
@@ -329,7 +329,7 @@ namespace mcp_nexus.CommandQueue.Core
 
                 m_NotificationManager.NotifyCommandStatusFireAndForget(commandId, command, statusMessage, null, progress);
 
-                m_Logger.LogInformation("✅ Command {CommandId} queued successfully for session {SessionId} (position: {Position})",
+                m_Logger.LogDebug("✅ Command {CommandId} queued successfully for session {SessionId} (position: {Position})",
                     commandId, m_Config.SessionId, queuePosition);
 
                 return commandId;

@@ -233,7 +233,7 @@ namespace mcp_nexus.Extensions
                 // Queue the command (this enables batching!)
                 var queuedCommandId = commandQueue.QueueCommand(request.Command);
 
-                m_Logger.LogInformation("Extension queued command {CommandId} for session {SessionId}",
+                m_Logger.LogDebug("Extension queued command {CommandId} for session {SessionId}",
                     queuedCommandId, sessionId);
 
                 return Ok(new ExtensionCallbackQueueResponse

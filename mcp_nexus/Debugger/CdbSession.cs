@@ -222,14 +222,14 @@ namespace mcp_nexus.Debugger
             {
                 m_Logger.LogDebug("About to call StartProcess directly");
                 var result = m_ProcessManager?.StartProcess(target, m_Config.CustomCdbPath) ?? throw new InvalidOperationException("Process manager not initialized");
-                m_Logger.LogInformation("🔧 StartProcess returned: {Result}", result);
+                m_Logger.LogDebug("🔧 StartProcess returned: {Result}", result);
 
                 if (result)
                 {
                     // Initialize the session-scoped producer-consumer architecture
-                    m_Logger.LogInformation("🔧 Initializing session-scoped architecture");
+                    m_Logger.LogDebug("🔧 Initializing session-scoped architecture");
                     await m_CommandExecutor.InitializeSessionAsync(m_ProcessManager).ConfigureAwait(false);
-                    m_Logger.LogInformation("🔧 Session-scoped architecture initialized successfully");
+                    m_Logger.LogDebug("🔧 Session-scoped architecture initialized successfully");
                 }
 
                 return result;
@@ -420,7 +420,7 @@ namespace mcp_nexus.Debugger
                 try
                 {
                     var result = m_ProcessManager.StopProcess();
-                    m_Logger.LogInformation("StopSession completed with result: {Result}", result);
+                    m_Logger.LogDebug("StopSession completed with result: {Result}", result);
                     return result;
                 }
                 catch (Exception ex)

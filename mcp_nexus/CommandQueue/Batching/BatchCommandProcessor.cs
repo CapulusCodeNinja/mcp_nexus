@@ -69,7 +69,7 @@ namespace mcp_nexus.CommandQueue.Batching
             var timeoutMs = Math.Max(1, m_Config.BatchWaitTimeoutMs); // Minimum 1ms to avoid invalid timer values
             m_BatchTimer = new Timer(OnBatchTimeout, null, TimeSpan.FromMilliseconds(timeoutMs), TimeSpan.FromMilliseconds(timeoutMs));
 
-            m_Logger.LogInformation("🚀 BatchCommandProcessor initialized - Enabled: {Enabled}, MaxBatchSize: {MaxBatchSize}, WaitTimeout: {WaitTimeout}ms",
+            m_Logger.LogDebug("🚀 BatchCommandProcessor initialized - Enabled: {Enabled}, MaxBatchSize: {MaxBatchSize}, WaitTimeout: {WaitTimeout}ms",
                 m_Config.Enabled, m_Config.MaxBatchSize, m_Config.BatchWaitTimeoutMs);
         }
 

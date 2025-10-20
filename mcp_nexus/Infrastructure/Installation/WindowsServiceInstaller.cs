@@ -100,7 +100,7 @@ namespace mcp_nexus.Infrastructure.Installation
 
                     if (startResult)
                     {
-                        logger?.LogInformation("Service started successfully");
+                    logger?.LogInformation("Service started successfully");
                     }
                     else
                     {
@@ -207,13 +207,13 @@ namespace mcp_nexus.Infrastructure.Installation
 
                 // Step 0: Check if service exists
                 Console.WriteLine("Checking if service exists...");
-                logger?.LogInformation("Checking if MCP-Nexus service exists");
+                logger?.LogDebug("Checking if MCP-Nexus service exists");
 
                 var serviceExists = await CheckServiceExistsAsync(logger);
                 if (!serviceExists)
                 {
                     Console.WriteLine("⚠ Service does not exist. Installing service first...");
-                    logger?.LogInformation("Service does not exist, installing first");
+                        logger?.LogWarning("Service does not exist, installing first");
 
                     var installResult = await InstallServiceAsync(logger);
                     if (!installResult)
@@ -228,7 +228,7 @@ namespace mcp_nexus.Infrastructure.Installation
 
                 // Step 1: Check if service is running and stop it if needed
                 Console.WriteLine("Checking if MCP-Nexus service is running...");
-                logger?.LogInformation("Checking if MCP-Nexus service is running");
+                logger?.LogDebug("Checking if MCP-Nexus service is running");
 
                 var (exists, isRunning) = GetServiceStatus();
                 bool wasRunning = false;
@@ -261,13 +261,13 @@ namespace mcp_nexus.Infrastructure.Installation
                     else
                     {
                         Console.WriteLine("Service is not running");
-                        logger?.LogInformation("Service is not running");
+                        logger?.LogDebug("Service is not running");
                     }
                 }
                 else
                 {
                     Console.WriteLine("Service does not exist");
-                    logger?.LogInformation("Service does not exist");
+                    logger?.LogWarning("Service does not exist");
                 }
 
                 // Step 2: Build the project
@@ -402,7 +402,7 @@ namespace mcp_nexus.Infrastructure.Installation
                 using var service = new ServiceController(m_ServiceName);
                 if (service.Status == ServiceControllerStatus.Running)
                 {
-                    logger?.LogInformation("Service is already running");
+                    logger?.LogDebug("Service is already running");
                     return Task.FromResult(true);
                 }
 
@@ -429,7 +429,7 @@ namespace mcp_nexus.Infrastructure.Installation
                 using var service = new ServiceController(m_ServiceName);
                 if (service.Status == ServiceControllerStatus.Stopped)
                 {
-                    logger?.LogInformation("Service is already stopped");
+                    logger?.LogDebug("Service is already stopped");
                     return Task.FromResult(true);
                 }
 
@@ -584,7 +584,7 @@ namespace mcp_nexus.Infrastructure.Installation
                 if (!Directory.Exists(targetDir))
                 {
                     Directory.CreateDirectory(targetDir);
-                    logger?.LogInformation("Created installation directory: {TargetDir}", targetDir);
+                    logger?.LogDebug("Created installation directory: {TargetDir}", targetDir);
                 }
 
                 // Copy all files from source to target

@@ -40,7 +40,7 @@ namespace mcp_nexus.CommandQueue.Core
         /// </summary>
         public async Task ProcessCommandQueueAsync()
         {
-            m_Logger.LogInformation("🔄 Starting command processing loop for session {SessionId}", m_Config.SessionId);
+            m_Logger.LogDebug("🔄 Starting command processing loop for session {SessionId}", m_Config.SessionId);
 
             try
             {
@@ -52,7 +52,7 @@ namespace mcp_nexus.CommandQueue.Core
                         // Check for cancellation before processing
                         m_ProcessingCts.Token.ThrowIfCancellationRequested();
 
-                        m_Logger.LogInformation("🎯 Processing command {CommandId}: {Command}", command.Id, command.Command);
+                        m_Logger.LogDebug("🎯 Processing command {CommandId}: {Command}", command.Id, command.Command);
 
                         // Set as current command
                         m_Tracker.SetCurrentCommand(command);
@@ -83,7 +83,7 @@ namespace mcp_nexus.CommandQueue.Core
             }
             catch (OperationCanceledException)
             {
-                m_Logger.LogInformation("Command processing cancelled for session {SessionId}", m_Config.SessionId);
+                m_Logger.LogWarning("Command processing cancelled for session {SessionId}", m_Config.SessionId);
             }
             catch (Exception ex)
             {
@@ -122,7 +122,7 @@ namespace mcp_nexus.CommandQueue.Core
                     m_Logger.LogWarning(cleanupEx, "Error during cleanup in finally block for session {SessionId}", m_Config.SessionId);
                 }
 
-                m_Logger.LogInformation("✅ Command processing loop ended for session {SessionId}", m_Config.SessionId);
+                m_Logger.LogDebug("✅ Command processing loop ended for session {SessionId}", m_Config.SessionId);
             }
         }
 
@@ -373,7 +373,7 @@ namespace mcp_nexus.CommandQueue.Core
                     return true;
                 }
 
-                m_Logger.LogInformation("🚫 Cancelling command {CommandId}", commandId);
+                    m_Logger.LogWarning("🚫 Cancelling command {CommandId}", commandId);
                 command.CancellationTokenSource?.Cancel();
 
                 // If it's not currently executing, complete it immediately
