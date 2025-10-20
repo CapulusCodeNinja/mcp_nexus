@@ -136,11 +136,11 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
             // Act
             var batchCommand = builder.CreateBatchCommand(commands);
 
-            // Assert - should use semicolons, not newlines
+            // Assert - should use semicolons, not newlines, and no batch start/end wrappers
             Assert.DoesNotContain("\n", batchCommand);
             Assert.Contains("; ", batchCommand);
-            Assert.Contains(".echo MCP_NEXUS_BATCH_START; ", batchCommand);
-            Assert.Contains("; .echo MCP_NEXUS_BATCH_END", batchCommand);
+            Assert.DoesNotContain("MCP_NEXUS_BATCH_START", batchCommand);
+            Assert.DoesNotContain("MCP_NEXUS_BATCH_END", batchCommand);
         }
 
         [Fact]
@@ -176,12 +176,11 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
             // Act
             var batchCommand = builder.CreateBatchCommand(commands);
 
-            // Assert - verify complete CDB syntax
-            var expected = ".echo MCP_NEXUS_BATCH_START; " +
-                           ".echo MCP_NEXUS_CMD_SEP_CMD-1_START; lm; .echo MCP_NEXUS_CMD_SEP_CMD-1_END; " +
-                           ".echo MCP_NEXUS_CMD_SEP_CMD-2_START; !threads; .echo MCP_NEXUS_CMD_SEP_CMD-2_END; " +
-                           ".echo MCP_NEXUS_BATCH_END";
-            Assert.Equal(expected, batchCommand);
+            // Assert - verify expected per-command separators with semicolons and no batch wrappers
+            Assert.StartsWith($".echo {CdbSentinels.CommandSeparator}_CMD-1_START; lm; ", batchCommand);
+            Assert.Contains($".echo {CdbSentinels.CommandSeparator}_CMD-1_END; ", batchCommand);
+            Assert.Contains($".echo {CdbSentinels.CommandSeparator}_CMD-2_START; !threads; ", batchCommand);
+            Assert.EndsWith($".echo {CdbSentinels.CommandSeparator}_CMD-2_END", batchCommand);
         }
 
         #endregion

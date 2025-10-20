@@ -214,7 +214,7 @@ namespace mcp_nexus_unit_tests.CommandQueue.Core
         /// Tests that performance stats are tracked
         /// </summary>
         [Fact]
-        public void GetPerformanceStats_ShouldTrackCommands()
+        public async Task GetPerformanceStats_ShouldTrackCommands()
         {
             // Arrange
             m_MockCdbSession.Setup(x => x.ExecuteCommand(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -226,7 +226,15 @@ namespace mcp_nexus_unit_tests.CommandQueue.Core
             service.QueueCommand("test command 1");
             service.QueueCommand("test command 2");
             
-            var stats = service.GetPerformanceStats();
+            // Poll briefly (<=100ms total) to allow background processor to record stats
+            (long Total, long Completed, long Failed, long Cancelled) stats = default;
+            for (int i = 0; i < 10; i++)
+            {
+                stats = service.GetPerformanceStats();
+                if (stats.Total >= 2)
+                    break;
+                await Task.Delay(10);
+            }
 
             // Assert - commands are queued, so total should be at least 2
             // Note: Commands may not be processed yet, but they should be tracked

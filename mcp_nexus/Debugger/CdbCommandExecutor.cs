@@ -481,8 +481,9 @@ namespace mcp_nexus.Debugger
                     m_currentCommandId = batchCommandId;
                 }
 
-                // Send batch command directly without sentinel wrapping
-                await SendCommandToCdbAsync(processManager, batchCommand, externalCancellationToken).ConfigureAwait(false);
+                // Wrap entire batch in single-command sentinels so normal completion applies
+                var wrappedBatch = CreateCommandWithSentinels(batchCommand);
+                await SendCommandToCdbAsync(processManager, wrappedBatch, externalCancellationToken).ConfigureAwait(false);
 
                 var timeoutMs = m_Config.CommandTimeoutMs;
                 using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMs));
