@@ -216,23 +216,16 @@ namespace mcp_nexus.CommandQueue.Batching
                     var timeInQueue = (startedAt - (queuedAt == default ? startedAt : queuedAt)).TotalMilliseconds;
                     var timeExecution = commandResult.Duration.TotalMilliseconds;
                     var totalDuration = (completedAt - (queuedAt == default ? startedAt : queuedAt)).TotalMilliseconds;
-                    
-                    m_Logger.LogInformation(
-                        "[STATISTICS] Batch command completed: {CommandId}\r\n"
-                        "SessionId: {SessionId}\r\n" 
-                        "Command: {Command}\r\n"
-                        "QueuedAt: {QueuedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n"
-                        "StartedAt: {StartedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" 
-                        "CompletedAt: {CompletedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n"
-                        "TimeInQueue: {TimeInQueueMs}ms\r\n"
-                        "TimeExecution: {TimeExecutionMs}ms\r\n"
-                        "TotalDuration: {TotalDurationMs}ms",
+
+                    Utilities.Statistics.CommandStats(
+                        m_Logger,
+                        "Batch command completed",
                         m_Config.SessionId,
                         command.Id,
                         command.Command,
-                        command.QueueTime,
-                        startTime,
-                        endTime,
+                        queuedAt,
+                        startedAt,
+                        completedAt,
                         timeInQueue,
                         timeExecution,
                         totalDuration);

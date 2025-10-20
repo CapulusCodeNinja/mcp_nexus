@@ -177,16 +177,9 @@ namespace mcp_nexus.CommandQueue.Core
                     var timeExecution = commandResult.Duration.TotalMilliseconds;
                     var totalDuration = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                     
-                    m_Logger.LogInformation(
-                        "[STATISTICS] Command completed: {CommandId}\r\n"
-                        "SessionId: {SessionId}\r\n" 
-                        "Command: {Command}\r\n"
-                        "QueuedAt: {QueuedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n"
-                        "StartedAt: {StartedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" 
-                        "CompletedAt: {CompletedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n"
-                        "TimeInQueue: {TimeInQueueMs}ms\r\n"
-                        "TimeExecution: {TimeExecutionMs}ms\r\n"
-                        "TotalDuration: {TotalDurationMs}ms",
+                    Utilities.Statistics.LogCommandStats(
+                        m_Logger,
+                        "Command completed",
                         m_Config.SessionId,
                         command.Id,
                         command.Command,
@@ -232,10 +225,9 @@ namespace mcp_nexus.CommandQueue.Core
                     var timeInQueueC = (startTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                     var timeExecutionC = cancelledResult.Duration.TotalMilliseconds;
                     var totalDurationC = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
-                    m_Logger.LogInformation(
-                        "COMMAND_STATS | SessionId: {SessionId} | CommandId: {CommandId} | Command: {Command} | State: Cancelled | " +
-                        "QueuedAt: {QueuedAt:yyyy-MM-dd HH:mm:ss.fff} | StartedAt: {StartedAt:yyyy-MM-dd HH:mm:ss.fff} | CompletedAt: {CompletedAt:yyyy-MM-dd HH:mm:ss.fff} | " +
-                        "TimeInQueue: {TimeInQueueMs}ms | TimeExecution: {TimeExecutionMs}ms | TotalDuration: {TotalDurationMs}ms",
+                    Utilities.Logging.Statistics.LogCommandStats(
+                        m_Logger,
+                        "Command cancelled",
                         m_Config.SessionId,
                         command.Id,
                         command.Command,
@@ -273,10 +265,10 @@ namespace mcp_nexus.CommandQueue.Core
                     var timeInQueueF = (startTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                     var timeExecutionF = failedResult.Duration.TotalMilliseconds;
                     var totalDurationF = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
-                    m_Logger.LogInformation(
-                        "COMMAND_STATS | SessionId: {SessionId} | CommandId: {CommandId} | Command: {Command} | State: {State} | " +
-                        "QueuedAt: {QueuedAt:yyyy-MM-dd HH:mm:ss.fff} | StartedAt: {StartedAt:yyyy-MM-dd HH:mm:ss.fff} | CompletedAt: {CompletedAt:yyyy-MM-dd HH:mm:ss.fff} | " +
-                        "TimeInQueue: {TimeInQueueMs}ms | TimeExecution: {TimeExecutionMs}ms | TotalDuration: {TotalDurationMs}ms",
+                    
+                    Utilities.Logging.Statistics.CommandStats(
+                        m_Logger,
+                        stopwatch.Elapsed >= m_Config.DefaultCommandTimeout ? "Command timed out" : "Command cancelled",
                         m_Config.SessionId,
                         command.Id,
                         command.Command,
@@ -285,8 +277,7 @@ namespace mcp_nexus.CommandQueue.Core
                         endTime,
                         timeInQueueF,
                         timeExecutionF,
-                        totalDurationF,
-                        stopwatch.Elapsed >= m_Config.DefaultCommandTimeout ? "TimedOut" : "Cancelled");
+                        totalDurationF);
 
                     CompleteCommandSafely(command, message, CommandState.Failed);
                     m_Tracker.UpdateState(command.Id ?? string.Empty, CommandState.Failed);
@@ -319,10 +310,9 @@ namespace mcp_nexus.CommandQueue.Core
                 var timeInQueueX = (startTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                 var timeExecutionX = failedResult.Duration.TotalMilliseconds;
                 var totalDurationX = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
-                m_Logger.LogInformation(
-                    "COMMAND_STATS | SessionId: {SessionId} | CommandId: {CommandId} | Command: {Command} | State: Failed | " +
-                    "QueuedAt: {QueuedAt:yyyy-MM-dd HH:mm:ss.fff} | StartedAt: {StartedAt:yyyy-MM-dd HH:mm:ss.fff} | CompletedAt: {CompletedAt:yyyy-MM-dd HH:mm:ss.fff} | " +
-                    "TimeInQueue: {TimeInQueueMs}ms | TimeExecution: {TimeExecutionMs}ms | TotalDuration: {TotalDurationMs}ms",
+                Utilities.Logging.Statistics.LogCommandStats(
+                    m_Logger,
+                    "Command failed",
                     m_Config.SessionId,
                     command.Id,
                     command.Command,
