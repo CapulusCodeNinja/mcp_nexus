@@ -17,6 +17,7 @@ namespace mcp_nexus.CommandQueue.Batching
         private readonly SessionCommandResultCache? m_ResultCache;
         private readonly ILogger<BatchCommandProcessor> m_Logger;
         private readonly BatchingConfiguration m_Config;
+        private readonly string m_SessionId;
         private readonly BatchCommandFilter m_Filter;
         private readonly CommandBatchBuilder m_BatchBuilder;
         private readonly BatchResultParser m_ResultParser;
@@ -40,16 +41,19 @@ namespace mcp_nexus.CommandQueue.Batching
         /// <param name="resultCache">Optional result cache for storing command results</param>
         /// <param name="logger">The logger instance</param>
         /// <param name="options">The batching configuration options</param>
+        /// <param name="sessionId">The session identifier</param>
         /// <exception cref="ArgumentNullException">Thrown when any required parameter is null</exception>
         public BatchCommandProcessor(
             ICdbSession cdbSession,
             SessionCommandResultCache? resultCache,
             ILogger<BatchCommandProcessor> logger,
-            IOptions<BatchingConfiguration> options)
+            IOptions<BatchingConfiguration> options,
+            string sessionId)
         {
             m_CdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
             m_ResultCache = resultCache;
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_SessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
 
             if (options?.Value == null)
                 throw new ArgumentNullException(nameof(options));

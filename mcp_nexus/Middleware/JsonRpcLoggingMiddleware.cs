@@ -202,8 +202,9 @@ namespace mcp_nexus.Middleware
         /// <param name="element">The JSON element to process.</param>
         /// <param name="maxFieldLength">The maximum length for field values.</param>
         /// <param name="shouldTruncate">Whether to actually truncate the fields.</param>
+        /// <param name="propertyName">The name of the property this element represents (optional).</param>
         /// <returns>A new JSON element with truncated fields.</returns>
-        private static JsonElement TruncateLargeFields(JsonElement element, int maxFieldLength = 1000, bool shouldTruncate = true)
+        private static JsonElement TruncateLargeFields(JsonElement element, int maxFieldLength = 1000, bool shouldTruncate = true, string? propertyName = null)
         {
             // If truncation is disabled, return the element as-is
             if (!shouldTruncate)
@@ -229,7 +230,7 @@ namespace mcp_nexus.Middleware
                         }
                         else
                         {
-                            truncatedObject[property.Name] = TruncateLargeFields(property.Value, maxFieldLength, shouldTruncate);
+                            truncatedObject[property.Name] = TruncateLargeFields(property.Value, maxFieldLength, shouldTruncate, property.Name);
                         }
                     }
                     return JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(truncatedObject, JsonOptions.JsonIndented)).RootElement;

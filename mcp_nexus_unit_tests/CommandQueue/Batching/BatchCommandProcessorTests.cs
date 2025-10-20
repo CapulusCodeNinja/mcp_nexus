@@ -58,7 +58,8 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
-                m_MockOptions.Object);
+                m_MockOptions.Object,
+                "test-session-id");
 
             // Assert
             Assert.NotNull(processor);
@@ -72,7 +73,8 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
                 null!,
                 m_ResultCache,
                 m_MockLogger.Object,
-                m_MockOptions.Object));
+                m_MockOptions.Object,
+                "test-session-id"));
         }
 
         [Fact]
@@ -83,7 +85,8 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 null!,
-                m_MockOptions.Object));
+                m_MockOptions.Object,
+                "test-session-id"));
         }
 
         [Fact]
@@ -94,6 +97,19 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
+                null!,
+                "test-session-id"));
+        }
+
+        [Fact]
+        public void Constructor_WithNullSessionId_ShouldThrowArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => new BatchCommandProcessor(
+                m_MockCdbSession.Object,
+                m_ResultCache,
+                m_MockLogger.Object,
+                m_MockOptions.Object,
                 null!));
         }
 
@@ -109,7 +125,8 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
-                m_MockOptions.Object);
+                m_MockOptions.Object,
+                "test-session-id");
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() => processor.ProcessCommandAsync(null!));
@@ -123,7 +140,8 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
-                m_MockOptions.Object);
+                m_MockOptions.Object,
+                "test-session-id");
 
             var command = new QueuedCommand(
                 "test-id",
@@ -151,7 +169,8 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
-                m_MockOptions.Object);
+                m_MockOptions.Object,
+                "test-session-id");
 
             var command = new QueuedCommand(
                 "test-id",
@@ -177,7 +196,8 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
-                m_MockOptions.Object);
+                m_MockOptions.Object,
+                "test-session-id");
 
             var commands = new List<QueuedCommand>();
             for (int i = 0; i < m_Config.MaxBatchSize; i++)
@@ -219,7 +239,8 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
-                m_MockOptions.Object);
+                m_MockOptions.Object,
+                "test-session-id");
 
             // Act
             processor.Dispose();
@@ -237,7 +258,8 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
-                m_MockOptions.Object);
+                m_MockOptions.Object,
+                "test-session-id");
 
             processor.Dispose();
 
@@ -595,7 +617,8 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
                 m_MockCdbSession.Object,
                 m_ResultCache,
                 m_MockLogger.Object,
-                m_MockOptions.Object);
+                m_MockOptions.Object,
+                "test-session-id");
 
             // Queue a command to start the batch processing loop (which creates the timer)
             var cts = new CancellationTokenSource();

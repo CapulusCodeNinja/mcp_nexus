@@ -225,7 +225,7 @@ namespace mcp_nexus.CommandQueue.Core
                     var timeInQueueC = (startTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                     var timeExecutionC = cancelledResult.Duration.TotalMilliseconds;
                     var totalDurationC = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
-                    
+
                     Utilities.Statistics.CommandStats(
                         m_Logger,
                         Utilities.Statistics.CommandState.Cancelled,
@@ -313,7 +313,7 @@ namespace mcp_nexus.CommandQueue.Core
                 var timeInQueueX = (startTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                 var timeExecutionX = failedResult.Duration.TotalMilliseconds;
                 var totalDurationX = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
-                
+
                 Utilities.Statistics.CommandStats(
                     m_Logger,
                     Utilities.Statistics.CommandState.Failed,
