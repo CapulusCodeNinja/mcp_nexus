@@ -335,7 +335,7 @@ namespace mcp_nexus.Resources
                 var currentCommand = commandQueue.GetCurrentCommand();
                 var queueStatus = commandQueue.GetQueueStatus().ToList();
 
-                // Create a list of all commands (current + queued)
+                // Create a list of all commands (current + queued + completed)
                 var allCommands = new List<QueuedCommand>();
 
                 // Add current command if it exists
@@ -361,6 +361,30 @@ namespace mcp_nexus.Resources
                         status == "Executing" ? CommandState.Executing : CommandState.Queued
                     );
                     allCommands.Add(queuedCmd);
+                }
+
+                // CRITICAL FIX: Add completed commands from result cache
+                var cachedResults = commandQueue.GetAllCachedResults();
+                foreach (var (commandId, cachedResult) in cachedResults)
+                {
+                    // Skip if already added as current or queued command
+                    if (allCommands.Any(c => c.Id == commandId))
+                        continue;
+
+                    // Create a QueuedCommand for completed items
+                    var completedCmd = new QueuedCommand(
+                        commandId,
+                        cachedResult.OriginalCommand ?? "Unknown command",
+                        cachedResult.QueueTime,
+                        new TaskCompletionSource<string>(),
+                        new CancellationTokenSource(),
+                        CommandState.Completed // Mark as completed
+                    );
+                    
+                    // Set the result in the completion source so it shows as finished
+                    completedCmd.CompletionSource?.TrySetResult(cachedResult.Result.Output);
+                    
+                    allCommands.Add(completedCmd);
                 }
 
                 var realCommands = allCommands.Select(cmd => new

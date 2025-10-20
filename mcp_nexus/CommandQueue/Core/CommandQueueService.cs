@@ -345,5 +345,15 @@ namespace mcp_nexus.CommandQueue.Core
                 m_Logger.LogError(ex, "💥 Error during CommandQueueService disposal");
             }
         }
+
+        /// <summary>
+        /// Gets all cached command results for completed commands
+        /// </summary>
+        /// <returns>Dictionary of command ID to cached result for completed commands</returns>
+        public Dictionary<string, CachedCommandResult> GetAllCachedResults()
+        {
+            // This basic implementation doesn't have result caching
+            return new Dictionary<string, CachedCommandResult>();
+        }
     }
 }

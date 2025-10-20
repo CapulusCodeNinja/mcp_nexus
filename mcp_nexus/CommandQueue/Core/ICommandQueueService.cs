@@ -66,6 +66,12 @@ namespace mcp_nexus.CommandQueue.Core
         /// <param name="commandId">The unique identifier of the command.</param>
         /// <returns>Detailed command information, or <c>null</c> if the command is not found.</returns>
         CommandInfo? GetCommandInfo(string commandId);
+
+        /// <summary>
+        /// Gets all cached command results for completed commands.
+        /// </summary>
+        /// <returns>Dictionary of command ID to cached result for completed commands.</returns>
+        Dictionary<string, CachedCommandResult> GetAllCachedResults();
     }
 }
 

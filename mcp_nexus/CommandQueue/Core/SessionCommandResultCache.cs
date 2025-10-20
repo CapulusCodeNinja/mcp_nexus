@@ -231,6 +231,16 @@ namespace mcp_nexus.CommandQueue.Core
         }
 
         /// <summary>
+        /// Gets all cached command results with their IDs
+        /// </summary>
+        /// <returns>Dictionary of command ID to cached result</returns>
+        public Dictionary<string, CachedCommandResult> GetAllCachedResults()
+        {
+            if (m_Disposed) return new Dictionary<string, CachedCommandResult>();
+            return new Dictionary<string, CachedCommandResult>(m_Results);
+        }
+
+        /// <summary>
         /// Gets cache statistics
         /// </summary>
         /// <returns>Cache statistics</returns>
