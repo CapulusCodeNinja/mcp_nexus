@@ -8,6 +8,11 @@ namespace mcp_nexus.CommandQueue.Batching
     public class BatchingConfiguration
     {
         /// <summary>
+        /// Gets or sets the session identifier for this batching configuration
+        /// </summary>
+        public string SessionId { get; set; } = string.Empty;
+
+        /// <summary>
         /// Gets or sets whether command batching is enabled
         /// </summary>
         public bool Enabled { get; set; } = true;

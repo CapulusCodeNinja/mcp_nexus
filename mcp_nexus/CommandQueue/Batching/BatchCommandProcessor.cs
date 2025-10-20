@@ -220,7 +220,7 @@ namespace mcp_nexus.CommandQueue.Batching
                     Utilities.Statistics.CommandStats(
                         m_Logger,
                         Utilities.Statistics.CommandState.SuccessBatch,
-                        m_CdbSession.SessionId,
+                        m_Config.SessionId,
                         command.Id,
                         command.Command,
                         queuedAt,
