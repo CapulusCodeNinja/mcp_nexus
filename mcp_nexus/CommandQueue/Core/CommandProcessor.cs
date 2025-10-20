@@ -177,7 +177,7 @@ namespace mcp_nexus.CommandQueue.Core
                     var timeExecution = commandResult.Duration.TotalMilliseconds;
                     var totalDuration = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                     
-                    Utilities.Statistics.LogCommandStats(
+                    Utilities.Statistics.CommandStats(
                         m_Logger,
                         "Command completed",
                         m_Config.SessionId,
@@ -225,7 +225,7 @@ namespace mcp_nexus.CommandQueue.Core
                     var timeInQueueC = (startTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                     var timeExecutionC = cancelledResult.Duration.TotalMilliseconds;
                     var totalDurationC = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
-                    Utilities.Logging.Statistics.LogCommandStats(
+                    Utilities.Statistics.CommandStats(
                         m_Logger,
                         "Command cancelled",
                         m_Config.SessionId,
@@ -266,7 +266,7 @@ namespace mcp_nexus.CommandQueue.Core
                     var timeExecutionF = failedResult.Duration.TotalMilliseconds;
                     var totalDurationF = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                     
-                    Utilities.Logging.Statistics.CommandStats(
+                    Utilities.Statistics.CommandStats(
                         m_Logger,
                         stopwatch.Elapsed >= m_Config.DefaultCommandTimeout ? "Command timed out" : "Command cancelled",
                         m_Config.SessionId,
@@ -310,7 +310,7 @@ namespace mcp_nexus.CommandQueue.Core
                 var timeInQueueX = (startTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
                 var timeExecutionX = failedResult.Duration.TotalMilliseconds;
                 var totalDurationX = (endTime - (command.QueueTime == default ? startTime : command.QueueTime)).TotalMilliseconds;
-                Utilities.Logging.Statistics.LogCommandStats(
+                Utilities.Statistics.CommandStats(
                     m_Logger,
                     "Command failed",
                     m_Config.SessionId,

@@ -78,7 +78,7 @@ namespace mcp_nexus.CommandQueue.Core
             if (batchingOptions?.Value?.Enabled == true)
             {
                 var batchLogger = loggerFactory.CreateLogger<BatchCommandProcessor>();
-                m_BatchProcessor = new BatchCommandProcessor(m_CdbSession, m_ResultCache, batchLogger, batchingOptions);
+                m_BatchProcessor = new BatchCommandProcessor(m_CdbSession, m_ResultCache, batchLogger, batchingOptions, sessionId);
                 m_Logger.LogInformation("🚀 Command batching enabled for session {SessionId}", sessionId);
             }
             else
