@@ -52,9 +52,9 @@ namespace mcp_nexus.Utilities
                 "TimeInQueue: {TimeInQueueMs}ms\r\n" +
                 "TimeExecution: {TimeExecutionMs}ms\r\n" +
                 "TotalDuration: {TotalDurationMs}ms",
-                header,
                 commandId,
                 sessionId,
+                status,
                 command,
                 queuedAt,
                 startedAt,
