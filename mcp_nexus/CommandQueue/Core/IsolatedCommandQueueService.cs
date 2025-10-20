@@ -28,8 +28,14 @@ namespace mcp_nexus.CommandQueue.Core
         // Core infrastructure
         private readonly BlockingCollection<QueuedCommand> m_CommandQueue;
         private readonly CancellationTokenSource m_ProcessingCts = new();
-        private readonly Task m_ProcessingTask;
+        private Task m_ProcessingTask;
         private bool m_Disposed = false;
+
+        // Task recovery infrastructure
+        private readonly object m_TaskRestartLock = new();
+        private int m_TaskRestartCount = 0;
+        private const int MaxTaskRestarts = 3;
+        private Exception? m_LastTaskException = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IsolatedCommandQueueService"/> class.
@@ -184,11 +190,90 @@ namespace mcp_nexus.CommandQueue.Core
 
         /// <summary>
         /// Checks if the command queue is ready to accept commands
+        /// Attempts automatic recovery if the processing task has faulted
         /// </summary>
         /// <returns>True if ready, false otherwise</returns>
         public bool IsReady()
         {
-            return !m_Disposed && m_ProcessingTask != null && !m_ProcessingTask.IsFaulted && !m_ProcessingCts.Token.IsCancellationRequested;
+            if (m_Disposed || m_ProcessingCts.Token.IsCancellationRequested)
+                return false;
+
+            if (m_ProcessingTask == null)
+                return false;
+
+            // If task is faulted, attempt automatic recovery
+            if (m_ProcessingTask.IsFaulted)
+            {
+                m_Logger.LogWarning("⚠️ Processing task is faulted for session {SessionId}, attempting automatic recovery", m_Config.SessionId);
+                
+                try
+                {
+                    var recovered = RestartProcessingTaskAsync().GetAwaiter().GetResult();
+                    if (recovered)
+                    {
+                        m_Logger.LogInformation("✅ Successfully recovered processing task for session {SessionId}", m_Config.SessionId);
+                        return true;
+                    }
+                    else
+                    {
+                        m_Logger.LogError("❌ Failed to recover processing task for session {SessionId} (restart limit reached)", m_Config.SessionId);
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.LogError(ex, "❌ Exception during processing task recovery for session {SessionId}", m_Config.SessionId);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Attempts to restart the processing task after a fault
+        /// </summary>
+        /// <returns>True if restart succeeded, false if restart limit reached</returns>
+        private Task<bool> RestartProcessingTaskAsync()
+        {
+            lock (m_TaskRestartLock)
+            {
+                if (m_TaskRestartCount >= MaxTaskRestarts)
+                {
+                    m_Logger.LogError("❌ Cannot restart processing task for session {SessionId}: restart limit ({Limit}) reached", 
+                        m_Config.SessionId, MaxTaskRestarts);
+                    return Task.FromResult(false);
+                }
+
+                // Log the fault details
+                if (m_ProcessingTask.Exception != null)
+                {
+                    m_LastTaskException = m_ProcessingTask.Exception;
+                    m_Logger.LogError(m_ProcessingTask.Exception, 
+                        "🔥 Processing task faulted for session {SessionId} (restart attempt {Count}/{Max})", 
+                        m_Config.SessionId, m_TaskRestartCount + 1, MaxTaskRestarts);
+                }
+
+                try
+                {
+                    // Create new processing task (old task is already faulted, no need to wait)
+                    m_Logger.LogInformation("🔄 Restarting processing task for session {SessionId} (attempt {Count}/{Max})", 
+                        m_Config.SessionId, m_TaskRestartCount + 1, MaxTaskRestarts);
+                    
+                    m_ProcessingTask = Task.Run(ProcessCommandQueueAsync, m_ProcessingCts.Token);
+                    m_TaskRestartCount++;
+
+                    m_Logger.LogInformation("✅ Processing task restarted successfully for session {SessionId} (restart count: {Count})", 
+                        m_Config.SessionId, m_TaskRestartCount);
+
+                    return Task.FromResult(true);
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.LogError(ex, "❌ Failed to restart processing task for session {SessionId}", m_Config.SessionId);
+                    return Task.FromResult(false);
+                }
+            }
         }
 
         /// <summary>
@@ -438,6 +523,28 @@ namespace mcp_nexus.CommandQueue.Core
                 return (0, 0, 0, 0);
 
             return m_Tracker.GetPerformanceStats();
+        }
+
+        /// <summary>
+        /// Gets diagnostic information about the command queue service
+        /// </summary>
+        /// <returns>Diagnostic information including task status, restart count, and health metrics</returns>
+        public QueueDiagnostics GetDiagnostics()
+        {
+            return new QueueDiagnostics
+            {
+                SessionId = m_Config.SessionId,
+                IsDisposed = m_Disposed,
+                IsCancellationRequested = m_ProcessingCts.Token.IsCancellationRequested,
+                TaskStatus = m_ProcessingTask?.Status.ToString() ?? "NotStarted",
+                TaskIsFaulted = m_ProcessingTask?.IsFaulted ?? false,
+                TaskRestartCount = m_TaskRestartCount,
+                MaxTaskRestarts = MaxTaskRestarts,
+                LastTaskException = m_LastTaskException?.GetBaseException()?.Message,
+                QueueCount = m_CommandQueue?.Count ?? 0,
+                IsQueueCompleted = m_CommandQueue?.IsCompleted ?? true,
+                PerformanceStats = GetPerformanceStats()
+            };
         }
 
         /// <summary>

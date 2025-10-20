@@ -1,0 +1,304 @@
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+using mcp_nexus.CommandQueue.Core;
+using mcp_nexus.Debugger;
+using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
+using mcp_nexus_unit_tests.Mocks;
+
+namespace mcp_nexus_unit_tests.CommandQueue.Core
+{
+    /// <summary>
+    /// Tests for BasicCommandProcessor
+    /// </summary>
+    public class BasicCommandProcessorTests : IDisposable
+    {
+        private readonly ICdbSession m_RealisticCdbSession;
+        private readonly Mock<ILogger<BasicCommandProcessor>> m_MockLogger;
+        private readonly BasicQueueConfiguration m_Config;
+        private readonly ConcurrentDictionary<string, QueuedCommand> m_ActiveCommands;
+        private readonly BasicCommandProcessor m_Processor;
+
+        public BasicCommandProcessorTests()
+        {
+            m_RealisticCdbSession = RealisticCdbTestHelper.CreateBugSimulatingCdbSession(Mock.Of<ILogger>());
+            m_MockLogger = new Mock<ILogger<BasicCommandProcessor>>();
+            m_Config = new BasicQueueConfiguration();
+            m_ActiveCommands = new ConcurrentDictionary<string, QueuedCommand>();
+            m_Processor = new BasicCommandProcessor(m_RealisticCdbSession, m_MockLogger.Object, m_Config, m_ActiveCommands);
+        }
+
+        [Fact]
+        public void Constructor_WithNullCdbSession_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() =>
+                new BasicCommandProcessor(null!, m_MockLogger.Object, m_Config, m_ActiveCommands));
+        }
+
+        [Fact]
+        public void Constructor_WithNullLogger_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() =>
+                new BasicCommandProcessor(m_RealisticCdbSession, null!, m_Config, m_ActiveCommands));
+        }
+
+        [Fact]
+        public void Constructor_WithNullConfig_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() =>
+                new BasicCommandProcessor(m_RealisticCdbSession, m_MockLogger.Object, null!, m_ActiveCommands));
+        }
+
+        [Fact]
+        public void Constructor_WithNullActiveCommands_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() =>
+                new BasicCommandProcessor(m_RealisticCdbSession, m_MockLogger.Object, m_Config, null!));
+        }
+
+        [Fact]
+        public void Constructor_WithValidParameters_InitializesCorrectly()
+        {
+            // Act
+            var processor = new BasicCommandProcessor(m_RealisticCdbSession, m_MockLogger.Object, m_Config, m_ActiveCommands);
+
+            // Assert
+            Assert.NotNull(processor);
+            Assert.Equal((0, 0, 0), processor.GetPerformanceStats());
+            Assert.Null(processor.GetCurrentCommand());
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_WithEmptyQueue_CompletesSuccessfully()
+        {
+            // Arrange
+            var commandQueue = new BlockingCollection<QueuedCommand>();
+            commandQueue.CompleteAdding();
+            var cancellationToken = new CancellationTokenSource().Token;
+
+            // Act
+            await m_Processor.ProcessCommandQueueAsync(commandQueue, cancellationToken);
+
+            // Assert
+            // Should complete without throwing
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_WithSingleCommand_ProcessesSuccessfully()
+        {
+            // Arrange
+            var commandQueue = new BlockingCollection<QueuedCommand>();
+            var cancellationTokenSource = new CancellationTokenSource();
+            var completionSource = new TaskCompletionSource<string>();
+            var queuedCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now, completionSource, cancellationTokenSource);
+
+            commandQueue.Add(queuedCommand);
+            commandQueue.CompleteAdding();
+
+            // Realistic mock handles ExecuteCommand internally
+
+            // Act
+            await m_Processor.ProcessCommandQueueAsync(commandQueue, cancellationTokenSource.Token);
+
+            // Assert
+            // Realistic mock verification - methods are called internally
+            Assert.True(completionSource.Task.IsCompleted);
+            var (Processed, Failed, Cancelled) = m_Processor.GetPerformanceStats();
+            Assert.Equal(1, Processed);
+            Assert.Equal(0, Failed);
+            Assert.Equal(0, Cancelled);
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_WithFailingCommand_HandlesFailure()
+        {
+            // Arrange
+            var commandQueue = new BlockingCollection<QueuedCommand>();
+            var cancellationTokenSource = new CancellationTokenSource();
+            var completionSource = new TaskCompletionSource<string>();
+            var queuedCommand = new QueuedCommand("cmd-1", "!invalid", DateTime.Now, completionSource, cancellationTokenSource);
+
+            commandQueue.Add(queuedCommand);
+            commandQueue.CompleteAdding();
+
+            // Realistic mock handles ExecuteCommand internally
+
+            // Act
+            await m_Processor.ProcessCommandQueueAsync(commandQueue, cancellationTokenSource.Token);
+
+            // Assert
+            // Realistic mock verification - methods are called internally
+            Assert.True(completionSource.Task.IsCompleted);
+            var (Processed, Failed, Cancelled) = m_Processor.GetPerformanceStats();
+            Assert.Equal(0, Processed);
+            Assert.Equal(1, Failed);
+            Assert.Equal(0, Cancelled);
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_WithCancelledCommand_HandlesCancellation()
+        {
+            // Arrange
+            var commandQueue = new BlockingCollection<QueuedCommand>();
+            var cancellationTokenSource = new CancellationTokenSource();
+            var commandCancellationTokenSource = new CancellationTokenSource();
+            var completionSource = new TaskCompletionSource<string>();
+            var queuedCommand = new QueuedCommand("cmd-1", "k", DateTime.Now, completionSource, commandCancellationTokenSource);
+
+            commandQueue.Add(queuedCommand);
+            commandQueue.CompleteAdding();
+
+            // Start processing in background
+            var processingTask = Task.Run(() => m_Processor.ProcessCommandQueueAsync(commandQueue, cancellationTokenSource.Token));
+
+            // Wait a bit for the command to start processing
+            await Task.Delay(50);
+
+            // Cancel the command after it starts
+            commandCancellationTokenSource.Cancel();
+
+            // Wait for processing to complete
+            await processingTask;
+
+            // Assert
+            var (Processed, Failed, Cancelled) = m_Processor.GetPerformanceStats();
+            Assert.Equal(0, Processed);
+            Assert.Equal(0, Failed);
+            Assert.Equal(1, Cancelled);
+        }
+
+        [Fact]
+        public async Task ProcessCommandQueueAsync_WithServiceShutdown_HandlesCancellation()
+        {
+            // Arrange
+            var commandQueue = new BlockingCollection<QueuedCommand>();
+            var serviceCancellationTokenSource = new CancellationTokenSource();
+            var commandCancellationTokenSource = new CancellationTokenSource();
+            var completionSource = new TaskCompletionSource<string>();
+            var queuedCommand = new QueuedCommand("cmd-1", "k", DateTime.Now, completionSource, commandCancellationTokenSource);
+
+            commandQueue.Add(queuedCommand);
+            commandQueue.CompleteAdding();
+
+            // Realistic mock handles ExecuteCommand internally
+
+            // Cancel the service before starting processing
+            serviceCancellationTokenSource.Cancel();
+
+            // Act - Start processing with already cancelled service
+            var processingTask = m_Processor.ProcessCommandQueueAsync(commandQueue, serviceCancellationTokenSource.Token);
+
+            await processingTask;
+
+            // Assert
+            var (Processed, Failed, Cancelled) = m_Processor.GetPerformanceStats();
+            // The command should be cancelled due to service shutdown
+            // Note: Service shutdown cancellation doesn't increment the cancelled counter in the production code
+            Assert.Equal(0, Processed);
+            Assert.Equal(0, Failed);
+            Assert.Equal(0, Cancelled); // Service shutdown doesn't increment this counter
+        }
+
+        [Fact]
+        public void GetCurrentCommand_WhenNoCommandIsExecuting_ReturnsNull()
+        {
+            // Act
+            var currentCommand = m_Processor.GetCurrentCommand();
+
+            // Assert
+            Assert.Null(currentCommand);
+        }
+
+        [Fact]
+        public void GetPerformanceStats_Initially_ReturnsZeroStats()
+        {
+            // Act
+            var (Processed, Failed, Cancelled) = m_Processor.GetPerformanceStats();
+
+            // Assert
+            Assert.Equal(0, Processed);
+            Assert.Equal(0, Failed);
+            Assert.Equal(0, Cancelled);
+        }
+
+        [Fact]
+        public void TriggerCleanup_RemovesCompletedCommands()
+        {
+            // Arrange
+            var completionSource = new TaskCompletionSource<string>();
+            var cancellationTokenSource = new CancellationTokenSource();
+            var oldCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now.AddHours(-2), completionSource, cancellationTokenSource, CommandState.Completed);
+
+            m_ActiveCommands["cmd-1"] = oldCommand;
+
+            // Act
+            m_Processor.TriggerCleanup();
+
+            // Assert
+            Assert.False(m_ActiveCommands.ContainsKey("cmd-1"));
+        }
+
+        [Fact]
+        public void TriggerCleanup_KeepsRecentCommands()
+        {
+            // Arrange
+            var completionSource = new TaskCompletionSource<string>();
+            var cancellationTokenSource = new CancellationTokenSource();
+            var recentCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now, completionSource, cancellationTokenSource, CommandState.Completed);
+
+            m_ActiveCommands["cmd-1"] = recentCommand;
+
+            // Act
+            m_Processor.TriggerCleanup();
+
+            // Assert
+            Assert.True(m_ActiveCommands.ContainsKey("cmd-1"));
+        }
+
+        [Fact]
+        public void TriggerCleanup_KeepsExecutingCommands()
+        {
+            // Arrange
+            var completionSource = new TaskCompletionSource<string>();
+            var cancellationTokenSource = new CancellationTokenSource();
+            var executingCommand = new QueuedCommand("cmd-1", "!analyze -v", DateTime.Now.AddHours(-2), completionSource, cancellationTokenSource, CommandState.Executing);
+
+            m_ActiveCommands["cmd-1"] = executingCommand;
+
+            // Act
+            m_Processor.TriggerCleanup();
+
+            // Assert
+            Assert.True(m_ActiveCommands.ContainsKey("cmd-1"));
+        }
+
+        [Fact]
+        public void Dispose_DisposesResources()
+        {
+            // Act
+            m_Processor.Dispose();
+
+            // Assert
+            // Should not throw
+        }
+
+        [Fact]
+        public void Dispose_CanBeCalledMultipleTimes()
+        {
+            // Act & Assert
+            m_Processor.Dispose();
+            m_Processor.Dispose(); // Should not throw
+        }
+
+        public void Dispose()
+        {
+            m_Processor?.Dispose();
+            m_RealisticCdbSession?.Dispose();
+        }
+    }
+}

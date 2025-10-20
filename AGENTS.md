@@ -275,6 +275,72 @@ nexus_read_dump_analyze_command_result(sessionId, "cmd-123")
 - **Test Directory Alignment**: **Test directories must mirror production directories exactly**. If production has `CommandQueue/Batching/`, tests must have `CommandQueue/Batching/` with `.Tests` namespace. MANDATORY.
 - **Test Class Organization**: **Test classes must be organized in the same sub-namespaces as their production counterparts**. NO EXCEPTIONS.
 
+### Test Organization and Strategy
+
+The project maintains two separate test projects, each serving distinct purposes while following the same ground rules:
+
+#### Unit Tests (`mcp_nexus_unit_tests`)
+**Purpose**: Fast, isolated tests that verify individual component behavior with mocked dependencies.
+
+**Characteristics**:
+- **Execution Speed**: Fast (milliseconds to seconds per test) - MANDATORY
+- **Dependencies**: All external dependencies mocked (CDB, file system, network, etc.) - ABSOLUTE REQUIREMENT
+- **Scope**: Individual classes, methods, and components in isolation - NO EXCEPTIONS
+- **Examples**: Service logic, command parsing, validation, state management - MANDATORY
+- **Naming Convention**: `{ProductionFileName}Tests.cs` (e.g., `CommandBatchBuilder.cs` → `CommandBatchBuilderTests.cs`) - ABSOLUTE REQUIREMENT
+- **Namespace Convention**: `mcp_nexus_unit_tests.{Category}` matching production namespace structure - NO EXCEPTIONS
+
+**When to Write Unit Tests**:
+- Testing business logic and algorithms - MANDATORY
+- Validating input/output transformations - ABSOLUTE REQUIREMENT
+- Testing error handling and edge cases - NO EXCEPTIONS
+- Verifying state transitions and lifecycle management - MANDATORY
+
+#### Integration Tests (`mcp_nexus_integration_tests`)
+**Purpose**: Slower tests that verify component interactions and infrastructure behavior with real dependencies.
+
+**Characteristics**:
+- **Execution Speed**: Slower (seconds to minutes per test, **maximum 5 minutes per test**) - ABSOLUTE REQUIREMENT
+- **Dependencies**: Real dependencies where feasible (actual CDB process, real file system, etc.) - MANDATORY
+- **Scope**: Multiple components working together, infrastructure failures, end-to-end scenarios - NO EXCEPTIONS
+- **Examples**: CDB session lifecycle, batch command execution with real debugger, task recovery mechanisms - MANDATORY
+- **Naming Convention**: `{ProductionFileName}Tests.cs` (same as unit tests) - ABSOLUTE REQUIREMENT
+- **Namespace Convention**: `mcp_nexus_integration_tests.{Category}` matching production namespace structure - NO EXCEPTIONS
+
+**When to Write Integration Tests**:
+- Testing infrastructure resilience (task faulting, recovery, timeout handling) - MANDATORY
+- Verifying real CDB command execution and output parsing - ABSOLUTE REQUIREMENT
+- Testing file system operations and path handling - NO EXCEPTIONS
+- Validating cross-component workflows and data flow - MANDATORY
+
+#### Shared Ground Rules (Apply to BOTH Test Projects)
+**ALL ground rules from the "MANDATORY GROUND RULES" section apply equally to both unit tests and integration tests. NO EXCEPTIONS.**
+
+Specifically:
+- **Coverage Thresholds**: Both projects must maintain ≥75% line coverage and ≥75% branch coverage - ABSOLUTE REQUIREMENT
+- **No Flaky Tests**: Tests must pass consistently, every time, in both projects - NO EXCEPTIONS
+- **Test Isolation**: Tests must be completely isolated from each other in both projects - MANDATORY
+- **No Arbitrary Delays**: No `Task.Delay` or `Thread.Sleep` >100ms in either project - ABSOLUTE REQUIREMENT
+- **Proper Concurrency**: Use deterministic synchronization (TaskCompletionSource, SemaphoreSlim) in both projects - NO EXCEPTIONS
+- **Mocking**: Unit tests mock all dependencies; integration tests mock only what's necessary for test control - MANDATORY
+- **Naming Convention**: Both projects use `{ProductionFileName}Tests.cs` pattern - ABSOLUTE REQUIREMENT
+- **Namespace Alignment**: Both projects mirror production namespace structure with `.Tests` suffix - NO EXCEPTIONS
+- **Maximum Test Duration**: Integration tests must complete within 5 minutes - ABSOLUTE REQUIREMENT
+
+#### Test Selection Guidelines
+**Use Unit Tests When**:
+- Testing pure logic without external dependencies - MANDATORY
+- Execution speed is critical (CI/CD pipeline) - ABSOLUTE REQUIREMENT
+- Testing all code paths and edge cases exhaustively - NO EXCEPTIONS
+
+**Use Integration Tests When**:
+- Testing infrastructure failure scenarios (task faulting, process crashes) - MANDATORY
+- Verifying real external tool behavior (CDB syntax, output format) - ABSOLUTE REQUIREMENT
+- Testing recovery mechanisms and resilience patterns - NO EXCEPTIONS
+- Validating end-to-end workflows across multiple components - MANDATORY
+
+**IMPORTANT**: The existence of integration tests does NOT reduce the requirement for comprehensive unit test coverage. Both are mandatory. ABSOLUTE REQUIREMENT.
+
 ### Unit Tests
 - **Coverage Thresholds**: **Mandatory minimum coverage requirements** - ABSOLUTE REQUIREMENT
   - **Line Coverage**: Must be **≥75%** at all times. NO EXCEPTIONS.

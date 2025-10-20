@@ -87,11 +87,41 @@ namespace mcp_nexus.CommandQueue.Core
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Fatal error in command processing loop for session {SessionId}", m_Config.SessionId);
+                // Enhanced error logging with full context
+                m_Logger.LogError(ex, 
+                    "🔥 FATAL ERROR in command processing loop for session {SessionId}. " +
+                    "Exception Type: {ExceptionType}, Message: {Message}, Stack Trace: {StackTrace}, " +
+                    "Queue Count: {QueueCount}, Current Command: {CurrentCommand}",
+                    m_Config.SessionId,
+                    ex.GetType().FullName,
+                    ex.Message,
+                    ex.StackTrace,
+                    m_CommandQueue?.Count ?? 0,
+                    m_Tracker?.GetCurrentCommand()?.Id ?? "None");
+
+                // Log inner exceptions if present
+                var innerEx = ex.InnerException;
+                var innerLevel = 1;
+                while (innerEx != null && innerLevel <= 3)
+                {
+                    m_Logger.LogError("  Inner Exception {Level}: {Type} - {Message}", 
+                        innerLevel, innerEx.GetType().FullName, innerEx.Message);
+                    innerEx = innerEx.InnerException;
+                    innerLevel++;
+                }
             }
             finally
             {
-                m_Tracker.SetCurrentCommand(null);
+                // Defensive cleanup with error handling
+                try
+                {
+                    m_Tracker.SetCurrentCommand(null);
+                }
+                catch (Exception cleanupEx)
+                {
+                    m_Logger.LogWarning(cleanupEx, "Error during cleanup in finally block for session {SessionId}", m_Config.SessionId);
+                }
+
                 m_Logger.LogInformation("✅ Command processing loop ended for session {SessionId}", m_Config.SessionId);
             }
         }
