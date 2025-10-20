@@ -198,15 +198,50 @@ public ReturnType MethodName(ParameterType paramName)
 ### Session Lifecycle
 1. **Create**: `nexus_open_dump_analyze_session` - Creates isolated session
 2. **Execute**: `nexus_enqueue_async_dump_analyze_command` - Queues commands
-3. **Monitor**: Use `commands` resource to track status
-4. **Retrieve**: `nexus_read_dump_analyze_command_result` - Get results
+3. **Monitor**: `nexus_get_dump_analyze_commands_status` - Bulk status polling (recommended)
+4. **Retrieve**: `nexus_read_dump_analyze_command_result` - Get individual results
 5. **Close**: `nexus_close_dump_analyze_session` - Clean up resources
+
+**Efficient Monitoring Pattern:**
+- Use `nexus_get_dump_analyze_commands_status` to poll ALL commands in a session at once
+- Much more efficient than individual command polling
+- Returns status, timing, and progress for all commands
+- Use `nexus_read_dump_analyze_command_result` only when status shows "Completed"
 
 ### Command Queue System
 - **Sequential execution**: Commands execute in FIFO order per session
 - **Timeout handling**: Configurable timeouts with heartbeat monitoring
 - **Recovery mechanisms**: Automatic retry and circuit breaker patterns
 - **Status tracking**: Real-time status updates and progress reporting
+
+### Efficient Command Monitoring
+
+**Bulk Status Polling Pattern (Recommended):**
+```json
+// 1. Queue multiple commands
+nexus_enqueue_async_dump_analyze_command(sessionId, "!analyze -v")
+nexus_enqueue_async_dump_analyze_command(sessionId, "kL")
+nexus_enqueue_async_dump_analyze_command(sessionId, "!threads")
+
+// 2. Poll ALL commands at once (efficient)
+nexus_get_dump_analyze_commands_status(sessionId)
+// Returns: Status of all commands with timing and progress
+
+// 3. Get individual results when completed
+nexus_read_dump_analyze_command_result(sessionId, "cmd-123")
+```
+
+**Benefits of Bulk Polling:**
+- **Single API call** instead of multiple individual polls
+- **Reduced network overhead** and latency
+- **Better performance** for monitoring multiple commands
+- **Unified view** of all command statuses in one response
+- **Easier to implement** efficient polling loops
+
+**When to Use Individual Polling:**
+- Only when you need the **full command output** (not just status)
+- When a specific command shows "Completed" status
+- For **debugging** specific command issues
 
 ## Performance Considerations
 
@@ -416,9 +451,11 @@ Extension Process          Command Queue (Serial)
 #### 2. **Unified Command Tracking**
 
 Extensions get their own `commandId` (prefixed with `ext-`) which allows:
-- AI can track extension progress with `nexus_read_dump_analyze_command_result(ext-xxx)`
+- AI can track extension progress with `nexus_get_dump_analyze_commands_status(sessionId)` (bulk polling)
+- AI can get individual results with `nexus_read_dump_analyze_command_result(ext-xxx)`
 - Same polling mechanism as regular commands
 - Consistent UX for AI agents
+- **Efficient monitoring**: Use bulk status polling to monitor extension + regular commands together
 
 #### 3. **Security: Localhost-Only HTTP Callbacks with Token Authentication**
 
@@ -600,8 +637,12 @@ extensions/
 7. Script completes, returns JSON output
    └─> ExtensionCommandTracker stores result
 
-8. AI polls: nexus_read_dump_analyze_command_result("ext-123")
-   └─> Returns: Extension output when completed
+8. AI polls: nexus_get_dump_analyze_commands_status(sessionId)
+   ├─> Returns: Status of ALL commands including "ext-123"
+   └─> Shows progress for extension and any other commands
+
+9. AI gets result: nexus_read_dump_analyze_command_result("ext-123")
+   └─> Returns: Extension output when status shows "Completed"
 ```
 
 ### Key Files

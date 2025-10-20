@@ -108,7 +108,7 @@ dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http
    }
    ```
 
-2. **Analyze the crash**:
+2. **Queue multiple commands** (recommended for efficiency):
    ```json
    {
      "method": "tools/call",
@@ -121,8 +121,45 @@ dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http
      }
    }
    ```
+   ```json
+   {
+     "method": "tools/call",
+     "params": {
+       "name": "nexus_enqueue_async_dump_analyze_command",
+       "arguments": {
+         "sessionId": "sess-123",
+         "command": "kL"
+       }
+     }
+   }
+   ```
+   ```json
+   {
+     "method": "tools/call",
+     "params": {
+       "name": "nexus_enqueue_async_dump_analyze_command",
+       "arguments": {
+         "sessionId": "sess-123",
+         "command": "!threads"
+       }
+     }
+   }
+   ```
 
-3. **Get results**:
+3. **Monitor all commands efficiently** (bulk polling):
+   ```json
+   {
+     "method": "tools/call",
+     "params": {
+       "name": "nexus_get_dump_analyze_commands_status",
+       "arguments": {
+         "sessionId": "sess-123"
+       }
+     }
+   }
+   ```
+
+4. **Get individual results** when completed:
    ```json
    {
      "method": "tools/call",
@@ -135,6 +172,15 @@ dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http
      }
    }
    ```
+
+### Efficient Workflow Pattern
+
+**Recommended approach for multiple commands:**
+1. **Queue all commands** at once using `nexus_enqueue_async_dump_analyze_command`
+2. **Poll bulk status** using `nexus_get_dump_analyze_commands_status` (one call for all commands)
+3. **Get individual results** using `nexus_read_dump_analyze_command_result` when status shows "Completed"
+
+This pattern is much more efficient than polling each command individually!
 
 ## 🔍 Analysis Capabilities
 
@@ -233,7 +279,8 @@ MCP Nexus provides live updates during analysis:
 - **`nexus_open_dump_analyze_session`**: Open a crash dump for analysis
 - **`nexus_close_dump_analyze_session`**: Close analysis session and cleanup
 - **`nexus_enqueue_async_dump_analyze_command`**: Execute debugging commands
-- **`nexus_read_dump_analyze_command_result`**: Get command results
+- **`nexus_get_dump_analyze_commands_status`**: Get status of ALL commands in a session (bulk polling)
+- **`nexus_read_dump_analyze_command_result`**: Get individual command results
 
 
 ### MCP Resources
