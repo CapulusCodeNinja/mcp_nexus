@@ -404,6 +404,10 @@ function Wait-NexusCommand {
 
         $completedCount = $completedCommands.Count
         Write-Verbose "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')"
+        
+        # Shrink the polling set to only remaining commands to avoid re-polling completed IDs
+        $CommandId = $remainingCommands
+        
         Start-Sleep -Milliseconds $PollIntervalMs
 
     } while ((Get-Date) - $startTime -lt $timeout)
@@ -764,6 +768,10 @@ function Wait-NexusCommands {
 
         $completedCount = $completedCommands.Count
         Write-Verbose "Commands completed: $completedCount/$($CommandIds.Count), remaining: $($remainingCommands -join ', ')"
+        
+        # Shrink the polling set to only remaining commands to avoid re-polling completed IDs
+        $CommandIds = $remainingCommands
+        
         Start-Sleep -Milliseconds $PollIntervalMs
 
     } while ((Get-Date) - $startTime -lt $timeout)

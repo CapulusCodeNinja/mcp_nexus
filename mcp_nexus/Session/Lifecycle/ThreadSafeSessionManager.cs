@@ -478,7 +478,7 @@ namespace mcp_nexus.Session.Lifecycle
                     return (commandInfo, null);
                 }
 
-                m_Logger.LogDebug("Command {CommandId} not found in tracker or cache for session {SessionId}", commandId, sessionId);
+                m_Logger.LogTrace("Command {CommandId} not found in tracker or cache for session {SessionId}", commandId, sessionId);
                 return (null, null);
             }
             catch (Exception ex)

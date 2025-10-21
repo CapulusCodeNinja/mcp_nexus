@@ -87,13 +87,7 @@ namespace mcp_nexus.Configuration
                     Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}"
                 };
                 nlogConfig.AddTarget(fileTarget);
-                
-                // Add Microsoft suppression rules FIRST (before general "*" rule)
-                if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
-                {
-                    nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, fileTarget));
-                }
-                
+
                 nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, fileTarget));
             }
 
@@ -106,14 +100,25 @@ namespace mcp_nexus.Configuration
                     Layout = "${longdate}|${uppercase:${level}}|${logger}|${message} ${exception:format=ToString}"
                 };
                 nlogConfig.AddTarget(stderrTarget);
-                
-                // Add Microsoft suppression rules FIRST (before general "*" rule)
-                if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
-                {
-                    nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, stderrTarget));
-                }
-                
+
                 nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, stderrTarget));
+            }
+
+            // Ensure Microsoft suppression rules exist for both targets even if targets already existed
+            if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
+            {
+                var ft = nlogConfig.FindTargetByName("mainFile") as NLog.Targets.FileTarget;
+                var st = nlogConfig.FindTargetByName("stderr") as NLog.Targets.ConsoleTarget;
+
+                if (ft != null && !nlogConfig.LoggingRules.Any(r => r.LoggerNamePattern == "Microsoft*" && r.Targets.Contains(ft)))
+                {
+                    // Insert at the beginning to ensure precedence
+                    nlogConfig.LoggingRules.Insert(0, new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, ft));
+                }
+                if (st != null && !nlogConfig.LoggingRules.Any(r => r.LoggerNamePattern == "Microsoft*" && r.Targets.Contains(st)))
+                {
+                    nlogConfig.LoggingRules.Insert(0, new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, st));
+                }
             }
 
             // Apply service-mode paths (ProgramData vs app dir)
@@ -123,6 +128,13 @@ namespace mcp_nexus.Configuration
             var nlogLevel = GetNLogLevel(logLevel);
             foreach (var rule in nlogConfig.LoggingRules)
             {
+                // Preserve explicit Microsoft* suppression rules
+                var pattern = rule.LoggerNamePattern;
+                if (!string.IsNullOrEmpty(pattern) && pattern.StartsWith("Microsoft", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 rule.SetLoggingLevels(nlogLevel, NLog.LogLevel.Fatal);
             }
 

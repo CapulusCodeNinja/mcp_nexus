@@ -254,41 +254,35 @@ namespace mcp_nexus.Debugger
                 {
                     try
                     {
-                        // Handle start sentinel
-                        if (string.Equals(line, CdbSentinels.StartMarker, StringComparison.Ordinal))
+                        // Handle start sentinel (sync only: do not complete here)
+                        if (line.Contains(CdbSentinels.StartMarker, StringComparison.Ordinal))
                         {
-                            m_Logger.LogDebug("🧠 Start sentinel detected: {Line}", line);
-
-                            currentCommandId = await CompleteAndStartNextCommandAsync(currentCommandId, currentCommandOutput, currentCommandStderr);
+                            SyncOnStartSentinel(ref currentCommandId, currentCommandOutput, currentCommandStderr);
                             continue;
                         }
 
-                        if (string.Equals(line, CdbSentinels.EndMarker, StringComparison.Ordinal))
+                        // Handle end sentinel (complete if pending)
+                        if (line.Contains(CdbSentinels.EndMarker, StringComparison.Ordinal))
                         {
-                            m_Logger.LogDebug("🧠 End sentinel detected - completing single command: {Line}", line);
-
-                            await CompleteAndResetCommandAsync(currentCommandId, currentCommandOutput, currentCommandStderr);
-                            currentCommandId = string.Empty;
+                            await CompleteIfPendingAsync(currentCommandOutput, currentCommandStderr, ref currentCommandId).ConfigureAwait(false);
                             continue;
                         }
 
-                        // FALLBACK: Check for CDB prompt patterns (100% reliable)
-                        if (CdbCompletionPatterns.IsCdbPrompt(line))
+                        // FALLBACK: Check for CDB prompt patterns (ignore lines that contain sentinels)
+                        if (!line.Contains(CdbSentinels.StartMarker, StringComparison.Ordinal) &&
+                            !line.Contains(CdbSentinels.EndMarker, StringComparison.Ordinal) &&
+                            CdbCompletionPatterns.IsCdbPrompt(line))
                         {
-                            m_Logger.LogDebug("🧠 CDB prompt detected - completing command: {Line}", line);
-
-                            await CompleteAndResetCommandAsync(currentCommandId, currentCommandOutput, currentCommandStderr);
-                            currentCommandId = string.Empty;
+                            await CompleteIfPendingAsync(currentCommandOutput, currentCommandStderr, ref currentCommandId).ConfigureAwait(false);
                             continue;
                         }
 
-                        // FALLBACK: Check for ultra-safe completion patterns
-                        if (CdbCompletionPatterns.IsUltraSafeCompletion(line))
+                        // FALLBACK: Check for ultra-safe completion patterns (ignore lines that contain sentinels)
+                        if (!line.Contains(CdbSentinels.StartMarker, StringComparison.Ordinal) &&
+                            !line.Contains(CdbSentinels.EndMarker, StringComparison.Ordinal) &&
+                            CdbCompletionPatterns.IsUltraSafeCompletion(line))
                         {
-                            m_Logger.LogDebug("🧠 Ultra-safe completion pattern detected - completing command: {Line}", line);
-
-                            await CompleteAndResetCommandAsync(currentCommandId, currentCommandOutput, currentCommandStderr);
-                            currentCommandId = string.Empty;
+                            await CompleteIfPendingAsync(currentCommandOutput, currentCommandStderr, ref currentCommandId).ConfigureAwait(false);
                             continue;
                         }
 
@@ -299,82 +293,86 @@ namespace mcp_nexus.Debugger
                     }
                     catch (OperationCanceledException)
                     {
-                        m_Logger.LogDebug("🧠 Consumer processing cancelled for line: {Line}", line);
+                        m_Logger.LogDebug("Consumer processing cancelled for line: {Line}", line);
                         break;
                     }
                     catch (Exception ex)
                     {
-                        m_Logger.LogError(ex, "🧠 Error processing line in consumer: {Line}", line);
+                        m_Logger.LogError(ex, "Error processing line in consumer: {Line}", line);
                         // Continue processing other lines
                     }
                 }
             }
             catch (OperationCanceledException)
             {
-                m_Logger.LogWarning("🧠 Consumer thread cancelled");
+                m_Logger.LogWarning("Consumer thread cancelled");
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "🧠 Error in consumer thread");
+                m_Logger.LogError(ex, "Error in consumer thread");
             }
             finally
             {
-                m_Logger.LogDebug("🧠 Consumer thread ended");
+                m_Logger.LogDebug("Consumer thread ended");
             }
         }
 
         /// <summary>
-        /// Completes the current command (if any) and starts a new command.
-        /// Used when a start sentinel is detected.
+        /// Synchronizes consumer state when a start sentinel is observed without completing any command.
+        /// Captures the current command identifier (if available) and clears output buffers to prepare for the next command output.
         /// </summary>
-        /// <param name="currentCommandId">Current command ID reference</param>
-        /// <param name="currentCommandOutput">Current command output buffer</param>
-        /// <param name="currentCommandStderr">Current command stderr buffer</param>
-        /// <returns>The new command ID to use</returns>
-        private async Task<string> CompleteAndStartNextCommandAsync(string currentCommandId, StringBuilder currentCommandOutput, List<string> currentCommandStderr)
+        /// <param name="currentCommandId">Reference to the currently tracked command identifier to synchronize.</param>
+        /// <param name="currentCommandOutput">The buffer accumulating standard output for the current command; cleared by this method.</param>
+        /// <param name="currentCommandStderr">The buffer accumulating standard error for the current command; cleared by this method.</param>
+        private void SyncOnStartSentinel(ref string currentCommandId, StringBuilder currentCommandOutput, List<string> currentCommandStderr)
         {
-            // Complete previous command if any
-            if (!string.IsNullOrEmpty(currentCommandId))
-            {
-                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
-            }
-
-            // Get the new command ID from the executor
-            string newCommandId;
             lock (m_pendingCommandsLock)
             {
-                newCommandId = m_currentCommandId ?? string.Empty;
+                if (string.IsNullOrEmpty(currentCommandId) && !string.IsNullOrEmpty(m_currentCommandId))
+                {
+                    currentCommandId = m_currentCommandId;
+                }
             }
-
-            // Clear buffers for new command
             currentCommandOutput.Clear();
             currentCommandStderr.Clear();
-
-            return newCommandId;
         }
 
         /// <summary>
-        /// Completes the current command and resets state for the next command.
-        /// Used when an end sentinel, CDB prompt, or completion pattern is detected.
+        /// Completes the current command only if it is still pending, using <paramref name="currentCommandId"/> first and
+        /// falling back to the executor's <c>m_currentCommandId</c>. Regardless of completion, resets internal state and clears buffers.
         /// </summary>
-        /// <param name="currentCommandId">Current command ID</param>
-        /// <param name="currentCommandOutput">Current command output buffer</param>
-        /// <param name="currentCommandStderr">Current command stderr buffer</param>
-        private async Task CompleteAndResetCommandAsync(string currentCommandId, StringBuilder currentCommandOutput, List<string> currentCommandStderr)
+        /// <param name="currentCommandOutput">The buffer containing accumulated standard output for the current command.</param>
+        /// <param name="currentCommandStderr">The buffer containing accumulated standard error for the current command.</param>
+        /// <param name="currentCommandId">Reference to the currently tracked command identifier; set to empty upon reset.</param>
+        /// <returns>A task representing the asynchronous completion attempt.</returns>
+        private async Task CompleteIfPendingAsync(StringBuilder currentCommandOutput, List<string> currentCommandStderr, ref string currentCommandId)
         {
-            // Complete current command if any
-            if (!string.IsNullOrEmpty(currentCommandId))
+            string idToComplete = currentCommandId;
+            bool shouldComplete = false;
+            lock (m_pendingCommandsLock)
             {
-                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
+                if (!string.IsNullOrEmpty(idToComplete) && m_pendingCommands.ContainsKey(idToComplete))
+                {
+                    shouldComplete = true;
+                }
+                else if (!string.IsNullOrEmpty(m_currentCommandId) && m_pendingCommands.ContainsKey(m_currentCommandId))
+                {
+                    idToComplete = m_currentCommandId;
+                    shouldComplete = true;
+                }
+            }
+
+            if (shouldComplete)
+            {
+                await CompleteCurrentCommandAsync(idToComplete, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
             }
 
             // Reset for next command
             lock (m_pendingCommandsLock)
             {
-                m_currentCommandId = null; // Clear the current command ID
+                m_currentCommandId = null;
             }
-
-            // Clear buffers
+            currentCommandId = string.Empty;
             currentCommandOutput.Clear();
             currentCommandStderr.Clear();
         }
@@ -410,17 +408,17 @@ namespace mcp_nexus.Debugger
 
                 if (completionSource != null)
                 {
-                    m_Logger.LogDebug("🧠 Completing command {CommandId} with {OutputLength} chars", commandId, result.Length);
+                    m_Logger.LogDebug("\U0001F9E0 Completing command {CommandId} with {OutputLength} chars", commandId, result.Length);
                     completionSource.SetResult(result);
                 }
                 else
                 {
-                    m_Logger.LogWarning("🧠 No pending command found for completion: {CommandId}", commandId);
+                    m_Logger.LogDebug("\U0001F9E0 No pending command found for completion: {CommandId}", commandId);
                 }
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "🧠 Error completing command: {CommandId}", commandId);
+                m_Logger.LogError(ex, "\U0001F9E0 Error completing command: {CommandId}", commandId);
             }
 
             return Task.CompletedTask;
