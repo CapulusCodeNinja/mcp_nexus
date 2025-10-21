@@ -148,10 +148,23 @@ namespace mcp_nexus.CommandQueue.Core
                         {
                             m_Logger.LogInformation("📦 Processing batch of {Count} commands", commandsToProcess.Count);
 
+                            // Measure batch execution window
+                            var batchStart = DateTime.Now;
                             var batchCommand = m_CommandBatchBuilder.CreateBatchCommand(commandsToProcess);
                             var batchResult = await m_CdbSession.ExecuteBatchCommand(batchCommand, CancellationToken.None);
+                            var batchEnd = DateTime.Now;
                             var results = m_BatchResultParser.SplitBatchResults(batchResult, commandsToProcess);
 
+                            // Compute weights per command based on output length (fallback to equal distribution)
+                            var totalOutputLength = 0;
+                            foreach (var r in results)
+                            {
+                                totalOutputLength += (r.Output?.Length ?? 0);
+                            }
+                            var batchExecMs = (batchEnd - batchStart).TotalMilliseconds;
+                            if (batchExecMs < 0) batchExecMs = 0;
+
+                            double cumulativeWeight = 0.0;
                             for (int i = 0; i < commandsToProcess.Count; i++)
                             {
                                 var cmd = commandsToProcess[i];
@@ -162,20 +175,36 @@ namespace mcp_nexus.CommandQueue.Core
                                 cmd.CompletionSource?.TrySetResult(resultOutput);
                                 m_ResultCache?.StoreResult(cmd.Id ?? string.Empty, CommandResult.Success(resultOutput));
 
-                                // Calculate timing for statistics
-                                var now = DateTime.Now;
-                                var timeInQueue = (now - cmd.QueueTime).TotalMilliseconds;
+                                // Calculate timing for statistics: distribute execution time across commands sequentially
+                                double weight;
+                                if (totalOutputLength > 0)
+                                {
+                                    weight = (double)resultOutput.Length / (double)totalOutputLength;
+                                }
+                                else
+                                {
+                                    weight = 1.0 / Math.Max(1, commandsToProcess.Count);
+                                }
+
+                                var cmdStart = batchStart.AddMilliseconds(batchExecMs * cumulativeWeight);
+                                var cmdEnd = batchStart.AddMilliseconds(batchExecMs * (cumulativeWeight + weight));
+                                cumulativeWeight += weight;
+
+                                var timeInQueue = (cmdStart - cmd.QueueTime).TotalMilliseconds;
+                                var timeExecution = (cmdEnd - cmdStart).TotalMilliseconds;
+                                var totalDuration = (cmdEnd - cmd.QueueTime).TotalMilliseconds;
+
                                 Statistics.CommandStats(m_Logger,
                                     Statistics.CommandState.SuccessBatch,
                                     m_Config.SessionId,
                                     cmd.Id ?? string.Empty,
                                     cmd.Command ?? string.Empty,
                                     cmd.QueueTime,
-                                    now, // startedAt (approximation)
-                                    now, // completedAt 
+                                    cmdStart,
+                                    cmdEnd,
                                     timeInQueue,
-                                    0.0, // executionTime (batch time distributed)
-                                    timeInQueue);
+                                    timeExecution,
+                                    totalDuration);
                             }
                         }
                         else
