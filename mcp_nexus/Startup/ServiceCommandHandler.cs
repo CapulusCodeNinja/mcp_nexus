@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using NLog.Extensions.Logging;
 using NLog.Web;
+using mcp_nexus.Configuration;
 
 namespace mcp_nexus.Startup
 {
@@ -17,11 +19,19 @@ namespace mcp_nexus.Startup
         {
             if (OperatingSystem.IsWindows())
             {
+                // Build configuration so logging uses the same centralized setup
+                var configuration = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: true)
+                    .AddJsonFile("appsettings.Service.json", optional: true)
+                    .AddJsonFile("appsettings.Production.json", optional: true)
+                    .AddJsonFile("appsettings.Development.json", optional: true)
+                    .AddEnvironmentVariables()
+                    .Build();
+
                 using var loggerFactory = LoggerFactory.Create(builder =>
                 {
-                    builder.ClearProviders();
-                    builder.AddNLogWeb();
-                    builder.SetMinimumLevel(LogLevel.Information);
+                    LoggingSetup.ConfigureLogging(builder, isServiceMode: true, configuration);
                 });
                 var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
@@ -49,11 +59,19 @@ namespace mcp_nexus.Startup
                 try
                 {
                     Console.WriteLine("Starting service uninstallation...");
+
+                    var configuration = new ConfigurationBuilder()
+                        .SetBasePath(AppContext.BaseDirectory)
+                        .AddJsonFile("appsettings.json", optional: true)
+                        .AddJsonFile("appsettings.Service.json", optional: true)
+                        .AddJsonFile("appsettings.Production.json", optional: true)
+                        .AddJsonFile("appsettings.Development.json", optional: true)
+                        .AddEnvironmentVariables()
+                        .Build();
+
                     using var loggerFactory = LoggerFactory.Create(builder =>
                     {
-                        builder.ClearProviders();
-                        builder.AddNLogWeb();
-                        builder.SetMinimumLevel(LogLevel.Information);
+                        LoggingSetup.ConfigureLogging(builder, isServiceMode: true, configuration);
                     });
                     var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 
@@ -89,11 +107,18 @@ namespace mcp_nexus.Startup
             {
                 Console.Error.WriteLine($" Creating logger for update process...");
 
+                var configuration = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: true)
+                    .AddJsonFile("appsettings.Service.json", optional: true)
+                    .AddJsonFile("appsettings.Production.json", optional: true)
+                    .AddJsonFile("appsettings.Development.json", optional: true)
+                    .AddEnvironmentVariables()
+                    .Build();
+
                 using var loggerFactory = LoggerFactory.Create(builder =>
                 {
-                    builder.ClearProviders();
-                    builder.AddNLogWeb();
-                    builder.SetMinimumLevel(LogLevel.Information);
+                    LoggingSetup.ConfigureLogging(builder, isServiceMode: true, configuration);
                 });
                 var logger = loggerFactory.CreateLogger("MCP.Nexus.ServiceInstaller");
 

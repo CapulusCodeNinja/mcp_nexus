@@ -97,27 +97,29 @@ namespace mcp_nexus.Configuration
                 stderrTarget = new NLog.Targets.ConsoleTarget("stderr")
                 {
                     StdErr = true,
-                    Layout = "${longdate}|${uppercase:${level}}|${logger}|${message} ${exception:format=ToString}"
+                    Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}"
                 };
                 nlogConfig.AddTarget(stderrTarget);
 
                 nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, stderrTarget));
             }
 
-            // Ensure Microsoft suppression rules exist for both targets even if targets already existed
+            // Ensure Microsoft suppression rule exists (single FINAL rule) even if targets already existed
             if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
             {
-                var ft = nlogConfig.FindTargetByName("mainFile") as NLog.Targets.FileTarget;
-                var st = nlogConfig.FindTargetByName("stderr") as NLog.Targets.ConsoleTarget;
-
-                if (ft != null && !nlogConfig.LoggingRules.Any(r => r.LoggerNamePattern == "Microsoft*" && r.Targets.Contains(ft)))
+                // Insert a FINAL rule that matches Microsoft* and stops processing (no targets => suppressed)
+                if (!nlogConfig.LoggingRules.Any(r =>
+                        string.Equals(r.LoggerNamePattern, "Microsoft*", StringComparison.OrdinalIgnoreCase) && r.Final))
                 {
-                    // Insert at the beginning to ensure precedence
-                    nlogConfig.LoggingRules.Insert(0, new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, ft));
-                }
-                if (st != null && !nlogConfig.LoggingRules.Any(r => r.LoggerNamePattern == "Microsoft*" && r.Targets.Contains(st)))
-                {
-                    nlogConfig.LoggingRules.Insert(0, new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, st));
+                    var finalMicrosoftRule = new NLog.Config.LoggingRule
+                    {
+                        LoggerNamePattern = "Microsoft*",
+                        Final = true
+                    };
+                    // Ensure the rule MATCHES by enabling all levels (acts as a hard stop with no targets)
+                    finalMicrosoftRule.SetLoggingLevels(NLog.LogLevel.Trace, NLog.LogLevel.Fatal);
+                    // Place at the very top to guarantee precedence
+                    nlogConfig.LoggingRules.Insert(0, finalMicrosoftRule);
                 }
             }
 
@@ -272,6 +274,14 @@ namespace mcp_nexus.Configuration
                 logging.AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.None);
                 logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.None);
                 logging.AddFilter("Microsoft.AspNetCore.Server.Kestrel", Microsoft.Extensions.Logging.LogLevel.None);
+
+                // Global guard: block any Microsoft.* categories that may slip through via other providers
+                logging.AddFilter((provider, category, level) =>
+                {
+                    if (category != null && category.StartsWith("Microsoft", StringComparison.Ordinal))
+                        return false; // block
+                    return true; // allow others
+                });
             }
         }
 

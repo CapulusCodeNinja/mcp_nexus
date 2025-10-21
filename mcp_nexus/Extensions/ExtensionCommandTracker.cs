@@ -174,7 +174,7 @@ namespace mcp_nexus.Extensions
             if (m_Commands.TryGetValue(commandId, out var info))
             {
                 info.CallbackCount++;
-                m_Logger.LogDebug("Extension command {CommandId} callback count: {Count}",
+                m_Logger.LogTrace("Extension command {CommandId} callback count: {Count}",
                     commandId, info.CallbackCount);
             }
         }

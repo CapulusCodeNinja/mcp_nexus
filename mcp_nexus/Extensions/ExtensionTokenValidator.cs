@@ -131,7 +131,7 @@ namespace mcp_nexus.Extensions
                 return (false, null, null);
             }
 
-            m_Logger.LogDebug("Token validated successfully for session {SessionId}, command {CommandId}",
+            m_Logger.LogTrace("Token validated successfully for session {SessionId}, command {CommandId}",
                 tokenInfo.SessionId, tokenInfo.CommandId);
 
             return (true, tokenInfo.SessionId, tokenInfo.CommandId);

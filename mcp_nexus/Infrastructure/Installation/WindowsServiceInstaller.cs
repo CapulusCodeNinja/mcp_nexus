@@ -197,37 +197,30 @@ namespace mcp_nexus.Infrastructure.Installation
         {
             try
             {
-                Console.WriteLine();
-                Console.WriteLine("═══════════════════════════════════════════════════════════════");
-                Console.WriteLine("                    MCP NEXUS SERVICE UPDATE");
-                Console.WriteLine("═══════════════════════════════════════════════════════════════");
-                Console.WriteLine();
+                logger?.LogInformation("╔═══════════════════════════════════════════════════════════════════╗");
+                logger?.LogInformation("                     MCP NEXUS SERVICE UPDATE");
+                logger?.LogInformation("╚═══════════════════════════════════════════════════════════════════╝");
 
                 logger?.LogInformation("Starting MCP Nexus service update");
 
                 // Step 0: Check if service exists
-                Console.WriteLine("Checking if service exists...");
                 logger?.LogDebug("Checking if MCP-Nexus service exists");
 
                 var serviceExists = await CheckServiceExistsAsync(logger);
                 if (!serviceExists)
                 {
-                    Console.WriteLine("⚠ Service does not exist. Installing service first...");
                     logger?.LogWarning("Service does not exist, installing first");
 
                     var installResult = await InstallServiceAsync(logger);
                     if (!installResult)
                     {
-                        Console.WriteLine("✗ Service installation failed");
                         logger?.LogError("Service installation failed during update");
                         return false;
                     }
-                    Console.WriteLine("✓ Service installed successfully");
                     return true;
                 }
 
                 // Step 1: Check if service is running and stop it if needed
-                Console.WriteLine("Checking if MCP-Nexus service is running...");
                 logger?.LogDebug("Checking if MCP-Nexus service is running");
 
                 var (exists, isRunning) = GetServiceStatus();
@@ -237,116 +230,89 @@ namespace mcp_nexus.Infrastructure.Installation
                 {
                     if (isRunning)
                     {
-                        Console.WriteLine("Service is running, stopping it...");
                         logger?.LogInformation("Service is running, stopping it");
 
                         var stopResult = await StopServiceAsync(logger);
                         if (stopResult)
                         {
-                            Console.WriteLine("✓ Service stopped successfully");
                             wasRunning = true;
                             // Wait for service to fully stop with proper status checking
                             var stopped = await WaitForServiceStatusAsync(m_ServiceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(10), logger);
                             if (!stopped)
                             {
-                                Console.WriteLine("⚠ Service did not stop within timeout, continuing with update");
                                 logger?.LogWarning("Service did not stop within timeout during update");
                             }
                         }
                         else
                         {
-                            Console.WriteLine("⚠ Service stop failed");
+                             logger?.LogWarning("⚠ Service stop failed");
                         }
                     }
                     else
                     {
-                        Console.WriteLine("Service is not running");
                         logger?.LogDebug("Service is not running");
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Service does not exist");
                     logger?.LogWarning("Service does not exist");
                 }
 
                 // Step 2: Build the project
-                Console.WriteLine("Building project...");
                 logger?.LogInformation("Building project for deployment");
 
                 var buildResult = await BuildProjectForDeploymentAsync(logger);
                 if (!buildResult)
                 {
-                    Console.WriteLine("✗ Build failed");
                     logger?.LogError("Project build failed during update");
                     return false;
                 }
-                Console.WriteLine("✓ Build completed successfully");
 
                 // Step 3: Copy new files to installation directory
-                Console.WriteLine("Deploying new files...");
                 logger?.LogInformation("Deploying new files to installation directory");
 
                 var deployResult = await CopyApplicationFilesAsync(logger);
                 if (!deployResult)
                 {
-                    Console.WriteLine("✗ File deployment failed");
                     logger?.LogError("File deployment failed during update");
                     return false;
                 }
-                Console.WriteLine("✓ Files deployed successfully");
 
                 // Step 4: Start the service only if it was running before the update
                 if (wasRunning)
                 {
-                    Console.WriteLine("Starting updated service...");
                     logger?.LogInformation("Starting updated MCP-Nexus service");
 
                     var startResult = await StartServiceAsync(logger);
                     if (startResult)
                     {
-                        Console.WriteLine("✓ Service started successfully");
                         // Wait for service to fully start with proper status checking
                         var started = await WaitForServiceStatusAsync(m_ServiceName, ServiceControllerStatus.Running, TimeSpan.FromSeconds(15), logger);
                         if (!started)
                         {
-                            Console.WriteLine("⚠ Service did not start within timeout, check service status manually");
                             logger?.LogWarning("Service did not start within timeout after update");
-                        }
-                        else
-                        {
-                            Console.WriteLine("✓ Service is running and ready");
                         }
                     }
                     else
                     {
-                        Console.WriteLine("⚠ Service start failed - you may need to start it manually");
                         logger?.LogWarning("Service start failed after update");
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Service was not running before update, leaving it stopped");
                     logger?.LogInformation("Service was not running before update, leaving it stopped");
                 }
 
-                Console.WriteLine();
-                Console.WriteLine("🎉 Service update completed successfully!");
                 logger?.LogInformation("MCP Nexus service update completed successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"✗ Update failed: {ex.Message}");
                 logger?.LogError(ex, "Exception during service update");
                 return false;
             }
         }
-
-
-
-
-
+        
         /// <summary>
         /// Checks if a Windows service exists asynchronously
         /// </summary>

@@ -264,7 +264,7 @@ namespace mcp_nexus.Debugger
                         // Handle end sentinel (complete if pending)
                         if (line.Contains(CdbSentinels.EndMarker, StringComparison.Ordinal))
                         {
-                            await CompleteIfPendingAsync(currentCommandOutput, currentCommandStderr, ref currentCommandId).ConfigureAwait(false);
+                            currentCommandId = await CompleteIfPendingAsync(currentCommandOutput, currentCommandStderr, currentCommandId).ConfigureAwait(false);
                             continue;
                         }
 
@@ -273,7 +273,7 @@ namespace mcp_nexus.Debugger
                             !line.Contains(CdbSentinels.EndMarker, StringComparison.Ordinal) &&
                             CdbCompletionPatterns.IsCdbPrompt(line))
                         {
-                            await CompleteIfPendingAsync(currentCommandOutput, currentCommandStderr, ref currentCommandId).ConfigureAwait(false);
+                            currentCommandId = await CompleteIfPendingAsync(currentCommandOutput, currentCommandStderr, currentCommandId).ConfigureAwait(false);
                             continue;
                         }
 
@@ -282,7 +282,7 @@ namespace mcp_nexus.Debugger
                             !line.Contains(CdbSentinels.EndMarker, StringComparison.Ordinal) &&
                             CdbCompletionPatterns.IsUltraSafeCompletion(line))
                         {
-                            await CompleteIfPendingAsync(currentCommandOutput, currentCommandStderr, ref currentCommandId).ConfigureAwait(false);
+                            currentCommandId = await CompleteIfPendingAsync(currentCommandOutput, currentCommandStderr, currentCommandId).ConfigureAwait(false);
                             continue;
                         }
 
@@ -343,9 +343,9 @@ namespace mcp_nexus.Debugger
         /// </summary>
         /// <param name="currentCommandOutput">The buffer containing accumulated standard output for the current command.</param>
         /// <param name="currentCommandStderr">The buffer containing accumulated standard error for the current command.</param>
-        /// <param name="currentCommandId">Reference to the currently tracked command identifier; set to empty upon reset.</param>
-        /// <returns>A task representing the asynchronous completion attempt.</returns>
-        private async Task CompleteIfPendingAsync(StringBuilder currentCommandOutput, List<string> currentCommandStderr, ref string currentCommandId)
+        /// <param name="currentCommandId">The currently tracked command identifier.</param>
+        /// <returns>A task that returns the updated current command identifier (usually empty after reset).</returns>
+        private async Task<string> CompleteIfPendingAsync(StringBuilder currentCommandOutput, List<string> currentCommandStderr, string currentCommandId)
         {
             string idToComplete = currentCommandId;
             bool shouldComplete = false;
@@ -372,9 +372,10 @@ namespace mcp_nexus.Debugger
             {
                 m_currentCommandId = null;
             }
-            currentCommandId = string.Empty;
+            var newCurrentId = string.Empty;
             currentCommandOutput.Clear();
             currentCommandStderr.Clear();
+            return newCurrentId;
         }
 
         /// <summary>
