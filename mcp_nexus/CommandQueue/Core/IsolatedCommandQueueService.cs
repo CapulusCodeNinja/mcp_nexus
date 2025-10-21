@@ -176,6 +176,7 @@ namespace mcp_nexus.CommandQueue.Core
                                     m_Config.SessionId,
                                     cmd.Id ?? string.Empty,
                                     cmd.Command ?? string.Empty,
+                                    count,
                                     cmd.QueueTime,
                                     batchStart,
                                     cmdEnd,

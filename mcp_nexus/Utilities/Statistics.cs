@@ -24,6 +24,7 @@ namespace mcp_nexus.Utilities
         /// <param name="sessionId">The session identifier associated with the command.</param>
         /// <param name="commandId">The unique command identifier.</param>
         /// <param name="command">The command text that was executed.</param>
+        /// <param name="count">The number of commands in the batch.</param>
         /// <param name="queuedAt">When the command was queued (local time).</param>
         /// <param name="startedAt">When execution started (local time).</param>
         /// <param name="completedAt">When execution completed (local time).</param>
@@ -36,6 +37,7 @@ namespace mcp_nexus.Utilities
             string sessionId,
             string? commandId,
             string? command,
+            int count,
             DateTime queuedAt,
             DateTime startedAt,
             DateTime completedAt,
@@ -49,6 +51,7 @@ namespace mcp_nexus.Utilities
                 "│ SessionId: {SessionId}\r\n" +
                 "│ Status: {Status}\r\n" +
                 "│ Command: {Command}\r\n" +
+                "│ CommandCount: {Count}\r\n" +
                 "│ QueuedAt: {QueuedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
                 "│ StartedAt: {StartedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
                 "│ CompletedAt: {CompletedAt:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
