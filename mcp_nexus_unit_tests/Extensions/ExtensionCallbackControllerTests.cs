@@ -148,8 +148,6 @@ namespace mcp_nexus_unit_tests.Extensions
             controller.HttpContext.Request.Headers.Authorization = "Bearer tok";
             m_MockTokenValidator.Setup(v => v.ValidateToken("tok")).Returns((true, "sess-1", "ext-1"));
 
-            m_MockCommandTracker.Setup(t => t.IncrementCallbackCount("ext-1"));
-
             var mockQueue = new Mock<ICommandQueueService>();
             mockQueue.Setup(q => q.QueueCommand("!analyze -v")).Returns("cmd-123");
             ICommandQueueService? outQueue = mockQueue.Object;
@@ -377,7 +375,6 @@ namespace mcp_nexus_unit_tests.Extensions
 
             m_MockTokenValidator.Setup(x => x.ValidateToken("valid-token"))
                 .Returns((true, "session-123", "cmd-456"));
-            m_MockCommandTracker.Setup(x => x.IncrementCallbackCount("cmd-456"));
 
             var mockQueue = new Mock<ICommandQueueService>();
             mockQueue.Setup(q => q.QueueCommand("lm")).Returns("cmd-789");
@@ -417,7 +414,6 @@ namespace mcp_nexus_unit_tests.Extensions
 
             m_MockTokenValidator.Setup(x => x.ValidateToken("valid-token"))
                 .Returns((true, "session-123", "cmd-456"));
-            m_MockCommandTracker.Setup(x => x.IncrementCallbackCount("cmd-456"));
 
             var mockQueue = new Mock<ICommandQueueService>();
             mockQueue.Setup(q => q.QueueCommand("lm")).Returns("cmd-789");
@@ -471,7 +467,6 @@ namespace mcp_nexus_unit_tests.Extensions
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            m_MockCommandTracker.Verify(x => x.IncrementCallbackCount(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -497,7 +492,6 @@ namespace mcp_nexus_unit_tests.Extensions
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            m_MockCommandTracker.Verify(x => x.IncrementCallbackCount(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]

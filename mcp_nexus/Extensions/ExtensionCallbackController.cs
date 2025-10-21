@@ -96,12 +96,6 @@ namespace mcp_nexus.Extensions
                 m_Logger.LogDebug("Extension callback execute command: {Command} for session {SessionId}",
                     request.Command, sessionId);
 
-                // Increment callback count
-                if (!string.IsNullOrWhiteSpace(commandId))
-                {
-                    m_ExtensionTracker.IncrementCallbackCount(commandId);
-                }
-
                 // Get command queue for the session
                 if (!m_SessionManager.TryGetCommandQueue(sessionId, out var commandQueue) || commandQueue == null)
                 {
@@ -213,12 +207,6 @@ namespace mcp_nexus.Extensions
             {
                 m_Logger.LogDebug("Extension callback queue command: {Command} for session {SessionId}",
                     request.Command, sessionId);
-
-                // Increment callback count
-                if (!string.IsNullOrWhiteSpace(commandId))
-                {
-                    m_ExtensionTracker.IncrementCallbackCount(commandId);
-                }
 
                 // Get command queue for the session
                 if (!m_SessionManager.TryGetCommandQueue(sessionId, out var commandQueue) || commandQueue == null)

@@ -440,7 +440,6 @@ namespace mcp_nexus.Tools
                                 {
                                     progressPercentage = extProgressPercentage,
                                     elapsed = FormatElapsedTime(extInfo.Elapsed),
-                                    callbackCount = extInfo.CallbackCount,
                                     executionTime = extIsCompleted ? FormatExecutionTime(extInfo.Elapsed) : null
                                 },
                                 aiGuidance = new

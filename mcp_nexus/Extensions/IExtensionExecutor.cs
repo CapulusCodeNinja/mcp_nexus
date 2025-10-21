@@ -72,11 +72,6 @@ namespace mcp_nexus.Extensions
         /// Whether the extension is still running.
         /// </summary>
         public bool IsRunning { get; set; }
-
-        /// <summary>
-        /// Number of callbacks made so far.
-        /// </summary>
-        public int CallbackCount { get; set; }
     }
 }
 

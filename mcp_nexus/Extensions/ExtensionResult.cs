@@ -38,12 +38,6 @@ namespace mcp_nexus.Extensions
         public TimeSpan ExecutionTime { get; set; }
 
         /// <summary>
-        /// Number of callbacks made by the extension.
-        /// </summary>
-        [JsonPropertyName("callbackCount")]
-        public int CallbackCount { get; set; }
-
-        /// <summary>
         /// Standard error output from the extension.
         /// </summary>
         [JsonPropertyName("standardError")]

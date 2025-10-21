@@ -101,7 +101,6 @@ namespace mcp_nexus.Extensions
             var stopwatch = Stopwatch.StartNew();
             var outputBuilder = new StringBuilder();
             var errorBuilder = new StringBuilder();
-            var callbackCount = 0;
 
             string? callbackToken = null;
             try
@@ -113,8 +112,7 @@ namespace mcp_nexus.Extensions
                     ExtensionName = extensionName,
                     SessionId = sessionId,
                     StartedAt = DateTime.Now,
-                    IsRunning = true,
-                    CallbackCount = 0
+                    IsRunning = true
                 };
 
                 m_RunningExtensions[commandId] = processInfo;
@@ -136,20 +134,9 @@ namespace mcp_nexus.Extensions
                     {
                         var sanitized = StripAnsi(e.Data);
                         outputBuilder.AppendLine(sanitized);
-
-                        // Check for progress messages
-                        if (e.Data.StartsWith("[PROGRESS]"))
-                        {
-                            var progressMessage = e.Data[10..].Trim();
-                            progressCallback?.Invoke(progressMessage);
-                        }
-
-                        // Check for callback count updates
-                        if (e.Data.StartsWith("[CALLBACK]"))
-                        {
-                            callbackCount++;
-                            processInfo.CallbackCount = callbackCount;
-                        }
+ 
+                        var progressMessage = e.Data[10..].Trim();
+                        progressCallback?.Invoke(progressMessage);
                     }
                 };
 
@@ -251,7 +238,6 @@ namespace mcp_nexus.Extensions
                     Error = exitCode != 0 ? $"Extension exited with code {exitCode}" : null,
                     ExitCode = exitCode,
                     ExecutionTime = stopwatch.Elapsed,
-                    CallbackCount = callbackCount,
                     StandardError = string.IsNullOrWhiteSpace(standardError) ? null : standardError
                 };
             }
@@ -268,7 +254,6 @@ namespace mcp_nexus.Extensions
                     Error = ex.Message,
                     ExitCode = -1,
                     ExecutionTime = stopwatch.Elapsed,
-                    CallbackCount = callbackCount,
                     StandardError = errorBuilder.ToString()
                 };
             }

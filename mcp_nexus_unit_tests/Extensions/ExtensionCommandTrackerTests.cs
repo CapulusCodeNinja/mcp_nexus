@@ -170,35 +170,6 @@ namespace mcp_nexus_unit_tests.Extensions
         }
 
         [Fact]
-        public void IncrementCallbackCount_IncrementsCounter()
-        {
-            // Arrange
-            var tracker = new ExtensionCommandTracker(m_MockLogger.Object);
-            var commandId = "ext-test-123";
-            tracker.TrackExtension(commandId, "session-1", "test_extension", null);
-
-            // Act
-            tracker.IncrementCallbackCount(commandId);
-            tracker.IncrementCallbackCount(commandId);
-            tracker.IncrementCallbackCount(commandId);
-            var commandInfo = tracker.GetCommandInfo(commandId);
-
-            // Assert
-            Assert.NotNull(commandInfo);
-            Assert.Equal(3, commandInfo.CallbackCount);
-        }
-
-        [Fact]
-        public void IncrementCallbackCount_WithNonexistentCommand_DoesNotThrow()
-        {
-            // Arrange
-            var tracker = new ExtensionCommandTracker(m_MockLogger.Object);
-
-            // Act & Assert - Should not throw
-            tracker.IncrementCallbackCount("nonexistent-command");
-        }
-
-        [Fact]
         public void StoreResult_CreatesCommandResult()
         {
             // Arrange
@@ -363,7 +334,6 @@ namespace mcp_nexus_unit_tests.Extensions
                     var commandId = $"ext-{index}";
                     tracker.TrackExtension(commandId, $"session-{index % 10}", $"extension-{index}", null);
                     tracker.UpdateState(commandId, CommandState.Executing);
-                    tracker.IncrementCallbackCount(commandId);
                     tracker.UpdateProgress(commandId, $"Progress {index}");
                 }));
             }

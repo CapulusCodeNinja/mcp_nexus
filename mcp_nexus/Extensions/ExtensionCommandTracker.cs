@@ -33,12 +33,6 @@ namespace mcp_nexus.Extensions
         void UpdateProgress(string commandId, string progressMessage);
 
         /// <summary>
-        /// Increments the callback count for an extension command.
-        /// </summary>
-        /// <param name="commandId">The command ID.</param>
-        void IncrementCallbackCount(string commandId);
-
-        /// <summary>
         /// Stores the result of an extension command.
         /// </summary>
         /// <param name="commandId">The command ID.</param>
@@ -112,7 +106,6 @@ namespace mcp_nexus.Extensions
                 State = CommandState.Queued,
                 QueuedAt = DateTime.Now,
                 QueuePosition = -1,
-                CallbackCount = 0,
                 Elapsed = TimeSpan.Zero,
                 Remaining = TimeSpan.Zero,
                 IsCompleted = false
@@ -162,20 +155,6 @@ namespace mcp_nexus.Extensions
                 info.ProgressMessage = progressMessage;
                 m_Logger.LogDebug("Updated extension command {CommandId} progress: {Progress}",
                     commandId, progressMessage);
-            }
-        }
-
-        /// <summary>
-        /// Increments the callback count for an extension command.
-        /// </summary>
-        /// <param name="commandId">The command ID.</param>
-        public void IncrementCallbackCount(string commandId)
-        {
-            if (m_Commands.TryGetValue(commandId, out var info))
-            {
-                info.CallbackCount++;
-                m_Logger.LogTrace("Extension command {CommandId} callback count: {Count}",
-                    commandId, info.CallbackCount);
             }
         }
 
@@ -337,11 +316,6 @@ namespace mcp_nexus.Extensions
         /// Parameters passed to the extension.
         /// </summary>
         public object? Parameters { get; set; }
-
-        /// <summary>
-        /// Number of callbacks made by the extension.
-        /// </summary>
-        public int CallbackCount { get; set; }
 
         /// <summary>
         /// Current progress message.
