@@ -63,6 +63,7 @@ namespace mcp_nexus.Utilities
                 sessionId,
                 status,
                 command,
+                count,
                 queuedAt,
                 startedAt,
                 completedAt,

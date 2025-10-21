@@ -179,10 +179,10 @@ namespace mcp_nexus.CommandQueue.Core
                                     count,
                                     cmd.QueueTime,
                                     batchStart,
-                                    cmdEnd,
+                                    batchEnd,
                                     (batchStart - cmd.QueueTime).TotalMilliseconds,
                                     perCommandExecMs,
-                                    (cmdEnd - cmd.QueueTime).TotalMilliseconds);
+                                    (batchEnd - cmd.QueueTime).TotalMilliseconds);
                             }
                         }
                         else
