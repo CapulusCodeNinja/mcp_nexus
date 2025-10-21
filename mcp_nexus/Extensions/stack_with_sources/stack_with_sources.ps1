@@ -123,7 +123,7 @@ try {
     }
     
     Write-NexusProgress "[$threadDisplay] Executing first pass source downloads using async batching..."
-    $downloadCommandIds = Start-NexusCommand -Command $downloadCommands
+    $downloadCommandIds = Start-NexusCommand -Commands $downloadCommands
     
     Write-NexusProgress "[$threadDisplay] Waiting for first pass downloads to complete..."
     try {
@@ -142,7 +142,7 @@ try {
     }
     
     Write-NexusProgress "[$threadDisplay] Executing second pass source verification using async batching..."
-    $verifyCommandIds = Start-NexusCommands -Commands $verifyCommands
+    $verifyCommandIds = Start-NexusCommand -Commands $verifyCommands
     
     Write-NexusProgress "[$threadDisplay] Waiting for verification to complete and processing results..."
     $downloadedCount = 0

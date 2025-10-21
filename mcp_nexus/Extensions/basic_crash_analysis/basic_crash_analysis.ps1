@@ -27,7 +27,7 @@ try {
     # Step 2-5: Queue multiple commands for batching
     Write-NexusProgress "Queueing multiple commands for batch execution..."
     $batchCommands = @("!threads", "~*k", "!locks", "!runaway")
-    $commandIds = Start-NexusCommand -Command $batchCommands
+    $commandIds = Start-NexusCommand -Commands $batchCommands
     
     Write-NexusProgress "Waiting for $($commandIds.Count) commands to complete..."
     Write-NexusLog "Executing $($commandIds.Count) commands using async batching" -Level Information

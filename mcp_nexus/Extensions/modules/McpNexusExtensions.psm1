@@ -123,6 +123,7 @@ function Invoke-NexusCommand {
     }
     catch {
         Write-Error "Failed to execute command '$Command': $_"
+        Write-NexusLog "Failed to execute command '$Command': $_" -Level Error
         throw
     }
 }
@@ -166,59 +167,60 @@ function Start-NexusCommand {
     param(
         [Parameter(Mandatory=$true, Position=0)]
         [ValidateNotNullOrEmpty()]
-        [string[]]$Command,
+        [string[]]$Commands,
 
         [Parameter(Mandatory=$false)]
         [int]$TimeoutSeconds = 300
     )
 
-    if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
-        Initialize-McpNexusExtension
-    }
+    try {
+        if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
+            Initialize-McpNexusExtension
+        }
 
-    $commandIds = @()
-    
-    foreach ($cmd in $Command) {
-        $script:RequestCounter++
-        Write-Verbose "Queueing command #$script:RequestCounter: $cmd"
+        $commandIds = @()
+        
+        foreach ($cmd in $Commands) {
+            $script:RequestCounter++
+            Write-Verbose "Queueing command #$script:RequestCounter: $cmd"
 
-        # Output marker for MCP Nexus to count callbacks
-        Write-NexusProgress "Queueing: $cmd"
+            # Output marker for MCP Nexus to count callbacks
+            Write-NexusProgress "Queueing: $cmd"
 
-        try {
-            $body = @{
-                command = $cmd
-                timeoutSeconds = $TimeoutSeconds
-            } | ConvertTo-Json
+            try {
+                $body = @{
+                    command = $cmd
+                    timeoutSeconds = $TimeoutSeconds
+                } | ConvertTo-Json
 
-            $headers = @{
-                "Authorization" = "Bearer $script:CallbackToken"
-                "Content-Type" = "application/json"
+                $headers = @{
+                    "Authorization" = "Bearer $script:CallbackToken"
+                    "Content-Type" = "application/json"
+                }
+
+                $response = Invoke-RestMethod `
+                    -Uri "$script:CallbackUrl/queue" `
+                    -Method POST `
+                    -Headers $headers `
+                    -Body $body `
+                    -TimeoutSec 30
+
+                Write-Verbose "Command queued with ID: $($response.commandId)"
+                $commandIds += $response.commandId
             }
-
-            $response = Invoke-RestMethod `
-                -Uri "$script:CallbackUrl/queue" `
-                -Method POST `
-                -Headers $headers `
-                -Body $body `
-                -TimeoutSec 30
-
-            Write-Verbose "Command queued with ID: $($response.commandId)"
-            $commandIds += $response.commandId
+            catch {
+                Write-Error "Failed to queue command '$cmd': $_"
+                throw
+            }
         }
-        catch {
-            Write-Error "Failed to queue command '$cmd': $_"
-            throw
-        }
+        
+        Write-NexusLog "Command queued with ID:  $($commandIds -join ", ")" -Level Information 
     }
-
-    # Return single ID if only one command, array if multiple
-    if ($commandIds.Count -eq 1) {
-        return $commandIds[0]
+    catch {
+        Write-Error "Failed to queue command '$cmd': $_"
+        Write-NexusLog "Failed to queue command '$cmd': $_" -Level Error
+        throw
     }
-    
-    Write-NexusLog "Command queued with ID:  $($commandIds -join ", ")" -Level Information
-
     return $commandIds
 }
 
@@ -277,6 +279,7 @@ function Get-NexusCommandResult {
     }
     catch {
         Write-Error "Failed to get result for command '$CommandId': $_"
+        Write-NexusLog "Failed to get result for command '$CommandId': $_" -Level Error
         throw
     }
 }
@@ -328,112 +331,119 @@ function Wait-NexusCommand {
         [Parameter(Mandatory=$false)]
         [bool]$ReturnResults = $false
     )
+    try {
+        if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
+            Initialize-McpNexusExtension
+        }
 
-    if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
-        Initialize-McpNexusExtension
-    }
+        if ($CommandId.Count -eq 0) {
+            return if ($ReturnResults) { @{} } else { @() }
+        }
 
-    if ($CommandId.Count -eq 0) {
-        return if ($ReturnResults) { @{} } else { @() }
-    }
+        # Preserve original IDs for accurate counts and ordering
+        $originalIds = @($CommandId)
+        $pendingIds = @($CommandId)
 
-    # Preserve original IDs for accurate counts and ordering
-    $originalIds = @($CommandId)
-    $pendingIds = @($CommandId)
+        $isSingleCommand = $originalIds.Count -eq 1
+        $commandDisplay = if ($isSingleCommand) { $originalIds[0] } else { "$($originalIds.Count) commands" }
+        Write-Verbose "Waiting for $commandDisplay to complete (timeout: ${TimeoutSeconds}s)..."
 
-    $isSingleCommand = $originalIds.Count -eq 1
-    $commandDisplay = if ($isSingleCommand) { $originalIds[0] } else { "$($originalIds.Count) commands" }
-    Write-Verbose "Waiting for $commandDisplay to complete (timeout: ${TimeoutSeconds}s)..."
+        $startTime = Get-Date
+        $timeout = [TimeSpan]::FromSeconds($TimeoutSeconds)
+        $completedCommands = @{}
+        $results = @{}
 
-    $startTime = Get-Date
-    $timeout = [TimeSpan]::FromSeconds($TimeoutSeconds)
-    $completedCommands = @{}
-    $results = @{}
+        Write-NexusLog "Waiting on commands: $($originalIds -join ', ')" -Level Information
+        do {
+            Write-NexusLog "Waiting on commands pending: $($pendingIds -join ', ')" -Level Information
+            $allCompleted = $true
+            $remainingCommands = @()
 
-    Write-NexusLog "Waiting on commands: $($originalIds -join ', ')" -Level Information
-    do {
-        Write-NexusLog "Waiting on commands pending: $($pendingIds -join ', ')" -Level Information
-        $allCompleted = $true
-        $remainingCommands = @()
+            try {
+                # Use bulk status endpoint for efficient polling (only for pending IDs)
+                $bulkResults = Get-NexusCommandStatus -CommandIds $pendingIds
 
-        try {
-            # Use bulk status endpoint for efficient polling (only for pending IDs)
-            $bulkResults = Get-NexusCommandStatus -CommandIds $pendingIds
+                foreach ($cmdId in $pendingIds) {
+                    if ($completedCommands.ContainsKey($cmdId)) {
+                        continue
+                    }
 
-            foreach ($cmdId in $pendingIds) {
-                if ($completedCommands.ContainsKey($cmdId)) {
-                    continue
-                }
+                    if ($bulkResults.ContainsKey($cmdId)) {
+                        $result = $bulkResults[$cmdId]
 
-                if ($bulkResults.ContainsKey($cmdId)) {
-                    $result = $bulkResults[$cmdId]
-
-                    if ($result.isCompleted) {
-                        $completedCommands[$cmdId] = $true
-                        if ($result.status -eq "Success" -or $result.status -eq "Completed") {
-                            Write-Verbose "Command $cmdId completed successfully"
-                            $results[$cmdId] = $result.output
+                        if ($result.isCompleted) {
+                            $completedCommands[$cmdId] = $true
+                            if ($result.status -eq "Success" -or $result.status -eq "Completed") {
+                                Write-Verbose "Command $cmdId completed successfully"
+                                $results[$cmdId] = $result.output
+                            }
+                            else {
+                                $errorMsg = if ($result.error) { $result.error } else { "Command failed with status: $($result.status)" }
+                                Write-Error "Command $cmdId failed: $errorMsg"
+                                throw "Command $cmdId failed: $errorMsg"
+                            }
                         }
                         else {
-                            $errorMsg = if ($result.error) { $result.error } else { "Command failed with status: $($result.status)" }
-                            Write-Error "Command $cmdId failed: $errorMsg"
-                            throw "Command $cmdId failed: $errorMsg"
+                            $allCompleted = $false
+                            $remainingCommands += $cmdId
                         }
                     }
                     else {
+                        Write-Warning "Command $cmdId not found in status response"
                         $allCompleted = $false
                         $remainingCommands += $cmdId
                     }
                 }
-                else {
-                    Write-Warning "Command $cmdId not found in status response"
-                    $allCompleted = $false
-                    $remainingCommands += $cmdId
+            }
+            catch {
+                Write-Error "Error while checking bulk command status: $_"
+                throw
+            }
+
+            if ($allCompleted) {
+                Write-Verbose "All $($CommandId.Count) commands completed successfully"
+                if ($isSingleCommand) {
+                    $singleId = $originalIds[0]
+                    return $results[$singleId]
+                }
+                if ($ReturnResults) {
+                    return $results
+                } else {
+                    # Return outputs in the same order as the original input IDs
+                    $ordered = @()
+                    foreach ($id in $originalIds) { $ordered += $results[$id] }
+                    return $ordered
                 }
             }
-        }
-        catch {
-            Write-Error "Error while checking bulk command status: $_"
-            throw
-        }
 
-        if ($allCompleted) {
-            Write-Verbose "All $($CommandId.Count) commands completed successfully"
-            if ($isSingleCommand) {
-                $singleId = $originalIds[0]
-                return $results[$singleId]
+            $completedCount = $completedCommands.Count
+            Write-Verbose "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')"
+            Write-NexusLog "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')" -Level Information
+            
+            # Emit dynamic progress for remaining items
+            $remainingCount = $remainingCommands.Count
+            if ($remainingCount -gt 0) {
+                Write-NexusProgress "Waiting for $remainingCount of $($originalIds.Count) commands to complete..."
             }
-            if ($ReturnResults) {
-                return $results
-            } else {
-                # Return outputs in the same order as the original input IDs
-                $ordered = @()
-                foreach ($id in $originalIds) { $ordered += $results[$id] }
-                return $ordered
-            }
-        }
+
+            # Shrink the polling set to only remaining commands to avoid re-polling completed IDs
+            $pendingIds = $remainingCommands
+            
+            Start-Sleep -Milliseconds $PollIntervalMs
+
+        } while ((Get-Date) - $startTime -lt $timeout)
 
         $completedCount = $completedCommands.Count
-        Write-Verbose "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')"
-        Write-NexusLog "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')" -Level Information
-        
-        # Emit dynamic progress for remaining items
-        $remainingCount = $remainingCommands.Count
-        if ($remainingCount -gt 0) {
-            Write-NexusProgress "Waiting for $remainingCount of $($originalIds.Count) commands to complete..."
-        }
-
-        # Shrink the polling set to only remaining commands to avoid re-polling completed IDs
-        $pendingIds = $remainingCommands
-        
-        Start-Sleep -Milliseconds $PollIntervalMs
-
-    } while ((Get-Date) - $startTime -lt $timeout)
-
-    $completedCount = $completedCommands.Count
-    $totalCount = $originalIds.Count
-    $remainingCount = $totalCount - $completedCount
-    throw "Timeout: Only $completedCount of $totalCount commands completed within $TimeoutSeconds seconds. $remainingCount commands still running."
+        $totalCount = $originalIds.Count
+        $remainingCount = $totalCount - $completedCount
+        throw "Timeout: Only $completedCount of $totalCount commands completed within $TimeoutSeconds seconds. $remainingCount commands still running."
+    }
+    catch {
+        # Silently ignore logging errors to avoid breaking extension execution
+        Write-Error "Failed to wait for commands to complete: $_"
+        Write-NexusLog "Failed to wait for commands to complete: $_" -Level Error 
+        throw
+    }
 }
 
 
@@ -546,6 +556,7 @@ function Write-NexusLog {
     catch {
         # Silently ignore logging errors to avoid breaking extension execution
         Write-Verbose "Failed to send log to server: $_"
+        Write-NexusLog "Failed to send log to server: $_" -Level Warning
     }
 }
 
@@ -584,6 +595,7 @@ try {
 catch {
     # Ignore errors during module import for non-extension contexts
     Write-Warning "McpNexusExtensions module: Not running in MCP Nexus extension context: $_"
+    Write-NexusLog "McpNexusExtensions module: Not running in MCP Nexus extension context: $_" -Level Warning
 }
 
 <#
@@ -652,6 +664,7 @@ function Get-NexusCommandStatus {
     }
     catch {
         Write-Error "Failed to get bulk status for commands: $_"
+        Write-NexusLog "Failed to get bulk status for commands: $_" -Level Error
         throw
     }
 }

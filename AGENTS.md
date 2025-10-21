@@ -871,10 +871,9 @@ Added async command execution functions that queue commands without blocking, en
 
 ### New PowerShell Functions
 
-- `Start-NexusCommand` - Queue a command, returns command ID immediately
+- `Start-NexusCommand` - Queue multiple command, returns command ID immediately
 - `Wait-NexusCommand` - Block until queued command completes
 - `Get-NexusCommandResult` - Check command status without blocking
-- `Start-NexusCommands` - Queue multiple commands at once
 
 ### New HTTP Endpoint
 
@@ -884,7 +883,7 @@ Added async command execution functions that queue commands without blocking, en
 
 ```powershell
 # Queue multiple commands (enables batching)
-$ids = Start-NexusCommands -Commands @("lm", "!threads", "!peb")
+$ids = Start-NexusCommand -Commands @("lm", "!threads", "!peb")
 
 # Wait for all to complete
 foreach ($id in $ids) {
