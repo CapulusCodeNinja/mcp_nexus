@@ -87,6 +87,13 @@ namespace mcp_nexus.Configuration
                     Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}"
                 };
                 nlogConfig.AddTarget(fileTarget);
+                
+                // Add Microsoft suppression rules FIRST (before general "*" rule)
+                if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
+                {
+                    nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, fileTarget));
+                }
+                
                 nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, fileTarget));
             }
 
@@ -99,6 +106,13 @@ namespace mcp_nexus.Configuration
                     Layout = "${longdate}|${uppercase:${level}}|${logger}|${message} ${exception:format=ToString}"
                 };
                 nlogConfig.AddTarget(stderrTarget);
+                
+                // Add Microsoft suppression rules FIRST (before general "*" rule)
+                if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
+                {
+                    nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, stderrTarget));
+                }
+                
                 nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, stderrTarget));
             }
 
@@ -110,17 +124,6 @@ namespace mcp_nexus.Configuration
             foreach (var rule in nlogConfig.LoggingRules)
             {
                 rule.SetLoggingLevels(nlogLevel, NLog.LogLevel.Fatal);
-            }
-
-            // Add specific rules for Microsoft categories based on log level
-            if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
-            {
-                // Suppress Microsoft categories when not in Trace mode
-                var microsoftRule = new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, fileTarget);
-                nlogConfig.LoggingRules.Add(microsoftRule);
-
-                var microsoftStderrRule = new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, stderrTarget);
-                nlogConfig.LoggingRules.Add(microsoftStderrRule);
             }
 
             // Apply the configuration
