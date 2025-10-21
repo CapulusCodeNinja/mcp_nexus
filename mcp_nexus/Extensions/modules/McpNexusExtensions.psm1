@@ -334,24 +334,28 @@ function Wait-NexusCommand {
         return if ($ReturnResults) { @{} } else { @() }
     }
 
-    $isSingleCommand = $CommandId.Count -eq 1
-    $commandDisplay = if ($isSingleCommand) { $CommandId[0] } else { "$($CommandId.Count) commands" }
+    # Preserve original IDs for accurate counts and ordering
+    $originalIds = @($CommandId)
+    $pendingIds = @($CommandId)
+
+    $isSingleCommand = $originalIds.Count -eq 1
+    $commandDisplay = if ($isSingleCommand) { $originalIds[0] } else { "$($originalIds.Count) commands" }
     Write-Verbose "Waiting for $commandDisplay to complete (timeout: ${TimeoutSeconds}s)..."
 
     $startTime = Get-Date
     $timeout = [TimeSpan]::FromSeconds($TimeoutSeconds)
     $completedCommands = @{}
-    $results = if ($ReturnResults) { @{} } else { @() }
+    $results = @{}
 
     do {
         $allCompleted = $true
         $remainingCommands = @()
 
         try {
-            # Use bulk status endpoint for efficient polling
-            $bulkResults = Get-NexusCommandStatus -CommandIds $CommandId
+            # Use bulk status endpoint for efficient polling (only for pending IDs)
+            $bulkResults = Get-NexusCommandStatus -CommandIds $pendingIds
 
-            foreach ($cmdId in $CommandId) {
+            foreach ($cmdId in $pendingIds) {
                 if ($completedCommands.ContainsKey($cmdId)) {
                     continue
                 }
@@ -359,16 +363,13 @@ function Wait-NexusCommand {
                 if ($bulkResults.ContainsKey($cmdId)) {
                     $result = $bulkResults[$cmdId]
 
+                    Write-NexusLog "Command $cmdId has the status: $($result.status)" -Level Information
+
                     if ($result.isCompleted) {
                         $completedCommands[$cmdId] = $true
-                        
                         if ($result.status -eq "Success" -or $result.status -eq "Completed") {
                             Write-Verbose "Command $cmdId completed successfully"
-                            if ($ReturnResults) {
-                                $results[$cmdId] = $result.output
-                            } else {
-                                $results += $result.output
-                            }
+                            $results[$cmdId] = $result.output
                         }
                         else {
                             $errorMsg = if ($result.error) { $result.error } else { "Command failed with status: $($result.status)" }
@@ -395,26 +396,41 @@ function Wait-NexusCommand {
 
         if ($allCompleted) {
             Write-Verbose "All $($CommandId.Count) commands completed successfully"
-            # For single command, return just the output; for multiple, return array/hashtable
             if ($isSingleCommand) {
-                return if ($ReturnResults) { $results[$CommandId[0]] } else { $results[0] }
+                $singleId = $originalIds[0]
+                return $results[$singleId]
             }
-            return $results
+            if ($ReturnResults) {
+                return $results
+            } else {
+                # Return outputs in the same order as the original input IDs
+                $ordered = @()
+                foreach ($id in $originalIds) { $ordered += $results[$id] }
+                return $ordered
+            }
         }
 
         $completedCount = $completedCommands.Count
         Write-Verbose "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')"
         
+        # Emit dynamic progress for remaining items
+        $remainingCount = $remainingCommands.Count
+        if ($remainingCount -gt 0) {
+            Write-NexusProgress "Waiting for $remainingCount of $($originalIds.Count) commands to complete..."
+            Write-NexusLog "Waiting for $remainingCount of $($originalIds.Count) commands to complete..." -Level Information
+        }
+
         # Shrink the polling set to only remaining commands to avoid re-polling completed IDs
-        $CommandId = $remainingCommands
+        $pendingIds = $remainingCommands
         
         Start-Sleep -Milliseconds $PollIntervalMs
 
     } while ((Get-Date) - $startTime -lt $timeout)
 
     $completedCount = $completedCommands.Count
-    $remainingCount = $CommandId.Count - $completedCount
-    throw "Timeout: Only $completedCount of $($CommandId.Count) commands completed within $TimeoutSeconds seconds. $remainingCount commands still running."
+    $totalCount = $originalIds.Count
+    $remainingCount = $totalCount - $completedCount
+    throw "Timeout: Only $completedCount of $totalCount commands completed within $TimeoutSeconds seconds. $remainingCount commands still running."
 }
 
 
@@ -635,150 +651,6 @@ function Get-NexusCommandStatus {
         Write-Error "Failed to get bulk status for commands: $_"
         throw
     }
-}
-
-<#
-.SYNOPSIS
-Waits for multiple queued commands to complete and returns their results.
-
-.DESCRIPTION
-Efficiently polls multiple queued commands until they all complete or timeout.
-This function optimizes the waiting process by checking all commands in a single
-polling loop rather than waiting for each command individually.
-
-.PARAMETER CommandIds
-Array of command IDs returned by Start-NexusCommand or Start-NexusCommands.
-
-.PARAMETER TimeoutSeconds
-Maximum time to wait for all commands to complete (default: 300 seconds).
-
-.PARAMETER PollIntervalMs
-Milliseconds to wait between status checks (default: 1000ms).
-
-.PARAMETER ReturnResults
-If true, returns a hashtable with command IDs as keys and outputs as values.
-If false, returns an array of outputs in the same order as input command IDs.
-
-.EXAMPLE
-$commandIds = Start-NexusCommands -Commands @("lm", "!threads", "!peb")
-$results = Wait-NexusCommands -CommandIds $commandIds -ReturnResults $true
-Write-Output "Modules: $($results['cmd-123'])"
-Write-Output "Threads: $($results['cmd-124'])"
-
-.EXAMPLE
-$commandIds = Start-NexusCommands -Commands @("lm", "!threads", "!peb")
-$outputs = Wait-NexusCommands -CommandIds $commandIds -ReturnResults $false
-$modules = $outputs[0]
-$threads = $outputs[1]
-$peb = $outputs[2]
-
-.OUTPUTS
-Hashtable or Array - Command results based on ReturnResults parameter.
-
-.NOTES
-This function is much more efficient than calling Wait-NexusCommand in a loop
-because it polls all commands together rather than waiting for each individually.
-#>
-function Wait-NexusCommands {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string[]]$CommandIds,
-
-        [Parameter(Mandatory=$false)]
-        [int]$TimeoutSeconds = 300,
-
-        [Parameter(Mandatory=$false)]
-        [int]$PollIntervalMs = 1000,
-
-        [Parameter(Mandatory=$false)]
-        [bool]$ReturnResults = $false
-    )
-
-    if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
-        Initialize-McpNexusExtension
-    }
-
-    if ($CommandIds.Count -eq 0) {
-        return if ($ReturnResults) { @{} } else { @() }
-    }
-
-    Write-Verbose "Waiting for $($CommandIds.Count) commands to complete (timeout: ${TimeoutSeconds}s)..."
-
-    $startTime = Get-Date
-    $timeout = [TimeSpan]::FromSeconds($TimeoutSeconds)
-    $completedCommands = @{}
-    $results = if ($ReturnResults) { @{} } else { @() }
-
-    do {
-        $allCompleted = $true
-        $remainingCommands = @()
-
-        try {
-            # Use bulk status endpoint for efficient polling
-            $bulkResults = Get-NexusCommandStatus -CommandIds $CommandIds
-
-            foreach ($cmdId in $CommandIds) {
-                if ($completedCommands.ContainsKey($cmdId)) {
-                    continue
-                }
-
-                if ($bulkResults.ContainsKey($cmdId)) {
-                    $result = $bulkResults[$cmdId]
-
-                    if ($result.isCompleted) {
-                        $completedCommands[$cmdId] = $true
-                        
-                        if ($result.status -eq "Success" -or $result.status -eq "Completed") {
-                            Write-Verbose "Command $cmdId completed successfully"
-                            if ($ReturnResults) {
-                                $results[$cmdId] = $result.output
-                            } else {
-                                $results += $result.output
-                            }
-                        }
-                        else {
-                            $errorMsg = if ($result.error) { $result.error } else { "Command failed with status: $($result.status)" }
-                            Write-Error "Command $cmdId failed: $errorMsg"
-                            throw "Command $cmdId failed: $errorMsg"
-                        }
-                    }
-                    else {
-                        $allCompleted = $false
-                        $remainingCommands += $cmdId
-                    }
-                }
-                else {
-                    Write-Warning "Command $cmdId not found in bulk status response"
-                    $allCompleted = $false
-                    $remainingCommands += $cmdId
-                }
-            }
-        }
-        catch {
-            Write-Error "Error while checking bulk command status: $_"
-            throw
-        }
-
-        if ($allCompleted) {
-            Write-Verbose "All $($CommandIds.Count) commands completed successfully"
-            return $results
-        }
-
-        $completedCount = $completedCommands.Count
-        Write-Verbose "Commands completed: $completedCount/$($CommandIds.Count), remaining: $($remainingCommands -join ', ')"
-        
-        # Shrink the polling set to only remaining commands to avoid re-polling completed IDs
-        $CommandIds = $remainingCommands
-        
-        Start-Sleep -Milliseconds $PollIntervalMs
-
-    } while ((Get-Date) - $startTime -lt $timeout)
-
-    $completedCount = $completedCommands.Count
-    $remainingCount = $CommandIds.Count - $completedCount
-    throw "Timeout: Only $completedCount of $($CommandIds.Count) commands completed within $TimeoutSeconds seconds. $remainingCount commands still running."
 }
 
 # Export functions
