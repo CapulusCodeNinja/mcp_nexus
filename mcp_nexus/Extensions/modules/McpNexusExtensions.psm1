@@ -91,7 +91,7 @@ function Invoke-NexusCommand {
     Write-Verbose "Executing command #$script:RequestCounter`: $Command"
 
     # Output marker for MCP Nexus to count callbacks
-    Write-NexusProgress "[CALLBACK] Executing: $Command"
+    Write-NexusProgress "Executing: $Command"
 
     try {
         $body = @{
@@ -183,7 +183,7 @@ function Start-NexusCommand {
         Write-Verbose "Queueing command #$script:RequestCounter: $cmd"
 
         # Output marker for MCP Nexus to count callbacks
-        Write-NexusProgress "[CALLBACK] Queueing: $cmd"
+        Write-NexusProgress "Queueing: $cmd"
 
         try {
             $body = @{
@@ -460,7 +460,7 @@ function Write-NexusProgress {
         [string]$Message
     )
 
-    Write-Host "[PROGRESS] $Message"
+    Write-Host $Message
 }
 
 <#

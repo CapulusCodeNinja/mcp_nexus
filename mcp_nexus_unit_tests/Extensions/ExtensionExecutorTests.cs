@@ -419,11 +419,11 @@ exit 1
                 new ExtensionTokenValidator(new LoggerFactory().CreateLogger<ExtensionTokenValidator>()));
 
             var scriptContent = @"
-Write-Output '[PROGRESS] Starting extension'
+Write-Output 'Starting extension'
 Start-Sleep -Milliseconds 100
-Write-Output '[PROGRESS] Extension in progress'
+Write-Output 'Extension in progress'
 Start-Sleep -Milliseconds 100
-Write-Output '[PROGRESS] Extension complete'
+Write-Output 'Extension complete'
 exit 0
 ";
             CreateTestScript("progress.ps1", scriptContent);

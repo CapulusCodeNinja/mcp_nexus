@@ -135,8 +135,7 @@ namespace mcp_nexus.Extensions
                         var sanitized = StripAnsi(e.Data);
                         outputBuilder.AppendLine(sanitized);
  
-                        var progressMessage = e.Data[10..].Trim();
-                        progressCallback?.Invoke(progressMessage);
+                        progressCallback?.Invoke(e.Data.Trim());
                     }
                 };
 

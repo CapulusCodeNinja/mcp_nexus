@@ -153,7 +153,7 @@ namespace mcp_nexus.Extensions
             if (m_Commands.TryGetValue(commandId, out var info))
             {
                 info.ProgressMessage = progressMessage;
-                m_Logger.LogDebug("Updated extension command {CommandId} progress: {Progress}",
+                m_Logger.LogTrace("Updated extension command {CommandId} progress: {Progress}",
                     commandId, progressMessage);
             }
         }
