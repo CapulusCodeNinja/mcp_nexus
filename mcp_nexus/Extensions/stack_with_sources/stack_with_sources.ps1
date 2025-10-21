@@ -72,7 +72,7 @@ try {
             suggestion = "Use the '!threads' or '~' command to list available threads, then try again with a valid thread ID."
             stackTrace = $stackOutput
         } | ConvertTo-Json -Depth 10
-        Write-Output $result
+        Write-NexusProgress $result
         exit 0
     }
 
@@ -108,7 +108,7 @@ try {
             error = "No valid return addresses found in stack trace"
             stackTrace = $stackOutput
         } | ConvertTo-Json -Depth 10
-        Write-Output $result
+        Write-NexusProgress $result
         exit 0
     }
 
@@ -202,7 +202,7 @@ try {
         sourceOutputs = $sourceOutputs
     } | ConvertTo-Json -Depth 10
 
-    Write-Output $result
+    Write-NexusProgress $result
     exit 0
 }
 catch {
@@ -214,7 +214,7 @@ catch {
         error = $_.Exception.Message
         stackTrace = $_.ScriptStackTrace
     } | ConvertTo-Json
-    Write-Output $errorResult
+    Write-NexusProgress $errorResult
     exit 1
 }
 

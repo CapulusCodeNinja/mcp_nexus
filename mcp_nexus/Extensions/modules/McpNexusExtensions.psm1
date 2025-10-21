@@ -91,7 +91,7 @@ function Invoke-NexusCommand {
     Write-Verbose "Executing command #$script:RequestCounter`: $Command"
 
     # Output marker for MCP Nexus to count callbacks
-    Write-Output "[CALLBACK] Executing: $Command"
+    Write-NexusProgress "[CALLBACK] Executing: $Command"
 
     try {
         $body = @{
@@ -152,7 +152,7 @@ $ids += Start-NexusCommand "!threads"
 $ids += Start-NexusCommand "!peb"
 foreach ($id in $ids) {
     $result = Wait-NexusCommand -CommandId $id
-    Write-Output $result
+    Write-NexusProgress $result
 }
 
 .OUTPUTS
@@ -183,7 +183,7 @@ function Start-NexusCommand {
         Write-Verbose "Queueing command #$script:RequestCounter: $cmd"
 
         # Output marker for MCP Nexus to count callbacks
-        Write-Output "[CALLBACK] Queueing: $cmd"
+        Write-NexusProgress "[CALLBACK] Queueing: $cmd"
 
         try {
             $body = @{
@@ -216,6 +216,9 @@ function Start-NexusCommand {
     if ($commandIds.Count -eq 1) {
         return $commandIds[0]
     }
+    
+    Write-NexusLog "Command queued with ID:  $($commandIds -join ", ")" -Level Information
+
     return $commandIds
 }
 
@@ -235,7 +238,7 @@ $cmdId = Start-NexusCommand "lm"
 Start-Sleep -Seconds 2
 $status = Get-NexusCommandResult -CommandId $cmdId
 if ($status.isCompleted) {
-    Write-Output $status.output
+    Write-NexusProgress $status.output
 }
 
 .OUTPUTS
@@ -347,7 +350,9 @@ function Wait-NexusCommand {
     $completedCommands = @{}
     $results = @{}
 
+    Write-NexusLog "Waiting on commands: $($originalIds -join ', ')" -Level Information
     do {
+        Write-NexusLog "Waiting on commands pending: $($pendingIds -join ', ')" -Level Information
         $allCompleted = $true
         $remainingCommands = @()
 
@@ -362,8 +367,6 @@ function Wait-NexusCommand {
 
                 if ($bulkResults.ContainsKey($cmdId)) {
                     $result = $bulkResults[$cmdId]
-
-                    Write-NexusLog "Command $cmdId has the status: $($result.status)" -Level Information
 
                     if ($result.isCompleted) {
                         $completedCommands[$cmdId] = $true
@@ -412,12 +415,12 @@ function Wait-NexusCommand {
 
         $completedCount = $completedCommands.Count
         Write-Verbose "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')"
+        Write-NexusLog "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')" -Level Information
         
         # Emit dynamic progress for remaining items
         $remainingCount = $remainingCommands.Count
         if ($remainingCount -gt 0) {
             Write-NexusProgress "Waiting for $remainingCount of $($originalIds.Count) commands to complete..."
-            Write-NexusLog "Waiting for $remainingCount of $($originalIds.Count) commands to complete..." -Level Information
         }
 
         # Shrink the polling set to only remaining commands to avoid re-polling completed IDs
@@ -457,7 +460,7 @@ function Write-NexusProgress {
         [string]$Message
     )
 
-    Write-Output "[PROGRESS] $Message"
+    Write-Host "[PROGRESS] $Message"
 }
 
 <#
@@ -599,7 +602,7 @@ $commandIds = @("cmd-123", "cmd-124", "cmd-125")
 $results = Get-NexusCommandStatus -CommandIds $commandIds
 foreach ($cmdId in $commandIds) {
     if ($results[$cmdId].isCompleted) {
-        Write-Output "Command $cmdId completed: $($results[$cmdId].output)"
+        Write-NexusProgress "Command $cmdId completed: $($results[$cmdId].output)"
     }
 }
 

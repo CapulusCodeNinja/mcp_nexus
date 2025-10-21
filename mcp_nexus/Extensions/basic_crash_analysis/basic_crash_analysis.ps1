@@ -71,7 +71,7 @@ try {
         message = "Basic crash analysis completed successfully using async batching. Review the outputs to identify faulting thread, exception type, and crash context."
     } | ConvertTo-Json -Depth 10
 
-    Write-Output $result
+    Write-NexusProgress $result
     exit 0
 }
 catch {
@@ -82,7 +82,7 @@ catch {
         workflow = "basic_crash_analysis"
         error = $_.Exception.Message
     } | ConvertTo-Json
-    Write-Output $errorResult
+    Write-NexusProgress $errorResult
     exit 1
 }
 
