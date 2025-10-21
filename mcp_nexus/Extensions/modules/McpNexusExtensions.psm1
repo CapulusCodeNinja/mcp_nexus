@@ -367,6 +367,8 @@ function Wait-NexusCommand {
                     if ($completedCommands.ContainsKey($cmdId)) {
                         continue
                     }
+                    
+                    Write-NexusLog "Still wait for command: $cmdId" -Level Information
 
                     if ($bulkResults.ContainsKey($cmdId)) {
                         $result = $bulkResults[$cmdId]
@@ -390,6 +392,7 @@ function Wait-NexusCommand {
                     }
                     else {
                         Write-Warning "Command $cmdId not found in status response"
+                        Write-NexusLog "Command $cmdId not found in status response" -Level Warning
                         $allCompleted = $false
                         $remainingCommands += $cmdId
                     }
@@ -397,6 +400,7 @@ function Wait-NexusCommand {
             }
             catch {
                 Write-Error "Error while checking bulk command status: $_"
+                Write-NexusLog "Error while checking bulk command status: $_" -Level Error
                 throw
             }
 
@@ -418,7 +422,6 @@ function Wait-NexusCommand {
 
             $completedCount = $completedCommands.Count
             Write-Verbose "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')"
-            Write-NexusLog "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')" -Level Information
             
             # Emit dynamic progress for remaining items
             $remainingCount = $remainingCommands.Count

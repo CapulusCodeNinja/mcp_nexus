@@ -215,7 +215,6 @@ namespace mcp_nexus.CommandQueue.Core
             catch (OperationCanceledException) when (m_ProcessingCts.Token.IsCancellationRequested)
             {
                 m_Logger.LogDebug("🛑 Command processing cancelled for session {SessionId}", m_Config.SessionId);
-                break;
             }
             catch (Exception ex)
             {
