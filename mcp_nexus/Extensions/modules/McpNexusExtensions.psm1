@@ -367,8 +367,6 @@ function Wait-NexusCommand {
                     if ($completedCommands.ContainsKey($cmdId)) {
                         continue
                     }
-                    
-                    Write-NexusLog "Still wait for command: $cmdId" -Level Information
 
                     if ($bulkResults.ContainsKey($cmdId)) {
                         $result = $bulkResults[$cmdId]

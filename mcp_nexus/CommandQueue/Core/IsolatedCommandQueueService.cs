@@ -167,9 +167,18 @@ namespace mcp_nexus.CommandQueue.Core
                                 var commandResult = i < results.Count ? results[i] : null;
                                 var resultOutput = commandResult?.Output ?? string.Empty;
 
-                                cmd.State = CommandState.Completed;
+                                // Mark command completed in tracker and signal completion source
+                                m_Tracker.UpdateState(cmd.Id ?? string.Empty, CommandState.Completed);
                                 cmd.CompletionSource?.TrySetResult(resultOutput);
-                                m_ResultCache?.StoreResult(cmd.Id ?? string.Empty, CommandResult.Success(resultOutput));
+
+                                // Store result with full metadata so status endpoints can rely on cache
+                                m_ResultCache?.StoreResult(
+                                    cmd.Id ?? string.Empty,
+                                    CommandResult.Success(resultOutput),
+                                    cmd.Command ?? string.Empty,
+                                    cmd.QueueTime,
+                                    batchStart,
+                                    batchEnd);
 
                                 Statistics.CommandStats(m_Logger,
                                     Statistics.CommandState.SuccessBatch,
@@ -183,6 +192,8 @@ namespace mcp_nexus.CommandQueue.Core
                                     (batchStart - cmd.QueueTime).TotalMilliseconds,
                                     perCommandExecMs,
                                     (batchEnd - cmd.QueueTime).TotalMilliseconds);
+                                // Remove from tracker once cached to keep behavior consistent with single-command path
+                                m_Tracker.TryRemoveCommand(cmd.Id ?? string.Empty, out _);
                             }
                         }
                         else

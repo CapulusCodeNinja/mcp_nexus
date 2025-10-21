@@ -310,11 +310,15 @@ namespace mcp_nexus.Extensions
 
                         if (commandInfo != null)
                         {
+                            var hasResult = commandResult != null;
+                            var isCompleted = commandInfo.IsCompleted || hasResult;
+                            var status = isCompleted ? "Completed" : commandInfo.State.ToString();
+
                             results[commandId] = new ExtensionCallbackReadResponse
                             {
                                 CommandId = commandId,
-                                Status = commandInfo.State.ToString(),
-                                IsCompleted = commandInfo.IsCompleted,
+                                Status = status,
+                                IsCompleted = isCompleted,
                                 Output = commandResult?.Output,
                                 Error = commandResult?.ErrorMessage
                             };
