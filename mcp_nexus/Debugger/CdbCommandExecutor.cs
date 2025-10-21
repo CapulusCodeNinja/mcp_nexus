@@ -259,40 +259,16 @@ namespace mcp_nexus.Debugger
                         {
                             m_Logger.LogDebug("🧠 Start sentinel detected: {Line}", line);
 
-                            // Complete previous command if any
-                            if (!string.IsNullOrEmpty(currentCommandId))
-                            {
-                                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
-                            }
-
-                            // Start new command - get the current command ID from the executor
-                            lock (m_pendingCommandsLock)
-                            {
-                                currentCommandId = m_currentCommandId ?? string.Empty;
-                            }
-                            currentCommandOutput.Clear();
-                            currentCommandStderr.Clear();
+                            currentCommandId = await CompleteAndStartNextCommandAsync(currentCommandId, currentCommandOutput, currentCommandStderr);
                             continue;
                         }
 
-                        // Handle end sentinel (only for non-batch commands)
                         if (string.Equals(line, CdbSentinels.EndMarker, StringComparison.Ordinal))
                         {
                             m_Logger.LogDebug("🧠 End sentinel detected - completing single command: {Line}", line);
 
-                            if (!string.IsNullOrEmpty(currentCommandId))
-                            {
-                                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
-                            }
-
-                            // Reset for next command
-                            lock (m_pendingCommandsLock)
-                            {
-                                m_currentCommandId = null; // Clear the current command ID
-                            }
+                            await CompleteAndResetCommandAsync(currentCommandId, currentCommandOutput, currentCommandStderr);
                             currentCommandId = string.Empty;
-                            currentCommandOutput.Clear();
-                            currentCommandStderr.Clear();
                             continue;
                         }
 
@@ -301,19 +277,8 @@ namespace mcp_nexus.Debugger
                         {
                             m_Logger.LogDebug("🧠 CDB prompt detected - completing command: {Line}", line);
 
-                            if (!string.IsNullOrEmpty(currentCommandId))
-                            {
-                                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
-                            }
-
-                            // Reset for next command
-                            lock (m_pendingCommandsLock)
-                            {
-                                m_currentCommandId = null; // Clear the current command ID
-                            }
+                            await CompleteAndResetCommandAsync(currentCommandId, currentCommandOutput, currentCommandStderr);
                             currentCommandId = string.Empty;
-                            currentCommandOutput.Clear();
-                            currentCommandStderr.Clear();
                             continue;
                         }
 
@@ -322,26 +287,15 @@ namespace mcp_nexus.Debugger
                         {
                             m_Logger.LogDebug("🧠 Ultra-safe completion pattern detected - completing command: {Line}", line);
 
-                            if (!string.IsNullOrEmpty(currentCommandId))
-                            {
-                                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
-                            }
-
-                            // Reset for next command
-                            lock (m_pendingCommandsLock)
-                            {
-                                m_currentCommandId = null; // Clear the current command ID
-                            }
+                            await CompleteAndResetCommandAsync(currentCommandId, currentCommandOutput, currentCommandStderr);
                             currentCommandId = string.Empty;
-                            currentCommandOutput.Clear();
-                            currentCommandStderr.Clear();
                             continue;
                         }
 
-                            if (isStderr)
-                                currentCommandStderr.Add(line);
-                            else
-                                currentCommandOutput.AppendLine(line);
+                        if (isStderr)
+                            currentCommandStderr.Add(line);
+                        else
+                            currentCommandOutput.AppendLine(line);
                     }
                     catch (OperationCanceledException)
                     {
@@ -367,6 +321,62 @@ namespace mcp_nexus.Debugger
             {
                 m_Logger.LogDebug("🧠 Consumer thread ended");
             }
+        }
+
+        /// <summary>
+        /// Completes the current command (if any) and starts a new command.
+        /// Used when a start sentinel is detected.
+        /// </summary>
+        /// <param name="currentCommandId">Current command ID reference</param>
+        /// <param name="currentCommandOutput">Current command output buffer</param>
+        /// <param name="currentCommandStderr">Current command stderr buffer</param>
+        /// <returns>The new command ID to use</returns>
+        private async Task<string> CompleteAndStartNextCommandAsync(string currentCommandId, StringBuilder currentCommandOutput, List<string> currentCommandStderr)
+        {
+            // Complete previous command if any
+            if (!string.IsNullOrEmpty(currentCommandId))
+            {
+                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
+            }
+
+            // Get the new command ID from the executor
+            string newCommandId;
+            lock (m_pendingCommandsLock)
+            {
+                newCommandId = m_currentCommandId ?? string.Empty;
+            }
+
+            // Clear buffers for new command
+            currentCommandOutput.Clear();
+            currentCommandStderr.Clear();
+
+            return newCommandId;
+        }
+
+        /// <summary>
+        /// Completes the current command and resets state for the next command.
+        /// Used when an end sentinel, CDB prompt, or completion pattern is detected.
+        /// </summary>
+        /// <param name="currentCommandId">Current command ID</param>
+        /// <param name="currentCommandOutput">Current command output buffer</param>
+        /// <param name="currentCommandStderr">Current command stderr buffer</param>
+        private async Task CompleteAndResetCommandAsync(string currentCommandId, StringBuilder currentCommandOutput, List<string> currentCommandStderr)
+        {
+            // Complete current command if any
+            if (!string.IsNullOrEmpty(currentCommandId))
+            {
+                await CompleteCurrentCommandAsync(currentCommandId, currentCommandOutput.ToString(), currentCommandStderr).ConfigureAwait(false);
+            }
+
+            // Reset for next command
+            lock (m_pendingCommandsLock)
+            {
+                m_currentCommandId = null; // Clear the current command ID
+            }
+
+            // Clear buffers
+            currentCommandOutput.Clear();
+            currentCommandStderr.Clear();
         }
 
         /// <summary>

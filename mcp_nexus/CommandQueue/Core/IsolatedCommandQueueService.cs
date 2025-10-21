@@ -79,7 +79,7 @@ namespace mcp_nexus.CommandQueue.Core
 
             // Store batching configuration for simple batching logic
             m_BatchingConfig = batchingOptions?.Value;
-            
+
             // Initialize batching components
             m_CommandBatchBuilder = new CommandBatchBuilder();
             m_BatchResultParser = new BatchResultParser();
@@ -123,7 +123,7 @@ namespace mcp_nexus.CommandQueue.Core
                         m_ProcessingCts.Token.ThrowIfCancellationRequested();
 
                         var commandsToProcess = new List<QueuedCommand> { command };
-                        
+
                         if (m_BatchingConfig?.Enabled == true)
                         {
                             // Try to collect more commands (non-blocking)
@@ -139,7 +139,7 @@ namespace mcp_nexus.CommandQueue.Core
                         }
 
                         // Decide batching - check if commands can actually be batched
-                        bool shouldBatch = m_BatchingConfig?.Enabled == true && 
+                        bool shouldBatch = m_BatchingConfig?.Enabled == true &&
                                          commandsToProcess.Count >= (m_BatchingConfig.MinBatchSize) &&
                                          commandsToProcess.Count >= 2 &&
                                          CanCommandsBeBatched(commandsToProcess);
@@ -147,7 +147,7 @@ namespace mcp_nexus.CommandQueue.Core
                         if (shouldBatch)
                         {
                             m_Logger.LogInformation("📦 Processing batch of {Count} commands", commandsToProcess.Count);
-                            
+
                             var batchCommand = m_CommandBatchBuilder.CreateBatchCommand(commandsToProcess);
                             var batchResult = await m_CdbSession.ExecuteBatchCommand(batchCommand, CancellationToken.None);
                             var results = m_BatchResultParser.SplitBatchResults(batchResult, commandsToProcess);
@@ -157,15 +157,15 @@ namespace mcp_nexus.CommandQueue.Core
                                 var cmd = commandsToProcess[i];
                                 var commandResult = i < results.Count ? results[i] : null;
                                 var resultOutput = commandResult?.Output ?? string.Empty;
-                                
+
                                 cmd.State = CommandState.Completed;
                                 cmd.CompletionSource?.TrySetResult(resultOutput);
                                 m_ResultCache?.StoreResult(cmd.Id ?? string.Empty, CommandResult.Success(resultOutput));
-                                
+
                                 // Calculate timing for statistics
                                 var now = DateTime.Now;
                                 var timeInQueue = (now - cmd.QueueTime).TotalMilliseconds;
-                                Statistics.CommandStats(m_Logger, 
+                                Statistics.CommandStats(m_Logger,
                                     Statistics.CommandState.SuccessBatch,
                                     m_Config.SessionId,
                                     cmd.Id ?? string.Empty,

@@ -380,10 +380,10 @@ namespace mcp_nexus.Resources
                         new CancellationTokenSource(),
                         CommandState.Completed // Mark as completed
                     );
-                    
+
                     // Set the result in the completion source so it shows as finished
                     completedCmd.CompletionSource?.TrySetResult(cachedResult.Result.Output);
-                    
+
                     allCommands.Add(completedCmd);
                 }
 

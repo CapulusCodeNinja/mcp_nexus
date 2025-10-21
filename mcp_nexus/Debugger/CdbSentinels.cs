@@ -23,7 +23,7 @@ namespace mcp_nexus.Debugger
         /// Command separator marker for command batching functionality.
         /// Used to separate individual command outputs within a batch.
         /// </summary>
-        public const string CommandSeparator = "MCP_NEXUS_CMD_SEP";
+        public const string CommandSeparator = "MCP_NEXUS_COMMAND_SEPERATOR";
     }
 }
 
