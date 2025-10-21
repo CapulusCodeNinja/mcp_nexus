@@ -95,10 +95,13 @@ void ProcessQueue()
             if (actualDir != null)
             {
                 string actualDirName = Path.GetFileName(actualDir);
-                string[] expectedFiles = { fileNameWithoutExt + ".md", actualDirName + ".md", "analysis.md", "console.txt", "cdb_analyze.txt" };
+                string[] expectedFiles = { Path.Combine("out", "dump.md"), fileNameWithoutExt + ".md", actualDirName + ".md", "analysis.md", "console.txt", "cdb_analyze.txt" };
                 foreach (string expectedFile in expectedFiles)
                 {
-                    if (File.Exists(Path.Combine(actualDir, expectedFile)))
+                        string candidatePath = expectedFile.Contains("\\") || expectedFile.Contains("/")
+                            ? Path.Combine(actualDir, expectedFile)
+                            : Path.Combine(actualDir, expectedFile);
+                        if (File.Exists(candidatePath))
                     {
                         hasAnalysis = true;
                         break;
@@ -113,10 +116,13 @@ void ProcessQueue()
                 if (actualDir != null)
                 {
                     string actualDirName = Path.GetFileName(actualDir);
-                    string[] fullAnalysisFiles = { fileNameWithoutExt + ".md", actualDirName + ".md", "analysis.md" };
+                    string[] fullAnalysisFiles = { Path.Combine("out", "dump.md"), fileNameWithoutExt + ".md", actualDirName + ".md", "analysis.md" };
                     foreach (string file in fullAnalysisFiles)
                     {
-                        if (File.Exists(Path.Combine(actualDir, file)))
+                        string candidatePath2 = file.Contains("\\") || file.Contains("/")
+                            ? Path.Combine(actualDir, file)
+                            : Path.Combine(actualDir, file);
+                        if (File.Exists(candidatePath2))
                         {
                             hasFullAnalysis = true;
                             break;
@@ -187,15 +193,15 @@ void ProcessDumpFileSimple(string filePath, string jobId)
         string boundary = "----WebKitFormBoundary" + DateTime.Now.Ticks.ToString("x");
         string fileName = Path.GetFileName(filePath);
         
-        // Build multipart form data headers
+        // Build multipart form data headers with CRLF line endings
         var formData = new System.Text.StringBuilder();
-        formData.AppendLine("--" + boundary);
-        formData.AppendLine("Content-Disposition: form-data; name=\"dumpFile\"; filename=\"" + fileName + "\"");
-        formData.AppendLine("Content-Type: application/octet-stream");
-        formData.AppendLine();
+        formData.Append("--" + boundary + "\r\n");
+        formData.Append("Content-Disposition: form-data; name=\"dumpFile\"; filename=\"" + fileName + "\"\r\n");
+        formData.Append("Content-Type: application/octet-stream\r\n\r\n");
         
-        byte[] formDataBytes = System.Text.Encoding.Unicode.GetBytes(formData.ToString());
-        byte[] endBoundaryBytes = System.Text.Encoding.Unicode.GetBytes("\r\n--" + boundary + "--\r\n");
+        // Use ASCII for multipart boundaries/headers so ASP.NET can parse Request.Files
+        byte[] formDataBytes = System.Text.Encoding.ASCII.GetBytes(formData.ToString());
+        byte[] endBoundaryBytes = System.Text.Encoding.ASCII.GetBytes("\r\n--" + boundary + "--\r\n");
         
         // Calculate total content length for streaming
         long totalContentLength = formDataBytes.Length + fileInfo.Length + endBoundaryBytes.Length;
@@ -207,6 +213,11 @@ void ProcessDumpFileSimple(string filePath, string jobId)
         request.ContentLength = totalContentLength;
         request.Timeout = 600000; // 10 minutes timeout to match upload.aspx processing time
         request.ReadWriteTimeout = 600000; // 10 minutes for reading response
+        request.AllowWriteStreamBuffering = false; // ensure streaming upload
+        request.KeepAlive = false;
+        request.SendChunked = false;
+        request.Proxy = null;
+        request.ServicePoint.Expect100Continue = false;
         
         // Send request using streaming to avoid loading entire file into memory
         using (var requestStream = request.GetRequestStream())
@@ -225,8 +236,8 @@ void ProcessDumpFileSimple(string filePath, string jobId)
                 }
             }
             
-            // Write end boundary
-            requestStream.Write(endBoundaryBytes, 0, endBoundaryBytes.Length);
+        // Write end boundary (includes leading CRLF)
+        requestStream.Write(endBoundaryBytes, 0, endBoundaryBytes.Length);
         }
         
         // Get response

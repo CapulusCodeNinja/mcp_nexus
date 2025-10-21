@@ -85,10 +85,8 @@ Each crash dump analysis must result in a single, comprehensive issue log page w
 
 All output pages must be in Markdown and adhere to the following structure and style.
 
-* **CRITICAL:** The output must be a single MD file saved to the directory `[outputdir]`.
-* The output file must have the same name as the dump file, but with an `.md` extension.
+* **CRITICAL:** The output must be a single MD file saved to the directory `[outputdir]` with the name `dump.md`.
 * **Create the output directory:** You MUST create the `[outputdir]` directory if it doesn't exist.
-* **Example:** For dump file `crash_data.dmp`, create the file `[outputdir]/crash_data.md`.
 
 ***
 

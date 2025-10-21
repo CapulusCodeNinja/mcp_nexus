@@ -219,15 +219,15 @@
             template = template.Replace("[filename]", windowsFilePath);
 
             // Write payload to a temp file and read it to avoid quoting issues
-            string tempPayloadWin = Path.Combine(workWin, "payload_" + DateTime.Now.ToString("yyyyMMdd_HHmmss_fff") + ".md");
+            string tempPayloadWin = Path.Combine(workWin, "payload.md");
             File.WriteAllText(tempPayloadWin, template);
             string tempPayloadWsl = ConvertToWSLPath(tempPayloadWin);
             // Prepare a stdout/stderr sink file inside work dir to avoid pipe blocking
-            string wslConsoleWin = Path.Combine(workWin, "agent_console_" + DateTime.Now.ToString("yyyyMMdd_HHmmss_fff") + ".txt");
+            string wslConsoleWin = Path.Combine(workWin, "agent_console.txt");
             string wslConsoleWsl = ConvertToWSLPath(wslConsoleWin);
 
             // Set HOME environment and run cursor-agent with clean output
-            string cmd = "export HOME=/home/droller && cd '$HOME' && cursor-agent -f --output-format text < '" + tempPayloadWsl + "' > '" + wslConsoleWsl + "' 2>&1";
+            string cmd = "export HOME=/home/droller && cd '$HOME' && /home/droller/.local/share/cursor-agent/versions/2025.10.21-224d294/cursor-agent -f --output-format text < '" + tempPayloadWsl + "' > '" + wslConsoleWsl + "' 2>&1";
 
             var psi = new ProcessStartInfo
             {
@@ -256,22 +256,31 @@
                 
                 while (!p.HasExited)
                 {
-                    // Look for analysis.md file (simplified naming)
+                    // Look for dump.md in out/ directory first, then legacy analysis.md
                     string baseName = Path.GetFileNameWithoutExtension(windowsFilePath);
                     string pick = null;
                     
-                    // Check locations in priority order for analysis.md or dump-named .md files
+                    // New preferred output location/name: out/dump.md
+                    string expectedOutInWork = Path.Combine(Path.Combine(workWin, "out"), "dump.md");
+                    string expectedOutInSubDir = Path.Combine(Path.Combine(analysisRootWin, baseName), Path.Combine("out", "dump.md"));
+                    string expectedOutInRoot = Path.Combine(analysisRootWin, Path.Combine("out", "dump.md"));
+                    
+                    // Legacy locations: analysis.md and dump-named files
                     string expectedInWorkSub = Path.Combine(Path.Combine(workWin, "analysis"), "analysis.md");
                     string expectedInWork = Path.Combine(workWin, "analysis.md");
                     string expectedInRoot = Path.Combine(analysisRootWin, "analysis.md");
                     string expectedInSubDir = Path.Combine(Path.Combine(analysisRootWin, baseName), "analysis.md");
-                    
-                    // Also check for dump-named files (e.g., dump_20250928_182405.md)
                     string expectedDumpNamedInSubDir = Path.Combine(Path.Combine(analysisRootWin, baseName), baseName + ".md");
                     string expectedDumpNamedInWork = Path.Combine(workWin, baseName + ".md");
                     string expectedDumpNamedInRoot = Path.Combine(analysisRootWin, baseName + ".md");
                     
-                    if (File.Exists(expectedInWorkSub))
+                    if (File.Exists(expectedOutInWork))
+                        pick = expectedOutInWork;
+                    else if (File.Exists(expectedOutInSubDir))
+                        pick = expectedOutInSubDir;
+                    else if (File.Exists(expectedOutInRoot))
+                        pick = expectedOutInRoot;
+                    else if (File.Exists(expectedInWorkSub))
                         pick = expectedInWorkSub;
                     else if (File.Exists(expectedInWork))
                         pick = expectedInWork;
@@ -295,16 +304,46 @@
                             Directory.CreateDirectory(analysisDir);
                         }
                         
-                        // Determine destination filename - preserve dump-named files, otherwise use analysis.md
-                        string destFileName = "analysis.md";
-                        string pickFileName = Path.GetFileName(pick);
-                        if (pickFileName.StartsWith(baseName + ".") && pickFileName.EndsWith(".md"))
+                        // Before moving/copying, wait for the picked file to become non-empty and stable
+                        try
                         {
-                            // Preserve dump-named files (e.g., dump_20250928_182405.md)
-                            destFileName = pickFileName;
+                            int maxWaitIterations = 20; // up to ~20s
+                            int stableTarget = 2; // require 2 consecutive stable reads
+                            int stableCount = 0;
+                            long lastLen = -1;
+                            for (int i = 0; i < maxWaitIterations; i++)
+                            {
+                                if (File.Exists(pick))
+                                {
+                                    long len = 0;
+                                    try { len = new FileInfo(pick).Length; } catch { len = 0; }
+                                    if (len > 0 && len == lastLen)
+                                    {
+                                        stableCount++;
+                                        if (stableCount >= stableTarget) break;
+                                    }
+                                    else
+                                    {
+                                        stableCount = 0;
+                                    }
+                                    lastLen = len;
+                                }
+                                System.Threading.Thread.Sleep(1000);
+                            }
                         }
+                        catch { }
                         
-                        string dest = Path.Combine(analysisDir, destFileName);
+                        // Determine destination filename - new standard is out/dump.md
+                        string destFileName = "dump.md";
+                        string pickFileName = Path.GetFileName(pick);
+                        
+                        // Place inside out/ subdirectory
+                        string outDir = Path.Combine(analysisDir, "out");
+                        if (!Directory.Exists(outDir))
+                        {
+                            Directory.CreateDirectory(outDir);
+                        }
+                        string dest = Path.Combine(outDir, destFileName);
                         if (!string.Equals(pick, dest, StringComparison.OrdinalIgnoreCase))
                         {
                             if (File.Exists(dest))
@@ -315,8 +354,30 @@
                         }
                         
                         foundWin = dest;
-						// Give cursor-agent a moment to finish writing the file
-                        System.Threading.Thread.Sleep(3000); // Wait 3 seconds to let it complete output
+						// Give cursor-agent extra time and ensure destination file is stable
+						try
+						{
+							int maxWaitDest = 10;
+							int stableDestCount = 0;
+							long lastDestLen = -1;
+							for (int i = 0; i < maxWaitDest; i++)
+							{
+								long len = 0;
+								try { len = new FileInfo(foundWin).Length; } catch { len = 0; }
+								if (len > 0 && len == lastDestLen)
+								{
+									stableDestCount++;
+									if (stableDestCount >= 2) break;
+								}
+								else
+								{
+									stableDestCount = 0;
+								}
+								lastDestLen = len;
+								System.Threading.Thread.Sleep(1000);
+							}
+						}
+						catch { }
                         
 						// Stop the agent now that we have the result
 						try { 
@@ -358,6 +419,22 @@
                 // Move console sink to analysis directory if present
                 try
                 {
+                    // Wait briefly for console file to be written and become non-empty
+                    int consoleWait = 10;
+                    for (int i = 0; i < consoleWait; i++)
+                    {
+                        if (File.Exists(wslConsoleWin))
+                        {
+                            try
+                            {
+                                var info = new FileInfo(wslConsoleWin);
+                                if (info.Length > 0) break;
+                            }
+                            catch { }
+                        }
+                        System.Threading.Thread.Sleep(500);
+                    }
+
                     if (File.Exists(wslConsoleWin))
                     {
                         string baseName = Path.GetFileNameWithoutExtension(windowsFilePath);
@@ -368,10 +445,6 @@
                         }
                         
                         string destConsole = Path.Combine(analysisDir, "console.txt");
-                        if (File.Exists(destConsole))
-                        {
-                            destConsole = Path.Combine(analysisDir, "console_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".txt");
-                        }
                         File.Move(wslConsoleWin, destConsole);
                     }
                 }
@@ -423,9 +496,24 @@
             {
                 try
                 {
-                    DeleteDirectoryRobust(workWin, workWsl);
+                    // Preserve working directory for diagnostics by moving it under the analysis directory
+                    string analysisRootWin = Server.MapPath("~/analysis");
+                    string baseName = null;
+                    try { baseName = Path.GetFileNameWithoutExtension(windowsFilePath); } catch { baseName = "unknown"; }
+                    string analysisDir = Path.Combine(analysisRootWin, baseName ?? "unknown");
+                    if (!Directory.Exists(analysisDir)) Directory.CreateDirectory(analysisDir);
+                    string destWork = Path.Combine(analysisDir, "work");
+                    if (Directory.Exists(destWork))
+                    {
+                        destWork = Path.Combine(analysisDir, "work_" + DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+                    }
+                    Directory.Move(workWin, destWork);
                 }
-                catch { }
+                catch
+                {
+                    // If move fails, fall back to cleanup to avoid orphaned temp dirs
+                    try { DeleteDirectoryRobust(workWin, workWsl); } catch { }
+                }
             }
         }
     }

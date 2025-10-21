@@ -323,6 +323,18 @@ namespace mcp_nexus.Extensions
                                 Error = commandResult?.ErrorMessage
                             };
                         }
+                        else if (commandResult != null)
+                        {
+                            // Tracker entry may be cleaned up, but result exists in cache → treat as Completed
+                            results[commandId] = new ExtensionCallbackReadResponse
+                            {
+                                CommandId = commandId,
+                                Status = "Completed",
+                                IsCompleted = true,
+                                Output = commandResult.Output,
+                                Error = commandResult.ErrorMessage
+                            };
+                        }
                         else
                         {
                             results[commandId] = new ExtensionCallbackReadResponse
@@ -424,7 +436,7 @@ namespace mcp_nexus.Extensions
                 var (commandInfo, commandResult) = await m_SessionManager.GetCommandInfoAndResultAsync(
                     sessionId, request.CommandId);
 
-                if (commandInfo == null)
+                if (commandInfo == null && commandResult == null)
                 {
                     return NotFound(new ExtensionCallbackErrorResponse
                     {
@@ -433,11 +445,24 @@ namespace mcp_nexus.Extensions
                     });
                 }
 
+                if (commandInfo != null)
+                {
+                    return Ok(new ExtensionCallbackReadResponse
+                    {
+                        CommandId = request.CommandId,
+                        Status = commandInfo.IsCompleted || commandResult != null ? "Completed" : commandInfo.State.ToString(),
+                        IsCompleted = commandInfo.IsCompleted || commandResult != null,
+                        Output = commandResult?.Output,
+                        Error = commandResult?.ErrorMessage
+                    });
+                }
+
+                // commandInfo is null, but we have a cached result → Completed
                 return Ok(new ExtensionCallbackReadResponse
                 {
                     CommandId = request.CommandId,
-                    Status = commandInfo.State.ToString(),
-                    IsCompleted = commandInfo.IsCompleted,
+                    Status = "Completed",
+                    IsCompleted = true,
                     Output = commandResult?.Output,
                     Error = commandResult?.ErrorMessage
                 });

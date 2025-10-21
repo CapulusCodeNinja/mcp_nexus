@@ -84,10 +84,12 @@
                                     {
                                         string actualDirName = Path.GetFileName(actualAnalysisDir);
                                         
-                                        // Check for analysis report (MD file) - prefer clean naming
-                                        enhancedJob["hasAnalysis"] = File.Exists(Path.Combine(actualAnalysisDir, "analysis.md")) || 
-                                                                    File.Exists(Path.Combine(actualAnalysisDir, jobName + ".md")) ||
-                                                                    File.Exists(Path.Combine(actualAnalysisDir, actualDirName + ".md"));
+                                        // Check for analysis report (MD file) - prefer new out/dump.md, also support legacy names
+                                        enhancedJob["hasAnalysis"] = 
+                                            File.Exists(Path.Combine(Path.Combine(actualAnalysisDir, "out"), "dump.md")) ||
+                                            File.Exists(Path.Combine(actualAnalysisDir, "analysis.md")) || 
+                                            File.Exists(Path.Combine(actualAnalysisDir, jobName + ".md")) ||
+                                            File.Exists(Path.Combine(actualAnalysisDir, actualDirName + ".md"));
                                         
                                         // Check for WinDbg output
                                         enhancedJob["hasWinDbg"] = File.Exists(Path.Combine(actualAnalysisDir, "cdb_analyze.txt"));
