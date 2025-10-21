@@ -155,16 +155,12 @@ namespace mcp_nexus.CommandQueue.Core
                             var batchEnd = DateTime.Now;
                             var results = m_BatchResultParser.SplitBatchResults(batchResult, commandsToProcess);
 
-                            // Compute weights per command based on output length (fallback to equal distribution)
-                            var totalOutputLength = 0;
-                            foreach (var r in results)
-                            {
-                                totalOutputLength += (r.Output?.Length ?? 0);
-                            }
+                            // Compute batch execution and apply exact per-command stats per requirements
                             var batchExecMs = (batchEnd - batchStart).TotalMilliseconds;
                             if (batchExecMs < 0) batchExecMs = 0;
+                            var count = Math.Max(1, commandsToProcess.Count);
+                            var perCommandExecMs = batchExecMs / count;
 
-                            double cumulativeWeight = 0.0;
                             for (int i = 0; i < commandsToProcess.Count; i++)
                             {
                                 var cmd = commandsToProcess[i];
@@ -175,36 +171,17 @@ namespace mcp_nexus.CommandQueue.Core
                                 cmd.CompletionSource?.TrySetResult(resultOutput);
                                 m_ResultCache?.StoreResult(cmd.Id ?? string.Empty, CommandResult.Success(resultOutput));
 
-                                // Calculate timing for statistics: distribute execution time across commands sequentially
-                                double weight;
-                                if (totalOutputLength > 0)
-                                {
-                                    weight = (double)resultOutput.Length / (double)totalOutputLength;
-                                }
-                                else
-                                {
-                                    weight = 1.0 / Math.Max(1, commandsToProcess.Count);
-                                }
-
-                                var cmdStart = batchStart.AddMilliseconds(batchExecMs * cumulativeWeight);
-                                var cmdEnd = batchStart.AddMilliseconds(batchExecMs * (cumulativeWeight + weight));
-                                cumulativeWeight += weight;
-
-                                var timeInQueue = (cmdStart - cmd.QueueTime).TotalMilliseconds;
-                                var timeExecution = (cmdEnd - cmdStart).TotalMilliseconds;
-                                var totalDuration = (cmdEnd - cmd.QueueTime).TotalMilliseconds;
-
                                 Statistics.CommandStats(m_Logger,
                                     Statistics.CommandState.SuccessBatch,
                                     m_Config.SessionId,
                                     cmd.Id ?? string.Empty,
                                     cmd.Command ?? string.Empty,
                                     cmd.QueueTime,
-                                    cmdStart,
+                                    batchStart,
                                     cmdEnd,
-                                    timeInQueue,
-                                    timeExecution,
-                                    totalDuration);
+                                    (batchStart - cmd.QueueTime).TotalMilliseconds,
+                                    perCommandExecMs,
+                                    (cmdEnd - cmd.QueueTime).TotalMilliseconds);
                             }
                         }
                         else
