@@ -117,9 +117,9 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
             // Assert
             Assert.NotNull(batchCommand);
 
-            // Should contain separators for each command
+            // Should contain separators for each command plus trailing batch separator
             var separatorCount = batchCommand.Split(CdbSentinels.CommandSeparator).Length - 1;
-            Assert.Equal(4, separatorCount); // 2 commands * 2 separators each
+            Assert.Equal(5, separatorCount); // 2 commands * 2 separators each + trailing
         }
 
         [Fact]
@@ -157,8 +157,8 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
             var batchCommand = builder.CreateBatchCommand(commands);
 
             // Assert - command IDs should be uppercase
-            Assert.Contains("MCP_NEXUS_CMD_SEP_CMD-ABC-123_START", batchCommand);
-            Assert.Contains("MCP_NEXUS_CMD_SEP_CMD-ABC-123_END", batchCommand);
+            Assert.Contains($"{CdbSentinels.CommandSeparator}_CMD-ABC-123_START", batchCommand);
+            Assert.Contains($"{CdbSentinels.CommandSeparator}_CMD-ABC-123_END", batchCommand);
             Assert.DoesNotContain("cmd-abc-123", batchCommand);
         }
 
@@ -176,11 +176,12 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
             // Act
             var batchCommand = builder.CreateBatchCommand(commands);
 
-            // Assert - verify expected per-command separators with semicolons and no batch wrappers
-            Assert.StartsWith($".echo {CdbSentinels.CommandSeparator}_CMD-1_START; lm; ", batchCommand);
+            // Assert - verify expected start marker followed by first command separators
+            Assert.StartsWith($".echo {CdbSentinels.StartMarker}; .echo {CdbSentinels.CommandSeparator}_CMD-1_START; lm; ", batchCommand);
             Assert.Contains($".echo {CdbSentinels.CommandSeparator}_CMD-1_END; ", batchCommand);
             Assert.Contains($".echo {CdbSentinels.CommandSeparator}_CMD-2_START; !threads; ", batchCommand);
-            Assert.EndsWith($".echo {CdbSentinels.CommandSeparator}_CMD-2_END", batchCommand);
+            Assert.Contains($".echo {CdbSentinels.CommandSeparator}_CMD-2_END", batchCommand);
+            Assert.EndsWith($".echo {CdbSentinels.CommandSeparator}", batchCommand);
         }
 
         #endregion

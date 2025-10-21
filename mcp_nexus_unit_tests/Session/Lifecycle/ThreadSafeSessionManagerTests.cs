@@ -119,7 +119,7 @@ namespace mcp_nexus_unit_tests.Session.Lifecycle
             Assert.NotNull(sessionManager);
             m_MockLogger.Verify(
                 x => x.Log(
-                    LogLevel.Information,
+                    LogLevel.Debug,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("ThreadSafeSessionManager initializing")),
                     It.IsAny<Exception>(),

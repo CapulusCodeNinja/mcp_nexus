@@ -245,7 +245,7 @@ namespace mcp_nexus.Infrastructure.Installation
                         }
                         else
                         {
-                             logger?.LogWarning("⚠ Service stop failed");
+                            logger?.LogWarning("⚠ Service stop failed");
                         }
                     }
                     else
@@ -312,7 +312,7 @@ namespace mcp_nexus.Infrastructure.Installation
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Checks if a Windows service exists asynchronously
         /// </summary>

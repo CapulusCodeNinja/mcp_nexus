@@ -229,11 +229,9 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
 
             var commands = new List<QueuedCommand> { commandWithNullId };
 
-            var batchOutput = $"{CdbSentinels.BatchStart}\n" +
-                             $"{CdbSentinels.CommandSeparator}\n" +
+            var batchOutput = $"{CdbSentinels.CommandSeparator}__START\n" +
                              "test output\n" +
-                             $"{CdbSentinels.CommandSeparator}_END\n" +
-                             $"{CdbSentinels.BatchEnd}";
+                             $"{CdbSentinels.CommandSeparator}__END";
 
             // Act - Should use empty string for null ID
             var results = parser.SplitBatchResults(batchOutput, commands);
