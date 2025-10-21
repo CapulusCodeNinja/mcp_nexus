@@ -1077,6 +1077,45 @@ namespace mcp_nexus.Tools
                 }
                 var sessionCommands = McpNexusResources.GetSessionCommandsFromQueue(commandQueue, sessionId);
 
+                // Merge in-flight extension commands so they appear alongside queue-backed commands
+                try
+                {
+                    var extensionTracker = serviceProvider.GetService<IExtensionCommandTracker>();
+                    if (extensionTracker != null)
+                    {
+                        foreach (var ext in extensionTracker.GetSessionCommands(sessionId))
+                        {
+                            if (!sessionCommands.ContainsKey(ext.Id))
+                            {
+                                var elapsed = DateTime.Now - ext.QueuedAt;
+                                var progressPercentage = ext.IsCompleted ? 100 : Math.Min(95, (int)(elapsed.TotalSeconds * 0.5));
+
+                                sessionCommands[ext.Id] = new
+                                {
+                                    commandId = ext.Id,
+                                    command = $"Extension: {ext.ExtensionName}",
+                                    status = ext.State.ToString(),
+                                    isFinished = ext.IsCompleted,
+                                    createdAt = ext.QueuedAt,
+                                    completedAt = ext.CompletedAt,
+                                    duration = elapsed,
+                                    error = (string?)null,
+                                    progress = new
+                                    {
+                                        queuePosition = -1,
+                                        progressPercentage,
+                                        elapsed = $"{elapsed.TotalMinutes:F1}min",
+                                        eta = (string?)null,
+                                        executionTime = ext.IsCompleted ? $"{elapsed.TotalMinutes:F1}min" : null,
+                                        message = ext.ProgressMessage ?? "Extension is running"
+                                    }
+                                };
+                            }
+                        }
+                    }
+                }
+                catch { }
+
                 var result = new
                 {
                     sessionId,

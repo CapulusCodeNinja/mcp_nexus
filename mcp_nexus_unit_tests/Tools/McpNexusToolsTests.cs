@@ -7,6 +7,7 @@ using mcp_nexus.Session.Lifecycle;
 using mcp_nexus.Session.Core.Models;
 using mcp_nexus.CommandQueue.Core;
 using System.Text.Json;
+using mcp_nexus.Extensions;
 
 namespace mcp_nexus_unit_tests.Tools
 {
@@ -1038,6 +1039,71 @@ namespace mcp_nexus_unit_tests.Tools
             Assert.True(commandsObj.TryGetProperty("cmd-002", out var cmd2));
             Assert.Equal("!analyze -v", cmd1.GetProperty("command").GetString());
             Assert.Equal("lm", cmd2.GetProperty("command").GetString());
+        }
+
+        [Fact]
+        public async Task nexus_get_dump_analyze_commands_status_IncludesExtensionCommands()
+        {
+            // Arrange
+            var sessionId = "test-session-123";
+
+            // Mock queue with no regular commands
+            var mockCommandQueue = new Mock<ICommandQueueService>();
+            mockCommandQueue.Setup(q => q.GetCurrentCommand()).Returns((QueuedCommand?)null);
+            mockCommandQueue.Setup(q => q.GetQueueStatus()).Returns(new List<(string Id, string Command, DateTime QueueTime, string Status)>());
+            mockCommandQueue.Setup(q => q.GetAllCachedResults()).Returns(new Dictionary<string, CachedCommandResult>());
+
+            // Mock session manager
+            var mockSm = new Mock<ISessionManager>();
+            mockSm.Setup(sm => sm.SessionExists(sessionId)).Returns(true);
+            mockSm.Setup(sm => sm.GetCommandQueue(sessionId)).Returns(mockCommandQueue.Object);
+            ICommandQueueService? outQueue = mockCommandQueue.Object;
+            mockSm.Setup(sm => sm.TryGetCommandQueue(sessionId, out outQueue)).Returns(true);
+
+            // Mock extension tracker with one in-flight extension
+            var mockExtTracker = new Mock<IExtensionCommandTracker>();
+            var extInfo = new ExtensionCommandInfo
+            {
+                Id = "ext-123",
+                SessionId = sessionId,
+                ExtensionName = "basic_crash_analysis",
+                Command = "basic_crash_analysis",
+                QueuedAt = DateTime.Now.AddSeconds(-30),
+                State = CommandState.Executing,
+                IsCompleted = false,
+                ProgressMessage = "Running analysis"
+            };
+            mockExtTracker.Setup(t => t.GetSessionCommands(sessionId))
+                .Returns(new List<ExtensionCommandInfo> { extInfo });
+
+            // Build a local service provider including ext tracker
+            var services = new ServiceCollection();
+
+            var mockLoggerFactory = new Mock<ILoggerFactory>();
+            mockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
+                .Returns(new Mock<ILogger>().Object);
+
+            services.AddSingleton<ISessionManager>(mockSm.Object);
+            services.AddSingleton(mockLoggerFactory.Object);
+            services.AddSingleton<ILogger<mcp_nexus.Program>>(NullLogger<mcp_nexus.Program>.Instance);
+            services.AddSingleton<IExtensionCommandTracker>(mockExtTracker.Object);
+
+            var sp = services.BuildServiceProvider();
+
+            // Act
+            var result = await McpNexusTools.nexus_get_dump_analyze_commands_status(sp, sessionId);
+
+            // Assert
+            Assert.NotNull(result);
+            var json = JsonSerializer.Serialize(result);
+            var doc = JsonDocument.Parse(json);
+
+            Assert.Equal(sessionId, doc.RootElement.GetProperty("sessionId").GetString());
+            var commands = doc.RootElement.GetProperty("commands");
+            Assert.True(commands.TryGetProperty("ext-123", out var extCmd));
+            Assert.Equal("Extension: basic_crash_analysis", extCmd.GetProperty("command").GetString());
+            Assert.Equal("Executing", extCmd.GetProperty("status").GetString());
+            Assert.False(extCmd.GetProperty("isFinished").GetBoolean());
         }
 
         #endregion

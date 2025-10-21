@@ -2,8 +2,8 @@
 
 **AI-Powered Windows Crash Dump Analysis Platform**
 
-[![Tests](https://img.shields.io/badge/tests-2,533%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
-[![Coverage](https://img.shields.io/badge/coverage-75.65%25%20line%20%7C%2072.41%25%20branch-yellow?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Tests](https://img.shields.io/badge/tests-2,485%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
+[![Coverage](https://img.shields.io/badge/coverage-66.74%25%20line%20%7C%2059.48%25%20branch-red?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![Build](https://img.shields.io/badge/build-0%20warnings-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
 
