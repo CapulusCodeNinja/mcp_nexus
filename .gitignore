@@ -421,3 +421,6 @@ FodyWeavers.xsd
 # Code coverage reports
 coverage-report/
 TestResults/
+
+# Shared build output directory
+build/

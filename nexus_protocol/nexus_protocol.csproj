@@ -1,23 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-    <Version>1.0.0.1</Version>
-    <AssemblyVersion>1.0.0.1</AssemblyVersion>
-    <FileVersion>1.0.0.1</FileVersion>
     <AssemblyName>nexus_protocol</AssemblyName>
     <RootNamespace>nexus.protocol</RootNamespace>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <Version>1.0.0.2</Version>
+    <AssemblyVersion>1.0.0.2</AssemblyVersion>
+    <FileVersion>1.0.0.2</FileVersion>
     <Product>MCP Nexus Protocol Library</Product>
     <Description>Model Context Protocol implementation for MCP Nexus debugging server</Description>
-    <Company>CapulusCodeNinja</Company>
-    <Copyright>Copyright © 2025 David Roller (aka CapulusCodeNinja on GitHub)</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,12 +18,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ModelContextProtocol" Version="0.4.0-preview.1" />
-    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.4.0-preview.1" />
-    <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-    <PackageReference Include="NLog.Web.AspNetCore" Version="6.0.4" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
+    <PackageReference Include="ModelContextProtocol" Version="$(ModelContextProtocolVersion)" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="$(ModelContextProtocolVersion)" />
+    <PackageReference Include="AspNetCoreRateLimit" Version="$(AspNetCoreRateLimitVersion)" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$(MicrosoftExtensionsDependencyInjectionVersion)" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="$(NLogWebAspNetCoreVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="$(MicrosoftExtensionsLoggingAbstractionsVersion)" />
   </ItemGroup>
 
   <ItemGroup>

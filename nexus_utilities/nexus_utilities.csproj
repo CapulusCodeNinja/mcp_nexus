@@ -1,18 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
     <AssemblyName>nexus_utilities</AssemblyName>
-    <RootNamespace>nexus.utilities</RootNamespace>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>1.0.0.1</Version>
+      <RootNamespace>nexus.utilities</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="$(SystemServiceProcessServiceControllerVersion)" />
   </ItemGroup>
 
 </Project>
