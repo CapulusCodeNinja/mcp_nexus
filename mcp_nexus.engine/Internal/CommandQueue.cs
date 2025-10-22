@@ -376,7 +376,7 @@ internal class CommandQueue : IDisposable
         }
     }
 
-    private async Task ProcessCommandAsync(QueuedCommand command, CancellationToken cancellationToken)
+    protected async Task ProcessCommandAsync(QueuedCommand command, CancellationToken cancellationToken)
     {
         if (m_CdbSession == null)
             throw new InvalidOperationException("CDB session not initialized");
@@ -469,7 +469,7 @@ internal class CommandQueue : IDisposable
         }
     }
 
-    private void UpdateCommandState(QueuedCommand command, CommandState newState)
+    protected void UpdateCommandState(QueuedCommand command, CommandState newState)
     {
         var oldState = command.State;
         command.State = newState;
@@ -477,7 +477,7 @@ internal class CommandQueue : IDisposable
         NotifyCommandStateChanged(command.Id, oldState, newState, command.Command);
     }
 
-    private void SetCommandResult(QueuedCommand command, CommandInfo result)
+    protected void SetCommandResult(QueuedCommand command, CommandInfo result)
     {
         // Cache the result
         m_ResultCache.TryAdd(command.Id, result);

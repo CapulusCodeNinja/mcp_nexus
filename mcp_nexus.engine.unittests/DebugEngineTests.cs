@@ -593,6 +593,27 @@ public class DebugEngineTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+
+    [Fact]
+    public void CancelCommand_WithInvalidSessionId_ShouldReturnFalse()
+    {
+        // Act
+        var result = m_Engine.CancelCommand("invalid-session", "test-command-id");
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CancelAllCommands_WithInvalidSessionId_ShouldReturnZero()
+    {
+        // Act
+        var result = m_Engine.CancelAllCommands("invalid-session");
+
+        // Assert
+        result.Should().Be(0);
+    }
+
     public void Dispose()
     {
         m_Engine?.Dispose();

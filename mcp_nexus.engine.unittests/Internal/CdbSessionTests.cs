@@ -416,4 +416,171 @@ public class CdbSessionTests : IDisposable
         };
         await action.Should().NotThrowAsync();
     }
+
+    [Fact]
+    public async Task FindCdbExecutableAsync_WhenNoCdbFound_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var session = CreateCdbSession();
+
+        // Act & Assert
+        var action = () => session.FindCdbExecutableAsync();
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
+    }
+
+    [Fact]
+    public async Task StartCdbProcessAsync_WhenCalled_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var session = CreateCdbSession();
+
+        // Act & Assert
+        var action = () => session.StartCdbProcessAsync();
+        await action.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void StopCdbProcess_WhenCalled_ShouldNotThrow()
+    {
+        // Arrange
+        var session = CreateCdbSession();
+
+        // Act & Assert
+        var action = () => session.StopCdbProcess();
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public async Task InitializeAsync_WithNullDumpFilePath_ShouldThrowArgumentException()
+    {
+        // Arrange
+        var session = CreateCdbSession();
+
+        // Act & Assert
+        var action = () => session.InitializeAsync(null!, "symbols");
+        await action.Should().ThrowAsync<ArgumentException>()
+            .WithParameterName("dumpFilePath");
+    }
+
+    [Fact]
+    public async Task InitializeAsync_WithEmptyDumpFilePath_ShouldThrowArgumentException()
+    {
+        // Arrange
+        var session = CreateCdbSession();
+
+        // Act & Assert
+        var action = () => session.InitializeAsync(string.Empty, "symbols");
+        await action.Should().ThrowAsync<ArgumentException>()
+            .WithParameterName("dumpFilePath");
+    }
+
+    [Fact]
+    public async Task InitializeAsync_WithWhitespaceDumpFilePath_ShouldThrowArgumentException()
+    {
+        // Arrange
+        var session = CreateCdbSession();
+
+        // Act & Assert
+        var action = () => session.InitializeAsync("   ", "symbols");
+        await action.Should().ThrowAsync<ArgumentException>()
+            .WithParameterName("dumpFilePath");
+    }
+
+    [Fact]
+    public void TestThrowIfDisposed_WhenDisposed_ShouldThrowObjectDisposedException()
+    {
+        // Arrange
+        var testAccessor = new CdbSessionTestAccessor(
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<mcp_nexus.Engine.Internal.CdbSession>(),
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        
+        testAccessor.Dispose();
+
+        // Act & Assert
+        var action = () => testAccessor.TestThrowIfDisposed();
+        action.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public void TestThrowIfDisposed_WhenNotDisposed_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new CdbSessionTestAccessor(
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<mcp_nexus.Engine.Internal.CdbSession>(),
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => testAccessor.TestThrowIfDisposed();
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestThrowIfNotInitialized_WhenNotInitialized_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var testAccessor = new CdbSessionTestAccessor(
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<mcp_nexus.Engine.Internal.CdbSession>(),
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => testAccessor.TestThrowIfNotInitialized();
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("CDB session is not initialized");
+    }
+
+    [Fact]
+    public async Task TestWaitForCdbInitializationAsync_WhenProcessNotStarted_ShouldCompleteSuccessfully()
+    {
+        // Arrange
+        var testAccessor = new CdbSessionTestAccessor(
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<mcp_nexus.Engine.Internal.CdbSession>(),
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => testAccessor.TestWaitForCdbInitializationAsync();
+        await action.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task TestSendCommandToCdbAsync_WhenNotInitialized_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var testAccessor = new CdbSessionTestAccessor(
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<mcp_nexus.Engine.Internal.CdbSession>(),
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => testAccessor.TestSendCommandToCdbAsync("test command");
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("CDB input stream is not available");
+    }
+
+    [Fact]
+    public async Task TestReadCommandOutputAsync_WhenNotInitialized_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var testAccessor = new CdbSessionTestAccessor(
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<mcp_nexus.Engine.Internal.CdbSession>(),
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => testAccessor.TestReadCommandOutputAsync();
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("CDB output stream is not available");
+    }
+
+
 }

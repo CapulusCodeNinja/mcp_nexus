@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using mcp_nexus.Engine.Events;
 using mcp_nexus.Engine.Internal;
 using mcp_nexus.Engine.Models;
 using mcp_nexus.Engine.Configuration;
@@ -375,5 +376,123 @@ public class DebugSessionTests : IDisposable
         session.Dispose();
         var action = () => session.Dispose();
         action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestThrowIfDisposed_WhenDisposed_ShouldThrowObjectDisposedException()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        
+        testAccessor.Dispose();
+
+        // Act & Assert
+        var action = () => testAccessor.TestThrowIfDisposed();
+        action.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public void TestThrowIfDisposed_WhenNotDisposed_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => testAccessor.TestThrowIfDisposed();
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestThrowIfNotActive_WhenNotActive_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => testAccessor.TestThrowIfNotActive();
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("Session test-session is not active (current state: Initializing)");
+    }
+
+    [Fact]
+    public void TestSetState_ShouldRaiseSessionStateChangedEvent()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        
+        SessionStateChangedEventArgs? eventArgs = null;
+        testAccessor.SessionStateChanged += (sender, args) => eventArgs = args;
+
+        // Act
+        testAccessor.TestSetState(SessionState.Active);
+
+        // Assert
+        eventArgs.Should().NotBeNull();
+        eventArgs!.SessionId.Should().Be("test-session");
+        eventArgs.NewState.Should().Be(SessionState.Active);
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_ShouldRaiseCommandStateChangedEvent()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        
+        CommandStateChangedEventArgs? eventArgs = null;
+        testAccessor.CommandStateChanged += (sender, args) => eventArgs = args;
+
+        var originalEventArgs = new CommandStateChangedEventArgs
+        {
+            SessionId = "original-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Queued,
+            NewState = CommandState.Executing,
+            Timestamp = DateTime.Now,
+            Command = "test command"
+        };
+
+        // Act
+        testAccessor.TestOnCommandStateChanged(this, originalEventArgs);
+
+        // Assert
+        eventArgs.Should().NotBeNull();
+        eventArgs!.SessionId.Should().Be("test-session"); // Should be overridden with session ID
+        eventArgs.CommandId.Should().Be("cmd-123");
+        eventArgs.NewState.Should().Be(CommandState.Executing);
     }
 }

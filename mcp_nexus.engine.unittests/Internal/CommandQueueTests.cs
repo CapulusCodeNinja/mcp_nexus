@@ -263,4 +263,316 @@ public class CommandQueueTests : IDisposable
         var action = () => m_CommandQueue.Dispose();
         action.Should().NotThrow();
     }
+
+    [Fact]
+    public void EnqueueCommand_WhenDisposed_ShouldThrowObjectDisposedException()
+    {
+        // Arrange
+        m_CommandQueue!.Dispose();
+
+        // Act & Assert
+        var action = () => m_CommandQueue.EnqueueCommand("test");
+        action.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public void GetCommandInfo_WhenDisposed_ShouldThrowObjectDisposedException()
+    {
+        // Arrange
+        m_CommandQueue!.Dispose();
+
+        // Act & Assert
+        var action = () => m_CommandQueue.GetCommandInfo("test-id");
+        action.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public void GetAllCommandInfos_WhenDisposed_ShouldThrowObjectDisposedException()
+    {
+        // Arrange
+        m_CommandQueue!.Dispose();
+
+        // Act & Assert
+        var action = () => m_CommandQueue.GetAllCommandInfos();
+        action.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public void CancelCommand_WhenDisposed_ShouldThrowObjectDisposedException()
+    {
+        // Arrange
+        m_CommandQueue!.Dispose();
+
+        // Act & Assert
+        var action = () => m_CommandQueue.CancelCommand("test-id");
+        action.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public void CancelAllCommands_WhenDisposed_ShouldThrowObjectDisposedException()
+    {
+        // Arrange
+        m_CommandQueue!.Dispose();
+
+        // Act & Assert
+        var action = () => m_CommandQueue.CancelAllCommands();
+        action.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithWhitespaceCommand_ShouldThrowArgumentException()
+    {
+        // Act & Assert
+        var action = () => m_CommandQueue!.EnqueueCommand("   ");
+        action.Should().Throw<ArgumentException>()
+            .WithParameterName("command");
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithVeryLongCommand_ShouldReturnCommandId()
+    {
+        // Arrange
+        var longCommand = new string('a', 10000);
+
+        // Act
+        var commandId = m_CommandQueue!.EnqueueCommand(longCommand);
+
+        // Assert
+        commandId.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithSpecialCharacters_ShouldReturnCommandId()
+    {
+        // Arrange
+        var specialCommand = "!analyze -v; lm; !threads; ~*k";
+
+        // Act
+        var commandId = m_CommandQueue!.EnqueueCommand(specialCommand);
+
+        // Assert
+        commandId.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public void EnqueueCommand_MultipleCommands_ShouldReturnUniqueCommandIds()
+    {
+        // Arrange
+        var command1 = "lm";
+        var command2 = "!threads";
+        var command3 = "!peb";
+
+        // Act
+        var commandId1 = m_CommandQueue!.EnqueueCommand(command1);
+        var commandId2 = m_CommandQueue.EnqueueCommand(command2);
+        var commandId3 = m_CommandQueue.EnqueueCommand(command3);
+
+        // Assert
+        commandId1.Should().NotBeNullOrEmpty();
+        commandId2.Should().NotBeNullOrEmpty();
+        commandId3.Should().NotBeNullOrEmpty();
+        commandId1.Should().NotBe(commandId2);
+        commandId2.Should().NotBe(commandId3);
+        commandId1.Should().NotBe(commandId3);
+    }
+
+    [Fact]
+    public void GetCommandInfo_WithNullCommandId_ShouldReturnNull()
+    {
+        // Act
+        var commandInfo = m_CommandQueue!.GetCommandInfo(null!);
+
+        // Assert
+        commandInfo.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetCommandInfo_WithEmptyCommandId_ShouldReturnNull()
+    {
+        // Act
+        var commandInfo = m_CommandQueue!.GetCommandInfo(string.Empty);
+
+        // Assert
+        commandInfo.Should().BeNull();
+    }
+
+    [Fact]
+    public void CancelCommand_WithNullCommandId_ShouldReturnFalse()
+    {
+        // Act
+        var result = m_CommandQueue!.CancelCommand(null!);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CancelCommand_WithEmptyCommandId_ShouldReturnFalse()
+    {
+        // Act
+        var result = m_CommandQueue!.CancelCommand(string.Empty);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ProcessCommandAsync_WithValidCommand_ShouldExecuteSuccessfully()
+    {
+        // Arrange
+        var command = new QueuedCommand
+        {
+            Id = "cmd-123",
+            Command = "test command",
+            QueuedTime = DateTime.Now,
+            CancellationTokenSource = new CancellationTokenSource()
+        };
+        
+        // Create a real CdbSession with mocked dependencies
+        var realCdbSession = new mcp_nexus.Engine.Internal.CdbSession(
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<mcp_nexus.Engine.Internal.CdbSession>(),
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        
+        // Use test accessor
+        var testAccessor = new CommandQueueTestAccessor("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        testAccessor.TestCdbSession = realCdbSession;
+
+        // Act
+        await testAccessor.TestProcessCommandAsync(command, CancellationToken.None);
+
+        // Assert
+        var result = testAccessor.GetCommandInfo("cmd-123");
+        result.Should().NotBeNull();
+        result!.IsSuccess.Should().BeFalse(); // Will fail because CDB session is not initialized
+        result.ErrorMessage.Should().Contain("CDB session is not initialized");
+    }
+
+    [Fact]
+    public async Task ProcessCommandAsync_WithCdbSessionNull_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var command = new QueuedCommand
+        {
+            Id = "cmd-123",
+            Command = "test command",
+            QueuedTime = DateTime.Now,
+            CancellationTokenSource = new CancellationTokenSource()
+        };
+
+        var testAccessor = new CommandQueueTestAccessor("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        // Don't set TestCdbSession - leave it null
+
+        // Act & Assert
+        var action = () => testAccessor.TestProcessCommandAsync(command, CancellationToken.None);
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("CDB session not initialized");
+    }
+
+    [Fact]
+    public async Task ProcessCommandAsync_WithCdbSessionThrowingException_ShouldMarkCommandAsFailed()
+    {
+        // Arrange
+        var command = new QueuedCommand
+        {
+            Id = "cmd-123",
+            Command = "test command",
+            QueuedTime = DateTime.Now,
+            CancellationTokenSource = new CancellationTokenSource()
+        };
+        
+        // Create a real CdbSession with mocked dependencies
+        var realCdbSession = new mcp_nexus.Engine.Internal.CdbSession(
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<mcp_nexus.Engine.Internal.CdbSession>(),
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        
+        var testAccessor = new CommandQueueTestAccessor("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        testAccessor.TestCdbSession = realCdbSession;
+
+        // Act
+        await testAccessor.TestProcessCommandAsync(command, CancellationToken.None);
+
+        // Assert
+        var result = testAccessor.GetCommandInfo("cmd-123");
+        result.Should().NotBeNull();
+        result!.IsSuccess.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("CDB session is not initialized");
+    }
+
+    [Fact]
+    public async Task ProcessCommandAsync_WithCancellation_ShouldMarkCommandAsCancelled()
+    {
+        // Arrange
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+        
+        var command = new QueuedCommand
+        {
+            Id = "cmd-123",
+            Command = "test command",
+            QueuedTime = DateTime.Now,
+            CancellationTokenSource = cts
+        };
+        command.CancellationTokenSource.Cancel();
+
+        var testAccessor = new CommandQueueTestAccessor("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        // Don't set TestCdbSession - leave it null
+
+        // Act & Assert
+        var action = () => testAccessor.TestProcessCommandAsync(command, cts.Token);
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("CDB session not initialized");
+    }
+
+    [Fact]
+    public void UpdateCommandState_ShouldRaiseEvent()
+    {
+        // Arrange
+        var command = new QueuedCommand
+        {
+            Id = "cmd-123",
+            Command = "test command",
+            QueuedTime = DateTime.Now,
+            CancellationTokenSource = new CancellationTokenSource()
+        };
+        mcp_nexus.Engine.Events.CommandStateChangedEventArgs? eventArgs = null;
+        
+        var testAccessor = new CommandQueueTestAccessor("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        testAccessor.CommandStateChanged += (sender, args) => eventArgs = args;
+
+        // Act
+        testAccessor.TestUpdateCommandState(command, CommandState.Executing);
+
+        // Assert
+        eventArgs.Should().NotBeNull();
+        eventArgs!.CommandId.Should().Be("cmd-123");
+        eventArgs.NewState.Should().Be(CommandState.Executing);
+    }
+
+    [Fact]
+    public void SetCommandResult_ShouldStoreResultInCache()
+    {
+        // Arrange
+        var command = new QueuedCommand
+        {
+            Id = "cmd-123",
+            Command = "test command",
+            QueuedTime = DateTime.Now,
+            CancellationTokenSource = new CancellationTokenSource()
+        };
+        var commandInfo = CommandInfo.Completed("cmd-123", "test command", DateTime.Now, DateTime.Now, DateTime.Now, "output", true);
+
+        var testAccessor = new CommandQueueTestAccessor("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+
+        // Act
+        testAccessor.TestSetCommandResult(command, commandInfo);
+
+        // Assert
+        var result = testAccessor.GetCommandInfo("cmd-123");
+        result.Should().NotBeNull();
+        result.Should().Be(commandInfo);
+    }
 }

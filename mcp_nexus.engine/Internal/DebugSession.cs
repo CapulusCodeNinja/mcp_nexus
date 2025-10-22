@@ -249,7 +249,7 @@ internal class DebugSession : IDisposable
         }
     }
 
-    private void OnCommandStateChanged(object? sender, CommandStateChangedEventArgs e)
+    protected void OnCommandStateChanged(object? sender, CommandStateChangedEventArgs e)
     {
         // Forward the event with session context
         var args = new CommandStateChangedEventArgs
@@ -265,7 +265,7 @@ internal class DebugSession : IDisposable
         CommandStateChanged?.Invoke(this, args);
     }
 
-    private void SetState(SessionState newState)
+    protected void SetState(SessionState newState)
     {
         SessionState oldState;
         lock (m_StateLock)
@@ -288,13 +288,13 @@ internal class DebugSession : IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
+    protected void ThrowIfDisposed()
     {
         if (m_Disposed)
             throw new ObjectDisposedException(nameof(DebugSession));
     }
 
-    private void ThrowIfNotActive()
+    protected void ThrowIfNotActive()
     {
         if (!IsActive)
             throw new InvalidOperationException($"Session {m_SessionId} is not active (current state: {State})");

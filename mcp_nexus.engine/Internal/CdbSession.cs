@@ -344,7 +344,7 @@ internal class CdbSession : ICdbSession
         return Task.CompletedTask;
     }
 
-    private async Task WaitForCdbInitializationAsync(CancellationToken cancellationToken)
+    protected async Task WaitForCdbInitializationAsync(CancellationToken cancellationToken)
     {
         var timeout = TimeSpan.FromMilliseconds(5000);
         var stopwatch = Stopwatch.StartNew();
@@ -370,7 +370,7 @@ internal class CdbSession : ICdbSession
         return $".echo {CdbSentinels.StartMarker}; {command}; .echo {CdbSentinels.EndMarker}";
     }
 
-    private async Task SendCommandToCdbAsync(string command, CancellationToken cancellationToken)
+    protected async Task SendCommandToCdbAsync(string command, CancellationToken cancellationToken)
     {
         if (m_InputWriter == null)
             throw new InvalidOperationException("CDB input stream is not available");
@@ -379,7 +379,7 @@ internal class CdbSession : ICdbSession
         await m_InputWriter.FlushAsync();
     }
 
-    private async Task<string> ReadCommandOutputAsync(CancellationToken cancellationToken)
+    protected async Task<string> ReadCommandOutputAsync(CancellationToken cancellationToken)
     {
         if (m_OutputReader == null)
             throw new InvalidOperationException("CDB output stream is not available");
@@ -422,13 +422,13 @@ internal class CdbSession : ICdbSession
         return output.ToString().TrimEnd();
     }
 
-    private void ThrowIfDisposed()
+    protected void ThrowIfDisposed()
     {
         if (m_Disposed)
             throw new ObjectDisposedException(nameof(CdbSession));
     }
 
-    private void ThrowIfNotInitialized()
+    protected void ThrowIfNotInitialized()
     {
         if (!m_Initialized)
             throw new InvalidOperationException("CDB session is not initialized");
