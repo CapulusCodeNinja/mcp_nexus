@@ -331,6 +331,11 @@ internal class CdbSession : ICdbSession
 
         m_CdbProcess = m_ProcessManager.StartProcess(startInfo);
         
+        if (m_CdbProcess == null)
+        {
+            throw new InvalidOperationException("Failed to start CDB process");
+        }
+        
         m_InputWriter = m_CdbProcess.StandardInput;
         m_OutputReader = m_CdbProcess.StandardOutput;
         m_ErrorReader = m_CdbProcess.StandardError;
