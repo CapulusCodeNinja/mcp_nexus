@@ -169,7 +169,7 @@ public class CommandQueueTests : IDisposable
 
         // Assert
         commandInfo.Should().NotBeNull();
-        commandInfo.CommandId.Should().Be(commandId);
+        commandInfo!.CommandId.Should().Be(commandId);
         commandInfo.Command.Should().Be(command);
         commandInfo.State.Should().Be(CommandState.Queued);
     }

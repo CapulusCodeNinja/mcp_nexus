@@ -49,11 +49,6 @@ public static class HttpServerSetup
     /// <param name="config">The server configuration.</param>
     private static void ConfigureServerLimits(IServiceCollection services, HttpServerConfiguration config)
     {
-        services.Configure<IISServerOptions>(options =>
-        {
-            options.MaxRequestBodySize = config.MaxRequestBodySize;
-        });
-
         services.Configure<KestrelServerOptions>(options =>
         {
             options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(config.RequestHeadersTimeoutSeconds);

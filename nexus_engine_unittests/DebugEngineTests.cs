@@ -212,9 +212,6 @@ public class DebugEngineTests : IDisposable
     [Fact]
     public async Task EnqueueCommand_WithValidParameters_ShouldThrowInvalidOperationException()
     {
-        // Arrange
-        var command = "lm";
-
         // Act & Assert
         var action = () => m_Engine.CreateSessionAsync(@"C:\Test\test.dmp");
         await action.Should().ThrowAsync<FileNotFoundException>()
@@ -546,7 +543,7 @@ public class DebugEngineTests : IDisposable
     }
 
     [Fact]
-    public async Task CancelCommandAsync_WithNullSessionId_ShouldThrowArgumentException()
+    public void CancelCommandAsync_WithNullSessionId_ShouldThrowArgumentException()
     {
         // Act & Assert
         var action = () => m_Engine.CancelCommand(null!, "cmd-123");
@@ -583,7 +580,7 @@ public class DebugEngineTests : IDisposable
     }
 
     [Fact]
-    public async Task CancelCommandAsync_WhenDisposed_ShouldThrowObjectDisposedException()
+    public void CancelCommandAsync_WhenDisposed_ShouldThrowObjectDisposedException()
     {
         // Arrange
         m_Engine.Dispose();
@@ -603,7 +600,7 @@ public class DebugEngineTests : IDisposable
     }
 
     [Fact]
-    public async Task CancelAllCommandsAsync_WithNullSessionId_ShouldThrowArgumentException()
+    public void CancelAllCommandsAsync_WithNullSessionId_ShouldThrowArgumentException()
     {
         // Act & Assert
         var action = () => m_Engine.CancelAllCommands(null!);
@@ -622,7 +619,7 @@ public class DebugEngineTests : IDisposable
     }
 
     [Fact]
-    public async Task CancelAllCommandsAsync_WhenDisposed_ShouldThrowObjectDisposedException()
+    public void CancelAllCommandsAsync_WhenDisposed_ShouldThrowObjectDisposedException()
     {
         // Arrange
         m_Engine.Dispose();
