@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using mcp_nexus.Engine;
+using mcp_nexus.Utilities.FileSystem;
 
 namespace mcp_nexus.Protocol.Tools;
 
@@ -29,6 +30,7 @@ internal static class OpenDumpAnalyzeSessionTool
     {
         var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("OpenDumpAnalyzeSessionTool");
         var debugEngine = serviceProvider.GetRequiredService<IDebugEngine>();
+        var fileSystem = serviceProvider.GetRequiredService<IFileSystem>();
 
         logger.LogInformation("Opening debugging session for dump: {DumpPath}", dumpPath);
 
@@ -39,13 +41,13 @@ internal static class OpenDumpAnalyzeSessionTool
                 symbolsPath = null;
             }
 
-            if (!File.Exists(dumpPath))
+            if (!fileSystem.FileExists(dumpPath))
             {
                 logger.LogError("Dump file not found: {DumpPath}", dumpPath);
                 return new
                 {
                     sessionId = (string?)null,
-                    dumpFile = Path.GetFileName(dumpPath),
+                    dumpFile = fileSystem.GetFileName(dumpPath),
                     status = "Failed",
                     operation = "nexus_open_dump_analyze_session",
                     message = $"Dump file not found: {dumpPath}",
@@ -60,7 +62,7 @@ internal static class OpenDumpAnalyzeSessionTool
             return new
             {
                 sessionId,
-                dumpFile = Path.GetFileName(dumpPath),
+                dumpFile = fileSystem.GetFileName(dumpPath),
                 status = "Success",
                 operation = "nexus_open_dump_analyze_session",
                 message = $"Session {sessionId} created successfully",
@@ -73,7 +75,7 @@ internal static class OpenDumpAnalyzeSessionTool
             return new
             {
                 sessionId = (string?)null,
-                dumpFile = Path.GetFileName(dumpPath),
+                dumpFile = fileSystem.GetFileName(dumpPath),
                 status = "Failed",
                 operation = "nexus_open_dump_analyze_session",
                 message = ex.Message,
@@ -86,7 +88,7 @@ internal static class OpenDumpAnalyzeSessionTool
             return new
             {
                 sessionId = (string?)null,
-                dumpFile = Path.GetFileName(dumpPath),
+                dumpFile = fileSystem.GetFileName(dumpPath),
                 status = "Failed",
                 operation = "nexus_open_dump_analyze_session",
                 message = ex.Message,
@@ -99,7 +101,7 @@ internal static class OpenDumpAnalyzeSessionTool
             return new
             {
                 sessionId = (string?)null,
-                dumpFile = Path.GetFileName(dumpPath),
+                dumpFile = fileSystem.GetFileName(dumpPath),
                 status = "Failed",
                 operation = "nexus_open_dump_analyze_session",
                 message = $"Unexpected error: {ex.Message}",

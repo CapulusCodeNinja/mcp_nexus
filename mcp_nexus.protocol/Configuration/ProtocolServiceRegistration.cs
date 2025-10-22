@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using mcp_nexus.Protocol.Notifications;
 using mcp_nexus.Protocol.Services;
+using mcp_nexus.Utilities.FileSystem;
 
 namespace mcp_nexus.Protocol.Configuration;
 
@@ -30,6 +31,7 @@ public static class ProtocolServiceRegistration
         services.AddSingleton<INotificationBridge, StdioNotificationBridge>();
         services.AddSingleton<IMcpNotificationService, McpNotificationService>();
         services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
+        services.AddSingleton<IFileSystem, Utilities.FileSystem.FileSystem>();
 
         services.AddTransient<Middleware.ContentTypeValidationMiddleware>();
         services.AddTransient<Middleware.JsonRpcLoggingMiddleware>();
