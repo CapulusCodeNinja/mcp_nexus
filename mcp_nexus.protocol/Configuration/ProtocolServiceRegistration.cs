@@ -26,6 +26,7 @@ public static class ProtocolServiceRegistration
         if (configuration == null)
             throw new ArgumentNullException(nameof(configuration));
 
+        services.AddSingleton<IProtocolServer, ProtocolServer>();
         services.AddSingleton<INotificationBridge, StdioNotificationBridge>();
         services.AddSingleton<IMcpNotificationService, McpNotificationService>();
         services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
