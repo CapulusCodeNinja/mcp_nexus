@@ -4,6 +4,8 @@ using Moq;
 using nexus.setup;
 using nexus.setup.Core;
 using nexus.setup.Models;
+using nexus.utilities.FileSystem;
+using nexus.utilities.ServiceManagement;
 using Xunit;
 
 namespace nexus.setup_unittests.Core;
@@ -15,6 +17,8 @@ public class ServiceUpdaterTests
 {
     private readonly ILogger<ServiceUpdater> m_Logger;
     private readonly Mock<IServiceInstaller> m_MockInstaller;
+    private readonly Mock<IFileSystem> m_MockFileSystem;
+    private readonly Mock<IServiceController> m_MockServiceController;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceUpdaterTests"/> class.
@@ -23,6 +27,8 @@ public class ServiceUpdaterTests
     {
         m_Logger = NullLogger<ServiceUpdater>.Instance;
         m_MockInstaller = new Mock<IServiceInstaller>();
+        m_MockFileSystem = new Mock<IFileSystem>();
+        m_MockServiceController = new Mock<IServiceController>();
     }
 
     /// <summary>
@@ -31,7 +37,11 @@ public class ServiceUpdaterTests
     [Fact]
     public void Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new ServiceUpdater(null!, m_MockInstaller.Object));
+        Assert.Throws<ArgumentNullException>(() => new ServiceUpdater(
+            null!,
+            m_MockInstaller.Object,
+            m_MockFileSystem.Object,
+            m_MockServiceController.Object));
     }
 
     /// <summary>
@@ -40,7 +50,11 @@ public class ServiceUpdaterTests
     [Fact]
     public void Constructor_ThrowsArgumentNullException_WhenServiceInstallerIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new ServiceUpdater(m_Logger, null!));
+        Assert.Throws<ArgumentNullException>(() => new ServiceUpdater(
+            m_Logger,
+            null!,
+            m_MockFileSystem.Object,
+            m_MockServiceController.Object));
     }
 
     /// <summary>
@@ -53,7 +67,7 @@ public class ServiceUpdaterTests
     public async Task UpdateServiceAsync_ThrowsArgumentException_WhenServiceNameIsNullOrEmpty(string? serviceName)
     {
         // Arrange
-        var updater = new ServiceUpdater(m_Logger, m_MockInstaller.Object);
+        var updater = new ServiceUpdater(m_Logger, m_MockInstaller.Object, m_MockFileSystem.Object, m_MockServiceController.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => updater.UpdateServiceAsync(serviceName!, "test.exe"));
@@ -69,7 +83,7 @@ public class ServiceUpdaterTests
     public async Task UpdateServiceAsync_ThrowsArgumentException_WhenExecutablePathIsNullOrEmpty(string? executablePath)
     {
         // Arrange
-        var updater = new ServiceUpdater(m_Logger, m_MockInstaller.Object);
+        var updater = new ServiceUpdater(m_Logger, m_MockInstaller.Object, m_MockFileSystem.Object, m_MockServiceController.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => updater.UpdateServiceAsync("TestService", executablePath!));
@@ -85,7 +99,7 @@ public class ServiceUpdaterTests
     public async Task BackupServiceAsync_ThrowsArgumentException_WhenServiceNameIsNullOrEmpty(string? serviceName)
     {
         // Arrange
-        var updater = new ServiceUpdater(m_Logger, m_MockInstaller.Object);
+        var updater = new ServiceUpdater(m_Logger, m_MockInstaller.Object, m_MockFileSystem.Object, m_MockServiceController.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => updater.BackupServiceAsync(serviceName!, @"C:\backup"));
@@ -101,7 +115,7 @@ public class ServiceUpdaterTests
     public async Task BackupServiceAsync_ThrowsArgumentException_WhenBackupPathIsNullOrEmpty(string? backupPath)
     {
         // Arrange
-        var updater = new ServiceUpdater(m_Logger, m_MockInstaller.Object);
+        var updater = new ServiceUpdater(m_Logger, m_MockInstaller.Object, m_MockFileSystem.Object, m_MockServiceController.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => updater.BackupServiceAsync("TestService", backupPath!));
@@ -117,7 +131,7 @@ public class ServiceUpdaterTests
     public async Task RestoreServiceAsync_ThrowsArgumentException_WhenServiceNameIsNullOrEmpty(string? serviceName)
     {
         // Arrange
-        var updater = new ServiceUpdater(m_Logger, m_MockInstaller.Object);
+        var updater = new ServiceUpdater(m_Logger, m_MockInstaller.Object, m_MockFileSystem.Object, m_MockServiceController.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => updater.RestoreServiceAsync(serviceName!, @"C:\backup"));
@@ -133,7 +147,7 @@ public class ServiceUpdaterTests
     public async Task RestoreServiceAsync_ThrowsArgumentException_WhenBackupPathIsNullOrEmpty(string? backupPath)
     {
         // Arrange
-        var updater = new ServiceUpdater(m_Logger, m_MockInstaller.Object);
+        var updater = new ServiceUpdater(m_Logger, m_MockInstaller.Object, m_MockFileSystem.Object, m_MockServiceController.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => updater.RestoreServiceAsync("TestService", backupPath!));

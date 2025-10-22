@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\nexus_setup\nexus_setup.csproj" />
+    <ProjectReference Include="..\nexus_utilities\nexus_utilities.csproj" />
   </ItemGroup>
 
 </Project>

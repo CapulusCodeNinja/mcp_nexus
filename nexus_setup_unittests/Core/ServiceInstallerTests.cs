@@ -1,8 +1,12 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using nexus.setup;
 using nexus.setup.Core;
 using nexus.setup.Models;
+using nexus.utilities.FileSystem;
+using nexus.utilities.ProcessManagement;
+using nexus.utilities.ServiceManagement;
 using Xunit;
 
 namespace nexus.setup_unittests.Core;
@@ -23,12 +27,39 @@ public class ServiceInstallerTests
     }
 
     /// <summary>
+    /// Creates a ServiceInstaller instance with mocked dependencies.
+    /// </summary>
+    /// <returns>A tuple containing the installer and mocks.</returns>
+    private (ServiceInstaller installer, Mock<IFileSystem> fileSystem, Mock<IProcessManager> processManager, Mock<IServiceController> serviceController) CreateServiceInstaller()
+    {
+        var mockFileSystem = new Mock<IFileSystem>();
+        var mockProcessManager = new Mock<IProcessManager>();
+        var mockServiceController = new Mock<IServiceController>();
+
+        var installer = new ServiceInstaller(
+            m_Logger,
+            mockFileSystem.Object,
+            mockProcessManager.Object,
+            mockServiceController.Object);
+
+        return (installer, mockFileSystem, mockProcessManager, mockServiceController);
+    }
+
+    /// <summary>
     /// Verifies constructor throws when logger is null.
     /// </summary>
     [Fact]
     public void Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new ServiceInstaller(null!));
+        var mockFileSystem = new Mock<IFileSystem>();
+        var mockProcessManager = new Mock<IProcessManager>();
+        var mockServiceController = new Mock<IServiceController>();
+
+        Assert.Throws<ArgumentNullException>(() => new ServiceInstaller(
+            null!,
+            mockFileSystem.Object,
+            mockProcessManager.Object,
+            mockServiceController.Object));
     }
 
     /// <summary>
@@ -38,7 +69,7 @@ public class ServiceInstallerTests
     public async Task InstallServiceAsync_ThrowsArgumentNullException_WhenOptionsIsNull()
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => installer.InstallServiceAsync(null!));
@@ -54,7 +85,7 @@ public class ServiceInstallerTests
     public async Task InstallServiceAsync_ThrowsArgumentException_WhenServiceNameIsNullOrEmpty(string? serviceName)
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
         var options = new ServiceInstallationOptions { ServiceName = serviceName!, ExecutablePath = "test.exe" };
 
         // Act & Assert
@@ -71,7 +102,7 @@ public class ServiceInstallerTests
     public async Task InstallServiceAsync_ThrowsArgumentException_WhenExecutablePathIsNullOrEmpty(string? executablePath)
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
         var options = new ServiceInstallationOptions { ServiceName = "TestService", ExecutablePath = executablePath! };
 
         // Act & Assert
@@ -88,7 +119,7 @@ public class ServiceInstallerTests
     public async Task UninstallServiceAsync_ThrowsArgumentException_WhenServiceNameIsNullOrEmpty(string? serviceName)
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => installer.UninstallServiceAsync(serviceName!));
@@ -104,7 +135,7 @@ public class ServiceInstallerTests
     public void IsServiceInstalled_ReturnsFalse_WhenServiceNameIsNullOrEmpty(string? serviceName)
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act
         var result = installer.IsServiceInstalled(serviceName!);
@@ -120,7 +151,7 @@ public class ServiceInstallerTests
     public void IsServiceInstalled_ReturnsFalse_ForNonExistentService()
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act
         var result = installer.IsServiceInstalled("NonExistentService_" + Guid.NewGuid());
@@ -139,7 +170,7 @@ public class ServiceInstallerTests
     public void GetServiceStatus_ReturnsNull_WhenServiceNameIsNullOrEmpty(string? serviceName)
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act
         var result = installer.GetServiceStatus(serviceName!);
@@ -155,7 +186,7 @@ public class ServiceInstallerTests
     public void GetServiceStatus_ReturnsNull_ForNonExistentService()
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act
         var result = installer.GetServiceStatus("NonExistentService_" + Guid.NewGuid());
@@ -174,7 +205,7 @@ public class ServiceInstallerTests
     public async Task WaitForServiceStatusAsync_ThrowsArgumentException_WhenServiceNameIsNullOrEmpty(string? serviceName)
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => 
@@ -191,7 +222,7 @@ public class ServiceInstallerTests
     public async Task WaitForServiceStatusAsync_ThrowsArgumentException_WhenTargetStatusIsNullOrEmpty(string? targetStatus)
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => 
@@ -205,7 +236,7 @@ public class ServiceInstallerTests
     public async Task WaitForServiceStatusAsync_ReturnsFalse_ForNonExistentService()
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act
         var result = await installer.WaitForServiceStatusAsync("NonExistentService_" + Guid.NewGuid(), "Running", TimeSpan.FromMilliseconds(100));
@@ -224,7 +255,7 @@ public class ServiceInstallerTests
     public async Task BuildProjectAsync_ThrowsArgumentException_WhenProjectPathIsNullOrEmpty(string? projectPath)
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => installer.BuildProjectAsync(projectPath!));
@@ -240,7 +271,7 @@ public class ServiceInstallerTests
     public async Task BuildProjectAsync_ThrowsArgumentException_WhenConfigurationIsNullOrEmpty(string? configuration)
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => 
@@ -257,7 +288,7 @@ public class ServiceInstallerTests
     public async Task CopyApplicationFilesAsync_ThrowsArgumentException_WhenSourceDirectoryIsNullOrEmpty(string? sourceDirectory)
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => 
@@ -274,7 +305,7 @@ public class ServiceInstallerTests
     public async Task CopyApplicationFilesAsync_ThrowsArgumentException_WhenTargetDirectoryIsNullOrEmpty(string? targetDirectory)
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => 
@@ -288,7 +319,7 @@ public class ServiceInstallerTests
     public async Task CopyApplicationFilesAsync_ReturnsFalse_WhenSourceDirectoryDoesNotExist()
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
+        var (installer, _, _, _) = CreateServiceInstaller();
         var sourcePath = Path.Combine(Path.GetTempPath(), "NonExistent_" + Guid.NewGuid());
         var targetPath = Path.Combine(Path.GetTempPath(), "Target_" + Guid.NewGuid());
 
@@ -315,39 +346,28 @@ public class ServiceInstallerTests
     public async Task CopyApplicationFilesAsync_Succeeds_WithValidDirectories()
     {
         // Arrange
-        var installer = new ServiceInstaller(m_Logger);
-        var sourcePath = Path.Combine(Path.GetTempPath(), "Source_" + Guid.NewGuid());
-        var targetPath = Path.Combine(Path.GetTempPath(), "Target_" + Guid.NewGuid());
+        var (installer, mockFileSystem, _, _) = CreateServiceInstaller();
+        var sourcePath = "C:\\Source";
+        var targetPath = "C:\\Target";
 
-        try
-        {
-            // Create source directory with test files
-            Directory.CreateDirectory(sourcePath);
-            File.WriteAllText(Path.Combine(sourcePath, "test1.txt"), "test content 1");
-            File.WriteAllText(Path.Combine(sourcePath, "test2.txt"), "test content 2");
+        // Setup mocks to simulate successful file copying
+        mockFileSystem.Setup(fs => fs.DirectoryExists(It.Is<string>(s => s == sourcePath))).Returns(true);
+        mockFileSystem.Setup(fs => fs.DirectoryExists(It.Is<string>(s => s != sourcePath))).Returns(false);
+        mockFileSystem.Setup(fs => fs.CreateDirectory(It.IsAny<string>()));
+        mockFileSystem.Setup(fs => fs.GetFiles(sourcePath, "*", SearchOption.AllDirectories))
+            .Returns(new[] { Path.Combine(sourcePath, "test1.txt"), Path.Combine(sourcePath, "test2.txt") });
+        mockFileSystem.Setup(fs => fs.CombinePaths(It.IsAny<string[]>())).Returns<string[]>(paths => Path.Combine(paths));
+        mockFileSystem.Setup(fs => fs.GetDirectoryName(It.IsAny<string>())).Returns<string>(path => Path.GetDirectoryName(path));
+        mockFileSystem.Setup(fs => fs.CopyFileAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
-            var subDir = Path.Combine(sourcePath, "subdir");
-            Directory.CreateDirectory(subDir);
-            File.WriteAllText(Path.Combine(subDir, "test3.txt"), "test content 3");
+        // Act
+        var result = await installer.CopyApplicationFilesAsync(sourcePath, targetPath);
 
-            // Act
-            var result = await installer.CopyApplicationFilesAsync(sourcePath, targetPath);
-
-            // Assert
-            Assert.True(result);
-            Assert.True(Directory.Exists(targetPath));
-            Assert.True(File.Exists(Path.Combine(targetPath, "test1.txt")));
-            Assert.True(File.Exists(Path.Combine(targetPath, "test2.txt")));
-            Assert.True(File.Exists(Path.Combine(targetPath, "subdir", "test3.txt")));
-        }
-        finally
-        {
-            // Cleanup
-            if (Directory.Exists(sourcePath))
-                Directory.Delete(sourcePath, true);
-            if (Directory.Exists(targetPath))
-                Directory.Delete(targetPath, true);
-        }
+        // Assert
+        Assert.True(result);
+        mockFileSystem.Verify(fs => fs.GetFiles(sourcePath, "*", SearchOption.AllDirectories), Times.Once);
+        mockFileSystem.Verify(fs => fs.CopyFileAsync(It.IsAny<string>(), It.IsAny<string>(), true, It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 }
 
