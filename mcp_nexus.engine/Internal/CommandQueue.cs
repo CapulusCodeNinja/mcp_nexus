@@ -65,7 +65,7 @@ internal class CommandQueue : IDisposable
         ThrowIfDisposed();
 
         m_CdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
-        
+
         m_Logger.LogDebug("Starting command queue for session {SessionId}", m_SessionId);
 
         // Start the processing task
@@ -172,7 +172,7 @@ internal class CommandQueue : IDisposable
         {
             // Wait for completion
             await command.CompletionSource.Task.WaitAsync(cancellationToken);
-            
+
             // Get result from cache
             if (m_ResultCache.TryGetValue(commandId, out var result))
             {
@@ -267,7 +267,7 @@ internal class CommandQueue : IDisposable
         {
             command.CancellationTokenSource.Cancel();
             UpdateCommandState(command, CommandState.Cancelled);
-            
+
 
             return true;
         }
@@ -293,7 +293,7 @@ internal class CommandQueue : IDisposable
         }
 
 
-        m_Logger.LogInformation("Cancelled {Count} commands in session {SessionId}. Reason: {Reason}", 
+        m_Logger.LogInformation("Cancelled {Count} commands in session {SessionId}. Reason: {Reason}",
             count, m_SessionId, reason ?? "No reason specified");
 
         return count;
@@ -342,9 +342,9 @@ internal class CommandQueue : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    m_Logger.LogError(ex, "Error processing command {CommandId} in session {SessionId}", 
+                    m_Logger.LogError(ex, "Error processing command {CommandId} in session {SessionId}",
                         command.Id, m_SessionId);
-                    
+
                     // Mark command as failed
                     UpdateCommandState(command, CommandState.Failed);
                     var endTime = DateTime.Now;
@@ -357,7 +357,7 @@ internal class CommandQueue : IDisposable
                         string.Empty,
                         false,
                         $"Command processing failed: {ex.Message}");
-                    
+
                     SetCommandResult(command, commandInfo);
                 }
             }
@@ -380,7 +380,7 @@ internal class CommandQueue : IDisposable
     {
         ValidateCdbSession();
         LogCommandProcessing(command);
-        
+
         UpdateCommandState(command, CommandState.Executing);
         var startTime = DateTime.Now;
 
@@ -458,7 +458,7 @@ internal class CommandQueue : IDisposable
         SetCommandResult(command, commandInfo);
 
         var executionTime = endTime - startTime;
-        m_Logger.LogDebug("Command {CommandId} completed successfully in {Elapsed}ms", 
+        m_Logger.LogDebug("Command {CommandId} completed successfully in {Elapsed}ms",
             command.Id, executionTime.TotalMilliseconds);
 
         return Task.CompletedTask;

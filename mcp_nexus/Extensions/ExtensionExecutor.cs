@@ -134,7 +134,7 @@ namespace mcp_nexus.Extensions
                     {
                         var sanitized = StripAnsi(e.Data);
                         outputBuilder.AppendLine(sanitized);
- 
+
                         progressCallback?.Invoke(e.Data.Trim());
                     }
                 };

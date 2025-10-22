@@ -64,7 +64,7 @@ public class DebugEngine : IDebugEngine
         try
         {
             var session = new Internal.DebugSession(sessionId, dumpFilePath, symbolPath, m_Configuration, m_LoggerFactory, m_FileSystem, m_ProcessManager);
-            
+
             // Subscribe to session events
             session.CommandStateChanged += OnSessionCommandStateChanged;
             session.SessionStateChanged += OnSessionStateChanged;

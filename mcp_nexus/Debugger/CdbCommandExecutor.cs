@@ -477,15 +477,15 @@ namespace mcp_nexus.Debugger
                 var batchCommandId = $"BATCH-{Guid.NewGuid()}";
                 var completionSource = new TaskCompletionSource<string>();
 
-            lock (m_pendingCommandsLock)
-            {
-                m_pendingCommands[batchCommandId] = completionSource;
-                m_currentCommandId = batchCommandId;
-            }
+                lock (m_pendingCommandsLock)
+                {
+                    m_pendingCommands[batchCommandId] = completionSource;
+                    m_currentCommandId = batchCommandId;
+                }
 
-            // Wrap batch command with outer sentinels for completion detection
-            var wrappedBatch = CreateCommandWithSentinels(batchCommand);
-            await SendCommandToCdbAsync(processManager, wrappedBatch, externalCancellationToken).ConfigureAwait(false);
+                // Wrap batch command with outer sentinels for completion detection
+                var wrappedBatch = CreateCommandWithSentinels(batchCommand);
+                await SendCommandToCdbAsync(processManager, wrappedBatch, externalCancellationToken).ConfigureAwait(false);
 
                 var timeoutMs = m_Config.CommandTimeoutMs;
                 using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMs));

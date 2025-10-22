@@ -19,7 +19,7 @@ internal class CdbSession : ICdbSession
     private readonly IProcessManager m_ProcessManager;
     private readonly SemaphoreSlim m_ExecutionSemaphore = new(1, 1);
     private readonly object m_ProcessLock = new();
-    
+
     private Process? m_CdbProcess;
     private StreamWriter? m_InputWriter;
     private StreamReader? m_OutputReader;
@@ -57,7 +57,7 @@ internal class CdbSession : ICdbSession
     /// <param name="fileSystem">The file system interface.</param>
     /// <param name="processManager">The process manager interface.</param>
     public CdbSession(
-        DebugEngineConfiguration configuration, 
+        DebugEngineConfiguration configuration,
         ILogger<CdbSession> logger,
         IFileSystem fileSystem,
         IProcessManager processManager)
@@ -94,21 +94,21 @@ internal class CdbSession : ICdbSession
         try
         {
             await m_ExecutionSemaphore.WaitAsync(cancellationToken);
-            
+
             try
             {
                 // Find CDB executable
                 var cdbPath = await FindCdbExecutableAsync();
-                
+
                 // Build command line arguments
                 var arguments = BuildCommandLineArguments(dumpFilePath, symbolPath);
-                
+
                 // Start CDB process
                 await StartCdbProcessAsync(cdbPath, arguments);
-                
+
                 // Wait for CDB to initialize
                 await WaitForCdbInitializationAsync(cancellationToken);
-                
+
                 m_Initialized = true;
                 m_Logger.LogInformation("CDB session initialized successfully");
             }
@@ -144,18 +144,18 @@ internal class CdbSession : ICdbSession
         try
         {
             await m_ExecutionSemaphore.WaitAsync(cancellationToken);
-            
+
             try
             {
                 // Create command with sentinels
                 var wrappedCommand = CreateCommandWithSentinels(command);
-                
+
                 // Send command to CDB
                 await SendCommandToCdbAsync(wrappedCommand, cancellationToken);
-                
+
                 // Read output until completion
                 var output = await ReadCommandOutputAsync(cancellationToken);
-                
+
                 m_Logger.LogDebug("CDB command completed with {OutputLength} characters of output", output.Length);
                 return output;
             }
@@ -349,7 +349,7 @@ internal class CdbSession : ICdbSession
 
         var cdbPath = FindCdbExecutableAsync().Result;
         var arguments = BuildCommandLineArguments(m_DumpFilePath, m_SymbolPath);
-        
+
         return StartCdbProcessAsync(cdbPath, arguments);
     }
 
@@ -385,12 +385,12 @@ internal class CdbSession : ICdbSession
         };
 
         m_CdbProcess = m_ProcessManager.StartProcess(startInfo);
-        
+
         if (m_CdbProcess == null)
         {
             throw new InvalidOperationException("Failed to start CDB process");
         }
-        
+
         m_InputWriter = m_CdbProcess.StandardInput;
         m_OutputReader = m_CdbProcess.StandardOutput;
         m_ErrorReader = m_CdbProcess.StandardError;
