@@ -194,6 +194,202 @@ internal class ServiceInstaller : IServiceInstaller
     }
 
     /// <summary>
+    /// Waits for a service to reach a specific status.
+    /// </summary>
+    /// <param name="serviceName">The name of the service.</param>
+    /// <param name="targetStatus">The target status to wait for.</param>
+    /// <param name="timeout">Maximum time to wait.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if the service reached the target status, false if timeout occurred.</returns>
+    public async Task<bool> WaitForServiceStatusAsync(string serviceName, string targetStatus, TimeSpan timeout, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(serviceName))
+            throw new ArgumentException("Service name cannot be null or empty.", nameof(serviceName));
+
+        if (string.IsNullOrWhiteSpace(targetStatus))
+            throw new ArgumentException("Target status cannot be null or empty.", nameof(targetStatus));
+
+        var startTime = DateTime.Now;
+        var pollInterval = TimeSpan.FromMilliseconds(100);
+
+        m_Logger.LogDebug("Waiting for service {ServiceName} to reach status {TargetStatus}", serviceName, targetStatus);
+
+        while (DateTime.Now - startTime < timeout)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                m_Logger.LogInformation("Wait for service status cancelled");
+                return false;
+            }
+
+            try
+            {
+                using var controller = new ServiceController(serviceName);
+                var currentStatus = controller.Status.ToString();
+
+                if (string.Equals(currentStatus, targetStatus, StringComparison.OrdinalIgnoreCase))
+                {
+                    m_Logger.LogDebug("Service {ServiceName} reached target status {Status}", serviceName, targetStatus);
+                    return true;
+                }
+
+                m_Logger.LogDebug("Service {ServiceName} status: {CurrentStatus}, waiting for {TargetStatus}",
+                    serviceName, currentStatus, targetStatus);
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogDebug(ex, "Error checking service {ServiceName} status", serviceName);
+            }
+
+            await Task.Delay(pollInterval, cancellationToken);
+        }
+
+        m_Logger.LogWarning("Service {ServiceName} did not reach status {Status} within {Timeout}ms",
+            serviceName, targetStatus, timeout.TotalMilliseconds);
+        return false;
+    }
+
+    /// <summary>
+    /// Builds the project for deployment.
+    /// </summary>
+    /// <param name="projectPath">Path to the project file or directory.</param>
+    /// <param name="configuration">Build configuration (e.g., "Release", "Debug").</param>
+    /// <param name="outputPath">Output path for build artifacts.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if the build succeeded, false otherwise.</returns>
+    public async Task<bool> BuildProjectAsync(string projectPath, string configuration = "Release", string? outputPath = null, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(projectPath))
+            throw new ArgumentException("Project path cannot be null or empty.", nameof(projectPath));
+
+        if (string.IsNullOrWhiteSpace(configuration))
+            throw new ArgumentException("Configuration cannot be null or empty.", nameof(configuration));
+
+        try
+        {
+            m_Logger.LogInformation("Building project for deployment: {ProjectPath}", projectPath);
+
+            var workingDirectory = Directory.Exists(projectPath) 
+                ? projectPath 
+                : Path.GetDirectoryName(projectPath) ?? Environment.CurrentDirectory;
+
+            var arguments = $"build --configuration {configuration}";
+            if (!string.IsNullOrEmpty(outputPath))
+            {
+                arguments += $" --output \"{outputPath}\"";
+            }
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = arguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+                WorkingDirectory = workingDirectory
+            };
+
+            using var process = new Process { StartInfo = startInfo };
+            process.Start();
+
+            var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+            var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
+
+            await process.WaitForExitAsync(cancellationToken);
+
+            var output = await outputTask;
+            var error = await errorTask;
+
+            if (process.ExitCode == 0)
+            {
+                m_Logger.LogInformation("Build completed successfully");
+                m_Logger.LogDebug("Build output: {Output}", output);
+                return true;
+            }
+            else
+            {
+                m_Logger.LogError("Build failed with exit code {ExitCode}. Output: {Output}. Error: {Error}",
+                    process.ExitCode, output, error);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            m_Logger.LogError(ex, "Exception during project build");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Copies application files from source to installation directory.
+    /// </summary>
+    /// <param name="sourceDirectory">Source directory containing the application files.</param>
+    /// <param name="targetDirectory">Target installation directory.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if the copy operation succeeded, false otherwise.</returns>
+    public async Task<bool> CopyApplicationFilesAsync(string sourceDirectory, string targetDirectory, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(sourceDirectory))
+            throw new ArgumentException("Source directory cannot be null or empty.", nameof(sourceDirectory));
+
+        if (string.IsNullOrWhiteSpace(targetDirectory))
+            throw new ArgumentException("Target directory cannot be null or empty.", nameof(targetDirectory));
+
+        try
+        {
+            m_Logger.LogInformation("Copying application files from {Source} to {Target}", sourceDirectory, targetDirectory);
+
+            if (!Directory.Exists(sourceDirectory))
+            {
+                m_Logger.LogError("Source directory does not exist: {SourceDir}", sourceDirectory);
+                return false;
+            }
+
+            // Create target directory if it doesn't exist
+            if (!Directory.Exists(targetDirectory))
+            {
+                Directory.CreateDirectory(targetDirectory);
+                m_Logger.LogDebug("Created installation directory: {TargetDir}", targetDirectory);
+            }
+
+            // Copy all files from source to target
+            var files = Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories);
+            var copiedCount = 0;
+
+            foreach (var file in files)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    m_Logger.LogInformation("File copy operation cancelled");
+                    return false;
+                }
+
+                var relativePath = Path.GetRelativePath(sourceDirectory, file);
+                var targetFile = Path.Combine(targetDirectory, relativePath);
+                var targetFileDir = Path.GetDirectoryName(targetFile);
+
+                if (!string.IsNullOrEmpty(targetFileDir) && !Directory.Exists(targetFileDir))
+                {
+                    Directory.CreateDirectory(targetFileDir);
+                }
+
+                await Task.Run(() => File.Copy(file, targetFile, overwrite: true), cancellationToken);
+                copiedCount++;
+                m_Logger.LogDebug("Copied file: {RelativePath}", relativePath);
+            }
+
+            m_Logger.LogInformation("Successfully copied {FileCount} files to installation directory", copiedCount);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            m_Logger.LogError(ex, "Exception during file copy operation");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Gets the account name for a service account type.
     /// </summary>
     /// <param name="account">The service account type.</param>
