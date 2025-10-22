@@ -117,9 +117,10 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
             // Assert
             Assert.NotNull(batchCommand);
 
-            // Should contain separators for each command plus trailing batch separator
+            // Should contain separators for each command (2 per command: START and END)
+            // Note: Outer start/end markers are added by the wrapper in CdbCommandExecutor
             var separatorCount = batchCommand.Split(CdbSentinels.CommandSeparator).Length - 1;
-            Assert.Equal(5, separatorCount); // 2 commands * 2 separators each + trailing
+            Assert.Equal(4, separatorCount); // 2 commands * 2 separators each (START and END)
         }
 
         [Fact]
@@ -176,12 +177,11 @@ namespace mcp_nexus_unit_tests.CommandQueue.Batching
             // Act
             var batchCommand = builder.CreateBatchCommand(commands);
 
-            // Assert - verify expected start marker followed by first command separators
-            Assert.StartsWith($".echo {CdbSentinels.StartMarker}; .echo {CdbSentinels.CommandSeparator}_CMD-1_START; lm; ", batchCommand);
+            // Assert - verify command structure (outer start/end markers added by wrapper)
+            Assert.StartsWith($".echo {CdbSentinels.CommandSeparator}_CMD-1_START; lm; ", batchCommand);
             Assert.Contains($".echo {CdbSentinels.CommandSeparator}_CMD-1_END; ", batchCommand);
             Assert.Contains($".echo {CdbSentinels.CommandSeparator}_CMD-2_START; !threads; ", batchCommand);
-            Assert.Contains($".echo {CdbSentinels.CommandSeparator}_CMD-2_END", batchCommand);
-            Assert.EndsWith($".echo {CdbSentinels.CommandSeparator}", batchCommand);
+            Assert.EndsWith($".echo {CdbSentinels.CommandSeparator}_CMD-2_END", batchCommand);
         }
 
         #endregion

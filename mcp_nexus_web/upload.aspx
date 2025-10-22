@@ -227,7 +227,7 @@
             string wslConsoleWsl = ConvertToWSLPath(wslConsoleWin);
 
             // Set HOME environment and run cursor-agent with clean output
-            string cmd = "export HOME=/home/droller && cd '$HOME' && /home/droller/.local/share/cursor-agent/versions/2025.10.21-224d294/cursor-agent -f --output-format text < '" + tempPayloadWsl + "' > '" + wslConsoleWsl + "' 2>&1";
+            string cmd = "export HOME=/home/droller && cd \"$HOME\" && /home/droller/.local/share/cursor-agent/versions/2025.10.21-224d294/cursor-agent -f --output-format text < '" + tempPayloadWsl + "' 2>&1 | tee -a '" + wslConsoleWsl + "' > /dev/null";
 
             var psi = new ProcessStartInfo
             {

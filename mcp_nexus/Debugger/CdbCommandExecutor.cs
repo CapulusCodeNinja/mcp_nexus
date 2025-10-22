@@ -257,6 +257,7 @@ namespace mcp_nexus.Debugger
                         // Handle start sentinel (sync only: do not complete here)
                         if (line.Contains(CdbSentinels.StartMarker, StringComparison.Ordinal))
                         {
+                            m_Logger.LogDebug("🧠 CONSUMER: Detected START sentinel in line {Line}", line);
                             SyncOnStartSentinel(ref currentCommandId, currentCommandOutput, currentCommandStderr);
                             continue;
                         }
@@ -264,6 +265,7 @@ namespace mcp_nexus.Debugger
                         // Handle end sentinel (complete if pending)
                         if (line.Contains(CdbSentinels.EndMarker, StringComparison.Ordinal))
                         {
+                            m_Logger.LogDebug("🧠 CONSUMER: Detected END sentinel in line {Line}", line);
                             currentCommandId = await CompleteIfPendingAsync(currentCommandOutput, currentCommandStderr, currentCommandId).ConfigureAwait(false);
                             continue;
                         }
@@ -273,6 +275,7 @@ namespace mcp_nexus.Debugger
                             !line.Contains(CdbSentinels.EndMarker, StringComparison.Ordinal) &&
                             CdbCompletionPatterns.IsCdbPrompt(line))
                         {
+                            m_Logger.LogDebug("🧠 CONSUMER: Detected CBD promt pattern in line {Line}", line);
                             currentCommandId = await CompleteIfPendingAsync(currentCommandOutput, currentCommandStderr, currentCommandId).ConfigureAwait(false);
                             continue;
                         }
@@ -282,6 +285,7 @@ namespace mcp_nexus.Debugger
                             !line.Contains(CdbSentinels.EndMarker, StringComparison.Ordinal) &&
                             CdbCompletionPatterns.IsUltraSafeCompletion(line))
                         {
+                            m_Logger.LogDebug("🧠 CONSUMER: Detected Ultra-safe completion pattern in line {Line}", line);
                             currentCommandId = await CompleteIfPendingAsync(currentCommandOutput, currentCommandStderr, currentCommandId).ConfigureAwait(false);
                             continue;
                         }
@@ -473,15 +477,15 @@ namespace mcp_nexus.Debugger
                 var batchCommandId = $"BATCH-{Guid.NewGuid()}";
                 var completionSource = new TaskCompletionSource<string>();
 
-                lock (m_pendingCommandsLock)
-                {
-                    m_pendingCommands[batchCommandId] = completionSource;
-                    m_currentCommandId = batchCommandId;
-                }
+            lock (m_pendingCommandsLock)
+            {
+                m_pendingCommands[batchCommandId] = completionSource;
+                m_currentCommandId = batchCommandId;
+            }
 
-                // Wrap entire batch in single-command sentinels so normal completion applies
-                var wrappedBatch = CreateCommandWithSentinels(batchCommand);
-                await SendCommandToCdbAsync(processManager, wrappedBatch, externalCancellationToken).ConfigureAwait(false);
+            // Wrap batch command with outer sentinels for completion detection
+            var wrappedBatch = CreateCommandWithSentinels(batchCommand);
+            await SendCommandToCdbAsync(processManager, wrappedBatch, externalCancellationToken).ConfigureAwait(false);
 
                 var timeoutMs = m_Config.CommandTimeoutMs;
                 using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMs));
