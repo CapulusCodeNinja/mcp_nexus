@@ -1,8 +1,10 @@
-using System.Diagnostics;
 using System.Runtime.Versioning;
 using System.ServiceProcess;
 using Microsoft.Extensions.Logging;
 using nexus.setup.Models;
+using nexus.utilities.FileSystem;
+using nexus.utilities.ProcessManagement;
+using nexus.utilities.ServiceManagement;
 
 namespace nexus.setup.Core;
 
@@ -13,14 +15,27 @@ namespace nexus.setup.Core;
 internal class ServiceInstaller : IServiceInstaller
 {
     private readonly ILogger<ServiceInstaller> m_Logger;
+    private readonly IFileSystem m_FileSystem;
+    private readonly IProcessManager m_ProcessManager;
+    private readonly IServiceController m_ServiceController;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceInstaller"/> class.
     /// </summary>
     /// <param name="logger">Logger instance.</param>
-    public ServiceInstaller(ILogger<ServiceInstaller> logger)
+    /// <param name="fileSystem">File system abstraction.</param>
+    /// <param name="processManager">Process manager abstraction.</param>
+    /// <param name="serviceController">Service controller abstraction.</param>
+    public ServiceInstaller(
+        ILogger<ServiceInstaller> logger,
+        IFileSystem fileSystem,
+        IProcessManager processManager,
+        IServiceController serviceController)
     {
         m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+        m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
+        m_ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
     }
 
     /// <summary>
@@ -40,12 +55,12 @@ internal class ServiceInstaller : IServiceInstaller
         if (string.IsNullOrWhiteSpace(options.ExecutablePath))
             throw new ArgumentException("Executable path cannot be null or empty.", nameof(options));
 
-        if (!File.Exists(options.ExecutablePath))
+        if (!m_FileSystem.FileExists(options.ExecutablePath))
             return ServiceInstallationResult.CreateFailure(options.ServiceName, "Executable file not found", options.ExecutablePath);
 
         m_Logger.LogInformation("Installing service: {ServiceName}", options.ServiceName);
 
-        if (IsServiceInstalled(options.ServiceName))
+        if (m_ServiceController.IsServiceInstalled(options.ServiceName))
         {
             m_Logger.LogWarning("Service {ServiceName} is already installed", options.ServiceName);
             return ServiceInstallationResult.CreateFailure(options.ServiceName, "Service is already installed");
@@ -111,7 +126,7 @@ internal class ServiceInstaller : IServiceInstaller
 
         m_Logger.LogInformation("Uninstalling service: {ServiceName}", serviceName);
 
-        if (!IsServiceInstalled(serviceName))
+        if (!m_ServiceController.IsServiceInstalled(serviceName))
         {
             m_Logger.LogWarning("Service {ServiceName} is not installed", serviceName);
             return ServiceInstallationResult.CreateFailure(serviceName, "Service is not installed");
@@ -120,14 +135,12 @@ internal class ServiceInstaller : IServiceInstaller
         try
         {
             // Stop the service if it's running
-            using (var controller = new ServiceController(serviceName))
+            var status = m_ServiceController.GetServiceStatus(serviceName);
+            if (status != null && status != ServiceControllerStatus.Stopped.ToString())
             {
-                if (controller.Status != ServiceControllerStatus.Stopped)
-                {
-                    m_Logger.LogInformation("Stopping service {ServiceName}...", serviceName);
-                    controller.Stop();
-                    controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
-                }
+                m_Logger.LogInformation("Stopping service {ServiceName}...", serviceName);
+                m_ServiceController.StopService(serviceName);
+                m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
             }
 
             // Delete the service
@@ -160,16 +173,7 @@ internal class ServiceInstaller : IServiceInstaller
         if (string.IsNullOrWhiteSpace(serviceName))
             return false;
 
-        try
-        {
-            using var controller = new ServiceController(serviceName);
-            var _ = controller.Status; // This will throw if service doesn't exist
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        return m_ServiceController.IsServiceInstalled(serviceName);
     }
 
     /// <summary>
@@ -182,15 +186,7 @@ internal class ServiceInstaller : IServiceInstaller
         if (string.IsNullOrWhiteSpace(serviceName))
             return null;
 
-        try
-        {
-            using var controller = new ServiceController(serviceName);
-            return controller.Status.ToString();
-        }
-        catch
-        {
-            return null;
-        }
+        return m_ServiceController.GetServiceStatus(serviceName);
     }
 
     /// <summary>
@@ -224,10 +220,9 @@ internal class ServiceInstaller : IServiceInstaller
 
             try
             {
-                using var controller = new ServiceController(serviceName);
-                var currentStatus = controller.Status.ToString();
+                var currentStatus = m_ServiceController.GetServiceStatus(serviceName);
 
-                if (string.Equals(currentStatus, targetStatus, StringComparison.OrdinalIgnoreCase))
+                if (currentStatus != null && string.Equals(currentStatus, targetStatus, StringComparison.OrdinalIgnoreCase))
                 {
                     m_Logger.LogDebug("Service {ServiceName} reached target status {Status}", serviceName, targetStatus);
                     return true;
@@ -269,9 +264,9 @@ internal class ServiceInstaller : IServiceInstaller
         {
             m_Logger.LogInformation("Building project for deployment: {ProjectPath}", projectPath);
 
-            var workingDirectory = Directory.Exists(projectPath) 
+            var workingDirectory = m_FileSystem.DirectoryExists(projectPath) 
                 ? projectPath 
-                : Path.GetDirectoryName(projectPath) ?? Environment.CurrentDirectory;
+                : m_FileSystem.GetDirectoryName(projectPath) ?? Environment.CurrentDirectory;
 
             var arguments = $"build --configuration {configuration}";
             if (!string.IsNullOrEmpty(outputPath))
@@ -279,7 +274,7 @@ internal class ServiceInstaller : IServiceInstaller
                 arguments += $" --output \"{outputPath}\"";
             }
 
-            var startInfo = new ProcessStartInfo
+            var startInfo = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "dotnet",
                 Arguments = arguments,
@@ -290,8 +285,7 @@ internal class ServiceInstaller : IServiceInstaller
                 WorkingDirectory = workingDirectory
             };
 
-            using var process = new Process { StartInfo = startInfo };
-            process.Start();
+            using var process = m_ProcessManager.StartProcess(startInfo);
 
             var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
             var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
@@ -340,21 +334,21 @@ internal class ServiceInstaller : IServiceInstaller
         {
             m_Logger.LogInformation("Copying application files from {Source} to {Target}", sourceDirectory, targetDirectory);
 
-            if (!Directory.Exists(sourceDirectory))
+            if (!m_FileSystem.DirectoryExists(sourceDirectory))
             {
                 m_Logger.LogError("Source directory does not exist: {SourceDir}", sourceDirectory);
                 return false;
             }
 
             // Create target directory if it doesn't exist
-            if (!Directory.Exists(targetDirectory))
+            if (!m_FileSystem.DirectoryExists(targetDirectory))
             {
-                Directory.CreateDirectory(targetDirectory);
+                m_FileSystem.CreateDirectory(targetDirectory);
                 m_Logger.LogDebug("Created installation directory: {TargetDir}", targetDirectory);
             }
 
             // Copy all files from source to target
-            var files = Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories);
+            var files = m_FileSystem.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories);
             var copiedCount = 0;
 
             foreach (var file in files)
@@ -366,15 +360,15 @@ internal class ServiceInstaller : IServiceInstaller
                 }
 
                 var relativePath = Path.GetRelativePath(sourceDirectory, file);
-                var targetFile = Path.Combine(targetDirectory, relativePath);
-                var targetFileDir = Path.GetDirectoryName(targetFile);
+                var targetFile = m_FileSystem.CombinePaths(targetDirectory, relativePath);
+                var targetFileDir = m_FileSystem.GetDirectoryName(targetFile);
 
-                if (!string.IsNullOrEmpty(targetFileDir) && !Directory.Exists(targetFileDir))
+                if (!string.IsNullOrEmpty(targetFileDir) && !m_FileSystem.DirectoryExists(targetFileDir))
                 {
-                    Directory.CreateDirectory(targetFileDir);
+                    m_FileSystem.CreateDirectory(targetFileDir);
                 }
 
-                await Task.Run(() => File.Copy(file, targetFile, overwrite: true), cancellationToken);
+                await m_FileSystem.CopyFileAsync(file, targetFile, overwrite: true, cancellationToken);
                 copiedCount++;
                 m_Logger.LogDebug("Copied file: {RelativePath}", relativePath);
             }
@@ -417,7 +411,7 @@ internal class ServiceInstaller : IServiceInstaller
     {
         try
         {
-            var startInfo = new ProcessStartInfo
+            var startInfo = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "sc.exe",
                 Arguments = arguments,
@@ -427,8 +421,7 @@ internal class ServiceInstaller : IServiceInstaller
                 CreateNoWindow = true
             };
 
-            using var process = new Process { StartInfo = startInfo };
-            process.Start();
+            using var process = m_ProcessManager.StartProcess(startInfo);
 
             var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
             var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);

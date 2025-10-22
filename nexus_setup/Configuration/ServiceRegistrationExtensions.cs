@@ -1,6 +1,10 @@
 using System.Runtime.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using nexus.setup.Core;
+using nexus.utilities.FileSystem;
+using nexus.utilities.ProcessManagement;
+using nexus.utilities.Registry;
+using nexus.utilities.ServiceManagement;
 
 namespace nexus.setup.Configuration;
 
@@ -17,8 +21,16 @@ public static class ServiceRegistrationExtensions
     [SupportedOSPlatform("windows")]
     public static IServiceCollection AddNexusSetupServices(this IServiceCollection services)
     {
+        // Register utility services
+        services.AddSingleton<IFileSystem, nexus.utilities.FileSystem.FileSystem>();
+        services.AddSingleton<IProcessManager, ProcessManager>();
+        services.AddSingleton<IRegistryService, RegistryService>();
+        services.AddSingleton<IServiceController, ServiceControllerWrapper>();
+
+        // Register setup services
         services.AddTransient<IServiceInstaller, ServiceInstaller>();
         services.AddTransient<IServiceUpdater, ServiceUpdater>();
+        
         return services;
     }
 }

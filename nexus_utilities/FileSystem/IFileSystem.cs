@@ -107,4 +107,38 @@ public interface IFileSystem
     /// </summary>
     /// <param name="path">The directory path to set as current.</param>
     void SetCurrentDirectory(string path);
+
+    /// <summary>
+    /// Gets all files in a directory matching a pattern.
+    /// </summary>
+    /// <param name="path">The directory path.</param>
+    /// <param name="searchPattern">The search pattern (e.g., "*.*").</param>
+    /// <param name="searchOption">The search option (TopDirectoryOnly or AllDirectories).</param>
+    /// <returns>An array of file paths.</returns>
+    string[] GetFiles(string path, string searchPattern, SearchOption searchOption);
+
+    /// <summary>
+    /// Copies a file from source to destination.
+    /// </summary>
+    /// <param name="sourceFileName">The source file path.</param>
+    /// <param name="destFileName">The destination file path.</param>
+    /// <param name="overwrite">Whether to overwrite an existing file.</param>
+    void CopyFile(string sourceFileName, string destFileName, bool overwrite);
+
+    /// <summary>
+    /// Copies a file from source to destination asynchronously.
+    /// </summary>
+    /// <param name="sourceFileName">The source file path.</param>
+    /// <param name="destFileName">The destination file path.</param>
+    /// <param name="overwrite">Whether to overwrite an existing file.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task CopyFileAsync(string sourceFileName, string destFileName, bool overwrite, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a DirectoryInfo object for the specified path.
+    /// </summary>
+    /// <param name="path">The directory path.</param>
+    /// <returns>A DirectoryInfo object.</returns>
+    DirectoryInfo GetDirectoryInfo(string path);
 }

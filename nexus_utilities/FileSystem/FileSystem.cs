@@ -152,4 +152,50 @@ public class FileSystem : IFileSystem
     {
         Directory.SetCurrentDirectory(path);
     }
+
+    /// <summary>
+    /// Gets all files in a directory matching a pattern.
+    /// </summary>
+    /// <param name="path">The directory path.</param>
+    /// <param name="searchPattern">The search pattern (e.g., "*.*").</param>
+    /// <param name="searchOption">The search option (TopDirectoryOnly or AllDirectories).</param>
+    /// <returns>An array of file paths.</returns>
+    public string[] GetFiles(string path, string searchPattern, SearchOption searchOption)
+    {
+        return Directory.GetFiles(path, searchPattern, searchOption);
+    }
+
+    /// <summary>
+    /// Copies a file from source to destination.
+    /// </summary>
+    /// <param name="sourceFileName">The source file path.</param>
+    /// <param name="destFileName">The destination file path.</param>
+    /// <param name="overwrite">Whether to overwrite an existing file.</param>
+    public void CopyFile(string sourceFileName, string destFileName, bool overwrite)
+    {
+        File.Copy(sourceFileName, destFileName, overwrite);
+    }
+
+    /// <summary>
+    /// Copies a file from source to destination asynchronously.
+    /// </summary>
+    /// <param name="sourceFileName">The source file path.</param>
+    /// <param name="destFileName">The destination file path.</param>
+    /// <param name="overwrite">Whether to overwrite an existing file.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task CopyFileAsync(string sourceFileName, string destFileName, bool overwrite, CancellationToken cancellationToken = default)
+    {
+        await Task.Run(() => File.Copy(sourceFileName, destFileName, overwrite), cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets a DirectoryInfo object for the specified path.
+    /// </summary>
+    /// <param name="path">The directory path.</param>
+    /// <returns>A DirectoryInfo object.</returns>
+    public DirectoryInfo GetDirectoryInfo(string path)
+    {
+        return new DirectoryInfo(path);
+    }
 }
