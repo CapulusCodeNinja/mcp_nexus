@@ -495,4 +495,472 @@ public class DebugSessionTests : IDisposable
         eventArgs.CommandId.Should().Be("cmd-123");
         eventArgs.NewState.Should().Be(CommandState.Executing);
     }
+
+    [Fact]
+    public void TestSetState_WithValidState_ShouldUpdateState()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act
+        testAccessor.TestSetState(SessionState.Active);
+
+        // Assert
+        testAccessor.State.Should().Be(SessionState.Active);
+    }
+
+    [Fact]
+    public void TestSetState_WithClosedState_ShouldUpdateState()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act
+        testAccessor.TestSetState(SessionState.Closed);
+
+        // Assert
+        testAccessor.State.Should().Be(SessionState.Closed);
+    }
+
+    [Fact]
+    public void TestSetState_WithInitializingState_ShouldUpdateState()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act
+        testAccessor.TestSetState(SessionState.Initializing);
+
+        // Assert
+        testAccessor.State.Should().Be(SessionState.Initializing);
+    }
+
+    [Fact]
+    public void TestSetState_WithErrorState_ShouldUpdateState()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act
+        testAccessor.TestSetState(SessionState.Faulted);
+
+        // Assert
+        testAccessor.State.Should().Be(SessionState.Faulted);
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithNullSender_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var e = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Queued,
+            NewState = CommandState.Completed,
+            Timestamp = DateTime.Now,
+            Command = "Test output"
+        };
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(null, e);
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithNullEventArgs_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var sender = new object();
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(sender, null!);
+        action.Should().Throw<NullReferenceException>();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithNullSenderAndEventArgs_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(null, null!);
+        action.Should().Throw<NullReferenceException>();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithQueuedState_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var sender = new object();
+        var e = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Queued,
+            NewState = CommandState.Queued,
+            Timestamp = DateTime.Now,
+            Command = "Test output"
+        };
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(sender, e);
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithExecutingState_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var sender = new object();
+        var e = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Queued,
+            NewState = CommandState.Executing,
+            Timestamp = DateTime.Now,
+            Command = "Test output"
+        };
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(sender, e);
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithFailedState_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var sender = new object();
+        var e = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Executing,
+            NewState = CommandState.Failed,
+            Timestamp = DateTime.Now,
+            Command = "Test output"
+        };
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(sender, e);
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithCancelledState_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var sender = new object();
+        var e = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Executing,
+            NewState = CommandState.Cancelled,
+            Timestamp = DateTime.Now,
+            Command = "Test output"
+        };
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(sender, e);
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithTimeoutState_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var sender = new object();
+        var e = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Executing,
+            NewState = CommandState.Timeout,
+            Timestamp = DateTime.Now,
+            Command = "Test output"
+        };
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(sender, e);
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithEmptyCommandId_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var sender = new object();
+        var e = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "",
+            OldState = CommandState.Queued,
+            NewState = CommandState.Completed,
+            Timestamp = DateTime.Now,
+            Command = "Test output"
+        };
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(sender, e);
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithNullOutput_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var sender = new object();
+        var e = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Queued,
+            NewState = CommandState.Completed,
+            Timestamp = DateTime.Now,
+            Command = null
+        };
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(sender, e);
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithEmptyOutput_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var sender = new object();
+        var e = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Queued,
+            NewState = CommandState.Completed,
+            Timestamp = DateTime.Now,
+            Command = ""
+        };
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(sender, e);
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithLongOutput_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var sender = new object();
+        var longOutput = new string('A', 10000);
+        var e = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Queued,
+            NewState = CommandState.Completed,
+            Timestamp = DateTime.Now,
+            Command = longOutput
+        };
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(sender, e);
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithSpecialCharactersInOutput_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var sender = new object();
+        var specialOutput = "Test output with special chars: \n\r\t\"'\\";
+        var e = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Queued,
+            NewState = CommandState.Completed,
+            Timestamp = DateTime.Now,
+            Command = specialOutput
+        };
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(sender, e);
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestOnCommandStateChanged_WithUnicodeOutput_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugSessionTestAccessor(
+            "test-session",
+            @"C:\Test\test.dmp",
+            @"C:\Symbols",
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        var sender = new object();
+        var unicodeOutput = "Test output with unicode: 你好世界 🌍";
+        var e = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Queued,
+            NewState = CommandState.Completed,
+            Timestamp = DateTime.Now,
+            Command = unicodeOutput
+        };
+
+        // Act & Assert
+        var action = () => testAccessor.TestOnCommandStateChanged(sender, e);
+        action.Should().NotThrow();
+    }
 }

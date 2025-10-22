@@ -378,95 +378,171 @@ internal class CommandQueue : IDisposable
 
     protected async Task ProcessCommandAsync(QueuedCommand command, CancellationToken cancellationToken)
     {
-        if (m_CdbSession == null)
-            throw new InvalidOperationException("CDB session not initialized");
-
-        m_Logger.LogDebug("Processing command {CommandId}: {Command}", command.Id, command.Command);
-
-        // Update state to executing
+        ValidateCdbSession();
+        LogCommandProcessing(command);
+        
         UpdateCommandState(command, CommandState.Executing);
         var startTime = DateTime.Now;
 
         try
         {
-            // Execute the command
-            var result = await m_CdbSession.ExecuteCommandAsync(command.Command, cancellationToken);
-            
-            // Update state to completed
-            UpdateCommandState(command, CommandState.Completed);
-            var endTime = DateTime.Now;
-
-            // Set result
-            var commandInfo = CommandInfo.Completed(
-                command.Id,
-                command.Command,
-                command.QueuedTime,
-                startTime,
-                endTime,
-                result,
-                true);
-
-            SetCommandResult(command, commandInfo);
-
-            var executionTime = endTime - startTime;
-            m_Logger.LogDebug("Command {CommandId} completed successfully in {Elapsed}ms", 
-                command.Id, executionTime.TotalMilliseconds);
+            var result = await ExecuteCommandWithCdbSession(command, cancellationToken);
+            await HandleSuccessfulCommandExecution(command, startTime, result);
         }
         catch (OperationCanceledException) when (command.CancellationTokenSource.Token.IsCancellationRequested)
         {
-            // Command was cancelled
-            UpdateCommandState(command, CommandState.Cancelled);
-            var endTime = DateTime.Now;
-
-            var commandInfo = CommandInfo.Cancelled(
-                command.Id,
-                command.Command,
-                command.QueuedTime,
-                startTime,
-                endTime);
-
-            SetCommandResult(command, commandInfo);
-
-            m_Logger.LogDebug("Command {CommandId} was cancelled", command.Id);
+            await HandleCancelledCommand(command, startTime);
         }
         catch (TimeoutException ex)
         {
-            // Command timed out
-            UpdateCommandState(command, CommandState.Timeout);
-            var endTime = DateTime.Now;
-
-            var commandInfo = CommandInfo.TimedOut(
-                command.Id,
-                command.Command,
-                command.QueuedTime,
-                startTime,
-                endTime,
-                $"Command timed out: {ex.Message}");
-
-            SetCommandResult(command, commandInfo);
-
-            m_Logger.LogWarning("Command {CommandId} timed out", command.Id);
+            await HandleTimedOutCommand(command, startTime, ex);
         }
         catch (Exception ex)
         {
-            // Command failed
-            UpdateCommandState(command, CommandState.Failed);
-            var endTime = DateTime.Now;
-
-            var commandInfo = CommandInfo.Completed(
-                command.Id,
-                command.Command,
-                command.QueuedTime,
-                startTime,
-                endTime,
-                string.Empty,
-                false,
-                $"Command failed: {ex.Message}");
-
-            SetCommandResult(command, commandInfo);
-
-            m_Logger.LogError(ex, "Command {CommandId} failed", command.Id);
+            await HandleFailedCommand(command, startTime, ex);
         }
+    }
+
+    /// <summary>
+    /// Validates that the CDB session is initialized.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when CDB session is not initialized.</exception>
+    protected virtual void ValidateCdbSession()
+    {
+        if (m_CdbSession == null)
+            throw new InvalidOperationException("CDB session not initialized");
+    }
+
+    /// <summary>
+    /// Logs the start of command processing.
+    /// </summary>
+    /// <param name="command">The command being processed.</param>
+    protected virtual void LogCommandProcessing(QueuedCommand command)
+    {
+        m_Logger.LogDebug("Processing command {CommandId}: {Command}", command.Id, command.Command);
+    }
+
+    /// <summary>
+    /// Executes the command with the CDB session.
+    /// </summary>
+    /// <param name="command">The command to execute.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The command result.</returns>
+    protected virtual async Task<string> ExecuteCommandWithCdbSession(QueuedCommand command, CancellationToken cancellationToken)
+    {
+        ValidateCdbSession();
+        return await m_CdbSession!.ExecuteCommandAsync(command.Command, cancellationToken);
+    }
+
+    /// <summary>
+    /// Handles successful command execution.
+    /// </summary>
+    /// <param name="command">The command that was executed.</param>
+    /// <param name="startTime">The start time of execution.</param>
+    /// <param name="result">The execution result.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    protected virtual Task HandleSuccessfulCommandExecution(QueuedCommand command, DateTime startTime, string result)
+    {
+        UpdateCommandState(command, CommandState.Completed);
+        var endTime = DateTime.Now;
+
+        var commandInfo = CommandInfo.Completed(
+            command.Id,
+            command.Command,
+            command.QueuedTime,
+            startTime,
+            endTime,
+            result,
+            true);
+
+        SetCommandResult(command, commandInfo);
+
+        var executionTime = endTime - startTime;
+        m_Logger.LogDebug("Command {CommandId} completed successfully in {Elapsed}ms", 
+            command.Id, executionTime.TotalMilliseconds);
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Handles cancelled command execution.
+    /// </summary>
+    /// <param name="command">The command that was cancelled.</param>
+    /// <param name="startTime">The start time of execution.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    protected virtual Task HandleCancelledCommand(QueuedCommand command, DateTime startTime)
+    {
+        UpdateCommandState(command, CommandState.Cancelled);
+        var endTime = DateTime.Now;
+
+        var commandInfo = CommandInfo.Cancelled(
+            command.Id,
+            command.Command,
+            command.QueuedTime,
+            startTime,
+            endTime);
+
+        SetCommandResult(command, commandInfo);
+
+        m_Logger.LogDebug("Command {CommandId} was cancelled", command.Id);
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Handles timed out command execution.
+    /// </summary>
+    /// <param name="command">The command that timed out.</param>
+    /// <param name="startTime">The start time of execution.</param>
+    /// <param name="ex">The timeout exception.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    protected virtual Task HandleTimedOutCommand(QueuedCommand command, DateTime startTime, TimeoutException ex)
+    {
+        UpdateCommandState(command, CommandState.Timeout);
+        var endTime = DateTime.Now;
+
+        var commandInfo = CommandInfo.TimedOut(
+            command.Id,
+            command.Command,
+            command.QueuedTime,
+            startTime,
+            endTime,
+            $"Command timed out: {ex.Message}");
+
+        SetCommandResult(command, commandInfo);
+
+        m_Logger.LogWarning("Command {CommandId} timed out", command.Id);
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Handles failed command execution.
+    /// </summary>
+    /// <param name="command">The command that failed.</param>
+    /// <param name="startTime">The start time of execution.</param>
+    /// <param name="ex">The exception that caused the failure.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    protected virtual Task HandleFailedCommand(QueuedCommand command, DateTime startTime, Exception ex)
+    {
+        UpdateCommandState(command, CommandState.Failed);
+        var endTime = DateTime.Now;
+
+        var commandInfo = CommandInfo.Completed(
+            command.Id,
+            command.Command,
+            command.QueuedTime,
+            startTime,
+            endTime,
+            string.Empty,
+            false,
+            $"Command failed: {ex.Message}");
+
+        SetCommandResult(command, commandInfo);
+
+        m_Logger.LogError(ex, "Command {CommandId} failed", command.Id);
+
+        return Task.CompletedTask;
     }
 
     protected void UpdateCommandState(QueuedCommand command, CommandState newState)

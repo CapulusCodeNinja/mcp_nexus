@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -5,6 +6,8 @@ using FluentAssertions;
 using Xunit;
 using mcp_nexus.Engine;
 using mcp_nexus.Engine.Configuration;
+using mcp_nexus.Engine.Events;
+using mcp_nexus.Engine.Internal;
 using mcp_nexus.Engine.Models;
 using mcp_nexus.Utilities.FileSystem;
 using mcp_nexus.Utilities.ProcessManagement;
@@ -240,8 +243,11 @@ public class DebugEngineTests : IDisposable
     {
         // Act & Assert
         var action = () => m_Engine.EnqueueCommand("invalid-session", "lm");
-        action.Should().Throw<InvalidOperationException>();
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("Session invalid-session not found");
     }
+
+
 
     [Fact]
     public void EnqueueCommand_WhenDisposed_ShouldThrowObjectDisposedException()
@@ -252,6 +258,55 @@ public class DebugEngineTests : IDisposable
         // Act & Assert
         var action = () => m_Engine.EnqueueCommand("test-session", "lm");
         action.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public void GetAllCommandInfos_WithInvalidSessionId_ShouldReturnEmptyDictionary()
+    {
+        // Act
+        var result = m_Engine.GetAllCommandInfos("invalid-session");
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetAllCommandInfos_WhenDisposed_ShouldThrowObjectDisposedException()
+    {
+        // Arrange
+        m_Engine.Dispose();
+
+        // Act & Assert
+        var action = () => m_Engine.GetAllCommandInfos("test-session");
+        action.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public void GetAllCommandInfos_WithNullSessionId_ShouldThrowArgumentException_New()
+    {
+        // Act & Assert
+        var action = () => m_Engine.GetAllCommandInfos(null!);
+        action.Should().Throw<ArgumentException>()
+            .WithParameterName("sessionId");
+    }
+
+    [Fact]
+    public void GetAllCommandInfos_WithEmptySessionId_ShouldThrowArgumentException_New()
+    {
+        // Act & Assert
+        var action = () => m_Engine.GetAllCommandInfos("");
+        action.Should().Throw<ArgumentException>()
+            .WithParameterName("sessionId");
+    }
+
+    [Fact]
+    public void GetAllCommandInfos_WithWhitespaceSessionId_ShouldThrowArgumentException_New()
+    {
+        // Act & Assert
+        var action = () => m_Engine.GetAllCommandInfos("   ");
+        action.Should().Throw<ArgumentException>()
+            .WithParameterName("sessionId");
     }
 
     [Fact]
@@ -400,7 +455,7 @@ public class DebugEngineTests : IDisposable
     }
 
     [Fact]
-    public void GetAllCommandInfos_WhenDisposed_ShouldThrowObjectDisposedException()
+    public void GetAllCommandInfos_WhenDisposed_ShouldThrowObjectDisposedException_New()
     {
         // Arrange
         m_Engine.Dispose();
@@ -650,5 +705,740 @@ public class DebugEngineTests : IDisposable
         
         m_MockProcessManager.Setup(pm => pm.KillProcess(It.IsAny<System.Diagnostics.Process>()))
             .Verifiable();
+    }
+
+    [Fact]
+    public void TestThrowIfDisposed_WhenDisposed_ShouldThrowObjectDisposedException()
+    {
+        // Arrange
+        var testAccessor = new DebugEngineTestAccessor(
+            m_LoggerFactory,
+            m_Configuration,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        
+        testAccessor.Dispose();
+
+        // Act & Assert
+        var action = () => testAccessor.TestThrowIfDisposed();
+        action.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public void TestThrowIfDisposed_WhenNotDisposed_ShouldNotThrow()
+    {
+        // Arrange
+        var testAccessor = new DebugEngineTestAccessor(
+            m_LoggerFactory,
+            m_Configuration,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => testAccessor.TestThrowIfDisposed();
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void TestOnSessionCommandStateChanged_ShouldRaiseCommandStateChangedEvent()
+    {
+        // Arrange
+        var testAccessor = new DebugEngineTestAccessor(
+            m_LoggerFactory,
+            m_Configuration,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        
+        CommandStateChangedEventArgs? eventArgs = null;
+        testAccessor.CommandStateChanged += (sender, args) => eventArgs = args;
+
+        var originalEventArgs = new CommandStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            CommandId = "cmd-123",
+            OldState = CommandState.Queued,
+            NewState = CommandState.Executing,
+            Timestamp = DateTime.Now,
+            Command = "test command"
+        };
+
+        // Act
+        testAccessor.TestOnSessionCommandStateChanged(this, originalEventArgs);
+
+        // Assert
+        eventArgs.Should().NotBeNull();
+        eventArgs.Should().Be(originalEventArgs);
+    }
+
+    [Fact]
+    public void TestOnSessionStateChanged_ShouldRaiseSessionStateChangedEvent()
+    {
+        // Arrange
+        var testAccessor = new DebugEngineTestAccessor(
+            m_LoggerFactory,
+            m_Configuration,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        
+        SessionStateChangedEventArgs? eventArgs = null;
+        testAccessor.SessionStateChanged += (sender, args) => eventArgs = args;
+
+        var originalEventArgs = new SessionStateChangedEventArgs
+        {
+            SessionId = "test-session",
+            OldState = SessionState.Initializing,
+            NewState = SessionState.Active,
+            Timestamp = DateTime.Now
+        };
+
+        // Act
+        testAccessor.TestOnSessionStateChanged(this, originalEventArgs);
+
+        // Assert
+        eventArgs.Should().NotBeNull();
+        eventArgs.Should().Be(originalEventArgs);
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_WithMaxSessionsReached_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var limitedConfig = new DebugEngineConfiguration
+        {
+            MaxConcurrentSessions = 0, // Set to 0 to trigger max sessions error immediately
+            DefaultCommandTimeout = TimeSpan.FromMinutes(5)
+        };
+        
+        var limitedEngine = new DebugEngine(
+            m_LoggerFactory,
+            limitedConfig,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Mock file exists
+        m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Test\test.dmp"))
+            .Returns(true);
+
+        // Act & Assert
+        var action = () => limitedEngine.CreateSessionAsync(@"C:\Test\test.dmp");
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Maximum number of concurrent sessions (0) reached");
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_WithValidDumpFile_ShouldThrowInvalidOperationException_New()
+    {
+        // Arrange
+        m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Test\test.dmp"))
+            .Returns(true);
+
+        // Act & Assert
+        var action = () => m_Engine.CreateSessionAsync(@"C:\Test\test.dmp", @"C:\Symbols");
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_WithNullSymbolPath_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Test\test.dmp"))
+            .Returns(true);
+
+        // Act & Assert
+        var action = () => m_Engine.CreateSessionAsync(@"C:\Test\test.dmp", null);
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_WithEmptySymbolPath_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Test\test.dmp"))
+            .Returns(true);
+
+        // Act & Assert
+        var action = () => m_Engine.CreateSessionAsync(@"C:\Test\test.dmp", string.Empty);
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_WithWhitespaceSymbolPath_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Test\test.dmp"))
+            .Returns(true);
+
+        // Act & Assert
+        var action = () => m_Engine.CreateSessionAsync(@"C:\Test\test.dmp", "   ");
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_WithVeryLongDumpFilePath_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var longPath = @"C:\" + new string('a', 200) + @"\test.dmp";
+        m_MockFileSystem.Setup(fs => fs.FileExists(longPath))
+            .Returns(true);
+
+        // Act & Assert
+        var action = () => m_Engine.CreateSessionAsync(longPath);
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_WithSpecialCharactersInPath_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var specialPath = @"C:\Test\test with spaces & symbols!@#.dmp";
+        m_MockFileSystem.Setup(fs => fs.FileExists(specialPath))
+            .Returns(true);
+
+        // Act & Assert
+        var action = () => m_Engine.CreateSessionAsync(specialPath);
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_WithUncPath_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var uncPath = @"\\server\share\test.dmp";
+        m_MockFileSystem.Setup(fs => fs.FileExists(uncPath))
+            .Returns(true);
+
+        // Act & Assert
+        var action = () => m_Engine.CreateSessionAsync(uncPath);
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_WithCancellation_ShouldThrowOperationCanceledException()
+    {
+        // Arrange
+        m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Test\test.dmp"))
+            .Returns(true);
+        
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act & Assert
+        var action = () => m_Engine.CreateSessionAsync(@"C:\Test\test.dmp", null, cts.Token);
+        await action.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_MultipleSessions_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>()))
+            .Returns(true);
+
+        // Act & Assert
+        var action = () => m_Engine.CreateSessionAsync(@"C:\Test\test1.dmp");
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Failed to start CDB process");
+    }
+
+    [Fact]
+    public void GetSessionState_WithValidSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var sessionId = "test-session";
+
+        // Act
+        var state = m_Engine.GetSessionState(sessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithNullSessionId_ShouldThrowArgumentException_New()
+    {
+        // Arrange & Act & Assert
+        var action = () => m_Engine.GetSessionState(null!);
+        action.Should().Throw<ArgumentException>()
+            .WithParameterName("sessionId");
+    }
+
+    [Fact]
+    public void GetSessionState_WithEmptySessionId_ShouldThrowArgumentException()
+    {
+        // Arrange & Act & Assert
+        var action = () => m_Engine.GetSessionState(string.Empty);
+        action.Should().Throw<ArgumentException>()
+            .WithParameterName("sessionId");
+    }
+
+    [Fact]
+    public void GetSessionState_WithWhitespaceSessionId_ShouldThrowArgumentException()
+    {
+        // Arrange & Act & Assert
+        var action = () => m_Engine.GetSessionState("   ");
+        action.Should().Throw<ArgumentException>()
+            .WithParameterName("sessionId");
+    }
+
+    [Fact]
+    public void GetSessionState_WithVeryLongSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var longSessionId = new string('a', 1000);
+
+        // Act
+        var state = m_Engine.GetSessionState(longSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithSpecialCharactersSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var specialSessionId = "session-123!@#$%^&*()";
+
+        // Act
+        var state = m_Engine.GetSessionState(specialSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithUnicodeSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var unicodeSessionId = "сессия-тест";
+
+        // Act
+        var state = m_Engine.GetSessionState(unicodeSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithNumericSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var numericSessionId = "123456789";
+
+        // Act
+        var state = m_Engine.GetSessionState(numericSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithMixedCaseSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var mixedCaseSessionId = "Session-123-Test";
+
+        // Act
+        var state = m_Engine.GetSessionState(mixedCaseSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithHyphenatedSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var hyphenatedSessionId = "session-123-test";
+
+        // Act
+        var state = m_Engine.GetSessionState(hyphenatedSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithUnderscoreSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var underscoreSessionId = "session_123_test";
+
+        // Act
+        var state = m_Engine.GetSessionState(underscoreSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithDotSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var dotSessionId = "session.123.test";
+
+        // Act
+        var state = m_Engine.GetSessionState(dotSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithColonSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var colonSessionId = "session:123:test";
+
+        // Act
+        var state = m_Engine.GetSessionState(colonSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithSemicolonSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var semicolonSessionId = "session;123;test";
+
+        // Act
+        var state = m_Engine.GetSessionState(semicolonSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithCommaSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var commaSessionId = "session,123,test";
+
+        // Act
+        var state = m_Engine.GetSessionState(commaSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithSpaceSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var spaceSessionId = "session 123 test";
+
+        // Act
+        var state = m_Engine.GetSessionState(spaceSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithTabSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var tabSessionId = "session\t123\ttest";
+
+        // Act
+        var state = m_Engine.GetSessionState(tabSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithNewlineSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var newlineSessionId = "session\n123\ntest";
+
+        // Act
+        var state = m_Engine.GetSessionState(newlineSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithCarriageReturnSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var carriageReturnSessionId = "session\r123\rtest";
+
+        // Act
+        var state = m_Engine.GetSessionState(carriageReturnSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithMixedWhitespaceSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var mixedWhitespaceSessionId = "session \t\n\r 123 \t\n\r test";
+
+        // Act
+        var state = m_Engine.GetSessionState(mixedWhitespaceSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithBracketSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var bracketSessionId = "session[123]test";
+
+        // Act
+        var state = m_Engine.GetSessionState(bracketSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithParenthesisSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var parenthesisSessionId = "session(123)test";
+
+        // Act
+        var state = m_Engine.GetSessionState(parenthesisSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithBraceSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var braceSessionId = "session{123}test";
+
+        // Act
+        var state = m_Engine.GetSessionState(braceSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithAngleBracketSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var angleBracketSessionId = "session<123>test";
+
+        // Act
+        var state = m_Engine.GetSessionState(angleBracketSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithPipeSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var pipeSessionId = "session|123|test";
+
+        // Act
+        var state = m_Engine.GetSessionState(pipeSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithBackslashSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var backslashSessionId = "session\\123\\test";
+
+        // Act
+        var state = m_Engine.GetSessionState(backslashSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithForwardSlashSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var forwardSlashSessionId = "session/123/test";
+
+        // Act
+        var state = m_Engine.GetSessionState(forwardSlashSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithQuestionMarkSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var questionMarkSessionId = "session?123?test";
+
+        // Act
+        var state = m_Engine.GetSessionState(questionMarkSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithExclamationMarkSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var exclamationMarkSessionId = "session!123!test";
+
+        // Act
+        var state = m_Engine.GetSessionState(exclamationMarkSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithAtSignSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var atSignSessionId = "session@123@test";
+
+        // Act
+        var state = m_Engine.GetSessionState(atSignSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithHashSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var hashSessionId = "session#123#test";
+
+        // Act
+        var state = m_Engine.GetSessionState(hashSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithDollarSignSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var dollarSignSessionId = "session$123$test";
+
+        // Act
+        var state = m_Engine.GetSessionState(dollarSignSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithPercentSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var percentSessionId = "session%123%test";
+
+        // Act
+        var state = m_Engine.GetSessionState(percentSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithAmpersandSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var ampersandSessionId = "session&123&test";
+
+        // Act
+        var state = m_Engine.GetSessionState(ampersandSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithAsteriskSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var asteriskSessionId = "session*123*test";
+
+        // Act
+        var state = m_Engine.GetSessionState(asteriskSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithPlusSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var plusSessionId = "session+123+test";
+
+        // Act
+        var state = m_Engine.GetSessionState(plusSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithEqualSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var equalSessionId = "session=123=test";
+
+        // Act
+        var state = m_Engine.GetSessionState(equalSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithTildeSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var tildeSessionId = "session~123~test";
+
+        // Act
+        var state = m_Engine.GetSessionState(tildeSessionId);
+
+        // Assert
+        state.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetSessionState_WithBacktickSessionId_ShouldReturnCorrectState()
+    {
+        // Arrange
+        var backtickSessionId = "session`123`test";
+
+        // Act
+        var state = m_Engine.GetSessionState(backtickSessionId);
+
+        // Assert
+        state.Should().BeNull();
     }
 }

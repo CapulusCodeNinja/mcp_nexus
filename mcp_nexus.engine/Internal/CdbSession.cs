@@ -189,44 +189,9 @@ internal class CdbSession : ICdbSession
 
         try
         {
-            // Close input stream to signal CDB to exit
-            if (m_InputWriter != null)
-            {
-                try
-                {
-                    await m_InputWriter.WriteLineAsync("q");
-                    await m_InputWriter.FlushAsync();
-                }
-                catch (Exception ex)
-                {
-                    m_Logger.LogWarning(ex, "Error sending quit command to CDB");
-                }
-            }
-
-            // Wait for process to exit
-            if (m_CdbProcess != null && !m_CdbProcess.HasExited)
-            {
-                try
-                {
-                    if (!m_CdbProcess.WaitForExit((int)m_Configuration.SessionCleanupTimeout.TotalMilliseconds))
-                    {
-                        m_Logger.LogWarning("CDB process did not exit within timeout, killing process");
-                        m_CdbProcess.Kill();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    m_Logger.LogWarning(ex, "Error waiting for CDB process to exit");
-                }
-            }
-
-            // Dispose streams
-            m_InputWriter?.Dispose();
-            m_OutputReader?.Dispose();
-            m_ErrorReader?.Dispose();
-
-            // Dispose process
-            m_CdbProcess?.Dispose();
+            await SendQuitCommandAsync();
+            await WaitForProcessExitAsync();
+            DisposeResources();
         }
         catch (Exception ex)
         {
@@ -234,9 +199,99 @@ internal class CdbSession : ICdbSession
         }
         finally
         {
-            m_Disposed = true;
-            m_Initialized = false;
+            SetDisposedState();
         }
+    }
+
+    /// <summary>
+    /// Sends the quit command to CDB.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    protected virtual async Task SendQuitCommandAsync()
+    {
+        if (m_InputWriter != null)
+        {
+            try
+            {
+                await WriteQuitCommandAsync();
+                await FlushInputAsync();
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogWarning(ex, "Error sending quit command to CDB");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Writes the quit command to the input stream.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    protected virtual async Task WriteQuitCommandAsync()
+    {
+        await m_InputWriter!.WriteLineAsync("q");
+    }
+
+    /// <summary>
+    /// Flushes the input stream.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    protected virtual async Task FlushInputAsync()
+    {
+        await m_InputWriter!.FlushAsync();
+    }
+
+    /// <summary>
+    /// Waits for the CDB process to exit.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    protected virtual Task WaitForProcessExitAsync()
+    {
+        if (m_CdbProcess != null && !m_CdbProcess.HasExited)
+        {
+            try
+            {
+                if (!m_CdbProcess.WaitForExit((int)m_Configuration.SessionCleanupTimeout.TotalMilliseconds))
+                {
+                    m_Logger.LogWarning("CDB process did not exit within timeout, killing process");
+                    KillProcess();
+                }
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogWarning(ex, "Error waiting for CDB process to exit");
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Kills the CDB process.
+    /// </summary>
+    protected virtual void KillProcess()
+    {
+        m_CdbProcess?.Kill();
+    }
+
+    /// <summary>
+    /// Disposes all resources.
+    /// </summary>
+    protected virtual void DisposeResources()
+    {
+        m_InputWriter?.Dispose();
+        m_OutputReader?.Dispose();
+        m_ErrorReader?.Dispose();
+        m_CdbProcess?.Dispose();
+    }
+
+    /// <summary>
+    /// Sets the disposed state.
+    /// </summary>
+    protected virtual void SetDisposedState()
+    {
+        m_Disposed = true;
+        m_Initialized = false;
     }
 
     /// <inheritdoc />
@@ -351,21 +406,40 @@ internal class CdbSession : ICdbSession
 
         while (stopwatch.Elapsed < timeout && !cancellationToken.IsCancellationRequested)
         {
-            if (m_CdbProcess?.HasExited == true)
+            if (IsProcessExited())
             {
                 throw new InvalidOperationException("CDB process exited during initialization");
             }
 
-            await Task.Delay(100, cancellationToken);
+            await WaitForInitializationDelay(cancellationToken);
         }
 
-        if (m_CdbProcess?.HasExited == true)
+        if (IsProcessExited())
         {
             throw new InvalidOperationException("CDB process exited during initialization");
         }
     }
 
-    private static string CreateCommandWithSentinels(string command)
+    /// <summary>
+    /// Checks if the CDB process has exited.
+    /// </summary>
+    /// <returns>True if the process has exited, false otherwise.</returns>
+    protected virtual bool IsProcessExited()
+    {
+        return m_CdbProcess?.HasExited == true;
+    }
+
+    /// <summary>
+    /// Waits for the specified delay during initialization.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    protected virtual async Task WaitForInitializationDelay(CancellationToken cancellationToken)
+    {
+        await Task.Delay(100, cancellationToken);
+    }
+
+    protected static string CreateCommandWithSentinels(string command)
     {
         return $".echo {CdbSentinels.StartMarker}; {command}; .echo {CdbSentinels.EndMarker}";
     }
@@ -395,23 +469,13 @@ internal class CdbSession : ICdbSession
         {
             while (!combinedCts.Token.IsCancellationRequested)
             {
-                var line = await m_OutputReader.ReadLineAsync();
+                var line = await ReadLineFromOutputAsync();
                 if (line == null)
                     break;
 
-                if (line.Contains(CdbSentinels.StartMarker))
-                {
-                    startMarkerFound = true;
-                    continue;
-                }
-
-                if (startMarkerFound)
-                {
-                    if (line.Contains(CdbSentinels.EndMarker))
-                        break;
-
-                    output.AppendLine(line);
-                }
+                var (shouldContinue, shouldBreak) = ProcessOutputLine(line, ref startMarkerFound, output);
+                if (shouldBreak)
+                    break;
             }
         }
         catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
@@ -420,6 +484,41 @@ internal class CdbSession : ICdbSession
         }
 
         return output.ToString().TrimEnd();
+    }
+
+    /// <summary>
+    /// Reads a line from the CDB output stream.
+    /// </summary>
+    /// <returns>The line read from the output stream, or null if no more lines.</returns>
+    protected virtual async Task<string?> ReadLineFromOutputAsync()
+    {
+        return await m_OutputReader!.ReadLineAsync();
+    }
+
+    /// <summary>
+    /// Processes a single line of output from CDB.
+    /// </summary>
+    /// <param name="line">The line to process.</param>
+    /// <param name="startMarkerFound">Reference to the start marker found flag.</param>
+    /// <param name="output">The output string builder to append to.</param>
+    /// <returns>A tuple indicating whether to continue processing and whether to break the loop.</returns>
+    protected virtual (bool ShouldContinue, bool ShouldBreak) ProcessOutputLine(string line, ref bool startMarkerFound, StringBuilder output)
+    {
+        if (line.Contains(CdbSentinels.StartMarker))
+        {
+            startMarkerFound = true;
+            return (true, false); // Continue, don't break
+        }
+
+        if (startMarkerFound)
+        {
+            if (line.Contains(CdbSentinels.EndMarker))
+                return (false, true); // Don't continue, break
+
+            output.AppendLine(line);
+        }
+
+        return (true, false); // Continue, don't break
     }
 
     protected void ThrowIfDisposed()

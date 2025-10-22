@@ -263,13 +263,23 @@ public class DebugEngine : IDebugEngine
         m_Logger.LogInformation("DebugEngine disposed");
     }
 
-    private void OnSessionCommandStateChanged(object? sender, CommandStateChangedEventArgs e)
+    /// <summary>
+    /// Handles command state changed events from sessions.
+    /// </summary>
+    /// <param name="sender">The event sender.</param>
+    /// <param name="e">The event arguments.</param>
+    protected void OnSessionCommandStateChanged(object? sender, CommandStateChangedEventArgs e)
     {
         // Forward the event
         CommandStateChanged?.Invoke(this, e);
     }
 
-    private void OnSessionStateChanged(object? sender, SessionStateChangedEventArgs e)
+    /// <summary>
+    /// Handles session state changed events from sessions.
+    /// </summary>
+    /// <param name="sender">The event sender.</param>
+    /// <param name="e">The event arguments.</param>
+    protected void OnSessionStateChanged(object? sender, SessionStateChangedEventArgs e)
     {
         // Forward the event
         SessionStateChanged?.Invoke(this, e);
@@ -298,7 +308,11 @@ public class DebugEngine : IDebugEngine
             throw new ArgumentException("Command cannot be null or empty", paramName);
     }
 
-    private void ThrowIfDisposed()
+    /// <summary>
+    /// Throws an exception if the engine has been disposed.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException">Thrown when the engine has been disposed.</exception>
+    protected void ThrowIfDisposed()
     {
         if (m_Disposed)
             throw new ObjectDisposedException(nameof(DebugEngine));

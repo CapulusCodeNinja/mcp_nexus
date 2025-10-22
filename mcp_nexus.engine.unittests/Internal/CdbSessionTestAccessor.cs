@@ -73,4 +73,74 @@ internal class CdbSessionTestAccessor : CdbSession
     {
         ThrowIfNotInitialized();
     }
+
+    /// <summary>
+    /// Calls the protected CreateCommandWithSentinels method.
+    /// </summary>
+    /// <param name="command">The command to wrap with sentinels.</param>
+    /// <returns>The command wrapped with sentinels.</returns>
+    internal static string TestCreateCommandWithSentinels(string command)
+    {
+        return CreateCommandWithSentinels(command);
+    }
+
+    /// <summary>
+    /// Calls the protected SendQuitCommandAsync method.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    internal Task TestSendQuitCommandAsync()
+    {
+        return SendQuitCommandAsync();
+    }
+
+    /// <summary>
+    /// Calls the protected WriteQuitCommandAsync method.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    internal Task TestWriteQuitCommandAsync()
+    {
+        return WriteQuitCommandAsync();
+    }
+
+    /// <summary>
+    /// Calls the protected FlushInputAsync method.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    internal Task TestFlushInputAsync()
+    {
+        return FlushInputAsync();
+    }
+
+    /// <summary>
+    /// Calls the protected WaitForProcessExitAsync method.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    internal Task TestWaitForProcessExitAsync()
+    {
+        return WaitForProcessExitAsync();
+    }
+
+    /// <summary>
+    /// Calls the protected KillProcess method.
+    /// </summary>
+    internal void TestKillProcess()
+    {
+        KillProcess();
+    }
+
+    /// <summary>
+    /// Calls the protected DisposeResources method.
+    /// </summary>
+    internal void TestDisposeResources()
+    {
+        DisposeResources();
+    }
+
+    /// <summary>
+    /// Calls the protected SetDisposedState method.
+    /// </summary>
+    internal void TestSetDisposedState()
+    {
+        SetDisposedState();
+    }
 }
