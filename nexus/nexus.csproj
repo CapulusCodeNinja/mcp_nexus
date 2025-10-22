@@ -7,18 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-    <Version>1.0.0.1</Version>
-    <AssemblyVersion>1.0.0.1</AssemblyVersion>
-    <FileVersion>1.0.0.1</FileVersion>
     <AssemblyName>nexus</AssemblyName>
     <RootNamespace>nexus</RootNamespace>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-    <Product>Nexus</Product>
-    <Description>Main entry point for Nexus debugging server</Description>
-    <Company>CapulusCodeNinja</Company>
-    <Copyright>Copyright © 2025 David Roller (aka CapulusCodeNinja on GitHub)</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
