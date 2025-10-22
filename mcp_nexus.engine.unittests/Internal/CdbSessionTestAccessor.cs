@@ -1,3 +1,4 @@
+using System.Text;
 using mcp_nexus.Engine.Configuration;
 using mcp_nexus.Engine.Internal;
 using mcp_nexus.Utilities.FileSystem;
@@ -142,5 +143,13 @@ internal class CdbSessionTestAccessor : CdbSession
     internal void TestSetDisposedState()
     {
         SetDisposedState();
+    }
+
+    /// <summary>
+    /// Calls the protected ProcessOutputLine method.
+    /// </summary>
+    internal (bool ShouldContinue, bool ShouldBreak) TestProcessOutputLine(string line, ref bool startMarkerFound, StringBuilder output)
+    {
+        return ProcessOutputLine(line, ref startMarkerFound, output);
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -1092,6 +1093,93 @@ public class CdbSessionTests : IDisposable
 
         // Assert
         testAccessor.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void TestProcessOutputLine_WithStartMarker_ShouldSetStartMarkerFound()
+    {
+        // Arrange
+        var testAccessor = new CdbSessionTestAccessor(
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<mcp_nexus.Engine.Internal.CdbSession>(),
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        var line = "MCP_NEXUS_SENTINEL_COMMAND_START";
+        var startMarkerFound = false;
+        var output = new StringBuilder();
+
+        // Act
+        var result = testAccessor.TestProcessOutputLine(line, ref startMarkerFound, output);
+
+        // Assert
+        result.ShouldContinue.Should().BeTrue();
+        result.ShouldBreak.Should().BeFalse();
+        startMarkerFound.Should().BeTrue();
+    }
+
+    [Fact]
+    public void TestProcessOutputLine_WithEndMarker_ShouldReturnBreak()
+    {
+        // Arrange
+        var testAccessor = new CdbSessionTestAccessor(
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<mcp_nexus.Engine.Internal.CdbSession>(),
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        var line = "MCP_NEXUS_SENTINEL_COMMAND_END";
+        var startMarkerFound = true;
+        var output = new StringBuilder();
+
+        // Act
+        var result = testAccessor.TestProcessOutputLine(line, ref startMarkerFound, output);
+
+        // Assert
+        result.ShouldContinue.Should().BeFalse();
+        result.ShouldBreak.Should().BeTrue();
+    }
+
+    [Fact]
+    public void TestProcessOutputLine_WithContentBetweenMarkers_ShouldAppendToOutput()
+    {
+        // Arrange
+        var testAccessor = new CdbSessionTestAccessor(
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<mcp_nexus.Engine.Internal.CdbSession>(),
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        var line = "Some command output";
+        var startMarkerFound = true;
+        var output = new StringBuilder();
+
+        // Act
+        var result = testAccessor.TestProcessOutputLine(line, ref startMarkerFound, output);
+
+        // Assert
+        result.ShouldContinue.Should().BeTrue();
+        result.ShouldBreak.Should().BeFalse();
+        output.ToString().Should().Be("Some command output\r\n");
+    }
+
+    [Fact]
+    public void TestProcessOutputLine_WithContentBeforeStartMarker_ShouldNotAppendToOutput()
+    {
+        // Arrange
+        var testAccessor = new CdbSessionTestAccessor(
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<mcp_nexus.Engine.Internal.CdbSession>(),
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+        var line = "Some command output";
+        var startMarkerFound = false;
+        var output = new StringBuilder();
+
+        // Act
+        var result = testAccessor.TestProcessOutputLine(line, ref startMarkerFound, output);
+
+        // Assert
+        result.ShouldContinue.Should().BeTrue();
+        result.ShouldBreak.Should().BeFalse();
+        output.ToString().Should().BeEmpty();
     }
 
 

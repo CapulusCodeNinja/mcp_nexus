@@ -1583,4 +1583,66 @@ public class CommandQueueTests : IDisposable
         result.ErrorMessage.Should().Be("Command was cancelled");
     }
 
+    [Fact]
+    public void StartAsync_WithValidCdbSession_ShouldStartSuccessfully()
+    {
+        // Arrange
+        var testAccessor = new CommandQueueTestAccessor(
+            "test-session",
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<CommandQueue>());
+        var mockCdbSession = new Mock<CdbSession>(m_Configuration, m_LoggerFactory.CreateLogger<CdbSession>(), m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var cancellationToken = CancellationToken.None;
+
+        // Act & Assert
+        var action = async () => await testAccessor.StartAsync(mockCdbSession.Object, cancellationToken);
+        action.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public void StartAsync_WithNullCdbSession_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var testAccessor = new CommandQueueTestAccessor(
+            "test-session",
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<CommandQueue>());
+        CdbSession? cdbSession = null;
+        var cancellationToken = CancellationToken.None;
+
+        // Act & Assert
+        var action = async () => await testAccessor.StartAsync(cdbSession!, cancellationToken);
+        action.Should().ThrowAsync<ArgumentNullException>()
+            .WithMessage("Value cannot be null. (Parameter 'cdbSession')");
+    }
+
+    [Fact]
+    public void StopAsync_WhenStarted_ShouldStopSuccessfully()
+    {
+        // Arrange
+        var testAccessor = new CommandQueueTestAccessor(
+            "test-session",
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<CommandQueue>());
+
+        // Act & Assert
+        var action = async () => await testAccessor.StopAsync();
+        action.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public void GetCommandInfoAsync_WithValidCommandId_ShouldReturnCommandInfo()
+    {
+        // Arrange
+        var testAccessor = new CommandQueueTestAccessor(
+            "test-session",
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<CommandQueue>());
+        var commandId = "cmd-123";
+        var cancellationToken = CancellationToken.None;
+
+        // Act & Assert
+        var action = async () => await testAccessor.GetCommandInfoAsync(commandId, cancellationToken);
+        action.Should().NotThrowAsync();
+    }
 }

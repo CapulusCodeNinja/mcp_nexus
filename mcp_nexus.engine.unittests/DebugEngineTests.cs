@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -245,6 +246,76 @@ public class DebugEngineTests : IDisposable
         var action = () => m_Engine.EnqueueCommand("invalid-session", "lm");
         action.Should().Throw<InvalidOperationException>()
             .WithMessage("Session invalid-session not found");
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithNullCommand_ShouldThrowArgumentException()
+    {
+        // Act & Assert
+        var action = () => m_Engine.EnqueueCommand("session-1", null!);
+        action.Should().Throw<ArgumentException>()
+            .WithMessage("Command cannot be null or empty (Parameter 'command')")
+            .WithParameterName("command");
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithEmptyCommand_ShouldThrowArgumentException()
+    {
+        // Act & Assert
+        var action = () => m_Engine.EnqueueCommand("session-1", "");
+        action.Should().Throw<ArgumentException>()
+            .WithMessage("Command cannot be null or empty (Parameter 'command')")
+            .WithParameterName("command");
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithWhitespaceCommand_ShouldThrowArgumentException()
+    {
+        // Act & Assert
+        var action = () => m_Engine.EnqueueCommand("session-1", "   ");
+        action.Should().Throw<ArgumentException>()
+            .WithMessage("Command cannot be null or empty (Parameter 'command')")
+            .WithParameterName("command");
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithTabOnlyCommand_ShouldThrowArgumentException()
+    {
+        // Act & Assert
+        var action = () => m_Engine.EnqueueCommand("session-1", "\t");
+        action.Should().Throw<ArgumentException>()
+            .WithMessage("Command cannot be null or empty (Parameter 'command')")
+            .WithParameterName("command");
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithNewlineOnlyCommand_ShouldThrowArgumentException()
+    {
+        // Act & Assert
+        var action = () => m_Engine.EnqueueCommand("session-1", "\n");
+        action.Should().Throw<ArgumentException>()
+            .WithMessage("Command cannot be null or empty (Parameter 'command')")
+            .WithParameterName("command");
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithCarriageReturnOnlyCommand_ShouldThrowArgumentException()
+    {
+        // Act & Assert
+        var action = () => m_Engine.EnqueueCommand("session-1", "\r");
+        action.Should().Throw<ArgumentException>()
+            .WithMessage("Command cannot be null or empty (Parameter 'command')")
+            .WithParameterName("command");
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithMixedWhitespaceCommand_ShouldThrowArgumentException()
+    {
+        // Act & Assert
+        var action = () => m_Engine.EnqueueCommand("session-1", " \t\n\r ");
+        action.Should().Throw<ArgumentException>()
+            .WithMessage("Command cannot be null or empty (Parameter 'command')")
+            .WithParameterName("command");
     }
 
 
@@ -1441,4 +1512,135 @@ public class DebugEngineTests : IDisposable
         // Assert
         state.Should().BeNull();
     }
+
+    [Fact]
+    public void Dispose_WhenNotDisposed_ShouldSetDisposedFlag()
+    {
+        // Arrange
+        var engine = new DebugEngine(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+        // Act
+        engine.Dispose();
+
+        // Assert
+        var disposedField = typeof(DebugEngine).GetField("m_Disposed", BindingFlags.NonPublic | BindingFlags.Instance);
+        var isDisposed = (bool)disposedField!.GetValue(engine)!;
+        isDisposed.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Dispose_WhenAlreadyDisposed_ShouldNotThrow()
+    {
+        // Arrange
+        var engine = new DebugEngine(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        engine.Dispose();
+
+        // Act & Assert
+        var action = () => engine.Dispose();
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Dispose_WhenCalledMultipleTimes_ShouldNotThrow_New()
+    {
+        // Arrange
+        var engine = new DebugEngine(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () =>
+        {
+            engine.Dispose();
+            engine.Dispose();
+            engine.Dispose();
+        };
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Dispose_WhenNoSessions_ShouldCompleteSuccessfully()
+    {
+        // Arrange
+        var engine = new DebugEngine(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => engine.Dispose();
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithValidSessionAndCommand_ShouldReturnCommandId_New()
+    {
+        // Arrange
+        var engine = new DebugEngine(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var sessionId = "test-session";
+        var command = "lm";
+
+        // Act & Assert
+        var action = () => engine.EnqueueCommand(sessionId, command);
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("Session test-session not found");
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithInactiveSession_ShouldThrowInvalidOperationException_New()
+    {
+        // Arrange
+        var engine = new DebugEngine(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var sessionId = "test-session";
+        var command = "lm";
+
+        // Act & Assert
+        var action = () => engine.EnqueueCommand(sessionId, command);
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("Session test-session not found");
+    }
+
+    [Fact]
+    public void EnqueueCommand_WhenDisposed_ShouldThrowObjectDisposedException_New()
+    {
+        // Arrange
+        var engine = new DebugEngine(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        engine.Dispose();
+
+        // Act & Assert
+        var action = () => engine.EnqueueCommand("test-session", "lm");
+        action.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithNullSessionId_ShouldThrowArgumentException_New()
+    {
+        // Arrange
+        var engine = new DebugEngine(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => engine.EnqueueCommand(null!, "lm");
+        action.Should().Throw<ArgumentException>()
+            .WithMessage("Session ID cannot be null or empty (Parameter 'sessionId')");
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithEmptySessionId_ShouldThrowArgumentException_New()
+    {
+        // Arrange
+        var engine = new DebugEngine(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => engine.EnqueueCommand("", "lm");
+        action.Should().Throw<ArgumentException>()
+            .WithMessage("Session ID cannot be null or empty (Parameter 'sessionId')");
+    }
+
+    [Fact]
+    public void EnqueueCommand_WithWhitespaceSessionId_ShouldThrowArgumentException_New()
+    {
+        // Arrange
+        var engine = new DebugEngine(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+        // Act & Assert
+        var action = () => engine.EnqueueCommand("   ", "lm");
+        action.Should().Throw<ArgumentException>()
+            .WithMessage("Session ID cannot be null or empty (Parameter 'sessionId')");
+    }
+
 }
