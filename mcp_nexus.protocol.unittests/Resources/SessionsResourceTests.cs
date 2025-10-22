@@ -57,5 +57,40 @@ public class SessionsResourceTests
         var action = () => JsonDocument.Parse(result);
         action.Should().NotThrow();
     }
+
+    [Fact]
+    public async Task Sessions_WithException_ReturnsErrorResponse()
+    {
+        // Create a service provider that throws when getting IDebugEngine
+        var mockServiceProvider = new Mock<IServiceProvider>();
+        var mockLoggerFactory = new Mock<ILoggerFactory>();
+        var mockLogger = NullLogger.Instance;
+        
+        mockLoggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(mockLogger);
+        mockServiceProvider.Setup(sp => sp.GetService(typeof(ILoggerFactory))).Returns(mockLoggerFactory.Object);
+        mockServiceProvider.Setup(sp => sp.GetService(typeof(IDebugEngine))).Throws(new InvalidOperationException("Test error"));
+
+        var result = await SessionsResource.Sessions(mockServiceProvider.Object);
+
+        var json = JsonDocument.Parse(result);
+        json.RootElement.GetProperty("count").GetInt32().Should().Be(0);
+        json.RootElement.TryGetProperty("error", out var errorProperty).Should().BeTrue();
+        errorProperty.GetString().Should().Contain("Test error");
+    }
+
+    [Fact]
+    public async Task Sessions_WithNullServiceProvider_ThrowsException()
+    {
+        var action = async () => await SessionsResource.Sessions(null!);
+        await action.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    [Fact]
+    public async Task Sessions_JsonFormat_IsIndented()
+    {
+        var result = await SessionsResource.Sessions(m_ServiceProvider);
+
+        result.Should().Contain("\n"); // Indented JSON contains newlines
+    }
 }
 
