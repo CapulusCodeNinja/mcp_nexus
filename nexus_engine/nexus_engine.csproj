@@ -3,8 +3,6 @@
   <PropertyGroup>
     <AssemblyName>nexus_engine</AssemblyName>
     <RootNamespace>nexus.engine</RootNamespace>
-    <Version>1.0.0.1</Version>
-    <WarningsNotAsErrors>NU1701</WarningsNotAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

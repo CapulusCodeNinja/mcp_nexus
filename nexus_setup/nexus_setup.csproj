@@ -1,14 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
     <AssemblyName>nexus_setup</AssemblyName>
     <RootNamespace>nexus.setup</RootNamespace>
-    <Version>1.0.0.4</Version>
-    <AssemblyVersion>1.0.0.4</AssemblyVersion>
-    <FileVersion>1.0.0.4</FileVersion>
-    <Product>Nexus Setup Library</Product>
-    <Description>Service installation and update management for Nexus debugging server</Description>
   </PropertyGroup>
 
   <ItemGroup>

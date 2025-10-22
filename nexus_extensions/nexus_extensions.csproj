@@ -3,7 +3,6 @@
   <PropertyGroup>
     <AssemblyName>nexus_extensions</AssemblyName>
     <RootNamespace>nexus.extensions</RootNamespace>
-    <WarningsNotAsErrors>NU1701</WarningsNotAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

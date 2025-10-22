@@ -3,9 +3,6 @@
   <PropertyGroup>
     <AssemblyName>nexus_engine_unittests</AssemblyName>
     <RootNamespace>nexus.engine.unittests</RootNamespace>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <WarningsNotAsErrors>NU1701</WarningsNotAsErrors>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
