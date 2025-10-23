@@ -1,6 +1,7 @@
 using System.Runtime.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using nexus.setup.Core;
+using nexus.setup.Interfaces;
 using nexus.utilities.FileSystem;
 using nexus.utilities.ProcessManagement;
 using nexus.utilities.Registry;
@@ -28,8 +29,7 @@ public static class ServiceRegistrationExtensions
         services.AddSingleton<IServiceController, ServiceControllerWrapper>();
 
         // Register setup services
-        services.AddTransient<IServiceInstaller, ServiceInstaller>();
-        services.AddTransient<IServiceUpdater, ServiceUpdater>();
+        services.AddTransient<IProductInstallation, ProductInstallation>();
         
         return services;
     }

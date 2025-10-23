@@ -12,7 +12,7 @@ namespace nexus.setup.Core;
 /// Implements Windows service installation.
 /// </summary>
 [SupportedOSPlatform("windows")]
-internal class ServiceInstaller : IServiceInstaller
+internal class ServiceInstaller
 {
     private readonly ILogger<ServiceInstaller> m_Logger;
     private readonly IFileSystem m_FileSystem;

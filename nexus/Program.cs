@@ -7,6 +7,7 @@ using NLog;
 using NLog.Extensions.Logging;
 using nexus.CommandLine;
 using nexus.Hosting;
+using nexus.Configuration;
 
 namespace nexus;
 
@@ -28,7 +29,6 @@ internal static class Program
         try
         {
             // Initialize logging first
-            InitializeLogging();
             m_Logger = LogManager.GetCurrentClassLogger();
             m_Logger.Info("=== Nexus Starting ===");
             m_Logger.Info($"Command line: {string.Join(" ", args)}");
@@ -50,34 +50,6 @@ internal static class Program
         }
     }
 
-    /// <summary>
-    /// Initializes NLog logging system.
-    /// </summary>
-    private static void InitializeLogging()
-    {
-        var config = new NLog.Config.LoggingConfiguration();
-
-        // Console target
-        var consoleTarget = new NLog.Targets.ConsoleTarget("console")
-        {
-            Layout = "${longdate}|${level:uppercase=true}|${logger}|${message} ${exception:format=tostring}"
-        };
-        config.AddTarget(consoleTarget);
-        config.AddRule(NLog.LogLevel.Info, NLog.LogLevel.Fatal, consoleTarget);
-
-        // File target
-        var fileTarget = new NLog.Targets.FileTarget("file")
-        {
-            FileName = "${basedir}/logs/nexus-${shortdate}.log",
-            Layout = "${longdate}|${level:uppercase=true}|${logger}|${message} ${exception:format=tostring}",
-            ArchiveEvery = NLog.Targets.FileArchivePeriod.Day,
-            MaxArchiveFiles = 7
-        };
-        config.AddTarget(fileTarget);
-        config.AddRule(NLog.LogLevel.Debug, NLog.LogLevel.Fatal, fileTarget);
-
-        LogManager.Configuration = config;
-    }
 
     /// <summary>
     /// Creates and configures a host builder for the application.
@@ -88,10 +60,11 @@ internal static class Program
     internal static IHostBuilder CreateHostBuilder(string[] args, ServerMode mode)
     {
         var builder = Host.CreateDefaultBuilder(args)
-            .ConfigureLogging(logging =>
+            .ConfigureLogging((context, logging) =>
             {
-                logging.ClearProviders();
-                logging.AddNLog();
+                // Use sophisticated logging setup from original MCP-Nexus
+                var isServiceMode = mode == ServerMode.Service;
+                LoggingSetup.ConfigureLogging(logging, isServiceMode, context.Configuration);
             })
             .ConfigureServices((context, services) =>
             {
@@ -118,7 +91,7 @@ internal static class Program
         {
             builder.UseWindowsService(options =>
             {
-                options.ServiceName = "Nexus";
+                options.ServiceName = "MCP-Nexus";
             });
         }
 

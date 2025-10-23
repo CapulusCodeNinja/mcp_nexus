@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using nexus.setup;
 using nexus.setup.Configuration;
 using nexus.setup.Models;
+using nexus.setup.Interfaces;
+using nexus.utilities.ServiceManagement;
 
 namespace nexus.CommandLine;
 
@@ -49,7 +51,6 @@ internal static class CommandLineBuilder
 
         httpCommand.SetHandler(async (int port) =>
         {
-            Console.WriteLine($"Starting HTTP server on port {port}...");
             var host = Program.CreateHostBuilder(Array.Empty<string>(), ServerMode.Http).Build();
             await host.RunAsync();
         }, portOption);
@@ -67,7 +68,6 @@ internal static class CommandLineBuilder
 
         stdioCommand.SetHandler(async () =>
         {
-            Console.WriteLine("Starting stdio server...");
             var host = Program.CreateHostBuilder(Array.Empty<string>(), ServerMode.Stdio).Build();
             await host.RunAsync();
         });
@@ -85,7 +85,6 @@ internal static class CommandLineBuilder
 
         serviceCommand.SetHandler(async () =>
         {
-            Console.WriteLine("Starting as Windows Service...");
             var host = Program.CreateHostBuilder(Array.Empty<string>(), ServerMode.Service).Build();
             await host.RunAsync();
         });
@@ -105,13 +104,13 @@ internal static class CommandLineBuilder
         var serviceNameOption = new Option<string>(
             name: "--service-name",
             description: "Name of the Windows service",
-            getDefaultValue: () => "Nexus");
+            getDefaultValue: () => "MCP-Nexus");
         installCommand.AddOption(serviceNameOption);
 
         var displayNameOption = new Option<string>(
             name: "--display-name",
             description: "Display name of the service",
-            getDefaultValue: () => "Nexus Debugging Server");
+            getDefaultValue: () => "MCP-Nexus Debugging Server");
         installCommand.AddOption(displayNameOption);
 
         var startModeOption = new Option<ServiceStartMode>(
@@ -122,47 +121,23 @@ internal static class CommandLineBuilder
 
         installCommand.SetHandler(async (string serviceName, string displayName, ServiceStartMode startMode) =>
         {
-            Console.WriteLine($"Installing {serviceName} as Windows Service...");
-
             var services = new ServiceCollection();
             services.AddLogging(builder => builder.AddConsole());
             services.AddNexusSetupServices();
             var serviceProvider = services.BuildServiceProvider();
 
-            var installer = serviceProvider.GetRequiredService<IServiceInstaller>();
+            var installationHandler = serviceProvider.GetRequiredService<IProductInstallation>();
+            var success = await installationHandler.InstallServiceAsync(serviceName, displayName, startMode);
             
-            var executablePath = Path.Combine(AppContext.BaseDirectory, "nexus.exe");
-            var options = new ServiceInstallationOptions
+            if (!success)
             {
-                ServiceName = serviceName,
-                DisplayName = displayName,
-                Description = "Model Context Protocol server for Windows debugging tools",
-                ExecutablePath = executablePath,
-                StartMode = startMode,
-                Account = ServiceAccount.LocalSystem
-            };
-
-            var result = await installer.InstallServiceAsync(options);
-
-            if (result.Success)
-            {
-                Console.WriteLine($"✓ {result.Message}");
-                Console.WriteLine($"Service '{serviceName}' installed successfully.");
-                Console.WriteLine($"Use 'sc start {serviceName}' to start the service.");
-            }
-            else
-            {
-                Console.Error.WriteLine($"✗ {result.Message}");
-                if (!string.IsNullOrEmpty(result.ErrorDetails))
-                {
-                    Console.Error.WriteLine($"Details: {result.ErrorDetails}");
-                }
                 Environment.Exit(1);
             }
         }, serviceNameOption, displayNameOption, startModeOption);
 
         return installCommand;
     }
+
 
     /// <summary>
     /// Builds the --update command.
@@ -176,35 +151,21 @@ internal static class CommandLineBuilder
         var serviceNameOption = new Option<string>(
             name: "--service-name",
             description: "Name of the Windows service to update",
-            getDefaultValue: () => "Nexus");
+            getDefaultValue: () => "MCP-Nexus");
         updateCommand.AddOption(serviceNameOption);
 
         updateCommand.SetHandler(async (string serviceName) =>
         {
-            Console.WriteLine($"Updating Windows Service '{serviceName}'...");
-
             var services = new ServiceCollection();
             services.AddLogging(builder => builder.AddConsole());
             services.AddNexusSetupServices();
             var serviceProvider = services.BuildServiceProvider();
 
-            var updater = serviceProvider.GetRequiredService<IServiceUpdater>();
+            var installationHandler = serviceProvider.GetRequiredService<IProductInstallation>();
+            var success = await installationHandler.UpdateServiceAsync(serviceName);
             
-            var newExecutablePath = Path.Combine(AppContext.BaseDirectory, "nexus.exe");
-            var result = await updater.UpdateServiceAsync(serviceName, newExecutablePath);
-
-            if (result.Success)
+            if (!success)
             {
-                Console.WriteLine($"✓ {result.Message}");
-                Console.WriteLine($"Service '{serviceName}' updated successfully.");
-            }
-            else
-            {
-                Console.Error.WriteLine($"✗ {result.Message}");
-                if (!string.IsNullOrEmpty(result.ErrorDetails))
-                {
-                    Console.Error.WriteLine($"Details: {result.ErrorDetails}");
-                }
                 Environment.Exit(1);
             }
         }, serviceNameOption);

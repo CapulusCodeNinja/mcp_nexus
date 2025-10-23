@@ -11,10 +11,10 @@ namespace nexus.setup.Core;
 /// Implements Windows service update functionality.
 /// </summary>
 [SupportedOSPlatform("windows")]
-internal class ServiceUpdater : IServiceUpdater
+internal class ServiceUpdater
 {
     private readonly ILogger<ServiceUpdater> m_Logger;
-    private readonly IServiceInstaller m_ServiceInstaller;
+    private readonly ServiceInstaller m_ServiceInstaller;
     private readonly IFileSystem m_FileSystem;
     private readonly IServiceController m_ServiceController;
 
@@ -27,7 +27,7 @@ internal class ServiceUpdater : IServiceUpdater
     /// <param name="serviceController">Service controller abstraction.</param>
     public ServiceUpdater(
         ILogger<ServiceUpdater> logger,
-        IServiceInstaller serviceInstaller,
+        ServiceInstaller serviceInstaller,
         IFileSystem fileSystem,
         IServiceController serviceController)
     {
