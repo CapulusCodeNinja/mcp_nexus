@@ -12,7 +12,6 @@ public interface ILoggingConfigurator
     /// Configures logging for the application.
     /// </summary>
     /// <param name="logging">The logging builder to configure.</param>
-    /// <param name="isServiceMode">Whether the application is running in service mode.</param>
     /// <param name="configuration">The application configuration.</param>
-    void ConfigureLogging(ILoggingBuilder logging, bool isServiceMode, IConfiguration configuration);
+    void ConfigureLogging(ILoggingBuilder logging, IConfiguration configuration);
 }

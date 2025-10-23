@@ -17,12 +17,11 @@ internal class LoggingConfiguration : ILoggingConfigurator
     /// Sets up NLog and Microsoft.Extensions.Logging based on configuration and service mode.
     /// </summary>
     /// <param name="logging">The logging builder to configure.</param>
-    /// <param name="isServiceMode">Whether the application is running in service mode.</param>
     /// <param name="configuration">The application configuration.</param>
-    public virtual void ConfigureLogging(ILoggingBuilder logging, bool isServiceMode, IConfiguration configuration)
+    public virtual void ConfigureLogging(ILoggingBuilder logging, IConfiguration configuration)
     {
         var logLevel = GetLogLevelFromConfiguration(configuration);
-        ConfigureNLogDynamically(configuration, logLevel, isServiceMode);
+        ConfigureNLogDynamically(configuration, logLevel);
         ConfigureNLogProvider(logging, logLevel);
         ConfigureMicrosoftLogging(logging, logLevel);
     }
@@ -47,7 +46,7 @@ internal class LoggingConfiguration : ILoggingConfigurator
     /// <param name="configuration">The application configuration.</param>
     /// <param name="logLevel">The log level to configure.</param>
     /// <param name="isServiceMode">Whether the application is running in service mode.</param>
-    protected virtual void ConfigureNLogDynamically(IConfiguration configuration, Microsoft.Extensions.Logging.LogLevel logLevel, bool isServiceMode)
+    protected virtual void ConfigureNLogDynamically(IConfiguration configuration, Microsoft.Extensions.Logging.LogLevel logLevel)
     {
         // Build or augment NLog configuration entirely from appsettings + code (no external nlog.json)
         var nlogConfig = LogManager.Configuration ?? new NLog.Config.LoggingConfiguration();

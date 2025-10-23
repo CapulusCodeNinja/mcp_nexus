@@ -18,6 +18,21 @@ public enum ServerMode
     /// <summary>
     /// Windows Service mode.
     /// </summary>
-    Service
+    Service,
+
+    /// <summary>
+    /// Install command mode.
+    /// </summary>
+    Install,
+
+    /// <summary>
+    /// Update command mode.
+    /// </summary>
+    Update,
+
+    /// <summary>
+    /// Uninstall command mode.
+    /// </summary>
+    Uninstall
 }
 

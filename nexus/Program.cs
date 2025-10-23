@@ -10,6 +10,7 @@ using nexus.Hosting;
 using nexus.Startup;
 using nexus.config;
 using nexus.config.ServiceRegistration;
+using nexus.setup.Configuration;
 
 namespace nexus;
 
@@ -29,8 +30,13 @@ internal static class Program
         try
         {
             // Parse command line and run
-            var rootCommand = CommandLineBuilder.BuildRootCommand();
-            return await rootCommand.InvokeAsync(args);
+            var cmd = new CommandLineContext(args);
+
+            // Use hosted service for ALL command types
+            var host = CreateHostBuilder(cmd).Build();
+            await host.RunAsync();
+            
+            return 0;
         }
         catch (Exception ex)
         {
@@ -50,19 +56,20 @@ internal static class Program
     /// <param name="args">Command line arguments.</param>
     /// <param name="mode">Server mode (http, stdio, service).</param>
     /// <returns>Configured host builder.</returns>
-    internal static IHostBuilder CreateHostBuilder(string[] args, ServerMode mode)
+    internal static IHostBuilder CreateHostBuilder(CommandLineBuilderContext cmd)
     {
-        var builder = Host.CreateDefaultBuilder(args)
+        var builder = Host.CreateDefaultBuilder(cmd)
             .ConfigureLogging((context, logging) =>
             {
-                // Use sophisticated logging setup from nexus_config library
-                var isServiceMode = mode == ServerMode.Service;
-                logging.AddNexusLogging(context.Configuration, isServiceMode);
+                logging.AddNexusLogging(context.Configuration, cmd);
             })
             .ConfigureServices((context, services) =>
             {
                 // Register mode
-                services.AddSingleton(new ServerModeContext(mode));
+                services.AddSingleton(cmd);
+
+                // Register ALL services for ALL modes (consistent architecture)
+                services.AddNexusSetupServices();
 
                 // Register ONLY the main hosted service (no others)
                 services.AddHostedService<MainHostedService>();
@@ -79,5 +86,4 @@ internal static class Program
 
         return builder;
     }
-}
 

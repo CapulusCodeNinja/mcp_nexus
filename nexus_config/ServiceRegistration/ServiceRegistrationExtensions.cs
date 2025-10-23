@@ -42,7 +42,7 @@ public static class ServiceRegistrationExtensions
     public static ILoggingBuilder AddNexusLogging(
         this ILoggingBuilder logging,
         IConfiguration configuration,
-        bool isServiceMode = false)
+        bool isServiceModes)
     {
         var configurator = new LoggingConfiguration();
         configurator.ConfigureLogging(logging, isServiceMode, configuration);
