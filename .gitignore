@@ -167,6 +167,7 @@ coverage*.info
 
 # Coverage report output directory
 CoverageReport/
+coverage/
 
 # Visual Studio code coverage results
 *.coverage
