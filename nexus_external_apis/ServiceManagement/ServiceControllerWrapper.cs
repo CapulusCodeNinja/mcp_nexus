@@ -1,9 +1,9 @@
 using Microsoft.Win32;
 using System.Runtime.Versioning;
 using System.ServiceProcess;
-using nexus.utilities.Registry;
+using nexus.external_apis.Registry;
 
-namespace nexus.utilities.ServiceManagement;
+namespace nexus.external_apis.ServiceManagement;
 
 /// <summary>
 /// Concrete implementation of IServiceController that uses the real Windows Service Controller.

@@ -3,10 +3,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using nexus.setup.Core;
 using nexus.setup.Interfaces;
-using nexus.utilities.FileSystem;
-using nexus.utilities.ProcessManagement;
-using nexus.utilities.Registry;
-using nexus.utilities.ServiceManagement;
+using nexus.external_apis.FileSystem;
+using nexus.external_apis.ProcessManagement;
+using nexus.external_apis.Registry;
+using nexus.external_apis.ServiceManagement;
 using nexus.config.ServiceRegistration;
 using nexus.protocol.Configuration;
 
@@ -33,7 +33,7 @@ public static class ServiceRegistrationExtensions
         services.AddNexusConfiguration();
 
         // Add utility services
-        services.AddSingleton<IFileSystem, nexus.utilities.FileSystem.FileSystem>();
+        services.AddSingleton<IFileSystem, nexus.external_apis.FileSystem.FileSystem>();
         services.AddSingleton<IProcessManager, ProcessManager>();
         services.AddSingleton<IRegistryService, RegistryService>();
         services.AddSingleton<IServiceController, ServiceControllerWrapper>();

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using nexus.engine;
 using nexus.protocol.Tools;
-using nexus.utilities.FileSystem;
+using nexus.external_apis.FileSystem;
 using Moq;
 
 namespace nexus.protocol.unittests.Tools;

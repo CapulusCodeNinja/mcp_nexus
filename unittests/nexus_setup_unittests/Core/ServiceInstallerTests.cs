@@ -4,9 +4,9 @@ using Moq;
 using nexus.setup;
 using nexus.setup.Core;
 using nexus.setup.Models;
-using nexus.utilities.FileSystem;
-using nexus.utilities.ProcessManagement;
-using nexus.utilities.ServiceManagement;
+using nexus.external_apis.FileSystem;
+using nexus.external_apis.ProcessManagement;
+using nexus.external_apis.ServiceManagement;
 using Xunit;
 
 namespace nexus.setup_unittests.Core;

@@ -3,8 +3,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using nexus.engine.Configuration;
-using nexus.utilities.FileSystem;
-using nexus.utilities.ProcessManagement;
+using nexus.external_apis.FileSystem;
+using nexus.external_apis.ProcessManagement;
 
 namespace nexus.engine.Internal;
 

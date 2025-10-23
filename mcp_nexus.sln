@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "nexus_utilities", "nexus_utilities\nexus_utilities.csproj", "{C3BCE4B3-4D38-48B3-A422-7DEF98E64F6F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "nexus_external_apis", "nexus_external_apis\nexus_external_apis.csproj", "{C3BCE4B3-4D38-48B3-A422-7DEF98E64F6F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "nexus_protocol", "nexus_protocol\nexus_protocol.csproj", "{794FFACC-E5CB-4296-A66E-ABBA73FAA695}"
 EndProject
@@ -32,6 +32,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "nexus_config", "nexus_config\nexus_config.csproj", "{4E5F6789-0123-4567-8DEF-123456789012}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "nexus_config_unittests", "unittests\nexus_config_unittests\nexus_config_unittests.csproj", "{5F678901-2345-6789-0DEF-234567890123}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unittests", "unittests", "{1C19CD4A-A4CD-4EF5-856B-7C8E8E8D11D6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -229,5 +231,7 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E6BCA66-8E89-492F-868E-A4388A5F468B}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 EndGlobal

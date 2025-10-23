@@ -11,8 +11,8 @@ using FluentAssertions;
 using Xunit;
 using nexus.engine.Configuration;
 using nexus.engine.unittests.TestHelpers;
-using nexus.utilities.FileSystem;
-using nexus.utilities.ProcessManagement;
+using nexus.external_apis.FileSystem;
+using nexus.external_apis.ProcessManagement;
 
 namespace nexus.engine.unittests.Internal;
 

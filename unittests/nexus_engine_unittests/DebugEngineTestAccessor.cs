@@ -1,7 +1,7 @@
 using nexus.engine.Configuration;
 using nexus.engine.Events;
-using nexus.utilities.FileSystem;
-using nexus.utilities.ProcessManagement;
+using nexus.external_apis.FileSystem;
+using nexus.external_apis.ProcessManagement;
 using Microsoft.Extensions.Logging;
 
 namespace nexus.engine.unittests;

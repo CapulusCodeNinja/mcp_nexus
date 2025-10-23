@@ -17,7 +17,7 @@ nexus_engine/               - Core debug engine (CDB sessions, command queue)
 nexus_engine_batch/         - Command batching system (self-contained)
 nexus_protocol/             - MCP protocol layer (tools, resources, HTTP/Stdio)
 nexus_setup/                - Service installation and management
-nexus_utilities/            - Shared utilities (file system, process, registry, service)
+nexus_external_apis/            - Shared utilities (file system, process, registry, service)
 nexus_extensions/           - Extension system (PowerShell workflow support)
 ```
 
@@ -64,7 +64,7 @@ nexus_extensions/           - Extension system (PowerShell workflow support)
 - `Models/` - Command state, session state, command info
 - `Configuration/DebugEngineConfiguration.cs` - Engine settings
 
-**Dependencies**: `nexus_utilities`, `nexus_config`, `nexus_engine_batch`
+**Dependencies**: `nexus_external_apis`, `nexus_config`, `nexus_engine_batch`
 
 **Namespace**: `nexus.engine.*`
 
@@ -113,7 +113,7 @@ nexus_extensions/           - Extension system (PowerShell workflow support)
 - `Middleware/` - HTTP middleware (logging, content-type validation)
 - `Models/` - MCP response models, notifications
 
-**Dependencies**: `nexus_engine`, `nexus_engine_batch`, `nexus_utilities`, `nexus_config`, ModelContextProtocol SDKs
+**Dependencies**: `nexus_engine`, `nexus_engine_batch`, `nexus_external_apis`, `nexus_config`, ModelContextProtocol SDKs
 
 **Namespace**: `nexus.protocol.*`
 
@@ -133,11 +133,11 @@ nexus_extensions/           - Extension system (PowerShell workflow support)
 - `Validation/` - Configuration and path validation
 - `Models/` - Service configuration models
 
-**Dependencies**: `nexus_utilities`, `nexus_config`, `nexus_protocol`
+**Dependencies**: `nexus_external_apis`, `nexus_config`, `nexus_protocol`
 
 **Namespace**: `nexus.setup.*`
 
-#### `nexus_utilities` - Shared Utilities
+#### `nexus_external_apis` - Shared Utilities
 **Purpose**: Cross-cutting utilities for file system, process management, registry, and service operations.
 
 **Key Components**:
@@ -148,9 +148,11 @@ nexus_extensions/           - Extension system (PowerShell workflow support)
 
 **Dependencies**: Microsoft.Extensions.Logging.Abstractions only
 
-**Namespace**: `nexus.utilities.*`
+**Namespace**: `nexus.external_apis.*`
 
 **Key Design**: All utilities are abstracted behind interfaces for testability
+
+**Testing Policy**: This library is **EXCLUDED from unit tests and coverage requirements**. These are thin wrappers around .NET framework classes (File, Directory, Process, Registry, ServiceController) used solely for dependency injection. They are tested indirectly through other components that mock these interfaces. See "Testing Requirements > Coverage Exclusions" for details.
 
 #### `nexus_extensions` - Extension System
 **Purpose**: PowerShell-based extension system for complex debugging workflows.
@@ -163,7 +165,7 @@ nexus_extensions/           - Extension system (PowerShell workflow support)
 - `Models/` - Extension metadata, parameters, results
 - `Configuration/ExtensionConfiguration.cs` - Extension settings
 
-**Dependencies**: `nexus_utilities`, `nexus_config`
+**Dependencies**: `nexus_external_apis`, `nexus_config`
 
 **Namespace**: `nexus.extensions.*`
 
@@ -509,11 +511,12 @@ unittests/
   ├── nexus_unittests/              - Tests for nexus (main app)
   ├── nexus_config_unittests/       - Tests for nexus_config
   ├── nexus_engine_unittests/       - Tests for nexus_engine
-  ├── nexus_engine_batch_unittests/ - Tests for nexus_engine_batch (NEW)
+  ├── nexus_engine_batch_unittests/ - Tests for nexus_engine_batch
   ├── nexus_protocol_unittests/     - Tests for nexus_protocol
   ├── nexus_setup_unittests/        - Tests for nexus_setup
-  ├── nexus_utilities_unittests/    - Tests for nexus_utilities (if exists)
   └── nexus_extensions_unittests/   - Tests for nexus_extensions
+
+Note: nexus_external_apis is EXCLUDED from testing (see Coverage Exclusions).
 ```
 
 ### Unit Test Strategy
@@ -546,6 +549,15 @@ unittests/
 - **Branch Coverage**: Must be **≥75%** at all times. NO EXCEPTIONS.
 - Run `dotnet test --collect:"XPlat Code Coverage"` to verify coverage before submission. MANDATORY.
 - If any code change causes coverage to drop below these thresholds, additional tests MUST be added before submission. ABSOLUTE REQUIREMENT.
+
+**Coverage Exclusions** - ABSOLUTE REQUIREMENT:
+- **`nexus_external_apis`**: This library is EXCLUDED from unit tests and coverage requirements. NO EXCEPTIONS.
+  - Rationale: `nexus_external_apis` contains thin wrappers around .NET framework classes (File, Directory, Process, Registry, ServiceController) that delegate directly to framework APIs with minimal logic.
+  - These wrappers exist solely for dependency injection and mocking in other projects' tests.
+  - Testing these wrappers would essentially test the .NET framework itself, providing minimal value.
+  - The library is thoroughly tested indirectly through integration with other components that mock these interfaces.
+- **DO NOT create `nexus_external_apis_unittests`** - MANDATORY
+- **DO NOT include `nexus_external_apis` in coverage calculations** - ABSOLUTE REQUIREMENT
 
 **Coverage Best Practices**:
 - Aim for 100% coverage where feasible
@@ -697,12 +709,12 @@ nexus (entry point)
   ↓
 nexus_protocol ←→ nexus_setup
   ↓                ↓
-nexus_engine   nexus_utilities
+nexus_engine   nexus_external_apis
   ↓                ↑
 nexus_engine_batch  |
                     |
 nexus_config ←──────┘
-nexus_extensions ──→ nexus_utilities
+nexus_extensions ──→ nexus_external_apis
 ```
 
 ### Command Batching Integration
@@ -782,10 +794,12 @@ When working on this project:
 - **nexus_engine_batch**: Command batching (self-contained)
 - **nexus_protocol**: MCP protocol layer
 - **nexus_setup**: Service management
-- **nexus_utilities**: Shared utilities
+- **nexus_external_apis**: Shared utilities (EXCLUDED from testing - see Coverage Exclusions)
 - **nexus_extensions**: Extension system
 
 Each library is self-contained with minimal dependencies. The batching library is completely independent and the engine always delegates to it for command processing.
+
+**Note**: `nexus_external_apis` is excluded from unit testing and coverage requirements as it contains only thin wrappers around .NET framework APIs used for dependency injection.
 
 ---
 

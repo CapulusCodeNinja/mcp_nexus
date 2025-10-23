@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
-using nexus.utilities.FileSystem;
-using nexus.utilities.ServiceManagement;
+using nexus.external_apis.FileSystem;
+using nexus.external_apis.ServiceManagement;
 using System.Runtime.Versioning;
 
 namespace nexus.setup.Validation

@@ -3,9 +3,9 @@ using System.ServiceProcess;
 using Microsoft.Extensions.Logging;
 using nexus.setup.Interfaces;
 using nexus.setup.Models;
-using nexus.utilities.FileSystem;
-using nexus.utilities.ProcessManagement;
-using nexus.utilities.ServiceManagement;
+using nexus.external_apis.FileSystem;
+using nexus.external_apis.ProcessManagement;
+using nexus.external_apis.ServiceManagement;
 
 namespace nexus.setup.Core;
 

@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using nexus.engine;
-using nexus.utilities.FileSystem;
+using nexus.external_apis.FileSystem;
 
 namespace nexus.protocol.Tools;
 

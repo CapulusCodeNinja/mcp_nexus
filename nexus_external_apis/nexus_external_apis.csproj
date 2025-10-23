@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>nexus_utilities</AssemblyName>
-      <RootNamespace>nexus.utilities</RootNamespace>
+    <AssemblyName>nexus_external_apis</AssemblyName>
+      <RootNamespace>nexus.external_apis</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

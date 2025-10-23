@@ -10,8 +10,8 @@ using nexus.engine.Configuration;
 using nexus.engine.Events;
 using nexus.engine.Internal;
 using nexus.engine.Models;
-using nexus.utilities.FileSystem;
-using nexus.utilities.ProcessManagement;
+using nexus.external_apis.FileSystem;
+using nexus.external_apis.ProcessManagement;
 
 namespace nexus.engine.unittests;
 

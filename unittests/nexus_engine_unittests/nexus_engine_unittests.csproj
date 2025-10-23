@@ -25,7 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\nexus_engine\nexus_engine.csproj" />
-    <ProjectReference Include="..\..\nexus_utilities\nexus_utilities.csproj" />
+    <ProjectReference Include="..\..\nexus_external_apis\nexus_external_apis.csproj" />
   </ItemGroup>
 
 </Project>

@@ -7,8 +7,8 @@ using nexus.engine.batch.Internal;
 using nexus.engine.Configuration;
 using nexus.protocol.Notifications;
 using nexus.protocol.Services;
-using nexus.utilities.FileSystem;
-using nexus.utilities.ProcessManagement;
+using nexus.external_apis.FileSystem;
+using nexus.external_apis.ProcessManagement;
 
 namespace nexus.protocol.Configuration;
 
@@ -64,7 +64,7 @@ public static class ProtocolServiceRegistration
         services.AddSingleton<INotificationBridge, StdioNotificationBridge>();
         services.AddSingleton<IMcpNotificationService, McpNotificationService>();
         services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
-        services.AddSingleton<IFileSystem, utilities.FileSystem.FileSystem>();
+        services.AddSingleton<IFileSystem, external_apis.FileSystem.FileSystem>();
 
         services.AddTransient<Middleware.ContentTypeValidationMiddleware>();
         services.AddTransient<Middleware.JsonRpcLoggingMiddleware>();
