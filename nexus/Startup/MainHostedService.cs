@@ -117,6 +117,9 @@ public class MainHostedService : IHostedService
         {
             Environment.Exit(1);
         }
+
+        // Exit successfully after completing install command
+        Environment.Exit(0);
     }
 
     private async Task HandleUpdateCommand(CancellationToken cancellationToken)
@@ -131,6 +134,9 @@ public class MainHostedService : IHostedService
         {
             Environment.Exit(1);
         }
+
+        // Exit successfully after completing install command
+        Environment.Exit(0);
     }
 
     private async Task HandleUninstallCommand(CancellationToken cancellationToken)
@@ -145,6 +151,9 @@ public class MainHostedService : IHostedService
         {
             Environment.Exit(1);
         }
+        
+        // Exit successfully after completing install command
+        Environment.Exit(0);
     }
 
     /// <summary>
