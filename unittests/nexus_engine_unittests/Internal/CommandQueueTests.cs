@@ -2052,4 +2052,218 @@ public class CommandQueueTests : IDisposable
         // Clean up
         commandQueue.Dispose();
     }
+
+    /// <summary>
+    /// Verifies that StartAsync sets up the CDB session and starts processing.
+    /// </summary>
+    [Fact]
+    public void StartAsync_WithValidCdbSession_ShouldStartProcessing()
+    {
+        // Arrange
+        var commandQueue = new CommandQueueTestAccessor("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        var mockCdbSession = new CdbSession(m_Configuration, m_LoggerFactory.CreateLogger<CdbSession>(), m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+        // Act
+        var startTask = commandQueue.StartAsync(mockCdbSession);
+
+        // Assert
+        startTask.Should().NotBeNull();
+        startTask.IsCompleted.Should().BeTrue();
+        commandQueue.TestCdbSession.Should().NotBeNull();
+        
+        // Clean up
+        commandQueue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that GetAllCommandInfos returns multiple cached results.
+    /// </summary>
+    [Fact]
+    public void GetAllCommandInfos_WithMultipleCachedResults_ShouldReturnAll()
+    {
+        // Arrange
+        var commandQueue = new CommandQueueTestAccessor("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        
+        var cmd1 = new QueuedCommand
+        {
+            Id = "cmd-1",
+            Command = "lm",
+            QueuedTime = DateTime.Now,
+            State = CommandState.Completed
+        };
+        
+        var cmd2 = new QueuedCommand
+        {
+            Id = "cmd-2",
+            Command = "k",
+            QueuedTime = DateTime.Now,
+            State = CommandState.Completed
+        };
+        
+        var result1 = CommandInfo.Completed("cmd-1", "lm", DateTime.Now, DateTime.Now, DateTime.Now, "output1", true);
+        var result2 = CommandInfo.Completed("cmd-2", "k", DateTime.Now, DateTime.Now, DateTime.Now, "output2", true);
+        
+        commandQueue.TestSetCommandResult(cmd1, result1);
+        commandQueue.TestSetCommandResult(cmd2, result2);
+
+        // Act
+        var results = commandQueue.GetAllCommandInfos();
+
+        // Assert
+        results.Should().ContainKey("cmd-1");
+        results.Should().ContainKey("cmd-2");
+        results.Count.Should().BeGreaterOrEqualTo(2);
+        
+        // Clean up
+        commandQueue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfo synchronously returns null for non-existent command.
+    /// </summary>
+    [Fact]
+    public void GetCommandInfo_Sync_WithNonExistentCommand_ShouldReturnNull()
+    {
+        // Arrange
+        var commandQueue = new CommandQueue("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        
+        // Act
+        var result = commandQueue.GetCommandInfo("non-existent-cmd");
+
+        // Assert
+        result.Should().BeNull();
+        
+        // Clean up
+        commandQueue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand returns false for non-existent command.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WithNonExistentCommand_ShouldReturnFalse()
+    {
+        // Arrange
+        var commandQueue = new CommandQueue("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        
+        // Act
+        var result = commandQueue.CancelCommand("non-existent-cmd");
+
+        // Assert
+        result.Should().BeFalse();
+        
+        // Clean up
+        commandQueue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CancelAllCommands returns zero when no commands exist.
+    /// </summary>
+    [Fact]
+    public void CancelAllCommands_WithNoCommands_ShouldReturnZero()
+    {
+        // Arrange
+        var commandQueue = new CommandQueue("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        
+        // Act
+        var result = commandQueue.CancelAllCommands("test reason");
+
+        // Assert
+        result.Should().Be(0);
+        
+        // Clean up
+        commandQueue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfoAsync throws KeyNotFoundException for non-existent command.
+    /// </summary>
+    [Fact]
+    public async Task GetCommandInfoAsync_WithNonExistentCommand_ShouldThrowKeyNotFoundException()
+    {
+        // Arrange
+        var commandQueue = new CommandQueue("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        
+        // Act
+        var act = async () => await commandQueue.GetCommandInfoAsync("non-existent-cmd");
+
+        // Assert
+        await act.Should().ThrowAsync<KeyNotFoundException>()
+            .WithMessage("*non-existent-cmd*");
+        
+        // Clean up
+        commandQueue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfo returns null for whitespace command ID.
+    /// </summary>
+    [Fact]
+    public void GetCommandInfo_WithWhitespaceCommandId_ShouldReturnNull()
+    {
+        // Arrange
+        var commandQueue = new CommandQueue("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        
+        // Act
+        var result = commandQueue.GetCommandInfo("   ");
+
+        // Assert
+        result.Should().BeNull();
+        
+        // Clean up
+        commandQueue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that StopAsync is no-op when already disposed.
+    /// </summary>
+    [Fact]
+    public async Task StopAsync_WhenAlreadyDisposed_ShouldBeNoOp()
+    {
+        // Arrange
+        var commandQueue = new CommandQueue("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        commandQueue.Dispose();
+        
+        // Act
+        var act = async () => await commandQueue.StopAsync();
+
+        // Assert
+        await act.Should().NotThrowAsync();
+    }
+
+    /// <summary>
+    /// Verifies that Dispose is no-op when called multiple times.
+    /// </summary>
+    [Fact]
+    public void Dispose_WhenCalledMultipleTimes_ShouldBeNoOp()
+    {
+        // Arrange
+        var commandQueue = new CommandQueue("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        
+        // Act
+        commandQueue.Dispose();
+        var act = () => commandQueue.Dispose();
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand returns false for whitespace command ID.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WithWhitespaceCommandId_ShouldReturnFalse()
+    {
+        // Arrange
+        var commandQueue = new CommandQueue("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
+        
+        // Act
+        var result = commandQueue.CancelCommand("   ");
+
+        // Assert
+        result.Should().BeFalse();
+        
+        // Clean up
+        commandQueue.Dispose();
+    }
 }

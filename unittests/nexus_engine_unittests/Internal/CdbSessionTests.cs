@@ -1383,6 +1383,5 @@ public class CdbSessionTests : IDisposable
         output.ToString().Should().BeEmpty();
     }
 
-
     #endregion
 }
