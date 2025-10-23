@@ -5,6 +5,7 @@ using nexus.engine.Events;
 using nexus.engine.Models;
 using nexus.utilities.FileSystem;
 using nexus.utilities.ProcessManagement;
+using nexus.engine.batch;
 
 namespace nexus.engine;
 
@@ -18,6 +19,7 @@ public class DebugEngine : IDebugEngine
     private readonly DebugEngineConfiguration m_Configuration;
     private readonly IFileSystem m_FileSystem;
     private readonly IProcessManager m_ProcessManager;
+    private readonly IBatchProcessor? m_BatchProcessor;
     private readonly ConcurrentDictionary<string, Internal.DebugSession> m_Sessions = new();
     private volatile bool m_Disposed = false;
 
@@ -28,14 +30,16 @@ public class DebugEngine : IDebugEngine
     /// <param name="configuration">The engine configuration.</param>
     /// <param name="fileSystem">The file system interface.</param>
     /// <param name="processManager">The process manager interface.</param>
+    /// <param name="batchProcessor">Optional batch processor for command batching.</param>
     /// <exception cref="ArgumentNullException">Thrown when loggerFactory or configuration is null.</exception>
-    public DebugEngine(ILoggerFactory loggerFactory, DebugEngineConfiguration configuration, IFileSystem fileSystem, IProcessManager processManager)
+    public DebugEngine(ILoggerFactory loggerFactory, DebugEngineConfiguration configuration, IFileSystem fileSystem, IProcessManager processManager, IBatchProcessor? batchProcessor = null)
     {
         m_LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         m_Logger = loggerFactory.CreateLogger<DebugEngine>();
         m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
+        m_BatchProcessor = batchProcessor;
 
         m_Logger.LogInformation("DebugEngine initialized with max {MaxSessions} concurrent sessions", m_Configuration.MaxConcurrentSessions);
     }
@@ -63,7 +67,7 @@ public class DebugEngine : IDebugEngine
 
         try
         {
-            var session = new Internal.DebugSession(sessionId, dumpFilePath, symbolPath, m_Configuration, m_LoggerFactory, m_FileSystem, m_ProcessManager);
+            var session = new Internal.DebugSession(sessionId, dumpFilePath, symbolPath, m_Configuration, m_LoggerFactory, m_FileSystem, m_ProcessManager, m_BatchProcessor);
 
             // Subscribe to session events
             session.CommandStateChanged += OnSessionCommandStateChanged;

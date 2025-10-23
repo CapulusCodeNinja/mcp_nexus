@@ -5,6 +5,7 @@ using nexus.engine.Events;
 using nexus.engine.Models;
 using nexus.utilities.FileSystem;
 using nexus.utilities.ProcessManagement;
+using nexus.engine.batch;
 
 namespace nexus.engine.Internal;
 
@@ -68,6 +69,7 @@ internal class DebugSession : IDisposable
     /// <param name="loggerFactory">The logger factory.</param>
     /// <param name="fileSystem">The file system interface.</param>
     /// <param name="processManager">The process manager interface.</param>
+    /// <param name="batchProcessor">Optional batch processor for command batching.</param>
     public DebugSession(
         string sessionId,
         string dumpFilePath,
@@ -75,7 +77,8 @@ internal class DebugSession : IDisposable
         DebugEngineConfiguration configuration,
         ILoggerFactory loggerFactory,
         IFileSystem fileSystem,
-        IProcessManager processManager)
+        IProcessManager processManager,
+        IBatchProcessor? batchProcessor = null)
     {
         m_SessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
         m_DumpFilePath = dumpFilePath ?? throw new ArgumentNullException(nameof(dumpFilePath));
@@ -89,7 +92,7 @@ internal class DebugSession : IDisposable
 
         // Create command queue
         var queueLogger = loggerFactory.CreateLogger<CommandQueue>();
-        m_CommandQueue = new CommandQueue(m_SessionId, m_Configuration, queueLogger);
+        m_CommandQueue = new CommandQueue(m_SessionId, m_Configuration, queueLogger, batchProcessor);
 
         // Subscribe to command queue events
         m_CommandQueue.CommandStateChanged += OnCommandStateChanged;

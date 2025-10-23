@@ -1,8 +1,14 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using nexus.engine;
+using nexus.engine.batch;
+using nexus.engine.batch.Internal;
+using nexus.engine.Configuration;
 using nexus.protocol.Notifications;
 using nexus.protocol.Services;
 using nexus.utilities.FileSystem;
+using nexus.utilities.ProcessManagement;
 
 namespace nexus.protocol.Configuration;
 
@@ -26,6 +32,33 @@ public static class ProtocolServiceRegistration
             throw new ArgumentNullException(nameof(services));
         if (configuration == null)
             throw new ArgumentNullException(nameof(configuration));
+
+        // Configure debug engine from config
+        var engineConfig = new DebugEngineConfiguration();
+        configuration.GetSection("McpNexus:DebugEngine").Bind(engineConfig);
+        services.AddSingleton(engineConfig);
+
+        // Register batch processor
+        services.AddSingleton<IBatchProcessor>(sp =>
+        {
+            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+            return new BatchProcessor(
+                engineConfig.Batching.Enabled,
+                engineConfig.Batching.MinBatchSize,
+                engineConfig.Batching.MaxBatchSize,
+                engineConfig.Batching.ExcludedCommands,
+                loggerFactory);
+        });
+
+        // Register debug engine
+        services.AddSingleton<IDebugEngine>(sp =>
+        {
+            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+            var fileSystem = sp.GetRequiredService<IFileSystem>();
+            var processManager = sp.GetRequiredService<IProcessManager>();
+            var batchProcessor = sp.GetRequiredService<IBatchProcessor>();
+            return new DebugEngine(loggerFactory, engineConfig, fileSystem, processManager, batchProcessor);
+        });
 
         services.AddSingleton<IProtocolServer, ProtocolServer>();
         services.AddSingleton<INotificationBridge, StdioNotificationBridge>();
