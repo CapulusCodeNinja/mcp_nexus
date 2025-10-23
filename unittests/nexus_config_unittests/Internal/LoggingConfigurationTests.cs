@@ -136,7 +136,7 @@ public class LoggingConfigurationTests
         mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
 
         // Act & Assert
-        var action = () => testAccessor.ConfigureLogging(mockLoggingBuilder.Object, false, m_MockConfiguration.Object);
+        var action = () => testAccessor.ConfigureLogging(mockLoggingBuilder.Object, m_MockConfiguration.Object, false);
         action.Should().NotThrow();
     }
 
@@ -152,7 +152,7 @@ public class LoggingConfigurationTests
         mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
 
         // Act & Assert
-        var action = () => testAccessor.ConfigureLogging(mockLoggingBuilder.Object, true, m_MockConfiguration.Object);
+        var action = () => testAccessor.ConfigureLogging(mockLoggingBuilder.Object, m_MockConfiguration.Object, true);
         action.Should().NotThrow();
     }
 

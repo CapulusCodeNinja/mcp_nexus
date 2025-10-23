@@ -18,10 +18,13 @@ public class ServerModeTests
         Assert.True(Enum.IsDefined(typeof(ServerMode), ServerMode.Http));
         Assert.True(Enum.IsDefined(typeof(ServerMode), ServerMode.Stdio));
         Assert.True(Enum.IsDefined(typeof(ServerMode), ServerMode.Service));
+        Assert.True(Enum.IsDefined(typeof(ServerMode), ServerMode.Install));
+        Assert.True(Enum.IsDefined(typeof(ServerMode), ServerMode.Update));
+        Assert.True(Enum.IsDefined(typeof(ServerMode), ServerMode.Uninstall));
     }
 
     /// <summary>
-    /// Verifies that enum has exactly three values.
+    /// Verifies that enum has exactly six values.
     /// </summary>
     [Fact]
     public void ServerMode_HasExactlyThreeValues()
@@ -30,7 +33,7 @@ public class ServerModeTests
         var values = Enum.GetValues(typeof(ServerMode));
 
         // Assert
-        Assert.Equal(3, values.Length);
+        Assert.Equal(6, values.Length);
     }
 
     /// <summary>
@@ -40,6 +43,9 @@ public class ServerModeTests
     [InlineData(ServerMode.Http, "Http")]
     [InlineData(ServerMode.Stdio, "Stdio")]
     [InlineData(ServerMode.Service, "Service")]
+    [InlineData(ServerMode.Install, "Install")]
+    [InlineData(ServerMode.Update, "Update")]
+    [InlineData(ServerMode.Uninstall, "Uninstall")]
     public void ServerMode_ToString_ReturnsExpectedValue(ServerMode mode, string expected)
     {
         // Act

@@ -41,7 +41,7 @@ public class CancelCommandToolTests
         m_MockEngine.Setup(e => e.CancelCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(true);
 
-        var result = await CancelCommandTool.nexus_cancel_command(
+        var result = await CancelCommandTool.nexus_cancel_dump_analyze_command(
             m_ServiceProvider, sessionId, commandId);
 
         dynamic response = result;
@@ -49,11 +49,11 @@ public class CancelCommandToolTests
         ((string)response.sessionId).Should().Be(sessionId);
         ((bool)response.cancelled).Should().BeTrue();
         ((string)response.status).Should().Be("Cancelled");
-        ((string)response.operation).Should().Be("nexus_cancel_command");
+        ((string)response.operation).Should().Be("nexus_cancel_dump_analyze_command");
     }
 
     /// <summary>
-    /// Verifies that nexus_cancel_command returns NotFound with command not found.
+    /// Verifies that nexus_cancel_dump_analyze_command returns NotFound with command not found.
     /// </summary>
     [Fact]
     public async Task nexus_cancel_command_WithNotFoundCommand_ReturnsNotFound()
@@ -64,7 +64,7 @@ public class CancelCommandToolTests
         m_MockEngine.Setup(e => e.CancelCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(false);
 
-        var result = await CancelCommandTool.nexus_cancel_command(
+        var result = await CancelCommandTool.nexus_cancel_dump_analyze_command(
             m_ServiceProvider, sessionId, commandId);
 
         dynamic response = result;
@@ -75,7 +75,7 @@ public class CancelCommandToolTests
     }
 
     /// <summary>
-    /// Verifies that nexus_cancel_command returns failed result with ArgumentException.
+    /// Verifies that nexus_cancel_dump_analyze_command returns failed result with ArgumentException.
     /// </summary>
     [Fact]
     public async Task nexus_cancel_command_WithArgumentException_ReturnsFailedResult()
@@ -86,7 +86,7 @@ public class CancelCommandToolTests
         m_MockEngine.Setup(e => e.CancelCommand(sessionId, commandId))
             .Throws(new ArgumentException("Invalid session"));
 
-        var result = await CancelCommandTool.nexus_cancel_command(
+        var result = await CancelCommandTool.nexus_cancel_dump_analyze_command(
             m_ServiceProvider, sessionId, commandId);
 
         dynamic response = result;
@@ -96,7 +96,7 @@ public class CancelCommandToolTests
     }
 
     /// <summary>
-    /// Verifies that nexus_cancel_command returns failed result with unexpected exception.
+    /// Verifies that nexus_cancel_dump_analyze_command returns failed result with unexpected exception.
     /// </summary>
     [Fact]
     public async Task nexus_cancel_command_WithUnexpectedException_ReturnsFailedResult()
@@ -107,7 +107,7 @@ public class CancelCommandToolTests
         m_MockEngine.Setup(e => e.CancelCommand(sessionId, commandId))
             .Throws(new Exception("Unexpected error"));
 
-        var result = await CancelCommandTool.nexus_cancel_command(
+        var result = await CancelCommandTool.nexus_cancel_dump_analyze_command(
             m_ServiceProvider, sessionId, commandId);
 
         dynamic response = result;
@@ -117,7 +117,7 @@ public class CancelCommandToolTests
     }
 
     /// <summary>
-    /// Verifies that nexus_cancel_command includes usage field in response.
+    /// Verifies that nexus_cancel_dump_analyze_command includes usage field in response.
     /// </summary>
     [Fact]
     public async Task nexus_cancel_command_IncludesUsageField()
@@ -128,7 +128,7 @@ public class CancelCommandToolTests
         m_MockEngine.Setup(e => e.CancelCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(true);
 
-        var result = await CancelCommandTool.nexus_cancel_command(
+        var result = await CancelCommandTool.nexus_cancel_dump_analyze_command(
             m_ServiceProvider, sessionId, commandId);
 
         result.Should().NotBeNull();
@@ -140,7 +140,7 @@ public class CancelCommandToolTests
     }
 
     /// <summary>
-    /// Verifies that nexus_cancel_command calls engine method.
+    /// Verifies that nexus_cancel_dump_analyze_command calls engine method.
     /// </summary>
     [Fact]
     public async Task nexus_cancel_command_VerifiesEngineIsCalled()
@@ -151,7 +151,7 @@ public class CancelCommandToolTests
         m_MockEngine.Setup(e => e.CancelCommand(sessionId, commandId))
             .Returns(true);
 
-        await CancelCommandTool.nexus_cancel_command(
+        await CancelCommandTool.nexus_cancel_dump_analyze_command(
             m_ServiceProvider, sessionId, commandId);
 
         m_MockEngine.Verify(e => e.CancelCommand(sessionId, commandId), Times.Once);
