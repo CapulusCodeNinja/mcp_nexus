@@ -2,6 +2,7 @@ using System.Runtime.Versioning;
 using System.ServiceProcess;
 using Microsoft.Extensions.Logging;
 using nexus.setup.Models;
+using nexus.setup.Utilities;
 using nexus.utilities.FileSystem;
 using nexus.utilities.ServiceManagement;
 
@@ -17,6 +18,7 @@ internal class ServiceUpdater
     private readonly ServiceInstaller m_ServiceInstaller;
     private readonly IFileSystem m_FileSystem;
     private readonly IServiceController m_ServiceController;
+    private readonly DirectoryCopyUtility m_DirectoryCopyUtility;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceUpdater"/> class.
@@ -35,6 +37,7 @@ internal class ServiceUpdater
         m_ServiceInstaller = serviceInstaller ?? throw new ArgumentNullException(nameof(serviceInstaller));
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
+        m_DirectoryCopyUtility = new DirectoryCopyUtility(logger, fileSystem);
     }
 
     /// <summary>
@@ -87,13 +90,19 @@ internal class ServiceUpdater
                 m_Logger.LogWarning("Backup failed, continuing with update anyway");
             }
 
-            // Stop the service
-            m_Logger.LogInformation("Stopping service {ServiceName}...", serviceName);
-            var status = m_ServiceController.GetServiceStatus(serviceName);
-            if (status != null && status != ServiceControllerStatus.Stopped)
+            // Check original service state and stop if running
+            var originalStatus = m_ServiceController.GetServiceStatus(serviceName);
+            var wasRunning = originalStatus == ServiceControllerStatus.Running;
+            
+            if (wasRunning)
             {
+                m_Logger.LogInformation("Service {ServiceName} is running - stopping it for update...", serviceName);
                 m_ServiceController.StopService(serviceName);
                 m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
+            }
+            else
+            {
+                m_Logger.LogInformation("Service {ServiceName} is not running - no need to stop it", serviceName);
             }
 
             // Copy new binaries
@@ -101,12 +110,19 @@ internal class ServiceUpdater
             var sourceDir = m_FileSystem.GetDirectoryName(newExecutablePath)!;
             var targetDir = m_FileSystem.GetDirectoryName(currentPath)!;
 
-            CopyDirectory(sourceDir, targetDir, overwrite: true);
+            await m_DirectoryCopyUtility.CopyDirectoryAsync(sourceDir, targetDir);
 
-            // Start the service
-            m_Logger.LogInformation("Starting service {ServiceName}...", serviceName);
-            m_ServiceController.StartService(serviceName);
-            m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
+            // Only start the service if it was running before the update
+            if (wasRunning)
+            {
+                m_Logger.LogInformation("Service {ServiceName} was running before update - starting it again...", serviceName);
+                m_ServiceController.StartService(serviceName);
+                m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
+            }
+            else
+            {
+                m_Logger.LogInformation("Service {ServiceName} was not running before update - leaving it stopped", serviceName);
+            }
 
             m_Logger.LogInformation("Service {ServiceName} updated successfully", serviceName);
             return ServiceInstallationResult.CreateSuccess(serviceName, $"Service updated successfully. Backup created at: {backupDir}");
@@ -146,7 +162,7 @@ internal class ServiceUpdater
             m_Logger.LogInformation("Backing up service from {Source} to {Backup}", sourceDir, backupPath);
 
             m_FileSystem.CreateDirectory(backupPath);
-            await Task.Run(() => CopyDirectory(sourceDir, backupPath, overwrite: false));
+            await m_DirectoryCopyUtility.CopyDirectoryAsync(sourceDir, backupPath);
 
             m_Logger.LogInformation("Backup completed successfully");
             return true;
@@ -199,7 +215,7 @@ internal class ServiceUpdater
 
             // Restore binaries
             m_Logger.LogInformation("Restoring binaries...");
-            await Task.Run(() => CopyDirectory(backupPath, targetDir, overwrite: true), cancellationToken);
+            await m_DirectoryCopyUtility.CopyDirectoryAsync(backupPath, targetDir);
 
             // Start the service
             m_Logger.LogInformation("Starting service {ServiceName}...", serviceName);
@@ -216,32 +232,5 @@ internal class ServiceUpdater
         }
     }
 
-    /// <summary>
-    /// Copies a directory and all its contents.
-    /// </summary>
-    /// <param name="sourceDir">Source directory.</param>
-    /// <param name="targetDir">Target directory.</param>
-    /// <param name="overwrite">Whether to overwrite existing files.</param>
-    private void CopyDirectory(string sourceDir, string targetDir, bool overwrite)
-    {
-        var dir = m_FileSystem.GetDirectoryInfo(sourceDir);
-        
-        if (!dir.Exists)
-            throw new DirectoryNotFoundException($"Source directory not found: {sourceDir}");
-
-        m_FileSystem.CreateDirectory(targetDir);
-
-        foreach (var file in dir.GetFiles())
-        {
-            var targetFilePath = m_FileSystem.CombinePaths(targetDir, file.Name);
-            m_FileSystem.CopyFile(file.FullName, targetFilePath, overwrite);
-        }
-
-        foreach (var subDir in dir.GetDirectories())
-        {
-            var newTargetDir = m_FileSystem.CombinePaths(targetDir, subDir.Name);
-            CopyDirectory(subDir.FullName, newTargetDir, overwrite);
-        }
-    }
 }
 
