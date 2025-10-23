@@ -73,7 +73,7 @@ internal static class Program
                 services.AddSingleton(cmd);
 
                 // Register ALL services for ALL modes (consistent architecture)
-                services.AddNexusSetupServices();
+                services.AddNexusServices(context.Configuration);
 
                 // Register ONLY the main hosted service (no others)
                 services.AddHostedService<MainHostedService>();
