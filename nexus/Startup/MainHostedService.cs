@@ -46,7 +46,7 @@ public class MainHostedService : IHostedService
     {
         // 1. Display startup banner FIRST (guaranteed first log output)
         var startupBannerLogger = m_ServiceProvider.GetRequiredService<ILogger<StartupBanner>>();
-        var startupBanner = new StartupBanner(m_Configuration, startupBannerLogger, m_CommandLineContext.IsServiceMode);
+        var startupBanner = new StartupBanner(m_Configuration, startupBannerLogger, m_CommandLineContext.IsServiceMode, m_CommandLineContext);
         startupBanner.DisplayBanner();
         
         // 2. Handle the appropriate command based on command line context

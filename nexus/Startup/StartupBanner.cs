@@ -17,12 +17,14 @@ internal class StartupBanner
     private readonly ILogger<StartupBanner> m_Logger;
     private readonly IConfiguration m_Configuration;
     private readonly bool m_IsServiceMode;
+    private readonly CommandLineContext m_CommandLineContext;
 
-    public StartupBanner(IConfiguration configuration, ILogger<StartupBanner> logger, bool isServiceMode)
+    public StartupBanner(IConfiguration configuration, ILogger<StartupBanner> logger, bool isServiceMode, CommandLineContext commandLineContext)
     {
         m_Logger = logger;
         m_Configuration = configuration;
         m_IsServiceMode = isServiceMode;
+        m_CommandLineContext = commandLineContext;
     }
 
     /// <summary>
@@ -106,18 +108,30 @@ internal class StartupBanner
     /// </summary>
     private void DisplayCommandLineConfiguration()
     {
-        var cdbPath = m_Configuration["McpNexus:Debugging:CdbPath"] ?? "";
-        var transportMode = m_Configuration["McpNexus:Transport:Mode"] ?? "http";
-        var host = m_Configuration["McpNexus:Server:Host"] ?? "0.0.0.0";
-        var port = m_Configuration["McpNexus:Server:Port"] ?? "5511";
+        var args = m_CommandLineContext.Args;
+        var commandLineString = args.Length > 0 ? string.Join(" ", args) : "No arguments";
 
         m_Logger.LogInformation("┌─ Command Line Arguments ───────────────────────────────────────────");
-        m_Logger.LogInformation("│ Custom CDB Path: {CdbPath}", string.IsNullOrEmpty(cdbPath) ? "Not specified" : cdbPath);
-        m_Logger.LogInformation("│ Use HTTP:        {UseHttp}", transportMode == "http");
+        m_Logger.LogInformation("│ Command Line:    {CommandLine}", commandLineString);
+        m_Logger.LogInformation("│ Mode:            {Mode}", GetDetectedMode());
         m_Logger.LogInformation("│ Service Mode:    {ServiceMode}", m_IsServiceMode);
-        m_Logger.LogInformation("│ Host:            {Host} (from config: {FromConfig})", host, "True");
-        m_Logger.LogInformation("│ Port:            {Port} (from config: {FromConfig})", port, "True");
+        m_Logger.LogInformation("└─────────────────────────────────────────────────────────────────────");
         m_Logger.LogInformation("");
+    }
+
+    /// <summary>
+    /// Gets the detected mode from command line context.
+    /// </summary>
+    /// <returns>String representation of the detected mode.</returns>
+    private string GetDetectedMode()
+    {
+        if (m_CommandLineContext.IsHttpMode) return "HTTP Server";
+        if (m_CommandLineContext.IsStdioMode) return "Stdio Server";
+        if (m_CommandLineContext.IsServiceMode) return "Windows Service";
+        if (m_CommandLineContext.IsInstallMode) return "Install Command";
+        if (m_CommandLineContext.IsUpdateMode) return "Update Command";
+        if (m_CommandLineContext.IsUninstallMode) return "Uninstall Command";
+        return "HTTP Server (default)";
     }
 
     /// <summary>
