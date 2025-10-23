@@ -17,8 +17,6 @@ namespace nexus;
 /// </summary>
 internal static class Program
 {
-    private static Logger? m_Logger;
-
     /// <summary>
     /// Application entry point.
     /// </summary>
@@ -29,16 +27,12 @@ internal static class Program
     {
         try
         {
-            // Initialize logging first
-            m_Logger = LogManager.GetCurrentClassLogger();
-
             // Parse command line and run
             var rootCommand = CommandLineBuilder.BuildRootCommand();
             return await rootCommand.InvokeAsync(args);
         }
         catch (Exception ex)
         {
-            m_Logger?.Fatal(ex, "Fatal error during startup");
             Console.Error.WriteLine($"Fatal error: {ex.Message}");
             return 1;
         }
@@ -66,6 +60,12 @@ internal static class Program
             })
             .ConfigureServices((context, services) =>
             {
+                // Display startup banner before starting any hosted services
+                var isServiceMode = mode == ServerMode.Service;
+                var startupBanner = new Startup.StartupBanner(context, isServiceMode);
+                
+                startupBanner.DisplayBanner();
+
                 // Register mode
                 services.AddSingleton(new ServerModeContext(mode));
 

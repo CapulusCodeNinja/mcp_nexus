@@ -1,45 +1,57 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using nexus.CommandLine;
+using nexus.config.ServiceRegistration;
 
 namespace nexus.Startup;
 
 /// <summary>
 /// Displays the startup banner with configuration information.
 /// </summary>
-internal static class StartupBanner
+internal class StartupBanner
 {
+    private readonly ILogger<StartupBanner> m_Logger;
+    private readonly IConfiguration m_Configuration;
+    private readonly bool m_IsServiceMode;
+
+    public StartupBanner(HostBuilderContext context, bool isServiceMode)
+    {
+        m_Logger = context.GetRequiredService<ILogger<StartupBanner>>();
+        m_Configuration = context.Configuration;
+        m_IsServiceMode = isServiceMode;
+    }
+
     /// <summary>
     /// Displays the startup banner with system and configuration information.
     /// </summary>
     /// <param name="logger">Logger instance.</param>
     /// <param name="configuration">Application configuration.</param>
     /// <param name="mode">Server mode.</param>
-    public static void DisplayBanner(Microsoft.Extensions.Logging.ILogger logger, IConfiguration configuration, ServerMode mode)
+    public void DisplayBanner()
     {
         try
         {
-            var isServiceMode = mode == ServerMode.Service;
-            
             // Display main startup header
-            DisplayStartupHeader(logger, isServiceMode);
+            DisplayStartupHeader();
             
             // Display configuration sections
-            DisplayApplicationConfiguration(logger, isServiceMode);
-            DisplayCommandLineConfiguration(logger, configuration, isServiceMode);
-            DisplayServerConfiguration(logger, configuration);
-            DisplayTransportConfiguration(logger, configuration, isServiceMode);
-            DisplayDebuggingConfiguration(logger, configuration);
-            DisplayServiceConfiguration(logger, configuration);
-            DisplayLoggingConfiguration(logger, configuration, isServiceMode);
-            DisplayEnvironmentVariables(logger);
-            DisplaySystemInformation(logger);
+            DisplayApplicationConfiguration();
+            DisplayCommandLineConfiguration();
+            DisplayServerConfiguration();
+            DisplayTransportConfiguration();
+            DisplayDebuggingConfiguration();
+            DisplayServiceConfiguration();
+            DisplayLoggingConfiguration();
+            DisplayEnvironmentVariables();
+            DisplaySystemInformation();
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to display startup banner");
+            m_Logger.LogWarning(ex, "Failed to display startup banner");
         }
     }
 
@@ -47,8 +59,8 @@ internal static class StartupBanner
     /// Displays the main startup header with basic application information.
     /// </summary>
     /// <param name="logger">Logger instance.</param>
-    /// <param name="isServiceMode">Whether running in service mode.</param>
-    private static void DisplayStartupHeader(Microsoft.Extensions.Logging.ILogger logger, bool isServiceMode)
+    /// <param name="m_IsServiceMode">Whether running in service mode.</param>
+    private void DisplayStartupHeader()
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
         var processId = Environment.ProcessId;
@@ -57,41 +69,41 @@ internal static class StartupBanner
         var port = Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(':').LastOrDefault() ?? "5511";
         var transportMode = "http";
 
-        logger.LogInformation("╔═══════════════════════════════════════════════════════════════════╗");
-        logger.LogInformation("                            MCP NEXUS STARTUP");
-        logger.LogInformation("");
-        logger.LogInformation("  Version:     {Version}", version);
-        logger.LogInformation("  Environment: {Environment}", isServiceMode ? "Service" : "Development");
-        logger.LogInformation("  Process ID:  {ProcessId}", processId);
-        logger.LogInformation("  Transport:   {TransportMode} ({ServiceMode})", 
-            transportMode.ToUpper(), isServiceMode ? "Service Mode" : "Development Mode");
-        logger.LogInformation("  Host:        {Host}", host);
-        logger.LogInformation("  Port:        {Port}", port);
-        logger.LogInformation("  Started:     {StartTime:yyyy-MM-dd HH:mm:ss}", startTime);
-        logger.LogInformation("╚═══════════════════════════════════════════════════════════════════╝");
-        logger.LogInformation("");
+        m_Logger.LogInformation("╔═══════════════════════════════════════════════════════════════════╗");
+        m_Logger.LogInformation("                            MCP NEXUS STARTUP");
+        m_Logger.LogInformation("");
+        m_Logger.LogInformation("  Version:     {Version}", version);
+        m_Logger.LogInformation("  Environment: {Environment}", m_IsServiceMode ? "Service" : "Development");
+        m_Logger.LogInformation("  Process ID:  {ProcessId}", processId);
+        m_Logger.LogInformation("  Transport:   {TransportMode} ({ServiceMode})", 
+            transportMode.ToUpper(), m_IsServiceMode ? "Service Mode" : "Development Mode");
+        m_Logger.LogInformation("  Host:        {Host}", host);
+        m_Logger.LogInformation("  Port:        {Port}", port);
+        m_Logger.LogInformation("  Started:     {StartTime:yyyy-MM-dd HH:mm:ss}", startTime);
+        m_Logger.LogInformation("╚═══════════════════════════════════════════════════════════════════╝");
+        m_Logger.LogInformation("");
     }
 
     /// <summary>
     /// Displays application configuration information.
     /// </summary>
     /// <param name="logger">Logger instance.</param>
-    /// <param name="isServiceMode">Whether running in service mode.</param>
-    private static void DisplayApplicationConfiguration(Microsoft.Extensions.Logging.ILogger logger, bool isServiceMode)
+    /// <param name="m_IsServiceMode">Whether running in service mode.</param>
+    private void DisplayApplicationConfiguration()
     {
         var workingDirectory = Environment.CurrentDirectory;
         var assemblyLocation = Assembly.GetExecutingAssembly().Location;
 
-        logger.LogInformation("╔═══════════════════════════════════════════════════════════════════╗");
-        logger.LogInformation("                        CONFIGURATION SETTINGS");
-        logger.LogInformation("╚═══════════════════════════════════════════════════════════════════╝");
-        logger.LogInformation("");
+        m_Logger.LogInformation("╔═══════════════════════════════════════════════════════════════════╗");
+        m_Logger.LogInformation("                        CONFIGURATION SETTINGS");
+        m_Logger.LogInformation("╚═══════════════════════════════════════════════════════════════════╝");
+        m_Logger.LogInformation("");
 
-        logger.LogInformation("┌─ Application ──────────────────────────────────────────────────────");
-        logger.LogInformation("│ Environment:       {Environment}", isServiceMode ? "Service" : "Development");
-        logger.LogInformation("│ Working Directory: {WorkingDirectory}", workingDirectory);
-        logger.LogInformation("│ Assembly Location: {AssemblyLocation}", assemblyLocation);
-        logger.LogInformation("");
+        m_Logger.LogInformation("┌─ Application ──────────────────────────────────────────────────────");
+        m_Logger.LogInformation("│ Environment:       {Environment}", m_IsServiceMode ? "Service" : "Development");
+        m_Logger.LogInformation("│ Working Directory: {WorkingDirectory}", workingDirectory);
+        m_Logger.LogInformation("│ Assembly Location: {AssemblyLocation}", assemblyLocation);
+        m_Logger.LogInformation("");
     }
 
     /// <summary>
@@ -99,21 +111,21 @@ internal static class StartupBanner
     /// </summary>
     /// <param name="logger">Logger instance.</param>
     /// <param name="configuration">Application configuration.</param>
-    /// <param name="isServiceMode">Whether running in service mode.</param>
-    private static void DisplayCommandLineConfiguration(Microsoft.Extensions.Logging.ILogger logger, IConfiguration configuration, bool isServiceMode)
+    /// <param name="m_IsServiceMode">Whether running in service mode.</param>
+    private void DisplayCommandLineConfiguration()
     {
-        var cdbPath = configuration["McpNexus:Debugging:CdbPath"] ?? "";
-        var transportMode = configuration["McpNexus:Transport:Mode"] ?? "http";
-        var host = configuration["McpNexus:Server:Host"] ?? "0.0.0.0";
-        var port = configuration["McpNexus:Server:Port"] ?? "5511";
+        var cdbPath = m_Configuration["McpNexus:Debugging:CdbPath"] ?? "";
+        var transportMode = m_Configuration["McpNexus:Transport:Mode"] ?? "http";
+        var host = m_Configuration["McpNexus:Server:Host"] ?? "0.0.0.0";
+        var port = m_Configuration["McpNexus:Server:Port"] ?? "5511";
 
-        logger.LogInformation("┌─ Command Line Arguments ───────────────────────────────────────────");
-        logger.LogInformation("│ Custom CDB Path: {CdbPath}", string.IsNullOrEmpty(cdbPath) ? "Not specified" : cdbPath);
-        logger.LogInformation("│ Use HTTP:        {UseHttp}", transportMode == "http");
-        logger.LogInformation("│ Service Mode:    {ServiceMode}", isServiceMode);
-        logger.LogInformation("│ Host:            {Host} (from config: {FromConfig})", host, "True");
-        logger.LogInformation("│ Port:            {Port} (from config: {FromConfig})", port, "True");
-        logger.LogInformation("");
+        m_Logger.LogInformation("┌─ Command Line Arguments ───────────────────────────────────────────");
+        m_Logger.LogInformation("│ Custom CDB Path: {CdbPath}", string.IsNullOrEmpty(cdbPath) ? "Not specified" : cdbPath);
+        m_Logger.LogInformation("│ Use HTTP:        {UseHttp}", transportMode == "http");
+        m_Logger.LogInformation("│ Service Mode:    {ServiceMode}", m_IsServiceMode);
+        m_Logger.LogInformation("│ Host:            {Host} (from config: {FromConfig})", host, "True");
+        m_Logger.LogInformation("│ Port:            {Port} (from config: {FromConfig})", port, "True");
+        m_Logger.LogInformation("");
     }
 
     /// <summary>
@@ -121,31 +133,31 @@ internal static class StartupBanner
     /// </summary>
     /// <param name="logger">Logger instance.</param>
     /// <param name="configuration">Application configuration.</param>
-    private static void DisplayServerConfiguration(Microsoft.Extensions.Logging.ILogger logger, IConfiguration configuration)
+    private void DisplayServerConfiguration()
     {
-        var host = configuration["McpNexus:Server:Host"] ?? "0.0.0.0";
-        var port = configuration["McpNexus:Server:Port"] ?? "5511";
+        var host = m_Configuration["McpNexus:Server:Host"] ?? "0.0.0.0";
+        var port = m_Configuration["McpNexus:Server:Port"] ?? "5511";
 
-        logger.LogInformation("┌─ Server Configuration ─────────────────────────────────────────────");
-        logger.LogInformation("│ Host: {Host}", host);
-        logger.LogInformation("│ Port: {Port}", port);
-        logger.LogInformation("");
+        m_Logger.LogInformation("┌─ Server Configuration ─────────────────────────────────────────────");
+        m_Logger.LogInformation("│ Host: {Host}", host);
+        m_Logger.LogInformation("│ Port: {Port}", port);
+        m_Logger.LogInformation("");
     }
 
     /// <summary>
-    /// Displays transport configuration information.
+    /// Displays transport m_Configuration information.
     /// </summary>
     /// <param name="logger">Logger instance.</param>
     /// <param name="configuration">Application configuration.</param>
-    /// <param name="isServiceMode">Whether running in service mode.</param>
-    private static void DisplayTransportConfiguration(Microsoft.Extensions.Logging.ILogger logger, IConfiguration configuration, bool isServiceMode)
+    /// <param name="m_IsServiceMode">Whether running in service mode.</param>
+    private void DisplayTransportConfiguration()
     {
-        var transportMode = configuration["McpNexus:Transport:Mode"] ?? "http";
+        var transportMode = m_Configuration["McpNexus:Transport:Mode"] ?? "http";
 
-        logger.LogInformation("┌─ Transport Configuration ──────────────────────────────────────────");
-        logger.LogInformation("│ Mode:         {TransportMode}", transportMode);
-        logger.LogInformation("│ Service Mode: {ServiceMode}", isServiceMode);
-        logger.LogInformation("");
+        m_Logger.LogInformation("┌─ Transport Configuration ──────────────────────────────────────────");
+        m_Logger.LogInformation("│ Mode:         {TransportMode}", transportMode);
+        m_Logger.LogInformation("│ Service Mode: {ServiceMode}", m_IsServiceMode);
+        m_Logger.LogInformation("");
     }
 
     /// <summary>
@@ -153,22 +165,22 @@ internal static class StartupBanner
     /// </summary>
     /// <param name="logger">Logger instance.</param>
     /// <param name="configuration">Application configuration.</param>
-    private static void DisplayDebuggingConfiguration(Microsoft.Extensions.Logging.ILogger logger, IConfiguration configuration)
+    private void DisplayDebuggingConfiguration()
     {
-        var cdbPath = configuration["McpNexus:Debugging:CdbPath"] ?? "";
-        var commandTimeout = configuration["McpNexus:Debugging:CommandTimeoutMs"] ?? "600000";
-        var symbolRetries = configuration["McpNexus:Debugging:SymbolServerMaxRetries"] ?? "1";
-        var symbolPath = configuration["McpNexus:Debugging:SymbolSearchPath"] ?? "";
-        var startupDelay = configuration["McpNexus:Debugging:StartupDelayMs"] ?? "500";
+        var cdbPath = m_Configuration["McpNexus:Debugging:CdbPath"] ?? "";
+        var commandTimeout = m_Configuration["McpNexus:Debugging:CommandTimeoutMs"] ?? "600000";
+        var symbolRetries = m_Configuration["McpNexus:Debugging:SymbolServerMaxRetries"] ?? "1";
+        var symbolPath = m_Configuration["McpNexus:Debugging:SymbolSearchPath"] ?? "";
+        var startupDelay = m_Configuration["McpNexus:Debugging:StartupDelayMs"] ?? "500";
 
-        logger.LogInformation("┌─ Debugging Configuration ──────────────────────────────────────────");
-        logger.LogInformation("│ CDB Path:                 {CdbPath}", string.IsNullOrEmpty(cdbPath) ? "Not specified" : cdbPath);
-        logger.LogInformation("│ Command Timeout:          {CommandTimeout}ms", commandTimeout);
-        logger.LogInformation("│ Symbol Server Retries:    {SymbolRetries}", symbolRetries);
-        logger.LogInformation("│ Symbol Search Path:       {SymbolPath}", string.IsNullOrEmpty(symbolPath) ? "Not configured" : symbolPath);
-        logger.LogInformation("│ Effective Symbol Path:    {SymbolPath}", string.IsNullOrEmpty(symbolPath) ? "Not configured" : symbolPath);
-        logger.LogInformation("│ Startup Delay:            {StartupDelay}ms", startupDelay);
-        logger.LogInformation("");
+        m_Logger.LogInformation("┌─ Debugging Configuration ──────────────────────────────────────────");
+        m_Logger.LogInformation("│ CDB Path:                 {CdbPath}", string.IsNullOrEmpty(cdbPath) ? "Not specified" : cdbPath);
+        m_Logger.LogInformation("│ Command Timeout:          {CommandTimeout}ms", commandTimeout);
+        m_Logger.LogInformation("│ Symbol Server Retries:    {SymbolRetries}", symbolRetries);
+        m_Logger.LogInformation("│ Symbol Search Path:       {SymbolPath}", string.IsNullOrEmpty(symbolPath) ? "Not configured" : symbolPath);
+        m_Logger.LogInformation("│ Effective Symbol Path:    {SymbolPath}", string.IsNullOrEmpty(symbolPath) ? "Not configured" : symbolPath);
+        m_Logger.LogInformation("│ Startup Delay:            {StartupDelay}ms", startupDelay);
+        m_Logger.LogInformation("");
     }
 
     /// <summary>
@@ -176,17 +188,17 @@ internal static class StartupBanner
     /// </summary>
     /// <param name="logger">Logger instance.</param>
     /// <param name="configuration">Application configuration.</param>
-    private static void DisplayServiceConfiguration(Microsoft.Extensions.Logging.ILogger logger, IConfiguration configuration)
+    private void DisplayServiceConfiguration()
     {
-        var installPath = configuration["McpNexus:Service:InstallPath"] ?? "";
-        var backupPath = configuration["McpNexus:Service:BackupPath"] ?? "";
+        var installPath = m_Configuration["McpNexus:Service:InstallPath"] ?? "";
+        var backupPath = m_Configuration["McpNexus:Service:BackupPath"] ?? "";
 
         if (!string.IsNullOrEmpty(installPath))
         {
-            logger.LogInformation("┌─ Service Configuration ────────────────────────────────────────────");
-            logger.LogInformation("│ Install Path: {InstallPath}", installPath);
-            logger.LogInformation("│ Backup Path:  {BackupPath}", backupPath);
-            logger.LogInformation("");
+            m_Logger.LogInformation("┌─ Service Configuration ────────────────────────────────────────────");
+            m_Logger.LogInformation("│ Install Path: {InstallPath}", installPath);
+            m_Logger.LogInformation("│ Backup Path:  {BackupPath}", backupPath);
+            m_Logger.LogInformation("");
         }
     }
 
@@ -195,41 +207,41 @@ internal static class StartupBanner
     /// </summary>
     /// <param name="logger">Logger instance.</param>
     /// <param name="configuration">Application configuration.</param>
-    /// <param name="isServiceMode">Whether running in service mode.</param>
-    private static void DisplayLoggingConfiguration(Microsoft.Extensions.Logging.ILogger logger, IConfiguration configuration, bool isServiceMode)
+    /// <param name="m_IsServiceMode">Whether running in service mode.</param>
+    private void DisplayLoggingConfiguration()
     {
-        var logLevel = configuration["Logging:LogLevel"] ?? "Information";
+        var logLevel = m_Configuration["Logging:LogLevel"] ?? "Information";
 
-        logger.LogInformation("┌─ Logging Configuration ────────────────────────────────────────────");
-        logger.LogInformation("│ Log Level:         {LogLevel}", logLevel);
-        logger.LogInformation("│ Environment:       {Environment}", isServiceMode ? "Service" : "Development");
-        logger.LogInformation("");
+        m_Logger.LogInformation("┌─ Logging Configuration ────────────────────────────────────────────");
+        m_Logger.LogInformation("│ Log Level:         {LogLevel}", logLevel);
+        m_Logger.LogInformation("│ Environment:       {Environment}", m_IsServiceMode ? "Service" : "Development");
+        m_Logger.LogInformation("");
     }
 
     /// <summary>
     /// Displays environment variables information.
     /// </summary>
     /// <param name="logger">Logger instance.</param>
-    private static void DisplayEnvironmentVariables(Microsoft.Extensions.Logging.ILogger logger)
+    private void DisplayEnvironmentVariables()
     {
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
         var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? "";
         var hasCdbInPath = pathEnv.Contains("cdb.exe", StringComparison.OrdinalIgnoreCase) || 
                           pathEnv.Contains("windbg", StringComparison.OrdinalIgnoreCase);
 
-        logger.LogInformation("┌─ Environment Variables ────────────────────────────────────────────");
-        logger.LogInformation("│ ASPNETCORE_ENVIRONMENT: {AspnetcoreEnvironment}", environment);
-        logger.LogInformation("│ ASPNETCORE_URLS:        {AspnetcoreUrls}", Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "Not set");
-        logger.LogInformation("│ PRIVATE_TOKEN:          {PrivateToken}", Environment.GetEnvironmentVariable("PRIVATE_TOKEN") ?? "Not set");
-        logger.LogInformation("│ CDB Paths in PATH:      {CdbInPath}", hasCdbInPath ? "CDB paths found in PATH" : "No CDB paths found in PATH");
-        logger.LogInformation("");
+        m_Logger.LogInformation("┌─ Environment Variables ────────────────────────────────────────────");
+        m_Logger.LogInformation("│ ASPNETCORE_ENVIRONMENT: {AspnetcoreEnvironment}", environment);
+        m_Logger.LogInformation("│ ASPNETCORE_URLS:        {AspnetcoreUrls}", Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "Not set");
+        m_Logger.LogInformation("│ PRIVATE_TOKEN:          {PrivateToken}", Environment.GetEnvironmentVariable("PRIVATE_TOKEN") ?? "Not set");
+        m_Logger.LogInformation("│ CDB Paths in PATH:      {CdbInPath}", hasCdbInPath ? "CDB paths found in PATH" : "No CDB paths found in PATH");
+        m_Logger.LogInformation("");
     }
 
     /// <summary>
     /// Displays system information.
     /// </summary>
     /// <param name="logger">Logger instance.</param>
-    private static void DisplaySystemInformation(Microsoft.Extensions.Logging.ILogger logger)
+    private void DisplaySystemInformation()
     {
         var osDescription = RuntimeInformation.OSDescription;
         var dotnetVersion = Environment.Version.ToString();
@@ -237,11 +249,11 @@ internal static class StartupBanner
         var userAccount = Environment.UserName;
         var processorCount = Environment.ProcessorCount;
 
-        logger.LogInformation("┌─ System Information ───────────────────────────────────────────────");
-        logger.LogInformation("│ OS:              {OSDescription}", osDescription);
-        logger.LogInformation("│ .NET Runtime:    {DotnetVersion}", dotnetVersion);
-        logger.LogInformation("│ Machine Name:    {MachineName}", machineName);
-        logger.LogInformation("│ User Account:    {UserAccount}", userAccount);
-        logger.LogInformation("│ Processor Count: {ProcessorCount}", processorCount);
+        m_Logger.LogInformation("┌─ System Information ───────────────────────────────────────────────");
+        m_Logger.LogInformation("│ OS:              {OSDescription}", osDescription);
+        m_Logger.LogInformation("│ .NET Runtime:    {DotnetVersion}", dotnetVersion);
+        m_Logger.LogInformation("│ Machine Name:    {MachineName}", machineName);
+        m_Logger.LogInformation("│ User Account:    {UserAccount}", userAccount);
+        m_Logger.LogInformation("│ Processor Count: {ProcessorCount}", processorCount);
     }
 }
