@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using nexus.CommandLine;
 using nexus.Hosting;
+using nexus.protocol;
+using nexus.protocol.Configuration;
 using nexus.setup.Interfaces;
 
 namespace nexus.Startup;
@@ -83,26 +85,90 @@ public class MainHostedService : IHostedService
 
     private async Task StartHttpServer(CancellationToken cancellationToken)
     {
-        // Move the logic from HttpServerHostedService here
-        m_Logger.LogInformation("Starting HTTP server...");
-        // Your HTTP server logic
-        await Task.Delay(Timeout.Infinite, cancellationToken);
+        m_Logger.LogInformation("Starting HTTP server mode...");
+        
+        try
+        {
+            // Get logging configurator from DI
+            var loggingConfigurator = m_ServiceProvider.GetRequiredService<nexus.config.ILoggingConfigurator>();
+            
+            // Create and configure WebApplication using protocol library (all logic encapsulated)
+            var app = HttpServerSetup.CreateConfiguredWebApplication(
+                m_Configuration,
+                loggingConfigurator,
+                m_CommandLineContext.IsServiceMode);
+            
+            // Get the protocol server from DI and configure it
+            var protocolServer = m_ServiceProvider.GetRequiredService<IProtocolServer>();
+            protocolServer.SetWebApplication(app);
+            
+            // Start the protocol server (which starts the WebApplication)
+            await protocolServer.StartAsync(cancellationToken);
+            
+            // Keep running until cancellation
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal shutdown - don't log as error
+            m_Logger.LogInformation("HTTP server shutdown requested");
+        }
+        catch (Exception ex)
+        {
+            m_Logger.LogError(ex, "Failed to start HTTP server");
+            throw;
+        }
     }
 
     private async Task StartStdioServer(CancellationToken cancellationToken)
     {
-        // Move the logic from StdioServerHostedService here
-        m_Logger.LogInformation("Starting Stdio server...");
-        // Your Stdio server logic
-        await Task.Delay(Timeout.Infinite, cancellationToken);
+        m_Logger.LogInformation("Starting Stdio server mode...");
+        
+        try
+        {
+            // Get logging configurator from DI
+            var loggingConfigurator = m_ServiceProvider.GetRequiredService<nexus.config.ILoggingConfigurator>();
+            
+            // Create and configure Host using protocol library (all logic encapsulated)
+            var host = HttpServerSetup.CreateConfiguredHost(
+                m_Configuration,
+                loggingConfigurator,
+                m_CommandLineContext.IsServiceMode);
+            
+            // Get the protocol server from DI and configure it
+            var protocolServer = m_ServiceProvider.GetRequiredService<IProtocolServer>();
+            var typedProtocolServer = protocolServer as ProtocolServer;
+            if (typedProtocolServer != null)
+            {
+                typedProtocolServer.SetHost(host);
+            }
+            else
+            {
+                throw new InvalidOperationException("ProtocolServer must be of type ProtocolServer to set Host.");
+            }
+            
+            // Start the protocol server (which starts the Host)
+            await protocolServer.StartAsync(cancellationToken);
+            
+            // Keep running until cancellation
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal shutdown - don't log as error
+            m_Logger.LogInformation("Stdio server shutdown requested");
+        }
+        catch (Exception ex)
+        {
+            m_Logger.LogError(ex, "Failed to start Stdio server");
+            throw;
+        }
     }
 
     private async Task StartServiceServer(CancellationToken cancellationToken)
     {
-        // Move the logic from ServiceHostedService here
-        m_Logger.LogInformation("Starting Service server...");
-        // Your Service server logic
-        await Task.Delay(Timeout.Infinite, cancellationToken);
+        // Service mode uses HTTP transport
+        await StartHttpServer(cancellationToken);
     }
 
     private async Task HandleInstallCommand(CancellationToken cancellationToken)
@@ -161,8 +227,24 @@ public class MainHostedService : IHostedService
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Task representing the stop operation.</returns>
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        m_Logger.LogInformation("Stopping main hosted service...");
+        
+        try
+        {
+            // Stop the protocol server if it's running
+            var protocolServer = m_ServiceProvider.GetService<IProtocolServer>();
+            if (protocolServer != null && protocolServer.IsRunning)
+            {
+                await protocolServer.StopAsync(cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            m_Logger.LogError(ex, "Error stopping protocol server");
+        }
+        
+        m_Logger.LogInformation("Main hosted service stopped");
     }
 }

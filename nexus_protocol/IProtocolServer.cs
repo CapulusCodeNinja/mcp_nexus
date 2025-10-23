@@ -62,6 +62,14 @@ public interface IProtocolServer : IDisposable
     void SetConfiguration(object configuration);
 
     /// <summary>
+    /// Sets the WebApplication instance for HTTP mode operation.
+    /// </summary>
+    /// <param name="app">The configured web application.</param>
+    /// <exception cref="ArgumentNullException">Thrown when app is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when trying to set WebApplication while server is running.</exception>
+    void SetWebApplication(Microsoft.AspNetCore.Builder.WebApplication app);
+
+    /// <summary>
     /// Gets a value indicating whether the protocol server is currently running.
     /// </summary>
     bool IsRunning { get; }

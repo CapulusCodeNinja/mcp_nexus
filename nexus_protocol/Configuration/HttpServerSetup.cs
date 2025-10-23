@@ -1,10 +1,13 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AspNetCoreRateLimit;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.Server;
 
@@ -119,6 +122,112 @@ public static class HttpServerSetup
             .WithHttpTransport()
             .WithToolsFromAssembly()
             .WithResourcesFromAssembly();
+    }
+
+    /// <summary>
+    /// Configures the HTTP request pipeline for MCP server operation.
+    /// </summary>
+    /// <param name="app">The web application to configure.</param>
+    public static void ConfigureMcpPipeline(WebApplication app)
+    {
+        ArgumentNullException.ThrowIfNull(app);
+
+        // Add middleware
+        app.UseMiddleware<Middleware.ContentTypeValidationMiddleware>();
+        app.UseCors();
+        app.UseRouting();
+
+        // CRITICAL: Map MCP endpoints
+        app.MapMcp();
+    }
+
+    /// <summary>
+    /// Configures all services required for stdio mode operation.
+    /// </summary>
+    /// <param name="services">The service collection to configure.</param>
+    public static void ConfigureStdioServices(IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        // Use official SDK for stdio mode
+        services.AddMcpServer()
+            .WithStdioServerTransport()
+            .WithToolsFromAssembly()
+            .WithResourcesFromAssembly();
+    }
+
+    /// <summary>
+    /// Creates and configures a WebApplication for HTTP mode with all required settings.
+    /// </summary>
+    /// <param name="configuration">The application configuration.</param>
+    /// <param name="loggingConfigurator">The logging configurator.</param>
+    /// <param name="isServiceMode">Whether running in service mode.</param>
+    /// <returns>A fully configured WebApplication ready to start.</returns>
+    public static WebApplication CreateConfiguredWebApplication(
+        IConfiguration configuration,
+        nexus.config.ILoggingConfigurator loggingConfigurator,
+        bool isServiceMode)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(loggingConfigurator);
+
+        // Read host and port from configuration
+        var host = configuration["McpNexus:Server:Host"] ?? "localhost";
+        var portStr = configuration["McpNexus:Server:Port"] ?? "5000";
+        if (!int.TryParse(portStr, out var port))
+        {
+            port = 5000;
+        }
+
+        var url = $"http://{host}:{port}";
+
+        // Create WebApplication builder
+        var webBuilder = WebApplication.CreateBuilder();
+
+        // Configure the URLs
+        webBuilder.WebHost.UseUrls(url);
+
+        // Configure logging
+        loggingConfigurator.ConfigureLogging(webBuilder.Logging, configuration, isServiceMode);
+
+        // Configure services
+        ConfigureHttpServices(webBuilder.Services, configuration);
+
+        // Build the application
+        var app = webBuilder.Build();
+
+        // Configure the HTTP pipeline
+        ConfigureMcpPipeline(app);
+
+        return app;
+    }
+
+    /// <summary>
+    /// Creates and configures a Host for stdio mode with all required settings.
+    /// </summary>
+    /// <param name="configuration">The application configuration.</param>
+    /// <param name="loggingConfigurator">The logging configurator.</param>
+    /// <param name="isServiceMode">Whether running in service mode.</param>
+    /// <returns>A fully configured Host ready to start.</returns>
+    public static IHost CreateConfiguredHost(
+        IConfiguration configuration,
+        nexus.config.ILoggingConfigurator loggingConfigurator,
+        bool isServiceMode)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(loggingConfigurator);
+
+        // Create Host builder for stdio mode
+        var hostBuilder = Host.CreateApplicationBuilder();
+
+        // Configure logging
+        loggingConfigurator.ConfigureLogging(hostBuilder.Logging, configuration, isServiceMode);
+
+        // Configure stdio services
+        ConfigureStdioServices(hostBuilder.Services);
+
+        // Build the host
+        return hostBuilder.Build();
     }
 }
 
