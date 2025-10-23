@@ -53,15 +53,15 @@ internal static class Program
     /// <summary>
     /// Creates and configures a host builder for the application.
     /// </summary>
-    /// <param name="args">Command line arguments.</param>
-    /// <param name="mode">Server mode (http, stdio, service).</param>
+    /// <param name="cmd">Command line context.</param>
     /// <returns>Configured host builder.</returns>
-    internal static IHostBuilder CreateHostBuilder(CommandLineBuilderContext cmd)
+    [SupportedOSPlatform("windows")]
+    internal static IHostBuilder CreateHostBuilder(CommandLineContext cmd)
     {
-        var builder = Host.CreateDefaultBuilder(cmd)
+        var builder = Host.CreateDefaultBuilder(cmd.Args)
             .ConfigureLogging((context, logging) =>
             {
-                logging.AddNexusLogging(context.Configuration, cmd);
+                logging.AddNexusLogging(context.Configuration, cmd.IsServiceMode);
             })
             .ConfigureServices((context, services) =>
             {
@@ -76,7 +76,7 @@ internal static class Program
             });
 
         // Configure Windows Service support if in service mode
-        if (mode == ServerMode.Service)
+        if (cmd.IsServiceMode)
         {
             builder.UseWindowsService(options =>
             {
@@ -86,4 +86,4 @@ internal static class Program
 
         return builder;
     }
-
+}

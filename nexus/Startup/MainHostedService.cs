@@ -15,7 +15,7 @@ public class MainHostedService : IHostedService
 {
     private readonly ILogger<MainHostedService> m_Logger;
     private readonly IConfiguration m_Configuration;
-    private readonly string[] m_Args;
+    private readonly CommandLineContext m_CommandLineContext;
     private readonly IServiceProvider m_ServiceProvider;
 
     /// <summary>
@@ -23,17 +23,17 @@ public class MainHostedService : IHostedService
     /// </summary>
     /// <param name="logger">Logger instance.</param>
     /// <param name="configuration">Application configuration.</param>
-    /// <param name="args">Command line arguments.</param>
+    /// <param name="commandLineContext">Command line context.</param>
     /// <param name="serviceProvider">Service provider.</param>
     public MainHostedService(
         ILogger<MainHostedService> logger, 
         IConfiguration configuration, 
-        string[] args,
+        CommandLineContext commandLineContext,
         IServiceProvider serviceProvider)
     {
         m_Logger = logger;
         m_Configuration = configuration;
-        m_Args = args;
+        m_CommandLineContext = commandLineContext;
         m_ServiceProvider = serviceProvider;
     }
 
@@ -46,30 +46,38 @@ public class MainHostedService : IHostedService
     {
         // 1. Display startup banner FIRST (guaranteed first log output)
         var startupBannerLogger = m_ServiceProvider.GetRequiredService<ILogger<StartupBanner>>();
-        var startupBanner = new StartupBanner(m_Configuration, startupBannerLogger);
+        var startupBanner = new StartupBanner(m_Configuration, startupBannerLogger, m_CommandLineContext.IsServiceMode);
         startupBanner.DisplayBanner();
         
-        // 2. Handle the appropriate command based on mode
-        switch (m_ServerMode)
+        // 2. Handle the appropriate command based on command line context
+        if (m_CommandLineContext.IsHttpMode)
         {
-            case ServerMode.Http:
-                await StartHttpServer(cancellationToken);
-                break;
-            case ServerMode.Stdio:
-                await StartStdioServer(cancellationToken);
-                break;
-            case ServerMode.Service:
-                await StartServiceServer(cancellationToken);
-                break;
-            case ServerMode.Install:
-                await HandleInstallCommand(cancellationToken);
-                break;
-            case ServerMode.Update:
-                await HandleUpdateCommand(cancellationToken);
-                break;
-            case ServerMode.Uninstall:
-                await HandleUninstallCommand(cancellationToken);
-                break;
+            await StartHttpServer(cancellationToken);
+        }
+        else if (m_CommandLineContext.IsStdioMode)
+        {
+            await StartStdioServer(cancellationToken);
+        }
+        else if (m_CommandLineContext.IsServiceMode)
+        {
+            await StartServiceServer(cancellationToken);
+        }
+        else if (m_CommandLineContext.IsInstallMode)
+        {
+            await HandleInstallCommand(cancellationToken);
+        }
+        else if (m_CommandLineContext.IsUpdateMode)
+        {
+            await HandleUpdateCommand(cancellationToken);
+        }
+        else if (m_CommandLineContext.IsUninstallMode)
+        {
+            await HandleUninstallCommand(cancellationToken);
+        }
+        else
+        {
+            // Default to HTTP mode
+            await StartHttpServer(cancellationToken);
         }
     }
 

@@ -45,6 +45,8 @@ internal class StartupBanner
             DisplayLoggingConfiguration();
             DisplayEnvironmentVariables();
             DisplaySystemInformation();
+
+            m_Logger.LogInformation("");
         }
         catch (Exception ex)
         {
