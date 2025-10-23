@@ -57,8 +57,8 @@ internal class LoggingConfiguration : ILoggingConfigurator
         {
             fileTarget = new NLog.Targets.FileTarget("mainFile")
             {
-                FileName = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "nexus.log"),
-                ArchiveFileName = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "archive", "nexus-${shortdate}-{##}.log"),
+                FileName = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp-nexus.log"),
+                ArchiveFileName = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "archive", "mcp-nexus-${shortdate}-{##}.log"),
                 ArchiveEvery = NLog.Targets.FileArchivePeriod.Day,
                 ArchiveSuffixFormat = "{#}",
                 MaxArchiveFiles = 30,
@@ -71,17 +71,17 @@ internal class LoggingConfiguration : ILoggingConfigurator
             nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, fileTarget));
         }
 
-        // Ensure stderr console target exists
-        if (nlogConfig.FindTargetByName("stderr") is not NLog.Targets.ConsoleTarget stderrTarget)
-        {
-            stderrTarget = new NLog.Targets.ConsoleTarget("stderr")
+            // Ensure stderr console target exists
+            if (nlogConfig.FindTargetByName("stderr") is not NLog.Targets.ConsoleTarget stderrTarget)
             {
-                StdErr = true,
-                Layout = "${longdate}|${uppercase:${level}}|${logger}|${message} ${exception:format=ToString}"
-            };
-            nlogConfig.AddTarget(stderrTarget);
-            nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, stderrTarget));
-        }
+                stderrTarget = new NLog.Targets.ConsoleTarget("stderr")
+                {
+                    StdErr = true,
+                    Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}"
+                };
+                nlogConfig.AddTarget(stderrTarget);
+                nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, stderrTarget));
+            }
 
         // Apply service-mode paths (ProgramData vs app dir)
         ConfigureLogPaths(nlogConfig, isServiceMode);
@@ -124,7 +124,7 @@ internal class LoggingConfiguration : ILoggingConfigurator
             // Use ProgramData for service mode
             var programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             logDirectory = Path.Combine(programDataPath, "MCP-Nexus", "Logs");
-            _ = Path.Combine(logDirectory, "nexus-internal.log");
+                _ = Path.Combine(logDirectory, "mcp-nexus-internal.log");
 
             // Ensure ProgramData directories exist
             try
@@ -141,20 +141,20 @@ internal class LoggingConfiguration : ILoggingConfigurator
         {
             // Use application directory for non-service mode
             logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
-            _ = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "nexus-internal.log");
+            _ = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp-nexus-internal.log");
         }
 
-        // Update file target paths
-        foreach (var target in nlogConfig.AllTargets.OfType<NLog.Targets.FileTarget>())
-        {
-            if (target.Name == "mainFile")
+            // Update file target paths
+            foreach (var target in nlogConfig.AllTargets.OfType<NLog.Targets.FileTarget>())
             {
-                // Update main log file path
-                target.FileName = Path.Combine(logDirectory, "nexus.log");
-                // Update archive path to use the new log directory
-                target.ArchiveFileName = Path.Combine(logDirectory, "archive", "nexus-${shortdate}-{##}.log");
+                if (target.Name == "mainFile")
+                {
+                    // Update main log file path
+                    target.FileName = Path.Combine(logDirectory, "mcp-nexus.log");
+                    // Update archive path to use the new log directory
+                    target.ArchiveFileName = Path.Combine(logDirectory, "archive", "mcp-nexus-${shortdate}-{##}.log");
+                }
             }
-        }
     }
 
     /// <summary>
@@ -171,12 +171,12 @@ internal class LoggingConfiguration : ILoggingConfigurator
             {
                 // Use ProgramData for service mode
                 var programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                internalLogFile = Path.Combine(programDataPath, "MCP-Nexus", "Logs", "nexus-internal.log");
+                internalLogFile = Path.Combine(programDataPath, "MCP-Nexus", "Logs", "mcp-nexus-internal.log");
             }
             else
             {
                 // Use application directory for non-service mode
-                internalLogFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "nexus-internal.log");
+                internalLogFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp-nexus-internal.log");
             }
 
             // Set the internal log file through LogManager
