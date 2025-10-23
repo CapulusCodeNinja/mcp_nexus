@@ -65,7 +65,9 @@ internal class LoggingConfiguration : ILoggingConfigurator
                 KeepFileOpen = false,
                 AutoFlush = true,
                 CreateDirs = true,
-                Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}"
+                WriteBom = true,
+                Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}",
+                Encoding = System.Text.Encoding.UTF8
             };
             nlogConfig.AddTarget(fileTarget);
             nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, fileTarget));
@@ -77,7 +79,8 @@ internal class LoggingConfiguration : ILoggingConfigurator
                 stderrTarget = new NLog.Targets.ConsoleTarget("stderr")
                 {
                     StdErr = true,
-                    Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}"
+                    Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}",
+                    Encoding = System.Text.Encoding.UTF8
                 };
                 nlogConfig.AddTarget(stderrTarget);
                 nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, stderrTarget));
