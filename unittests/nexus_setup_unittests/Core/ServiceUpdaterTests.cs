@@ -16,7 +16,7 @@ namespace nexus.setup_unittests.Core;
 public class ServiceUpdaterTests
 {
     private readonly ILogger<ServiceUpdater> m_Logger;
-    private readonly Mock<IServiceInstaller> m_MockInstaller;
+    private readonly Mock<ServiceInstaller> m_MockInstaller;
     private readonly Mock<IFileSystem> m_MockFileSystem;
     private readonly Mock<IServiceController> m_MockServiceController;
 
@@ -26,7 +26,7 @@ public class ServiceUpdaterTests
     public ServiceUpdaterTests()
     {
         m_Logger = NullLogger<ServiceUpdater>.Instance;
-        m_MockInstaller = new Mock<IServiceInstaller>();
+        m_MockInstaller = new Mock<ServiceInstaller>();
         m_MockFileSystem = new Mock<IFileSystem>();
         m_MockServiceController = new Mock<IServiceController>();
     }

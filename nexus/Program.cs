@@ -7,7 +7,8 @@ using NLog;
 using NLog.Extensions.Logging;
 using nexus.CommandLine;
 using nexus.Hosting;
-using nexus.Configuration;
+using nexus.config;
+using nexus.config.ServiceRegistration;
 
 namespace nexus;
 
@@ -62,9 +63,9 @@ internal static class Program
         var builder = Host.CreateDefaultBuilder(args)
             .ConfigureLogging((context, logging) =>
             {
-                // Use sophisticated logging setup from original MCP-Nexus
+                // Use sophisticated logging setup from nexus_config library
                 var isServiceMode = mode == ServerMode.Service;
-                LoggingSetup.ConfigureLogging(logging, isServiceMode, context.Configuration);
+                logging.AddNexusLogging(context.Configuration, isServiceMode);
             })
             .ConfigureServices((context, services) =>
             {

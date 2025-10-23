@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\nexus_utilities\nexus_utilities.csproj" />
+    <ProjectReference Include="..\nexus_config\nexus_config.csproj" />
   </ItemGroup>
 
 </Project>

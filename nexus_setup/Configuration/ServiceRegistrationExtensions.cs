@@ -6,6 +6,7 @@ using nexus.utilities.FileSystem;
 using nexus.utilities.ProcessManagement;
 using nexus.utilities.Registry;
 using nexus.utilities.ServiceManagement;
+using nexus.config.ServiceRegistration;
 
 namespace nexus.setup.Configuration;
 
@@ -22,6 +23,9 @@ public static class ServiceRegistrationExtensions
     [SupportedOSPlatform("windows")]
     public static IServiceCollection AddNexusSetupServices(this IServiceCollection services)
     {
+        // Add shared config first
+        services.AddNexusConfiguration();
+        
         // Register utility services
         services.AddSingleton<IFileSystem, nexus.utilities.FileSystem.FileSystem>();
         services.AddSingleton<IProcessManager, ProcessManager>();

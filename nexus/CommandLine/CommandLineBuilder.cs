@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Runtime.Versioning;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,7 @@ using nexus.setup.Configuration;
 using nexus.setup.Models;
 using nexus.setup.Interfaces;
 using nexus.utilities.ServiceManagement;
+using nexus.config.ServiceRegistration;
 
 namespace nexus.CommandLine;
 
@@ -101,28 +103,16 @@ internal static class CommandLineBuilder
     {
         var installCommand = new Command("--install", "Install Nexus as a Windows Service");
 
-        var serviceNameOption = new Option<string>(
-            name: "--service-name",
-            description: "Name of the Windows service",
-            getDefaultValue: () => "MCP-Nexus");
-        installCommand.AddOption(serviceNameOption);
-
-        var displayNameOption = new Option<string>(
-            name: "--display-name",
-            description: "Display name of the service",
-            getDefaultValue: () => "MCP-Nexus Debugging Server");
-        installCommand.AddOption(displayNameOption);
-
-        var startModeOption = new Option<ServiceStartMode>(
-            name: "--start-mode",
-            description: "Service start mode (Automatic, Manual, Disabled)",
-            getDefaultValue: () => ServiceStartMode.Automatic);
-        installCommand.AddOption(startModeOption);
-
         installCommand.SetHandler(async (string serviceName, string displayName, ServiceStartMode startMode) =>
         {
             var services = new ServiceCollection();
-            services.AddLogging(builder => builder.AddConsole());
+            services.AddNexusConfiguration();
+            services.AddLogging(builder => 
+            {
+                var sp = services.BuildServiceProvider();
+                var config = sp.GetRequiredService<IConfiguration>();
+                builder.AddNexusLogging(config, false);
+            });
             services.AddNexusSetupServices();
             var serviceProvider = services.BuildServiceProvider();
 
@@ -148,16 +138,16 @@ internal static class CommandLineBuilder
     {
         var updateCommand = new Command("--update", "Update an installed Windows Service");
 
-        var serviceNameOption = new Option<string>(
-            name: "--service-name",
-            description: "Name of the Windows service to update",
-            getDefaultValue: () => "MCP-Nexus");
-        updateCommand.AddOption(serviceNameOption);
-
         updateCommand.SetHandler(async (string serviceName) =>
         {
             var services = new ServiceCollection();
-            services.AddLogging(builder => builder.AddConsole());
+            services.AddNexusConfiguration();
+            services.AddLogging(builder => 
+            {
+                var sp = services.BuildServiceProvider();
+                var config = sp.GetRequiredService<IConfiguration>();
+                builder.AddNexusLogging(config, false);
+            });
             services.AddNexusSetupServices();
             var serviceProvider = services.BuildServiceProvider();
 
