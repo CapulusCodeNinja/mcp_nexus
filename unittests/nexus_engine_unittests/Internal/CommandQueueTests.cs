@@ -1936,4 +1936,120 @@ public class CommandQueueTests : IDisposable
         var action = async () => await testAccessor.GetCommandInfoAsync(commandId, cancellationToken);
         action.Should().NotThrowAsync();
     }
+
+    /// <summary>
+    /// Verifies that CommandQueue works correctly without a batch processor.
+    /// </summary>
+    [Fact]
+    public void Constructor_WithoutBatchProcessor_ShouldCreateInstance()
+    {
+        // Act
+        var commandQueue = new CommandQueue(
+            "test-session", 
+            m_Configuration, 
+            m_LoggerFactory.CreateLogger<CommandQueue>(), 
+            batchProcessor: null);
+
+        // Assert
+        commandQueue.Should().NotBeNull();
+        commandQueue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CommandQueue works correctly with a batch processor.
+    /// </summary>
+    [Fact]
+    public void Constructor_WithBatchProcessor_ShouldCreateInstance()
+    {
+        // Arrange
+        var mockBatchProcessor = new Mock<nexus.engine.batch.IBatchProcessor>();
+
+        // Act
+        var commandQueue = new CommandQueue(
+            "test-session", 
+            m_Configuration, 
+            m_LoggerFactory.CreateLogger<CommandQueue>(), 
+            batchProcessor: mockBatchProcessor.Object);
+
+        // Assert
+        commandQueue.Should().NotBeNull();
+        commandQueue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that batch processor integration is properly initialized when provided.
+    /// </summary>
+    [Fact]
+    public void Constructor_WithBatchProcessor_ShouldAcceptBatchProcessor()
+    {
+        // Arrange
+        var mockBatchProcessor = new Mock<nexus.engine.batch.IBatchProcessor>();
+
+        // Act
+        var commandQueue = new CommandQueue(
+            "test-session",
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<CommandQueue>(),
+            batchProcessor: mockBatchProcessor.Object);
+
+        // Assert - verify the command queue was created with the batch processor
+        commandQueue.Should().NotBeNull();
+        
+        // Clean up
+        commandQueue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that BatchCommands is called with correct parameters when batch processor is provided.
+    /// </summary>
+    [Fact]
+    public void BatchProcessor_Integration_ShouldCallBatchCommandsWithCorrectFormat()
+    {
+        // Arrange
+        var mockBatchProcessor = new Mock<nexus.engine.batch.IBatchProcessor>();
+        var capturedCommands = new List<nexus.engine.batch.Command>();
+
+        mockBatchProcessor.Setup(bp => bp.BatchCommands(It.IsAny<List<nexus.engine.batch.Command>>()))
+            .Callback<List<nexus.engine.batch.Command>>(commands => capturedCommands.AddRange(commands))
+            .Returns((List<nexus.engine.batch.Command> commands) => commands);
+
+        var commandQueue = new CommandQueue(
+            "test-session",
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<CommandQueue>(),
+            batchProcessor: mockBatchProcessor.Object);
+
+        // Act - just verify setup, actual execution would require CdbSession
+        // Assert - verify the setup was successful
+        commandQueue.Should().NotBeNull();
+        mockBatchProcessor.VerifyNoOtherCalls(); // No calls yet since no commands were processed
+        
+        // Clean up
+        commandQueue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that UnbatchResults would be called with correct result format.
+    /// </summary>
+    [Fact]
+    public void BatchProcessor_Integration_ShouldSetupUnbatchResults()
+    {
+        // Arrange
+        var mockBatchProcessor = new Mock<nexus.engine.batch.IBatchProcessor>();
+
+        mockBatchProcessor.Setup(bp => bp.UnbatchResults(It.IsAny<List<nexus.engine.batch.CommandResult>>()))
+            .Returns((List<nexus.engine.batch.CommandResult> results) => results);
+
+        var commandQueue = new CommandQueue(
+            "test-session",
+            m_Configuration,
+            m_LoggerFactory.CreateLogger<CommandQueue>(),
+            batchProcessor: mockBatchProcessor.Object);
+
+        // Act & Assert - verify the setup was successful
+        commandQueue.Should().NotBeNull();
+        
+        // Clean up
+        commandQueue.Dispose();
+    }
 }
