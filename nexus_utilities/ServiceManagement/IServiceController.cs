@@ -20,8 +20,8 @@ public interface IServiceController
     /// Gets the current status of a service.
     /// </summary>
     /// <param name="serviceName">The service name.</param>
-    /// <returns>The service status as a string, or null if service not found.</returns>
-    string? GetServiceStatus(string serviceName);
+    /// <returns>The service status, or null if service not found.</returns>
+    ServiceControllerStatus? GetServiceStatus(string serviceName);
 
     /// <summary>
     /// Starts a service.

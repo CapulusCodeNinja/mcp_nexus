@@ -90,7 +90,7 @@ internal class ServiceUpdater
             // Stop the service
             m_Logger.LogInformation("Stopping service {ServiceName}...", serviceName);
             var status = m_ServiceController.GetServiceStatus(serviceName);
-            if (status != null && status != ServiceControllerStatus.Stopped.ToString())
+            if (status != null && status != ServiceControllerStatus.Stopped)
             {
                 m_ServiceController.StopService(serviceName);
                 m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
@@ -191,7 +191,7 @@ internal class ServiceUpdater
             // Stop the service
             m_Logger.LogInformation("Stopping service {ServiceName}...", serviceName);
             var status = m_ServiceController.GetServiceStatus(serviceName);
-            if (status != null && status != ServiceControllerStatus.Stopped.ToString())
+            if (status != null && status != ServiceControllerStatus.Stopped)
             {
                 m_ServiceController.StopService(serviceName);
                 m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));

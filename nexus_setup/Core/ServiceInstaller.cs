@@ -136,11 +136,28 @@ internal class ServiceInstaller
         {
             // Stop the service if it's running
             var status = m_ServiceController.GetServiceStatus(serviceName);
-            if (status != null && status != ServiceControllerStatus.Stopped.ToString())
+            if (status == null)
             {
-                m_Logger.LogInformation("Stopping service {ServiceName}...", serviceName);
-                m_ServiceController.StopService(serviceName);
-                m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
+                m_Logger.LogInformation("Service {ServiceName} is not installed - nothing to stop", serviceName);
+            }
+            else if (status == ServiceControllerStatus.Stopped)
+            {
+                m_Logger.LogInformation("Service {ServiceName} is already stopped", serviceName);
+            }
+            else
+            {
+                // Service is running or in transitional state - try to stop it
+                try
+                {
+                    m_Logger.LogInformation("Stopping service {ServiceName}...", serviceName);
+                    m_ServiceController.StopService(serviceName);
+                    m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
+                    m_Logger.LogInformation("Service {ServiceName} stopped successfully", serviceName);
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.LogWarning(ex, "Failed to stop service {ServiceName}, but continuing with uninstall", serviceName);
+                }
             }
 
             // Delete the service
@@ -181,7 +198,7 @@ internal class ServiceInstaller
     /// </summary>
     /// <param name="serviceName">The name of the service.</param>
     /// <returns>The service status, or null if the service doesn't exist.</returns>
-    public string? GetServiceStatus(string serviceName)
+    public ServiceControllerStatus? GetServiceStatus(string serviceName)
     {
         if (string.IsNullOrWhiteSpace(serviceName))
             return null;
@@ -222,7 +239,7 @@ internal class ServiceInstaller
             {
                 var currentStatus = m_ServiceController.GetServiceStatus(serviceName);
 
-                if (currentStatus != null && string.Equals(currentStatus, targetStatus, StringComparison.OrdinalIgnoreCase))
+                if (currentStatus != null && currentStatus.Value.ToString().Equals(targetStatus, StringComparison.OrdinalIgnoreCase))
                 {
                     m_Logger.LogDebug("Service {ServiceName} reached target status {Status}", serviceName, targetStatus);
                     return true;

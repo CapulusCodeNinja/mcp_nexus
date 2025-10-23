@@ -61,7 +61,11 @@ internal static class Program
         var builder = Host.CreateDefaultBuilder(cmd.Args)
             .ConfigureLogging((context, logging) =>
             {
-                logging.AddNexusLogging(context.Configuration, cmd.IsServiceMode);
+                logging.AddNexusLogging(context.Configuration, 
+                    cmd.IsServiceMode || 
+                    cmd.IsInstallMode || 
+                    cmd.IsUpdateMode || 
+                    cmd.IsUninstallMode);
             })
             .ConfigureServices((context, services) =>
             {
