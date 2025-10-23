@@ -9,6 +9,9 @@ namespace nexus.engine.unittests.Configuration;
 /// </summary>
 public class DebugEngineConfigurationTests
 {
+    /// <summary>
+    /// Verifies that the DebugEngineConfiguration class sets all default values correctly.
+    /// </summary>
     [Fact]
     public void DefaultValues_ShouldBeSetCorrectly()
     {
@@ -27,6 +30,9 @@ public class DebugEngineConfigurationTests
         config.MaxCachedResultsPerSession.Should().Be(10000);
     }
 
+    /// <summary>
+    /// Verifies that all properties of the DebugEngineConfiguration class can be set to custom values.
+    /// </summary>
     [Fact]
     public void Properties_ShouldBeSettable()
     {
@@ -57,6 +63,9 @@ public class DebugEngineConfigurationTests
         config.MaxCachedResultsPerSession.Should().Be(20000);
     }
 
+    /// <summary>
+    /// Verifies that setting Batching to null does not throw an exception.
+    /// </summary>
     [Fact]
     public void Batching_WhenSetToNull_ShouldNotThrow()
     {

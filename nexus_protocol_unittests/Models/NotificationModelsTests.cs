@@ -9,6 +9,9 @@ namespace nexus.protocol.unittests.Models;
 /// </summary>
 public class NotificationModelsTests
 {
+    /// <summary>
+    /// Verifies that McpCommandHeartbeatNotification has correct default values.
+    /// </summary>
     [Fact]
     public void McpCommandHeartbeatNotification_DefaultValues()
     {
@@ -23,6 +26,9 @@ public class NotificationModelsTests
         notification.Timestamp.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(5));
     }
 
+    /// <summary>
+    /// Verifies that McpCommandHeartbeatNotification properties can be set.
+    /// </summary>
     [Fact]
     public void McpCommandHeartbeatNotification_PropertiesCanBeSet()
     {
@@ -46,6 +52,9 @@ public class NotificationModelsTests
         notification.Timestamp.Year.Should().Be(2025);
     }
 
+    /// <summary>
+    /// Verifies that McpCommandHeartbeatNotification serializes to JSON correctly.
+    /// </summary>
     [Fact]
     public void McpCommandHeartbeatNotification_SerializesToJson()
     {
@@ -66,6 +75,9 @@ public class NotificationModelsTests
         json.Should().Contain("\"elapsedSeconds\":10.5");
     }
 
+    /// <summary>
+    /// Verifies that McpCommandStatusNotification has correct default values.
+    /// </summary>
     [Fact]
     public void McpCommandStatusNotification_DefaultValues()
     {
@@ -82,6 +94,9 @@ public class NotificationModelsTests
         notification.Timestamp.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(5));
     }
 
+    /// <summary>
+    /// Verifies that McpCommandStatusNotification properties can be set.
+    /// </summary>
     [Fact]
     public void McpCommandStatusNotification_PropertiesCanBeSet()
     {
@@ -106,6 +121,9 @@ public class NotificationModelsTests
         notification.Message.Should().Be("Done");
     }
 
+    /// <summary>
+    /// Verifies that McpServerHealthNotification has correct default values.
+    /// </summary>
     [Fact]
     public void McpServerHealthNotification_DefaultValues()
     {
@@ -119,6 +137,9 @@ public class NotificationModelsTests
         notification.Timestamp.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(5));
     }
 
+    /// <summary>
+    /// Verifies that McpServerHealthNotification properties can be set.
+    /// </summary>
     [Fact]
     public void McpServerHealthNotification_PropertiesCanBeSet()
     {
@@ -139,6 +160,9 @@ public class NotificationModelsTests
         notification.Uptime.Should().Be(TimeSpan.FromHours(2));
     }
 
+    /// <summary>
+    /// Verifies that McpSessionRecoveryNotification has correct default values.
+    /// </summary>
     [Fact]
     public void McpSessionRecoveryNotification_DefaultValues()
     {
@@ -152,6 +176,9 @@ public class NotificationModelsTests
         notification.Timestamp.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(5));
     }
 
+    /// <summary>
+    /// Verifies that McpSessionRecoveryNotification properties can be set.
+    /// </summary>
     [Fact]
     public void McpSessionRecoveryNotification_PropertiesCanBeSet()
     {
@@ -172,6 +199,9 @@ public class NotificationModelsTests
         notification.AffectedCommands.Should().HaveCount(2);
     }
 
+    /// <summary>
+    /// Verifies that McpError has correct default values.
+    /// </summary>
     [Fact]
     public void McpError_DefaultValues()
     {
@@ -182,6 +212,9 @@ public class NotificationModelsTests
         error.Data.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that McpError properties can be set.
+    /// </summary>
     [Fact]
     public void McpError_PropertiesCanBeSet()
     {
@@ -197,6 +230,9 @@ public class NotificationModelsTests
         error.Data.Should().Be("Additional details");
     }
 
+    /// <summary>
+    /// Verifies that McpResponse has correct default values.
+    /// </summary>
     [Fact]
     public void McpResponse_DefaultValues()
     {
@@ -208,6 +244,9 @@ public class NotificationModelsTests
         response.Error.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that McpResponse properties can be set.
+    /// </summary>
     [Fact]
     public void McpResponse_PropertiesCanBeSet()
     {
@@ -227,4 +266,3 @@ public class NotificationModelsTests
         response.Error!.Code.Should().Be(-32600);
     }
 }
-

@@ -16,6 +16,9 @@ public class StdioNotificationBridgeTests : IDisposable
     private readonly StringWriter m_CapturedOutput;
     private readonly TextWriter m_OriginalOutput;
 
+    /// <summary>
+    /// Initializes a new instance of the StdioNotificationBridgeTests class.
+    /// </summary>
     public StdioNotificationBridgeTests()
     {
         var logger = NullLogger<StdioNotificationBridge>.Instance;
@@ -27,6 +30,9 @@ public class StdioNotificationBridgeTests : IDisposable
         Console.SetOut(m_CapturedOutput);
     }
 
+    /// <summary>
+    /// Disposes resources and restores console output.
+    /// </summary>
     public void Dispose()
     {
         // Restore original console output
@@ -34,6 +40,9 @@ public class StdioNotificationBridgeTests : IDisposable
         m_CapturedOutput?.Dispose();
     }
 
+    /// <summary>
+    /// Verifies that constructor throws ArgumentNullException when logger is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
@@ -43,6 +52,9 @@ public class StdioNotificationBridgeTests : IDisposable
             .WithParameterName("logger");
     }
 
+    /// <summary>
+    /// Verifies that SendNotificationAsync writes to console with valid notification.
+    /// </summary>
     [Fact]
     public async Task SendNotificationAsync_WithValidNotification_WritesToConsole()
     {
@@ -60,6 +72,9 @@ public class StdioNotificationBridgeTests : IDisposable
         output.Should().Contain("\"method\":\"test/notification\"");
     }
 
+    /// <summary>
+    /// Verifies that SendNotificationAsync throws ArgumentNullException when notification is null.
+    /// </summary>
     [Fact]
     public async Task SendNotificationAsync_WithNullNotification_ThrowsArgumentNullException()
     {
@@ -69,6 +84,9 @@ public class StdioNotificationBridgeTests : IDisposable
             .WithParameterName("notification");
     }
 
+    /// <summary>
+    /// Verifies that SendNotificationAsync writes complete JSON line.
+    /// </summary>
     [Fact]
     public async Task SendNotificationAsync_WritesCompleteJsonLine()
     {
@@ -86,6 +104,9 @@ public class StdioNotificationBridgeTests : IDisposable
         output.Should().EndWith("}");
     }
 
+    /// <summary>
+    /// Verifies that SendNotificationAsync writes multiple notifications sequentially.
+    /// </summary>
     [Fact]
     public async Task SendNotificationAsync_MultipleNotifications_WritesSequentially()
     {
@@ -114,6 +135,9 @@ public class StdioNotificationBridgeTests : IDisposable
         lines.Should().HaveCountGreaterOrEqualTo(2);
     }
 
+    /// <summary>
+    /// Verifies that SendNotificationAsync is thread-safe with concurrent calls.
+    /// </summary>
     [Fact]
     public async Task SendNotificationAsync_ConcurrentCalls_AreThreadSafe()
     {
@@ -135,6 +159,9 @@ public class StdioNotificationBridgeTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// Verifies that SendNotificationAsync serializes complex params correctly.
+    /// </summary>
     [Fact]
     public async Task SendNotificationAsync_WithComplexParams_SerializesCorrectly()
     {
@@ -161,4 +188,3 @@ public class StdioNotificationBridgeTests : IDisposable
         output.Should().Contain("\"text\":\"test\"");
     }
 }
-

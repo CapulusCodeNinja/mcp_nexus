@@ -27,6 +27,9 @@ public class CdbSessionTests : IDisposable
     private readonly Mock<IProcessManager> m_MockProcessManager;
     private nexus.engine.Internal.CdbSession? m_CdbSession;
 
+    /// <summary>
+    /// Initializes a new instance of the CdbSessionTests class and sets up test dependencies.
+    /// </summary>
     public CdbSessionTests()
     {
         m_LoggerFactory = NullLoggerFactory.Instance;
@@ -38,6 +41,9 @@ public class CdbSessionTests : IDisposable
         SetupDefaultMocks();
     }
 
+    /// <summary>
+    /// Verifies that the CdbSession constructor creates an instance successfully with valid parameters.
+    /// </summary>
     [Fact]
     public void Constructor_WithValidParameters_ShouldCreateInstance()
     {
@@ -50,6 +56,9 @@ public class CdbSessionTests : IDisposable
         m_CdbSession.IsActive.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that the CdbSession constructor throws ArgumentNullException when configuration is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullConfiguration_ShouldThrowArgumentNullException()
     {
@@ -61,6 +70,9 @@ public class CdbSessionTests : IDisposable
             .WithParameterName("configuration");
     }
 
+    /// <summary>
+    /// Verifies that the CdbSession constructor throws ArgumentNullException when logger is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
@@ -71,6 +83,9 @@ public class CdbSessionTests : IDisposable
             .WithParameterName("logger");
     }
 
+    /// <summary>
+    /// Verifies that IsActive returns false when the session has not been initialized.
+    /// </summary>
     [Fact]
     public void IsActive_WhenNotInitialized_ShouldReturnFalse()
     {
@@ -82,6 +97,9 @@ public class CdbSessionTests : IDisposable
         m_CdbSession.IsActive.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that calling Dispose properly disposes the session and prevents further operations.
+    /// </summary>
     [Fact]
     public void Dispose_WhenCalled_ShouldDisposeSession()
     {
@@ -97,6 +115,9 @@ public class CdbSessionTests : IDisposable
         action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that calling Dispose multiple times does not throw an exception.
+    /// </summary>
     [Fact]
     public void Dispose_WhenCalledMultipleTimes_ShouldNotThrow()
     {
@@ -113,6 +134,9 @@ public class CdbSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Disposes the test instance and cleans up resources.
+    /// </summary>
     public void Dispose()
     {
         m_CdbSession?.Dispose();
@@ -160,6 +184,9 @@ public class CdbSessionTests : IDisposable
             m_MockProcessManager.Object);
     }
 
+    /// <summary>
+    /// Verifies that InitializeAsync throws FileNotFoundException when the dump file does not exist.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_WithValidDumpFile_ShouldThrowFileNotFoundException()
     {
@@ -174,6 +201,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that InitializeAsync throws ArgumentException when dump file path is null.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_WithNullDumpFile_ShouldThrowArgumentException()
     {
@@ -186,6 +216,9 @@ public class CdbSessionTests : IDisposable
             .WithParameterName("dumpFilePath");
     }
 
+    /// <summary>
+    /// Verifies that InitializeAsync throws ArgumentException when dump file path is empty.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_WithEmptyDumpFile_ShouldThrowArgumentException()
     {
@@ -198,6 +231,9 @@ public class CdbSessionTests : IDisposable
             .WithParameterName("dumpFilePath");
     }
 
+    /// <summary>
+    /// Verifies that InitializeAsync throws FileNotFoundException when the dump file does not exist.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_WithNonExistentDumpFile_ShouldThrowFileNotFoundException()
     {
@@ -211,6 +247,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().ThrowAsync<FileNotFoundException>();
     }
 
+    /// <summary>
+    /// Verifies that InitializeAsync throws ObjectDisposedException when the session is disposed.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -223,6 +262,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that ExecuteCommandAsync throws InvalidOperationException when session is not initialized.
+    /// </summary>
     [Fact]
     public async Task ExecuteCommandAsync_WhenNotInitialized_ShouldThrowInvalidOperationException()
     {
@@ -234,6 +276,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().ThrowAsync<InvalidOperationException>();
     }
 
+    /// <summary>
+    /// Verifies that ExecuteCommandAsync throws ObjectDisposedException when the session is disposed.
+    /// </summary>
     [Fact]
     public async Task ExecuteCommandAsync_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -246,6 +291,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that ExecuteBatchCommandAsync throws InvalidOperationException when session is not initialized.
+    /// </summary>
     [Fact]
     public async Task ExecuteBatchCommandAsync_WhenNotInitialized_ShouldThrowInvalidOperationException()
     {
@@ -258,6 +306,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().ThrowAsync<InvalidOperationException>();
     }
 
+    /// <summary>
+    /// Verifies that ExecuteBatchCommandAsync throws ObjectDisposedException when the session is disposed.
+    /// </summary>
     [Fact]
     public async Task ExecuteBatchCommandAsync_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -271,6 +322,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that ExecuteBatchCommandAsync throws InvalidOperationException when commands parameter is null and session is not initialized.
+    /// </summary>
     [Fact]
     public async Task ExecuteBatchCommandAsync_WithNullCommands_ShouldThrowInvalidOperationException()
     {
@@ -283,6 +337,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ExecuteBatchCommandAsync throws InvalidOperationException when commands array is empty and session is not initialized.
+    /// </summary>
     [Fact]
     public async Task ExecuteBatchCommandAsync_WithEmptyCommands_ShouldThrowInvalidOperationException()
     {
@@ -295,6 +352,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that FindCdbExecutableAsync returns a valid CDB path when CDB executable is found.
+    /// </summary>
     [Fact]
     public async Task FindCdbExecutableAsync_WhenCdbFound_ShouldReturnCdbPath()
     {
@@ -310,6 +370,9 @@ public class CdbSessionTests : IDisposable
         result.Should().NotBeNullOrEmpty();
     }
 
+    /// <summary>
+    /// Verifies that FindCdbExecutableAsync throws InvalidOperationException when CDB executable is not found.
+    /// </summary>
     [Fact]
     public async Task FindCdbExecutableAsync_WhenCdbNotFound_ShouldThrowInvalidOperationException()
     {
@@ -323,6 +386,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().ThrowAsync<InvalidOperationException>();
     }
 
+    /// <summary>
+    /// Verifies that StartCdbProcessAsync throws InvalidOperationException when session is not initialized.
+    /// </summary>
     [Fact]
     public async Task StartCdbProcessAsync_ShouldStartProcess()
     {
@@ -335,6 +401,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that StopCdbProcess does not throw when CDB process has not been started.
+    /// </summary>
     [Fact]
     public void StopCdbProcess_WhenNotStarted_ShouldNotThrow()
     {
@@ -346,6 +415,9 @@ public class CdbSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that StopCdbProcess throws ObjectDisposedException when the session is disposed.
+    /// </summary>
     [Fact]
     public void StopCdbProcess_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -358,6 +430,9 @@ public class CdbSessionTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that DumpFilePath returns an empty string when the session is not initialized.
+    /// </summary>
     [Fact]
     public void DumpFilePath_WhenNotInitialized_ShouldReturnEmptyString()
     {
@@ -371,6 +446,9 @@ public class CdbSessionTests : IDisposable
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that SymbolPath returns null when the session is not initialized.
+    /// </summary>
     [Fact]
     public void SymbolPath_WhenNotInitialized_ShouldReturnNull()
     {
@@ -384,6 +462,9 @@ public class CdbSessionTests : IDisposable
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that IsInitialized returns false when the session is not initialized.
+    /// </summary>
     [Fact]
     public void IsInitialized_WhenNotInitialized_ShouldReturnFalse()
     {
@@ -397,6 +478,9 @@ public class CdbSessionTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that DisposeAsync properly disposes the session without throwing.
+    /// </summary>
     [Fact]
     public async Task DisposeAsync_WhenCalled_ShouldDisposeSession()
     {
@@ -408,6 +492,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    /// Verifies that calling DisposeAsync multiple times does not throw an exception.
+    /// </summary>
     [Fact]
     public async Task DisposeAsync_WhenCalledMultipleTimes_ShouldNotThrow()
     {
@@ -423,6 +510,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    /// Verifies that FindCdbExecutableAsync throws InvalidOperationException when CDB is not found.
+    /// </summary>
     [Fact]
     public async Task FindCdbExecutableAsync_WhenNoCdbFound_ShouldThrowInvalidOperationException()
     {
@@ -435,6 +525,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
     }
 
+    /// <summary>
+    /// Verifies that StartCdbProcessAsync throws InvalidOperationException when session is not initialized.
+    /// </summary>
     [Fact]
     public async Task StartCdbProcessAsync_WhenCalled_ShouldThrowInvalidOperationException()
     {
@@ -446,6 +539,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().ThrowAsync<InvalidOperationException>();
     }
 
+    /// <summary>
+    /// Verifies that StopCdbProcess does not throw when called.
+    /// </summary>
     [Fact]
     public void StopCdbProcess_WhenCalled_ShouldNotThrow()
     {
@@ -457,6 +553,9 @@ public class CdbSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that InitializeAsync throws ArgumentException when dump file path is null.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_WithNullDumpFilePath_ShouldThrowArgumentException()
     {
@@ -469,6 +568,9 @@ public class CdbSessionTests : IDisposable
             .WithParameterName("dumpFilePath");
     }
 
+    /// <summary>
+    /// Verifies that InitializeAsync throws ArgumentException when dump file path is empty.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_WithEmptyDumpFilePath_ShouldThrowArgumentException()
     {
@@ -481,6 +583,9 @@ public class CdbSessionTests : IDisposable
             .WithParameterName("dumpFilePath");
     }
 
+    /// <summary>
+    /// Verifies that InitializeAsync throws ArgumentException when dump file path is whitespace.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_WithWhitespaceDumpFilePath_ShouldThrowArgumentException()
     {
@@ -493,6 +598,9 @@ public class CdbSessionTests : IDisposable
             .WithParameterName("dumpFilePath");
     }
 
+    /// <summary>
+    /// Verifies that ThrowIfDisposed throws ObjectDisposedException when the session is disposed.
+    /// </summary>
     [Fact]
     public void TestThrowIfDisposed_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -510,6 +618,9 @@ public class CdbSessionTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that ThrowIfDisposed does not throw when the session is not disposed.
+    /// </summary>
     [Fact]
     public void TestThrowIfDisposed_WhenNotDisposed_ShouldNotThrow()
     {
@@ -525,6 +636,9 @@ public class CdbSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that ThrowIfNotInitialized throws InvalidOperationException when session is not initialized.
+    /// </summary>
     [Fact]
     public void TestThrowIfNotInitialized_WhenNotInitialized_ShouldThrowInvalidOperationException()
     {
@@ -541,6 +655,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that WaitForCdbInitializationAsync completes successfully when process is not started.
+    /// </summary>
     [Fact]
     public async Task TestWaitForCdbInitializationAsync_WhenProcessNotStarted_ShouldCompleteSuccessfully()
     {
@@ -556,6 +673,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    /// Verifies that SendCommandToCdbAsync throws InvalidOperationException when session is not initialized.
+    /// </summary>
     [Fact]
     public async Task TestSendCommandToCdbAsync_WhenNotInitialized_ShouldThrowInvalidOperationException()
     {
@@ -572,6 +692,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB input stream is not available");
     }
 
+    /// <summary>
+    /// Verifies that ReadCommandOutputAsync throws InvalidOperationException when session is not initialized.
+    /// </summary>
     [Fact]
     public async Task TestReadCommandOutputAsync_WhenNotInitialized_ShouldThrowInvalidOperationException()
     {
@@ -588,6 +711,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB output stream is not available");
     }
 
+    /// <summary>
+    /// Verifies that InitializeAsync throws InvalidOperationException when CDB process fails to start.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_WithSuccessfulInitialization_ShouldSetInitializedToTrue()
     {
@@ -616,6 +742,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("Failed to start CDB process");
     }
 
+    /// <summary>
+    /// Verifies that InitializeAsync throws InvalidOperationException when CDB process fails to start.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_WithSuccessfulInitialization_ShouldLogSuccessMessage()
     {
@@ -644,6 +773,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("Failed to start CDB process");
     }
 
+    /// <summary>
+    /// Verifies that ExecuteCommandAsync throws InvalidOperationException when session is not initialized and command is null.
+    /// </summary>
     [Fact]
     public async Task ExecuteCommandAsync_WithNullCommand_ShouldThrowArgumentException()
     {
@@ -672,6 +804,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ExecuteCommandAsync throws InvalidOperationException when session is not initialized and command is empty.
+    /// </summary>
     [Fact]
     public async Task ExecuteCommandAsync_WithEmptyCommand_ShouldThrowArgumentException()
     {
@@ -700,6 +835,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ExecuteCommandAsync throws InvalidOperationException when session is not initialized and command is whitespace.
+    /// </summary>
     [Fact]
     public async Task ExecuteCommandAsync_WithWhitespaceCommand_ShouldThrowArgumentException()
     {
@@ -728,6 +866,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ExecuteCommandAsync logs debug messages when executing a valid command.
+    /// </summary>
     [Fact]
     public async Task ExecuteCommandAsync_WithValidCommand_ShouldLogDebugMessage()
     {
@@ -759,6 +900,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ExecuteCommandAsync throws InvalidOperationException when session is not initialized and command is tab character.
+    /// </summary>
     [Fact]
     public async Task ExecuteCommandAsync_WithTabCommand_ShouldThrowArgumentException()
     {
@@ -787,6 +931,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ExecuteCommandAsync throws InvalidOperationException when session is not initialized and command is newline character.
+    /// </summary>
     [Fact]
     public async Task ExecuteCommandAsync_WithNewlineCommand_ShouldThrowArgumentException()
     {
@@ -815,6 +962,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ExecuteCommandAsync throws InvalidOperationException when session is not initialized and command is carriage return character.
+    /// </summary>
     [Fact]
     public async Task ExecuteCommandAsync_WithCarriageReturnCommand_ShouldThrowArgumentException()
     {
@@ -843,6 +993,9 @@ public class CdbSessionTests : IDisposable
             .WithMessage("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ExecuteCommandAsync throws InvalidOperationException when session is not initialized and command contains mixed whitespace.
+    /// </summary>
     [Fact]
     public async Task ExecuteCommandAsync_WithMixedWhitespaceCommand_ShouldThrowArgumentException()
     {
@@ -873,6 +1026,9 @@ public class CdbSessionTests : IDisposable
 
     #region Additional Tests for Coverage
 
+    /// <summary>
+    /// Verifies that CreateCommandWithSentinels wraps a valid command with sentinel markers.
+    /// </summary>
     [Fact]
     public void CreateCommandWithSentinels_WithValidCommand_ShouldWrapCommand()
     {
@@ -894,6 +1050,9 @@ public class CdbSessionTests : IDisposable
         result.Should().Contain(command);
     }
 
+    /// <summary>
+    /// Verifies that CreateCommandWithSentinels wraps an empty command with sentinel markers.
+    /// </summary>
     [Fact]
     public void CreateCommandWithSentinels_WithEmptyCommand_ShouldWrapEmptyCommand()
     {
@@ -914,6 +1073,9 @@ public class CdbSessionTests : IDisposable
         result.Should().Contain("MCP_NEXUS_SENTINEL_COMMAND_END");
     }
 
+    /// <summary>
+    /// Verifies that CreateCommandWithSentinels wraps a null command with sentinel markers.
+    /// </summary>
     [Fact]
     public void CreateCommandWithSentinels_WithNullCommand_ShouldWrapNullCommand()
     {
@@ -934,6 +1096,9 @@ public class CdbSessionTests : IDisposable
         result.Should().Contain("MCP_NEXUS_SENTINEL_COMMAND_END");
     }
 
+    /// <summary>
+    /// Verifies that CreateCommandWithSentinels wraps commands with special characters correctly.
+    /// </summary>
     [Fact]
     public void CreateCommandWithSentinels_WithSpecialCharacters_ShouldWrapSpecialCharacters()
     {
@@ -955,6 +1120,9 @@ public class CdbSessionTests : IDisposable
         result.Should().Contain(command);
     }
 
+    /// <summary>
+    /// Verifies that CreateCommandWithSentinels wraps long commands correctly.
+    /// </summary>
     [Fact]
     public void CreateCommandWithSentinels_WithLongCommand_ShouldWrapLongCommand()
     {
@@ -976,6 +1144,9 @@ public class CdbSessionTests : IDisposable
         result.Should().Contain(command);
     }
 
+    /// <summary>
+    /// Verifies that SendQuitCommandAsync completes successfully when input writer is null.
+    /// </summary>
     [Fact]
     public async Task TestSendQuitCommandAsync_WithNullInputWriter_ShouldCompleteSuccessfully()
     {
@@ -993,6 +1164,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    /// Verifies that WriteQuitCommandAsync throws NullReferenceException when input writer is null.
+    /// </summary>
     [Fact]
     public async Task TestWriteQuitCommandAsync_WithNullInputWriter_ShouldThrowNullReferenceException()
     {
@@ -1010,6 +1184,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().ThrowAsync<NullReferenceException>();
     }
 
+    /// <summary>
+    /// Verifies that FlushInputAsync throws NullReferenceException when input writer is null.
+    /// </summary>
     [Fact]
     public async Task TestFlushInputAsync_WithNullInputWriter_ShouldThrowNullReferenceException()
     {
@@ -1027,6 +1204,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().ThrowAsync<NullReferenceException>();
     }
 
+    /// <summary>
+    /// Verifies that WaitForProcessExitAsync completes successfully when process is null.
+    /// </summary>
     [Fact]
     public async Task TestWaitForProcessExitAsync_WithNullProcess_ShouldCompleteSuccessfully()
     {
@@ -1044,6 +1224,9 @@ public class CdbSessionTests : IDisposable
         await action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    /// Verifies that KillProcess does not throw when process is null.
+    /// </summary>
     [Fact]
     public void TestKillProcess_WithNullProcess_ShouldNotThrow()
     {
@@ -1061,6 +1244,9 @@ public class CdbSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that DisposeResources disposes all resources correctly.
+    /// </summary>
     [Fact]
     public void TestDisposeResources_ShouldDisposeAllResources()
     {
@@ -1078,6 +1264,9 @@ public class CdbSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that SetDisposedState sets disposed flag and clears initialized state.
+    /// </summary>
     [Fact]
     public void TestSetDisposedState_ShouldSetDisposedAndNotInitialized()
     {
@@ -1095,6 +1284,9 @@ public class CdbSessionTests : IDisposable
         testAccessor.IsActive.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that ProcessOutputLine sets start marker found flag when start marker is encountered.
+    /// </summary>
     [Fact]
     public void TestProcessOutputLine_WithStartMarker_ShouldSetStartMarkerFound()
     {
@@ -1117,6 +1309,9 @@ public class CdbSessionTests : IDisposable
         startMarkerFound.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that ProcessOutputLine returns break signal when end marker is encountered.
+    /// </summary>
     [Fact]
     public void TestProcessOutputLine_WithEndMarker_ShouldReturnBreak()
     {
@@ -1138,6 +1333,9 @@ public class CdbSessionTests : IDisposable
         result.ShouldBreak.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that ProcessOutputLine appends content to output when between start and end markers.
+    /// </summary>
     [Fact]
     public void TestProcessOutputLine_WithContentBetweenMarkers_ShouldAppendToOutput()
     {
@@ -1160,6 +1358,9 @@ public class CdbSessionTests : IDisposable
         output.ToString().Should().Be("Some command output\r\n");
     }
 
+    /// <summary>
+    /// Verifies that ProcessOutputLine does not append content to output before start marker is found.
+    /// </summary>
     [Fact]
     public void TestProcessOutputLine_WithContentBeforeStartMarker_ShouldNotAppendToOutput()
     {

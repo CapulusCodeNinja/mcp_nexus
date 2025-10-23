@@ -16,6 +16,9 @@ public class CommandsResourceTests
     private readonly Mock<IDebugEngine> m_MockDebugEngine;
     private readonly IServiceProvider m_ServiceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the CommandsResourceTests class.
+    /// </summary>
     public CommandsResourceTests()
     {
         m_MockDebugEngine = new Mock<IDebugEngine>();
@@ -26,6 +29,9 @@ public class CommandsResourceTests
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
+    /// <summary>
+    /// Verifies that Commands returns empty list when no commands exist.
+    /// </summary>
     [Fact]
     public async Task Commands_ReturnsEmptyList()
     {
@@ -39,6 +45,9 @@ public class CommandsResourceTests
         json.RootElement.GetProperty("note").GetString().Should().Contain("IDebugEngine");
     }
 
+    /// <summary>
+    /// Verifies that Commands includes timestamp in response.
+    /// </summary>
     [Fact]
     public async Task Commands_IncludesTimestamp()
     {
@@ -49,6 +58,9 @@ public class CommandsResourceTests
     }
 
 
+    /// <summary>
+    /// Verifies that Commands returns valid JSON.
+    /// </summary>
     [Fact]
     public async Task Commands_ReturnsValidJson()
     {
@@ -58,6 +70,9 @@ public class CommandsResourceTests
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that Commands returns error response when exception occurs.
+    /// </summary>
     [Fact]
     public async Task Commands_WithException_ReturnsErrorResponse()
     {
@@ -78,6 +93,9 @@ public class CommandsResourceTests
         errorProperty.GetString().Should().Contain("Test error");
     }
 
+    /// <summary>
+    /// Verifies that Commands throws exception when service provider is null.
+    /// </summary>
     [Fact]
     public async Task Commands_WithNullServiceProvider_ThrowsException()
     {
@@ -85,6 +103,9 @@ public class CommandsResourceTests
         await action.Should().ThrowAsync<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Verifies that Commands JSON format is indented.
+    /// </summary>
     [Fact]
     public async Task Commands_JsonFormat_IsIndented()
     {
@@ -93,4 +114,3 @@ public class CommandsResourceTests
         result.Should().Contain("\n"); // Indented JSON contains newlines
     }
 }
-

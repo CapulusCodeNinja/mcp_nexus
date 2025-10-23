@@ -17,6 +17,9 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     private readonly Mock<IDebugEngine> m_MockEngine;
     private readonly IServiceProvider m_ServiceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the GetDumpAnalyzeCommandsStatusToolTests class.
+    /// </summary>
     public GetDumpAnalyzeCommandsStatusToolTests()
     {
         m_MockEngine = new Mock<IDebugEngine>();
@@ -27,6 +30,9 @@ public class GetDumpAnalyzeCommandsStatusToolTests
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
+    /// <summary>
+    /// Verifies that nexus_get_dump_analyze_commands_status returns all commands with valid session.
+    /// </summary>
     [Fact]
     public async Task nexus_get_dump_analyze_commands_status_WithValidSession_ReturnsAllCommands()
     {
@@ -70,6 +76,9 @@ public class GetDumpAnalyzeCommandsStatusToolTests
         commandsValue.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that nexus_get_dump_analyze_commands_status returns empty array with empty session.
+    /// </summary>
     [Fact]
     public async Task nexus_get_dump_analyze_commands_status_WithEmptySession_ReturnsEmptyArray()
     {
@@ -86,6 +95,9 @@ public class GetDumpAnalyzeCommandsStatusToolTests
         ((int)response.count).Should().Be(0);
     }
 
+    /// <summary>
+    /// Verifies that nexus_get_dump_analyze_commands_status returns error with ArgumentException.
+    /// </summary>
     [Fact]
     public async Task nexus_get_dump_analyze_commands_status_WithArgumentException_ReturnsError()
     {
@@ -102,6 +114,9 @@ public class GetDumpAnalyzeCommandsStatusToolTests
         ((string)response.error).Should().Be("Invalid session");
     }
 
+    /// <summary>
+    /// Verifies that nexus_get_dump_analyze_commands_status returns error with unexpected exception.
+    /// </summary>
     [Fact]
     public async Task nexus_get_dump_analyze_commands_status_WithUnexpectedException_ReturnsError()
     {
@@ -118,6 +133,9 @@ public class GetDumpAnalyzeCommandsStatusToolTests
         ((string)response.error).Should().Contain("Unexpected error");
     }
 
+    /// <summary>
+    /// Verifies that nexus_get_dump_analyze_commands_status includes usage field in response.
+    /// </summary>
     [Fact]
     public async Task nexus_get_dump_analyze_commands_status_IncludesUsageField()
     {
@@ -138,6 +156,9 @@ public class GetDumpAnalyzeCommandsStatusToolTests
         usageValue.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that nexus_get_dump_analyze_commands_status sets hasOutput correctly.
+    /// </summary>
     [Fact]
     public async Task nexus_get_dump_analyze_commands_status_SetsHasOutputCorrectly()
     {
@@ -173,4 +194,3 @@ public class GetDumpAnalyzeCommandsStatusToolTests
         commands.Should().HaveCount(2);
     }
 }
-

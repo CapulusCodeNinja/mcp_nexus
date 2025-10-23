@@ -9,6 +9,9 @@ namespace nexus.engine.unittests.Configuration;
 /// </summary>
 public class BatchingConfigurationTests
 {
+    /// <summary>
+    /// Verifies that the BatchingConfiguration class sets all default values correctly.
+    /// </summary>
     [Fact]
     public void DefaultValues_ShouldBeSetCorrectly()
     {
@@ -35,6 +38,9 @@ public class BatchingConfigurationTests
         config.ExcludedCommands.Should().Contain("!gchandles");
     }
 
+    /// <summary>
+    /// Verifies that all properties of the BatchingConfiguration class can be set to custom values.
+    /// </summary>
     [Fact]
     public void Properties_ShouldBeSettable()
     {
@@ -61,6 +67,9 @@ public class BatchingConfigurationTests
         config.ExcludedCommands.Should().BeSameAs(excludedCommands);
     }
 
+    /// <summary>
+    /// Verifies that setting ExcludedCommands to null does not throw an exception.
+    /// </summary>
     [Fact]
     public void ExcludedCommands_WhenSetToNull_ShouldNotThrow()
     {

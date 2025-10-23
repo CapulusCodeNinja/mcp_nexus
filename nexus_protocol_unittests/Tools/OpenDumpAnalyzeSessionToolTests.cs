@@ -18,6 +18,9 @@ public class OpenDumpAnalyzeSessionToolTests
     private readonly Mock<IFileSystem> m_MockFileSystem;
     private readonly IServiceProvider m_ServiceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the OpenDumpAnalyzeSessionToolTests class.
+    /// </summary>
     public OpenDumpAnalyzeSessionToolTests()
     {
         m_MockEngine = new Mock<IDebugEngine>();
@@ -34,6 +37,9 @@ public class OpenDumpAnalyzeSessionToolTests
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
+    /// <summary>
+    /// Verifies that nexus_open_dump_analyze_session returns success result with valid dump path.
+    /// </summary>
     [Fact]
     public async Task nexus_open_dump_analyze_session_WithValidDumpPath_ReturnsSuccessResult()
     {
@@ -51,6 +57,9 @@ public class OpenDumpAnalyzeSessionToolTests
         ((string)response.operation).Should().Be("nexus_open_dump_analyze_session");
     }
 
+    /// <summary>
+    /// Verifies that nexus_open_dump_analyze_session passes symbols path to engine.
+    /// </summary>
     [Fact]
     public async Task nexus_open_dump_analyze_session_WithSymbolsPath_PassesToEngine()
     {
@@ -69,6 +78,9 @@ public class OpenDumpAnalyzeSessionToolTests
         ((string)response.sessionId).Should().Be(sessionId);
     }
 
+    /// <summary>
+    /// Verifies that nexus_open_dump_analyze_session returns failed result when file not found.
+    /// </summary>
     [Fact]
     public async Task nexus_open_dump_analyze_session_WithFileNotFoundException_ReturnsFailedResult()
     {
@@ -85,6 +97,9 @@ public class OpenDumpAnalyzeSessionToolTests
         ((string)response.message).Should().Contain("Dump file not found");
     }
 
+    /// <summary>
+    /// Verifies that nexus_open_dump_analyze_session returns failed result with InvalidOperationException.
+    /// </summary>
     [Fact]
     public async Task nexus_open_dump_analyze_session_WithInvalidOperationException_ReturnsFailedResult()
     {
@@ -101,6 +116,9 @@ public class OpenDumpAnalyzeSessionToolTests
         ((string)response.message).Should().Be("Max sessions reached");
     }
 
+    /// <summary>
+    /// Verifies that nexus_open_dump_analyze_session returns failed result with unexpected exception.
+    /// </summary>
     [Fact]
     public async Task nexus_open_dump_analyze_session_WithUnexpectedException_ReturnsFailedResult()
     {
@@ -117,6 +135,9 @@ public class OpenDumpAnalyzeSessionToolTests
         ((string)response.message).Should().Contain("Unexpected error");
     }
 
+    /// <summary>
+    /// Verifies that nexus_open_dump_analyze_session includes usage field in response.
+    /// </summary>
     [Fact]
     public async Task nexus_open_dump_analyze_session_IncludesUsageField()
     {
@@ -136,4 +157,3 @@ public class OpenDumpAnalyzeSessionToolTests
         usageValue.Should().NotBeNull();
     }
 }
-

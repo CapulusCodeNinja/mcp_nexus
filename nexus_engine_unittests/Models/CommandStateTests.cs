@@ -9,6 +9,9 @@ namespace nexus.engine.unittests.Models;
 /// </summary>
 public class CommandStateTests
 {
+    /// <summary>
+    /// Verifies that CommandState enum values have correct numeric values.
+    /// </summary>
     [Theory]
     [InlineData(CommandState.Queued, 0)]
     [InlineData(CommandState.Executing, 1)]
@@ -22,6 +25,9 @@ public class CommandStateTests
         ((int)state).Should().Be(expectedValue);
     }
 
+    /// <summary>
+    /// Verifies that all CommandState enum values are defined and accessible.
+    /// </summary>
     [Fact]
     public void AllEnumValues_ShouldBeDefined()
     {
@@ -38,6 +44,9 @@ public class CommandStateTests
         values.Should().Contain(CommandState.Timeout);
     }
 
+    /// <summary>
+    /// Verifies that all CommandState enum values are unique.
+    /// </summary>
     [Fact]
     public void EnumValues_ShouldBeUnique()
     {

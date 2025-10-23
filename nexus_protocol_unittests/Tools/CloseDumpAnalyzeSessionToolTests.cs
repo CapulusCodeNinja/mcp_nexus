@@ -16,6 +16,9 @@ public class CloseDumpAnalyzeSessionToolTests
     private readonly Mock<IDebugEngine> m_MockEngine;
     private readonly IServiceProvider m_ServiceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the CloseDumpAnalyzeSessionToolTests class.
+    /// </summary>
     public CloseDumpAnalyzeSessionToolTests()
     {
         m_MockEngine = new Mock<IDebugEngine>();
@@ -26,6 +29,9 @@ public class CloseDumpAnalyzeSessionToolTests
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
+    /// <summary>
+    /// Verifies that nexus_close_dump_analyze_session returns success result with valid session ID.
+    /// </summary>
     [Fact]
     public async Task nexus_close_dump_analyze_session_WithValidSessionId_ReturnsSuccessResult()
     {
@@ -43,6 +49,9 @@ public class CloseDumpAnalyzeSessionToolTests
         ((string)response.operation).Should().Be("nexus_close_dump_analyze_session");
     }
 
+    /// <summary>
+    /// Verifies that nexus_close_dump_analyze_session returns failed result with ArgumentException.
+    /// </summary>
     [Fact]
     public async Task nexus_close_dump_analyze_session_WithArgumentException_ReturnsFailedResult()
     {
@@ -59,6 +68,9 @@ public class CloseDumpAnalyzeSessionToolTests
         ((string)response.message).Should().Be("Invalid session ID");
     }
 
+    /// <summary>
+    /// Verifies that nexus_close_dump_analyze_session returns failed result with unexpected exception.
+    /// </summary>
     [Fact]
     public async Task nexus_close_dump_analyze_session_WithUnexpectedException_ReturnsFailedResult()
     {
@@ -75,6 +87,9 @@ public class CloseDumpAnalyzeSessionToolTests
         ((string)response.message).Should().Contain("Unexpected error");
     }
 
+    /// <summary>
+    /// Verifies that nexus_close_dump_analyze_session includes usage field in response.
+    /// </summary>
     [Fact]
     public async Task nexus_close_dump_analyze_session_IncludesUsageField()
     {
@@ -93,4 +108,3 @@ public class CloseDumpAnalyzeSessionToolTests
         usageValue.Should().NotBeNull();
     }
 }
-

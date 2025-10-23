@@ -15,6 +15,9 @@ public class CommandStateChangedEventArgsTests
     private readonly string m_CommandId = "cmd-456";
     private readonly string m_Command = "lm";
 
+    /// <summary>
+    /// Verifies that the constructor correctly sets all properties when provided with valid parameters.
+    /// </summary>
     [Fact]
     public void Constructor_WithValidParameters_ShouldSetProperties()
     {
@@ -38,6 +41,9 @@ public class CommandStateChangedEventArgsTests
         args.Command.Should().Be(m_Command);
     }
 
+    /// <summary>
+    /// Verifies that the constructor allows the Command property to be set to null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullCommand_ShouldAllowNull()
     {
@@ -56,6 +62,11 @@ public class CommandStateChangedEventArgsTests
         args.Command.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that various state transitions are correctly represented in the event args.
+    /// </summary>
+    /// <param name="oldState">The previous command state.</param>
+    /// <param name="newState">The new command state.</param>
     [Theory]
     [InlineData(CommandState.Queued, CommandState.Executing)]
     [InlineData(CommandState.Executing, CommandState.Completed)]

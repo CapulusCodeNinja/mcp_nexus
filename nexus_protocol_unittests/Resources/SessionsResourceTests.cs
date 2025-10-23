@@ -16,6 +16,9 @@ public class SessionsResourceTests
     private readonly Mock<IDebugEngine> m_MockDebugEngine;
     private readonly IServiceProvider m_ServiceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the SessionsResourceTests class.
+    /// </summary>
     public SessionsResourceTests()
     {
         m_MockDebugEngine = new Mock<IDebugEngine>();
@@ -26,6 +29,9 @@ public class SessionsResourceTests
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
+    /// <summary>
+    /// Verifies that Sessions returns empty list when no sessions exist.
+    /// </summary>
     [Fact]
     public async Task Sessions_ReturnsEmptyList()
     {
@@ -39,6 +45,9 @@ public class SessionsResourceTests
         json.RootElement.GetProperty("note").GetString().Should().Contain("IDebugEngine");
     }
 
+    /// <summary>
+    /// Verifies that Sessions includes timestamp in response.
+    /// </summary>
     [Fact]
     public async Task Sessions_IncludesTimestamp()
     {
@@ -49,6 +58,9 @@ public class SessionsResourceTests
     }
 
 
+    /// <summary>
+    /// Verifies that Sessions returns valid JSON.
+    /// </summary>
     [Fact]
     public async Task Sessions_ReturnsValidJson()
     {
@@ -58,6 +70,9 @@ public class SessionsResourceTests
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that Sessions returns error response when exception occurs.
+    /// </summary>
     [Fact]
     public async Task Sessions_WithException_ReturnsErrorResponse()
     {
@@ -78,6 +93,9 @@ public class SessionsResourceTests
         errorProperty.GetString().Should().Contain("Test error");
     }
 
+    /// <summary>
+    /// Verifies that Sessions throws exception when service provider is null.
+    /// </summary>
     [Fact]
     public async Task Sessions_WithNullServiceProvider_ThrowsException()
     {
@@ -85,6 +103,9 @@ public class SessionsResourceTests
         await action.Should().ThrowAsync<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Verifies that Sessions JSON format is indented.
+    /// </summary>
     [Fact]
     public async Task Sessions_JsonFormat_IsIndented()
     {
@@ -93,4 +114,3 @@ public class SessionsResourceTests
         result.Should().Contain("\n"); // Indented JSON contains newlines
     }
 }
-

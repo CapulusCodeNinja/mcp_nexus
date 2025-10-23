@@ -15,6 +15,9 @@ public class HttpServerSetupTests
 {
     private readonly IConfiguration m_Configuration;
 
+    /// <summary>
+    /// Initializes a new instance of the HttpServerSetupTests class.
+    /// </summary>
     public HttpServerSetupTests()
     {
         var configBuilder = new ConfigurationBuilder();
@@ -26,6 +29,9 @@ public class HttpServerSetupTests
         m_Configuration = configBuilder.Build();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices configures all services with default configuration.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_WithDefaultConfig_ConfiguresAllServices()
     {
@@ -37,6 +43,9 @@ public class HttpServerSetupTests
         serviceProvider.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices applies custom configuration correctly.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_WithCustomConfig_AppliesConfiguration()
     {
@@ -59,6 +68,9 @@ public class HttpServerSetupTests
         kestrelOptions.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices uses default configuration when null config is provided.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_WithNullConfig_UsesDefaults()
     {
@@ -70,6 +82,9 @@ public class HttpServerSetupTests
         serviceProvider.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices does not add CORS when disabled.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_WithCorsDisabled_DoesNotAddCors()
     {
@@ -87,6 +102,9 @@ public class HttpServerSetupTests
         serviceProvider.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices does not add rate limiting when disabled.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_WithRateLimitDisabled_DoesNotAddRateLimit()
     {
@@ -103,6 +121,9 @@ public class HttpServerSetupTests
         serviceProvider.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices throws ArgumentException with invalid configuration.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_WithInvalidConfig_ThrowsArgumentException()
     {
@@ -118,6 +139,9 @@ public class HttpServerSetupTests
             .WithMessage("*MaxRequestBodySize*");
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices configures both CORS and rate limiting when both are enabled.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_WithBothCorsAndRateLimitEnabled_ConfiguresBoth()
     {
@@ -134,6 +158,9 @@ public class HttpServerSetupTests
         serviceProvider.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices configures Kestrel server limits correctly.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_ConfiguresKestrelLimits()
     {
@@ -156,6 +183,9 @@ public class HttpServerSetupTests
         kestrelOptions.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices configures JSON serialization options.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_ConfiguresJsonOptions()
     {
@@ -168,6 +198,9 @@ public class HttpServerSetupTests
         serviceProvider.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices configures MCP server services.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_ConfiguresMcpServer()
     {
@@ -181,6 +214,9 @@ public class HttpServerSetupTests
         serviceProvider.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices succeeds with minimal valid configuration values.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_WithMinimalValidConfig_Succeeds()
     {
@@ -201,6 +237,9 @@ public class HttpServerSetupTests
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices succeeds with large configuration values.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_WithLargeValues_Succeeds()
     {
@@ -221,6 +260,9 @@ public class HttpServerSetupTests
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices configures IIS server options.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_ConfiguresIISServerOptions()
     {
@@ -237,6 +279,9 @@ public class HttpServerSetupTests
         serviceProvider.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices adds MCP server with transport configuration.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_AddsMcpServerWithTransport()
     {
@@ -250,6 +295,9 @@ public class HttpServerSetupTests
         serviceProvider.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices configures memory cache for rate limiting.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_ConfiguresMemoryCacheForRateLimit()
     {
@@ -265,6 +313,9 @@ public class HttpServerSetupTests
         serviceProvider.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that ConfigureHttpServices can be called multiple times without errors.
+    /// </summary>
     [Fact]
     public void ConfigureHttpServices_AllowsMultipleCalls()
     {
@@ -276,4 +327,3 @@ public class HttpServerSetupTests
         action.Should().NotThrow();
     }
 }
-

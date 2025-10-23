@@ -16,6 +16,9 @@ public class JsonRpcLoggingMiddlewareTests
     private readonly RequestDelegate m_NextDelegate;
     private bool m_NextCalled;
 
+    /// <summary>
+    /// Initializes a new instance of the JsonRpcLoggingMiddlewareTests class.
+    /// </summary>
     public JsonRpcLoggingMiddlewareTests()
     {
         var logger = NullLogger<JsonRpcLoggingMiddleware>.Instance;
@@ -28,6 +31,9 @@ public class JsonRpcLoggingMiddlewareTests
         m_Middleware = new JsonRpcLoggingMiddleware(m_NextDelegate, logger);
     }
 
+    /// <summary>
+    /// Verifies that constructor throws ArgumentNullException when next delegate is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullNext_ThrowsArgumentNullException()
     {
@@ -39,6 +45,9 @@ public class JsonRpcLoggingMiddlewareTests
             .WithParameterName("next");
     }
 
+    /// <summary>
+    /// Verifies that constructor throws ArgumentNullException when logger is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
@@ -48,6 +57,9 @@ public class JsonRpcLoggingMiddlewareTests
             .WithParameterName("logger");
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync calls next middleware with valid request.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithValidRequest_CallsNext()
     {
@@ -62,6 +74,9 @@ public class JsonRpcLoggingMiddlewareTests
         m_NextCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync calls next middleware with GET request.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithGetRequest_CallsNext()
     {
@@ -75,6 +90,9 @@ public class JsonRpcLoggingMiddlewareTests
         m_NextCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync calls next middleware with non-seekable request body.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithNonSeekableRequestBody_CallsNext()
     {
@@ -89,6 +107,9 @@ public class JsonRpcLoggingMiddlewareTests
         m_NextCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync calls next middleware with large request body exceeding size limit.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithLargeRequestBody_CallsNext()
     {
@@ -104,6 +125,9 @@ public class JsonRpcLoggingMiddlewareTests
         m_NextCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync logs request and response when POST is sent to root path.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithRootPathPost_LogsRequestAndResponse()
     {
@@ -118,6 +142,9 @@ public class JsonRpcLoggingMiddlewareTests
         m_NextCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync captures response body when POST is sent to root path.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithRootPathPost_CapturesResponseBody()
     {
@@ -144,6 +171,9 @@ public class JsonRpcLoggingMiddlewareTests
         actualResponse.Should().Be(responseText);
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync logs requests with empty request body.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithEmptyRequestBody_Logs()
     {
@@ -158,6 +188,9 @@ public class JsonRpcLoggingMiddlewareTests
         m_NextCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync truncates very large request bodies in logs.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithVeryLargeRequestBody_TruncatesInLogs()
     {
@@ -173,6 +206,9 @@ public class JsonRpcLoggingMiddlewareTests
         m_NextCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync restores original response body stream when exception occurs in next middleware.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithExceptionInNext_RestoresOriginalBodyStream()
     {
@@ -197,6 +233,9 @@ public class JsonRpcLoggingMiddlewareTests
         context.Response.Body.Should().BeSameAs(originalBody); // Body should be restored
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync logs JSON-RPC method and path with valid request.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithValidJsonRpcRequest_LogsMethodAndPath()
     {
@@ -212,6 +251,9 @@ public class JsonRpcLoggingMiddlewareTests
         m_NextCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync skips logging for non-root paths.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithNonRootPath_SkipsLogging()
     {
@@ -226,6 +268,9 @@ public class JsonRpcLoggingMiddlewareTests
         m_NextCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync skips logging for non-POST methods.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithNonPostMethod_SkipsLogging()
     {
@@ -244,7 +289,9 @@ public class JsonRpcLoggingMiddlewareTests
     /// </summary>
     private class NonSeekableStream : MemoryStream
     {
+        /// <summary>
+        /// Gets a value indicating whether the stream supports seeking.
+        /// </summary>
         public override bool CanSeek => false;
     }
 }
-

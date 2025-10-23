@@ -9,6 +9,9 @@ namespace nexus.engine.unittests.Models;
 /// </summary>
 public class SessionStateTests
 {
+    /// <summary>
+    /// Verifies that SessionState enum values have correct numeric values.
+    /// </summary>
     [Theory]
     [InlineData(SessionState.Initializing, 0)]
     [InlineData(SessionState.Active, 1)]
@@ -21,6 +24,9 @@ public class SessionStateTests
         ((int)state).Should().Be(expectedValue);
     }
 
+    /// <summary>
+    /// Verifies that all SessionState enum values are defined and accessible.
+    /// </summary>
     [Fact]
     public void AllEnumValues_ShouldBeDefined()
     {
@@ -36,6 +42,9 @@ public class SessionStateTests
         values.Should().Contain(SessionState.Faulted);
     }
 
+    /// <summary>
+    /// Verifies that all SessionState enum values are unique.
+    /// </summary>
     [Fact]
     public void EnumValues_ShouldBeUnique()
     {

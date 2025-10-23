@@ -68,7 +68,7 @@ public class CommandLineBuilderTests
         var parseResult = rootCommand.Parse("--http");
 
         // Assert
-        Assert.Equal(0, parseResult.Errors.Count);
+        Assert.Empty(parseResult.Errors);
     }
 
     /// <summary>

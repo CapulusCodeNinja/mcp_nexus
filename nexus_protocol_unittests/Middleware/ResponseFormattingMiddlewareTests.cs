@@ -14,12 +14,18 @@ public class ResponseFormattingMiddlewareTests
 {
     private readonly ResponseFormattingMiddleware m_Middleware;
 
+    /// <summary>
+    /// Initializes a new instance of the ResponseFormattingMiddlewareTests class.
+    /// </summary>
     public ResponseFormattingMiddlewareTests()
     {
         var logger = NullLogger<ResponseFormattingMiddleware>.Instance;
         m_Middleware = new ResponseFormattingMiddleware((HttpContext context) => Task.CompletedTask, logger);
     }
 
+    /// <summary>
+    /// Verifies that constructor throws ArgumentNullException when next delegate is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullNext_ThrowsArgumentNullException()
     {
@@ -31,6 +37,9 @@ public class ResponseFormattingMiddlewareTests
             .WithParameterName("next");
     }
 
+    /// <summary>
+    /// Verifies that constructor throws ArgumentNullException when logger is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
@@ -42,6 +51,9 @@ public class ResponseFormattingMiddlewareTests
             .WithParameterName("logger");
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync calls next middleware with normal execution.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithNormalExecution_CallsNext()
     {
@@ -60,6 +72,9 @@ public class ResponseFormattingMiddlewareTests
         nextCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync returns error response when exception occurs.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithException_ReturnsErrorResponse()
     {
@@ -83,6 +98,9 @@ public class ResponseFormattingMiddlewareTests
         responseBody.Should().Contain("\"jsonrpc\":\"2.0\"");
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync returns 500 with ArgumentException.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithArgumentException_Returns500()
     {
@@ -103,6 +121,9 @@ public class ResponseFormattingMiddlewareTests
         responseBody.Should().Contain("Invalid argument");
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync returns 500 with ArgumentNullException.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithArgumentNullException_Returns500()
     {
@@ -123,6 +144,9 @@ public class ResponseFormattingMiddlewareTests
         responseBody.Should().Contain("Parameter is null");
     }
 
+    /// <summary>
+    /// Verifies that InvokeAsync returns 500 with FileNotFoundException.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_WithFileNotFoundException_Returns500()
     {
@@ -143,4 +167,3 @@ public class ResponseFormattingMiddlewareTests
         responseBody.Should().Contain("File not found");
     }
 }
-

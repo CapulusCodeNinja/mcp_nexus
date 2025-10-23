@@ -9,6 +9,9 @@ namespace nexus.protocol.unittests.Models;
 /// </summary>
 public class McpModelsTests
 {
+    /// <summary>
+    /// Verifies that McpResponse with result serializes correctly.
+    /// </summary>
     [Fact]
     public void McpResponse_WithResult_SerializesCorrectly()
     {
@@ -26,6 +29,9 @@ public class McpModelsTests
         json.Should().Contain("\"status\":\"success\"");
     }
 
+    /// <summary>
+    /// Verifies that McpResponse with error serializes correctly.
+    /// </summary>
     [Fact]
     public void McpResponse_WithError_SerializesCorrectly()
     {
@@ -47,6 +53,9 @@ public class McpModelsTests
         json.Should().Contain("\"message\":\"Internal error\"");
     }
 
+    /// <summary>
+    /// Verifies that McpToolSchema round-trip preserves data.
+    /// </summary>
     [Fact]
     public void McpToolSchema_RoundTrip_PreservesData()
     {
@@ -72,6 +81,9 @@ public class McpModelsTests
         deserialized.Description.Should().Be("Test tool description");
     }
 
+    /// <summary>
+    /// Verifies that McpCommandStatusNotification has correct properties.
+    /// </summary>
     [Fact]
     public void McpCommandStatusNotification_HasCorrectProperties()
     {
@@ -92,4 +104,3 @@ public class McpModelsTests
         notification.Progress.Should().Be(50);
     }
 }
-

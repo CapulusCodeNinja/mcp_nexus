@@ -26,6 +26,9 @@ public class DebugEngineTests : IDisposable
     private readonly Mock<IProcessManager> m_MockProcessManager;
     private readonly DebugEngine m_Engine;
 
+    /// <summary>
+    /// Initializes a new instance of the DebugEngineTests class and sets up test dependencies.
+    /// </summary>
     public DebugEngineTests()
     {
         m_LoggerFactory = NullLoggerFactory.Instance;
@@ -46,6 +49,9 @@ public class DebugEngineTests : IDisposable
         m_Engine = new DebugEngine(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
     }
 
+    /// <summary>
+    /// Verifies that the DebugEngine constructor creates an instance successfully with valid parameters.
+    /// </summary>
     [Fact]
     public void Constructor_WithValidParameters_ShouldCreateInstance()
     {
@@ -53,6 +59,9 @@ public class DebugEngineTests : IDisposable
         m_Engine.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that the DebugEngine constructor throws ArgumentNullException when logger factory is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullLoggerFactory_ShouldThrowArgumentNullException()
     {
@@ -62,6 +71,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("loggerFactory");
     }
 
+    /// <summary>
+    /// Verifies that the DebugEngine constructor throws ArgumentNullException when configuration is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullConfiguration_ShouldThrowArgumentNullException()
     {
@@ -71,6 +83,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("configuration");
     }
 
+    /// <summary>
+    /// Verifies that the DebugEngine constructor throws ArgumentNullException when file system is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullFileSystem_ShouldThrowArgumentNullException()
     {
@@ -80,6 +95,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("fileSystem");
     }
 
+    /// <summary>
+    /// Verifies that the DebugEngine constructor throws ArgumentNullException when process manager is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullProcessManager_ShouldThrowArgumentNullException()
     {
@@ -89,6 +107,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("processManager");
     }
 
+    /// <summary>
+    /// Verifies that disposing the engine properly cleans up resources and prevents further operations.
+    /// </summary>
     [Fact]
     public async Task Dispose_WhenCalled_ShouldDisposeEngine()
     {
@@ -100,6 +121,9 @@ public class DebugEngineTests : IDisposable
         await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that calling Dispose multiple times does not throw an exception.
+    /// </summary>
     [Fact]
     public void Dispose_WhenCalledMultipleTimes_ShouldNotThrow()
     {
@@ -112,6 +136,9 @@ public class DebugEngineTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws FileNotFoundException when the dump file does not exist.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithValidDumpFile_ShouldThrowInvalidOperationException()
     {
@@ -125,6 +152,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws ArgumentException when dump file path is null.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithNullDumpFile_ShouldThrowArgumentException()
     {
@@ -134,6 +164,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("dumpFilePath");
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws ArgumentException when dump file path is empty.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithEmptyDumpFile_ShouldThrowArgumentException()
     {
@@ -143,6 +176,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("dumpFilePath");
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws ArgumentException when dump file path is whitespace.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithWhitespaceDumpFile_ShouldThrowArgumentException()
     {
@@ -152,6 +188,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("dumpFilePath");
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws ObjectDisposedException when the engine is disposed.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -163,6 +202,9 @@ public class DebugEngineTests : IDisposable
         await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that CloseSessionAsync behavior when attempting to close a non-existent session.
+    /// </summary>
     [Fact]
     public async Task CloseSessionAsync_WithValidSessionId_ShouldThrowInvalidOperationException()
     {
@@ -172,6 +214,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that CloseSessionAsync throws ArgumentException when session ID is null.
+    /// </summary>
     [Fact]
     public async Task CloseSessionAsync_WithNullSessionId_ShouldThrowArgumentException()
     {
@@ -181,6 +226,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that CloseSessionAsync throws ArgumentException when session ID is empty.
+    /// </summary>
     [Fact]
     public async Task CloseSessionAsync_WithEmptySessionId_ShouldThrowArgumentException()
     {
@@ -190,6 +238,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that CloseSessionAsync completes without error when session ID is invalid.
+    /// </summary>
     [Fact]
     public async Task CloseSessionAsync_WithInvalidSessionId_ShouldCompleteWithoutError()
     {
@@ -198,6 +249,9 @@ public class DebugEngineTests : IDisposable
         await action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    /// Verifies that CloseSessionAsync throws ObjectDisposedException when the engine is disposed.
+    /// </summary>
     [Fact]
     public async Task CloseSessionAsync_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -209,6 +263,9 @@ public class DebugEngineTests : IDisposable
         await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand behavior with valid parameters when session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task EnqueueCommand_WithValidParameters_ShouldThrowInvalidOperationException()
     {
@@ -218,6 +275,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when session ID is null.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithNullSessionId_ShouldThrowArgumentException()
     {
@@ -227,6 +287,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand behavior when command is null and session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task EnqueueCommand_WithNullCommand_ShouldThrowInvalidOperationException()
     {
@@ -236,6 +299,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws InvalidOperationException when session ID does not exist.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithInvalidSessionId_ShouldThrowInvalidOperationException()
     {
@@ -245,6 +311,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Session invalid-session not found");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command is null.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithNullCommand_ShouldThrowArgumentException()
     {
@@ -255,6 +324,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command is empty.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithEmptyCommand_ShouldThrowArgumentException()
     {
@@ -265,6 +337,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command contains only whitespace.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithWhitespaceCommand_ShouldThrowArgumentException()
     {
@@ -275,6 +350,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command contains only tab characters.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithTabOnlyCommand_ShouldThrowArgumentException()
     {
@@ -285,6 +363,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command contains only newline characters.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithNewlineOnlyCommand_ShouldThrowArgumentException()
     {
@@ -295,6 +376,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command contains only carriage return characters.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithCarriageReturnOnlyCommand_ShouldThrowArgumentException()
     {
@@ -305,6 +389,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command contains only mixed whitespace characters.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithMixedWhitespaceCommand_ShouldThrowArgumentException()
     {
@@ -317,6 +404,9 @@ public class DebugEngineTests : IDisposable
 
 
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ObjectDisposedException when the engine is disposed.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -328,6 +418,9 @@ public class DebugEngineTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandInfos returns an empty dictionary when session ID is invalid.
+    /// </summary>
     [Fact]
     public void GetAllCommandInfos_WithInvalidSessionId_ShouldReturnEmptyDictionary()
     {
@@ -339,6 +432,9 @@ public class DebugEngineTests : IDisposable
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandInfos throws ObjectDisposedException when the engine is disposed.
+    /// </summary>
     [Fact]
     public void GetAllCommandInfos_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -350,6 +446,9 @@ public class DebugEngineTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandInfos throws ArgumentException when session ID is null.
+    /// </summary>
     [Fact]
     public void GetAllCommandInfos_WithNullSessionId_ShouldThrowArgumentException_New()
     {
@@ -359,6 +458,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandInfos throws ArgumentException when session ID is empty.
+    /// </summary>
     [Fact]
     public void GetAllCommandInfos_WithEmptySessionId_ShouldThrowArgumentException_New()
     {
@@ -368,6 +470,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandInfos throws ArgumentException when session ID is whitespace.
+    /// </summary>
     [Fact]
     public void GetAllCommandInfos_WithWhitespaceSessionId_ShouldThrowArgumentException_New()
     {
@@ -377,6 +482,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfoAsync behavior when command ID is valid but session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task GetCommandInfoAsync_WithValidCommandId_ShouldThrowInvalidOperationException()
     {
@@ -386,6 +494,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfoAsync throws ArgumentException when session ID is null.
+    /// </summary>
     [Fact]
     public async Task GetCommandInfoAsync_WithNullSessionId_ShouldThrowArgumentException()
     {
@@ -395,6 +506,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfoAsync behavior when command ID is null and session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task GetCommandInfoAsync_WithNullCommandId_ShouldThrowInvalidOperationException()
     {
@@ -404,6 +518,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfoAsync throws InvalidOperationException when session ID is invalid.
+    /// </summary>
     [Fact]
     public async Task GetCommandInfoAsync_WithInvalidSessionId_ShouldThrowInvalidOperationException()
     {
@@ -412,6 +529,9 @@ public class DebugEngineTests : IDisposable
         await action.Should().ThrowAsync<InvalidOperationException>();
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfoAsync behavior when command ID is invalid and session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task GetCommandInfoAsync_WithInvalidCommandId_ShouldThrowInvalidOperationException()
     {
@@ -421,6 +541,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfoAsync throws ObjectDisposedException when the engine is disposed.
+    /// </summary>
     [Fact]
     public async Task GetCommandInfoAsync_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -432,6 +555,9 @@ public class DebugEngineTests : IDisposable
         await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo behavior when command ID is valid but session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task GetCommandInfo_WithValidCommandId_ShouldThrowInvalidOperationException()
     {
@@ -441,6 +567,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo throws ArgumentException when session ID is null.
+    /// </summary>
     [Fact]
     public void GetCommandInfo_WithNullSessionId_ShouldThrowArgumentException()
     {
@@ -450,6 +579,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo throws ArgumentException when command ID is null.
+    /// </summary>
     [Fact]
     public void GetCommandInfo_WithNullCommandId_ShouldThrowArgumentException()
     {
@@ -459,6 +591,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("commandId");
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo returns null when session ID is invalid.
+    /// </summary>
     [Fact]
     public void GetCommandInfo_WithInvalidSessionId_ShouldReturnNull()
     {
@@ -469,6 +604,9 @@ public class DebugEngineTests : IDisposable
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo returns null when command ID is invalid.
+    /// </summary>
     [Fact]
     public void GetCommandInfo_WithInvalidCommandId_ShouldReturnNull()
     {
@@ -482,6 +620,9 @@ public class DebugEngineTests : IDisposable
         commandInfo.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo throws ObjectDisposedException when the engine is disposed.
+    /// </summary>
     [Fact]
     public void GetCommandInfo_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -493,6 +634,9 @@ public class DebugEngineTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandInfos behavior when session ID is valid but session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task GetAllCommandInfos_WithValidSessionId_ShouldThrowInvalidOperationException()
     {
@@ -502,6 +646,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandInfos throws ArgumentException when session ID is null.
+    /// </summary>
     [Fact]
     public void GetAllCommandInfos_WithNullSessionId_ShouldThrowArgumentException()
     {
@@ -511,6 +658,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandInfos returns an empty collection when session ID is invalid.
+    /// </summary>
     [Fact]
     public void GetAllCommandInfos_WithInvalidSessionId_ShouldReturnEmptyCollection()
     {
@@ -522,6 +672,9 @@ public class DebugEngineTests : IDisposable
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandInfos throws ObjectDisposedException when the engine is disposed.
+    /// </summary>
     [Fact]
     public void GetAllCommandInfos_WhenDisposed_ShouldThrowObjectDisposedException_New()
     {
@@ -533,6 +686,9 @@ public class DebugEngineTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand behavior when command ID is valid but session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task CancelCommand_WithValidCommandId_ShouldThrowInvalidOperationException()
     {
@@ -542,6 +698,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand throws ArgumentException when session ID is null.
+    /// </summary>
     [Fact]
     public void CancelCommandAsync_WithNullSessionId_ShouldThrowArgumentException()
     {
@@ -551,6 +710,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand behavior when command ID is null and session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task CancelCommandAsync_WithNullCommandId_ShouldThrowInvalidOperationException()
     {
@@ -560,6 +722,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand returns false when session ID is invalid.
+    /// </summary>
     [Fact]
     public void CancelCommandAsync_WithInvalidSessionId_ShouldReturnFalse()
     {
@@ -570,6 +735,9 @@ public class DebugEngineTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand behavior when command ID is invalid and session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task CancelCommandAsync_WithInvalidCommandId_ShouldThrowInvalidOperationException()
     {
@@ -579,6 +747,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand throws ObjectDisposedException when the engine is disposed.
+    /// </summary>
     [Fact]
     public void CancelCommandAsync_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -590,6 +761,9 @@ public class DebugEngineTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that CancelAllCommands behavior when session ID is valid but session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task CancelAllCommandsAsync_WithValidSessionId_ShouldThrowInvalidOperationException()
     {
@@ -599,6 +773,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that CancelAllCommands throws ArgumentException when session ID is null.
+    /// </summary>
     [Fact]
     public void CancelAllCommandsAsync_WithNullSessionId_ShouldThrowArgumentException()
     {
@@ -608,6 +785,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that CancelAllCommands returns zero when session ID is invalid.
+    /// </summary>
     [Fact]
     public void CancelAllCommandsAsync_WithInvalidSessionId_ShouldReturnZero()
     {
@@ -618,6 +798,9 @@ public class DebugEngineTests : IDisposable
         result.Should().Be(0);
     }
 
+    /// <summary>
+    /// Verifies that CancelAllCommands throws ObjectDisposedException when the engine is disposed.
+    /// </summary>
     [Fact]
     public void CancelAllCommandsAsync_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -629,6 +812,9 @@ public class DebugEngineTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that IsSessionActive behavior when session ID is valid but session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task IsSessionActive_WithValidSessionId_ShouldThrowInvalidOperationException()
     {
@@ -638,6 +824,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that IsSessionActive throws ArgumentException when session ID is null.
+    /// </summary>
     [Fact]
     public void IsSessionActive_WithNullSessionId_ShouldThrowArgumentException()
     {
@@ -647,6 +836,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that IsSessionActive returns false when session ID is invalid.
+    /// </summary>
     [Fact]
     public void IsSessionActive_WithInvalidSessionId_ShouldReturnFalse()
     {
@@ -657,6 +849,9 @@ public class DebugEngineTests : IDisposable
         isActive.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that IsSessionActive behavior after attempting to close a session that doesn't exist.
+    /// </summary>
     [Fact]
     public async Task IsSessionActive_AfterClosingSession_ShouldThrowInvalidOperationException()
     {
@@ -666,6 +861,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that IsSessionActive throws ObjectDisposedException when the engine is disposed.
+    /// </summary>
     [Fact]
     public void IsSessionActive_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -677,6 +875,9 @@ public class DebugEngineTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState behavior when session ID is valid but session doesn't exist.
+    /// </summary>
     [Fact]
     public async Task GetSessionState_WithValidSessionId_ShouldThrowInvalidOperationException()
     {
@@ -686,6 +887,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Dump file not found: C:\\Test\\test.dmp");
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState throws ArgumentException when session ID is null.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithNullSessionId_ShouldThrowArgumentException()
     {
@@ -695,6 +899,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState returns null when session ID is invalid.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithInvalidSessionId_ShouldReturnNull()
     {
@@ -705,6 +912,9 @@ public class DebugEngineTests : IDisposable
         sessionState.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState throws ObjectDisposedException when the engine is disposed.
+    /// </summary>
     [Fact]
     public void GetSessionState_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -717,6 +927,9 @@ public class DebugEngineTests : IDisposable
     }
 
 
+    /// <summary>
+    /// Verifies that CancelCommand returns false when session ID is invalid.
+    /// </summary>
     [Fact]
     public void CancelCommand_WithInvalidSessionId_ShouldReturnFalse()
     {
@@ -727,6 +940,9 @@ public class DebugEngineTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that CancelAllCommands returns zero when session ID is invalid.
+    /// </summary>
     [Fact]
     public void CancelAllCommands_WithInvalidSessionId_ShouldReturnZero()
     {
@@ -737,11 +953,17 @@ public class DebugEngineTests : IDisposable
         result.Should().Be(0);
     }
 
+    /// <summary>
+    /// Disposes the test instance and cleans up resources.
+    /// </summary>
     public void Dispose()
     {
         m_Engine?.Dispose();
     }
 
+    /// <summary>
+    /// Sets up default mock behaviors for file system and process manager.
+    /// </summary>
     private void SetupDefaultMocks()
     {
         // Setup file system mocks - return false for ALL file existence checks to prevent real system access
@@ -775,6 +997,9 @@ public class DebugEngineTests : IDisposable
             .Verifiable();
     }
 
+    /// <summary>
+    /// Verifies that ThrowIfDisposed throws ObjectDisposedException when the engine is disposed.
+    /// </summary>
     [Fact]
     public void TestThrowIfDisposed_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -792,6 +1017,9 @@ public class DebugEngineTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that ThrowIfDisposed does not throw when the engine is not disposed.
+    /// </summary>
     [Fact]
     public void TestThrowIfDisposed_WhenNotDisposed_ShouldNotThrow()
     {
@@ -807,6 +1035,9 @@ public class DebugEngineTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that OnSessionCommandStateChanged raises the CommandStateChanged event with correct event args.
+    /// </summary>
     [Fact]
     public void TestOnSessionCommandStateChanged_ShouldRaiseCommandStateChangedEvent()
     {
@@ -838,6 +1069,9 @@ public class DebugEngineTests : IDisposable
         eventArgs.Should().Be(originalEventArgs);
     }
 
+    /// <summary>
+    /// Verifies that OnSessionStateChanged raises the SessionStateChanged event with correct event args.
+    /// </summary>
     [Fact]
     public void TestOnSessionStateChanged_ShouldRaiseSessionStateChangedEvent()
     {
@@ -867,6 +1101,9 @@ public class DebugEngineTests : IDisposable
         eventArgs.Should().Be(originalEventArgs);
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws InvalidOperationException when maximum concurrent sessions limit is reached.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithMaxSessionsReached_ShouldThrowInvalidOperationException()
     {
@@ -893,6 +1130,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Maximum number of concurrent sessions (0) reached");
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws InvalidOperationException when CDB executable is not found even with valid dump file.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithValidDumpFile_ShouldThrowInvalidOperationException_New()
     {
@@ -906,6 +1146,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws InvalidOperationException when symbol path is null and CDB is not found.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithNullSymbolPath_ShouldThrowInvalidOperationException()
     {
@@ -919,6 +1162,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws InvalidOperationException when symbol path is empty and CDB is not found.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithEmptySymbolPath_ShouldThrowInvalidOperationException()
     {
@@ -932,6 +1178,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws InvalidOperationException when symbol path is whitespace and CDB is not found.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithWhitespaceSymbolPath_ShouldThrowInvalidOperationException()
     {
@@ -945,6 +1194,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws InvalidOperationException when dump file path is very long and CDB is not found.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithVeryLongDumpFilePath_ShouldThrowInvalidOperationException()
     {
@@ -959,6 +1211,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws InvalidOperationException when dump file path contains special characters and CDB is not found.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithSpecialCharactersInPath_ShouldThrowInvalidOperationException()
     {
@@ -973,6 +1228,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws InvalidOperationException when dump file path is a UNC path and CDB is not found.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithUncPath_ShouldThrowInvalidOperationException()
     {
@@ -987,6 +1245,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws OperationCanceledException when the operation is cancelled.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_WithCancellation_ShouldThrowOperationCanceledException()
     {
@@ -1002,6 +1263,9 @@ public class DebugEngineTests : IDisposable
         await action.Should().ThrowAsync<OperationCanceledException>();
     }
 
+    /// <summary>
+    /// Verifies that CreateSessionAsync throws InvalidOperationException when attempting to create multiple sessions.
+    /// </summary>
     [Fact]
     public async Task CreateSessionAsync_MultipleSessions_ShouldThrowInvalidOperationException()
     {
@@ -1015,6 +1279,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Failed to start CDB process");
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState returns correct state when session ID is valid but session doesn't exist.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithValidSessionId_ShouldReturnCorrectState()
     {
@@ -1028,6 +1295,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState throws ArgumentException when session ID is null.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithNullSessionId_ShouldThrowArgumentException_New()
     {
@@ -1037,6 +1307,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState throws ArgumentException when session ID is empty.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithEmptySessionId_ShouldThrowArgumentException()
     {
@@ -1046,6 +1319,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState throws ArgumentException when session ID is whitespace.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithWhitespaceSessionId_ShouldThrowArgumentException()
     {
@@ -1055,6 +1331,9 @@ public class DebugEngineTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles very long session IDs correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithVeryLongSessionId_ShouldReturnCorrectState()
     {
@@ -1068,6 +1347,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with special characters correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithSpecialCharactersSessionId_ShouldReturnCorrectState()
     {
@@ -1081,6 +1363,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with Unicode characters correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithUnicodeSessionId_ShouldReturnCorrectState()
     {
@@ -1094,6 +1379,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles numeric session IDs correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithNumericSessionId_ShouldReturnCorrectState()
     {
@@ -1107,6 +1395,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with mixed case correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithMixedCaseSessionId_ShouldReturnCorrectState()
     {
@@ -1120,6 +1411,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles hyphenated session IDs correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithHyphenatedSessionId_ShouldReturnCorrectState()
     {
@@ -1133,6 +1427,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with underscores correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithUnderscoreSessionId_ShouldReturnCorrectState()
     {
@@ -1146,6 +1443,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with dots correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithDotSessionId_ShouldReturnCorrectState()
     {
@@ -1159,6 +1459,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with colons correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithColonSessionId_ShouldReturnCorrectState()
     {
@@ -1172,6 +1475,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with semicolons correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithSemicolonSessionId_ShouldReturnCorrectState()
     {
@@ -1185,6 +1491,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with commas correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithCommaSessionId_ShouldReturnCorrectState()
     {
@@ -1198,6 +1507,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with spaces correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithSpaceSessionId_ShouldReturnCorrectState()
     {
@@ -1211,6 +1523,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with tabs correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithTabSessionId_ShouldReturnCorrectState()
     {
@@ -1224,6 +1539,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with newlines correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithNewlineSessionId_ShouldReturnCorrectState()
     {
@@ -1237,6 +1555,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with carriage returns correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithCarriageReturnSessionId_ShouldReturnCorrectState()
     {
@@ -1250,6 +1571,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with mixed whitespace characters correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithMixedWhitespaceSessionId_ShouldReturnCorrectState()
     {
@@ -1263,6 +1587,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with brackets correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithBracketSessionId_ShouldReturnCorrectState()
     {
@@ -1276,6 +1603,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with parentheses correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithParenthesisSessionId_ShouldReturnCorrectState()
     {
@@ -1289,6 +1619,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with braces correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithBraceSessionId_ShouldReturnCorrectState()
     {
@@ -1302,6 +1635,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with angle brackets correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithAngleBracketSessionId_ShouldReturnCorrectState()
     {
@@ -1315,6 +1651,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with pipe characters correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithPipeSessionId_ShouldReturnCorrectState()
     {
@@ -1328,6 +1667,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with backslashes correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithBackslashSessionId_ShouldReturnCorrectState()
     {
@@ -1341,6 +1683,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with forward slashes correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithForwardSlashSessionId_ShouldReturnCorrectState()
     {
@@ -1354,6 +1699,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with question marks correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithQuestionMarkSessionId_ShouldReturnCorrectState()
     {
@@ -1367,6 +1715,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with exclamation marks correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithExclamationMarkSessionId_ShouldReturnCorrectState()
     {
@@ -1380,6 +1731,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with at signs correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithAtSignSessionId_ShouldReturnCorrectState()
     {
@@ -1393,6 +1747,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with hash symbols correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithHashSessionId_ShouldReturnCorrectState()
     {
@@ -1406,6 +1763,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with dollar signs correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithDollarSignSessionId_ShouldReturnCorrectState()
     {
@@ -1419,6 +1779,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with percent signs correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithPercentSessionId_ShouldReturnCorrectState()
     {
@@ -1432,6 +1795,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with ampersands correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithAmpersandSessionId_ShouldReturnCorrectState()
     {
@@ -1445,6 +1811,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with asterisks correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithAsteriskSessionId_ShouldReturnCorrectState()
     {
@@ -1458,6 +1827,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with plus signs correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithPlusSessionId_ShouldReturnCorrectState()
     {
@@ -1471,6 +1843,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with equal signs correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithEqualSessionId_ShouldReturnCorrectState()
     {
@@ -1484,6 +1859,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with tildes correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithTildeSessionId_ShouldReturnCorrectState()
     {
@@ -1497,6 +1875,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetSessionState handles session IDs with backticks correctly.
+    /// </summary>
     [Fact]
     public void GetSessionState_WithBacktickSessionId_ShouldReturnCorrectState()
     {
@@ -1510,6 +1891,9 @@ public class DebugEngineTests : IDisposable
         state.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that Dispose sets the disposed flag correctly.
+    /// </summary>
     [Fact]
     public void Dispose_WhenNotDisposed_ShouldSetDisposedFlag()
     {
@@ -1525,6 +1909,9 @@ public class DebugEngineTests : IDisposable
         isDisposed.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that calling Dispose when already disposed does not throw an exception.
+    /// </summary>
     [Fact]
     public void Dispose_WhenAlreadyDisposed_ShouldNotThrow()
     {
@@ -1537,6 +1924,9 @@ public class DebugEngineTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that calling Dispose multiple times consecutively does not throw an exception.
+    /// </summary>
     [Fact]
     public void Dispose_WhenCalledMultipleTimes_ShouldNotThrow_New()
     {
@@ -1553,6 +1943,9 @@ public class DebugEngineTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that Dispose completes successfully when there are no active sessions.
+    /// </summary>
     [Fact]
     public void Dispose_WhenNoSessions_ShouldCompleteSuccessfully()
     {
@@ -1564,6 +1957,9 @@ public class DebugEngineTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws InvalidOperationException when session does not exist.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithValidSessionAndCommand_ShouldReturnCommandId_New()
     {
@@ -1578,6 +1974,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Session test-session not found");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws InvalidOperationException when session is inactive or does not exist.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithInactiveSession_ShouldThrowInvalidOperationException_New()
     {
@@ -1592,6 +1991,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Session test-session not found");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ObjectDisposedException when the engine has been disposed.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WhenDisposed_ShouldThrowObjectDisposedException_New()
     {
@@ -1604,6 +2006,9 @@ public class DebugEngineTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when session ID is null.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithNullSessionId_ShouldThrowArgumentException_New()
     {
@@ -1616,6 +2021,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Session ID cannot be null or empty (Parameter 'sessionId')");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when session ID is empty.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithEmptySessionId_ShouldThrowArgumentException_New()
     {
@@ -1628,6 +2036,9 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Session ID cannot be null or empty (Parameter 'sessionId')");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when session ID contains only whitespace.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithWhitespaceSessionId_ShouldThrowArgumentException_New()
     {

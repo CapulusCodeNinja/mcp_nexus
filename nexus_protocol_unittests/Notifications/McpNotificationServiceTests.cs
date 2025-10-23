@@ -14,6 +14,9 @@ public class McpNotificationServiceTests
     private readonly Mock<INotificationBridge> m_MockBridge;
     private readonly McpNotificationService m_Service;
 
+    /// <summary>
+    /// Initializes a new instance of the McpNotificationServiceTests class.
+    /// </summary>
     public McpNotificationServiceTests()
     {
         var logger = NullLoggerFactory.Instance.CreateLogger<McpNotificationService>();
@@ -21,6 +24,9 @@ public class McpNotificationServiceTests
         m_Service = new McpNotificationService(logger, m_MockBridge.Object);
     }
 
+    /// <summary>
+    /// Verifies that PublishNotificationAsync calls bridge with valid notification.
+    /// </summary>
     [Fact]
     public async Task PublishNotificationAsync_ValidNotification_CallsBridge()
     {
@@ -34,6 +40,9 @@ public class McpNotificationServiceTests
         )), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that NotifyCommandStatusAsync sends notification with valid parameters.
+    /// </summary>
     [Fact]
     public async Task NotifyCommandStatusAsync_ValidParameters_SendsNotification()
     {
@@ -45,6 +54,9 @@ public class McpNotificationServiceTests
         )), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that NotifyCommandHeartbeatAsync sends notification with valid parameters.
+    /// </summary>
     [Fact]
     public async Task NotifyCommandHeartbeatAsync_ValidParameters_SendsNotification()
     {
@@ -58,6 +70,9 @@ public class McpNotificationServiceTests
         )), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that NotifySessionRecoveryAsync sends notification with valid parameters.
+    /// </summary>
     [Fact]
     public async Task NotifySessionRecoveryAsync_ValidParameters_SendsNotification()
     {
@@ -69,6 +84,9 @@ public class McpNotificationServiceTests
         )), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that NotifyServerHealthAsync sends notification with valid parameters.
+    /// </summary>
     [Fact]
     public async Task NotifyServerHealthAsync_ValidParameters_SendsNotification()
     {
@@ -80,6 +98,9 @@ public class McpNotificationServiceTests
         )), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that NotifyToolsListChangedAsync sends notification.
+    /// </summary>
     [Fact]
     public async Task NotifyToolsListChangedAsync_SendsNotification()
     {
@@ -90,6 +111,9 @@ public class McpNotificationServiceTests
         )), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that NotifyResourcesListChangedAsync sends notification.
+    /// </summary>
     [Fact]
     public async Task NotifyResourcesListChangedAsync_SendsNotification()
     {
@@ -100,6 +124,9 @@ public class McpNotificationServiceTests
         )), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that PublishNotificationAsync logs error but does not throw when bridge throws exception.
+    /// </summary>
     [Fact]
     public async Task PublishNotificationAsync_BridgeThrows_LogsErrorButDoesNotThrow()
     {
@@ -111,4 +138,3 @@ public class McpNotificationServiceTests
             .Should().NotThrowAsync();
     }
 }
-

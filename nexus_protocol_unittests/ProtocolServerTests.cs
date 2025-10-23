@@ -12,12 +12,18 @@ public class ProtocolServerTests
 {
     private readonly ProtocolServer m_Server;
 
+    /// <summary>
+    /// Initializes a new instance of the ProtocolServerTests class.
+    /// </summary>
     public ProtocolServerTests()
     {
         var logger = NullLogger<ProtocolServer>.Instance;
         m_Server = new ProtocolServer(logger);
     }
 
+    /// <summary>
+    /// Verifies that ProtocolServer constructor creates instance with valid logger.
+    /// </summary>
     [Fact]
     public void Constructor_WithValidLogger_CreatesInstance()
     {
@@ -28,6 +34,9 @@ public class ProtocolServerTests
         server.IsRunning.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that ProtocolServer constructor throws ArgumentNullException with null logger.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
@@ -37,6 +46,9 @@ public class ProtocolServerTests
             .WithParameterName("logger");
     }
 
+    /// <summary>
+    /// Verifies that StartAsync starts the server when not already running.
+    /// </summary>
     [Fact]
     public async Task StartAsync_WhenNotRunning_StartsServer()
     {
@@ -45,6 +57,9 @@ public class ProtocolServerTests
         m_Server.IsRunning.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that StartAsync throws InvalidOperationException when server is already running.
+    /// </summary>
     [Fact]
     public async Task StartAsync_WhenAlreadyRunning_ThrowsInvalidOperationException()
     {
@@ -56,6 +71,9 @@ public class ProtocolServerTests
             .WithMessage("Protocol server is already running.");
     }
 
+    /// <summary>
+    /// Verifies that StopAsync stops the server when running.
+    /// </summary>
     [Fact]
     public async Task StopAsync_WhenRunning_StopsServer()
     {
@@ -66,6 +84,9 @@ public class ProtocolServerTests
         m_Server.IsRunning.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that StopAsync does not throw when server is not running.
+    /// </summary>
     [Fact]
     public async Task StopAsync_WhenNotRunning_DoesNotThrow()
     {
@@ -75,6 +96,9 @@ public class ProtocolServerTests
         m_Server.IsRunning.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that SetConfiguration sets configuration with valid configuration object.
+    /// </summary>
     [Fact]
     public void SetConfiguration_WithValidConfiguration_SetsConfiguration()
     {
@@ -85,6 +109,9 @@ public class ProtocolServerTests
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that SetConfiguration throws ArgumentNullException with null configuration.
+    /// </summary>
     [Fact]
     public void SetConfiguration_WithNullConfiguration_ThrowsArgumentNullException()
     {
@@ -94,6 +121,9 @@ public class ProtocolServerTests
             .WithParameterName("configuration");
     }
 
+    /// <summary>
+    /// Verifies that SetConfiguration throws InvalidOperationException when server is running.
+    /// </summary>
     [Fact]
     public async Task SetConfiguration_WhenServerIsRunning_ThrowsInvalidOperationException()
     {
@@ -106,6 +136,9 @@ public class ProtocolServerTests
             .WithMessage("Cannot change configuration while server is running. Stop the server first.");
     }
 
+    /// <summary>
+    /// Verifies that Dispose stops and disposes the server when running.
+    /// </summary>
     [Fact]
     public async Task Dispose_WhenRunning_StopsServerAndDisposes()
     {
@@ -117,6 +150,9 @@ public class ProtocolServerTests
         m_Server.IsRunning.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that Dispose disposes the server when not running.
+    /// </summary>
     [Fact]
     public void Dispose_WhenNotRunning_Disposes()
     {
@@ -125,6 +161,9 @@ public class ProtocolServerTests
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that Dispose can be called multiple times without throwing.
+    /// </summary>
     [Fact]
     public void Dispose_CalledMultipleTimes_DoesNotThrow()
     {
@@ -135,6 +174,9 @@ public class ProtocolServerTests
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that StartAsync throws ObjectDisposedException after server is disposed.
+    /// </summary>
     [Fact]
     public async Task StartAsync_AfterDispose_ThrowsObjectDisposedException()
     {
@@ -145,6 +187,9 @@ public class ProtocolServerTests
         await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that StopAsync throws ObjectDisposedException after server is disposed.
+    /// </summary>
     [Fact]
     public async Task StopAsync_AfterDispose_ThrowsObjectDisposedException()
     {
@@ -155,6 +200,9 @@ public class ProtocolServerTests
         await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that SetConfiguration throws ObjectDisposedException after server is disposed.
+    /// </summary>
     [Fact]
     public void SetConfiguration_AfterDispose_ThrowsObjectDisposedException()
     {
@@ -165,4 +213,3 @@ public class ProtocolServerTests
         action.Should().Throw<ObjectDisposedException>();
     }
 }
-

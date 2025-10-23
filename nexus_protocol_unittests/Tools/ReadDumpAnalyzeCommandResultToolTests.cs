@@ -17,6 +17,9 @@ public class ReadDumpAnalyzeCommandResultToolTests
     private readonly Mock<IDebugEngine> m_MockEngine;
     private readonly IServiceProvider m_ServiceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the ReadDumpAnalyzeCommandResultToolTests class.
+    /// </summary>
     public ReadDumpAnalyzeCommandResultToolTests()
     {
         m_MockEngine = new Mock<IDebugEngine>();
@@ -27,6 +30,9 @@ public class ReadDumpAnalyzeCommandResultToolTests
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
+    /// <summary>
+    /// Verifies that nexus_read_dump_analyze_command_result returns result with completed command.
+    /// </summary>
     [Fact]
     public async Task nexus_read_dump_analyze_command_result_WithCompletedCommand_ReturnsResult()
     {
@@ -55,6 +61,9 @@ public class ReadDumpAnalyzeCommandResultToolTests
         ((bool)response.isSuccess).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that nexus_read_dump_analyze_command_result returns failed result with ArgumentException.
+    /// </summary>
     [Fact]
     public async Task nexus_read_dump_analyze_command_result_WithArgumentException_ReturnsFailedResult()
     {
@@ -73,6 +82,9 @@ public class ReadDumpAnalyzeCommandResultToolTests
         ((string)response.errorMessage).Should().Be("Invalid session");
     }
 
+    /// <summary>
+    /// Verifies that nexus_read_dump_analyze_command_result returns NotFound result with KeyNotFoundException.
+    /// </summary>
     [Fact]
     public async Task nexus_read_dump_analyze_command_result_WithKeyNotFoundException_ReturnsNotFoundResult()
     {
@@ -91,6 +103,9 @@ public class ReadDumpAnalyzeCommandResultToolTests
         ((string)response.errorMessage).Should().Be("Command not found");
     }
 
+    /// <summary>
+    /// Verifies that nexus_read_dump_analyze_command_result returns failed result with unexpected exception.
+    /// </summary>
     [Fact]
     public async Task nexus_read_dump_analyze_command_result_WithUnexpectedException_ReturnsFailedResult()
     {
@@ -109,6 +124,9 @@ public class ReadDumpAnalyzeCommandResultToolTests
         ((string)response.errorMessage).Should().Contain("Unexpected error");
     }
 
+    /// <summary>
+    /// Verifies that nexus_read_dump_analyze_command_result includes usage field in response.
+    /// </summary>
     [Fact]
     public async Task nexus_read_dump_analyze_command_result_IncludesUsageField()
     {
@@ -136,4 +154,3 @@ public class ReadDumpAnalyzeCommandResultToolTests
         usageValue.Should().NotBeNull();
     }
 }
-

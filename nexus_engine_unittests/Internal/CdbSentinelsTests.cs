@@ -8,6 +8,9 @@ namespace nexus.engine.unittests.Internal;
 /// </summary>
 public class CdbSentinelsTests
 {
+    /// <summary>
+    /// Verifies that the StartMarker sentinel has the correct expected value.
+    /// </summary>
     [Fact]
     public void StartMarker_ShouldHaveCorrectValue()
     {
@@ -15,6 +18,9 @@ public class CdbSentinelsTests
         nexus.engine.Internal.CdbSentinels.StartMarker.Should().Be("MCP_NEXUS_SENTINEL_COMMAND_START");
     }
 
+    /// <summary>
+    /// Verifies that the EndMarker sentinel has the correct expected value.
+    /// </summary>
     [Fact]
     public void EndMarker_ShouldHaveCorrectValue()
     {
@@ -22,6 +28,9 @@ public class CdbSentinelsTests
         nexus.engine.Internal.CdbSentinels.EndMarker.Should().Be("MCP_NEXUS_SENTINEL_COMMAND_END");
     }
 
+    /// <summary>
+    /// Verifies that the CommandSeparator sentinel has the correct expected value.
+    /// </summary>
     [Fact]
     public void CommandSeparator_ShouldHaveCorrectValue()
     {
@@ -29,6 +38,9 @@ public class CdbSentinelsTests
         nexus.engine.Internal.CdbSentinels.CommandSeparator.Should().Be("MCP_NEXUS_COMMAND_SEPERATOR");
     }
 
+    /// <summary>
+    /// Verifies that all sentinel values are unique and do not overlap.
+    /// </summary>
     [Fact]
     public void AllSentinels_ShouldBeUnique()
     {
@@ -44,6 +56,9 @@ public class CdbSentinelsTests
         sentinels.Should().OnlyHaveUniqueItems();
     }
 
+    /// <summary>
+    /// Verifies that all sentinel values are not null or empty strings.
+    /// </summary>
     [Fact]
     public void AllSentinels_ShouldNotBeEmpty()
     {
@@ -53,6 +68,9 @@ public class CdbSentinelsTests
         nexus.engine.Internal.CdbSentinels.CommandSeparator.Should().NotBeNullOrEmpty();
     }
 
+    /// <summary>
+    /// Verifies that all sentinel values start with the MCP_NEXUS_ prefix.
+    /// </summary>
     [Fact]
     public void AllSentinels_ShouldContainMCPNexusPrefix()
     {
@@ -62,6 +80,9 @@ public class CdbSentinelsTests
         nexus.engine.Internal.CdbSentinels.CommandSeparator.Should().StartWith("MCP_NEXUS_");
     }
 
+    /// <summary>
+    /// Verifies that the StartMarker contains the START keyword.
+    /// </summary>
     [Fact]
     public void StartMarker_ShouldContainStartKeyword()
     {
@@ -69,6 +90,9 @@ public class CdbSentinelsTests
         nexus.engine.Internal.CdbSentinels.StartMarker.Should().Contain("START");
     }
 
+    /// <summary>
+    /// Verifies that the EndMarker contains the END keyword.
+    /// </summary>
     [Fact]
     public void EndMarker_ShouldContainEndKeyword()
     {
@@ -76,6 +100,9 @@ public class CdbSentinelsTests
         nexus.engine.Internal.CdbSentinels.EndMarker.Should().Contain("END");
     }
 
+    /// <summary>
+    /// Verifies that the CommandSeparator contains the SEPERATOR keyword.
+    /// </summary>
     [Fact]
     public void CommandSeparator_ShouldContainSeparatorKeyword()
     {

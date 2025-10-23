@@ -16,6 +16,9 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
     private readonly Mock<IDebugEngine> m_MockEngine;
     private readonly IServiceProvider m_ServiceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the EnqueueAsyncDumpAnalyzeCommandToolTests class.
+    /// </summary>
     public EnqueueAsyncDumpAnalyzeCommandToolTests()
     {
         m_MockEngine = new Mock<IDebugEngine>();
@@ -26,6 +29,9 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
+    /// <summary>
+    /// Verifies that nexus_enqueue_async_dump_analyze_command returns queued result with valid parameters.
+    /// </summary>
     [Fact]
     public async Task nexus_enqueue_async_dump_analyze_command_WithValidParameters_ReturnsQueuedResult()
     {
@@ -46,6 +52,9 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         ((string)response.operation).Should().Be("nexus_enqueue_async_dump_analyze_command");
     }
 
+    /// <summary>
+    /// Verifies that nexus_enqueue_async_dump_analyze_command returns failed result with ArgumentException.
+    /// </summary>
     [Fact]
     public async Task nexus_enqueue_async_dump_analyze_command_WithArgumentException_ReturnsFailedResult()
     {
@@ -64,6 +73,9 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         ((string)response.message).Should().Be("Invalid session");
     }
 
+    /// <summary>
+    /// Verifies that nexus_enqueue_async_dump_analyze_command returns failed result with InvalidOperationException.
+    /// </summary>
     [Fact]
     public async Task nexus_enqueue_async_dump_analyze_command_WithInvalidOperationException_ReturnsFailedResult()
     {
@@ -82,6 +94,9 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         ((string)response.message).Should().Be("Queue full");
     }
 
+    /// <summary>
+    /// Verifies that nexus_enqueue_async_dump_analyze_command returns failed result with unexpected exception.
+    /// </summary>
     [Fact]
     public async Task nexus_enqueue_async_dump_analyze_command_WithUnexpectedException_ReturnsFailedResult()
     {
@@ -100,6 +115,9 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         ((string)response.message).Should().Contain("Unexpected error");
     }
 
+    /// <summary>
+    /// Verifies that nexus_enqueue_async_dump_analyze_command includes usage field in response.
+    /// </summary>
     [Fact]
     public async Task nexus_enqueue_async_dump_analyze_command_IncludesUsageField()
     {
@@ -121,4 +139,3 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         usageValue.Should().NotBeNull();
     }
 }
-

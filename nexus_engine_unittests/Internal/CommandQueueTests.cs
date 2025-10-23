@@ -89,6 +89,9 @@ public class CommandQueueTests : IDisposable
         m_LoggerFactory?.Dispose();
     }
 
+    /// <summary>
+    /// Verifies that the CommandQueue constructor creates an instance successfully with valid parameters.
+    /// </summary>
     [Fact]
     public void Constructor_WithValidParameters_ShouldCreateInstance()
     {
@@ -99,6 +102,9 @@ public class CommandQueueTests : IDisposable
         commandQueue.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that the CommandQueue constructor throws ArgumentNullException when session ID is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullSessionId_ShouldThrowArgumentNullException()
     {
@@ -108,6 +114,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that the CommandQueue constructor throws ArgumentNullException when configuration is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullConfiguration_ShouldThrowArgumentNullException()
     {
@@ -117,6 +126,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("configuration");
     }
 
+    /// <summary>
+    /// Verifies that the CommandQueue constructor throws ArgumentNullException when logger is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
@@ -126,6 +138,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("logger");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand returns a valid command ID when given a valid command.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithValidCommand_ShouldReturnCommandId()
     {
@@ -139,6 +154,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().NotBeNullOrEmpty();
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command is null.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithNullCommand_ShouldThrowArgumentException()
     {
@@ -148,6 +166,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command is empty.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithEmptyCommand_ShouldThrowArgumentException()
     {
@@ -157,6 +178,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo returns command information when given a valid command ID.
+    /// </summary>
     [Fact]
     public void GetCommandInfo_WithValidCommandId_ShouldReturnCommandInfo()
     {
@@ -174,6 +198,9 @@ public class CommandQueueTests : IDisposable
         commandInfo.State.Should().Be(CommandState.Queued);
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo returns null when given an invalid command ID.
+    /// </summary>
     [Fact]
     public void GetCommandInfo_WithInvalidCommandId_ShouldReturnNull()
     {
@@ -184,6 +211,9 @@ public class CommandQueueTests : IDisposable
         commandInfo.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandInfos returns all queued commands.
+    /// </summary>
     [Fact]
     public void GetAllCommandInfos_ShouldReturnAllCommands()
     {
@@ -204,6 +234,9 @@ public class CommandQueueTests : IDisposable
         allCommands[commandId2].Command.Should().Be(command2);
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand successfully cancels a command with a valid command ID.
+    /// </summary>
     [Fact]
     public void CancelCommand_WithValidCommandId_ShouldCancelCommand()
     {
@@ -218,6 +251,9 @@ public class CommandQueueTests : IDisposable
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand returns false when given an invalid command ID.
+    /// </summary>
     [Fact]
     public void CancelCommand_WithInvalidCommandId_ShouldReturnFalse()
     {
@@ -228,6 +264,9 @@ public class CommandQueueTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that CancelAllCommands cancels all queued commands.
+    /// </summary>
     [Fact]
     public void CancelAllCommands_ShouldCancelAllCommands()
     {
@@ -244,6 +283,9 @@ public class CommandQueueTests : IDisposable
         result.Should().Be(2);
     }
 
+    /// <summary>
+    /// Verifies that Dispose disposes the queue correctly.
+    /// </summary>
     [Fact]
     public void Dispose_WhenCalled_ShouldDisposeQueue()
     {
@@ -256,6 +298,9 @@ public class CommandQueueTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that calling Dispose multiple times does not throw an exception.
+    /// </summary>
     [Fact]
     public void Dispose_WhenCalledMultipleTimes_ShouldNotThrow()
     {
@@ -265,6 +310,9 @@ public class CommandQueueTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ObjectDisposedException when the queue is disposed.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -276,6 +324,9 @@ public class CommandQueueTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo throws ObjectDisposedException when the queue is disposed.
+    /// </summary>
     [Fact]
     public void GetCommandInfo_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -287,6 +338,9 @@ public class CommandQueueTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandInfos throws ObjectDisposedException when the queue is disposed.
+    /// </summary>
     [Fact]
     public void GetAllCommandInfos_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -298,6 +352,9 @@ public class CommandQueueTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand throws ObjectDisposedException when the queue is disposed.
+    /// </summary>
     [Fact]
     public void CancelCommand_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -309,6 +366,9 @@ public class CommandQueueTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that CancelAllCommands throws ObjectDisposedException when the queue is disposed.
+    /// </summary>
     [Fact]
     public void CancelAllCommands_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -320,6 +380,9 @@ public class CommandQueueTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command is whitespace.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithWhitespaceCommand_ShouldThrowArgumentException()
     {
@@ -329,6 +392,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles very long commands correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithVeryLongCommand_ShouldReturnCommandId()
     {
@@ -342,6 +408,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().NotBeNullOrEmpty();
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with special characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithSpecialCharacters_ShouldReturnCommandId()
     {
@@ -355,6 +424,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().NotBeNullOrEmpty();
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand returns unique command IDs for multiple commands.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_MultipleCommands_ShouldReturnUniqueCommandIds()
     {
@@ -377,6 +449,9 @@ public class CommandQueueTests : IDisposable
         commandId1.Should().NotBe(commandId3);
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo returns null when command ID is null.
+    /// </summary>
     [Fact]
     public void GetCommandInfo_WithNullCommandId_ShouldReturnNull()
     {
@@ -387,6 +462,9 @@ public class CommandQueueTests : IDisposable
         commandInfo.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo returns null when command ID is empty.
+    /// </summary>
     [Fact]
     public void GetCommandInfo_WithEmptyCommandId_ShouldReturnNull()
     {
@@ -397,6 +475,9 @@ public class CommandQueueTests : IDisposable
         commandInfo.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand returns false when command ID is null.
+    /// </summary>
     [Fact]
     public void CancelCommand_WithNullCommandId_ShouldReturnFalse()
     {
@@ -407,6 +488,9 @@ public class CommandQueueTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand returns false when command ID is empty.
+    /// </summary>
     [Fact]
     public void CancelCommand_WithEmptyCommandId_ShouldReturnFalse()
     {
@@ -417,6 +501,9 @@ public class CommandQueueTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that ProcessCommandAsync executes a valid command and handles uninitialized CDB session.
+    /// </summary>
     [Fact]
     public async Task ProcessCommandAsync_WithValidCommand_ShouldExecuteSuccessfully()
     {
@@ -450,6 +537,9 @@ public class CommandQueueTests : IDisposable
         result.ErrorMessage.Should().Contain("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ProcessCommandAsync throws InvalidOperationException when CDB session is null.
+    /// </summary>
     [Fact]
     public async Task ProcessCommandAsync_WithCdbSessionNull_ShouldThrowInvalidOperationException()
     {
@@ -471,6 +561,9 @@ public class CommandQueueTests : IDisposable
             .WithMessage("CDB session not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ProcessCommandAsync marks command as failed when CDB session throws an exception.
+    /// </summary>
     [Fact]
     public async Task ProcessCommandAsync_WithCdbSessionThrowingException_ShouldMarkCommandAsFailed()
     {
@@ -503,6 +596,9 @@ public class CommandQueueTests : IDisposable
         result.ErrorMessage.Should().Contain("CDB session is not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ProcessCommandAsync marks command as cancelled when cancellation is requested.
+    /// </summary>
     [Fact]
     public async Task ProcessCommandAsync_WithCancellation_ShouldMarkCommandAsCancelled()
     {
@@ -528,6 +624,9 @@ public class CommandQueueTests : IDisposable
             .WithMessage("CDB session not initialized");
     }
 
+    /// <summary>
+    /// Verifies that UpdateCommandState raises CommandStateChanged event correctly.
+    /// </summary>
     [Fact]
     public void UpdateCommandState_ShouldRaiseEvent()
     {
@@ -553,6 +652,9 @@ public class CommandQueueTests : IDisposable
         eventArgs.NewState.Should().Be(CommandState.Executing);
     }
 
+    /// <summary>
+    /// Verifies that SetCommandResult stores command result in cache correctly.
+    /// </summary>
     [Fact]
     public void SetCommandResult_ShouldStoreResultInCache()
     {
@@ -577,6 +679,9 @@ public class CommandQueueTests : IDisposable
         result.Should().Be(commandInfo);
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand returns a command ID with correct prefix.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithValidCommand_ShouldReturnCommandId_New()
     {
@@ -591,6 +696,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand returns unique command IDs for multiple commands.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithMultipleCommands_ShouldReturnUniqueCommandIds()
     {
@@ -606,6 +714,9 @@ public class CommandQueueTests : IDisposable
         commandIds.Should().AllSatisfy(id => id.Should().StartWith("cmd-"));
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles very long commands correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithVeryLongCommand_ShouldReturnCommandId_New()
     {
@@ -620,6 +731,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with special characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithSpecialCharacters_ShouldReturnCommandId_New()
     {
@@ -634,6 +748,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with Unicode characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithUnicodeCharacters_ShouldReturnCommandId()
     {
@@ -648,6 +765,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with newline characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithNewlines_ShouldReturnCommandId()
     {
@@ -662,6 +782,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with tab characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithTabs_ShouldReturnCommandId()
     {
@@ -676,6 +799,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with quote characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithQuotes_ShouldReturnCommandId()
     {
@@ -690,6 +816,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with backslash characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithBackslashes_ShouldReturnCommandId()
     {
@@ -704,6 +833,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with parentheses correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithParentheses_ShouldReturnCommandId()
     {
@@ -718,6 +850,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with brackets correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithBrackets_ShouldReturnCommandId()
     {
@@ -732,6 +867,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with braces correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithBraces_ShouldReturnCommandId()
     {
@@ -746,6 +884,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with pipe characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithPipes_ShouldReturnCommandId()
     {
@@ -760,6 +901,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with ampersand characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithAmpersands_ShouldReturnCommandId()
     {
@@ -774,6 +918,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with semicolon characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithSemicolons_ShouldReturnCommandId()
     {
@@ -788,6 +935,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with comma characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithCommas_ShouldReturnCommandId()
     {
@@ -802,6 +952,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with dot characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithDots_ShouldReturnCommandId()
     {
@@ -816,6 +969,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with hyphen characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithHyphens_ShouldReturnCommandId()
     {
@@ -830,6 +986,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with underscore characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithUnderscores_ShouldReturnCommandId()
     {
@@ -844,6 +1003,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with numeric characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithNumbers_ShouldReturnCommandId()
     {
@@ -858,6 +1020,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with mixed case letters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithMixedCase_ShouldReturnCommandId()
     {
@@ -872,6 +1037,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command is empty string.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithEmptyString_ShouldThrowArgumentException()
     {
@@ -881,6 +1049,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command is null.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithNullString_ShouldThrowArgumentException()
     {
@@ -890,6 +1061,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command is whitespace only.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithWhitespaceOnly_ShouldThrowArgumentException()
     {
@@ -899,6 +1073,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command is tab only.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithTabOnly_ShouldThrowArgumentException()
     {
@@ -908,6 +1085,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command is newline only.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithNewlineOnly_ShouldThrowArgumentException()
     {
@@ -917,6 +1097,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command is carriage return only.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithCarriageReturnOnly_ShouldThrowArgumentException()
     {
@@ -926,6 +1109,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws ArgumentException when command is mixed whitespace only.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithMixedWhitespace_ShouldThrowArgumentException()
     {
@@ -935,6 +1121,9 @@ public class CommandQueueTests : IDisposable
             .WithParameterName("command");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with a single character correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithSingleCharacter_ShouldReturnCommandId()
     {
@@ -949,6 +1138,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with two characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithTwoCharacters_ShouldReturnCommandId()
     {
@@ -963,6 +1155,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with three characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithThreeCharacters_ShouldReturnCommandId()
     {
@@ -977,6 +1172,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with four characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithFourCharacters_ShouldReturnCommandId()
     {
@@ -991,6 +1189,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with five characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithFiveCharacters_ShouldReturnCommandId()
     {
@@ -1005,6 +1206,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with ten characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithTenCharacters_ShouldReturnCommandId()
     {
@@ -1019,6 +1223,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with fifty characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithFiftyCharacters_ShouldReturnCommandId()
     {
@@ -1033,6 +1240,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with one hundred characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithHundredCharacters_ShouldReturnCommandId()
     {
@@ -1047,6 +1257,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with one thousand characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithThousandCharacters_ShouldReturnCommandId()
     {
@@ -1061,6 +1274,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with five thousand characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithFiveThousandCharacters_ShouldReturnCommandId()
     {
@@ -1075,6 +1291,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with ten thousand characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithTenThousandCharacters_ShouldReturnCommandId()
     {
@@ -1089,6 +1308,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with fifty thousand characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithFiftyThousandCharacters_ShouldReturnCommandId()
     {
@@ -1103,6 +1325,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with one hundred thousand characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithHundredThousandCharacters_ShouldReturnCommandId()
     {
@@ -1117,6 +1342,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand handles commands with one million characters correctly.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithMillionCharacters_ShouldReturnCommandId()
     {
@@ -1131,6 +1359,9 @@ public class CommandQueueTests : IDisposable
         commandId.Should().StartWith("cmd-");
     }
 
+    /// <summary>
+    /// Verifies that ValidateCdbSession throws InvalidOperationException when CDB session is null.
+    /// </summary>
     [Fact]
     public void TestValidateCdbSession_WithNullCdbSession_ShouldThrowInvalidOperationException()
     {
@@ -1148,6 +1379,9 @@ public class CommandQueueTests : IDisposable
             .WithMessage("CDB session not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ValidateCdbSession throws InvalidOperationException when CDB session is not set.
+    /// </summary>
     [Fact]
     public void TestValidateCdbSession_WithValidCdbSession_ShouldNotThrow()
     {
@@ -1165,6 +1399,9 @@ public class CommandQueueTests : IDisposable
             .WithMessage("CDB session not initialized");
     }
 
+    /// <summary>
+    /// Verifies that LogCommandProcessing does not throw when logging a valid command.
+    /// </summary>
     [Fact]
     public void TestLogCommandProcessing_WithValidCommand_ShouldNotThrow()
     {
@@ -1189,6 +1426,9 @@ public class CommandQueueTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that ExecuteCommandWithCdbSession throws InvalidOperationException when CDB session is not initialized.
+    /// </summary>
     [Fact]
     public async Task TestExecuteCommandWithCdbSession_WithValidCommand_ShouldReturnResult()
     {
@@ -1214,6 +1454,9 @@ public class CommandQueueTests : IDisposable
             .WithMessage("CDB session not initialized");
     }
 
+    /// <summary>
+    /// Verifies that HandleSuccessfulCommandExecution updates command state and sets result correctly.
+    /// </summary>
     [Fact]
     public async Task TestHandleSuccessfulCommandExecution_WithValidCommand_ShouldUpdateStateAndSetResult()
     {
@@ -1240,6 +1483,9 @@ public class CommandQueueTests : IDisposable
         command.State.Should().Be(CommandState.Completed);
     }
 
+    /// <summary>
+    /// Verifies that HandleCancelledCommand updates command state and sets result correctly for cancelled commands.
+    /// </summary>
     [Fact]
     public async Task TestHandleCancelledCommand_WithValidCommand_ShouldUpdateStateAndSetResult()
     {
@@ -1265,6 +1511,9 @@ public class CommandQueueTests : IDisposable
         command.State.Should().Be(CommandState.Cancelled);
     }
 
+    /// <summary>
+    /// Verifies that HandleTimedOutCommand updates command state and sets result correctly for timed out commands.
+    /// </summary>
     [Fact]
     public async Task TestHandleTimedOutCommand_WithValidCommand_ShouldUpdateStateAndSetResult()
     {
@@ -1291,6 +1540,9 @@ public class CommandQueueTests : IDisposable
         command.State.Should().Be(CommandState.Timeout);
     }
 
+    /// <summary>
+    /// Verifies that HandleFailedCommand updates command state and sets result correctly for failed commands.
+    /// </summary>
     [Fact]
     public async Task TestHandleFailedCommand_WithValidCommand_ShouldUpdateStateAndSetResult()
     {
@@ -1317,6 +1569,9 @@ public class CommandQueueTests : IDisposable
         command.State.Should().Be(CommandState.Failed);
     }
 
+    /// <summary>
+    /// Verifies that ProcessCommandAsync handles timeout exceptions correctly.
+    /// </summary>
     [Fact]
     public async Task ProcessCommandAsync_WithTimeoutException_ShouldHandleTimeout()
     {
@@ -1340,6 +1595,9 @@ public class CommandQueueTests : IDisposable
             .WithMessage("CDB session not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ProcessCommandAsync handles OperationCanceledException correctly.
+    /// </summary>
     [Fact]
     public async Task ProcessCommandAsync_WithOperationCanceledException_ShouldHandleCancellation()
     {
@@ -1363,6 +1621,9 @@ public class CommandQueueTests : IDisposable
             .WithMessage("CDB session not initialized");
     }
 
+    /// <summary>
+    /// Verifies that ProcessCommandAsync handles generic exceptions correctly.
+    /// </summary>
     [Fact]
     public async Task ProcessCommandAsync_WithGenericException_ShouldHandleFailure()
     {
@@ -1386,6 +1647,9 @@ public class CommandQueueTests : IDisposable
             .WithMessage("CDB session not initialized");
     }
 
+    /// <summary>
+    /// Verifies that UpdateCommandState updates command state correctly.
+    /// </summary>
     [Fact]
     public void UpdateCommandState_WithValidCommand_ShouldUpdateState()
     {
@@ -1410,6 +1674,9 @@ public class CommandQueueTests : IDisposable
         command.State.Should().Be(CommandState.Executing);
     }
 
+    /// <summary>
+    /// Verifies that UpdateCommandState raises CommandStateChanged event with correct event arguments.
+    /// </summary>
     [Fact]
     public void UpdateCommandState_WithValidCommand_ShouldRaiseEvent()
     {
@@ -1440,6 +1707,9 @@ public class CommandQueueTests : IDisposable
         capturedEvent.NewState.Should().Be(CommandState.Executing);
     }
 
+    /// <summary>
+    /// Verifies that SetCommandResult stores command result correctly.
+    /// </summary>
     [Fact]
     public void SetCommandResult_WithValidCommand_ShouldStoreResult()
     {
@@ -1477,6 +1747,9 @@ public class CommandQueueTests : IDisposable
         result.Output.Should().Be("test result");
     }
 
+    /// <summary>
+    /// Verifies that SetCommandResult stores failure result correctly for failed commands.
+    /// </summary>
     [Fact]
     public void SetCommandResult_WithFailedCommand_ShouldStoreFailureResult()
     {
@@ -1514,6 +1787,9 @@ public class CommandQueueTests : IDisposable
         result.ErrorMessage.Should().Be("Command failed");
     }
 
+    /// <summary>
+    /// Verifies that SetCommandResult stores timeout result correctly for timed out commands.
+    /// </summary>
     [Fact]
     public void SetCommandResult_WithTimedOutCommand_ShouldStoreTimeoutResult()
     {
@@ -1549,6 +1825,9 @@ public class CommandQueueTests : IDisposable
         result.ErrorMessage.Should().Be("Command timed out");
     }
 
+    /// <summary>
+    /// Verifies that SetCommandResult stores cancelled result correctly for cancelled commands.
+    /// </summary>
     [Fact]
     public void SetCommandResult_WithCancelledCommand_ShouldStoreCancelledResult()
     {
@@ -1583,6 +1862,9 @@ public class CommandQueueTests : IDisposable
         result.ErrorMessage.Should().Be("Command was cancelled");
     }
 
+    /// <summary>
+    /// Verifies that StartAsync starts the command queue successfully with a valid CDB session.
+    /// </summary>
     [Fact]
     public void StartAsync_WithValidCdbSession_ShouldStartSuccessfully()
     {
@@ -1599,6 +1881,9 @@ public class CommandQueueTests : IDisposable
         action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    /// Verifies that StartAsync throws ArgumentNullException when CDB session is null.
+    /// </summary>
     [Fact]
     public void StartAsync_WithNullCdbSession_ShouldThrowArgumentNullException()
     {
@@ -1616,6 +1901,9 @@ public class CommandQueueTests : IDisposable
             .WithMessage("Value cannot be null. (Parameter 'cdbSession')");
     }
 
+    /// <summary>
+    /// Verifies that StopAsync stops the command queue successfully.
+    /// </summary>
     [Fact]
     public void StopAsync_WhenStarted_ShouldStopSuccessfully()
     {
@@ -1630,6 +1918,9 @@ public class CommandQueueTests : IDisposable
         action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfoAsync returns command information for a valid command ID.
+    /// </summary>
     [Fact]
     public void GetCommandInfoAsync_WithValidCommandId_ShouldReturnCommandInfo()
     {

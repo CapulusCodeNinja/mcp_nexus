@@ -13,6 +13,9 @@ public class QueuedCommandTests
     private readonly string m_TestCommandId = "cmd-123";
     private readonly string m_TestCommand = "lm";
 
+    /// <summary>
+    /// Verifies that QueuedCommand can be constructed with valid parameters.
+    /// </summary>
     [Fact]
     public void Constructor_WithValidParameters_ShouldCreateInstance()
     {
@@ -34,6 +37,9 @@ public class QueuedCommandTests
         queuedCommand.CancellationTokenSource.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that the State property can be set and updated correctly.
+    /// </summary>
     [Fact]
     public void State_WhenSet_ShouldUpdateCorrectly()
     {
@@ -52,6 +58,9 @@ public class QueuedCommandTests
         queuedCommand.State.Should().Be(CommandState.Executing);
     }
 
+    /// <summary>
+    /// Verifies that CompletionSource is initialized and not completed by default.
+    /// </summary>
     [Fact]
     public void CompletionSource_ShouldBeInitialized()
     {
@@ -68,6 +77,9 @@ public class QueuedCommandTests
         queuedCommand.CompletionSource.Task.IsCompleted.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that CancellationTokenSource is initialized and not cancelled by default.
+    /// </summary>
     [Fact]
     public void CancellationTokenSource_ShouldBeInitialized()
     {
@@ -85,6 +97,9 @@ public class QueuedCommandTests
         queuedCommand.CancellationTokenSource.Token.IsCancellationRequested.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that CancellationTokenSource reflects cancellation state when cancelled.
+    /// </summary>
     [Fact]
     public void CancellationTokenSource_WhenCancelled_ShouldReflectCancellation()
     {
@@ -103,6 +118,9 @@ public class QueuedCommandTests
         queuedCommand.CancellationTokenSource.Token.IsCancellationRequested.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that CompletionSource task completes successfully when result is set.
+    /// </summary>
     [Fact]
     public async Task CompletionSource_WhenSetResult_ShouldCompleteTask()
     {
@@ -124,6 +142,9 @@ public class QueuedCommandTests
         result.Should().Be(commandInfo);
     }
 
+    /// <summary>
+    /// Verifies that CompletionSource task completes with exception when exception is set.
+    /// </summary>
     [Fact]
     public void CompletionSource_WhenSetException_ShouldCompleteTaskWithException()
     {
@@ -145,6 +166,9 @@ public class QueuedCommandTests
         queuedCommand.CompletionSource.Task.Exception!.InnerException.Should().Be(exception);
     }
 
+    /// <summary>
+    /// Verifies that CompletionSource task completes as canceled when SetCanceled is called.
+    /// </summary>
     [Fact]
     public void CompletionSource_WhenSetCanceled_ShouldCompleteTaskAsCanceled()
     {

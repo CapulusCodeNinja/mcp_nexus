@@ -111,6 +111,9 @@ public class DebugSessionTests : IDisposable
         return session;
     }
 
+    /// <summary>
+    /// Verifies that the DebugSession constructor creates an instance successfully with valid parameters.
+    /// </summary>
     [Fact]
     public void Constructor_WithValidParameters_ShouldCreateInstance()
     {
@@ -121,6 +124,9 @@ public class DebugSessionTests : IDisposable
         session.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that the DebugSession constructor throws ArgumentNullException when session ID is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullSessionId_ShouldThrowArgumentNullException()
     {
@@ -138,6 +144,9 @@ public class DebugSessionTests : IDisposable
             .WithParameterName("sessionId");
     }
 
+    /// <summary>
+    /// Verifies that the DebugSession constructor throws ArgumentNullException when dump file path is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullDumpFilePath_ShouldThrowArgumentNullException()
     {
@@ -155,6 +164,9 @@ public class DebugSessionTests : IDisposable
             .WithParameterName("dumpFilePath");
     }
 
+    /// <summary>
+    /// Verifies that the DebugSession constructor throws ArgumentNullException when configuration is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullConfiguration_ShouldThrowArgumentNullException()
     {
@@ -172,6 +184,9 @@ public class DebugSessionTests : IDisposable
             .WithParameterName("configuration");
     }
 
+    /// <summary>
+    /// Verifies that the DebugSession constructor throws ArgumentNullException when logger factory is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullLoggerFactory_ShouldThrowArgumentNullException()
     {
@@ -189,6 +204,9 @@ public class DebugSessionTests : IDisposable
             .WithParameterName("factory");
     }
 
+    /// <summary>
+    /// Verifies that the DebugSession constructor throws ArgumentNullException when file system is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullFileSystem_ShouldThrowArgumentNullException()
     {
@@ -206,6 +224,9 @@ public class DebugSessionTests : IDisposable
             .WithParameterName("fileSystem");
     }
 
+    /// <summary>
+    /// Verifies that the DebugSession constructor throws ArgumentNullException when process manager is null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullProcessManager_ShouldThrowArgumentNullException()
     {
@@ -223,6 +244,9 @@ public class DebugSessionTests : IDisposable
             .WithParameterName("processManager");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws InvalidOperationException when session is not active.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithValidCommand_ShouldThrowInvalidOperationException()
     {
@@ -236,6 +260,9 @@ public class DebugSessionTests : IDisposable
             .WithMessage("Session test-session is not active (current state: Initializing)");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws InvalidOperationException when session is not active and command is null.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithNullCommand_ShouldThrowInvalidOperationException()
     {
@@ -248,6 +275,9 @@ public class DebugSessionTests : IDisposable
             .WithMessage("Session test-session is not active (current state: Initializing)");
     }
 
+    /// <summary>
+    /// Verifies that EnqueueCommand throws InvalidOperationException when session is not active and command is empty.
+    /// </summary>
     [Fact]
     public void EnqueueCommand_WithEmptyCommand_ShouldThrowInvalidOperationException()
     {
@@ -260,6 +290,9 @@ public class DebugSessionTests : IDisposable
             .WithMessage("Session test-session is not active (current state: Initializing)");
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo returns null for a valid command ID when queue is not active.
+    /// </summary>
     [Fact]
     public void GetCommandInfo_WithValidCommandId_ShouldReturnNull()
     {
@@ -273,6 +306,9 @@ public class DebugSessionTests : IDisposable
         commandInfo.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetCommandInfo returns null for an invalid command ID.
+    /// </summary>
     [Fact]
     public void GetCommandInfo_WithInvalidCommandId_ShouldReturnNull()
     {
@@ -286,6 +322,9 @@ public class DebugSessionTests : IDisposable
         commandInfo.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandInfos returns an empty collection when queue is not active.
+    /// </summary>
     [Fact]
     public void GetAllCommandInfos_ShouldReturnEmptyCollection()
     {
@@ -299,6 +338,9 @@ public class DebugSessionTests : IDisposable
         allCommands.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand returns false when queue is not active.
+    /// </summary>
     [Fact]
     public void CancelCommand_WithValidCommandId_ShouldReturnFalse()
     {
@@ -312,6 +354,9 @@ public class DebugSessionTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that CancelCommand returns false for an invalid command ID.
+    /// </summary>
     [Fact]
     public void CancelCommand_WithInvalidCommandId_ShouldReturnFalse()
     {
@@ -325,6 +370,9 @@ public class DebugSessionTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that CancelAllCommands returns zero when queue is not active.
+    /// </summary>
     [Fact]
     public void CancelAllCommands_ShouldReturnZero()
     {
@@ -338,6 +386,9 @@ public class DebugSessionTests : IDisposable
         result.Should().Be(0);
     }
 
+    /// <summary>
+    /// Verifies that State returns Initializing for a newly created session.
+    /// </summary>
     [Fact]
     public void State_ShouldReturnInitializing()
     {
@@ -351,6 +402,9 @@ public class DebugSessionTests : IDisposable
         state.Should().Be(SessionState.Initializing);
     }
 
+    /// <summary>
+    /// Verifies that Dispose disposes the session correctly.
+    /// </summary>
     [Fact]
     public void Dispose_WhenCalled_ShouldDisposeSession()
     {
@@ -366,6 +420,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that calling Dispose multiple times does not throw an exception.
+    /// </summary>
     [Fact]
     public void Dispose_WhenCalledMultipleTimes_ShouldNotThrow()
     {
@@ -378,6 +435,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that ThrowIfDisposed throws ObjectDisposedException when session is disposed.
+    /// </summary>
     [Fact]
     public void TestThrowIfDisposed_WhenDisposed_ShouldThrowObjectDisposedException()
     {
@@ -398,6 +458,9 @@ public class DebugSessionTests : IDisposable
         action.Should().Throw<ObjectDisposedException>();
     }
 
+    /// <summary>
+    /// Verifies that ThrowIfDisposed does not throw when session is not disposed.
+    /// </summary>
     [Fact]
     public void TestThrowIfDisposed_WhenNotDisposed_ShouldNotThrow()
     {
@@ -416,6 +479,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that ThrowIfNotActive throws InvalidOperationException when session is not active.
+    /// </summary>
     [Fact]
     public void TestThrowIfNotActive_WhenNotActive_ShouldThrowInvalidOperationException()
     {
@@ -435,6 +501,9 @@ public class DebugSessionTests : IDisposable
             .WithMessage("Session test-session is not active (current state: Initializing)");
     }
 
+    /// <summary>
+    /// Verifies that SetState raises SessionStateChanged event correctly.
+    /// </summary>
     [Fact]
     public void TestSetState_ShouldRaiseSessionStateChangedEvent()
     {
@@ -460,6 +529,9 @@ public class DebugSessionTests : IDisposable
         eventArgs.NewState.Should().Be(SessionState.Active);
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged raises CommandStateChanged event with correct session ID.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_ShouldRaiseCommandStateChangedEvent()
     {
@@ -496,6 +568,9 @@ public class DebugSessionTests : IDisposable
         eventArgs.NewState.Should().Be(CommandState.Executing);
     }
 
+    /// <summary>
+    /// Verifies that SetState updates session state correctly.
+    /// </summary>
     [Fact]
     public void TestSetState_WithValidState_ShouldUpdateState()
     {
@@ -516,6 +591,9 @@ public class DebugSessionTests : IDisposable
         testAccessor.State.Should().Be(SessionState.Active);
     }
 
+    /// <summary>
+    /// Verifies that SetState updates session state to Closed correctly.
+    /// </summary>
     [Fact]
     public void TestSetState_WithClosedState_ShouldUpdateState()
     {
@@ -536,6 +614,9 @@ public class DebugSessionTests : IDisposable
         testAccessor.State.Should().Be(SessionState.Closed);
     }
 
+    /// <summary>
+    /// Verifies that SetState updates session state to Initializing correctly.
+    /// </summary>
     [Fact]
     public void TestSetState_WithInitializingState_ShouldUpdateState()
     {
@@ -556,6 +637,9 @@ public class DebugSessionTests : IDisposable
         testAccessor.State.Should().Be(SessionState.Initializing);
     }
 
+    /// <summary>
+    /// Verifies that SetState updates session state to Faulted correctly.
+    /// </summary>
     [Fact]
     public void TestSetState_WithErrorState_ShouldUpdateState()
     {
@@ -576,6 +660,9 @@ public class DebugSessionTests : IDisposable
         testAccessor.State.Should().Be(SessionState.Faulted);
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged does not throw when sender is null.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithNullSender_ShouldNotThrow()
     {
@@ -604,6 +691,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged throws NullReferenceException when event args are null.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithNullEventArgs_ShouldNotThrow()
     {
@@ -624,6 +714,9 @@ public class DebugSessionTests : IDisposable
         action.Should().Throw<NullReferenceException>();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged throws NullReferenceException when both sender and event args are null.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithNullSenderAndEventArgs_ShouldNotThrow()
     {
@@ -642,6 +735,9 @@ public class DebugSessionTests : IDisposable
         action.Should().Throw<NullReferenceException>();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged does not throw when command state is Queued.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithQueuedState_ShouldNotThrow()
     {
@@ -671,6 +767,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged does not throw when command state is Executing.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithExecutingState_ShouldNotThrow()
     {
@@ -700,6 +799,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged does not throw when command state is Failed.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithFailedState_ShouldNotThrow()
     {
@@ -729,6 +831,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged does not throw when command state is Cancelled.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithCancelledState_ShouldNotThrow()
     {
@@ -758,6 +863,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged does not throw when command state is Timeout.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithTimeoutState_ShouldNotThrow()
     {
@@ -787,6 +895,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged does not throw when command ID is empty.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithEmptyCommandId_ShouldNotThrow()
     {
@@ -816,6 +927,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged does not throw when command output is null.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithNullOutput_ShouldNotThrow()
     {
@@ -845,6 +959,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged does not throw when command output is empty.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithEmptyOutput_ShouldNotThrow()
     {
@@ -874,6 +991,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged does not throw when command output is very long.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithLongOutput_ShouldNotThrow()
     {
@@ -904,6 +1024,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged does not throw when command output contains special characters.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithSpecialCharactersInOutput_ShouldNotThrow()
     {
@@ -934,6 +1057,9 @@ public class DebugSessionTests : IDisposable
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that OnCommandStateChanged does not throw when command output contains Unicode characters.
+    /// </summary>
     [Fact]
     public void TestOnCommandStateChanged_WithUnicodeOutput_ShouldNotThrow()
     {

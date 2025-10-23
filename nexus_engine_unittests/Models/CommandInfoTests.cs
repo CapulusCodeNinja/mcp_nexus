@@ -13,6 +13,9 @@ public class CommandInfoTests
     private readonly string m_TestCommandId = "cmd-123";
     private readonly string m_TestCommand = "lm";
 
+    /// <summary>
+    /// Verifies that Queued factory method creates a queued CommandInfo correctly.
+    /// </summary>
     [Fact]
     public void Queued_WithValidParameters_ShouldCreateQueuedCommandInfo()
     {
@@ -33,6 +36,9 @@ public class CommandInfoTests
         commandInfo.TotalTime.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that Executing factory method creates an executing CommandInfo correctly.
+    /// </summary>
     [Fact]
     public void Executing_WithValidParameters_ShouldCreateExecutingCommandInfo()
     {
@@ -56,6 +62,9 @@ public class CommandInfoTests
         commandInfo.TotalTime.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that Completed factory method creates a successful completed CommandInfo correctly.
+    /// </summary>
     [Fact]
     public void Completed_WithSuccessfulCommand_ShouldCreateCompletedCommandInfo()
     {
@@ -82,6 +91,9 @@ public class CommandInfoTests
         commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(5));
     }
 
+    /// <summary>
+    /// Verifies that Completed factory method creates a failed CommandInfo correctly.
+    /// </summary>
     [Fact]
     public void Completed_WithFailedCommand_ShouldCreateFailedCommandInfo()
     {
@@ -109,6 +121,9 @@ public class CommandInfoTests
         commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(5));
     }
 
+    /// <summary>
+    /// Verifies that Cancelled factory method creates a cancelled CommandInfo correctly.
+    /// </summary>
     [Fact]
     public void Cancelled_WithValidParameters_ShouldCreateCancelledCommandInfo()
     {
@@ -133,6 +148,9 @@ public class CommandInfoTests
         commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(3));
     }
 
+    /// <summary>
+    /// Verifies that TimedOut factory method creates a timed out CommandInfo correctly.
+    /// </summary>
     [Fact]
     public void TimedOut_WithValidParameters_ShouldCreateTimedOutCommandInfo()
     {
@@ -158,6 +176,9 @@ public class CommandInfoTests
         commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(10));
     }
 
+    /// <summary>
+    /// Verifies that ExecutionTime returns null when StartTime is null.
+    /// </summary>
     [Fact]
     public void ExecutionTime_WhenStartTimeIsNull_ShouldReturnNull()
     {
@@ -168,6 +189,9 @@ public class CommandInfoTests
         commandInfo.ExecutionTime.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that ExecutionTime returns null when EndTime is null.
+    /// </summary>
     [Fact]
     public void ExecutionTime_WhenEndTimeIsNull_ShouldReturnNull()
     {
@@ -179,6 +203,9 @@ public class CommandInfoTests
         commandInfo.ExecutionTime.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that TotalTime returns null when EndTime is null.
+    /// </summary>
     [Fact]
     public void TotalTime_WhenEndTimeIsNull_ShouldReturnNull()
     {

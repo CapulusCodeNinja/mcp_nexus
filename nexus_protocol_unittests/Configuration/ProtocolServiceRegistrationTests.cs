@@ -13,6 +13,9 @@ namespace nexus.protocol.unittests.Configuration;
 /// </summary>
 public class ProtocolServiceRegistrationTests
 {
+    /// <summary>
+    /// Verifies that AddProtocolServices registers all required services.
+    /// </summary>
     [Fact]
     public void AddProtocolServices_RegistersAllRequiredServices()
     {
@@ -30,6 +33,9 @@ public class ProtocolServiceRegistrationTests
         serviceProvider.GetService<IMcpToolDefinitionService>().Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that AddProtocolServices registers middleware components.
+    /// </summary>
     [Fact]
     public void AddProtocolServices_RegistersMiddleware()
     {
@@ -48,6 +54,9 @@ public class ProtocolServiceRegistrationTests
         services.Should().Contain(sd => sd.ServiceType == typeof(ResponseFormattingMiddleware));
     }
 
+    /// <summary>
+    /// Verifies that AddProtocolServices throws ArgumentNullException when services is null.
+    /// </summary>
     [Fact]
     public void AddProtocolServices_WithNullServices_ThrowsArgumentNullException()
     {
@@ -59,6 +68,9 @@ public class ProtocolServiceRegistrationTests
             .WithParameterName("services");
     }
 
+    /// <summary>
+    /// Verifies that AddProtocolServices throws ArgumentNullException when configuration is null.
+    /// </summary>
     [Fact]
     public void AddProtocolServices_WithNullConfiguration_ThrowsArgumentNullException()
     {
@@ -70,6 +82,9 @@ public class ProtocolServiceRegistrationTests
             .WithParameterName("configuration");
     }
 
+    /// <summary>
+    /// Verifies that AddProtocolServices returns the same service collection for chaining.
+    /// </summary>
     [Fact]
     public void AddProtocolServices_ReturnsServiceCollection()
     {
@@ -81,6 +96,9 @@ public class ProtocolServiceRegistrationTests
         result.Should().BeSameAs(services);
     }
 
+    /// <summary>
+    /// Verifies that AddProtocolServices registers ProtocolServer as singleton.
+    /// </summary>
     [Fact]
     public void AddProtocolServices_RegistersProtocolServerAsSingleton()
     {
@@ -97,6 +115,9 @@ public class ProtocolServiceRegistrationTests
         instance1.Should().BeSameAs(instance2);
     }
 
+    /// <summary>
+    /// Verifies that AddProtocolServices registers notification service as singleton.
+    /// </summary>
     [Fact]
     public void AddProtocolServices_RegistersNotificationServiceAsSingleton()
     {
@@ -113,6 +134,9 @@ public class ProtocolServiceRegistrationTests
         instance1.Should().BeSameAs(instance2);
     }
 
+    /// <summary>
+    /// Verifies that AddProtocolServices registers middleware as transient.
+    /// </summary>
     [Fact]
     public void AddProtocolServices_RegistersMiddlewareAsTransient()
     {
@@ -131,4 +155,3 @@ public class ProtocolServiceRegistrationTests
         middlewareDescriptors.Should().AllSatisfy(sd => sd.Lifetime.Should().Be(ServiceLifetime.Transient));
     }
 }
-

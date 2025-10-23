@@ -13,6 +13,9 @@ public class SessionStateChangedEventArgsTests
     private readonly DateTime m_TestTime = new(2024, 1, 15, 10, 30, 0);
     private readonly string m_SessionId = "sess-123";
 
+    /// <summary>
+    /// Verifies that the constructor correctly sets all properties when provided with valid parameters.
+    /// </summary>
     [Fact]
     public void Constructor_WithValidParameters_ShouldSetProperties()
     {
@@ -34,6 +37,9 @@ public class SessionStateChangedEventArgsTests
         args.Message.Should().Be("Session initialized successfully");
     }
 
+    /// <summary>
+    /// Verifies that the constructor allows the Message property to be set to null.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullMessage_ShouldAllowNull()
     {
@@ -51,6 +57,11 @@ public class SessionStateChangedEventArgsTests
         args.Message.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that various state transitions are correctly represented in the event args.
+    /// </summary>
+    /// <param name="oldState">The previous session state.</param>
+    /// <param name="newState">The new session state.</param>
     [Theory]
     [InlineData(SessionState.Initializing, SessionState.Active)]
     [InlineData(SessionState.Active, SessionState.Closing)]

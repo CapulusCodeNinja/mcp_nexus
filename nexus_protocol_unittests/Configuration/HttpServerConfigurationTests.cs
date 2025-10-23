@@ -8,6 +8,9 @@ namespace nexus.protocol.unittests.Configuration;
 /// </summary>
 public class HttpServerConfigurationTests
 {
+    /// <summary>
+    /// Verifies that HttpServerConfiguration constructor sets default values correctly.
+    /// </summary>
     [Fact]
     public void Constructor_SetsDefaultValues()
     {
@@ -22,6 +25,9 @@ public class HttpServerConfigurationTests
         config.EnableRateLimit.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that Validate does not throw with default configuration values.
+    /// </summary>
     [Fact]
     public void Validate_WithDefaultValues_DoesNotThrow()
     {
@@ -32,6 +38,9 @@ public class HttpServerConfigurationTests
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that Validate does not throw with valid custom configuration values.
+    /// </summary>
     [Fact]
     public void Validate_WithValidCustomValues_DoesNotThrow()
     {
@@ -51,6 +60,9 @@ public class HttpServerConfigurationTests
         action.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Verifies that Validate throws ArgumentException when MaxRequestBodySize is zero.
+    /// </summary>
     [Fact]
     public void Validate_WithZeroMaxRequestBodySize_ThrowsArgumentException()
     {
@@ -63,6 +75,9 @@ public class HttpServerConfigurationTests
             .WithParameterName("MaxRequestBodySize");
     }
 
+    /// <summary>
+    /// Verifies that Validate throws ArgumentException when MaxRequestBodySize is negative.
+    /// </summary>
     [Fact]
     public void Validate_WithNegativeMaxRequestBodySize_ThrowsArgumentException()
     {
@@ -74,6 +89,9 @@ public class HttpServerConfigurationTests
             .WithParameterName("MaxRequestBodySize");
     }
 
+    /// <summary>
+    /// Verifies that Validate throws ArgumentException when RequestHeadersTimeoutSeconds is zero.
+    /// </summary>
     [Fact]
     public void Validate_WithZeroRequestHeadersTimeout_ThrowsArgumentException()
     {
@@ -85,6 +103,9 @@ public class HttpServerConfigurationTests
             .WithParameterName("RequestHeadersTimeoutSeconds");
     }
 
+    /// <summary>
+    /// Verifies that Validate throws ArgumentException when RequestHeadersTimeoutSeconds is negative.
+    /// </summary>
     [Fact]
     public void Validate_WithNegativeRequestHeadersTimeout_ThrowsArgumentException()
     {
@@ -96,6 +117,9 @@ public class HttpServerConfigurationTests
             .WithParameterName("RequestHeadersTimeoutSeconds");
     }
 
+    /// <summary>
+    /// Verifies that Validate throws ArgumentException when KeepAliveTimeoutSeconds is zero.
+    /// </summary>
     [Fact]
     public void Validate_WithZeroKeepAliveTimeout_ThrowsArgumentException()
     {
@@ -107,6 +131,9 @@ public class HttpServerConfigurationTests
             .WithParameterName("KeepAliveTimeoutSeconds");
     }
 
+    /// <summary>
+    /// Verifies that Validate throws ArgumentException when KeepAliveTimeoutSeconds is negative.
+    /// </summary>
     [Fact]
     public void Validate_WithNegativeKeepAliveTimeout_ThrowsArgumentException()
     {
@@ -118,6 +145,9 @@ public class HttpServerConfigurationTests
             .WithParameterName("KeepAliveTimeoutSeconds");
     }
 
+    /// <summary>
+    /// Verifies that Validate throws ArgumentException when MaxRequestLineSize is zero.
+    /// </summary>
     [Fact]
     public void Validate_WithZeroMaxRequestLineSize_ThrowsArgumentException()
     {
@@ -129,6 +159,9 @@ public class HttpServerConfigurationTests
             .WithParameterName("MaxRequestLineSize");
     }
 
+    /// <summary>
+    /// Verifies that Validate throws ArgumentException when MaxRequestLineSize is negative.
+    /// </summary>
     [Fact]
     public void Validate_WithNegativeMaxRequestLineSize_ThrowsArgumentException()
     {
@@ -140,6 +173,9 @@ public class HttpServerConfigurationTests
             .WithParameterName("MaxRequestLineSize");
     }
 
+    /// <summary>
+    /// Verifies that Validate throws ArgumentException when MaxRequestHeadersTotalSize is zero.
+    /// </summary>
     [Fact]
     public void Validate_WithZeroMaxRequestHeadersTotalSize_ThrowsArgumentException()
     {
@@ -151,6 +187,9 @@ public class HttpServerConfigurationTests
             .WithParameterName("MaxRequestHeadersTotalSize");
     }
 
+    /// <summary>
+    /// Verifies that Validate throws ArgumentException when MaxRequestHeadersTotalSize is negative.
+    /// </summary>
     [Fact]
     public void Validate_WithNegativeMaxRequestHeadersTotalSize_ThrowsArgumentException()
     {
@@ -162,6 +201,9 @@ public class HttpServerConfigurationTests
             .WithParameterName("MaxRequestHeadersTotalSize");
     }
 
+    /// <summary>
+    /// Verifies that all properties can be set and retrieved correctly.
+    /// </summary>
     [Fact]
     public void Properties_CanBeSetAndRetrieved()
     {
