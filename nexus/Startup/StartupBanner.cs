@@ -18,19 +18,16 @@ internal class StartupBanner
     private readonly IConfiguration m_Configuration;
     private readonly bool m_IsServiceMode;
 
-    public StartupBanner(HostBuilderContext context, bool isServiceMode)
+    public StartupBanner(IConfiguration configuration, ILogger<StartupBanner> logger, bool isServiceMode)
     {
-        m_Logger = context.GetRequiredService<ILogger<StartupBanner>>();
-        m_Configuration = context.Configuration;
+        m_Logger = logger;
+        m_Configuration = configuration;
         m_IsServiceMode = isServiceMode;
     }
 
     /// <summary>
     /// Displays the startup banner with system and configuration information.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
-    /// <param name="configuration">Application configuration.</param>
-    /// <param name="mode">Server mode.</param>
     public void DisplayBanner()
     {
         try
@@ -58,8 +55,6 @@ internal class StartupBanner
     /// <summary>
     /// Displays the main startup header with basic application information.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
-    /// <param name="m_IsServiceMode">Whether running in service mode.</param>
     private void DisplayStartupHeader()
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
@@ -87,8 +82,6 @@ internal class StartupBanner
     /// <summary>
     /// Displays application configuration information.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
-    /// <param name="m_IsServiceMode">Whether running in service mode.</param>
     private void DisplayApplicationConfiguration()
     {
         var workingDirectory = Environment.CurrentDirectory;
@@ -109,9 +102,6 @@ internal class StartupBanner
     /// <summary>
     /// Displays command line configuration information.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
-    /// <param name="configuration">Application configuration.</param>
-    /// <param name="m_IsServiceMode">Whether running in service mode.</param>
     private void DisplayCommandLineConfiguration()
     {
         var cdbPath = m_Configuration["McpNexus:Debugging:CdbPath"] ?? "";
@@ -131,8 +121,6 @@ internal class StartupBanner
     /// <summary>
     /// Displays server configuration information.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
-    /// <param name="configuration">Application configuration.</param>
     private void DisplayServerConfiguration()
     {
         var host = m_Configuration["McpNexus:Server:Host"] ?? "0.0.0.0";
@@ -147,9 +135,6 @@ internal class StartupBanner
     /// <summary>
     /// Displays transport m_Configuration information.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
-    /// <param name="configuration">Application configuration.</param>
-    /// <param name="m_IsServiceMode">Whether running in service mode.</param>
     private void DisplayTransportConfiguration()
     {
         var transportMode = m_Configuration["McpNexus:Transport:Mode"] ?? "http";
@@ -163,8 +148,6 @@ internal class StartupBanner
     /// <summary>
     /// Displays debugging configuration information.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
-    /// <param name="configuration">Application configuration.</param>
     private void DisplayDebuggingConfiguration()
     {
         var cdbPath = m_Configuration["McpNexus:Debugging:CdbPath"] ?? "";
@@ -186,8 +169,6 @@ internal class StartupBanner
     /// <summary>
     /// Displays service configuration information.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
-    /// <param name="configuration">Application configuration.</param>
     private void DisplayServiceConfiguration()
     {
         var installPath = m_Configuration["McpNexus:Service:InstallPath"] ?? "";
@@ -205,9 +186,6 @@ internal class StartupBanner
     /// <summary>
     /// Displays logging configuration information.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
-    /// <param name="configuration">Application configuration.</param>
-    /// <param name="m_IsServiceMode">Whether running in service mode.</param>
     private void DisplayLoggingConfiguration()
     {
         var logLevel = m_Configuration["Logging:LogLevel"] ?? "Information";
@@ -221,7 +199,6 @@ internal class StartupBanner
     /// <summary>
     /// Displays environment variables information.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
     private void DisplayEnvironmentVariables()
     {
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
@@ -240,7 +217,6 @@ internal class StartupBanner
     /// <summary>
     /// Displays system information.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
     private void DisplaySystemInformation()
     {
         var osDescription = RuntimeInformation.OSDescription;

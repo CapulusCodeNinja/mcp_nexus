@@ -7,6 +7,7 @@ using NLog;
 using NLog.Extensions.Logging;
 using nexus.CommandLine;
 using nexus.Hosting;
+using nexus.Startup;
 using nexus.config;
 using nexus.config.ServiceRegistration;
 
@@ -60,28 +61,11 @@ internal static class Program
             })
             .ConfigureServices((context, services) =>
             {
-                // Display startup banner before starting any hosted services
-                var isServiceMode = mode == ServerMode.Service;
-                var startupBanner = new Startup.StartupBanner(context, isServiceMode);
-                
-                startupBanner.DisplayBanner();
-
                 // Register mode
                 services.AddSingleton(new ServerModeContext(mode));
 
-                // Register hosted service based on mode
-                switch (mode)
-                {
-                    case ServerMode.Http:
-                        services.AddHostedService<HttpServerHostedService>();
-                        break;
-                    case ServerMode.Stdio:
-                        services.AddHostedService<StdioServerHostedService>();
-                        break;
-                    case ServerMode.Service:
-                        services.AddHostedService<ServiceHostedService>();
-                        break;
-                }
+                // Register ONLY the main hosted service (no others)
+                services.AddHostedService<MainHostedService>();
             });
 
         // Configure Windows Service support if in service mode
