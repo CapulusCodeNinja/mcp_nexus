@@ -206,6 +206,16 @@ public class ServiceSettings
     /// Gets or sets the service backup path.
     /// </summary>
     public string BackupPath { get; set; } = "C:\\Program Files\\MCP-Nexus\\backups";
+
+    /// <summary>
+    /// Gets or sets the service name.
+    /// </summary>
+    public string ServiceName { get; set; } = "MCP-Nexus";
+
+    /// <summary>
+    /// Gets or sets the service display name.
+    /// </summary>
+    public string DisplayName { get; set; } = "MCP-Nexus Debugging Server";
 }
 
 /// <summary>

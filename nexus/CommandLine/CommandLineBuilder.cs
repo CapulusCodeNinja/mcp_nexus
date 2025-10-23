@@ -103,7 +103,7 @@ internal static class CommandLineBuilder
     {
         var installCommand = new Command("--install", "Install Nexus as a Windows Service");
 
-        installCommand.SetHandler(async (string serviceName, string displayName, ServiceStartMode startMode) =>
+        installCommand.SetHandler(async () =>
         {
             var services = new ServiceCollection();
             services.AddNexusConfiguration();
@@ -117,13 +117,13 @@ internal static class CommandLineBuilder
             var serviceProvider = services.BuildServiceProvider();
 
             var installationHandler = serviceProvider.GetRequiredService<IProductInstallation>();
-            var success = await installationHandler.InstallServiceAsync(serviceName, displayName, startMode);
+            var success = await installationHandler.InstallServiceAsync();
             
             if (!success)
             {
                 Environment.Exit(1);
             }
-        }, serviceNameOption, displayNameOption, startModeOption);
+        });
 
         return installCommand;
     }
@@ -138,7 +138,7 @@ internal static class CommandLineBuilder
     {
         var updateCommand = new Command("--update", "Update an installed Windows Service");
 
-        updateCommand.SetHandler(async (string serviceName) =>
+        updateCommand.SetHandler(async () =>
         {
             var services = new ServiceCollection();
             services.AddNexusConfiguration();
@@ -152,13 +152,13 @@ internal static class CommandLineBuilder
             var serviceProvider = services.BuildServiceProvider();
 
             var installationHandler = serviceProvider.GetRequiredService<IProductInstallation>();
-            var success = await installationHandler.UpdateServiceAsync(serviceName);
+            var success = await installationHandler.UpdateServiceAsync();
             
             if (!success)
             {
                 Environment.Exit(1);
             }
-        }, serviceNameOption);
+        });
 
         return updateCommand;
     }

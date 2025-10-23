@@ -5,6 +5,7 @@ using nexus.setup.Interfaces;
 using nexus.utilities.FileSystem;
 using nexus.utilities.ProcessManagement;
 using nexus.utilities.ServiceManagement;
+using nexus.config.Models;
 using System.Runtime.Versioning;
 
 namespace nexus.setup.Core
@@ -19,6 +20,7 @@ namespace nexus.setup.Core
         private readonly ServiceInstaller m_Installer;
         private readonly ServiceUpdater m_Updater;
         private readonly IServiceController m_ServiceController;
+        private readonly SharedConfiguration m_Configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
@@ -27,14 +29,17 @@ namespace nexus.setup.Core
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="processManager">Process manager abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
+        /// <param name="configuration">Shared configuration.</param>
         public ProductInstallation(
             ILoggerFactory loggerFactory,
             IFileSystem fileSystem,
             IProcessManager processManager,
-            IServiceController serviceController)
+            IServiceController serviceController,
+            SharedConfiguration configuration)
         {
             m_Logger = loggerFactory.CreateLogger<ProductInstallation>();
             m_ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
+            m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             
             // Create internal dependencies
             m_Installer = new ServiceInstaller(
@@ -51,19 +56,19 @@ namespace nexus.setup.Core
         }
 
         /// <summary>
-        /// Installs a Windows service with the specified options.
+        /// Installs a Windows service using configuration settings.
         /// </summary>
-        /// <param name="serviceName">Name of the service.</param>
-        /// <param name="displayName">Display name of the service.</param>
-        /// <param name="startMode">Service start mode.</param>
         /// <returns>True if installation succeeded, false otherwise.</returns>
-        public async Task<bool> InstallServiceAsync(string serviceName, string displayName, ServiceStartMode startMode)
+        public async Task<bool> InstallServiceAsync()
         {
+            var serviceName = m_Configuration.McpNexus.Service.ServiceName;
+            var displayName = m_Configuration.McpNexus.Service.DisplayName;
+            var startMode = ServiceStartMode.Automatic; // Fixed value, not configurable
+            
             m_Logger.LogInformation("Installing {ServiceName} as Windows Service...", serviceName);
 
-            // Define installation directory in Program Files
-            var programFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            var installationDirectory = Path.Combine(programFilesPath, "MCP-Nexus");
+            // Use configuration for installation directory
+            var installationDirectory = m_Configuration.McpNexus.Service.InstallPath;
             var installedExecutablePath = Path.Combine(installationDirectory, "nexus.exe");
             
             m_Logger.LogInformation("Copying application files to: {InstallationDirectory}", installationDirectory);
@@ -126,12 +131,13 @@ namespace nexus.setup.Core
         }
 
         /// <summary>
-        /// Updates an existing Windows service.
+        /// Updates an existing Windows service using configuration settings.
         /// </summary>
-        /// <param name="serviceName">Name of the service to update.</param>
         /// <returns>True if update succeeded, false otherwise.</returns>
-        public async Task<bool> UpdateServiceAsync(string serviceName)
+        public async Task<bool> UpdateServiceAsync()
         {
+            var serviceName = m_Configuration.McpNexus.Service.ServiceName;
+            
             m_Logger.LogInformation("Updating Windows Service '{ServiceName}'...", serviceName);
 
             var newExecutablePath = Path.Combine(AppContext.BaseDirectory, "nexus.exe");
