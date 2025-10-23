@@ -31,8 +31,6 @@ internal static class Program
         {
             // Initialize logging first
             m_Logger = LogManager.GetCurrentClassLogger();
-            m_Logger.Info("=== Nexus Starting ===");
-            m_Logger.Info($"Command line: {string.Join(" ", args)}");
 
             // Parse command line and run
             var rootCommand = CommandLineBuilder.BuildRootCommand();
@@ -46,7 +44,6 @@ internal static class Program
         }
         finally
         {
-            m_Logger?.Info("=== Nexus Shutdown ===");
             LogManager.Shutdown();
         }
     }

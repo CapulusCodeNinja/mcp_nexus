@@ -57,11 +57,20 @@ namespace nexus.setup.Validation
         {
             try
             {
-                var parentDir = Path.GetDirectoryName(directoryPath);
-                if (!string.IsNullOrEmpty(parentDir) && !m_FileSystem.DirectoryExists(parentDir))
+                // For directories that are inside the installation directory (like backups),
+                // we need to check if we can create the installation directory itself
+                var installationParentDir = GetInstallationParentDirectory(directoryPath);
+                if (!string.IsNullOrEmpty(installationParentDir))
                 {
-                    m_Logger.LogError("{DirectoryName} parent directory does not exist: {ParentDirectory}", directoryName, parentDir);
-                    return false;
+                    // Check if the installation's parent directory exists and is writable
+                    if (!m_FileSystem.DirectoryExists(installationParentDir))
+                    {
+                        m_Logger.LogError("{DirectoryName} installation parent directory does not exist: {InstallationParentDirectory}", directoryName, installationParentDir);
+                        m_Logger.LogError("Please ensure the installation parent directory exists and you have write permissions");
+                        return false;
+                    }
+                    
+                    m_Logger.LogDebug("Installation parent directory validation passed for {DirectoryName}: {InstallationParentDirectory}", directoryName, installationParentDir);
                 }
             }
             catch (Exception ex)
@@ -71,6 +80,59 @@ namespace nexus.setup.Validation
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Gets the installation parent directory for validation purposes.
+        /// For directories inside the installation directory, returns the installation's parent.
+        /// </summary>
+        /// <param name="directoryPath">The directory path to analyze.</param>
+        /// <returns>The parent directory that should exist for validation.</returns>
+        private string GetInstallationParentDirectory(string directoryPath)
+        {
+            if (string.IsNullOrWhiteSpace(directoryPath))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                // Normalize the path to handle trailing slashes, mixed separators, etc.
+                var normalizedPath = Path.GetFullPath(directoryPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                
+                // Split the normalized path into parts
+                var pathParts = normalizedPath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
+                
+                // Find "MCP-Nexus" in the path (case-insensitive)
+                var mcpNexusIndex = Array.FindIndex(pathParts, part => part.Equals("MCP-Nexus", StringComparison.OrdinalIgnoreCase));
+                
+                if (mcpNexusIndex > 0)
+                {
+                    // Found MCP-Nexus in the path, return everything up to that point
+                    var parentParts = pathParts.Take(mcpNexusIndex).ToArray();
+                    if (parentParts.Length > 0)
+                    {
+                        // Reconstruct the path with proper separators
+                        var result = string.Join(Path.DirectorySeparatorChar.ToString(), parentParts);
+                        
+                        // Ensure we have a drive letter or UNC path
+                        if (normalizedPath.Length > 0 && (char.IsLetter(normalizedPath[0]) || normalizedPath.StartsWith("\\\\")))
+                        {
+                            return result;
+                        }
+                    }
+                }
+                
+                // Fallback: use the immediate parent directory
+                var fallbackParent = Path.GetDirectoryName(normalizedPath);
+                return fallbackParent ?? string.Empty;
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogWarning(ex, "Failed to parse directory path: {DirectoryPath}", directoryPath);
+                // Fallback to immediate parent
+                return Path.GetDirectoryName(directoryPath) ?? string.Empty;
+            }
         }
 
         /// <summary>

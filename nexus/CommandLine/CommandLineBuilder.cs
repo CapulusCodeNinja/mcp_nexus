@@ -10,6 +10,8 @@ using nexus.setup.Models;
 using nexus.setup.Interfaces;
 using nexus.utilities.ServiceManagement;
 using nexus.config.ServiceRegistration;
+using nexus.Startup;
+using nexus.Hosting;
 
 namespace nexus.CommandLine;
 
@@ -54,7 +56,7 @@ internal static class CommandLineBuilder
 
         httpCommand.SetHandler(async (int port) =>
         {
-            var host = Program.CreateHostBuilder(Array.Empty<string>(), ServerMode.Http).Build();
+            var host = Program.CreateHostBuilder(Array.Empty<string>(), ServerMode.Http).Build();            
             await host.RunAsync();
         }, portOption);
 
