@@ -1,5 +1,8 @@
+using System.Collections.Concurrent;
+using System.Reflection;
 using nexus.engine.Configuration;
 using nexus.engine.Events;
+using nexus.engine.Internal;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
 using Microsoft.Extensions.Logging;
@@ -7,7 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace nexus.engine.unittests;
 
 /// <summary>
-/// Test accessor for DebugEngine that provides access to protected methods for testing.
+/// Test accessor for DebugEngine that provides access to protected methods and private fields for testing.
 /// </summary>
 internal class DebugEngineTestAccessor : DebugEngine
 {
@@ -25,6 +28,28 @@ internal class DebugEngineTestAccessor : DebugEngine
         IProcessManager processManager)
         : base(loggerFactory, configuration, fileSystem, processManager)
     {
+    }
+
+    /// <summary>
+    /// Gets the private m_Sessions dictionary for testing purposes.
+    /// </summary>
+    internal ConcurrentDictionary<string, DebugSession> Sessions
+    {
+        get
+        {
+            var sessionsField = typeof(DebugEngine).GetField("m_Sessions", BindingFlags.NonPublic | BindingFlags.Instance);
+            return (ConcurrentDictionary<string, DebugSession>)sessionsField!.GetValue(this)!;
+        }
+    }
+
+    /// <summary>
+    /// Adds a session to the internal sessions dictionary for testing.
+    /// </summary>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="session">The session to add.</param>
+    internal void AddSession(string sessionId, DebugSession session)
+    {
+        Sessions.TryAdd(sessionId, session);
     }
 
     /// <summary>

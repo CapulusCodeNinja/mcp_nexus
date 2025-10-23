@@ -2051,4 +2051,203 @@ public class DebugEngineTests : IDisposable
             .WithMessage("Session ID cannot be null or empty (Parameter 'sessionId')");
     }
 
+    /// <summary>
+    /// Helper method to create a mock session and inject it into the engine for testing.
+    /// Uses the TestAccessor pattern to properly set up the session.
+    /// </summary>
+    /// <param name="engineAccessor">The engine test accessor.</param>
+    /// <param name="sessionId">The session ID.</param>
+    /// <returns>The created session.</returns>
+    private Internal.DebugSessionTestAccessor CreateAndInjectMockSession(DebugEngineTestAccessor engineAccessor, string sessionId)
+    {
+        // Create a DebugSession using the TestAccessor
+        var session = new Internal.DebugSessionTestAccessor(
+            sessionId,
+            "C:\\test.dmp",
+            null,
+            m_Configuration,
+            m_LoggerFactory,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object);
+
+        // Set the session state to Active using the TestAccessor method
+        session.TestSetState(SessionState.Active);
+
+        // Add the session to the engine using the TestAccessor method
+        engineAccessor.AddSession(sessionId, session);
+
+        return session;
+    }
+
+    /// <summary>
+    /// Verifies that EnqueueCommand works when session exists and is active.
+    /// </summary>
+    [Fact]
+    public void EnqueueCommand_WithActiveSession_ShouldEnqueueCommandSuccessfully()
+    {
+        // Arrange
+        var engineAccessor = new DebugEngineTestAccessor(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        const string sessionId = "test-session-123";
+        const string command = "lm";
+        CreateAndInjectMockSession(engineAccessor, sessionId);
+
+        // Act
+        var commandId = engineAccessor.EnqueueCommand(sessionId, command);
+
+        // Assert
+        commandId.Should().NotBeNullOrEmpty();
+        commandId.Should().StartWith("cmd-");
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfo returns command info when session exists.
+    /// </summary>
+    [Fact]
+    public void GetCommandInfo_WithExistingSession_ShouldReturnCommandInfo()
+    {
+        // Arrange
+        var engineAccessor = new DebugEngineTestAccessor(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        const string sessionId = "test-session-456";
+        const string commandId = "cmd-123";
+        CreateAndInjectMockSession(engineAccessor, sessionId);
+
+        // Act
+        var result = engineAccessor.GetCommandInfo(sessionId, commandId);
+
+        // Assert - command doesn't exist yet, so should return null
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that GetAllCommandInfos returns empty dictionary when session exists but has no commands.
+    /// </summary>
+    [Fact]
+    public void GetAllCommandInfos_WithExistingSession_ShouldReturnDictionary()
+    {
+        // Arrange
+        var engineAccessor = new DebugEngineTestAccessor(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        const string sessionId = "test-session-789";
+        CreateAndInjectMockSession(engineAccessor, sessionId);
+
+        // Act
+        var result = engineAccessor.GetAllCommandInfos(sessionId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand returns false when command doesn't exist but session exists.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WithExistingSessionButNonExistentCommand_ShouldReturnFalse()
+    {
+        // Arrange
+        var engineAccessor = new DebugEngineTestAccessor(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        const string sessionId = "test-session-cancel";
+        const string commandId = "cmd-nonexistent";
+        CreateAndInjectMockSession(engineAccessor, sessionId);
+
+        // Act
+        var result = engineAccessor.CancelCommand(sessionId, commandId);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Verifies that CancelAllCommands returns zero when session exists but has no commands.
+    /// </summary>
+    [Fact]
+    public void CancelAllCommands_WithExistingSessionButNoCommands_ShouldReturnZero()
+    {
+        // Arrange
+        var engineAccessor = new DebugEngineTestAccessor(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        const string sessionId = "test-session-cancelall";
+        CreateAndInjectMockSession(engineAccessor, sessionId);
+
+        // Act
+        var result = engineAccessor.CancelAllCommands(sessionId, "test reason");
+
+        // Assert
+        result.Should().Be(0);
+    }
+
+    /// <summary>
+    /// Verifies that IsSessionActive returns true when session exists and is active.
+    /// </summary>
+    [Fact]
+    public void IsSessionActive_WithActiveSession_ShouldReturnTrue()
+    {
+        // Arrange
+        var engineAccessor = new DebugEngineTestAccessor(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        const string sessionId = "test-session-active";
+        CreateAndInjectMockSession(engineAccessor, sessionId);
+
+        // Act
+        var result = engineAccessor.IsSessionActive(sessionId);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that GetSessionState returns Active when session exists and is active.
+    /// </summary>
+    [Fact]
+    public void GetSessionState_WithActiveSession_ShouldReturnActiveState()
+    {
+        // Arrange
+        var engineAccessor = new DebugEngineTestAccessor(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        const string sessionId = "test-session-state";
+        CreateAndInjectMockSession(engineAccessor, sessionId);
+
+        // Act
+        var result = engineAccessor.GetSessionState(sessionId);
+
+        // Assert
+        result.Should().Be(SessionState.Active);
+    }
+
+    /// <summary>
+    /// Verifies that CloseSessionAsync successfully closes an existing session.
+    /// </summary>
+    [Fact]
+    public async Task CloseSessionAsync_WithExistingSession_ShouldCloseSuccessfully()
+    {
+        // Arrange
+        var engineAccessor = new DebugEngineTestAccessor(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        const string sessionId = "test-session-close";
+        var session = CreateAndInjectMockSession(engineAccessor, sessionId);
+
+        // Act
+        await engineAccessor.CloseSessionAsync(sessionId);
+
+        // Assert
+        engineAccessor.IsSessionActive(sessionId).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Verifies that Dispose closes all active sessions.
+    /// </summary>
+    [Fact]
+    public void Dispose_WithActiveSessions_ShouldCloseAllSessions()
+    {
+        // Arrange
+        var engineAccessor = new DebugEngineTestAccessor(m_LoggerFactory, m_Configuration, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        
+        var session1 = new Internal.DebugSessionTestAccessor("sess-1", "C:\\test1.dmp", null, m_Configuration, m_LoggerFactory, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var session2 = new Internal.DebugSessionTestAccessor("sess-2", "C:\\test2.dmp", null, m_Configuration, m_LoggerFactory, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        
+        engineAccessor.AddSession("sess-1", session1);
+        engineAccessor.AddSession("sess-2", session2);
+
+        // Act
+        engineAccessor.Dispose();
+
+        // Assert
+        engineAccessor.Sessions.Should().BeEmpty();
+    }
+
 }
