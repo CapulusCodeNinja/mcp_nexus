@@ -23,15 +23,15 @@ public static class ServiceRegistrationExtensions
         var configProvider = new ConfigurationLoader(configPath);
         var configuration = configProvider.LoadConfiguration(configPath);
         var sharedConfig = configProvider.GetSharedConfiguration();
-        
+
         services.AddSingleton<IConfiguration>(configuration);
         services.AddSingleton<IConfigurationProvider>(configProvider);
         services.AddSingleton(sharedConfig);
         services.AddSingleton<ILoggingConfigurator, LoggingConfiguration>();
-        
+
         return services;
     }
-    
+
     /// <summary>
     /// Adds nexus logging configuration to the logging builder.
     /// </summary>

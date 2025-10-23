@@ -24,7 +24,7 @@ public class BatchProcessorTests
         m_MockFilterLogger = new Mock<ILogger<BatchCommandFilter>>();
         m_MockBuilderLogger = new Mock<ILogger<BatchCommandBuilder>>();
         m_MockParserLogger = new Mock<ILogger<BatchResultParser>>();
-        
+
         m_Configuration = new BatchingConfiguration
         {
             Enabled = true,

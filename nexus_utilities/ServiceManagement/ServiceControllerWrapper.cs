@@ -76,7 +76,7 @@ public class ServiceControllerWrapper : IServiceController
     public void StopService(string serviceName)
     {
         using var controller = new ServiceController(serviceName);
-        
+
         if (controller.Status != ServiceControllerStatus.Stopped)
         {
             controller.Stop();

@@ -31,7 +31,7 @@ public class ServiceRegistrationExtensionsTests
 
         // Assert
         var serviceProvider = services.BuildServiceProvider();
-        
+
         serviceProvider.GetService<IConfiguration>().Should().NotBeNull();
         serviceProvider.GetService<NexusConfigProvider>().Should().NotBeNull();
         serviceProvider.GetService<SharedConfiguration>().Should().NotBeNull();
@@ -53,7 +53,7 @@ public class ServiceRegistrationExtensionsTests
 
         // Assert
         var serviceProvider = services.BuildServiceProvider();
-        
+
         serviceProvider.GetService<IConfiguration>().Should().NotBeNull();
         serviceProvider.GetService<NexusConfigProvider>().Should().NotBeNull();
         serviceProvider.GetService<SharedConfiguration>().Should().NotBeNull();
@@ -106,7 +106,7 @@ public class ServiceRegistrationExtensionsTests
 
         // Assert
         var serviceProvider = services.BuildServiceProvider();
-        
+
         var config1 = serviceProvider.GetService<IConfiguration>();
         var config2 = serviceProvider.GetService<IConfiguration>();
         config1.Should().BeSameAs(config2);

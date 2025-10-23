@@ -80,7 +80,7 @@ public class SessionsResourceTests
         var mockServiceProvider = new Mock<IServiceProvider>();
         var mockLoggerFactory = new Mock<ILoggerFactory>();
         var mockLogger = NullLogger.Instance;
-        
+
         mockLoggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(mockLogger);
         mockServiceProvider.Setup(sp => sp.GetService(typeof(ILoggerFactory))).Returns(mockLoggerFactory.Object);
         mockServiceProvider.Setup(sp => sp.GetService(typeof(IDebugEngine))).Throws(new InvalidOperationException("Test error"));

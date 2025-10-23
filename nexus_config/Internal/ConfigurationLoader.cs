@@ -9,7 +9,7 @@ namespace nexus.config.Internal;
 internal class ConfigurationLoader : IConfigurationProvider
 {
     private readonly IConfiguration m_Configuration;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigurationLoader"/> class.
     /// </summary>
@@ -18,7 +18,7 @@ internal class ConfigurationLoader : IConfigurationProvider
     {
         m_Configuration = LoadConfiguration(configPath);
     }
-    
+
     /// <summary>
     /// Loads configuration from the specified path or default location.
     /// </summary>
@@ -27,14 +27,14 @@ internal class ConfigurationLoader : IConfigurationProvider
     public virtual IConfiguration LoadConfiguration(string? configPath = null)
     {
         var basePath = configPath ?? AppContext.BaseDirectory;
-        
+
         return new ConfigurationBuilder()
             .SetBasePath(basePath)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddEnvironmentVariables()
             .Build();
     }
-    
+
     /// <summary>
     /// Gets the shared configuration settings.
     /// </summary>
@@ -42,7 +42,7 @@ internal class ConfigurationLoader : IConfigurationProvider
     /// <exception cref="InvalidOperationException">Thrown when configuration cannot be loaded.</exception>
     public virtual SharedConfiguration GetSharedConfiguration()
     {
-        return m_Configuration.Get<SharedConfiguration>() 
+        return m_Configuration.Get<SharedConfiguration>()
             ?? throw new InvalidOperationException("Failed to load configuration");
     }
 }

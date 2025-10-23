@@ -147,7 +147,7 @@ public class ProtocolServiceRegistrationTests
         services.AddProtocolServices(configuration);
 
         // Check that middleware are registered as transient (not singleton)
-        var middlewareDescriptors = services.Where(sd => 
+        var middlewareDescriptors = services.Where(sd =>
             sd.ServiceType == typeof(ContentTypeValidationMiddleware) ||
             sd.ServiceType == typeof(JsonRpcLoggingMiddleware) ||
             sd.ServiceType == typeof(ResponseFormattingMiddleware));

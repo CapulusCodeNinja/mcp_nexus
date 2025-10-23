@@ -35,7 +35,7 @@ namespace nexus.setup.Utilities
             // Prevent infinite loops by checking if destination is inside source
             var normalizedSourceDir = Path.GetFullPath(sourceDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             var normalizedDestDir = Path.GetFullPath(destDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            
+
             if (normalizedDestDir.StartsWith(normalizedSourceDir, StringComparison.OrdinalIgnoreCase))
             {
                 m_Logger.LogDebug("Skipping copy to prevent infinite loop: {SourceDir} -> {DestDir}", sourceDir, destDir);

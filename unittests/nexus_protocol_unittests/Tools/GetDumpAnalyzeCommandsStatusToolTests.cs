@@ -23,7 +23,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     public GetDumpAnalyzeCommandsStatusToolTests()
     {
         m_MockEngine = new Mock<IDebugEngine>();
-        
+
         var services = new ServiceCollection();
         services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
         services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
@@ -57,7 +57,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
                 QueuedTime = DateTime.Now
             }
         };
-        
+
         m_MockEngine.Setup(e => e.GetAllCommandInfos(It.IsAny<string>()))
             .Returns(commandInfos);
 
@@ -68,7 +68,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
         ((int)response.count).Should().Be(2);
         ((string)response.sessionId).Should().Be(sessionId);
         ((string)response.operation).Should().Be("nexus_get_dump_analyze_commands_status");
-        
+
         var resultType = result.GetType();
         var commandsProperty = resultType.GetProperty("commands");
         commandsProperty.Should().NotBeNull();
@@ -84,7 +84,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     {
         const string sessionId = "sess-empty";
         var commandInfos = new Dictionary<string, CommandInfo>();
-        
+
         m_MockEngine.Setup(e => e.GetAllCommandInfos(It.IsAny<string>()))
             .Returns(commandInfos);
 
@@ -102,7 +102,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     public async Task nexus_get_dump_analyze_commands_status_WithArgumentException_ReturnsError()
     {
         const string sessionId = "sess-invalid";
-        
+
         m_MockEngine.Setup(e => e.GetAllCommandInfos(sessionId))
             .Throws(new ArgumentException("Invalid session"));
 
@@ -121,7 +121,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     public async Task nexus_get_dump_analyze_commands_status_WithUnexpectedException_ReturnsError()
     {
         const string sessionId = "sess-123";
-        
+
         m_MockEngine.Setup(e => e.GetAllCommandInfos(sessionId))
             .Throws(new Exception("Unexpected error"));
 
@@ -141,7 +141,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     {
         const string sessionId = "sess-789";
         var commandInfos = new Dictionary<string, CommandInfo>();
-        
+
         m_MockEngine.Setup(e => e.GetAllCommandInfos(It.IsAny<string>()))
             .Returns(commandInfos);
 
@@ -182,7 +182,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
                 QueuedTime = DateTime.Now
             }
         };
-        
+
         m_MockEngine.Setup(e => e.GetAllCommandInfos(It.IsAny<string>()))
             .Returns(commandInfos);
 

@@ -35,13 +35,15 @@ internal static class SessionsResource
     [McpServerResource, Description("Lists all active debugging sessions. Note: Requires IDebugEngine enhancement for full functionality.")]
     public static Task<string> Sessions(IServiceProvider serviceProvider)
     {
-        var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("SessionsResource");
-        var debugEngine = serviceProvider.GetRequiredService<IDebugEngine>();
-
-        logger.LogDebug("Sessions resource accessed - returning limited data due to IDebugEngine interface constraints");
+        ArgumentNullException.ThrowIfNull(serviceProvider);
 
         try
         {
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("SessionsResource");
+            var debugEngine = serviceProvider.GetRequiredService<IDebugEngine>();
+
+            logger.LogDebug("Sessions resource accessed - returning limited data due to IDebugEngine interface constraints");
+
             var result = new
             {
                 sessions = Array.Empty<object>(),
@@ -57,8 +59,7 @@ internal static class SessionsResource
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error accessing sessions resource");
-
+            // Logger might not be available if service resolution failed
             var errorResult = new
             {
                 sessions = Array.Empty<object>(),

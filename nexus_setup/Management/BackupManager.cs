@@ -25,7 +25,7 @@ namespace nexus.setup.Management
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             m_DirectoryCopyUtility = new DirectoryCopyUtility(
-                logger, 
+                logger,
                 fileSystem);
         }
 
@@ -47,15 +47,15 @@ namespace nexus.setup.Management
                 // Create backup directory with timestamp
                 var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                 var backupPath = Path.Combine(backupDirectory, $"backup-{timestamp}");
-                
+
                 m_Logger.LogInformation("Creating backup at: {BackupPath}", backupPath);
-                
+
                 // Ensure backup directory exists
                 m_FileSystem.CreateDirectory(backupDirectory);
-                
+
                 // Copy the entire installation directory to backup
                 await m_DirectoryCopyUtility.CopyDirectoryAsync(installationDirectory, backupPath);
-                
+
                 m_Logger.LogInformation("Backup created successfully at: {BackupPath}", backupPath);
                 return true;
             }
@@ -84,25 +84,25 @@ namespace nexus.setup.Management
                     var backupDirs = backupDirInfo.GetDirectories("backup-*")
                         .OrderByDescending(d => d.Name)
                         .ToArray();
-                    
+
                     if (backupDirs.Length > 0)
                     {
                         var latestBackup = backupDirs[0].FullName;
                         m_Logger.LogInformation("Restoring from backup: {BackupPath}", latestBackup);
-                        
+
                         // Remove current installation
                         if (m_FileSystem.DirectoryExists(installationDirectory))
                         {
                             m_FileSystem.DeleteDirectory(installationDirectory, true);
                         }
-                        
+
                         // Restore from backup
                         await m_DirectoryCopyUtility.CopyDirectoryAsync(latestBackup, installationDirectory);
                         m_Logger.LogInformation("Rollback completed successfully");
                         return;
                     }
                 }
-                
+
                 // If no backup available, clean up the installation directory
                 m_Logger.LogWarning("No backup available, cleaning up installation directory");
                 if (m_FileSystem.DirectoryExists(installationDirectory))

@@ -153,7 +153,7 @@ public class JsonRpcLoggingMiddlewareTests
         {
             await ctx.Response.WriteAsync(responseText);
         };
-        
+
         var logger = NullLogger<JsonRpcLoggingMiddleware>.Instance;
         var middleware = new JsonRpcLoggingMiddleware(nextWithResponse, logger);
 
@@ -216,7 +216,7 @@ public class JsonRpcLoggingMiddlewareTests
         {
             throw new InvalidOperationException("Test exception");
         };
-        
+
         var logger = NullLogger<JsonRpcLoggingMiddleware>.Instance;
         var middleware = new JsonRpcLoggingMiddleware(nextThatThrows, logger);
 

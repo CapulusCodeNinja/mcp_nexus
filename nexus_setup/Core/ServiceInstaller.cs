@@ -1,6 +1,7 @@
 using System.Runtime.Versioning;
 using System.ServiceProcess;
 using Microsoft.Extensions.Logging;
+using nexus.setup.Interfaces;
 using nexus.setup.Models;
 using nexus.utilities.FileSystem;
 using nexus.utilities.ProcessManagement;
@@ -12,7 +13,7 @@ namespace nexus.setup.Core;
 /// Implements Windows service installation.
 /// </summary>
 [SupportedOSPlatform("windows")]
-internal class ServiceInstaller
+internal class ServiceInstaller : IServiceInstaller
 {
     private readonly ILogger<ServiceInstaller> m_Logger;
     private readonly IFileSystem m_FileSystem;
@@ -281,8 +282,8 @@ internal class ServiceInstaller
         {
             m_Logger.LogInformation("Building project for deployment: {ProjectPath}", projectPath);
 
-            var workingDirectory = m_FileSystem.DirectoryExists(projectPath) 
-                ? projectPath 
+            var workingDirectory = m_FileSystem.DirectoryExists(projectPath)
+                ? projectPath
                 : m_FileSystem.GetDirectoryName(projectPath) ?? Environment.CurrentDirectory;
 
             var arguments = $"build --configuration {configuration}";

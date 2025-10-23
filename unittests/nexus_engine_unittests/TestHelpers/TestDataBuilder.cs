@@ -71,9 +71,9 @@ public static class TestDataBuilder
     /// <param name="isSuccess">Whether the command succeeded.</param>
     /// <returns>A completed command info.</returns>
     public static CommandInfo CreateCompletedCommandInfo(
-        string commandId = "cmd-test", 
-        string command = "lm", 
-        string output = "Test output", 
+        string commandId = "cmd-test",
+        string command = "lm",
+        string output = "Test output",
         bool isSuccess = true)
     {
         var queuedTime = DateTime.Now.AddSeconds(-5);

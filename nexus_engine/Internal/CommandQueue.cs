@@ -344,7 +344,7 @@ internal class CommandQueue : IDisposable
                 {
                     // Collect available commands for potential batching
                     var commandsToProcess = CollectAvailableCommands(command, cancellationToken);
-                    
+
                     // Process commands (with or without batching)
                     await ProcessCommandBatchAsync(commandsToProcess, cancellationToken);
                 }
@@ -393,7 +393,7 @@ internal class CommandQueue : IDisposable
     private List<QueuedCommand> CollectAvailableCommands(QueuedCommand firstCommand, CancellationToken cancellationToken)
     {
         var commands = new List<QueuedCommand> { firstCommand };
-        
+
         // If no batch processor, return single command
         if (m_BatchProcessor == null)
             return commands;
@@ -446,7 +446,7 @@ internal class CommandQueue : IDisposable
         }).ToList();
 
         // Apply batching (library decides whether to batch or pass through)
-        var commandsToExecute = m_BatchProcessor != null 
+        var commandsToExecute = m_BatchProcessor != null
             ? m_BatchProcessor.BatchCommands(batchCommands)
             : batchCommands;
 
@@ -469,7 +469,7 @@ internal class CommandQueue : IDisposable
             {
                 // Execute the command
                 var result = await m_CdbSession!.ExecuteCommandAsync(cmd.CommandText, cancellationToken);
-                
+
                 executionResults.Add(new nexus.engine.batch.CommandResult
                 {
                     CommandId = cmd.CommandId,
@@ -479,7 +479,7 @@ internal class CommandQueue : IDisposable
             catch (Exception ex)
             {
                 m_Logger.LogError(ex, "Error executing command {CommandId}", cmd.CommandId);
-                
+
                 // Add error result
                 executionResults.Add(new nexus.engine.batch.CommandResult
                 {
@@ -534,7 +534,7 @@ internal class CommandQueue : IDisposable
             var commandIds = batchCommandId.Substring(6).Split('_');
             return queuedCommands.Where(qc => commandIds.Contains(qc.Id)).ToList();
         }
-        
+
         // Single command
         var command = queuedCommands.FirstOrDefault(qc => qc.Id == batchCommandId);
         return command != null ? new List<QueuedCommand> { command } : new List<QueuedCommand>();

@@ -179,7 +179,7 @@ public class ExtensionManagerTests
             // Cleanup
             if (Directory.Exists(m_TestExtensionsPath))
             {
-                Directory.Delete(m_TestExtensionsPath, true);
+                TryDeleteDirectory(m_TestExtensionsPath);
             }
         }
     }
@@ -212,7 +212,37 @@ public class ExtensionManagerTests
             // Cleanup
             if (Directory.Exists(m_TestExtensionsPath))
             {
-                Directory.Delete(m_TestExtensionsPath, true);
+                TryDeleteDirectory(m_TestExtensionsPath);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Attempts to delete a directory with retry logic to handle file locking issues.
+    /// </summary>
+    /// <param name="path">The path to the directory to delete.</param>
+    private static void TryDeleteDirectory(string path)
+    {
+        const int maxRetries = 3;
+        const int delayMs = 50;
+
+        for (int i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                if (Directory.Exists(path))
+                {
+                    Directory.Delete(path, true);
+                }
+                return;
+            }
+            catch (IOException) when (i < maxRetries - 1)
+            {
+                Thread.Sleep(delayMs);
+            }
+            catch (UnauthorizedAccessException) when (i < maxRetries - 1)
+            {
+                Thread.Sleep(delayMs);
             }
         }
     }

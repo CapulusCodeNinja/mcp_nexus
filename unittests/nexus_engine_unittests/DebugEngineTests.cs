@@ -969,30 +969,30 @@ public class DebugEngineTests : IDisposable
         // Setup file system mocks - return false for ALL file existence checks to prevent real system access
         m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>()))
             .Returns(false);
-        
+
         m_MockFileSystem.Setup(fs => fs.CombinePaths(It.IsAny<string[]>()))
             .Returns<string[]>(paths => string.Join("\\", paths));
 
         // Setup ALL other file system methods to prevent real system access
         m_MockFileSystem.Setup(fs => fs.ReadAllText(It.IsAny<string>()))
             .Returns("mocked content");
-        
+
         m_MockFileSystem.Setup(fs => fs.WriteAllText(It.IsAny<string>(), It.IsAny<string>()))
             .Verifiable();
-        
+
         m_MockFileSystem.Setup(fs => fs.DeleteFile(It.IsAny<string>()))
             .Verifiable();
-        
+
         m_MockFileSystem.Setup(fs => fs.GetFileName(It.IsAny<string>()))
             .Returns<string>(path => System.IO.Path.GetFileName(path));
-        
+
         m_MockFileSystem.Setup(fs => fs.GetDirectoryName(It.IsAny<string>()))
             .Returns<string>(path => System.IO.Path.GetDirectoryName(path));
 
         // Setup process manager mocks - return null to avoid process-related issues in tests
         m_MockProcessManager.Setup(pm => pm.StartProcess(It.IsAny<System.Diagnostics.ProcessStartInfo>()))
             .Returns((System.Diagnostics.Process)null!);
-        
+
         m_MockProcessManager.Setup(pm => pm.KillProcess(It.IsAny<System.Diagnostics.Process>()))
             .Verifiable();
     }
@@ -1009,7 +1009,7 @@ public class DebugEngineTests : IDisposable
             m_Configuration,
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         testAccessor.Dispose();
 
         // Act & Assert
@@ -1047,7 +1047,7 @@ public class DebugEngineTests : IDisposable
             m_Configuration,
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         CommandStateChangedEventArgs? eventArgs = null;
         testAccessor.CommandStateChanged += (sender, args) => eventArgs = args;
 
@@ -1081,7 +1081,7 @@ public class DebugEngineTests : IDisposable
             m_Configuration,
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         SessionStateChangedEventArgs? eventArgs = null;
         testAccessor.SessionStateChanged += (sender, args) => eventArgs = args;
 
@@ -1113,7 +1113,7 @@ public class DebugEngineTests : IDisposable
             MaxConcurrentSessions = 0, // Set to 0 to trigger max sessions error immediately
             DefaultCommandTimeout = TimeSpan.FromMinutes(5)
         };
-        
+
         var limitedEngine = new DebugEngine(
             m_LoggerFactory,
             limitedConfig,
@@ -1254,7 +1254,7 @@ public class DebugEngineTests : IDisposable
         // Arrange
         m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Test\test.dmp"))
             .Returns(true);
-        
+
         var cts = new CancellationTokenSource();
         cts.Cancel();
 

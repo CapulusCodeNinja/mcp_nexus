@@ -25,7 +25,7 @@ public class BatchProcessor : IBatchProcessor
     public BatchProcessor(bool enabled, int minBatchSize, int maxBatchSize, List<string> excludedCommands, ILoggerFactory loggerFactory)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
-        
+
         m_Configuration = new BatchingConfiguration
         {
             Enabled = enabled,
@@ -33,7 +33,7 @@ public class BatchProcessor : IBatchProcessor
             MaxBatchSize = maxBatchSize,
             ExcludedCommands = excludedCommands
         };
-        
+
         m_Logger = loggerFactory.CreateLogger<BatchProcessor>();
         m_Filter = new BatchCommandFilter(m_Configuration, loggerFactory.CreateLogger<BatchCommandFilter>());
         m_Builder = new BatchCommandBuilder(m_Configuration, loggerFactory.CreateLogger<BatchCommandBuilder>());
@@ -91,12 +91,12 @@ public class BatchProcessor : IBatchProcessor
         {
             // Check if this specific batch should be batched
             // (may have commands that should be excluded)
-            if (batch.Count >= m_Configuration.MinBatchSize && 
+            if (batch.Count >= m_Configuration.MinBatchSize &&
                 batch.All(cmd => !m_Filter.IsCommandExcluded(cmd.CommandText)))
             {
                 var batchedCommand = m_Builder.BuildBatch(batch);
                 batchedCommands.Add(batchedCommand);
-                m_Logger.LogInformation("Batched {Count} commands into {BatchId}", 
+                m_Logger.LogInformation("Batched {Count} commands into {BatchId}",
                     batch.Count, batchedCommand.CommandId);
             }
             else
@@ -107,7 +107,7 @@ public class BatchProcessor : IBatchProcessor
             }
         }
 
-        m_Logger.LogInformation("Transformed {InputCount} commands into {OutputCount} batched commands", 
+        m_Logger.LogInformation("Transformed {InputCount} commands into {OutputCount} batched commands",
             commands.Count, batchedCommands.Count);
 
         return batchedCommands;
@@ -135,12 +135,12 @@ public class BatchProcessor : IBatchProcessor
 
             if (parsedResults.Count > 1)
             {
-                m_Logger.LogInformation("Unbatched {BatchId} into {Count} individual results", 
+                m_Logger.LogInformation("Unbatched {BatchId} into {Count} individual results",
                     result.CommandId, parsedResults.Count);
             }
         }
 
-        m_Logger.LogInformation("Transformed {InputCount} results into {OutputCount} individual results", 
+        m_Logger.LogInformation("Transformed {InputCount} results into {OutputCount} individual results",
             results.Count, unbatchedResults.Count);
 
         return unbatchedResults;

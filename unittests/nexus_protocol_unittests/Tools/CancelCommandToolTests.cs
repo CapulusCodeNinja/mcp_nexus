@@ -22,7 +22,7 @@ public class CancelCommandToolTests
     public CancelCommandToolTests()
     {
         m_MockEngine = new Mock<IDebugEngine>();
-        
+
         var services = new ServiceCollection();
         services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
         services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
@@ -37,7 +37,7 @@ public class CancelCommandToolTests
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
-        
+
         m_MockEngine.Setup(e => e.CancelCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(true);
 
@@ -60,7 +60,7 @@ public class CancelCommandToolTests
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-missing";
-        
+
         m_MockEngine.Setup(e => e.CancelCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(false);
 
@@ -82,7 +82,7 @@ public class CancelCommandToolTests
     {
         const string sessionId = "sess-invalid";
         const string commandId = "cmd-456";
-        
+
         m_MockEngine.Setup(e => e.CancelCommand(sessionId, commandId))
             .Throws(new ArgumentException("Invalid session"));
 
@@ -103,7 +103,7 @@ public class CancelCommandToolTests
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
-        
+
         m_MockEngine.Setup(e => e.CancelCommand(sessionId, commandId))
             .Throws(new Exception("Unexpected error"));
 
@@ -124,7 +124,7 @@ public class CancelCommandToolTests
     {
         const string sessionId = "sess-789";
         const string commandId = "cmd-101";
-        
+
         m_MockEngine.Setup(e => e.CancelCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(true);
 
@@ -147,7 +147,7 @@ public class CancelCommandToolTests
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-789";
-        
+
         m_MockEngine.Setup(e => e.CancelCommand(sessionId, commandId))
             .Returns(true);
 

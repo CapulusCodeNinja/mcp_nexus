@@ -43,7 +43,7 @@ internal class BatchCommandFilter
 
         if (commands.Count < m_Configuration.MinBatchSize)
         {
-            m_Logger.LogDebug("Not enough commands to batch (count: {Count}, min: {Min})", 
+            m_Logger.LogDebug("Not enough commands to batch (count: {Count}, min: {Min})",
                 commands.Count, m_Configuration.MinBatchSize);
             return false;
         }

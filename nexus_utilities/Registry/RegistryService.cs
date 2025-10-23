@@ -35,7 +35,7 @@ public class RegistryService : IRegistryService
         using var baseKey = RegistryKey.OpenBaseKey(hive, RegistryView.Default);
         using var key = baseKey.OpenSubKey(keyPath);
         var value = key?.GetValue(valueName);
-        
+
         return value switch
         {
             int intValue => intValue,

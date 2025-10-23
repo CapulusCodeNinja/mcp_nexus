@@ -69,7 +69,7 @@ namespace nexus.setup.Validation
                         m_Logger.LogError("Please ensure the installation parent directory exists and you have write permissions");
                         return false;
                     }
-                    
+
                     m_Logger.LogDebug("Installation parent directory validation passed for {DirectoryName}: {InstallationParentDirectory}", directoryName, installationParentDir);
                 }
             }
@@ -99,13 +99,13 @@ namespace nexus.setup.Validation
             {
                 // Normalize the path to handle trailing slashes, mixed separators, etc.
                 var normalizedPath = Path.GetFullPath(directoryPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-                
+
                 // Split the normalized path into parts
                 var pathParts = normalizedPath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
-                
+
                 // Find "MCP-Nexus" in the path (case-insensitive)
                 var mcpNexusIndex = Array.FindIndex(pathParts, part => part.Equals("MCP-Nexus", StringComparison.OrdinalIgnoreCase));
-                
+
                 if (mcpNexusIndex > 0)
                 {
                     // Found MCP-Nexus in the path, return everything up to that point
@@ -114,7 +114,7 @@ namespace nexus.setup.Validation
                     {
                         // Reconstruct the path with proper separators
                         var result = string.Join(Path.DirectorySeparatorChar.ToString(), parentParts);
-                        
+
                         // Ensure we have a drive letter or UNC path
                         if (normalizedPath.Length > 0 && (char.IsLetter(normalizedPath[0]) || normalizedPath.StartsWith("\\\\")))
                         {
@@ -122,7 +122,7 @@ namespace nexus.setup.Validation
                         }
                     }
                 }
-                
+
                 // Fallback: use the immediate parent directory
                 var fallbackParent = Path.GetDirectoryName(normalizedPath);
                 return fallbackParent ?? string.Empty;

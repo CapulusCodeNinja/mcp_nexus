@@ -36,7 +36,7 @@ internal class StartupBanner
         {
             // Display main startup header
             DisplayStartupHeader();
-            
+
             // Display configuration sections
             DisplayApplicationConfiguration();
             DisplayCommandLineConfiguration();
@@ -74,7 +74,7 @@ internal class StartupBanner
         m_Logger.LogInformation("  Version:     {Version}", version);
         m_Logger.LogInformation("  Environment: {Environment}", m_IsServiceMode ? "Service" : "Development");
         m_Logger.LogInformation("  Process ID:  {ProcessId}", processId);
-        m_Logger.LogInformation("  Transport:   {TransportMode} ({ServiceMode})", 
+        m_Logger.LogInformation("  Transport:   {TransportMode} ({ServiceMode})",
             transportMode.ToUpper(), m_IsServiceMode ? "Service Mode" : "Development Mode");
         m_Logger.LogInformation("  Host:        {Host}", host);
         m_Logger.LogInformation("  Port:        {Port}", port);
@@ -219,7 +219,7 @@ internal class StartupBanner
     {
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
         var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? "";
-        var hasCdbInPath = pathEnv.Contains("cdb.exe", StringComparison.OrdinalIgnoreCase) || 
+        var hasCdbInPath = pathEnv.Contains("cdb.exe", StringComparison.OrdinalIgnoreCase) ||
                           pathEnv.Contains("windbg", StringComparison.OrdinalIgnoreCase);
 
         m_Logger.LogInformation("┌─ Environment Variables ────────────────────────────────────────────");

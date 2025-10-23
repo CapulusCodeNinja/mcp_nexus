@@ -126,7 +126,7 @@ internal class BatchResultParser
                 ResultText = individualResult
             });
 
-            m_Logger.LogDebug("Extracted result for command {CommandId} ({Length} chars)", 
+            m_Logger.LogDebug("Extracted result for command {CommandId} ({Length} chars)",
                 commandId, individualResult.Length);
         }
 

@@ -23,7 +23,7 @@ public class ReadDumpAnalyzeCommandResultToolTests
     public ReadDumpAnalyzeCommandResultToolTests()
     {
         m_MockEngine = new Mock<IDebugEngine>();
-        
+
         var services = new ServiceCollection();
         services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
         services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
@@ -47,7 +47,7 @@ public class ReadDumpAnalyzeCommandResultToolTests
             IsSuccess = true,
             QueuedTime = DateTime.Now
         };
-        
+
         m_MockEngine.Setup(e => e.GetCommandInfoAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(commandInfo);
 
@@ -69,7 +69,7 @@ public class ReadDumpAnalyzeCommandResultToolTests
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
-        
+
         m_MockEngine.Setup(e => e.GetCommandInfoAsync(sessionId, commandId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentException("Invalid session"));
 
@@ -90,7 +90,7 @@ public class ReadDumpAnalyzeCommandResultToolTests
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-missing";
-        
+
         m_MockEngine.Setup(e => e.GetCommandInfoAsync(sessionId, commandId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new KeyNotFoundException("Command not found"));
 
@@ -111,7 +111,7 @@ public class ReadDumpAnalyzeCommandResultToolTests
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
-        
+
         m_MockEngine.Setup(e => e.GetCommandInfoAsync(sessionId, commandId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Unexpected error"));
 
@@ -139,7 +139,7 @@ public class ReadDumpAnalyzeCommandResultToolTests
             State = CommandState.Executing,
             QueuedTime = DateTime.Now
         };
-        
+
         m_MockEngine.Setup(e => e.GetCommandInfoAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(commandInfo);
 

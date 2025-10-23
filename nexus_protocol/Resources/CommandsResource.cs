@@ -38,13 +38,15 @@ internal static class CommandsResource
     [McpServerResource, Description("Lists commands from all sessions. Note: Requires IDebugEngine enhancement for full functionality.")]
     public static Task<string> Commands(IServiceProvider serviceProvider)
     {
-        var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CommandsResource");
-        var debugEngine = serviceProvider.GetRequiredService<IDebugEngine>();
-
-        logger.LogDebug("Commands resource accessed - returning limited data due to IDebugEngine interface constraints");
+        ArgumentNullException.ThrowIfNull(serviceProvider);
 
         try
         {
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CommandsResource");
+            var debugEngine = serviceProvider.GetRequiredService<IDebugEngine>();
+
+            logger.LogDebug("Commands resource accessed - returning limited data due to IDebugEngine interface constraints");
+
             var result = new
             {
                 commands = Array.Empty<object>(),
@@ -60,8 +62,7 @@ internal static class CommandsResource
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error accessing commands resource");
-
+            // Logger might not be available if service resolution failed
             var errorResult = new
             {
                 commands = Array.Empty<object>(),

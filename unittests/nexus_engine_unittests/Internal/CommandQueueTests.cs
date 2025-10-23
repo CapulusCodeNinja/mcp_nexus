@@ -38,9 +38,9 @@ public class CommandQueueTests : IDisposable
             DefaultCommandTimeout = TimeSpan.FromSeconds(30),
             SessionInitializationTimeout = TimeSpan.FromMinutes(1)
         };
-        
+
         SetupDefaultMocks();
-        
+
         m_CommandQueue = new CommandQueue("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
     }
 
@@ -52,30 +52,30 @@ public class CommandQueueTests : IDisposable
         // Setup file system mocks - return false for ALL file existence checks to prevent real system access
         m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>()))
             .Returns(false);
-        
+
         m_MockFileSystem.Setup(fs => fs.CombinePaths(It.IsAny<string[]>()))
             .Returns<string[]>(paths => string.Join("\\", paths));
 
         // Setup ALL other file system methods to prevent real system access
         m_MockFileSystem.Setup(fs => fs.ReadAllText(It.IsAny<string>()))
             .Returns("mocked content");
-        
+
         m_MockFileSystem.Setup(fs => fs.WriteAllText(It.IsAny<string>(), It.IsAny<string>()))
             .Verifiable();
-        
+
         m_MockFileSystem.Setup(fs => fs.DeleteFile(It.IsAny<string>()))
             .Verifiable();
-        
+
         m_MockFileSystem.Setup(fs => fs.GetFileName(It.IsAny<string>()))
             .Returns<string>(path => System.IO.Path.GetFileName(path));
-        
+
         m_MockFileSystem.Setup(fs => fs.GetDirectoryName(It.IsAny<string>()))
             .Returns<string>(path => System.IO.Path.GetDirectoryName(path));
 
         // Setup process manager mocks - return null to avoid process-related issues in tests
         m_MockProcessManager.Setup(pm => pm.StartProcess(It.IsAny<System.Diagnostics.ProcessStartInfo>()))
             .Returns((System.Diagnostics.Process)null!);
-        
+
         m_MockProcessManager.Setup(pm => pm.KillProcess(It.IsAny<System.Diagnostics.Process>()))
             .Verifiable();
     }
@@ -515,14 +515,14 @@ public class CommandQueueTests : IDisposable
             QueuedTime = DateTime.Now,
             CancellationTokenSource = new CancellationTokenSource()
         };
-        
+
         // Create a real CdbSession with mocked dependencies
         var realCdbSession = new nexus.engine.Internal.CdbSession(
             m_Configuration,
             m_LoggerFactory.CreateLogger<nexus.engine.Internal.CdbSession>(),
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         // Use test accessor
         var testAccessor = new CommandQueueTestAccessor("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
         testAccessor.TestCdbSession = realCdbSession;
@@ -575,14 +575,14 @@ public class CommandQueueTests : IDisposable
             QueuedTime = DateTime.Now,
             CancellationTokenSource = new CancellationTokenSource()
         };
-        
+
         // Create a real CdbSession with mocked dependencies
         var realCdbSession = new nexus.engine.Internal.CdbSession(
             m_Configuration,
             m_LoggerFactory.CreateLogger<nexus.engine.Internal.CdbSession>(),
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         var testAccessor = new CommandQueueTestAccessor("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
         testAccessor.TestCdbSession = realCdbSession;
 
@@ -605,7 +605,7 @@ public class CommandQueueTests : IDisposable
         // Arrange
         var cts = new CancellationTokenSource();
         cts.Cancel();
-        
+
         var command = new QueuedCommand
         {
             Id = "cmd-123",
@@ -639,7 +639,7 @@ public class CommandQueueTests : IDisposable
             CancellationTokenSource = new CancellationTokenSource()
         };
         nexus.engine.Events.CommandStateChangedEventArgs? eventArgs = null;
-        
+
         var testAccessor = new CommandQueueTestAccessor("test-session", m_Configuration, m_LoggerFactory.CreateLogger<CommandQueue>());
         testAccessor.CommandStateChanged += (sender, args) => eventArgs = args;
 

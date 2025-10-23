@@ -22,7 +22,7 @@ public class CloseDumpAnalyzeSessionToolTests
     public CloseDumpAnalyzeSessionToolTests()
     {
         m_MockEngine = new Mock<IDebugEngine>();
-        
+
         var services = new ServiceCollection();
         services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
         services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
@@ -36,7 +36,7 @@ public class CloseDumpAnalyzeSessionToolTests
     public async Task nexus_close_dump_analyze_session_WithValidSessionId_ReturnsSuccessResult()
     {
         const string sessionId = "sess-123";
-        
+
         m_MockEngine.Setup(e => e.CloseSessionAsync(It.IsAny<string>()))
             .Returns(Task.CompletedTask);
 
@@ -56,7 +56,7 @@ public class CloseDumpAnalyzeSessionToolTests
     public async Task nexus_close_dump_analyze_session_WithArgumentException_ReturnsFailedResult()
     {
         const string sessionId = "sess-invalid";
-        
+
         m_MockEngine.Setup(e => e.CloseSessionAsync(It.IsAny<string>()))
             .ThrowsAsync(new ArgumentException("Invalid session ID"));
 
@@ -75,7 +75,7 @@ public class CloseDumpAnalyzeSessionToolTests
     public async Task nexus_close_dump_analyze_session_WithUnexpectedException_ReturnsFailedResult()
     {
         const string sessionId = "sess-123";
-        
+
         m_MockEngine.Setup(e => e.CloseSessionAsync(It.IsAny<string>()))
             .ThrowsAsync(new Exception("Unexpected error"));
 
@@ -94,7 +94,7 @@ public class CloseDumpAnalyzeSessionToolTests
     public async Task nexus_close_dump_analyze_session_IncludesUsageField()
     {
         const string sessionId = "sess-789";
-        
+
         m_MockEngine.Setup(e => e.CloseSessionAsync(It.IsAny<string>()))
             .Returns(Task.CompletedTask);
 

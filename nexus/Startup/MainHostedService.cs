@@ -28,8 +28,8 @@ public class MainHostedService : IHostedService
     /// <param name="commandLineContext">Command line context.</param>
     /// <param name="serviceProvider">Service provider.</param>
     public MainHostedService(
-        ILogger<MainHostedService> logger, 
-        IConfiguration configuration, 
+        ILogger<MainHostedService> logger,
+        IConfiguration configuration,
         CommandLineContext commandLineContext,
         IServiceProvider serviceProvider)
     {
@@ -50,7 +50,7 @@ public class MainHostedService : IHostedService
         var startupBannerLogger = m_ServiceProvider.GetRequiredService<ILogger<StartupBanner>>();
         var startupBanner = new StartupBanner(m_Configuration, startupBannerLogger, m_CommandLineContext.IsServiceMode, m_CommandLineContext);
         startupBanner.DisplayBanner();
-        
+
         // 2. Handle the appropriate command based on command line context
         if (m_CommandLineContext.IsHttpMode)
         {
@@ -86,25 +86,25 @@ public class MainHostedService : IHostedService
     private async Task StartHttpServer(CancellationToken cancellationToken)
     {
         m_Logger.LogInformation("Starting HTTP server mode...");
-        
+
         try
         {
             // Get logging configurator from DI
             var loggingConfigurator = m_ServiceProvider.GetRequiredService<nexus.config.ILoggingConfigurator>();
-            
+
             // Create and configure WebApplication using protocol library (all logic encapsulated)
             var app = HttpServerSetup.CreateConfiguredWebApplication(
                 m_Configuration,
                 loggingConfigurator,
                 m_CommandLineContext.IsServiceMode);
-            
+
             // Get the protocol server from DI and configure it
             var protocolServer = m_ServiceProvider.GetRequiredService<IProtocolServer>();
             protocolServer.SetWebApplication(app);
-            
+
             // Start the protocol server (which starts the WebApplication)
             await protocolServer.StartAsync(cancellationToken);
-            
+
             // Keep running until cancellation
             await Task.Delay(Timeout.Infinite, cancellationToken);
         }
@@ -123,18 +123,18 @@ public class MainHostedService : IHostedService
     private async Task StartStdioServer(CancellationToken cancellationToken)
     {
         m_Logger.LogInformation("Starting Stdio server mode...");
-        
+
         try
         {
             // Get logging configurator from DI
             var loggingConfigurator = m_ServiceProvider.GetRequiredService<nexus.config.ILoggingConfigurator>();
-            
+
             // Create and configure Host using protocol library (all logic encapsulated)
             var host = HttpServerSetup.CreateConfiguredHost(
                 m_Configuration,
                 loggingConfigurator,
                 m_CommandLineContext.IsServiceMode);
-            
+
             // Get the protocol server from DI and configure it
             var protocolServer = m_ServiceProvider.GetRequiredService<IProtocolServer>();
             var typedProtocolServer = protocolServer as ProtocolServer;
@@ -146,10 +146,10 @@ public class MainHostedService : IHostedService
             {
                 throw new InvalidOperationException("ProtocolServer must be of type ProtocolServer to set Host.");
             }
-            
+
             // Start the protocol server (which starts the Host)
             await protocolServer.StartAsync(cancellationToken);
-            
+
             // Keep running until cancellation
             await Task.Delay(Timeout.Infinite, cancellationToken);
         }
@@ -174,11 +174,11 @@ public class MainHostedService : IHostedService
     private async Task HandleInstallCommand(CancellationToken cancellationToken)
     {
         m_Logger.LogInformation("Handling install command...");
-        
+
         // Get the installation handler from DI
         var installationHandler = m_ServiceProvider.GetRequiredService<IProductInstallation>();
         var success = await installationHandler.InstallServiceAsync();
-        
+
         if (!success)
         {
             Environment.Exit(1);
@@ -191,11 +191,11 @@ public class MainHostedService : IHostedService
     private async Task HandleUpdateCommand(CancellationToken cancellationToken)
     {
         m_Logger.LogInformation("Handling update command...");
-        
+
         // Get the installation handler from DI
         var installationHandler = m_ServiceProvider.GetRequiredService<IProductInstallation>();
         var success = await installationHandler.UpdateServiceAsync();
-        
+
         if (!success)
         {
             Environment.Exit(1);
@@ -208,16 +208,16 @@ public class MainHostedService : IHostedService
     private async Task HandleUninstallCommand(CancellationToken cancellationToken)
     {
         m_Logger.LogInformation("Handling uninstall command...");
-        
+
         // Get the installation handler from DI
         var installationHandler = m_ServiceProvider.GetRequiredService<IProductInstallation>();
         var success = await installationHandler.UninstallServiceAsync();
-        
+
         if (!success)
         {
             Environment.Exit(1);
         }
-        
+
         // Exit successfully after completing install command
         Environment.Exit(0);
     }
@@ -230,7 +230,7 @@ public class MainHostedService : IHostedService
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         m_Logger.LogInformation("Stopping main hosted service...");
-        
+
         try
         {
             // Stop the protocol server if it's running
@@ -244,7 +244,7 @@ public class MainHostedService : IHostedService
         {
             m_Logger.LogError(ex, "Error stopping protocol server");
         }
-        
+
         m_Logger.LogInformation("Main hosted service stopped");
     }
 }

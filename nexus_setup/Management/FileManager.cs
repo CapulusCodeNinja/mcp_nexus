@@ -25,7 +25,7 @@ namespace nexus.setup.Management
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             m_DirectoryCopyUtility = new DirectoryCopyUtility(
-                logger, 
+                logger,
                 fileSystem);
         }
 
@@ -39,7 +39,7 @@ namespace nexus.setup.Management
         {
             try
             {
-                m_Logger.LogInformation("Copying application files from {SourceDirectory} to {DestinationDirectory}", 
+                m_Logger.LogInformation("Copying application files from {SourceDirectory} to {DestinationDirectory}",
                     sourceDirectory, destinationDirectory);
 
                 // Create destination directory if it doesn't exist

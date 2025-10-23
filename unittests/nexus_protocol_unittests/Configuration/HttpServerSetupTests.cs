@@ -36,7 +36,7 @@ public class HttpServerSetupTests
     public void ConfigureHttpServices_WithDefaultConfig_ConfiguresAllServices()
     {
         var services = new ServiceCollection();
-        
+
         HttpServerSetup.ConfigureHttpServices(services, m_Configuration);
 
         var serviceProvider = services.BuildServiceProvider();
@@ -178,7 +178,7 @@ public class HttpServerSetupTests
 
         var serviceProvider = services.BuildServiceProvider();
         var kestrelOptions = serviceProvider.GetService<IOptions<KestrelServerOptions>>();
-        
+
         // Verify options are registered
         kestrelOptions.Should().NotBeNull();
     }

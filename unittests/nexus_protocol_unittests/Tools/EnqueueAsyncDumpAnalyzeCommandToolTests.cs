@@ -22,7 +22,7 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
     public EnqueueAsyncDumpAnalyzeCommandToolTests()
     {
         m_MockEngine = new Mock<IDebugEngine>();
-        
+
         var services = new ServiceCollection();
         services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
         services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
@@ -38,7 +38,7 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         const string sessionId = "sess-123";
         const string command = "kL";
         const string commandId = "cmd-456";
-        
+
         m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(commandId);
 
@@ -60,7 +60,7 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
     {
         const string sessionId = "sess-123";
         const string command = "kL";
-        
+
         m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Throws(new ArgumentException("Invalid session"));
 
@@ -81,7 +81,7 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
     {
         const string sessionId = "sess-123";
         const string command = "kL";
-        
+
         m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Throws(new InvalidOperationException("Queue full"));
 
@@ -102,7 +102,7 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
     {
         const string sessionId = "sess-123";
         const string command = "kL";
-        
+
         m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Throws(new Exception("Unexpected error"));
 
@@ -124,7 +124,7 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         const string sessionId = "sess-123";
         const string command = "kL";
         const string commandId = "cmd-789";
-        
+
         m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(commandId);
 

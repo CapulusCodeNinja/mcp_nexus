@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using nexus.protocol;
@@ -61,23 +62,58 @@ public class ProtocolServerTests
     /// <summary>
     /// Verifies that StartAsync throws InvalidOperationException when server is already running.
     /// </summary>
-    [Fact(Skip = "Requires WebApplication/Host setup - integration test needed")]
+    [Fact]
     public async Task StartAsync_WhenAlreadyRunning_ThrowsInvalidOperationException()
     {
-        // Note: This test requires proper WebApplication setup which is done by MainHostedService
-        // Consider moving to integration tests
-        await Task.CompletedTask;
+        // Arrange: Create a minimal WebApplication for testing
+        var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0"); // Use random port
+        var app = builder.Build();
+        
+        try
+        {
+            m_Server.SetWebApplication(app);
+            await m_Server.StartAsync();
+
+            // Act & Assert
+            var action = async () => await m_Server.StartAsync();
+            await action.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("Protocol server is already running.");
+        }
+        finally
+        {
+            await m_Server.StopAsync();
+            await app.DisposeAsync();
+        }
     }
 
     /// <summary>
     /// Verifies that StopAsync stops the server when running.
     /// </summary>
-    [Fact(Skip = "Requires WebApplication/Host setup - integration test needed")]
+    [Fact]
     public async Task StopAsync_WhenRunning_StopsServer()
     {
-        // Note: This test requires proper WebApplication setup which is done by MainHostedService
-        // Consider moving to integration tests
-        await Task.CompletedTask;
+        // Arrange: Create a minimal WebApplication for testing
+        var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0"); // Use random port
+        var app = builder.Build();
+        
+        try
+        {
+            m_Server.SetWebApplication(app);
+            await m_Server.StartAsync();
+            m_Server.IsRunning.Should().BeTrue();
+
+            // Act
+            await m_Server.StopAsync();
+
+            // Assert
+            m_Server.IsRunning.Should().BeFalse();
+        }
+        finally
+        {
+            await app.DisposeAsync();
+        }
     }
 
     /// <summary>
@@ -120,26 +156,55 @@ public class ProtocolServerTests
     /// <summary>
     /// Verifies that SetConfiguration throws InvalidOperationException when server is running.
     /// </summary>
-    [Fact(Skip = "Requires WebApplication/Host setup - integration test needed")]
+    [Fact]
     public async Task SetConfiguration_WhenServerIsRunning_ThrowsInvalidOperationException()
     {
-        // Note: This test requires proper WebApplication setup which is done by MainHostedService
-        // Consider moving to integration tests
-        await Task.CompletedTask;
+        // Arrange: Create a minimal WebApplication for testing
+        var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0"); // Use random port
+        var app = builder.Build();
+        
+        try
+        {
+            m_Server.SetWebApplication(app);
+            await m_Server.StartAsync();
+            var config = new { Port = 8080 };
+
+            // Act & Assert
+            var action = () => m_Server.SetConfiguration(config);
+            action.Should().Throw<InvalidOperationException>()
+                .WithMessage("Cannot change configuration while server is running. Stop the server first.");
+        }
+        finally
+        {
+            await m_Server.StopAsync();
+            await app.DisposeAsync();
+        }
     }
 
     /// <summary>
     /// Verifies that Dispose stops and disposes the server when running.
     /// </summary>
-    [Fact(Skip = "Requires WebApplication/Host setup - integration test needed")]
+    [Fact]
     public async Task Dispose_WhenRunning_StopsServerAndDisposes()
     {
-        // Note: This test requires proper WebApplication setup which is done by MainHostedService
-        // Consider moving to integration tests
-        await Task.CompletedTask;
+        // Arrange: Create a minimal WebApplication for testing
+        var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0"); // Use random port
+        var app = builder.Build();
+        
+        m_Server.SetWebApplication(app);
+        await m_Server.StartAsync();
+        m_Server.IsRunning.Should().BeTrue();
+
+        // Act
         m_Server.Dispose();
 
+        // Assert
         m_Server.IsRunning.Should().BeFalse();
+        
+        // Cleanup
+        await app.DisposeAsync();
     }
 
     /// <summary>

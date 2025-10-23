@@ -37,7 +37,7 @@ internal class HttpServerHostedService : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         m_Logger.LogInformation("Starting HTTP server mode...");
-        
+
         try
         {
             await m_ProtocolServer.StartAsync(cancellationToken);
@@ -59,7 +59,7 @@ internal class HttpServerHostedService : IHostedService
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         m_Logger.LogInformation("Stopping HTTP server mode...");
-        
+
         try
         {
             await m_ProtocolServer.StopAsync(cancellationToken);

@@ -1,6 +1,7 @@
 using System.Runtime.Versioning;
 using System.ServiceProcess;
 using Microsoft.Extensions.Logging;
+using nexus.setup.Interfaces;
 using nexus.setup.Models;
 using nexus.setup.Utilities;
 using nexus.utilities.FileSystem;
@@ -15,7 +16,7 @@ namespace nexus.setup.Core;
 internal class ServiceUpdater
 {
     private readonly ILogger<ServiceUpdater> m_Logger;
-    private readonly ServiceInstaller m_ServiceInstaller;
+    private readonly IServiceInstaller m_ServiceInstaller;
     private readonly IFileSystem m_FileSystem;
     private readonly IServiceController m_ServiceController;
     private readonly DirectoryCopyUtility m_DirectoryCopyUtility;
@@ -29,7 +30,7 @@ internal class ServiceUpdater
     /// <param name="serviceController">Service controller abstraction.</param>
     public ServiceUpdater(
         ILogger<ServiceUpdater> logger,
-        ServiceInstaller serviceInstaller,
+        IServiceInstaller serviceInstaller,
         IFileSystem fileSystem,
         IServiceController serviceController)
     {
@@ -93,7 +94,7 @@ internal class ServiceUpdater
             // Check original service state and stop if running
             var originalStatus = m_ServiceController.GetServiceStatus(serviceName);
             var wasRunning = originalStatus == ServiceControllerStatus.Running;
-            
+
             if (wasRunning)
             {
                 m_Logger.LogInformation("Service {ServiceName} is running - stopping it for update...", serviceName);

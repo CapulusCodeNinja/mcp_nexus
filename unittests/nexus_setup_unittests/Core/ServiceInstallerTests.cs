@@ -208,7 +208,7 @@ public class ServiceInstallerTests
         var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             installer.WaitForServiceStatusAsync(serviceName!, "Running", TimeSpan.FromSeconds(1)));
     }
 
@@ -225,7 +225,7 @@ public class ServiceInstallerTests
         var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             installer.WaitForServiceStatusAsync("TestService", targetStatus!, TimeSpan.FromSeconds(1)));
     }
 
@@ -274,7 +274,7 @@ public class ServiceInstallerTests
         var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             installer.BuildProjectAsync("test.csproj", configuration!));
     }
 
@@ -291,7 +291,7 @@ public class ServiceInstallerTests
         var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             installer.CopyApplicationFilesAsync(sourceDirectory!, @"C:\target"));
     }
 
@@ -308,7 +308,7 @@ public class ServiceInstallerTests
         var (installer, _, _, _) = CreateServiceInstaller();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             installer.CopyApplicationFilesAsync(@"C:\source", targetDirectory!));
     }
 

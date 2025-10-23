@@ -31,7 +31,7 @@ public static class ServiceRegistrationExtensions
     {
         // Add shared configuration services
         services.AddNexusConfiguration();
-        
+
         // Add utility services
         services.AddSingleton<IFileSystem, nexus.utilities.FileSystem.FileSystem>();
         services.AddSingleton<IProcessManager, ProcessManager>();
@@ -40,10 +40,10 @@ public static class ServiceRegistrationExtensions
 
         // Add setup services
         services.AddTransient<IProductInstallation, ProductInstallation>();
-        
+
         // Add protocol services
         services.AddProtocolServices(configuration);
-        
+
         return services;
     }
 }

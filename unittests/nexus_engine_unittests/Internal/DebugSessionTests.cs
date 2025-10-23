@@ -37,7 +37,7 @@ public class DebugSessionTests : IDisposable
             DefaultCommandTimeout = TimeSpan.FromSeconds(30),
             SessionInitializationTimeout = TimeSpan.FromMinutes(1)
         };
-        
+
         SetupDefaultMocks();
     }
 
@@ -49,30 +49,30 @@ public class DebugSessionTests : IDisposable
         // Setup file system mocks - return false for ALL file existence checks to prevent real system access
         m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>()))
             .Returns(false);
-        
+
         m_MockFileSystem.Setup(fs => fs.CombinePaths(It.IsAny<string[]>()))
             .Returns<string[]>(paths => string.Join("\\", paths));
 
         // Setup ALL other file system methods to prevent real system access
         m_MockFileSystem.Setup(fs => fs.ReadAllText(It.IsAny<string>()))
             .Returns("mocked content");
-        
+
         m_MockFileSystem.Setup(fs => fs.WriteAllText(It.IsAny<string>(), It.IsAny<string>()))
             .Verifiable();
-        
+
         m_MockFileSystem.Setup(fs => fs.DeleteFile(It.IsAny<string>()))
             .Verifiable();
-        
+
         m_MockFileSystem.Setup(fs => fs.GetFileName(It.IsAny<string>()))
             .Returns<string>(path => System.IO.Path.GetFileName(path));
-        
+
         m_MockFileSystem.Setup(fs => fs.GetDirectoryName(It.IsAny<string>()))
             .Returns<string>(path => System.IO.Path.GetDirectoryName(path));
 
         // Setup process manager mocks - return null to avoid process-related issues in tests
         m_MockProcessManager.Setup(pm => pm.StartProcess(It.IsAny<System.Diagnostics.ProcessStartInfo>()))
             .Returns((System.Diagnostics.Process)null!);
-        
+
         m_MockProcessManager.Setup(pm => pm.KillProcess(It.IsAny<System.Diagnostics.Process>()))
             .Verifiable();
     }
@@ -94,11 +94,11 @@ public class DebugSessionTests : IDisposable
         // Mock the file system to return true for the dump file and CDB executable so initialization can succeed
         m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Test\test.dmp"))
             .Returns(true);
-        
+
         // Mock CDB executable path
         m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe"))
             .Returns(true);
-        
+
         var session = new DebugSession(
             "test-session",
             @"C:\Test\test.dmp",
@@ -107,7 +107,7 @@ public class DebugSessionTests : IDisposable
             m_LoggerFactory,
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         return session;
     }
 
@@ -139,7 +139,7 @@ public class DebugSessionTests : IDisposable
             m_LoggerFactory,
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("sessionId");
     }
@@ -159,7 +159,7 @@ public class DebugSessionTests : IDisposable
             m_LoggerFactory,
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("dumpFilePath");
     }
@@ -179,7 +179,7 @@ public class DebugSessionTests : IDisposable
             m_LoggerFactory,
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("configuration");
     }
@@ -199,7 +199,7 @@ public class DebugSessionTests : IDisposable
             null!,
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("factory");
     }
@@ -219,7 +219,7 @@ public class DebugSessionTests : IDisposable
             m_LoggerFactory,
             null!,
             m_MockProcessManager.Object);
-        
+
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("fileSystem");
     }
@@ -239,7 +239,7 @@ public class DebugSessionTests : IDisposable
             m_LoggerFactory,
             m_MockFileSystem.Object,
             null!);
-        
+
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("processManager");
     }
@@ -450,7 +450,7 @@ public class DebugSessionTests : IDisposable
             m_LoggerFactory,
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         testAccessor.Dispose();
 
         // Act & Assert
@@ -516,7 +516,7 @@ public class DebugSessionTests : IDisposable
             m_LoggerFactory,
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         SessionStateChangedEventArgs? eventArgs = null;
         testAccessor.SessionStateChanged += (sender, args) => eventArgs = args;
 
@@ -544,7 +544,7 @@ public class DebugSessionTests : IDisposable
             m_LoggerFactory,
             m_MockFileSystem.Object,
             m_MockProcessManager.Object);
-        
+
         CommandStateChangedEventArgs? eventArgs = null;
         testAccessor.CommandStateChanged += (sender, args) => eventArgs = args;
 

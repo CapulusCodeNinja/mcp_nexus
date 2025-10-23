@@ -49,14 +49,14 @@ namespace nexus.setup.Core
             m_ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
             m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
-            
+
             // Create internal dependencies
             m_Installer = new ServiceInstaller(
                 loggerFactory.CreateLogger<ServiceInstaller>(),
                 fileSystem,
                 processManager,
                 serviceController);
-            
+
             m_Updater = new ServiceUpdater(
                 loggerFactory.CreateLogger<ServiceUpdater>(),
                 m_Installer,
@@ -92,7 +92,7 @@ namespace nexus.setup.Core
             var serviceName = m_Configuration.McpNexus.Service.ServiceName;
             var displayName = m_Configuration.McpNexus.Service.DisplayName;
             var startMode = ServiceStartMode.Automatic; // Fixed value, not configurable
-            
+
             m_Logger.LogInformation("Installing {ServiceName} as Windows Service...", serviceName);
 
             var installationDirectory = m_Configuration.McpNexus.Service.InstallPath;
@@ -127,14 +127,14 @@ namespace nexus.setup.Core
                 // Step 2: Copy application files
                 m_Logger.LogInformation("Copying application files to: {InstallationDirectory}", installationDirectory);
                 filesCopied = await m_FileManager.CopyApplicationFilesAsync(sourceDirectory, installationDirectory);
-                
+
                 if (!filesCopied)
                 {
                     m_Logger.LogError("Failed to copy application files to Program Files");
                     m_Logger.LogError("Please ensure you have administrator privileges and the target directory is accessible");
                     return false;
                 }
-                
+
                 // Step 3: Install service
                 var options = new ServiceInstallationOptions
                 {
@@ -153,12 +153,12 @@ namespace nexus.setup.Core
                     serviceInstalled = true;
                     m_Logger.LogInformation("{Message}", result.Message);
                     m_Logger.LogInformation("Service '{ServiceName}' installed successfully.", serviceName);
-                    
+
                     // Start the service
                     m_Logger.LogInformation("Starting service '{ServiceName}'...", serviceName);
                     m_ServiceController.StartService(serviceName);
                     m_Logger.LogInformation("Service '{ServiceName}' started successfully.", serviceName);
-                    
+
                     return true;
                 }
                 else
@@ -194,7 +194,7 @@ namespace nexus.setup.Core
         public async Task<bool> UpdateServiceAsync()
         {
             var serviceName = m_Configuration.McpNexus.Service.ServiceName;
-            
+
             m_Logger.LogInformation("Updating Windows Service '{ServiceName}'...", serviceName);
 
             var newExecutablePath = Path.Combine(AppContext.BaseDirectory, "nexus.exe");
@@ -275,7 +275,7 @@ namespace nexus.setup.Core
                 // Step 3: Remove the Windows service
                 m_Logger.LogInformation("Removing Windows service {ServiceName}...", serviceName);
                 var uninstallResult = await m_Installer.UninstallServiceAsync(serviceName);
-                
+
                 if (uninstallResult.Success)
                 {
                     serviceRemoved = true;
@@ -303,7 +303,7 @@ namespace nexus.setup.Core
 
                 m_Logger.LogInformation("Uninstall completed successfully");
                 m_Logger.LogInformation("Service {ServiceName} has been completely removed", serviceName);
-                
+
                 if (backupCreated)
                 {
                     m_Logger.LogInformation("Backup created at: {BackupDirectory}", backupDirectory);
@@ -314,7 +314,7 @@ namespace nexus.setup.Core
             catch (Exception ex)
             {
                 m_Logger.LogError(ex, "Unexpected error during uninstall");
-                
+
                 // Attempt partial rollback if possible
                 if (serviceRemoved && !filesRemoved && m_FileSystem.DirectoryExists(backupDirectory))
                 {
@@ -329,7 +329,7 @@ namespace nexus.setup.Core
                         m_Logger.LogError(rollbackEx, "Failed to restore from backup");
                     }
                 }
-                
+
                 return false;
             }
         }

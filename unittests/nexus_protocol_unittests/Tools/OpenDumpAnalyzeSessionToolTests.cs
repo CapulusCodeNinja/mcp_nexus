@@ -25,11 +25,11 @@ public class OpenDumpAnalyzeSessionToolTests
     {
         m_MockEngine = new Mock<IDebugEngine>();
         m_MockFileSystem = new Mock<IFileSystem>();
-        
+
         // By default, mock FileExists to return true (file exists)
         m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
         m_MockFileSystem.Setup(fs => fs.GetFileName(It.IsAny<string>())).Returns<string>(path => Path.GetFileName(path));
-        
+
         var services = new ServiceCollection();
         services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
         services.AddSingleton<IFileSystem>(m_MockFileSystem.Object);
@@ -45,7 +45,7 @@ public class OpenDumpAnalyzeSessionToolTests
     {
         const string dumpPath = @"C:\dumps\test.dmp";
         const string sessionId = "sess-123";
-        
+
         m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sessionId);
 
@@ -66,7 +66,7 @@ public class OpenDumpAnalyzeSessionToolTests
         const string dumpPath = @"C:\dumps\test.dmp";
         const string symbolsPath = @"C:\symbols";
         const string sessionId = "sess-456";
-        
+
         m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sessionId);
 
@@ -85,7 +85,7 @@ public class OpenDumpAnalyzeSessionToolTests
     public async Task nexus_open_dump_analyze_session_WithFileNotFoundException_ReturnsFailedResult()
     {
         const string dumpPath = @"C:\dumps\missing.dmp";
-        
+
         // Mock FileExists to return false for this test
         m_MockFileSystem.Setup(fs => fs.FileExists(dumpPath)).Returns(false);
 
@@ -104,7 +104,7 @@ public class OpenDumpAnalyzeSessionToolTests
     public async Task nexus_open_dump_analyze_session_WithInvalidOperationException_ReturnsFailedResult()
     {
         const string dumpPath = @"C:\dumps\test.dmp";
-        
+
         m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Max sessions reached"));
 
@@ -123,7 +123,7 @@ public class OpenDumpAnalyzeSessionToolTests
     public async Task nexus_open_dump_analyze_session_WithUnexpectedException_ReturnsFailedResult()
     {
         const string dumpPath = @"C:\dumps\test.dmp";
-        
+
         m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Unexpected failure"));
 
@@ -143,7 +143,7 @@ public class OpenDumpAnalyzeSessionToolTests
     {
         const string dumpPath = @"C:\dumps\test.dmp";
         const string sessionId = "sess-789";
-        
+
         m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sessionId);
 
