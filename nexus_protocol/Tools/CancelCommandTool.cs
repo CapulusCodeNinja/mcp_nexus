@@ -22,7 +22,7 @@ internal static class CancelCommandTool
     /// <param name="commandId">Command ID from nexus_enqueue_async_dump_analyze_command.</param>
     /// <returns>Command cancellation result.</returns>
     [McpServerTool, Description("Cancels a queued or executing command.")]
-    public static Task<object> nexus_cancel_command(
+    public static Task<object> nexus_cancel_dump_analyze_command(
         IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("Command ID to cancel")] string commandId)
@@ -44,7 +44,7 @@ internal static class CancelCommandTool
                 sessionId,
                 cancelled,
                 status = cancelled ? "Cancelled" : "NotFound",
-                operation = "nexus_cancel_command",
+                operation = "nexus_cancel_dump_analyze_command",
                 message = cancelled ? $"Command {commandId} cancelled successfully" : $"Command {commandId} not found or already completed",
                 usage = UsageField
             });
@@ -58,7 +58,7 @@ internal static class CancelCommandTool
                 sessionId,
                 cancelled = false,
                 status = "Failed",
-                operation = "nexus_cancel_command",
+                operation = "nexus_cancel_dump_analyze_command",
                 message = ex.Message,
                 usage = UsageField
             });
@@ -72,7 +72,7 @@ internal static class CancelCommandTool
                 sessionId,
                 cancelled = false,
                 status = "Failed",
-                operation = "nexus_cancel_command",
+                operation = "nexus_cancel_dump_analyze_command",
                 message = $"Unexpected error: {ex.Message}",
                 usage = UsageField
             });
