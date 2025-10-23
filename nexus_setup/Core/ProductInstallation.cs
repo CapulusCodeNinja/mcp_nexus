@@ -2,6 +2,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using nexus.setup.Models;
 using nexus.setup.Interfaces;
+using nexus.setup.Validation;
+using nexus.setup.Management;
 using nexus.utilities.FileSystem;
 using nexus.utilities.ProcessManagement;
 using nexus.utilities.ServiceManagement;
@@ -22,6 +24,11 @@ namespace nexus.setup.Core
         private readonly ServiceUpdater m_Updater;
         private readonly IServiceController m_ServiceController;
         private readonly SharedConfiguration m_Configuration;
+        private readonly IFileSystem m_FileSystem;
+        private readonly InstallationValidator m_InstallationValidator;
+        private readonly UninstallValidator m_UninstallValidator;
+        private readonly BackupManager m_BackupManager;
+        private readonly FileManager m_FileManager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
@@ -41,6 +48,7 @@ namespace nexus.setup.Core
             m_Logger = loggerFactory.CreateLogger<ProductInstallation>();
             m_ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
             m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             
             // Create internal dependencies
             m_Installer = new ServiceInstaller(
@@ -54,6 +62,25 @@ namespace nexus.setup.Core
                 m_Installer,
                 fileSystem,
                 serviceController);
+
+            // Create specialized managers
+            m_InstallationValidator = new InstallationValidator(
+                loggerFactory.CreateLogger<InstallationValidator>(),
+                fileSystem,
+                serviceController);
+
+            m_UninstallValidator = new UninstallValidator(
+                loggerFactory.CreateLogger<UninstallValidator>(),
+                fileSystem,
+                serviceController);
+
+            m_BackupManager = new BackupManager(
+                loggerFactory.CreateLogger<BackupManager>(),
+                fileSystem);
+
+            m_FileManager = new FileManager(
+                loggerFactory.CreateLogger<FileManager>(),
+                fileSystem);
         }
 
         /// <summary>
@@ -68,81 +95,16 @@ namespace nexus.setup.Core
             
             m_Logger.LogInformation("Installing {ServiceName} as Windows Service...", serviceName);
 
-            // Use configuration for installation directory
             var installationDirectory = m_Configuration.McpNexus.Service.InstallPath;
             var backupDirectory = m_Configuration.McpNexus.Service.BackupPath;
             var installedExecutablePath = Path.Combine(installationDirectory, "nexus.exe");
             var sourceDirectory = AppContext.BaseDirectory;
 
-            // PHASE 1: Pre-installation validation (no file system changes)
-            m_Logger.LogInformation("Performing pre-installation validation...");
-            
-            // Check 1: Administrator privileges
-            var isAdmin = IsRunningAsAdministrator();
-            if (!isAdmin)
+            // PHASE 1: Pre-installation validation
+            if (!m_InstallationValidator.ValidateInstallation(m_Configuration, sourceDirectory))
             {
-                m_Logger.LogError("Administrator privileges required to install to Program Files");
-                m_Logger.LogError("Please run this command as Administrator (Run as Administrator)");
                 return false;
             }
-
-            // Check 2: Service already installed
-            var isServiceInstalled = m_ServiceController.IsServiceInstalled(serviceName);
-            if (isServiceInstalled)
-            {
-                m_Logger.LogWarning("Service {ServiceName} is already installed", serviceName);
-                m_Logger.LogInformation("Use --update command to update an existing installation");
-                return false;
-            }
-
-            // Check 3: Source directory exists and contains required files
-            if (!Directory.Exists(sourceDirectory))
-            {
-                m_Logger.LogError("Source directory does not exist: {SourceDirectory}", sourceDirectory);
-                return false;
-            }
-
-            var sourceExecutablePath = Path.Combine(sourceDirectory, "nexus.exe");
-            if (!File.Exists(sourceExecutablePath))
-            {
-                m_Logger.LogError("Source executable not found: {SourceExecutablePath}", sourceExecutablePath);
-                m_Logger.LogError("Please ensure the application is properly built before installation");
-                return false;
-            }
-
-            // Check 4: Target directory permissions (without creating it yet)
-            try
-            {
-                var parentDir = Path.GetDirectoryName(installationDirectory);
-                if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
-                {
-                    m_Logger.LogError("Parent directory does not exist: {ParentDirectory}", parentDir);
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                m_Logger.LogError(ex, "Failed to validate target directory path");
-                return false;
-            }
-
-            // Check 5: Backup directory permissions (without creating it yet)
-            try
-            {
-                var backupParentDir = Path.GetDirectoryName(backupDirectory);
-                if (!string.IsNullOrEmpty(backupParentDir) && !Directory.Exists(backupParentDir))
-                {
-                    m_Logger.LogError("Backup parent directory does not exist: {BackupParentDirectory}", backupParentDir);
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                m_Logger.LogError(ex, "Failed to validate backup directory path");
-                return false;
-            }
-
-            m_Logger.LogInformation("Pre-installation validation completed successfully");
 
             // PHASE 2: Installation execution (with rollback protection)
             bool backupCreated = false;
@@ -152,10 +114,10 @@ namespace nexus.setup.Core
             try
             {
                 // Step 1: Create backup of existing installation (if any)
-                if (Directory.Exists(installationDirectory))
+                if (m_FileSystem.DirectoryExists(installationDirectory))
                 {
                     m_Logger.LogInformation("Creating backup of existing installation...");
-                    backupCreated = await CreateBackupAsync(installationDirectory, backupDirectory);
+                    backupCreated = await m_BackupManager.CreateBackupAsync(installationDirectory, backupDirectory);
                     if (!backupCreated)
                     {
                         m_Logger.LogWarning("Failed to create backup, but continuing with installation");
@@ -164,17 +126,14 @@ namespace nexus.setup.Core
 
                 // Step 2: Copy application files
                 m_Logger.LogInformation("Copying application files to: {InstallationDirectory}", installationDirectory);
-                var copyResult = await m_Installer.CopyApplicationFilesAsync(sourceDirectory, installationDirectory);
+                filesCopied = await m_FileManager.CopyApplicationFilesAsync(sourceDirectory, installationDirectory);
                 
-                if (!copyResult)
+                if (!filesCopied)
                 {
                     m_Logger.LogError("Failed to copy application files to Program Files");
                     m_Logger.LogError("Please ensure you have administrator privileges and the target directory is accessible");
                     return false;
                 }
-                
-                filesCopied = true;
-                m_Logger.LogInformation("Application files copied successfully");
                 
                 // Step 3: Install service
                 var options = new ServiceInstallationOptions
@@ -223,7 +182,7 @@ namespace nexus.setup.Core
                 if (!serviceInstalled && filesCopied)
                 {
                     m_Logger.LogWarning("Installation failed, attempting rollback...");
-                    await RollbackInstallationAsync(installationDirectory, backupDirectory, backupCreated);
+                    await m_BackupManager.RollbackInstallationAsync(installationDirectory, backupDirectory, backupCreated);
                 }
             }
         }
@@ -258,137 +217,119 @@ namespace nexus.setup.Core
             }
         }
 
+
         /// <summary>
-        /// Creates a backup of the existing installation directory.
+        /// Uninstalls the Windows service and removes application files.
         /// </summary>
-        /// <param name="installationDirectory">The installation directory to backup.</param>
-        /// <param name="backupDirectory">The backup directory path.</param>
-        /// <returns>True if backup was successful, false otherwise.</returns>
-        private async Task<bool> CreateBackupAsync(string installationDirectory, string backupDirectory)
+        /// <returns>True if uninstall succeeded, false otherwise.</returns>
+        public async Task<bool> UninstallServiceAsync()
         {
+            var serviceName = m_Configuration.McpNexus.Service.ServiceName;
+            var installationDirectory = m_Configuration.McpNexus.Service.InstallPath;
+            var backupDirectory = m_Configuration.McpNexus.Service.BackupPath;
+
+            m_Logger.LogInformation("Uninstalling {ServiceName} Windows Service...", serviceName);
+
+            // PHASE 1: Pre-uninstall validation
+            if (!m_UninstallValidator.ValidateUninstall(m_Configuration))
+            {
+                // Check if it's the "nothing to uninstall" case (success)
+                var isServiceInstalled = m_ServiceController.IsServiceInstalled(serviceName);
+                if (!isServiceInstalled)
+                {
+                    return true; // Not an error - service is already uninstalled
+                }
+                return false;
+            }
+
+            // PHASE 2: Uninstall execution
+            bool serviceRemoved = false;
+            bool filesRemoved = false;
+            bool backupCreated = false;
+
             try
             {
-                if (!Directory.Exists(installationDirectory))
+                // Step 1: Stop the service if it's running
+                m_Logger.LogInformation("Stopping service {ServiceName}...", serviceName);
+                try
                 {
-                    return true; // Nothing to backup
+                    m_ServiceController.StopService(serviceName);
+                    m_Logger.LogInformation("Service {ServiceName} stopped successfully", serviceName);
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.LogWarning(ex, "Failed to stop service {ServiceName}, continuing with uninstall", serviceName);
                 }
 
-                // Create backup directory with timestamp
-                var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-                var backupPath = Path.Combine(backupDirectory, $"backup-{timestamp}");
+                // Step 2: Create backup of current installation (if directory exists)
+                if (m_FileSystem.DirectoryExists(installationDirectory))
+                {
+                    m_Logger.LogInformation("Creating backup of current installation...");
+                    backupCreated = await m_BackupManager.CreateBackupAsync(installationDirectory, backupDirectory);
+                    if (!backupCreated)
+                    {
+                        m_Logger.LogWarning("Failed to create backup, but continuing with uninstall");
+                    }
+                }
+
+                // Step 3: Remove the Windows service
+                m_Logger.LogInformation("Removing Windows service {ServiceName}...", serviceName);
+                var uninstallResult = await m_Installer.UninstallServiceAsync(serviceName);
                 
-                m_Logger.LogInformation("Creating backup at: {BackupPath}", backupPath);
+                if (uninstallResult.Success)
+                {
+                    serviceRemoved = true;
+                    m_Logger.LogInformation("{Message}", uninstallResult.Message);
+                    m_Logger.LogInformation("Service {ServiceName} removed successfully", serviceName);
+                }
+                else
+                {
+                    m_Logger.LogError("{Message}", uninstallResult.Message);
+                    if (!string.IsNullOrEmpty(uninstallResult.ErrorDetails))
+                    {
+                        m_Logger.LogError("Details: {ErrorDetails}", uninstallResult.ErrorDetails);
+                    }
+                    return false;
+                }
+
+                // Step 4: Remove application files (if directory exists)
+                filesRemoved = m_FileManager.RemoveApplicationFiles(installationDirectory);
+                if (!filesRemoved)
+                {
+                    m_Logger.LogError("Failed to remove application files from {InstallationDirectory}", installationDirectory);
+                    m_Logger.LogError("You may need to manually remove the directory");
+                    return false;
+                }
+
+                m_Logger.LogInformation("Uninstall completed successfully");
+                m_Logger.LogInformation("Service {ServiceName} has been completely removed", serviceName);
                 
-                // Ensure backup directory exists
-                Directory.CreateDirectory(backupDirectory);
-                
-                // Copy the entire installation directory to backup
-                await CopyDirectoryAsync(installationDirectory, backupPath);
-                
-                m_Logger.LogInformation("Backup created successfully at: {BackupPath}", backupPath);
+                if (backupCreated)
+                {
+                    m_Logger.LogInformation("Backup created at: {BackupDirectory}", backupDirectory);
+                }
+
                 return true;
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Failed to create backup");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Rolls back the installation by restoring from backup or cleaning up.
-        /// </summary>
-        /// <param name="installationDirectory">The installation directory to rollback.</param>
-        /// <param name="backupDirectory">The backup directory path.</param>
-        /// <param name="backupCreated">Whether a backup was created during installation.</param>
-        /// <returns>Task representing the rollback operation.</returns>
-        private async Task RollbackInstallationAsync(string installationDirectory, string backupDirectory, bool backupCreated)
-        {
-            try
-            {
-                if (backupCreated && Directory.Exists(backupDirectory))
+                m_Logger.LogError(ex, "Unexpected error during uninstall");
+                
+                // Attempt partial rollback if possible
+                if (serviceRemoved && !filesRemoved && m_FileSystem.DirectoryExists(backupDirectory))
                 {
-                    // Find the most recent backup
-                    var backupDirs = Directory.GetDirectories(backupDirectory, "backup-*")
-                        .OrderByDescending(d => d)
-                        .ToArray();
-                    
-                    if (backupDirs.Length > 0)
+                    m_Logger.LogWarning("Attempting to restore from backup...");
+                    try
                     {
-                        var latestBackup = backupDirs[0];
-                        m_Logger.LogInformation("Restoring from backup: {BackupPath}", latestBackup);
-                        
-                        // Remove current installation
-                        if (Directory.Exists(installationDirectory))
-                        {
-                            Directory.Delete(installationDirectory, true);
-                        }
-                        
-                        // Restore from backup
-                        await CopyDirectoryAsync(latestBackup, installationDirectory);
-                        m_Logger.LogInformation("Rollback completed successfully");
-                        return;
+                        await m_BackupManager.RollbackInstallationAsync(installationDirectory, backupDirectory, true);
+                        m_Logger.LogInformation("Files restored from backup");
+                    }
+                    catch (Exception rollbackEx)
+                    {
+                        m_Logger.LogError(rollbackEx, "Failed to restore from backup");
                     }
                 }
                 
-                // If no backup available, clean up the installation directory
-                m_Logger.LogWarning("No backup available, cleaning up installation directory");
-                if (Directory.Exists(installationDirectory))
-                {
-                    Directory.Delete(installationDirectory, true);
-                    m_Logger.LogInformation("Installation directory cleaned up");
-                }
-            }
-            catch (Exception ex)
-            {
-                m_Logger.LogError(ex, "Failed to rollback installation");
-            }
-        }
-
-        /// <summary>
-        /// Copies a directory and all its contents recursively.
-        /// </summary>
-        /// <param name="sourceDir">The source directory path.</param>
-        /// <param name="destDir">The destination directory path.</param>
-        /// <returns>Task representing the copy operation.</returns>
-        private async Task CopyDirectoryAsync(string sourceDir, string destDir)
-        {
-            var dir = new DirectoryInfo(sourceDir);
-            var dirs = dir.GetDirectories();
-
-            // Create the destination directory if it doesn't exist
-            Directory.CreateDirectory(destDir);
-
-            // Copy all files
-            var files = dir.GetFiles();
-            foreach (var file in files)
-            {
-                var targetFilePath = Path.Combine(destDir, file.Name);
-                file.CopyTo(targetFilePath, true);
-            }
-
-            // Recursively copy subdirectories
-            foreach (var subDir in dirs)
-            {
-                var targetSubDir = Path.Combine(destDir, subDir.Name);
-                await CopyDirectoryAsync(subDir.FullName, targetSubDir);
-            }
-        }
-
-        /// <summary>
-        /// Checks if the current process is running with administrator privileges.
-        /// </summary>
-        /// <returns>True if running as administrator, false otherwise.</returns>
-        private static bool IsRunningAsAdministrator()
-        {
-            try
-            {
-                var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
-                var principal = new System.Security.Principal.WindowsPrincipal(identity);
-                return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
-            }
-            catch
-            {
                 return false;
             }
         }

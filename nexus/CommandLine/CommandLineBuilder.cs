@@ -31,7 +31,8 @@ internal static class CommandLineBuilder
             BuildStdioCommand(),
             BuildServiceCommand(),
             BuildInstallCommand(),
-            BuildUpdateCommand()
+            BuildUpdateCommand(),
+            BuildUninstallCommand()
         };
 
         return rootCommand;
@@ -161,6 +162,40 @@ internal static class CommandLineBuilder
         });
 
         return updateCommand;
+    }
+
+    /// <summary>
+    /// Builds the --uninstall command.
+    /// </summary>
+    /// <returns>The uninstall command.</returns>
+    [SupportedOSPlatform("windows")]
+    private static Command BuildUninstallCommand()
+    {
+        var uninstallCommand = new Command("--uninstall", "Uninstall Nexus Windows Service");
+
+        uninstallCommand.SetHandler(async () =>
+        {
+            var services = new ServiceCollection();
+            services.AddNexusConfiguration();
+            services.AddLogging(builder => 
+            {
+                var sp = services.BuildServiceProvider();
+                var config = sp.GetRequiredService<IConfiguration>();
+                builder.AddNexusLogging(config, false);
+            });
+            services.AddNexusSetupServices();
+            var serviceProvider = services.BuildServiceProvider();
+
+            var installationHandler = serviceProvider.GetRequiredService<IProductInstallation>();
+            var success = await installationHandler.UninstallServiceAsync();
+            
+            if (!success)
+            {
+                Environment.Exit(1);
+            }
+        });
+
+        return uninstallCommand;
     }
 }
 

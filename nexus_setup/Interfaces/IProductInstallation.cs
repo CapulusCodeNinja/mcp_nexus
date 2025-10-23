@@ -18,6 +18,12 @@ namespace nexus.setup.Interfaces
         /// </summary>
         /// <returns>True if update succeeded, false otherwise.</returns>
         Task<bool> UpdateServiceAsync();
+
+        /// <summary>
+        /// Uninstalls the Windows service and removes application files.
+        /// </summary>
+        /// <returns>True if uninstall succeeded, false otherwise.</returns>
+        Task<bool> UninstallServiceAsync();
     }
 }
 
