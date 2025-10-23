@@ -334,7 +334,7 @@ public class ExtensionExecutorTests : IDisposable
             Name = "test-extension",
             Version = "1.0.0",
             Description = "Test",
-            ScriptPath = "test.ps1",
+            ScriptFile = "test.ps1",
             ScriptType = "powershell",
             Timeout = 5000
         };
@@ -470,6 +470,591 @@ public class ExtensionExecutorTests : IDisposable
 
         // Assert
         action.Should().NotThrow();
+    }
+
+    /// <summary>
+    /// Verifies that ExecuteAsync with successful extension returns success result.
+    /// </summary>
+    [Fact]
+    public async Task ExecuteAsync_WithSuccessfulExtension_ShouldReturnSuccessResult()
+    {
+        // Arrange
+        m_Executor = new ExtensionExecutor(
+            m_Logger,
+            m_MockExtensionManager.Object,
+            "http://localhost:5555",
+            m_Configuration,
+            m_MockTokenValidator.Object,
+            m_MockProcessWrapper.Object);
+
+        var metadata = new ExtensionMetadata
+        {
+            Name = "test-extension",
+            Version = "1.0.0",
+            Description = "Test",
+            ScriptFile = "test.ps1",
+            ScriptType = "powershell",
+            Timeout = 5000,
+            ExtensionPath = "C:\\extensions\\test"
+        };
+
+        m_MockExtensionManager.Setup(m => m.GetExtension("test-extension"))
+            .Returns(metadata);
+        m_MockExtensionManager.Setup(m => m.ValidateExtension("test-extension"))
+            .Returns((true, string.Empty));
+
+        var mockProcess = new Mock<IProcessHandle>();
+        mockProcess.Setup(p => p.Id).Returns(12345);
+        mockProcess.Setup(p => p.HasExited).Returns(false).Callback(() =>
+        {
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+        });
+        mockProcess.Setup(p => p.ExitCode).Returns(0);
+        mockProcess.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        mockProcess.Setup(p => p.WaitForExit()).Callback(() => { });
+
+        m_MockProcessWrapper.Setup(w => w.CreateProcess(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<Dictionary<string, string>>()))
+            .Returns(mockProcess.Object);
+
+        m_MockTokenValidator.Setup(t => t.CreateToken(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns("test-token");
+
+        // Act
+        var result = await m_Executor.ExecuteAsync(
+            "test-extension",
+            "session-1",
+            null,
+            "cmd-1");
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.ExitCode.Should().Be(0);
+    }
+
+    /// <summary>
+    /// Verifies that ExecuteAsync with process failure returns failure result.
+    /// </summary>
+    [Fact]
+    public async Task ExecuteAsync_WithProcessFailure_ShouldReturnFailureResult()
+    {
+        // Arrange
+        m_Executor = new ExtensionExecutor(
+            m_Logger,
+            m_MockExtensionManager.Object,
+            "http://localhost:5555",
+            m_Configuration,
+            m_MockTokenValidator.Object,
+            m_MockProcessWrapper.Object);
+
+        var metadata = new ExtensionMetadata
+        {
+            Name = "test-extension",
+            Version = "1.0.0",
+            Description = "Test",
+            ScriptFile = "test.ps1",
+            ScriptType = "powershell",
+            Timeout = 5000,
+            ExtensionPath = "C:\\extensions\\test"
+        };
+
+        m_MockExtensionManager.Setup(m => m.GetExtension("test-extension"))
+            .Returns(metadata);
+        m_MockExtensionManager.Setup(m => m.ValidateExtension("test-extension"))
+            .Returns((true, string.Empty));
+
+        var mockProcess = new Mock<IProcessHandle>();
+        mockProcess.Setup(p => p.Id).Returns(12345);
+        mockProcess.Setup(p => p.HasExited).Returns(false).Callback(() =>
+        {
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+        });
+        mockProcess.Setup(p => p.ExitCode).Returns(1);
+        mockProcess.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        mockProcess.Setup(p => p.WaitForExit()).Callback(() => { });
+
+        m_MockProcessWrapper.Setup(w => w.CreateProcess(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<Dictionary<string, string>>()))
+            .Returns(mockProcess.Object);
+
+        m_MockTokenValidator.Setup(t => t.CreateToken(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns("test-token");
+
+        // Act
+        var result = await m_Executor.ExecuteAsync(
+            "test-extension",
+            "session-1",
+            null,
+            "cmd-1");
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeFalse();
+        result.ExitCode.Should().Be(1);
+    }
+
+    /// <summary>
+    /// Verifies that ExecuteAsync with process start failure returns failure result.
+    /// </summary>
+    [Fact]
+    public async Task ExecuteAsync_WithProcessStartFailure_ShouldReturnFailureResult()
+    {
+        // Arrange
+        m_Executor = new ExtensionExecutor(
+            m_Logger,
+            m_MockExtensionManager.Object,
+            "http://localhost:5555",
+            m_Configuration,
+            m_MockTokenValidator.Object,
+            m_MockProcessWrapper.Object);
+
+        var metadata = new ExtensionMetadata
+        {
+            Name = "test-extension",
+            Version = "1.0.0",
+            Description = "Test",
+            ScriptFile = "test.ps1",
+            ScriptType = "powershell",
+            Timeout = 5000,
+            ExtensionPath = "C:\\extensions\\test"
+        };
+
+        m_MockExtensionManager.Setup(m => m.GetExtension("test-extension"))
+            .Returns(metadata);
+        m_MockExtensionManager.Setup(m => m.ValidateExtension("test-extension"))
+            .Returns((true, string.Empty));
+
+        var mockProcess = new Mock<IProcessHandle>();
+        mockProcess.Setup(p => p.Start())
+            .Throws(new InvalidOperationException("Failed to start process"));
+
+        m_MockProcessWrapper.Setup(w => w.CreateProcess(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<Dictionary<string, string>>()))
+            .Returns(mockProcess.Object);
+
+        m_MockTokenValidator.Setup(t => t.CreateToken(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns("test-token");
+
+        // Act
+        var result = await m_Executor.ExecuteAsync(
+            "test-extension",
+            "session-1",
+            null,
+            "cmd-1");
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeFalse();
+        result.Error.Should().Contain("Failed to start process");
+    }
+
+    /// <summary>
+    /// Verifies that ExecuteAsync with unsupported script type returns failure.
+    /// </summary>
+    [Fact]
+    public async Task ExecuteAsync_WithUnsupportedScriptType_ShouldReturnFailureResult()
+    {
+        // Arrange
+        m_Executor = new ExtensionExecutor(
+            m_Logger,
+            m_MockExtensionManager.Object,
+            "http://localhost:5555",
+            m_Configuration,
+            m_MockTokenValidator.Object,
+            m_MockProcessWrapper.Object);
+
+        var metadata = new ExtensionMetadata
+        {
+            Name = "test-extension",
+            Version = "1.0.0",
+            Description = "Test",
+            ScriptFile = "test.py",
+            ScriptType = "python", // Unsupported
+            Timeout = 5000,
+            ExtensionPath = "C:\\extensions\\test"
+        };
+
+        m_MockExtensionManager.Setup(m => m.GetExtension("test-extension"))
+            .Returns(metadata);
+        m_MockExtensionManager.Setup(m => m.ValidateExtension("test-extension"))
+            .Returns((true, string.Empty));
+
+        m_MockTokenValidator.Setup(t => t.CreateToken(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns("test-token");
+
+        // Act
+        var result = await m_Executor.ExecuteAsync(
+            "test-extension",
+            "session-1",
+            null,
+            "cmd-1");
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeFalse();
+        result.Error.Should().Contain("Unsupported script type");
+    }
+
+    /// <summary>
+    /// Verifies that ExecuteAsync revokes token after completion.
+    /// </summary>
+    [Fact]
+    public async Task ExecuteAsync_AfterCompletion_ShouldRevokeToken()
+    {
+        // Arrange
+        m_Executor = new ExtensionExecutor(
+            m_Logger,
+            m_MockExtensionManager.Object,
+            "http://localhost:5555",
+            m_Configuration,
+            m_MockTokenValidator.Object,
+            m_MockProcessWrapper.Object);
+
+        var metadata = new ExtensionMetadata
+        {
+            Name = "test-extension",
+            Version = "1.0.0",
+            Description = "Test",
+            ScriptFile = "test.ps1",
+            ScriptType = "powershell",
+            Timeout = 5000,
+            ExtensionPath = "C:\\extensions\\test"
+        };
+
+        m_MockExtensionManager.Setup(m => m.GetExtension("test-extension"))
+            .Returns(metadata);
+        m_MockExtensionManager.Setup(m => m.ValidateExtension("test-extension"))
+            .Returns((true, string.Empty));
+
+        var mockProcess = new Mock<IProcessHandle>();
+        mockProcess.Setup(p => p.Id).Returns(12345);
+        mockProcess.Setup(p => p.HasExited).Returns(false).Callback(() =>
+        {
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+        });
+        mockProcess.Setup(p => p.ExitCode).Returns(0);
+        mockProcess.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        mockProcess.Setup(p => p.WaitForExit()).Callback(() => { });
+
+        m_MockProcessWrapper.Setup(w => w.CreateProcess(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<Dictionary<string, string>>()))
+            .Returns(mockProcess.Object);
+
+        m_MockTokenValidator.Setup(t => t.CreateToken(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns("test-token");
+
+        // Act
+        await m_Executor.ExecuteAsync(
+            "test-extension",
+            "session-1",
+            null,
+            "cmd-1");
+
+        // Assert
+        m_MockTokenValidator.Verify(t => t.RevokeToken("test-token"), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that GetExtensionInfo returns info for running extension.
+    /// </summary>
+    [Fact]
+    public async Task GetExtensionInfo_WithRunningExtension_ShouldReturnInfo()
+    {
+        // Arrange
+        m_Executor = new ExtensionExecutor(
+            m_Logger,
+            m_MockExtensionManager.Object,
+            "http://localhost:5555",
+            m_Configuration,
+            m_MockTokenValidator.Object,
+            m_MockProcessWrapper.Object);
+
+        var metadata = new ExtensionMetadata
+        {
+            Name = "test-extension",
+            Version = "1.0.0",
+            Description = "Test",
+            ScriptFile = "test.ps1",
+            ScriptType = "powershell",
+            Timeout = 30000, // Long timeout
+            ExtensionPath = "C:\\extensions\\test"
+        };
+
+        m_MockExtensionManager.Setup(m => m.GetExtension("test-extension"))
+            .Returns(metadata);
+        m_MockExtensionManager.Setup(m => m.ValidateExtension("test-extension"))
+            .Returns((true, string.Empty));
+
+        var mockProcess = new Mock<IProcessHandle>();
+        var tcs = new TaskCompletionSource();
+        mockProcess.Setup(p => p.Id).Returns(12345);
+        mockProcess.Setup(p => p.HasExited).Returns(false);
+        mockProcess.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>()))
+            .Returns(tcs.Task); // Never complete, simulating long-running process
+
+        m_MockProcessWrapper.Setup(w => w.CreateProcess(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<Dictionary<string, string>>()))
+            .Returns(mockProcess.Object);
+
+        m_MockTokenValidator.Setup(t => t.CreateToken(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns("test-token");
+
+        // Start execution but don't await
+        var executeTask = m_Executor.ExecuteAsync(
+            "test-extension",
+            "session-1",
+            null,
+            "cmd-1");
+
+        // Wait a bit for the process to start
+        await Task.Delay(50);
+
+        // Act
+        var info = m_Executor.GetExtensionInfo("cmd-1");
+
+        // Assert
+        info.Should().NotBeNull();
+        info!.CommandId.Should().Be("cmd-1");
+        info.ExtensionName.Should().Be("test-extension");
+        info.SessionId.Should().Be("session-1");
+        info.IsRunning.Should().BeTrue();
+
+        // Cleanup - complete the task
+        tcs.SetResult();
+        try { await executeTask; } catch { }
+    }
+
+    /// <summary>
+    /// Verifies that KillExtension kills running extension.
+    /// </summary>
+    [Fact]
+    public async Task KillExtension_WithRunningExtension_ShouldKillProcess()
+    {
+        // Arrange
+        m_Executor = new ExtensionExecutor(
+            m_Logger,
+            m_MockExtensionManager.Object,
+            "http://localhost:5555",
+            m_Configuration,
+            m_MockTokenValidator.Object,
+            m_MockProcessWrapper.Object);
+
+        var metadata = new ExtensionMetadata
+        {
+            Name = "test-extension",
+            Version = "1.0.0",
+            Description = "Test",
+            ScriptFile = "test.ps1",
+            ScriptType = "powershell",
+            Timeout = 30000,
+            ExtensionPath = "C:\\extensions\\test"
+        };
+
+        m_MockExtensionManager.Setup(m => m.GetExtension("test-extension"))
+            .Returns(metadata);
+        m_MockExtensionManager.Setup(m => m.ValidateExtension("test-extension"))
+            .Returns((true, string.Empty));
+
+        var mockProcess = new Mock<IProcessHandle>();
+        var tcs = new TaskCompletionSource();
+        mockProcess.Setup(p => p.Id).Returns(12345);
+        mockProcess.Setup(p => p.HasExited).Returns(false);
+        mockProcess.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>()))
+            .Returns(tcs.Task);
+        mockProcess.Setup(p => p.Kill(true)).Callback(() => tcs.SetCanceled());
+
+        m_MockProcessWrapper.Setup(w => w.CreateProcess(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<Dictionary<string, string>>()))
+            .Returns(mockProcess.Object);
+
+        m_MockTokenValidator.Setup(t => t.CreateToken(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns("test-token");
+
+        // Start execution but don't await
+        var executeTask = m_Executor.ExecuteAsync(
+            "test-extension",
+            "session-1",
+            null,
+            "cmd-1");
+
+        // Wait for process to start
+        await Task.Delay(50);
+
+        // Act
+        var result = m_Executor.KillExtension("cmd-1");
+
+        // Assert
+        result.Should().BeTrue();
+        mockProcess.Verify(p => p.Kill(true), Times.AtLeastOnce);
+
+        // Cleanup
+        try { await executeTask; } catch { }
+    }
+
+    /// <summary>
+    /// Verifies that ExecuteAsync with parameters passes them to process.
+    /// </summary>
+    [Fact]
+    public async Task ExecuteAsync_WithParameters_ShouldPassToProcess()
+    {
+        // Arrange
+        m_Executor = new ExtensionExecutor(
+            m_Logger,
+            m_MockExtensionManager.Object,
+            "http://localhost:5555",
+            m_Configuration,
+            m_MockTokenValidator.Object,
+            m_MockProcessWrapper.Object);
+
+        var metadata = new ExtensionMetadata
+        {
+            Name = "test-extension",
+            Version = "1.0.0",
+            Description = "Test",
+            ScriptFile = "test.ps1",
+            ScriptType = "powershell",
+            Timeout = 5000,
+            ExtensionPath = "C:\\extensions\\test"
+        };
+
+        m_MockExtensionManager.Setup(m => m.GetExtension("test-extension"))
+            .Returns(metadata);
+        m_MockExtensionManager.Setup(m => m.ValidateExtension("test-extension"))
+            .Returns((true, string.Empty));
+
+        var mockProcess = new Mock<IProcessHandle>();
+        mockProcess.Setup(p => p.Id).Returns(12345);
+        mockProcess.Setup(p => p.HasExited).Returns(false).Callback(() =>
+        {
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+        });
+        mockProcess.Setup(p => p.ExitCode).Returns(0);
+        mockProcess.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        mockProcess.Setup(p => p.WaitForExit()).Callback(() => { });
+
+        string? capturedArguments = null;
+        m_MockProcessWrapper.Setup(w => w.CreateProcess(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<Dictionary<string, string>>()))
+            .Callback<string, string, Dictionary<string, string>>((file, args, env) =>
+            {
+                capturedArguments = args;
+            })
+            .Returns(mockProcess.Object);
+
+        m_MockTokenValidator.Setup(t => t.CreateToken(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns("test-token");
+
+        var parameters = new
+        {
+            threadId = "1234",
+            verbose = true
+        };
+
+        // Act
+        await m_Executor.ExecuteAsync(
+            "test-extension",
+            "session-1",
+            parameters,
+            "cmd-1");
+
+        // Assert
+        capturedArguments.Should().NotBeNull();
+        capturedArguments.Should().Contain("-ThreadId");
+        capturedArguments.Should().Contain("-Verbose");
+    }
+
+    /// <summary>
+    /// Verifies that Dispose kills all running extensions.
+    /// </summary>
+    [Fact]
+    public async Task Dispose_WithRunningExtensions_ShouldKillAll()
+    {
+        // Arrange
+        m_Executor = new ExtensionExecutor(
+            m_Logger,
+            m_MockExtensionManager.Object,
+            "http://localhost:5555",
+            m_Configuration,
+            m_MockTokenValidator.Object,
+            m_MockProcessWrapper.Object);
+
+        var metadata = new ExtensionMetadata
+        {
+            Name = "test-extension",
+            Version = "1.0.0",
+            Description = "Test",
+            ScriptFile = "test.ps1",
+            ScriptType = "powershell",
+            Timeout = 30000,
+            ExtensionPath = "C:\\extensions\\test"
+        };
+
+        m_MockExtensionManager.Setup(m => m.GetExtension("test-extension"))
+            .Returns(metadata);
+        m_MockExtensionManager.Setup(m => m.ValidateExtension("test-extension"))
+            .Returns((true, string.Empty));
+
+        var mockProcess1 = new Mock<IProcessHandle>();
+        var mockProcess2 = new Mock<IProcessHandle>();
+        var tcs1 = new TaskCompletionSource();
+        var tcs2 = new TaskCompletionSource();
+
+        mockProcess1.Setup(p => p.Id).Returns(12345);
+        mockProcess1.Setup(p => p.HasExited).Returns(false);
+        mockProcess1.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>()))
+            .Returns(tcs1.Task);
+        mockProcess1.Setup(p => p.Kill(true)).Callback(() => tcs1.SetCanceled());
+
+        mockProcess2.Setup(p => p.Id).Returns(12346);
+        mockProcess2.Setup(p => p.HasExited).Returns(false);
+        mockProcess2.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>()))
+            .Returns(tcs2.Task);
+        mockProcess2.Setup(p => p.Kill(true)).Callback(() => tcs2.SetCanceled());
+
+        var processQueue = new Queue<IProcessHandle>(new[] { mockProcess1.Object, mockProcess2.Object });
+        m_MockProcessWrapper.Setup(w => w.CreateProcess(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<Dictionary<string, string>>()))
+            .Returns(() => processQueue.Dequeue());
+
+        m_MockTokenValidator.Setup(t => t.CreateToken(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns("test-token");
+
+        // Start two extensions
+        var task1 = m_Executor.ExecuteAsync("test-extension", "session-1", null, "cmd-1");
+        var task2 = m_Executor.ExecuteAsync("test-extension", "session-1", null, "cmd-2");
+        await Task.Delay(50); // Let them start
+
+        // Act
+        m_Executor.Dispose();
+
+        // Assert
+        mockProcess1.Verify(p => p.Kill(true), Times.AtLeastOnce);
+        mockProcess2.Verify(p => p.Kill(true), Times.AtLeastOnce);
+
+        // Cleanup
+        try { await task1; } catch { }
+        try { await task2; } catch { }
     }
 
     /// <summary>

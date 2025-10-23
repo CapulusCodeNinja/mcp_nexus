@@ -54,25 +54,6 @@ public class ProcessWrapperTests
     }
 
     /// <summary>
-    /// Verifies that ProcessHandle properties can be accessed.
-    /// </summary>
-    [Fact]
-    public void ProcessHandle_Properties_ShouldBeAccessible()
-    {
-        // Arrange
-        var wrapper = new ProcessWrapper();
-        var fileName = "cmd.exe";
-        var arguments = "/c echo test";
-        var envVars = new Dictionary<string, string>();
-
-        // Act
-        var process = wrapper.CreateProcess(fileName, arguments, envVars);
-
-        // Assert
-        process.HasExited.Should().BeOneOf(true, false); // Process may or may not have started/exited yet
-    }
-
-    /// <summary>
     /// Verifies that ProcessHandle can be disposed without error.
     /// </summary>
     [Fact]

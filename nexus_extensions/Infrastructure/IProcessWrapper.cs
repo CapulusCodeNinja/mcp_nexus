@@ -5,7 +5,7 @@ namespace nexus.extensions.Infrastructure;
 /// <summary>
 /// Interface for wrapping Process to enable testing.
 /// </summary>
-internal interface IProcessWrapper
+public interface IProcessWrapper
 {
     /// <summary>
     /// Creates and configures a new process for extension execution.
@@ -20,7 +20,7 @@ internal interface IProcessWrapper
 /// <summary>
 /// Interface representing a process handle for testing.
 /// </summary>
-internal interface IProcessHandle : IDisposable
+public interface IProcessHandle : IDisposable
 {
     /// <summary>
     /// Event raised when output data is received.

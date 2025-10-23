@@ -19,12 +19,14 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Moq" Version="$(MoqVersion)" />
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="$(MicrosoftExtensionsLoggingAbstractionsVersion)" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\nexus_setup\nexus_setup.csproj" />
     <ProjectReference Include="..\..\nexus_external_apis\nexus_external_apis.csproj" />
+    <ProjectReference Include="..\..\nexus_config\nexus_config.csproj" />
   </ItemGroup>
 
 </Project>
