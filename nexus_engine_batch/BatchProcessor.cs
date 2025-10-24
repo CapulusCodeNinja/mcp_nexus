@@ -25,11 +25,10 @@ public class BatchProcessor : IBatchProcessor
     /// <param name="loggerFactory">The logger factory.</param>
     public BatchProcessor()
     {
-        var config = new nexus.config.ConfigurationLoader().GetSharedConfiguration();
-        config.GetSection("McpNexus:Batching").Bind(m_Configuration);
-
         m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("BatchProcessor");
-        
+
+        config.ConfigurationLoader.Instance.GetSection("McpNexus:Batching").Bind(m_Configuration);
+
         m_Filter = new BatchCommandFilter(m_Configuration);
         m_Builder = new BatchCommandBuilder(m_Configuration);
         m_Parser = new BatchResultParser();

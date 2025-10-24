@@ -28,7 +28,6 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
         [Description("WinDbg/CDB command to execute (e.g., 'k', '!analyze -v', 'lm')")] string command)
     {
         var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("EnqueueAsyncDumpAnalyzeCommandTool");
-        var debugEngine = Loader.EngineLoader.GetDebugEngine();
 
         logger.LogInformation("Enqueuing command in session {SessionId}: {Command}", sessionId, command);
 
@@ -44,7 +43,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
                 throw new ArgumentException("command cannot be empty", nameof(command));
             }
 
-            var commandId = debugEngine.EnqueueCommand(sessionId, command);
+            var commandId = DebugEngine.Instance.EnqueueCommand(sessionId, command);
 
             logger.LogInformation("Command enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
 

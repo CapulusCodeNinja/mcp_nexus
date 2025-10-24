@@ -28,11 +28,7 @@ internal class ServiceUpdater
     /// <param name="serviceInstaller">Service installer instance.</param>
     /// <param name="fileSystem">File system abstraction.</param>
     /// <param name="serviceController">Service controller abstraction.</param>
-    public ServiceUpdater(
-        ILogger<ServiceUpdater> logger,
-        IServiceInstaller serviceInstaller,
-        IFileSystem fileSystem,
-        IServiceController serviceController)
+    public ServiceUpdater(IServiceProvider serviceProvider)
     {
         m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         m_ServiceInstaller = serviceInstaller ?? throw new ArgumentNullException(nameof(serviceInstaller));

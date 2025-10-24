@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace nexus.engine.batch.Internal;
@@ -15,6 +16,7 @@ internal class BatchResultParser
     /// <param name="logger">The logger instance.</param>
     public BatchResultParser()
     {
+        m_Logger = serviceProvider.GetRequiredService<ILogger<BatchCommandBuilder>>();
         m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("BatchResultParser");
     }
 

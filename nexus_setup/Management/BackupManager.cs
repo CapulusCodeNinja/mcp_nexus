@@ -20,7 +20,7 @@ namespace nexus.setup.Management
         /// </summary>
         /// <param name="logger">Logger instance.</param>
         /// <param name="fileSystem">File system abstraction.</param>
-        public BackupManager(ILogger<BackupManager> logger, IFileSystem fileSystem)
+        public BackupManager(IServiceProvider serviceProvider)
         {
             m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));

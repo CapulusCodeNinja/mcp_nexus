@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using nexus.engine;
 
 namespace nexus.protocol;
 
@@ -17,15 +19,22 @@ public class ProtocolServer : IProtocolServer
     private bool m_IsRunning;
     private bool m_Disposed;
 
+    private static IProtocolServer? m_Instance;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ProtocolServer"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for the protocol server.</param>
     /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
-    public ProtocolServer(ILogger<ProtocolServer> logger)
+    private ProtocolServer(IServiceProvider serviceProvider)
     {
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("ProtocolServer");
         m_IsRunning = false;
+    }
+
+    public static IProtocolServer GetInstance(IServiceProvider serviceProvider)
+    {
+        return m_Instance ??= new ProtocolServer(serviceProvider);
     }
 
     /// <inheritdoc/>

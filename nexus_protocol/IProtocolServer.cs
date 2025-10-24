@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Hosting;
+
 namespace nexus.protocol;
 
 /// <summary>
@@ -21,13 +23,7 @@ public interface IProtocolServer : IDisposable
     /// <returns>A task that represents the asynchronous stop operation.</returns>
     Task StopAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Updates the server configuration.
-    /// </summary>
-    /// <param name="configuration">The new configuration to apply.</param>
-    /// <exception cref="ArgumentNullException">Thrown when configuration is null.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when trying to change configuration while server is running.</exception>
-    void SetConfiguration(object configuration);
+    void SetHost(IHost host);
 
     /// <summary>
     /// Sets the WebApplication instance for HTTP mode operation.

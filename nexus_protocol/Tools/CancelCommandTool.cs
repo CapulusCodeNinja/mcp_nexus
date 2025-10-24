@@ -28,13 +28,12 @@ internal static class CancelCommandTool
         [Description("Command ID to cancel")] string commandId)
     {
         var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CancelCommandTool");
-        var debugEngine = Loader.EngineLoader.GetDebugEngine();
 
         logger.LogInformation("Cancelling command {CommandId} in session {SessionId}", commandId, sessionId);
 
         try
         {
-            var cancelled = debugEngine.CancelCommand(sessionId, commandId);
+            var cancelled = DebugEngine.Instance.CancelCommand(sessionId, commandId);
 
             logger.LogInformation("Command {CommandId} cancellation: {Result}", commandId, cancelled ? "Success" : "NotFound");
 

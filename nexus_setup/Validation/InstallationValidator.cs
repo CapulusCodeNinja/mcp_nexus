@@ -18,11 +18,7 @@ namespace nexus.setup.Validation
         /// <param name="logger">Logger instance.</param>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        public InstallationValidator(
-            ILogger<InstallationValidator> logger,
-            IFileSystem fileSystem,
-            IServiceController serviceController)
-            : base(logger, fileSystem, serviceController)
+        public InstallationValidator(IServiceProvider serviceProvider)
         {
         }
 

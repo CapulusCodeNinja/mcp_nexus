@@ -1,11 +1,12 @@
-using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using nexus.engine.batch;
 using nexus.engine.Configuration;
 using nexus.engine.Events;
 using nexus.engine.Models;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
-using nexus.engine.batch;
+using System.Collections.Concurrent;
 
 namespace nexus.engine;
 
@@ -24,6 +25,8 @@ public class DebugEngine : IDebugEngine
     private readonly ConcurrentDictionary<string, Internal.DebugSession> m_Sessions = new();
     private volatile bool m_Disposed = false;
 
+    public static IDebugEngine Instance { get; private set; } = new DebugEngine();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DebugEngine"/> class.
     /// </summary>
@@ -33,8 +36,9 @@ public class DebugEngine : IDebugEngine
     /// <param name="processManager">The process manager interface.</param>
     /// <param name="batchProcessor">Optional batch processor for command batching.</param>
     /// <exception cref="ArgumentNullException">Thrown when loggerFactory or configuration is null.</exception>
-    public DebugEngine(ILoggerFactory loggerFactory, DebugEngineConfiguration configuration, IFileSystem fileSystem, IProcessManager processManager, IBatchProcessor batchProcessor)
+    private DebugEngine(ILoggerFactory loggerFactory, DebugEngineConfiguration configuration, IFileSystem fileSystem, IProcessManager processManager, IBatchProcessor batchProcessor)
     {
+        m_Logger = serviceProvider.GetRequiredService<ILogger<DebugEngine>>();
         m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DebugEngine");
         m_Logger.LogInformation("DebugEngine initialized with max {MaxSessions} concurrent sessions", m_Configuration.MaxConcurrentSessions);
     }

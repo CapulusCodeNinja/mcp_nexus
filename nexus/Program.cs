@@ -1,14 +1,9 @@
-using System.CommandLine;
 using System.Runtime.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using NLog;
-using NLog.Extensions.Logging;
 using nexus.CommandLine;
-using nexus.Hosting;
 using nexus.Startup;
-using nexus.config;
 using nexus.Logging;
 
 namespace nexus;
@@ -39,7 +34,7 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Fatal error: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Fatal error: {ex.Message}");
             return 1;
         }
         finally
@@ -66,7 +61,7 @@ internal static class Program
                     cmd.IsUpdateMode ||
                     cmd.IsUninstallMode);
             })
-            .ConfigureServices((context, services) =>
+            .ConfigureServices((_, services) =>
             {
                 // Register mode
                 services.AddSingleton(cmd);

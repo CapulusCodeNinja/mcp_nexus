@@ -1,6 +1,6 @@
 using nexus.setup.Models;
 
-namespace nexus.setup.Interfaces
+namespace nexus.setup
 {
     /// <summary>
     /// Defines the interface for product installation operations.

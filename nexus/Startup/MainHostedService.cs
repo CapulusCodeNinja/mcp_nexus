@@ -3,13 +3,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using nexus.CommandLine;
-using nexus.Hosting;
 using nexus.protocol;
 using nexus.protocol.Configuration;
-using nexus.setup.Interfaces;
-using nexus.engine;
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ProcessManagement;
+using nexus.setup;
 
 namespace nexus.Startup;
 
@@ -43,49 +39,6 @@ public class MainHostedService : IHostedService
     }
 
     /// <summary>
-    /// Creates the protocol server with direct dependencies.
-    /// </summary>
-    /// <returns>Configured protocol server.</returns>
-    private IProtocolServer CreateProtocolServer()
-    {
-        // Create logger factory
-        var loggerFactory = m_ServiceProvider.GetRequiredService<ILoggerFactory>();
-        var logger = loggerFactory.CreateLogger<nexus.protocol.ProtocolServer>();
-        
-        // Create protocol server
-        return new nexus.protocol.ProtocolServer(logger);
-    }
-
-    /// <summary>
-    /// Creates the product installation handler with direct dependencies.
-    /// </summary>
-    /// <returns>Configured product installation handler.</returns>
-    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private IProductInstallation CreateProductInstallation()
-    {
-        // Create dependencies directly
-        var fileSystem = new nexus.external_apis.FileSystem.FileSystem();
-        var processManager = new nexus.external_apis.ProcessManagement.ProcessManager();
-        var registryService = new nexus.external_apis.Registry.RegistryService();
-        var serviceController = new nexus.external_apis.ServiceManagement.ServiceControllerWrapper(registryService);
-        
-        // Create logger factory
-        var loggerFactory = m_ServiceProvider.GetRequiredService<ILoggerFactory>();
-        
-        // Create shared configuration
-        var sharedConfig = new nexus.config.Models.SharedConfiguration();
-        m_Configuration.GetSection("McpNexus").Bind(sharedConfig);
-        
-        // Create product installation
-        return new nexus.setup.Core.ProductInstallation(
-            loggerFactory,
-            fileSystem, 
-            processManager, 
-            serviceController, 
-            sharedConfig);
-    }
-
-    /// <summary>
     /// Starts the hosted service.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -113,15 +66,15 @@ public class MainHostedService : IHostedService
         }
         else if (m_CommandLineContext.IsInstallMode)
         {
-            await HandleInstallCommand(cancellationToken);
+            await HandleInstallCommand();
         }
         else if (m_CommandLineContext.IsUpdateMode)
         {
-            await HandleUpdateCommand(cancellationToken);
+            await HandleUpdateCommand();
         }
         else if (m_CommandLineContext.IsUninstallMode)
         {
-            await HandleUninstallCommand(cancellationToken);
+            await HandleUninstallCommand();
         }
         else
         {
@@ -136,21 +89,16 @@ public class MainHostedService : IHostedService
 
         try
         {
-            // Get logging configurator from DI
-            var loggingConfigurator = new nexus.config.Internal.LoggingConfiguration();
-
             // Create and configure WebApplication using protocol library (all logic encapsulated)
             var app = HttpServerSetup.CreateConfiguredWebApplication(
                 m_Configuration,
-                loggingConfigurator,
+                config.LoggingConfiguration.GetInstance(),
                 m_CommandLineContext.IsServiceMode);
 
-            // Get the protocol server from DI and configure it
-            var protocolServer = CreateProtocolServer();
-            protocolServer.SetWebApplication(app);
+            ProtocolServer.GetInstance(m_ServiceProvider).SetWebApplication(app);
 
             // Start the protocol server (which starts the WebApplication)
-            await protocolServer.StartAsync(cancellationToken);
+            await ProtocolServer.GetInstance(m_ServiceProvider).StartAsync(cancellationToken);
 
             // Keep running until cancellation
             await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -173,29 +121,17 @@ public class MainHostedService : IHostedService
 
         try
         {
-            // Get logging configurator from DI
-            var loggingConfigurator = new nexus.config.Internal.LoggingConfiguration();
-
             // Create and configure Host using protocol library (all logic encapsulated)
             var host = HttpServerSetup.CreateConfiguredHost(
                 m_Configuration,
-                loggingConfigurator,
+                config.LoggingConfiguration.GetInstance(),
                 m_CommandLineContext.IsServiceMode);
 
             // Get the protocol server from DI and configure it
-            var protocolServer = CreateProtocolServer();
-            var typedProtocolServer = protocolServer as ProtocolServer;
-            if (typedProtocolServer != null)
-            {
-                typedProtocolServer.SetHost(host);
-            }
-            else
-            {
-                throw new InvalidOperationException("ProtocolServer must be of type ProtocolServer to set Host.");
-            }
+            ProtocolServer.GetInstance(m_ServiceProvider).SetHost(host);
 
             // Start the protocol server (which starts the Host)
-            await protocolServer.StartAsync(cancellationToken);
+            await ProtocolServer.GetInstance(m_ServiceProvider).StartAsync(cancellationToken);
 
             // Keep running until cancellation
             await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -219,12 +155,12 @@ public class MainHostedService : IHostedService
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private async Task HandleInstallCommand(CancellationToken cancellationToken)
+    private async Task HandleInstallCommand()
     {
         m_Logger.LogInformation("Handling install command...");
 
         // Get the installation handler from DI
-        var installationHandler = CreateProductInstallation();
+        var installationHandler = setup.ProductInstallation.Instance;
         var success = await installationHandler.InstallServiceAsync();
 
         if (!success)
@@ -237,7 +173,7 @@ public class MainHostedService : IHostedService
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private async Task HandleUpdateCommand(CancellationToken cancellationToken)
+    private async Task HandleUpdateCommand()
     {
         m_Logger.LogInformation("Handling update command...");
 
@@ -255,7 +191,7 @@ public class MainHostedService : IHostedService
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private async Task HandleUninstallCommand(CancellationToken cancellationToken)
+    private async Task HandleUninstallCommand()
     {
         m_Logger.LogInformation("Handling uninstall command...");
 
@@ -285,7 +221,7 @@ public class MainHostedService : IHostedService
         {
             // Stop the protocol server if it's running
             var protocolServer = m_ServiceProvider.GetService<IProtocolServer>();
-            if (protocolServer != null && protocolServer.IsRunning)
+            if (protocolServer is { IsRunning: true })
             {
                 await protocolServer.StopAsync(cancellationToken);
             }

@@ -26,13 +26,12 @@ internal static class CloseDumpAnalyzeSessionTool
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
     {
         var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CloseDumpAnalyzeSessionTool");
-        var debugEngine = Loader.EngineLoader.GetDebugEngine();
 
         logger.LogInformation("Closing debugging session: {SessionId}", sessionId);
 
         try
         {
-            await debugEngine.CloseSessionAsync(sessionId);
+            await DebugEngine.Instance.CloseSessionAsync(sessionId);
 
             logger.LogInformation("Successfully closed session: {SessionId}", sessionId);
 

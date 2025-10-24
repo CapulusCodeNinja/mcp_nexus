@@ -8,7 +8,7 @@ namespace nexus.setup.Interfaces;
 /// Interface for Windows service installation operations.
 /// </summary>
 [SupportedOSPlatform("windows")]
-public interface IServiceInstaller
+internal interface IServiceInstaller
 {
     /// <summary>
     /// Installs a Windows service.

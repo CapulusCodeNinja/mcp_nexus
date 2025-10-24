@@ -29,7 +29,6 @@ internal static class OpenDumpAnalyzeSessionTool
         [Description("Optional path to symbol files directory")] string? symbolsPath = null)
     {
         var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("OpenDumpAnalyzeSessionTool");
-        var debugEngine = Loader.EngineLoader.GetDebugEngine();
         IFileSystem fileSystem = new FileSystem();
 
         logger.LogInformation("Opening debugging session for dump: {DumpPath}", dumpPath);
@@ -55,7 +54,7 @@ internal static class OpenDumpAnalyzeSessionTool
                 };
             }
 
-            var sessionId = await debugEngine.CreateSessionAsync(dumpPath, symbolsPath);
+            var sessionId = await DebugEngine.Instance.CreateSessionAsync(dumpPath, symbolsPath);
 
             logger.LogInformation("Successfully created session: {SessionId}", sessionId);
 

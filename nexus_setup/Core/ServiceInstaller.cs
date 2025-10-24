@@ -27,11 +27,7 @@ internal class ServiceInstaller : IServiceInstaller
     /// <param name="fileSystem">File system abstraction.</param>
     /// <param name="processManager">Process manager abstraction.</param>
     /// <param name="serviceController">Service controller abstraction.</param>
-    public ServiceInstaller(
-        ILogger<ServiceInstaller> logger,
-        IFileSystem fileSystem,
-        IProcessManager processManager,
-        IServiceController serviceController)
+    public ServiceInstaller(IServiceProvider serviceProvider)
     {
         m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));

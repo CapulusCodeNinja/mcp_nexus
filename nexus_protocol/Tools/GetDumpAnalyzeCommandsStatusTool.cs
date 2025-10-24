@@ -26,13 +26,12 @@ internal static class GetDumpAnalyzeCommandsStatusTool
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
     {
         var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("GetDumpAnalyzeCommandsStatusTool");
-        var debugEngine = Loader.EngineLoader.GetDebugEngine();
 
         logger.LogInformation("Getting all command statuses for session: {SessionId}", sessionId);
 
         try
         {
-            var allCommands = debugEngine.GetAllCommandInfos(sessionId);
+            var allCommands = DebugEngine.Instance.GetAllCommandInfos(sessionId);
 
             var commandStatuses = allCommands.Values.Select(cmd => new
             {

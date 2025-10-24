@@ -1,17 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using nexus.setup.Models;
-using nexus.setup.Interfaces;
-using nexus.setup.Validation;
+using nexus.setup.Core;
 using nexus.setup.Management;
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ProcessManagement;
-using nexus.external_apis.ServiceManagement;
-using nexus.config.Models;
+using nexus.setup.Models;
+using nexus.setup.Validation;
 using System.Runtime.Versioning;
-using System.Linq;
 
-namespace nexus.setup.Core
+namespace nexus.setup
 {
     /// <summary>
     /// Handles product installation operations including file copying and service installation.
@@ -22,13 +17,18 @@ namespace nexus.setup.Core
         private readonly ILogger<ProductInstallation> m_Logger;
         private readonly ServiceInstaller m_Installer;
         private readonly ServiceUpdater m_Updater;
-        private readonly IServiceController m_ServiceController;
-        private readonly SharedConfiguration m_Configuration;
-        private readonly IFileSystem m_FileSystem;
+        private readonly IServiceProvider m_ServiceProvider;
         private readonly InstallationValidator m_InstallationValidator;
         private readonly UninstallValidator m_UninstallValidator;
         private readonly BackupManager m_BackupManager;
         private readonly FileManager m_FileManager;
+        
+        private static IProductInstallation? m_Instance;
+
+        public static IProductInstallation GetInstance(IServiceProvider serviceProvider)
+        {
+            return m_Instance ??= new ProductInstallation(serviceProvider);
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
@@ -38,49 +38,21 @@ namespace nexus.setup.Core
         /// <param name="processManager">Process manager abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
         /// <param name="configuration">Shared configuration.</param>
-        public ProductInstallation(
-            ILoggerFactory loggerFactory,
-            IFileSystem fileSystem,
-            IProcessManager processManager,
-            IServiceController serviceController,
-            SharedConfiguration configuration)
+        private ProductInstallation(IServiceProvider serviceProvider)
         {
-            m_Logger = loggerFactory.CreateLogger<ProductInstallation>();
-            m_ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
-            m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+            m_ServiceProvider = serviceProvider;
+
+            m_Logger = m_ServiceProvider.GetRequiredService<ILogger<ProductInstallation>>();
 
             // Create internal dependencies
-            m_Installer = new ServiceInstaller(
-                loggerFactory.CreateLogger<ServiceInstaller>(),
-                fileSystem,
-                processManager,
-                serviceController);
-
-            m_Updater = new ServiceUpdater(
-                loggerFactory.CreateLogger<ServiceUpdater>(),
-                m_Installer,
-                fileSystem,
-                serviceController);
+            m_Installer = new ServiceInstaller(m_ServiceProvider);
+            m_Updater = new ServiceUpdater(m_ServiceProvider);
 
             // Create specialized managers
-            m_InstallationValidator = new InstallationValidator(
-                loggerFactory.CreateLogger<InstallationValidator>(),
-                fileSystem,
-                serviceController);
-
-            m_UninstallValidator = new UninstallValidator(
-                loggerFactory.CreateLogger<UninstallValidator>(),
-                fileSystem,
-                serviceController);
-
-            m_BackupManager = new BackupManager(
-                loggerFactory.CreateLogger<BackupManager>(),
-                fileSystem);
-
-            m_FileManager = new FileManager(
-                loggerFactory.CreateLogger<FileManager>(),
-                fileSystem);
+            m_InstallationValidator = new InstallationValidator(m_ServiceProvider);
+            m_UninstallValidator = new UninstallValidator(m_ServiceProvider);
+            m_BackupManager = new BackupManager(m_ServiceProvider);
+            m_FileManager = new FileManager(m_ServiceProvider);
         }
 
         /// <summary>

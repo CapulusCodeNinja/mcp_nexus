@@ -1,17 +1,30 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using NLog.Web;
 using NLog;
+using NLog.Web;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 
-namespace nexus.config.Internal;
+namespace nexus.config;
 
 /// <summary>
 /// Handles logging configuration for different environments.
 /// </summary>
 public class LoggingConfiguration : ILoggingConfigurator
 {
+    private static ILoggingConfigurator? m_Instance;
+
+    public static ILoggingConfigurator GetInstance(string? configPath = null)
+    {
+        return m_Instance ??= new LoggingConfiguration(configPath);
+    }
+
+    private LoggingConfiguration()
+    {
+
+    }
+
     /// <summary>
     /// Configures logging for the application.
     /// Sets up NLog and Microsoft.Extensions.Logging based on configuration and service mode.
