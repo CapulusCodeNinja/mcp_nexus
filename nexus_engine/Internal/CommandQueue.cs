@@ -1,10 +1,9 @@
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 
+using Nexus.Engine.Batch;
 using Nexus.Engine.Events;
 using Nexus.Engine.Models;
-
-using Nexus.Engine.Batch;
 
 using NLog;
 

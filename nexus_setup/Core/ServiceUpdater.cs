@@ -2,12 +2,11 @@ using System.Runtime.Versioning;
 using System.ServiceProcess;
 
 using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ProcessManagement;
 using Nexus.External.Apis.ServiceManagement;
 using Nexus.Setup.Interfaces;
 using Nexus.Setup.Models;
 using Nexus.Setup.Utilities;
-
-using Nexus.External.Apis.ProcessManagement;
 
 using NLog;
 

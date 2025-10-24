@@ -1,10 +1,9 @@
 using System.Diagnostics;
 using System.Text;
 
+using Nexus.Config;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
-
-using Nexus.Config;
 
 using NLog;
 

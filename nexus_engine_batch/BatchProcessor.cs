@@ -1,6 +1,5 @@
-using Nexus.Engine.Batch.Internal;
-
 using Nexus.Config;
+using Nexus.Engine.Batch.Internal;
 
 using NLog;
 
