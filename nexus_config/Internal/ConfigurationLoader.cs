@@ -1,27 +1,21 @@
 using Microsoft.Extensions.Configuration;
 using nexus.config.Models;
+using Microsoft.Extensions.Primitives;
 
-namespace nexus.config;
+namespace nexus.config.Internal;
 
 /// <summary>
 /// Internal implementation of configuration loading functionality.
 /// </summary>
-public class ConfigurationLoader : IConfigurationProvider
+internal class ConfigurationLoader : IConfigurationProvider
 {
     private readonly IConfiguration m_Configuration;
-
-    private static IConfigurationProvider? m_Instance;
-
-    public static IConfigurationProvider GetInstance(string? configPath = null)
-    {
-        return m_Instance ??= new ConfigurationLoader(configPath);
-    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigurationLoader"/> class.
     /// </summary>
     /// <param name="configPath">Optional configuration path. If null, uses default location.</param>
-    private ConfigurationLoader(string? configPath = null)
+    public ConfigurationLoader(string? configPath = null)
     {
         m_Configuration = LoadConfiguration(configPath);
     }
@@ -51,5 +45,30 @@ public class ConfigurationLoader : IConfigurationProvider
     {
         return m_Configuration.Get<SharedConfiguration>()
             ?? throw new InvalidOperationException("Failed to load configuration");
+    }
+
+    public IEnumerable<string> GetChildKeys(IEnumerable<string> earlierKeys, string? parentPath)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IChangeToken GetReloadToken()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Load()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Set(string key, string? value)
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool TryGet(string key, out string? value)
+    {
+        throw new NotImplementedException();
     }
 }

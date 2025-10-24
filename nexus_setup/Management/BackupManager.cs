@@ -1,6 +1,9 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using nexus.external_apis.FileSystem;
 using nexus.setup.Utilities;
+using nexus.setup.Validation;
+using NLog;
 using System.Runtime.Versioning;
 
 namespace nexus.setup.Management
@@ -18,14 +21,22 @@ namespace nexus.setup.Management
         /// <summary>
         /// Initializes a new instance of the <see cref="BackupManager"/> class.
         /// </summary>
-        /// <param name="logger">Logger instance.</param>
-        /// <param name="fileSystem">File system abstraction.</param>
-        public BackupManager(IServiceProvider serviceProvider)
+        public BackupManager(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem())
         {
-            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BackupManager"/> class.
+        /// </summary>
+        /// <param name="fileSystem">File system abstraction.</param>
+        internal BackupManager(IServiceProvider serviceProvider, IFileSystem fileSystem)
+        {
+            m_Logger = serviceProvider.GetRequiredService<ILogger<BackupManager>>();
+
+            m_FileSystem = fileSystem;
+
             m_DirectoryCopyUtility = new DirectoryCopyUtility(
-                logger,
+                serviceProvider,
                 fileSystem);
         }
 

@@ -1,6 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ServiceManagement;
+using nexus.setup.Management;
 using System.Runtime.Versioning;
 
 namespace nexus.setup.Validation
@@ -15,18 +17,16 @@ namespace nexus.setup.Validation
         protected readonly IFileSystem m_FileSystem;
         protected readonly IServiceController m_ServiceController;
 
+
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseValidator"/> class.
         /// </summary>
         /// <param name="logger">Logger instance.</param>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        protected BaseValidator(
-            ILogger logger,
-            IFileSystem fileSystem,
-            IServiceController serviceController)
+        protected BaseValidator(ILogger logger, IFileSystem fileSystem, IServiceController serviceController)
         {
-            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            m_Logger = logger;
             m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             m_ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
         }

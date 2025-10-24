@@ -5,6 +5,10 @@ using nexus.setup.Management;
 using nexus.setup.Models;
 using nexus.setup.Validation;
 using System.Runtime.Versioning;
+using nexus.config;
+using nexus.external_apis.FileSystem;
+using nexus.external_apis.ProcessManagement;
+using nexus.external_apis.ServiceManagement;
 
 namespace nexus.setup
 {
@@ -22,7 +26,9 @@ namespace nexus.setup
         private readonly UninstallValidator m_UninstallValidator;
         private readonly BackupManager m_BackupManager;
         private readonly FileManager m_FileManager;
-        
+        private readonly IFileSystem m_FileSystem;
+
+
         private static IProductInstallation? m_Instance;
 
         public static IProductInstallation GetInstance(IServiceProvider serviceProvider)
@@ -38,21 +44,36 @@ namespace nexus.setup
         /// <param name="processManager">Process manager abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
         /// <param name="configuration">Shared configuration.</param>
-        private ProductInstallation(IServiceProvider serviceProvider)
+        private ProductInstallation(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
+        {
+        }
+
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
+        /// </summary>
+        /// <param name="loggerFactory">Logger factory instance.</param>
+        /// <param name="fileSystem">File system abstraction.</param>
+        /// <param name="processManager">Process manager abstraction.</param>
+        /// <param name="serviceController">Service controller abstraction.</param>
+        /// <param name="configuration">Shared configuration.</param>
+        internal ProductInstallation(IServiceProvider serviceProvider, IFileSystem fileSystem,
+            IProcessManager processManager,
+            IServiceController serviceController)
         {
             m_ServiceProvider = serviceProvider;
+            m_FileSystem= fileSystem;
 
             m_Logger = m_ServiceProvider.GetRequiredService<ILogger<ProductInstallation>>();
 
-            // Create internal dependencies
-            m_Installer = new ServiceInstaller(m_ServiceProvider);
-            m_Updater = new ServiceUpdater(m_ServiceProvider);
+            m_Installer = new ServiceInstaller(m_ServiceProvider, m_FileSystem, processManager, serviceController);
+            m_Updater = new ServiceUpdater(m_ServiceProvider, m_FileSystem, processManager, serviceController);
 
-            // Create specialized managers
-            m_InstallationValidator = new InstallationValidator(m_ServiceProvider);
-            m_UninstallValidator = new UninstallValidator(m_ServiceProvider);
-            m_BackupManager = new BackupManager(m_ServiceProvider);
-            m_FileManager = new FileManager(m_ServiceProvider);
+            m_InstallationValidator = new InstallationValidator(m_ServiceProvider, fileSystem, serviceController);
+            m_UninstallValidator = new UninstallValidator(m_ServiceProvider, fileSystem, serviceController);
+
+            m_BackupManager = new BackupManager(m_ServiceProvider, fileSystem);
+            m_FileManager = new FileManager(m_ServiceProvider, fileSystem);
         }
 
         /// <summary>
@@ -61,19 +82,28 @@ namespace nexus.setup
         /// <returns>True if installation succeeded, false otherwise.</returns>
         public async Task<bool> InstallServiceAsync()
         {
-            var serviceName = m_Configuration.McpNexus.Service.ServiceName;
-            var displayName = m_Configuration.McpNexus.Service.DisplayName;
+            return await InstallServiceAsync(new ServiceControllerWrapper());
+        }
+
+        /// <summary>
+        /// Installs a Windows service using configuration settings.
+        /// </summary>
+        /// <returns>True if installation succeeded, false otherwise.</returns>
+        internal async Task<bool> InstallServiceAsync(IServiceController serviceController)
+        {
+            var serviceName = Settings.GetInstance().Get().McpNexus.Service.ServiceName;
+            var displayName = Settings.GetInstance().Get().McpNexus.Service.DisplayName;
             var startMode = ServiceStartMode.Automatic; // Fixed value, not configurable
 
             m_Logger.LogInformation("Installing {ServiceName} as Windows Service...", serviceName);
 
-            var installationDirectory = m_Configuration.McpNexus.Service.InstallPath;
-            var backupDirectory = m_Configuration.McpNexus.Service.BackupPath;
+            var installationDirectory = Settings.GetInstance().Get().McpNexus.Service.InstallPath;
+            var backupDirectory = Settings.GetInstance().Get().McpNexus.Service.BackupPath;
             var installedExecutablePath = Path.Combine(installationDirectory, "nexus.exe");
             var sourceDirectory = AppContext.BaseDirectory;
 
             // PHASE 1: Pre-installation validation
-            if (!m_InstallationValidator.ValidateInstallation(m_Configuration, sourceDirectory))
+            if (!m_InstallationValidator.ValidateInstallation(Settings.GetInstance().Get(), sourceDirectory))
             {
                 return false;
             }
@@ -128,7 +158,7 @@ namespace nexus.setup
 
                     // Start the service
                     m_Logger.LogInformation("Starting service '{ServiceName}'...", serviceName);
-                    m_ServiceController.StartService(serviceName);
+                    serviceController.StartService(serviceName);
                     m_Logger.LogInformation("Service '{ServiceName}' started successfully.", serviceName);
 
                     return true;
@@ -165,7 +195,7 @@ namespace nexus.setup
         /// <returns>True if update succeeded, false otherwise.</returns>
         public async Task<bool> UpdateServiceAsync()
         {
-            var serviceName = m_Configuration.McpNexus.Service.ServiceName;
+            var serviceName = Settings.GetInstance().Get().McpNexus.Service.ServiceName;
 
             m_Logger.LogInformation("Updating Windows Service '{ServiceName}'...", serviceName);
 
@@ -189,24 +219,32 @@ namespace nexus.setup
             }
         }
 
-
         /// <summary>
         /// Uninstalls the Windows service and removes application files.
         /// </summary>
         /// <returns>True if uninstall succeeded, false otherwise.</returns>
         public async Task<bool> UninstallServiceAsync()
         {
-            var serviceName = m_Configuration.McpNexus.Service.ServiceName;
-            var installationDirectory = m_Configuration.McpNexus.Service.InstallPath;
-            var backupDirectory = m_Configuration.McpNexus.Service.BackupPath;
+            return await UninstallServiceAsync(new ServiceControllerWrapper());
+        }
+
+        /// <summary>
+        /// Uninstalls the Windows service and removes application files.
+        /// </summary>
+        /// <returns>True if uninstall succeeded, false otherwise.</returns>
+        internal async Task<bool> UninstallServiceAsync(IServiceController serviceController)
+        {
+            var serviceName = Settings.GetInstance().Get().McpNexus.Service.ServiceName;
+            var installationDirectory = Settings.GetInstance().Get().McpNexus.Service.InstallPath;
+            var backupDirectory = Settings.GetInstance().Get().McpNexus.Service.BackupPath;
 
             m_Logger.LogInformation("Uninstalling {ServiceName} Windows Service...", serviceName);
 
             // PHASE 1: Pre-uninstall validation
-            if (!m_UninstallValidator.ValidateUninstall(m_Configuration))
+            if (!m_UninstallValidator.ValidateUninstall(Settings.GetInstance().Get()))
             {
                 // Check if it's the "nothing to uninstall" case (success)
-                var isServiceInstalled = m_ServiceController.IsServiceInstalled(serviceName);
+                var isServiceInstalled = serviceController.IsServiceInstalled(serviceName);
                 if (!isServiceInstalled)
                 {
                     return true; // Not an error - service is already uninstalled
@@ -225,7 +263,7 @@ namespace nexus.setup
                 m_Logger.LogInformation("Stopping service {ServiceName}...", serviceName);
                 try
                 {
-                    m_ServiceController.StopService(serviceName);
+                    serviceController.StopService(serviceName);
                     m_Logger.LogInformation("Service {ServiceName} stopped successfully", serviceName);
                 }
                 catch (Exception ex)

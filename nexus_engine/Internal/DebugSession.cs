@@ -1,11 +1,12 @@
-using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using nexus.engine.batch;
 using nexus.engine.Configuration;
 using nexus.engine.Events;
 using nexus.engine.Models;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
-using nexus.engine.batch;
+using System.Collections.Concurrent;
 
 namespace nexus.engine.Internal;
 
@@ -83,8 +84,8 @@ internal class DebugSession : IDisposable
         m_DumpFilePath = dumpFilePath ?? throw new ArgumentNullException(nameof(dumpFilePath));
         m_SymbolPath = symbolPath;
         m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        
-        m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DebugSession");
+
+        m_Logger = serviceProvider.GetRequiredService<ILogger<DebugSession>>();
 
         // Create CDB session
         var cdbLogger = loggerFactory.CreateLogger<CdbSession>();

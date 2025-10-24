@@ -28,7 +28,7 @@ public class ProtocolServer : IProtocolServer
     /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
     private ProtocolServer(IServiceProvider serviceProvider)
     {
-        m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("ProtocolServer");
+        m_Logger = serviceProvider.GetRequiredService<ILogger<ProtocolServer>>();
         m_IsRunning = false;
     }
 

@@ -1,4 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using nexus.config.Internal;
 using nexus.engine.batch.Configuration;
 using nexus.engine.batch.Internal;
 
@@ -25,9 +27,9 @@ public class BatchProcessor : IBatchProcessor
     /// <param name="loggerFactory">The logger factory.</param>
     public BatchProcessor()
     {
-        m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("BatchProcessor");
+        m_Logger = serviceProvider.GetRequiredService<ILogger<BatchProcessor>>();
 
-        config.ConfigurationLoader.Instance.GetSection("McpNexus:Batching").Bind(m_Configuration);
+        ConfigurationLoader.Instance.GetSection("McpNexus:Batching").Bind(m_Configuration);
 
         m_Filter = new BatchCommandFilter(m_Configuration);
         m_Builder = new BatchCommandBuilder(m_Configuration);

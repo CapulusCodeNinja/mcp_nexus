@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -10,6 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.Server;
+using nexus.config;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace nexus.protocol.Configuration;
 
@@ -165,7 +166,7 @@ public static class HttpServerSetup
     /// <returns>A fully configured WebApplication ready to start.</returns>
     public static WebApplication CreateConfiguredWebApplication(
         IConfiguration configuration,
-        nexus.config.ILoggingConfigurator loggingConfigurator,
+        ILoggingConfigurator loggingConfigurator,
         bool isServiceMode)
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -206,22 +207,25 @@ public static class HttpServerSetup
     /// Creates and configures a Host for stdio mode with all required settings.
     /// </summary>
     /// <param name="configuration">The application configuration.</param>
-    /// <param name="loggingConfigurator">The logging configurator.</param>
+    /// <param name="settingsLoader">The settings loader.</param>
     /// <param name="isServiceMode">Whether running in service mode.</param>
     /// <returns>A fully configured Host ready to start.</returns>
     public static IHost CreateConfiguredHost(
         IConfiguration configuration,
-        nexus.config.ILoggingConfigurator loggingConfigurator,
+        ISettingsLoader settingsLoader,
         bool isServiceMode)
     {
         ArgumentNullException.ThrowIfNull(configuration);
-        ArgumentNullException.ThrowIfNull(loggingConfigurator);
+        ArgumentNullException.ThrowIfNull(settingsLoader);
 
         // Create Host builder for stdio mode
         var hostBuilder = Host.CreateApplicationBuilder();
 
+        // Load configuration settings
+        settingsLoader.LoadConfiguration();
+
         // Configure logging
-        loggingConfigurator.ConfigureLogging(hostBuilder.Logging, configuration, isServiceMode);
+        settingsLoader.ConfigureLogging(hostBuilder.Logging, configuration, isServiceMode);
 
         // Configure stdio services
         ConfigureStdioServices(hostBuilder.Services);

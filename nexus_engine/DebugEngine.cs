@@ -39,7 +39,6 @@ public class DebugEngine : IDebugEngine
     private DebugEngine(ILoggerFactory loggerFactory, DebugEngineConfiguration configuration, IFileSystem fileSystem, IProcessManager processManager, IBatchProcessor batchProcessor)
     {
         m_Logger = serviceProvider.GetRequiredService<ILogger<DebugEngine>>();
-        m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DebugEngine");
         m_Logger.LogInformation("DebugEngine initialized with max {MaxSessions} concurrent sessions", m_Configuration.MaxConcurrentSessions);
     }
 

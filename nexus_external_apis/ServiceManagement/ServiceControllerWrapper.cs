@@ -16,8 +16,16 @@ public class ServiceControllerWrapper : IServiceController
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceControllerWrapper"/> class.
     /// </summary>
+    public ServiceControllerWrapper() : this(new RegistryService())
+    {
+
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ServiceControllerWrapper"/> class.
+    /// </summary>
     /// <param name="registryService">The registry service for reading service configuration.</param>
-    public ServiceControllerWrapper(IRegistryService registryService)
+    protected ServiceControllerWrapper(IRegistryService registryService)
     {
         m_RegistryService = registryService ?? throw new ArgumentNullException(nameof(registryService));
     }

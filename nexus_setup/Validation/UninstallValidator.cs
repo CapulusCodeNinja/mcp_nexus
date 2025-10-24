@@ -1,7 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using nexus.config.Models;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ServiceManagement;
-using nexus.config.Models;
 using System.Runtime.Versioning;
 
 namespace nexus.setup.Validation
@@ -15,11 +16,19 @@ namespace nexus.setup.Validation
         /// <summary>
         /// Initializes a new instance of the <see cref="UninstallValidator"/> class.
         /// </summary>
-        /// <param name="logger">Logger instance.</param>
+        public UninstallValidator(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem(), new ServiceControllerWrapper())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UninstallValidator"/> class.
+        /// </summary>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        public UninstallValidator(IServiceProvider serviceProvider)
+        internal UninstallValidator(IServiceProvider serviceProvider, IFileSystem fileSystem, IServiceController serviceController)
+            : base(serviceProvider.GetRequiredService<ILogger<InstallationValidator>>(), fileSystem, serviceController)
         {
+
         }
 
         /// <summary>

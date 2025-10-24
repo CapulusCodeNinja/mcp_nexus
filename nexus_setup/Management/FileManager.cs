@@ -5,6 +5,9 @@ using System.Runtime.Versioning;
 
 namespace nexus.setup.Management
 {
+    using Microsoft.Extensions.DependencyInjection;
+    using NLog;
+
     /// <summary>
     /// Manages file operations for service installation using utility interfaces.
     /// </summary>
@@ -18,14 +21,22 @@ namespace nexus.setup.Management
         /// <summary>
         /// Initializes a new instance of the <see cref="FileManager"/> class.
         /// </summary>
-        /// <param name="logger">Logger instance.</param>
-        /// <param name="fileSystem">File system abstraction.</param>
-        public FileManager(IServiceProvider serviceProvider)
+        public FileManager(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem())
         {
-            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileManager"/> class.
+        /// </summary>
+        internal FileManager(IServiceProvider serviceProvider, IFileSystem fileSystem)
+        {
+            m_Logger = serviceProvider.GetRequiredService<ILogger<FileManager>>();
+
             m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+
             m_DirectoryCopyUtility = new DirectoryCopyUtility(
-                logger,
+                serviceProvider,
                 fileSystem);
         }
 

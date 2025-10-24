@@ -1,5 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using nexus.external_apis.FileSystem;
+using nexus.setup.Core;
 using System.Runtime.Versioning;
 
 namespace nexus.setup.Utilities
@@ -16,12 +18,19 @@ namespace nexus.setup.Utilities
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectoryCopyUtility"/> class.
         /// </summary>
-        /// <param name="logger">Logger instance.</param>
-        /// <param name="fileSystem">File system abstraction.</param>
-        public DirectoryCopyUtility(ILogger logger, IFileSystem fileSystem)
+        public DirectoryCopyUtility(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem())
         {
-            m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DirectoryCopyUtility"/> class.
+        /// </summary>
+        /// <param name="fileSystem">File system abstraction.</param>
+        internal DirectoryCopyUtility(IServiceProvider serviceProvider, IFileSystem fileSystem)
+        {
+            m_Logger = serviceProvider.GetRequiredService<ILogger<DirectoryCopyUtility>>();
+            m_FileSystem = fileSystem;
         }
 
         /// <summary>

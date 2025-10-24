@@ -1,13 +1,16 @@
-using System.Runtime.Versioning;
-using System.ServiceProcess;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using nexus.external_apis.FileSystem;
+using nexus.external_apis.ServiceManagement;
 using nexus.setup.Interfaces;
 using nexus.setup.Models;
 using nexus.setup.Utilities;
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ServiceManagement;
+using System.Runtime.Versioning;
+using System.ServiceProcess;
 
 namespace nexus.setup.Core;
+
+using external_apis.ProcessManagement;
 
 /// <summary>
 /// Implements Windows service update functionality.
@@ -24,17 +27,25 @@ internal class ServiceUpdater
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceUpdater"/> class.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
-    /// <param name="serviceInstaller">Service installer instance.</param>
+    public ServiceUpdater(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ServiceUpdater"/> class.
+    /// </summary>
     /// <param name="fileSystem">File system abstraction.</param>
     /// <param name="serviceController">Service controller abstraction.</param>
-    public ServiceUpdater(IServiceProvider serviceProvider)
+    internal ServiceUpdater(IServiceProvider serviceProvider, IFileSystem fileSystem, IProcessManager processManager, IServiceController serviceController)
     {
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        m_ServiceInstaller = serviceInstaller ?? throw new ArgumentNullException(nameof(serviceInstaller));
-        m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
-        m_ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
-        m_DirectoryCopyUtility = new DirectoryCopyUtility(logger, fileSystem);
+        m_Logger = serviceProvider.GetRequiredService<ILogger<ServiceUpdater>>();
+
+        m_ServiceInstaller = new ServiceInstaller(serviceProvider, fileSystem, processManager, serviceController);
+
+        m_FileSystem = fileSystem;
+        m_ServiceController = serviceController;
+
+        m_DirectoryCopyUtility = new DirectoryCopyUtility(serviceProvider, fileSystem);
     }
 
     /// <summary>

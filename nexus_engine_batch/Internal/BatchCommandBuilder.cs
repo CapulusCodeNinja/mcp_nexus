@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using nexus.engine.batch.Configuration;
 
@@ -19,8 +20,8 @@ internal class BatchCommandBuilder
     public BatchCommandBuilder(BatchingConfiguration configuration, ILogger<BatchCommandBuilder> logger)
     {
         m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        
-        m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("BatchProcessor");
+
+        m_Logger = serviceProvider.GetRequiredService<ILogger<BatchCommandBuilder>>();
     }
 
     /// <summary>

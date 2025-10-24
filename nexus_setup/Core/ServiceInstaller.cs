@@ -1,11 +1,12 @@
-using System.Runtime.Versioning;
-using System.ServiceProcess;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using nexus.setup.Interfaces;
-using nexus.setup.Models;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
 using nexus.external_apis.ServiceManagement;
+using nexus.setup.Interfaces;
+using nexus.setup.Models;
+using System.Runtime.Versioning;
+using System.ServiceProcess;
 
 namespace nexus.setup.Core;
 
@@ -23,16 +24,26 @@ internal class ServiceInstaller : IServiceInstaller
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceInstaller"/> class.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
+    public ServiceInstaller(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ServiceInstaller"/> class.
+    /// </summary>
     /// <param name="fileSystem">File system abstraction.</param>
     /// <param name="processManager">Process manager abstraction.</param>
     /// <param name="serviceController">Service controller abstraction.</param>
-    public ServiceInstaller(IServiceProvider serviceProvider)
+    internal ServiceInstaller(IServiceProvider serviceProvider,
+        IFileSystem fileSystem,
+        IProcessManager processManager,
+        IServiceController serviceController)
     {
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
-        m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
-        m_ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
+        m_Logger = serviceProvider.GetRequiredService<ILogger<ServiceInstaller>>();
+
+        m_FileSystem = fileSystem;
+        m_ProcessManager = processManager;
+        m_ServiceController = serviceController;
     }
 
     /// <summary>

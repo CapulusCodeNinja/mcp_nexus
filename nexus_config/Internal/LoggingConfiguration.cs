@@ -6,25 +6,13 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 
-namespace nexus.config;
+namespace nexus.config.Internal;
 
 /// <summary>
 /// Handles logging configuration for different environments.
 /// </summary>
-public class LoggingConfiguration : ILoggingConfigurator
+internal class LoggingConfiguration
 {
-    private static ILoggingConfigurator? m_Instance;
-
-    public static ILoggingConfigurator GetInstance(string? configPath = null)
-    {
-        return m_Instance ??= new LoggingConfiguration(configPath);
-    }
-
-    private LoggingConfiguration()
-    {
-
-    }
-
     /// <summary>
     /// Configures logging for the application.
     /// Sets up NLog and Microsoft.Extensions.Logging based on configuration and service mode.
@@ -70,8 +58,8 @@ public class LoggingConfiguration : ILoggingConfigurator
         {
             fileTarget = new NLog.Targets.FileTarget("mainFile")
             {
-                FileName = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp-nexus.log"),
-                ArchiveFileName = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "archive", "mcp-nexus-${shortdate}-{##}.log"),
+                FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp-nexus.log"),
+                ArchiveFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "archive", "mcp-nexus-${shortdate}-{##}.log"),
                 ArchiveEvery = NLog.Targets.FileArchivePeriod.Day,
                 ArchiveSuffixFormat = "{#}",
                 MaxArchiveFiles = 30,
