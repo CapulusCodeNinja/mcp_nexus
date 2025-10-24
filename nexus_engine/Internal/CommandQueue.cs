@@ -1,12 +1,13 @@
-using System.Collections.Concurrent;
-using System.Threading.Channels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using nexus.engine.Configuration;
 using nexus.engine.Events;
 using nexus.engine.Models;
-using nexus.engine.batch;
+using System.Collections.Concurrent;
+using System.Threading.Channels;
 
 namespace nexus.engine.Internal;
+
+using System;
 
 /// <summary>
 /// Internal command queue that manages command execution with batching support.
@@ -15,13 +16,11 @@ internal class CommandQueue : IDisposable
 {
     private readonly ILogger<CommandQueue> m_Logger;
     private readonly string m_SessionId;
-    private readonly DebugEngineConfiguration m_Configuration;
     private readonly Channel<QueuedCommand> m_CommandChannel;
     private readonly ConcurrentDictionary<string, QueuedCommand> m_ActiveCommands = new();
     private readonly ConcurrentDictionary<string, CommandInfo> m_ResultCache = new();
-    private readonly object m_StatisticsLock = new();
     private readonly CancellationTokenSource m_CancellationTokenSource = new();
-    private readonly IBatchProcessor? m_BatchProcessor;
+    private readonly IServiceProvider m_ServiceProvider;
 
     private CdbSession? m_CdbSession;
     private Task? m_ProcessingTask;
@@ -33,19 +32,12 @@ internal class CommandQueue : IDisposable
     /// </summary>
     public event EventHandler<CommandStateChangedEventArgs>? CommandStateChanged;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CommandQueue"/> class.
-    /// </summary>
-    /// <param name="sessionId">The session identifier.</param>
-    /// <param name="configuration">The engine configuration.</param>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="batchProcessor">The optional batch processor for command batching.</param>
-    public CommandQueue(string sessionId, DebugEngineConfiguration configuration, ILogger<CommandQueue> logger, IBatchProcessor? batchProcessor = null)
+    public CommandQueue(string sessionId, IServiceProvider serviceProvider)
     {
+        m_ServiceProvider = serviceProvider;
+        m_Logger = m_ServiceProvider.GetRequiredService<ILogger<CommandQueue>>();
+
         m_SessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
-        m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        m_BatchProcessor = batchProcessor;
 
         // Create unbounded channel for commands
         var options = new UnboundedChannelOptions
@@ -91,7 +83,7 @@ internal class CommandQueue : IDisposable
         m_Logger.LogDebug("Stopping command queue for session {SessionId}", m_SessionId);
 
         // Signal shutdown
-        m_CancellationTokenSource.Cancel();
+        await m_CancellationTokenSource.CancelAsync();
         m_CommandChannel.Writer.Complete();
 
         // Wait for processing to complete
@@ -394,36 +386,14 @@ internal class CommandQueue : IDisposable
     {
         var commands = new List<QueuedCommand> { firstCommand };
 
-        // If no batch processor, return single command
-        if (m_BatchProcessor == null)
-            return commands;
-
-        // Try to read more commands with a short timeout (non-blocking peek)
-        var maxBatchSize = m_Configuration.Batching.MaxBatchSize;
         var timeout = TimeSpan.FromMilliseconds(100); // Short timeout to avoid blocking
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(timeout);
 
-        while (commands.Count < maxBatchSize)
+        while (m_CommandChannel.Reader.TryRead(out var nextCommand))
         {
-            try
-            {
-                if (m_CommandChannel.Reader.TryRead(out var nextCommand))
-                {
-                    commands.Add(nextCommand);
-                }
-                else
-                {
-                    // No more commands available immediately
-                    break;
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Timeout or cancellation - stop collecting
-                break;
-            }
+            commands.Add(nextCommand);
         }
 
         return commands;
@@ -439,22 +409,20 @@ internal class CommandQueue : IDisposable
         ValidateCdbSession();
 
         // Convert to batch commands
-        var batchCommands = queuedCommands.Select(qc => new nexus.engine.batch.Command
+        var batchCommands = queuedCommands.Select(qc => new batch.Command
         {
             CommandId = qc.Id,
             CommandText = qc.Command
         }).ToList();
 
         // Apply batching (library decides whether to batch or pass through)
-        var commandsToExecute = m_BatchProcessor != null
-            ? m_BatchProcessor.BatchCommands(batchCommands)
-            : batchCommands;
+        var commandsToExecute = batch.BatchProcessor.GetInstance(m_ServiceProvider).BatchCommands(batchCommands);
 
         m_Logger.LogDebug("Processing {OriginalCount} commands as {ExecutionCount} execution units",
             queuedCommands.Count, commandsToExecute.Count);
 
         // Execute each command (batched or not)
-        var executionResults = new List<nexus.engine.batch.CommandResult>();
+        var executionResults = new List<batch.CommandResult>();
         foreach (var cmd in commandsToExecute)
         {
             // Mark corresponding queued commands as executing
@@ -464,13 +432,12 @@ internal class CommandQueue : IDisposable
                 UpdateCommandState(qc, CommandState.Executing);
             }
 
-            var startTime = DateTime.Now;
             try
             {
                 // Execute the command
                 var result = await m_CdbSession!.ExecuteCommandAsync(cmd.CommandText, cancellationToken);
 
-                executionResults.Add(new nexus.engine.batch.CommandResult
+                executionResults.Add(new batch.CommandResult
                 {
                     CommandId = cmd.CommandId,
                     ResultText = result
@@ -481,7 +448,7 @@ internal class CommandQueue : IDisposable
                 m_Logger.LogError(ex, "Error executing command {CommandId}", cmd.CommandId);
 
                 // Add error result
-                executionResults.Add(new nexus.engine.batch.CommandResult
+                executionResults.Add(new batch.CommandResult
                 {
                     CommandId = cmd.CommandId,
                     ResultText = $"ERROR: {ex.Message}"
@@ -490,9 +457,7 @@ internal class CommandQueue : IDisposable
         }
 
         // Unbatch results (library decides whether to unbatch or pass through)
-        var individualResults = m_BatchProcessor != null
-            ? m_BatchProcessor.UnbatchResults(executionResults)
-            : executionResults;
+        var individualResults = batch.BatchProcessor.GetInstance(m_ServiceProvider).UnbatchResults(executionResults);
 
         m_Logger.LogDebug("Unbatched {ExecutionCount} execution results into {IndividualCount} individual results",
             executionResults.Count, individualResults.Count);
@@ -511,8 +476,7 @@ internal class CommandQueue : IDisposable
                     queuedCommand.QueuedTime, // Use queued time as approximate start
                     endTime,
                     result.ResultText,
-                    true,
-                    null);
+                    true);
 
                 SetCommandResult(queuedCommand, commandInfo);
                 UpdateCommandState(queuedCommand, CommandState.Completed);
@@ -524,7 +488,7 @@ internal class CommandQueue : IDisposable
     /// Gets the queued commands associated with a batch command ID.
     /// </summary>
     /// <param name="queuedCommands">All queued commands.</param>
-    /// <param name="batchCommandId">The batch command ID (may be a batch or single command ID).</param>
+    /// <param name="batchCommandId">The batch command ID (maybe a batch or single command ID).</param>
     /// <returns>List of corresponding queued commands.</returns>
     private static List<QueuedCommand> GetQueuedCommandsForBatch(List<QueuedCommand> queuedCommands, string batchCommandId)
     {
@@ -537,7 +501,7 @@ internal class CommandQueue : IDisposable
 
         // Single command
         var command = queuedCommands.FirstOrDefault(qc => qc.Id == batchCommandId);
-        return command != null ? new List<QueuedCommand> { command } : new List<QueuedCommand>();
+        return command != null ? [command] : [];
     }
 
     protected async Task ProcessCommandAsync(QueuedCommand command, CancellationToken cancellationToken)

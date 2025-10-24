@@ -34,7 +34,9 @@ internal class ServiceUpdater
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceUpdater"/> class.
     /// </summary>
+    /// <param name="serviceProvider">Service provider for dependency injection.</param>
     /// <param name="fileSystem">File system abstraction.</param>
+    /// <param name="processManager">Process manager abstraction.</param>
     /// <param name="serviceController">Service controller abstraction.</param>
     internal ServiceUpdater(IServiceProvider serviceProvider, IFileSystem fileSystem, IProcessManager processManager, IServiceController serviceController)
     {

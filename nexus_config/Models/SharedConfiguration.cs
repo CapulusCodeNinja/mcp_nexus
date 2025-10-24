@@ -166,6 +166,11 @@ public class AutomatedRecoverySettings
     /// </summary>
     public int DefaultCommandTimeoutMinutes { get; set; } = 10;
 
+    public TimeSpan GetDefaultCommandTimeout()
+    {
+        return TimeSpan.FromMinutes(DefaultCommandTimeoutMinutes);
+    }
+
     /// <summary>
     /// Gets or sets the complex command timeout in minutes.
     /// </summary>
@@ -237,6 +242,11 @@ public class SessionManagementSettings
     /// Gets or sets the cleanup interval in minutes.
     /// </summary>
     public int CleanupIntervalMinutes { get; set; } = 5;
+
+    public TimeSpan GetCleanupInterval()
+    {
+        return TimeSpan.FromMinutes(CleanupIntervalMinutes);
+    }
 
     /// <summary>
     /// Gets or sets the disposal timeout in seconds.

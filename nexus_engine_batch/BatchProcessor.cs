@@ -19,6 +19,11 @@ public class BatchProcessor : IBatchProcessor
 
     private static IBatchProcessor? m_Instance;
 
+    /// <summary>
+    /// Gets the singleton instance of the batch processor.
+    /// </summary>
+    /// <param name="serviceProvider">Service provider for dependency injection.</param>
+    /// <returns>The batch processor instance.</returns>
     public static IBatchProcessor GetInstance(IServiceProvider serviceProvider)
     {
         return m_Instance ??= new BatchProcessor(serviceProvider);

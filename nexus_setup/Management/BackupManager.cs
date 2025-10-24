@@ -28,6 +28,7 @@ namespace nexus.setup.Management
         /// <summary>
         /// Initializes a new instance of the <see cref="BackupManager"/> class.
         /// </summary>
+        /// <param name="serviceProvider">Service provider for dependency injection.</param>
         /// <param name="fileSystem">File system abstraction.</param>
         internal BackupManager(IServiceProvider serviceProvider, IFileSystem fileSystem)
         {

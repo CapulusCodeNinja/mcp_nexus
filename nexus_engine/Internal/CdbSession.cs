@@ -1,12 +1,13 @@
-using System.Diagnostics;
-using System.Text;
-using System.Text.RegularExpressions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using nexus.engine.Configuration;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
+using System.Diagnostics;
+using System.Text;
 
 namespace nexus.engine.Internal;
+
+using config;
 
 /// <summary>
 /// Internal CDB session that manages a single CDB process and command execution.
@@ -14,7 +15,7 @@ namespace nexus.engine.Internal;
 internal class CdbSession : ICdbSession
 {
     private readonly ILogger<CdbSession> m_Logger;
-    private readonly DebugEngineConfiguration m_Configuration;
+
     private readonly IFileSystem m_FileSystem;
     private readonly IProcessManager m_ProcessManager;
     private readonly SemaphoreSlim m_ExecutionSemaphore = new(1, 1);
@@ -49,21 +50,12 @@ internal class CdbSession : ICdbSession
     /// </summary>
     public bool IsInitialized => m_Initialized;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CdbSession"/> class.
-    /// </summary>
-    /// <param name="configuration">The engine configuration.</param>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="fileSystem">The file system interface.</param>
-    /// <param name="processManager">The process manager interface.</param>
     public CdbSession(
-        DebugEngineConfiguration configuration,
-        ILogger<CdbSession> logger,
+        IServiceProvider serviceProvider,
         IFileSystem fileSystem,
         IProcessManager processManager)
     {
-        m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = serviceProvider.GetRequiredService<ILogger<CdbSession>>();
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
     }
@@ -251,7 +243,7 @@ internal class CdbSession : ICdbSession
         {
             try
             {
-                if (!m_CdbProcess.WaitForExit((int)m_Configuration.SessionCleanupTimeout.TotalMilliseconds))
+                if (!m_CdbProcess.WaitForExit((int)Settings.GetInstance().Get().McpNexus.SessionManagement.GetCleanupInterval().TotalMilliseconds))
                 {
                     m_Logger.LogWarning("CDB process did not exit within timeout, killing process");
                     KillProcess();
@@ -313,9 +305,10 @@ internal class CdbSession : ICdbSession
     public Task<string> FindCdbExecutableAsync()
     {
         // If configured path exists, use it
-        if (!string.IsNullOrEmpty(m_Configuration.CdbPath) && m_FileSystem.FileExists(m_Configuration.CdbPath))
+        if (!string.IsNullOrEmpty(Settings.GetInstance().Get().McpNexus.Debugging.CdbPath) && 
+            m_FileSystem.FileExists(Settings.GetInstance().Get().McpNexus.Debugging.CdbPath ?? string.Empty))
         {
-            return Task.FromResult(m_Configuration.CdbPath);
+            return Task.FromResult(Settings.GetInstance().Get().McpNexus.Debugging.CdbPath)!;
         }
 
         // Try common CDB locations
@@ -460,7 +453,7 @@ internal class CdbSession : ICdbSession
 
         var output = new StringBuilder();
         var startMarkerFound = false;
-        var timeout = m_Configuration.DefaultCommandTimeout;
+        var timeout = Settings.GetInstance().Get().McpNexus.AutomatedRecovery.GetDefaultCommandTimeout();
 
         using var timeoutCts = new CancellationTokenSource(timeout);
         using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);

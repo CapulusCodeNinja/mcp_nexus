@@ -1,7 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using nexus.engine.batch;
-using nexus.engine.Configuration;
 using nexus.engine.Events;
 using nexus.engine.Models;
 using nexus.external_apis.FileSystem;
@@ -10,36 +8,43 @@ using System.Collections.Concurrent;
 
 namespace nexus.engine;
 
+using config;
+using System;
+
 /// <summary>
 /// Main implementation of the debug engine that manages CDB sessions and command execution.
 /// </summary>
 public class DebugEngine : IDebugEngine
 {
     private readonly ILogger<DebugEngine> m_Logger;
-
-    private readonly DebugEngineConfiguration m_Configuration = new DebugEngineConfiguration();
-    private readonly IFileSystem m_FileSystem = new nexus.external_apis.FileSystem.FileSystem();
-    private readonly IProcessManager m_ProcessManager = new nexus.external_apis.ProcessManagement.ProcessManager();
-    private readonly IBatchProcessor m_BatchProcessor = new nexus.engine.batch.Internal.BatchProcessor();
+    private readonly IServiceProvider m_ServiceProvider;
+    private readonly IFileSystem m_FileSystem;
+    private readonly IProcessManager m_ProcessManager;
 
     private readonly ConcurrentDictionary<string, Internal.DebugSession> m_Sessions = new();
     private volatile bool m_Disposed = false;
 
-    public static IDebugEngine Instance { get; private set; } = new DebugEngine();
+    private static IDebugEngine? m_Instance;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DebugEngine"/> class.
-    /// </summary>
-    /// <param name="loggerFactory">The logger factory.</param>
-    /// <param name="configuration">The engine configuration.</param>
-    /// <param name="fileSystem">The file system interface.</param>
-    /// <param name="processManager">The process manager interface.</param>
-    /// <param name="batchProcessor">Optional batch processor for command batching.</param>
-    /// <exception cref="ArgumentNullException">Thrown when loggerFactory or configuration is null.</exception>
-    private DebugEngine(ILoggerFactory loggerFactory, DebugEngineConfiguration configuration, IFileSystem fileSystem, IProcessManager processManager, IBatchProcessor batchProcessor)
+    public static IDebugEngine GetInstance(IServiceProvider serviceProvider)
     {
-        m_Logger = serviceProvider.GetRequiredService<ILogger<DebugEngine>>();
-        m_Logger.LogInformation("DebugEngine initialized with max {MaxSessions} concurrent sessions", m_Configuration.MaxConcurrentSessions);
+        return m_Instance ??= new DebugEngine(serviceProvider);
+    }
+
+    internal DebugEngine(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem(), new ProcessManager()
+    )
+    {
+
+    }
+
+    internal DebugEngine(IServiceProvider serviceProvider, IFileSystem fileSystem, IProcessManager processManager)
+    {
+        m_ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+        m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
+
+        m_Logger = m_ServiceProvider.GetRequiredService<ILogger<DebugEngine>>();
+        m_Logger.LogInformation("DebugEngine initialized with max {MaxSessions} concurrent sessions", Settings.GetInstance().Get().McpNexus.SessionManagement.MaxConcurrentSessions);
     }
 
     /// <inheritdoc />
@@ -57,15 +62,15 @@ public class DebugEngine : IDebugEngine
         if (!m_FileSystem.FileExists(dumpFilePath))
             throw new FileNotFoundException($"Dump file not found: {dumpFilePath}", dumpFilePath);
 
-        if (m_Sessions.Count >= m_Configuration.MaxConcurrentSessions)
-            throw new InvalidOperationException($"Maximum number of concurrent sessions ({m_Configuration.MaxConcurrentSessions}) reached");
+        if (m_Sessions.Count >= Settings.GetInstance().Get().McpNexus.SessionManagement.MaxConcurrentSessions)
+            throw new InvalidOperationException($"Maximum number of concurrent sessions ({Settings.GetInstance().Get().McpNexus.SessionManagement.MaxConcurrentSessions}) reached");
 
         var sessionId = GenerateSessionId();
         m_Logger.LogInformation("Creating debug session {SessionId} for dump file: {DumpFilePath}", sessionId, dumpFilePath);
 
         try
         {
-            var session = new Internal.DebugSession(sessionId, dumpFilePath, symbolPath, m_Configuration, m_FileSystem, m_ProcessManager, m_BatchProcessor);
+            var session = new Internal.DebugSession(sessionId, dumpFilePath, symbolPath, m_ServiceProvider, m_FileSystem, m_ProcessManager);
 
             // Subscribe to session events
             session.CommandStateChanged += OnSessionCommandStateChanged;

@@ -31,6 +31,11 @@ namespace nexus.setup
 
         private static IProductInstallation? m_Instance;
 
+        /// <summary>
+        /// Gets the singleton instance of the product installation.
+        /// </summary>
+        /// <param name="serviceProvider">Service provider for dependency injection.</param>
+        /// <returns>The product installation instance.</returns>
         public static IProductInstallation GetInstance(IServiceProvider serviceProvider)
         {
             return m_Instance ??= new ProductInstallation(serviceProvider);
@@ -39,11 +44,7 @@ namespace nexus.setup
         /// <summary>
         /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
         /// </summary>
-        /// <param name="loggerFactory">Logger factory instance.</param>
-        /// <param name="fileSystem">File system abstraction.</param>
-        /// <param name="processManager">Process manager abstraction.</param>
-        /// <param name="serviceController">Service controller abstraction.</param>
-        /// <param name="configuration">Shared configuration.</param>
+        /// <param name="serviceProvider">Service provider for dependency injection.</param>
         private ProductInstallation(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
         {
         }
@@ -52,11 +53,10 @@ namespace nexus.setup
         /// <summary>
         /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
         /// </summary>
-        /// <param name="loggerFactory">Logger factory instance.</param>
+        /// <param name="serviceProvider">Service provider for dependency injection.</param>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="processManager">Process manager abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        /// <param name="configuration">Shared configuration.</param>
         internal ProductInstallation(IServiceProvider serviceProvider, IFileSystem fileSystem,
             IProcessManager processManager,
             IServiceController serviceController)

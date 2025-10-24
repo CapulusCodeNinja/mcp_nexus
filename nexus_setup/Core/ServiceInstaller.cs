@@ -31,6 +31,7 @@ internal class ServiceInstaller : IServiceInstaller
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceInstaller"/> class.
     /// </summary>
+    /// <param name="serviceProvider">Service provider for dependency injection.</param>
     /// <param name="fileSystem">File system abstraction.</param>
     /// <param name="processManager">Process manager abstraction.</param>
     /// <param name="serviceController">Service controller abstraction.</param>

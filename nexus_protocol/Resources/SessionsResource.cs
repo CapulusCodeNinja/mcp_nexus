@@ -40,7 +40,6 @@ internal static class SessionsResource
         try
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("SessionsResource");
-            var debugEngine = Loader.EngineLoader.GetDebugEngine();
 
             logger.LogDebug("Sessions resource accessed - returning limited data due to IDebugEngine interface constraints");
 

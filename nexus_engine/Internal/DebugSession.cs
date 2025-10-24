@@ -1,12 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using nexus.engine.batch;
-using nexus.engine.Configuration;
 using nexus.engine.Events;
 using nexus.engine.Models;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
-using System.Collections.Concurrent;
 
 namespace nexus.engine.Internal;
 
@@ -16,7 +13,6 @@ namespace nexus.engine.Internal;
 internal class DebugSession : IDisposable
 {
     private readonly ILogger<DebugSession> m_Logger;
-    private readonly DebugEngineConfiguration m_Configuration;
     private readonly string m_SessionId;
     private readonly string m_DumpFilePath;
     private readonly string? m_SymbolPath;
@@ -60,40 +56,25 @@ internal class DebugSession : IDisposable
     /// </summary>
     public event EventHandler<SessionStateChangedEventArgs>? SessionStateChanged;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DebugSession"/> class.
-    /// </summary>
-    /// <param name="sessionId">The session identifier.</param>
-    /// <param name="dumpFilePath">The path to the dump file.</param>
-    /// <param name="symbolPath">Optional symbol path.</param>
-    /// <param name="configuration">The engine configuration.</param>
-    /// <param name="loggerFactory">The logger factory.</param>
-    /// <param name="fileSystem">The file system interface.</param>
-    /// <param name="processManager">The process manager interface.</param>
-    /// <param name="batchProcessor">Optional batch processor for command batching.</param>
     public DebugSession(
         string sessionId,
         string dumpFilePath,
         string? symbolPath,
-        DebugEngineConfiguration configuration,
+        IServiceProvider serviceProvider,
         IFileSystem fileSystem,
-        IProcessManager processManager,
-        IBatchProcessor batchProcessor)
+        IProcessManager processManager)
     {
         m_SessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
         m_DumpFilePath = dumpFilePath ?? throw new ArgumentNullException(nameof(dumpFilePath));
         m_SymbolPath = symbolPath;
-        m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
         m_Logger = serviceProvider.GetRequiredService<ILogger<DebugSession>>();
 
         // Create CDB session
-        var cdbLogger = loggerFactory.CreateLogger<CdbSession>();
-        m_CdbSession = new CdbSession(m_Configuration, cdbLogger, fileSystem, processManager);
+        m_CdbSession = new CdbSession(serviceProvider, fileSystem, processManager);
 
         // Create command queue
-        var queueLogger = loggerFactory.CreateLogger<CommandQueue>();
-        m_CommandQueue = new CommandQueue(m_SessionId, m_Configuration, queueLogger, batchProcessor);
+        m_CommandQueue = new CommandQueue(m_SessionId, serviceProvider);
 
         // Subscribe to command queue events
         m_CommandQueue.CommandStateChanged += OnCommandStateChanged;

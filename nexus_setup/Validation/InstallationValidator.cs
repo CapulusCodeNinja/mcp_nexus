@@ -23,6 +23,7 @@ namespace nexus.setup.Validation
         /// <summary>
         /// Initializes a new instance of the <see cref="InstallationValidator"/> class.
         /// </summary>
+        /// <param name="serviceProvider">Service provider for dependency injection.</param>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
         internal InstallationValidator(IServiceProvider serviceProvider, IFileSystem fileSystem, IServiceController serviceController) 
