@@ -1,4 +1,4 @@
-using nexus.CommandLine;
+using Nexus.CommandLine;
 
 using Xunit;
 

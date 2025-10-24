@@ -16,7 +16,7 @@ public class CdbSentinelsTests
     public void StartMarker_ShouldHaveCorrectValue()
     {
         // Act & Assert
-        nexus.engine.Internal.CdbSentinels.StartMarker.Should().Be("MCP_NEXUS_SENTINEL_COMMAND_START");
+        Nexus.Engine.Internal.CdbSentinels.StartMarker.Should().Be("MCP_NEXUS_SENTINEL_COMMAND_START");
     }
 
     /// <summary>
@@ -26,7 +26,7 @@ public class CdbSentinelsTests
     public void EndMarker_ShouldHaveCorrectValue()
     {
         // Act & Assert
-        nexus.engine.Internal.CdbSentinels.EndMarker.Should().Be("MCP_NEXUS_SENTINEL_COMMAND_END");
+        Nexus.Engine.Internal.CdbSentinels.EndMarker.Should().Be("MCP_NEXUS_SENTINEL_COMMAND_END");
     }
 
     /// <summary>
@@ -36,7 +36,7 @@ public class CdbSentinelsTests
     public void CommandSeparator_ShouldHaveCorrectValue()
     {
         // Act & Assert
-        nexus.engine.Internal.CdbSentinels.CommandSeparator.Should().Be("MCP_NEXUS_COMMAND_SEPERATOR");
+        Nexus.Engine.Internal.CdbSentinels.CommandSeparator.Should().Be("MCP_NEXUS_COMMAND_SEPERATOR");
     }
 
     /// <summary>
@@ -48,9 +48,9 @@ public class CdbSentinelsTests
         // Act
         var sentinels = new[]
         {
-            nexus.engine.Internal.CdbSentinels.StartMarker,
-            nexus.engine.Internal.CdbSentinels.EndMarker,
-            nexus.engine.Internal.CdbSentinels.CommandSeparator
+            Nexus.Engine.Internal.CdbSentinels.StartMarker,
+            Nexus.Engine.Internal.CdbSentinels.EndMarker,
+            Nexus.Engine.Internal.CdbSentinels.CommandSeparator
         };
 
         // Assert
@@ -64,9 +64,9 @@ public class CdbSentinelsTests
     public void AllSentinels_ShouldNotBeEmpty()
     {
         // Act & Assert
-        nexus.engine.Internal.CdbSentinels.StartMarker.Should().NotBeNullOrEmpty();
-        nexus.engine.Internal.CdbSentinels.EndMarker.Should().NotBeNullOrEmpty();
-        nexus.engine.Internal.CdbSentinels.CommandSeparator.Should().NotBeNullOrEmpty();
+        Nexus.Engine.Internal.CdbSentinels.StartMarker.Should().NotBeNullOrEmpty();
+        Nexus.Engine.Internal.CdbSentinels.EndMarker.Should().NotBeNullOrEmpty();
+        Nexus.Engine.Internal.CdbSentinels.CommandSeparator.Should().NotBeNullOrEmpty();
     }
 
     /// <summary>
@@ -76,9 +76,9 @@ public class CdbSentinelsTests
     public void AllSentinels_ShouldContainMCPNexusPrefix()
     {
         // Act & Assert
-        nexus.engine.Internal.CdbSentinels.StartMarker.Should().StartWith("MCP_NEXUS_");
-        nexus.engine.Internal.CdbSentinels.EndMarker.Should().StartWith("MCP_NEXUS_");
-        nexus.engine.Internal.CdbSentinels.CommandSeparator.Should().StartWith("MCP_NEXUS_");
+        Nexus.Engine.Internal.CdbSentinels.StartMarker.Should().StartWith("MCP_NEXUS_");
+        Nexus.Engine.Internal.CdbSentinels.EndMarker.Should().StartWith("MCP_NEXUS_");
+        Nexus.Engine.Internal.CdbSentinels.CommandSeparator.Should().StartWith("MCP_NEXUS_");
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public class CdbSentinelsTests
     public void StartMarker_ShouldContainStartKeyword()
     {
         // Act & Assert
-        nexus.engine.Internal.CdbSentinels.StartMarker.Should().Contain("START");
+        Nexus.Engine.Internal.CdbSentinels.StartMarker.Should().Contain("START");
     }
 
     /// <summary>
@@ -98,7 +98,7 @@ public class CdbSentinelsTests
     public void EndMarker_ShouldContainEndKeyword()
     {
         // Act & Assert
-        nexus.engine.Internal.CdbSentinels.EndMarker.Should().Contain("END");
+        Nexus.Engine.Internal.CdbSentinels.EndMarker.Should().Contain("END");
     }
 
     /// <summary>
@@ -108,6 +108,6 @@ public class CdbSentinelsTests
     public void CommandSeparator_ShouldContainSeparatorKeyword()
     {
         // Act & Assert
-        nexus.engine.Internal.CdbSentinels.CommandSeparator.Should().Contain("SEPERATOR");
+        Nexus.Engine.Internal.CdbSentinels.CommandSeparator.Should().Contain("SEPERATOR");
     }
 }

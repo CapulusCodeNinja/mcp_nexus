@@ -87,7 +87,7 @@ internal class BatchResultParser
         }
 
         // Remove "batch_" prefix
-        var idsString = batchId.Substring(6);
+        var idsString = batchId[6..];
 
         // Split by underscore to get command IDs
         // Note: This assumes command IDs don't contain underscores themselves
@@ -163,7 +163,7 @@ internal class BatchResultParser
         if (endIndex < 0)
         {
             // No end marker found, take everything until end
-            return resultText.Substring(startIndex).Trim();
+            return resultText[startIndex..].Trim();
         }
 
         // Find the last newline before the end marker (to exclude the echo command)
@@ -173,7 +173,7 @@ internal class BatchResultParser
             endIndex = lastNewlineBeforeEnd;
         }
 
-        return resultText.Substring(startIndex, endIndex - startIndex).Trim();
+        return resultText[startIndex..endIndex].Trim();
     }
 }
 

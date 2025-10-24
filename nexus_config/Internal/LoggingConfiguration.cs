@@ -246,16 +246,16 @@ internal class LoggingConfiguration
         return string.IsNullOrEmpty(logLevelString)
             ? Microsoft.Extensions.Logging.LogLevel.Information
             : logLevelString.ToLowerInvariant() switch
-        {
-            "trace" => Microsoft.Extensions.Logging.LogLevel.Trace,
-            "debug" => Microsoft.Extensions.Logging.LogLevel.Debug,
-            "information" or "info" => Microsoft.Extensions.Logging.LogLevel.Information,
-            "warning" or "warn" => Microsoft.Extensions.Logging.LogLevel.Warning,
-            "error" => Microsoft.Extensions.Logging.LogLevel.Error,
-            "critical" => Microsoft.Extensions.Logging.LogLevel.Critical,
-            "none" => Microsoft.Extensions.Logging.LogLevel.None,
-            _ => Microsoft.Extensions.Logging.LogLevel.Information
-        };
+            {
+                "trace" => Microsoft.Extensions.Logging.LogLevel.Trace,
+                "debug" => Microsoft.Extensions.Logging.LogLevel.Debug,
+                "information" or "info" => Microsoft.Extensions.Logging.LogLevel.Information,
+                "warning" or "warn" => Microsoft.Extensions.Logging.LogLevel.Warning,
+                "error" => Microsoft.Extensions.Logging.LogLevel.Error,
+                "critical" => Microsoft.Extensions.Logging.LogLevel.Critical,
+                "none" => Microsoft.Extensions.Logging.LogLevel.None,
+                _ => Microsoft.Extensions.Logging.LogLevel.Information
+            };
     }
 
     /// <summary>

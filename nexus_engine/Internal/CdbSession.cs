@@ -52,8 +52,11 @@ internal class CdbSession : ICdbSession
     /// </summary>
     public bool IsInitialized => m_Initialized;
 
-    public string? SymbolPath1 { get;
-        set; }
+    public string? SymbolPath1
+    {
+        get;
+        set;
+    }
 
     public CdbSession(
         IFileSystem fileSystem,
