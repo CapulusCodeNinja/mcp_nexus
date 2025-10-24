@@ -31,20 +31,6 @@ public class BackupManagerTests
     }
 
     /// <summary>
-    /// Verifies that constructor with null file system throws ArgumentNullException.
-    /// </summary>
-    [Fact]
-    public void Constructor_WithNullFileSystem_ShouldThrowArgumentNullException()
-    {
-        // Act
-        var action = () => new BackupManager(null!);
-
-        // Assert
-        _ = action.Should().Throw<ArgumentNullException>()
-            .WithParameterName("fileSystem");
-    }
-
-    /// <summary>
     /// Verifies that CreateBackupAsync returns true when source directory doesn't exist.
     /// </summary>
     [Fact]

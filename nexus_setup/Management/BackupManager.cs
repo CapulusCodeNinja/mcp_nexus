@@ -28,11 +28,8 @@ namespace Nexus.Setup.Management
         /// Initializes a new instance of the <see cref="BackupManager"/> class.
         /// </summary>
         /// <param name="fileSystem">File system abstraction.</param>
-        /// <exception cref="ArgumentNullException">Thrown when fileSystem is null.</exception>
         internal BackupManager(IFileSystem fileSystem)
         {
-            ArgumentNullException.ThrowIfNull(fileSystem);
-
             m_Logger = LogManager.GetCurrentClassLogger();
 
             m_FileSystem = fileSystem;

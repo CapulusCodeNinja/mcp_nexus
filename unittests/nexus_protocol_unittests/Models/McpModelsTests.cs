@@ -107,4 +107,73 @@ public class McpModelsTests
         _ = notification.Status.Should().Be("Executing");
         _ = notification.Progress.Should().Be(50);
     }
+
+    /// <summary>
+    /// Verifies that McpError with data serializes correctly.
+    /// </summary>
+    [Fact]
+    public void McpError_WithData_SerializesCorrectly()
+    {
+        var error = new McpError
+        {
+            Code = -32600,
+            Message = "Invalid Request",
+            Data = new { details = "Missing required parameter" }
+        };
+
+        var json = JsonSerializer.Serialize(error);
+
+        _ = json.Should().Contain("\"code\":-32600");
+        _ = json.Should().Contain("\"message\":\"Invalid Request\"");
+        _ = json.Should().Contain("\"data\"");
+        _ = json.Should().Contain("\"details\"");
+    }
+
+    /// <summary>
+    /// Verifies that McpError without data serializes correctly.
+    /// </summary>
+    [Fact]
+    public void McpError_WithoutData_SerializesCorrectly()
+    {
+        var error = new McpError
+        {
+            Code = -32601,
+            Message = "Method not found"
+        };
+
+        var json = JsonSerializer.Serialize(error);
+
+        _ = json.Should().Contain("\"code\":-32601");
+        _ = json.Should().Contain("\"message\":\"Method not found\"");
+    }
+
+
+    /// <summary>
+    /// Verifies that McpToolSchema with complex input schema serializes correctly.
+    /// </summary>
+    [Fact]
+    public void McpToolSchema_WithComplexInputSchema_SerializesCorrectly()
+    {
+        var schema = new McpToolSchema
+        {
+            Name = "complex_tool",
+            Description = "A tool with complex schema",
+            InputSchema = new
+            {
+                type = "object",
+                required = new[] { "param1", "param2" },
+                properties = new
+                {
+                    param1 = new { type = "string", description = "First parameter" },
+                    param2 = new { type = "integer", minimum = 0, maximum = 100 }
+                }
+            }
+        };
+
+        var json = JsonSerializer.Serialize(schema);
+
+        _ = json.Should().Contain("\"name\":\"complex_tool\"");
+        _ = json.Should().Contain("\"required\"");
+        _ = json.Should().Contain("\"properties\"");
+    }
 }
