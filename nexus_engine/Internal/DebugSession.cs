@@ -58,6 +58,15 @@ internal class DebugSession : IDisposable
     /// </summary>
     public event EventHandler<SessionStateChangedEventArgs>? SessionStateChanged;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DebugSession"/> class.
+    /// </summary>
+    /// <param name="sessionId">The unique session identifier.</param>
+    /// <param name="dumpFilePath">The path to the dump file to analyze.</param>
+    /// <param name="symbolPath">Optional symbol path for symbol resolution.</param>
+    /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="processManager">The process manager abstraction.</param>
+    /// <exception cref="ArgumentNullException">Thrown when sessionId or dumpFilePath is null.</exception>
     public DebugSession(
         string sessionId,
         string dumpFilePath,

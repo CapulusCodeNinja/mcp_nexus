@@ -9,6 +9,9 @@ namespace Nexus.Engine.Batch.Tests;
 /// </summary>
 public class BatchSentinelsTests
 {
+    /// <summary>
+    /// Tests that GetStartMarker returns the correct format for a given command ID.
+    /// </summary>
     [Fact]
     public void GetStartMarker_ReturnsCorrectFormat()
     {
@@ -22,6 +25,9 @@ public class BatchSentinelsTests
         Assert.Equal("MCP_NEXUS_COMMAND_SEPARATOR_cmd-123_START", marker);
     }
 
+    /// <summary>
+    /// Tests that GetEndMarker returns the correct format for a given command ID.
+    /// </summary>
     [Fact]
     public void GetEndMarker_ReturnsCorrectFormat()
     {
@@ -35,6 +41,9 @@ public class BatchSentinelsTests
         Assert.Equal("MCP_NEXUS_COMMAND_SEPARATOR_cmd-123_END", marker);
     }
 
+    /// <summary>
+    /// Tests that GetStartMarker returns the correct format for a different command ID.
+    /// </summary>
     [Fact]
     public void GetStartMarker_WithDifferentId_ReturnsCorrectFormat()
     {
@@ -48,6 +57,9 @@ public class BatchSentinelsTests
         Assert.Equal("MCP_NEXUS_COMMAND_SEPARATOR_test-456_START", marker);
     }
 
+    /// <summary>
+    /// Tests that GetEndMarker returns the correct format for a different command ID.
+    /// </summary>
     [Fact]
     public void GetEndMarker_WithDifferentId_ReturnsCorrectFormat()
     {

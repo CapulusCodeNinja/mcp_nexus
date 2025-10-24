@@ -30,6 +30,11 @@ internal class CommandQueue : IDisposable
     /// </summary>
     public event EventHandler<CommandStateChangedEventArgs>? CommandStateChanged;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CommandQueue"/> class.
+    /// </summary>
+    /// <param name="sessionId">The session identifier for this command queue.</param>
+    /// <exception cref="ArgumentNullException">Thrown when sessionId is null.</exception>
     public CommandQueue(string sessionId)
     {
         m_Logger = LogManager.GetCurrentClassLogger();

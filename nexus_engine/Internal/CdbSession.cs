@@ -47,12 +47,21 @@ internal class CdbSession : ICdbSession
     /// </summary>
     public bool IsInitialized => m_Initialized;
 
+    /// <summary>
+    /// Gets or sets the internal symbol path storage.
+    /// </summary>
     public string? SymbolPath1
     {
         get;
         set;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CdbSession"/> class.
+    /// </summary>
+    /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="processManager">The process manager abstraction.</param>
+    /// <exception cref="ArgumentNullException">Thrown when fileSystem or processManager is null.</exception>
     public CdbSession(
         IFileSystem fileSystem,
         IProcessManager processManager)
@@ -316,6 +325,11 @@ internal class CdbSession : ICdbSession
         }
     }
 
+    /// <summary>
+    /// Finds the CDB executable path by checking configured path and common installation locations.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the CDB executable path.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when CDB executable cannot be found.</exception>
     public Task<string> FindCdbExecutableAsync()
     {
         // If configured path exists, use it
@@ -346,6 +360,13 @@ internal class CdbSession : ICdbSession
         throw new InvalidOperationException("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
     }
 
+    /// <summary>
+    /// Starts the CDB process asynchronously using the initialized dump file path and symbol path.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the session has been disposed.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the session is not initialized with a dump file.</exception>
     public Task StartCdbProcessAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -600,6 +621,16 @@ internal class CdbSession : ICdbSession
         }
     }
 
+    /// <summary>
+    /// Executes a batch of commands in the CDB session by joining them with semicolons.
+    /// </summary>
+    /// <param name="commands">The commands to execute.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the combined command output.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the session has been disposed.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the session is not initialized.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when commands is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when commands list is empty.</exception>
     public Task<string> ExecuteBatchCommandAsync(IEnumerable<string> commands, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -640,6 +671,10 @@ internal class CdbSession : ICdbSession
         }
     }
 
+    /// <summary>
+    /// Stops the CDB process forcefully by killing it.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException">Thrown when the session has been disposed.</exception>
     public void StopCdbProcess()
     {
         ThrowIfDisposed();
