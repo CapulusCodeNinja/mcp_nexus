@@ -32,12 +32,6 @@ public static class ServiceRegistrationExtensions
         // Add shared configuration services
         services.AddNexusConfiguration();
 
-        // Add utility services
-        services.AddSingleton<IFileSystem, nexus.external_apis.FileSystem.FileSystem>();
-        services.AddSingleton<IProcessManager, ProcessManager>();
-        services.AddSingleton<IRegistryService, RegistryService>();
-        services.AddSingleton<IServiceController, ServiceControllerWrapper>();
-
         // Add setup services
         services.AddTransient<IProductInstallation, ProductInstallation>();
 
