@@ -1,61 +1,36 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using nexus.config.Internal;
-using nexus.engine.batch.Configuration;
 using nexus.engine.batch.Internal;
 
 namespace nexus.engine.batch;
+
+using config;
 
 /// <summary>
 /// Implements batch processing logic for commands and results.
 /// </summary>
 public class BatchProcessor : IBatchProcessor
 {
-    private readonly BatchingConfiguration m_Configuration;
     private readonly BatchCommandFilter m_Filter;
     private readonly BatchCommandBuilder m_Builder;
     private readonly BatchResultParser m_Parser;
+
     private readonly ILogger<BatchProcessor> m_Logger;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BatchProcessor"/> class with simplified configuration.
-    /// </summary>
-    /// <param name="enabled">Whether batching is enabled.</param>
-    /// <param name="minBatchSize">Minimum batch size.</param>
-    /// <param name="maxBatchSize">Maximum batch size.</param>
-    /// <param name="excludedCommands">List of excluded commands.</param>
-    /// <param name="loggerFactory">The logger factory.</param>
-    public BatchProcessor()
+    private static IBatchProcessor? m_Instance;
+
+    public static IBatchProcessor GetInstance(IServiceProvider serviceProvider)
+    {
+        return m_Instance ??= new BatchProcessor(serviceProvider);
+    }
+
+    internal BatchProcessor(IServiceProvider serviceProvider)
     {
         m_Logger = serviceProvider.GetRequiredService<ILogger<BatchProcessor>>();
 
-        ConfigurationLoader.Instance.GetSection("McpNexus:Batching").Bind(m_Configuration);
-
-        m_Filter = new BatchCommandFilter(m_Configuration);
-        m_Builder = new BatchCommandBuilder(m_Configuration);
-        m_Parser = new BatchResultParser();
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BatchProcessor"/> class with full control.
-    /// </summary>
-    /// <param name="configuration">The batching configuration.</param>
-    /// <param name="filter">The command filter.</param>
-    /// <param name="builder">The command builder.</param>
-    /// <param name="parser">The result parser.</param>
-    /// <param name="logger">The logger instance.</param>
-    internal BatchProcessor(
-        BatchingConfiguration configuration,
-        BatchCommandFilter filter,
-        BatchCommandBuilder builder,
-        BatchResultParser parser,
-        ILogger<BatchProcessor> logger)
-    {
-        m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        m_Filter = filter ?? throw new ArgumentNullException(nameof(filter));
-        m_Builder = builder ?? throw new ArgumentNullException(nameof(builder));
-        m_Parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Filter = new BatchCommandFilter(serviceProvider);
+        m_Builder = new BatchCommandBuilder(serviceProvider);
+        m_Parser = new BatchResultParser(serviceProvider);
     }
 
     /// <summary>
@@ -87,7 +62,7 @@ public class BatchProcessor : IBatchProcessor
         {
             // Check if this specific batch should be batched
             // (may have commands that should be excluded)
-            if (batch.Count >= m_Configuration.MinBatchSize &&
+            if (batch.Count >= Settings.GetInstance().Get().McpNexus.Batching.MinBatchSize &&
                 batch.All(cmd => !m_Filter.IsCommandExcluded(cmd.CommandText)))
             {
                 var batchedCommand = m_Builder.BuildBatch(batch);

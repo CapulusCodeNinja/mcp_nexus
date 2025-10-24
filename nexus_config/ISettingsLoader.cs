@@ -1,13 +1,11 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace nexus.config
 {
+    /// <summary>
+    /// Loads application configuration and configures logging infrastructure.
+    /// </summary>
     public interface ISettingsLoader
     {
         /// <summary>
@@ -22,7 +20,6 @@ namespace nexus.config
         /// Loads configuration from the specified path or default location.
         /// </summary>
         /// <param name="configPath">Optional configuration path. If null, uses default location.</param>
-        /// <returns>Loaded configuration.</returns>
         void LoadConfiguration(string? configPath = null);
     }
 }

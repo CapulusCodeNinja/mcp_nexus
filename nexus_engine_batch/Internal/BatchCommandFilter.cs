@@ -1,26 +1,20 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using nexus.engine.batch.Configuration;
 
 namespace nexus.engine.batch.Internal;
+
+using config;
 
 /// <summary>
 /// Filters commands to determine if they should be batched.
 /// </summary>
 internal class BatchCommandFilter
 {
-    private readonly BatchingConfiguration m_Configuration;
     private readonly ILogger<BatchCommandFilter> m_Logger;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BatchCommandFilter"/> class.
-    /// </summary>
-    /// <param name="configuration">The batching configuration.</param>
-    /// <param name="logger">The logger instance.</param>
-    public BatchCommandFilter(BatchingConfiguration configuration, ILogger<BatchCommandFilter> logger)
+    public BatchCommandFilter(IServiceProvider serviceProvider)
     {
-        m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        m_Logger = serviceProvider.GetRequiredService<ILogger<BatchCommandBuilder>>();
+        m_Logger = serviceProvider.GetRequiredService<ILogger<BatchCommandFilter>>();
     }
 
     /// <summary>
@@ -36,16 +30,16 @@ internal class BatchCommandFilter
             return false;
         }
 
-        if (!m_Configuration.Enabled)
+        if (!Settings.GetInstance().Get().McpNexus.Batching.Enabled)
         {
             m_Logger.LogDebug("Batching is disabled");
             return false;
         }
 
-        if (commands.Count < m_Configuration.MinBatchSize)
+        if (commands.Count < Settings.GetInstance().Get().McpNexus.Batching.MinBatchSize)
         {
             m_Logger.LogDebug("Not enough commands to batch (count: {Count}, min: {Min})",
-                commands.Count, m_Configuration.MinBatchSize);
+                commands.Count, Settings.GetInstance().Get().McpNexus.Batching.MinBatchSize);
             return false;
         }
 
@@ -74,7 +68,7 @@ internal class BatchCommandFilter
 
         var trimmedCommand = commandText.Trim();
 
-        foreach (var excludedCommand in m_Configuration.ExcludedCommands)
+        foreach (var excludedCommand in Settings.GetInstance().Get().McpNexus.Batching.ExcludedCommands)
         {
             // Prefix matching: if command starts with excluded prefix, it's excluded
             if (trimmedCommand.StartsWith(excludedCommand, StringComparison.OrdinalIgnoreCase))

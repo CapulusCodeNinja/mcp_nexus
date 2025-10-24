@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using nexus.engine.batch.Configuration;
+using nexus.config;
 
 namespace nexus.engine.batch.Internal;
 
@@ -9,18 +9,10 @@ namespace nexus.engine.batch.Internal;
 /// </summary>
 internal class BatchCommandBuilder
 {
-    private readonly BatchingConfiguration m_Configuration;
     private readonly ILogger<BatchCommandBuilder> m_Logger;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BatchCommandBuilder"/> class.
-    /// </summary>
-    /// <param name="configuration">The batching configuration.</param>
-    /// <param name="logger">The logger instance.</param>
-    public BatchCommandBuilder(BatchingConfiguration configuration, ILogger<BatchCommandBuilder> logger)
+    public BatchCommandBuilder(IServiceProvider serviceProvider)
     {
-        m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-
         m_Logger = serviceProvider.GetRequiredService<ILogger<BatchCommandBuilder>>();
     }
 
@@ -69,7 +61,7 @@ internal class BatchCommandBuilder
         {
             currentBatch.Add(command);
 
-            if (currentBatch.Count >= m_Configuration.MaxBatchSize)
+            if (currentBatch.Count >= Settings.GetInstance().Get().McpNexus.Batching.MaxBatchSize)
             {
                 batches.Add(currentBatch);
                 currentBatch = new List<Command>();

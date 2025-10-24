@@ -348,6 +348,11 @@ public class BatchingSettings
     public int MaxBatchSize { get; set; } = 5;
 
     /// <summary>
+    /// Gets or sets the minimum batch size.
+    /// </summary>
+    public int MinBatchSize { get; set; } = 2;
+    
+    /// <summary>
     /// Gets or sets the batch wait timeout in milliseconds.
     /// </summary>
     public int BatchWaitTimeoutMs { get; set; } = 2000;

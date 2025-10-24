@@ -10,11 +10,7 @@ internal class BatchResultParser
 {
     private readonly ILogger<BatchResultParser> m_Logger;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BatchResultParser"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    public BatchResultParser()
+    public BatchResultParser(IServiceProvider serviceProvider)
     {
         m_Logger = serviceProvider.GetRequiredService<ILogger<BatchResultParser>>();
     }
