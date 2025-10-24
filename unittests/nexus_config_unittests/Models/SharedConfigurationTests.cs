@@ -251,4 +251,212 @@ public class SharedConfigurationTests
         _ = settings.GeneralRules.Should().NotBeNull();
         _ = settings.GeneralRules.Should().BeEmpty();
     }
+
+    /// <summary>
+    /// Tests that AutomatedRecoverySettings has correct default values.
+    /// </summary>
+    [Fact]
+    public void AutomatedRecoverySettings_DefaultValues_ShouldBeCorrect()
+    {
+        // Act
+        var settings = new AutomatedRecoverySettings();
+
+        // Assert
+        _ = settings.DefaultCommandTimeoutMinutes.Should().Be(10);
+        _ = settings.ComplexCommandTimeoutMinutes.Should().Be(30);
+        _ = settings.MaxCommandTimeoutMinutes.Should().Be(60);
+        _ = settings.HealthCheckIntervalSeconds.Should().Be(30);
+        _ = settings.MaxRecoveryAttempts.Should().Be(3);
+        _ = settings.RecoveryDelaySeconds.Should().Be(5);
+    }
+
+    /// <summary>
+    /// Tests that ServiceSettings has correct default values.
+    /// </summary>
+    [Fact]
+    public void ServiceSettings_DefaultValues_ShouldBeCorrect()
+    {
+        // Act
+        var settings = new ServiceSettings();
+
+        // Assert
+        _ = settings.InstallPath.Should().Be("C:\\Program Files\\MCP-Nexus");
+        _ = settings.BackupPath.Should().Be("C:\\Program Files\\MCP-Nexus\\backups");
+        _ = settings.ServiceName.Should().Be("MCP-Nexus");
+        _ = settings.DisplayName.Should().Be("MCP-Nexus Debugging Server");
+    }
+
+    /// <summary>
+    /// Tests that RateLimitRule can be created and modified.
+    /// </summary>
+    [Fact]
+    public void RateLimitRule_CanBeCreatedAndModified()
+    {
+        // Act
+        var rule = new RateLimitRule
+        {
+            Endpoint = "/api/*",
+            Period = "1s",
+            Limit = 10
+        };
+
+        // Assert
+        _ = rule.Endpoint.Should().Be("/api/*");
+        _ = rule.Period.Should().Be("1s");
+        _ = rule.Limit.Should().Be(10);
+    }
+
+    /// <summary>
+    /// Tests that LoggingSettings can be modified.
+    /// </summary>
+    [Fact]
+    public void LoggingSettings_CanBeModified()
+    {
+        // Act
+        var settings = new LoggingSettings
+        {
+            LogLevel = "Debug"
+        };
+
+        // Assert
+        _ = settings.LogLevel.Should().Be("Debug");
+    }
+
+    /// <summary>
+    /// Tests that ServerSettings can be modified.
+    /// </summary>
+    [Fact]
+    public void ServerSettings_CanBeModified()
+    {
+        // Act
+        var settings = new ServerSettings
+        {
+            Host = "localhost",
+            Port = 8080
+        };
+
+        // Assert
+        _ = settings.Host.Should().Be("localhost");
+        _ = settings.Port.Should().Be(8080);
+    }
+
+    /// <summary>
+    /// Tests that TransportSettings can be modified.
+    /// </summary>
+    [Fact]
+    public void TransportSettings_CanBeModified()
+    {
+        // Act
+        var settings = new TransportSettings
+        {
+            Mode = "stdio",
+            ServiceMode = false
+        };
+
+        // Assert
+        _ = settings.Mode.Should().Be("stdio");
+        _ = settings.ServiceMode.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Tests that DebuggingSettings can be modified.
+    /// </summary>
+    [Fact]
+    public void DebuggingSettings_CanBeModified()
+    {
+        // Act
+        var settings = new DebuggingSettings
+        {
+            CdbPath = "C:\\WinDbg\\cdb.exe",
+            CommandTimeoutMs = 300000,
+            IdleTimeoutMs = 150000,
+            SymbolServerMaxRetries = 3,
+            StartupDelayMs = 1000,
+            EnableCommandPreprocessing = false
+        };
+
+        // Assert
+        _ = settings.CdbPath.Should().Be("C:\\WinDbg\\cdb.exe");
+        _ = settings.CommandTimeoutMs.Should().Be(300000);
+        _ = settings.IdleTimeoutMs.Should().Be(150000);
+        _ = settings.SymbolServerMaxRetries.Should().Be(3);
+        _ = settings.StartupDelayMs.Should().Be(1000);
+        _ = settings.EnableCommandPreprocessing.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Tests that SessionManagementSettings can be modified.
+    /// </summary>
+    [Fact]
+    public void SessionManagementSettings_CanBeModified()
+    {
+        // Act
+        var settings = new SessionManagementSettings
+        {
+            MaxConcurrentSessions = 50,
+            SessionTimeoutMinutes = 60,
+            CleanupIntervalMinutes = 10,
+            DisposalTimeoutSeconds = 60,
+            DefaultCommandTimeoutMinutes = 20,
+            MemoryCleanupThresholdMB = 2048
+        };
+
+        // Assert
+        _ = settings.MaxConcurrentSessions.Should().Be(50);
+        _ = settings.SessionTimeoutMinutes.Should().Be(60);
+        _ = settings.CleanupIntervalMinutes.Should().Be(10);
+        _ = settings.DisposalTimeoutSeconds.Should().Be(60);
+        _ = settings.DefaultCommandTimeoutMinutes.Should().Be(20);
+        _ = settings.MemoryCleanupThresholdMB.Should().Be(2048);
+    }
+
+    /// <summary>
+    /// Tests that AutomatedRecoverySettings can be modified.
+    /// </summary>
+    [Fact]
+    public void AutomatedRecoverySettings_CanBeModified()
+    {
+        // Act
+        var settings = new AutomatedRecoverySettings
+        {
+            DefaultCommandTimeoutMinutes = 20,
+            ComplexCommandTimeoutMinutes = 60,
+            MaxCommandTimeoutMinutes = 120,
+            HealthCheckIntervalSeconds = 60,
+            MaxRecoveryAttempts = 5,
+            RecoveryDelaySeconds = 10
+        };
+
+        // Assert
+        _ = settings.DefaultCommandTimeoutMinutes.Should().Be(20);
+        _ = settings.ComplexCommandTimeoutMinutes.Should().Be(60);
+        _ = settings.MaxCommandTimeoutMinutes.Should().Be(120);
+        _ = settings.HealthCheckIntervalSeconds.Should().Be(60);
+        _ = settings.MaxRecoveryAttempts.Should().Be(5);
+        _ = settings.RecoveryDelaySeconds.Should().Be(10);
+    }
+
+    /// <summary>
+    /// Tests that IpRateLimitingSettings can be modified.
+    /// </summary>
+    [Fact]
+    public void IpRateLimitingSettings_CanBeModified()
+    {
+        // Act
+        var settings = new IpRateLimitingSettings
+        {
+            EnableEndpointRateLimiting = false,
+            StackBlockedRequests = true,
+            RealIpHeader = "X-Forwarded-For",
+            ClientIdHeader = "X-Client"
+        };
+        settings.GeneralRules.Add(new RateLimitRule { Endpoint = "*", Period = "1m", Limit = 100 });
+
+        // Assert
+        _ = settings.EnableEndpointRateLimiting.Should().BeFalse();
+        _ = settings.StackBlockedRequests.Should().BeTrue();
+        _ = settings.RealIpHeader.Should().Be("X-Forwarded-For");
+        _ = settings.ClientIdHeader.Should().Be("X-Client");
+        _ = settings.GeneralRules.Should().HaveCount(1);
+    }
 }

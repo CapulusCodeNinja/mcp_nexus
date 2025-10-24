@@ -176,4 +176,138 @@ public class McpModelsTests
         _ = json.Should().Contain("\"required\"");
         _ = json.Should().Contain("\"properties\"");
     }
+
+    /// <summary>
+    /// Verifies that McpNotification with method and params serializes correctly.
+    /// </summary>
+    [Fact]
+    public void McpNotification_WithMethodAndParams_SerializesCorrectly()
+    {
+        var notification = new McpNotification
+        {
+            JsonRpc = "2.0",
+            Method = "notifications/command_status",
+            Params = new { commandId = "cmd-123", status = "completed" }
+        };
+
+        var json = JsonSerializer.Serialize(notification);
+
+        _ = json.Should().Contain("\"jsonrpc\":\"2.0\"");
+        _ = json.Should().Contain("\"method\":\"notifications/command_status\"");
+        _ = json.Should().Contain("\"params\"");
+        _ = json.Should().Contain("\"commandId\":\"cmd-123\"");
+    }
+
+    /// <summary>
+    /// Verifies that McpServerHealthNotification properties serialize correctly.
+    /// </summary>
+    [Fact]
+    public void McpServerHealthNotification_PropertiesSerializeCorrectly()
+    {
+        var notification = new McpServerHealthNotification
+        {
+            Status = "healthy",
+            CdbSessionActive = true,
+            QueueSize = 5,
+            ActiveCommands = 2,
+            Uptime = TimeSpan.FromHours(24),
+            Timestamp = new DateTimeOffset(2025, 1, 15, 10, 30, 0, TimeSpan.Zero)
+        };
+
+        var json = JsonSerializer.Serialize(notification);
+
+        _ = json.Should().Contain("\"status\":\"healthy\"");
+        _ = json.Should().Contain("\"cdbSessionActive\":true");
+        _ = json.Should().Contain("\"queueSize\":5");
+        _ = json.Should().Contain("\"activeCommands\":2");
+    }
+
+    /// <summary>
+    /// Verifies that McpSessionRecoveryNotification properties serialize correctly.
+    /// </summary>
+    [Fact]
+    public void McpSessionRecoveryNotification_PropertiesSerializeCorrectly()
+    {
+        var notification = new McpSessionRecoveryNotification
+        {
+            Reason = "Session timeout",
+            RecoveryStep = "Restarting CDB",
+            Success = true,
+            Message = "Session recovered successfully",
+            AffectedCommands = new[] { "cmd-1", "cmd-2" },
+            Timestamp = new DateTimeOffset(2025, 1, 15, 10, 30, 0, TimeSpan.Zero)
+        };
+
+        var json = JsonSerializer.Serialize(notification);
+
+        _ = json.Should().Contain("\"reason\":\"Session timeout\"");
+        _ = json.Should().Contain("\"recoveryStep\":\"Restarting CDB\"");
+        _ = json.Should().Contain("\"success\":true");
+        _ = json.Should().Contain("\"message\":\"Session recovered successfully\"");
+        _ = json.Should().Contain("\"affectedCommands\"");
+    }
+
+    /// <summary>
+    /// Verifies that McpCommandHeartbeatNotification properties serialize correctly.
+    /// </summary>
+    [Fact]
+    public void McpCommandHeartbeatNotification_PropertiesSerializeCorrectly()
+    {
+        var notification = new McpCommandHeartbeatNotification
+        {
+            SessionId = "sess-001",
+            CommandId = "cmd-123",
+            Command = "!analyze -v",
+            ElapsedSeconds = 125.5,
+            ElapsedDisplay = "2m 5s",
+            Details = "Analyzing crash dump",
+            Timestamp = new DateTimeOffset(2025, 1, 15, 10, 30, 0, TimeSpan.Zero)
+        };
+
+        var json = JsonSerializer.Serialize(notification);
+
+        _ = json.Should().Contain("\"sessionId\":\"sess-001\"");
+        _ = json.Should().Contain("\"commandId\":\"cmd-123\"");
+        _ = json.Should().Contain("\"command\":\"!analyze -v\"");
+        _ = json.Should().Contain("\"elapsedSeconds\":125.5");
+        _ = json.Should().Contain("\"elapsedDisplay\":\"2m 5s\"");
+    }
+
+    /// <summary>
+    /// Verifies that McpResponse with null error has null error property.
+    /// </summary>
+    [Fact]
+    public void McpResponse_WithNullError_SerializesCorrectly()
+    {
+        var response = new McpResponse
+        {
+            JsonRpc = "2.0",
+            Id = 1,
+            Result = "success",
+            Error = null
+        };
+
+        var json = JsonSerializer.Serialize(response);
+
+        _ = json.Should().Contain("\"jsonrpc\":\"2.0\"");
+        _ = json.Should().Contain("\"result\":\"success\"");
+    }
+
+    /// <summary>
+    /// Verifies that McpError properties can be set and retrieved.
+    /// </summary>
+    [Fact]
+    public void McpError_PropertiesCanBeSetAndRetrieved()
+    {
+        var error = new McpError
+        {
+            Code = -32700,
+            Message = "Parse error",
+            Data = new { line = 5, column = 10 }
+        };
+
+        _ = error.Code.Should().Be(-32700);
+        _ = error.Message.Should().Be("Parse error");
+        _ = error.Data.Should().NotBeNull();
+    }
 }
