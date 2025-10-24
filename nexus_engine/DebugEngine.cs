@@ -1,21 +1,15 @@
 using System.Collections.Concurrent;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
 using Nexus.Engine.Events;
 using Nexus.Engine.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 
-namespace Nexus.Engine;
-
-using System;
-
 using Nexus.Config;
 
 using NLog;
 
+namespace Nexus.Engine;
 /// <summary>
 /// Main implementation of the debug engine that manages CDB sessions and command execution.
 /// </summary>
@@ -328,7 +322,7 @@ public class DebugEngine : IDebugEngine
 
         try
         {
-            Task.WaitAll(closeTasks.ToArray(), TimeSpan.FromSeconds(30));
+            _ = Task.WaitAll(closeTasks.ToArray(), TimeSpan.FromSeconds(30));
         }
         catch (Exception ex)
         {

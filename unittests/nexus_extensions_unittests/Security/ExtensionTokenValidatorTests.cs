@@ -1,9 +1,4 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-
 using Nexus.Extensions.Security;
-
-using NLog;
 
 namespace Nexus.Extensions_unittests.Security;
 
@@ -18,7 +13,7 @@ public class ExtensionTokenValidatorTests
     [Fact]
     public void Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new ExtensionTokenValidator());
+        _ = Assert.Throws<ArgumentNullException>(() => new ExtensionTokenValidator());
     }
 
     /// <summary>
@@ -34,7 +29,7 @@ public class ExtensionTokenValidatorTests
         var validator = new ExtensionTokenValidator();
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => validator.CreateToken(sessionId!, "cmd-123"));
+        _ = Assert.Throws<ArgumentException>(() => validator.CreateToken(sessionId!, "cmd-123"));
     }
 
     /// <summary>
@@ -50,7 +45,7 @@ public class ExtensionTokenValidatorTests
         var validator = new ExtensionTokenValidator();
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => validator.CreateToken("session-123", commandId!));
+        _ = Assert.Throws<ArgumentException>(() => validator.CreateToken("session-123", commandId!));
     }
 
     /// <summary>

@@ -1,12 +1,4 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
-
 using FluentAssertions;
-
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
@@ -48,7 +40,7 @@ public class BackupManagerTests
         var action = () => new BackupManager(null!);
 
         // Assert
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("fileSystem");
     }
 
@@ -59,14 +51,14 @@ public class BackupManagerTests
     public async Task CreateBackupAsync_WithNonExistentSourceDirectory_ShouldReturnTrue()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
             .Returns(false);
 
         // Act
         var result = await m_BackupManager.CreateBackupAsync("C:\\source", "C:\\backup");
 
         // Assert
-        result.Should().BeTrue();
+        _ = result.Should().BeTrue();
     }
 
     /// <summary>
@@ -76,12 +68,12 @@ public class BackupManagerTests
     public async Task CreateBackupAsync_WithValidDirectories_CallsCreateDirectory()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\source"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\source"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.CreateDirectory(It.IsAny<string>()));
-        m_MockFileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>()))
+        _ = m_MockFileSystem.Setup(fs => fs.CreateDirectory(It.IsAny<string>()));
+        _ = m_MockFileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>()))
             .Returns(Array.Empty<string>());
-        m_MockFileSystem.Setup(fs => fs.GetDirectoryInfo(It.IsAny<string>()))
+        _ = m_MockFileSystem.Setup(fs => fs.GetDirectoryInfo(It.IsAny<string>()))
             .Throws(new IOException("File system error")); // Force exception path
 
         // Act
@@ -98,16 +90,16 @@ public class BackupManagerTests
     public async Task CreateBackupAsync_WithException_ShouldReturnFalse()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.CreateDirectory(It.IsAny<string>()))
+        _ = m_MockFileSystem.Setup(fs => fs.CreateDirectory(It.IsAny<string>()))
             .Throws(new IOException("Disk full"));
 
         // Act
         var result = await m_BackupManager.CreateBackupAsync("C:\\source", "C:\\backup");
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     /// <summary>
@@ -117,9 +109,9 @@ public class BackupManagerTests
     public async Task RollbackInstallationAsync_WithNoBackup_ShouldCleanUpDirectory()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\install"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\install"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\backup"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\backup"))
             .Returns(false);
 
         // Act
@@ -136,14 +128,14 @@ public class BackupManagerTests
     public async Task RollbackInstallationAsync_WithNonExistentInstallDir_ShouldDoNothing()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
             .Returns(false);
 
         // Act
         var action = async () => await m_BackupManager.RollbackInstallationAsync("C:\\install", "C:\\backup", false);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        _ = await action.Should().NotThrowAsync();
         m_MockFileSystem.Verify(fs => fs.DeleteDirectory(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
     }
 
@@ -154,16 +146,16 @@ public class BackupManagerTests
     public async Task RollbackInstallationAsync_WithException_ShouldHandleGracefully()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.DeleteDirectory(It.IsAny<string>(), It.IsAny<bool>()))
+        _ = m_MockFileSystem.Setup(fs => fs.DeleteDirectory(It.IsAny<string>(), It.IsAny<bool>()))
             .Throws(new IOException("Access denied"));
 
         // Act
         var action = async () => await m_BackupManager.RollbackInstallationAsync("C:\\install", "C:\\backup", false);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        _ = await action.Should().NotThrowAsync();
     }
 
     /// <summary>
@@ -175,11 +167,11 @@ public class BackupManagerTests
         // Arrange
         var backupDirInfo = new DirectoryInfo("C:\\backup");
 
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\backup"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\backup"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\install"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\install"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.GetDirectoryInfo("C:\\backup"))
+        _ = m_MockFileSystem.Setup(fs => fs.GetDirectoryInfo("C:\\backup"))
             .Returns(backupDirInfo);
 
         // Act

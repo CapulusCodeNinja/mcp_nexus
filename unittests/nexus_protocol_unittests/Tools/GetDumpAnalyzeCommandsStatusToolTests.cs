@@ -2,8 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Moq;
-
 using Nexus.Engine;
 using Nexus.Engine.Models;
 using Nexus.Protocol.Tools;
@@ -27,8 +25,8 @@ public class GetDumpAnalyzeCommandsStatusToolTests
         m_MockEngine = new Mock<IDebugEngine>();
 
         var services = new ServiceCollection();
-        services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
-        services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
+        _ = services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
+        _ = services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
@@ -60,22 +58,22 @@ public class GetDumpAnalyzeCommandsStatusToolTests
             }
         };
 
-        m_MockEngine.Setup(e => e.GetAllCommandInfos(It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.GetAllCommandInfos(It.IsAny<string>()))
             .Returns(commandInfos);
 
         var result = await GetDumpAnalyzeCommandsStatusTool.nexus_get_dump_analyze_commands_status(
             m_ServiceProvider, sessionId);
 
         dynamic response = result;
-        ((int)response.count).Should().Be(2);
-        ((string)response.sessionId).Should().Be(sessionId);
-        ((string)response.operation).Should().Be("nexus_get_dump_analyze_commands_status");
+        _ = ((int)response.count).Should().Be(2);
+        _ = ((string)response.sessionId).Should().Be(sessionId);
+        _ = ((string)response.operation).Should().Be("nexus_get_dump_analyze_commands_status");
 
         var resultType = result.GetType();
         var commandsProperty = resultType.GetProperty("commands");
-        commandsProperty.Should().NotBeNull();
+        _ = commandsProperty.Should().NotBeNull();
         var commandsValue = commandsProperty!.GetValue(result);
-        commandsValue.Should().NotBeNull();
+        _ = commandsValue.Should().NotBeNull();
     }
 
     /// <summary>
@@ -87,14 +85,14 @@ public class GetDumpAnalyzeCommandsStatusToolTests
         const string sessionId = "sess-empty";
         var commandInfos = new Dictionary<string, CommandInfo>();
 
-        m_MockEngine.Setup(e => e.GetAllCommandInfos(It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.GetAllCommandInfos(It.IsAny<string>()))
             .Returns(commandInfos);
 
         var result = await GetDumpAnalyzeCommandsStatusTool.nexus_get_dump_analyze_commands_status(
             m_ServiceProvider, sessionId);
 
         dynamic response = result;
-        ((int)response.count).Should().Be(0);
+        _ = ((int)response.count).Should().Be(0);
     }
 
     /// <summary>
@@ -105,15 +103,15 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     {
         const string sessionId = "sess-invalid";
 
-        m_MockEngine.Setup(e => e.GetAllCommandInfos(sessionId))
+        _ = m_MockEngine.Setup(e => e.GetAllCommandInfos(sessionId))
             .Throws(new ArgumentException("Invalid session"));
 
         var result = await GetDumpAnalyzeCommandsStatusTool.nexus_get_dump_analyze_commands_status(
             m_ServiceProvider, sessionId);
 
         dynamic response = result;
-        ((int)response.count).Should().Be(0);
-        ((string)response.error).Should().Be("Invalid session");
+        _ = ((int)response.count).Should().Be(0);
+        _ = ((string)response.error).Should().Be("Invalid session");
     }
 
     /// <summary>
@@ -124,15 +122,15 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     {
         const string sessionId = "sess-123";
 
-        m_MockEngine.Setup(e => e.GetAllCommandInfos(sessionId))
+        _ = m_MockEngine.Setup(e => e.GetAllCommandInfos(sessionId))
             .Throws(new Exception("Unexpected error"));
 
         var result = await GetDumpAnalyzeCommandsStatusTool.nexus_get_dump_analyze_commands_status(
             m_ServiceProvider, sessionId);
 
         dynamic response = result;
-        ((int)response.count).Should().Be(0);
-        ((string)response.error).Should().Contain("Unexpected error");
+        _ = ((int)response.count).Should().Be(0);
+        _ = ((string)response.error).Should().Contain("Unexpected error");
     }
 
     /// <summary>
@@ -144,18 +142,18 @@ public class GetDumpAnalyzeCommandsStatusToolTests
         const string sessionId = "sess-789";
         var commandInfos = new Dictionary<string, CommandInfo>();
 
-        m_MockEngine.Setup(e => e.GetAllCommandInfos(It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.GetAllCommandInfos(It.IsAny<string>()))
             .Returns(commandInfos);
 
         var result = await GetDumpAnalyzeCommandsStatusTool.nexus_get_dump_analyze_commands_status(
             m_ServiceProvider, sessionId);
 
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
         var resultType = result.GetType();
         var usageProperty = resultType.GetProperty("usage");
-        usageProperty.Should().NotBeNull();
+        _ = usageProperty.Should().NotBeNull();
         var usageValue = usageProperty!.GetValue(result);
-        usageValue.Should().NotBeNull();
+        _ = usageValue.Should().NotBeNull();
     }
 
     /// <summary>
@@ -185,7 +183,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
             }
         };
 
-        m_MockEngine.Setup(e => e.GetAllCommandInfos(It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.GetAllCommandInfos(It.IsAny<string>()))
             .Returns(commandInfos);
 
         var result = await GetDumpAnalyzeCommandsStatusTool.nexus_get_dump_analyze_commands_status(
@@ -193,6 +191,6 @@ public class GetDumpAnalyzeCommandsStatusToolTests
 
         dynamic response = result;
         var commands = (object[])response.commands;
-        commands.Should().HaveCount(2);
+        _ = commands.Should().HaveCount(2);
     }
 }

@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-
 using Nexus.Protocol.Models;
 using Nexus.Protocol.Notifications;
 
@@ -130,11 +127,11 @@ public class McpNotificationServiceTests
     [Fact]
     public async Task PublishNotificationAsync_BridgeThrows_LogsErrorButDoesNotThrow()
     {
-        m_MockBridge
+        _ = m_MockBridge
             .Setup(b => b.SendNotificationAsync(It.IsAny<McpNotification>()))
             .ThrowsAsync(new IOException("Bridge error"));
 
-        await m_Service.Invoking(s => s.PublishNotificationAsync("test", new { }))
+        _ = await m_Service.Invoking(s => s.PublishNotificationAsync("test", new { }))
             .Should().NotThrowAsync();
     }
 }

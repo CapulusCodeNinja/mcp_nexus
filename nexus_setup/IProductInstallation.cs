@@ -1,5 +1,3 @@
-using Nexus.Setup.Models;
-
 namespace Nexus.Setup
 {
     /// <summary>

@@ -2,8 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Moq;
-
 using Nexus.Engine;
 using Nexus.Protocol.Tools;
 
@@ -26,8 +24,8 @@ public class CancelCommandToolTests
         m_MockEngine = new Mock<IDebugEngine>();
 
         var services = new ServiceCollection();
-        services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
-        services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
+        _ = services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
+        _ = services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
@@ -40,18 +38,18 @@ public class CancelCommandToolTests
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
 
-        m_MockEngine.Setup(e => e.CancelCommand(It.IsAny<string>(), It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.CancelCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(true);
 
         var result = await CancelCommandTool.nexus_cancel_dump_analyze_command(
             m_ServiceProvider, sessionId, commandId);
 
         dynamic response = result;
-        ((string)response.commandId).Should().Be(commandId);
-        ((string)response.sessionId).Should().Be(sessionId);
-        ((bool)response.cancelled).Should().BeTrue();
-        ((string)response.status).Should().Be("Cancelled");
-        ((string)response.operation).Should().Be("nexus_cancel_dump_analyze_command");
+        _ = ((string)response.commandId).Should().Be(commandId);
+        _ = ((string)response.sessionId).Should().Be(sessionId);
+        _ = ((bool)response.cancelled).Should().BeTrue();
+        _ = ((string)response.status).Should().Be("Cancelled");
+        _ = ((string)response.operation).Should().Be("nexus_cancel_dump_analyze_command");
     }
 
     /// <summary>
@@ -63,17 +61,17 @@ public class CancelCommandToolTests
         const string sessionId = "sess-123";
         const string commandId = "cmd-missing";
 
-        m_MockEngine.Setup(e => e.CancelCommand(It.IsAny<string>(), It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.CancelCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(false);
 
         var result = await CancelCommandTool.nexus_cancel_dump_analyze_command(
             m_ServiceProvider, sessionId, commandId);
 
         dynamic response = result;
-        ((string)response.commandId).Should().Be(commandId);
-        ((bool)response.cancelled).Should().BeFalse();
-        ((string)response.status).Should().Be("NotFound");
-        ((string)response.message).Should().Contain("not found");
+        _ = ((string)response.commandId).Should().Be(commandId);
+        _ = ((bool)response.cancelled).Should().BeFalse();
+        _ = ((string)response.status).Should().Be("NotFound");
+        _ = ((string)response.message).Should().Contain("not found");
     }
 
     /// <summary>
@@ -85,16 +83,16 @@ public class CancelCommandToolTests
         const string sessionId = "sess-invalid";
         const string commandId = "cmd-456";
 
-        m_MockEngine.Setup(e => e.CancelCommand(sessionId, commandId))
+        _ = m_MockEngine.Setup(e => e.CancelCommand(sessionId, commandId))
             .Throws(new ArgumentException("Invalid session"));
 
         var result = await CancelCommandTool.nexus_cancel_dump_analyze_command(
             m_ServiceProvider, sessionId, commandId);
 
         dynamic response = result;
-        ((bool)response.cancelled).Should().BeFalse();
-        ((string)response.status).Should().Be("Failed");
-        ((string)response.message).Should().Be("Invalid session");
+        _ = ((bool)response.cancelled).Should().BeFalse();
+        _ = ((string)response.status).Should().Be("Failed");
+        _ = ((string)response.message).Should().Be("Invalid session");
     }
 
     /// <summary>
@@ -106,16 +104,16 @@ public class CancelCommandToolTests
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
 
-        m_MockEngine.Setup(e => e.CancelCommand(sessionId, commandId))
+        _ = m_MockEngine.Setup(e => e.CancelCommand(sessionId, commandId))
             .Throws(new Exception("Unexpected error"));
 
         var result = await CancelCommandTool.nexus_cancel_dump_analyze_command(
             m_ServiceProvider, sessionId, commandId);
 
         dynamic response = result;
-        ((bool)response.cancelled).Should().BeFalse();
-        ((string)response.status).Should().Be("Failed");
-        ((string)response.message).Should().Contain("Unexpected error");
+        _ = ((bool)response.cancelled).Should().BeFalse();
+        _ = ((string)response.status).Should().Be("Failed");
+        _ = ((string)response.message).Should().Contain("Unexpected error");
     }
 
     /// <summary>
@@ -127,18 +125,18 @@ public class CancelCommandToolTests
         const string sessionId = "sess-789";
         const string commandId = "cmd-101";
 
-        m_MockEngine.Setup(e => e.CancelCommand(It.IsAny<string>(), It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.CancelCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(true);
 
         var result = await CancelCommandTool.nexus_cancel_dump_analyze_command(
             m_ServiceProvider, sessionId, commandId);
 
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
         var resultType = result.GetType();
         var usageProperty = resultType.GetProperty("usage");
-        usageProperty.Should().NotBeNull();
+        _ = usageProperty.Should().NotBeNull();
         var usageValue = usageProperty!.GetValue(result);
-        usageValue.Should().NotBeNull();
+        _ = usageValue.Should().NotBeNull();
     }
 
     /// <summary>
@@ -150,10 +148,10 @@ public class CancelCommandToolTests
         const string sessionId = "sess-123";
         const string commandId = "cmd-789";
 
-        m_MockEngine.Setup(e => e.CancelCommand(sessionId, commandId))
+        _ = m_MockEngine.Setup(e => e.CancelCommand(sessionId, commandId))
             .Returns(true);
 
-        await CancelCommandTool.nexus_cancel_dump_analyze_command(
+        _ = await CancelCommandTool.nexus_cancel_dump_analyze_command(
             m_ServiceProvider, sessionId, commandId);
 
         m_MockEngine.Verify(e => e.CancelCommand(sessionId, commandId), Times.Once);

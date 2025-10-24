@@ -1,9 +1,6 @@
 using System.Runtime.Versioning;
 using System.ServiceProcess;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 using Nexus.External.Apis.ServiceManagement;
@@ -120,7 +117,7 @@ internal class ServiceInstaller : IServiceInstaller
             if (!string.IsNullOrEmpty(options.Description))
             {
                 var descArgs = $"description \"{options.ServiceName}\" \"{options.Description}\"";
-                await ExecuteScCommandAsync(descArgs, cancellationToken);
+                _ = await ExecuteScCommandAsync(descArgs, cancellationToken);
             }
 
             m_Logger.Info("Service {ServiceName} installed successfully", options.ServiceName);

@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace Nexus.External.Apis.FileSystem;
 
 /// <summary>
@@ -93,7 +91,7 @@ public class FileSystem : IFileSystem
     /// <param name="path">The directory path to create.</param>
     public void CreateDirectory(string path)
     {
-        Directory.CreateDirectory(path);
+        _ = Directory.CreateDirectory(path);
     }
 
     /// <summary>

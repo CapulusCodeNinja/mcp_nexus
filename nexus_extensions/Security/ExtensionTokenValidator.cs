@@ -1,7 +1,5 @@
 using System.Collections.Concurrent;
 
-using Microsoft.Extensions.Logging;
-
 using NLog;
 
 namespace Nexus.Extensions.Security;
@@ -105,7 +103,7 @@ internal class ExtensionTokenValidator : IExtensionTokenValidator
         {
             m_Logger.Warn("Token validation failed: Token expired for session {SessionId}",
                 tokenInfo.SessionId);
-            m_Tokens.TryRemove(token, out _);
+            _ = m_Tokens.TryRemove(token, out _);
             return (false, null, null);
         }
 

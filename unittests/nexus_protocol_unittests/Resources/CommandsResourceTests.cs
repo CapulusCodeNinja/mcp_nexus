@@ -26,8 +26,8 @@ public class CommandsResourceTests
         m_MockDebugEngine = new Mock<IDebugEngine>();
 
         var services = new ServiceCollection();
-        services.AddSingleton(m_MockDebugEngine.Object);
-        services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
+        _ = services.AddSingleton(m_MockDebugEngine.Object);
+        _ = services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
@@ -39,12 +39,12 @@ public class CommandsResourceTests
     {
         var result = await CommandsResource.Commands(m_ServiceProvider);
 
-        result.Should().NotBeNullOrEmpty();
+        _ = result.Should().NotBeNullOrEmpty();
 
         var json = JsonDocument.Parse(result);
-        json.RootElement.GetProperty("count").GetInt32().Should().Be(0);
-        json.RootElement.GetProperty("commands").GetArrayLength().Should().Be(0);
-        json.RootElement.GetProperty("note").GetString().Should().Contain("IDebugEngine");
+        _ = json.RootElement.GetProperty("count").GetInt32().Should().Be(0);
+        _ = json.RootElement.GetProperty("commands").GetArrayLength().Should().Be(0);
+        _ = json.RootElement.GetProperty("note").GetString().Should().Contain("IDebugEngine");
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public class CommandsResourceTests
         var result = await CommandsResource.Commands(m_ServiceProvider);
 
         var json = JsonDocument.Parse(result);
-        json.RootElement.TryGetProperty("timestamp", out _).Should().BeTrue();
+        _ = json.RootElement.TryGetProperty("timestamp", out _).Should().BeTrue();
     }
 
 
@@ -69,7 +69,7 @@ public class CommandsResourceTests
         var result = await CommandsResource.Commands(m_ServiceProvider);
 
         var action = () => JsonDocument.Parse(result);
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -83,16 +83,16 @@ public class CommandsResourceTests
         var mockLoggerFactory = new Mock<ILoggerFactory>();
         var mockLogger = NullLogger.Instance;
 
-        mockLoggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(mockLogger);
-        mockServiceProvider.Setup(sp => sp.GetService(typeof(ILoggerFactory))).Returns(mockLoggerFactory.Object);
-        mockServiceProvider.Setup(sp => sp.GetService(typeof(IDebugEngine))).Throws(new InvalidOperationException("Test error"));
+        _ = mockLoggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(mockLogger);
+        _ = mockServiceProvider.Setup(sp => sp.GetService(typeof(ILoggerFactory))).Returns(mockLoggerFactory.Object);
+        _ = mockServiceProvider.Setup(sp => sp.GetService(typeof(IDebugEngine))).Throws(new InvalidOperationException("Test error"));
 
         var result = await CommandsResource.Commands(mockServiceProvider.Object);
 
         var json = JsonDocument.Parse(result);
-        json.RootElement.GetProperty("count").GetInt32().Should().Be(0);
-        json.RootElement.TryGetProperty("error", out var errorProperty).Should().BeTrue();
-        errorProperty.GetString().Should().Contain("Test error");
+        _ = json.RootElement.GetProperty("count").GetInt32().Should().Be(0);
+        _ = json.RootElement.TryGetProperty("error", out var errorProperty).Should().BeTrue();
+        _ = errorProperty.GetString().Should().Contain("Test error");
     }
 
     /// <summary>
@@ -102,7 +102,7 @@ public class CommandsResourceTests
     public async Task Commands_WithNullServiceProvider_ThrowsException()
     {
         var action = async () => await CommandsResource.Commands(null!);
-        await action.Should().ThrowAsync<ArgumentNullException>();
+        _ = await action.Should().ThrowAsync<ArgumentNullException>();
     }
 
     /// <summary>
@@ -113,6 +113,6 @@ public class CommandsResourceTests
     {
         var result = await CommandsResource.Commands(m_ServiceProvider);
 
-        result.Should().Contain("\n"); // Indented JSON contains newlines
+        _ = result.Should().Contain("\n"); // Indented JSON contains newlines
     }
 }

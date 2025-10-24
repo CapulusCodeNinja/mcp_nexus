@@ -2,8 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Moq;
-
 using Nexus.Engine;
 using Nexus.External.Apis.FileSystem;
 using Nexus.Protocol.Tools;
@@ -29,13 +27,13 @@ public class OpenDumpAnalyzeSessionToolTests
         m_MockFileSystem = new Mock<IFileSystem>();
 
         // By default, mock FileExists to return true (file exists)
-        m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
-        m_MockFileSystem.Setup(fs => fs.GetFileName(It.IsAny<string>())).Returns<string>(path => Path.GetFileName(path));
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
+        _ = m_MockFileSystem.Setup(fs => fs.GetFileName(It.IsAny<string>())).Returns<string>(path => Path.GetFileName(path));
 
         var services = new ServiceCollection();
-        services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
-        services.AddSingleton<IFileSystem>(m_MockFileSystem.Object);
-        services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
+        _ = services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
+        _ = services.AddSingleton<IFileSystem>(m_MockFileSystem.Object);
+        _ = services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
@@ -48,15 +46,15 @@ public class OpenDumpAnalyzeSessionToolTests
         const string dumpPath = @"C:\dumps\test.dmp";
         const string sessionId = "sess-123";
 
-        m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        _ = m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sessionId);
 
         var result = await OpenDumpAnalyzeSessionTool.nexus_open_dump_analyze_session(m_ServiceProvider, dumpPath);
 
         dynamic response = result;
-        ((string)response.sessionId).Should().Be(sessionId);
-        ((string)response.status).Should().Be("Success");
-        ((string)response.operation).Should().Be("nexus_open_dump_analyze_session");
+        _ = ((string)response.sessionId).Should().Be(sessionId);
+        _ = ((string)response.status).Should().Be("Success");
+        _ = ((string)response.operation).Should().Be("nexus_open_dump_analyze_session");
     }
 
     /// <summary>
@@ -69,7 +67,7 @@ public class OpenDumpAnalyzeSessionToolTests
         const string symbolsPath = @"C:\symbols";
         const string sessionId = "sess-456";
 
-        m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        _ = m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sessionId);
 
         var result = await OpenDumpAnalyzeSessionTool.nexus_open_dump_analyze_session(
@@ -77,7 +75,7 @@ public class OpenDumpAnalyzeSessionToolTests
 
         m_MockEngine.Verify(e => e.CreateSessionAsync(dumpPath, symbolsPath, It.IsAny<CancellationToken>()), Times.Once);
         dynamic response = result;
-        ((string)response.sessionId).Should().Be(sessionId);
+        _ = ((string)response.sessionId).Should().Be(sessionId);
     }
 
     /// <summary>
@@ -89,14 +87,14 @@ public class OpenDumpAnalyzeSessionToolTests
         const string dumpPath = @"C:\dumps\missing.dmp";
 
         // Mock FileExists to return false for this test
-        m_MockFileSystem.Setup(fs => fs.FileExists(dumpPath)).Returns(false);
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(dumpPath)).Returns(false);
 
         var result = await OpenDumpAnalyzeSessionTool.nexus_open_dump_analyze_session(m_ServiceProvider, dumpPath);
 
         dynamic response = result;
-        ((string?)response.sessionId).Should().BeNull();
-        ((string)response.status).Should().Be("Failed");
-        ((string)response.message).Should().Contain("Dump file not found");
+        _ = ((string?)response.sessionId).Should().BeNull();
+        _ = ((string)response.status).Should().Be("Failed");
+        _ = ((string)response.message).Should().Contain("Dump file not found");
     }
 
     /// <summary>
@@ -107,15 +105,15 @@ public class OpenDumpAnalyzeSessionToolTests
     {
         const string dumpPath = @"C:\dumps\test.dmp";
 
-        m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        _ = m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Max sessions reached"));
 
         var result = await OpenDumpAnalyzeSessionTool.nexus_open_dump_analyze_session(m_ServiceProvider, dumpPath);
 
         dynamic response = result;
-        ((string?)response.sessionId).Should().BeNull();
-        ((string)response.status).Should().Be("Failed");
-        ((string)response.message).Should().Be("Max sessions reached");
+        _ = ((string?)response.sessionId).Should().BeNull();
+        _ = ((string)response.status).Should().Be("Failed");
+        _ = ((string)response.message).Should().Be("Max sessions reached");
     }
 
     /// <summary>
@@ -126,15 +124,15 @@ public class OpenDumpAnalyzeSessionToolTests
     {
         const string dumpPath = @"C:\dumps\test.dmp";
 
-        m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        _ = m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Unexpected failure"));
 
         var result = await OpenDumpAnalyzeSessionTool.nexus_open_dump_analyze_session(m_ServiceProvider, dumpPath);
 
         dynamic response = result;
-        ((string?)response.sessionId).Should().BeNull();
-        ((string)response.status).Should().Be("Failed");
-        ((string)response.message).Should().Contain("Unexpected error");
+        _ = ((string?)response.sessionId).Should().BeNull();
+        _ = ((string)response.status).Should().Be("Failed");
+        _ = ((string)response.message).Should().Contain("Unexpected error");
     }
 
     /// <summary>
@@ -146,16 +144,16 @@ public class OpenDumpAnalyzeSessionToolTests
         const string dumpPath = @"C:\dumps\test.dmp";
         const string sessionId = "sess-789";
 
-        m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        _ = m_MockEngine.Setup(e => e.CreateSessionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sessionId);
 
         var result = await OpenDumpAnalyzeSessionTool.nexus_open_dump_analyze_session(m_ServiceProvider, dumpPath);
 
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
         var resultType = result.GetType();
         var usageProperty = resultType.GetProperty("usage");
-        usageProperty.Should().NotBeNull();
+        _ = usageProperty.Should().NotBeNull();
         var usageValue = usageProperty!.GetValue(result);
-        usageValue.Should().NotBeNull();
+        _ = usageValue.Should().NotBeNull();
     }
 }

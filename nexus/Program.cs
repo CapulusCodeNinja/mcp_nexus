@@ -64,16 +64,16 @@ internal static class Program
             .ConfigureServices((_, services) =>
             {
                 // Register mode
-                services.AddSingleton(cmd);
+                var ununsed = services.AddSingleton(cmd);
 
                 // Register ONLY the main hosted service (no others)
-                services.AddHostedService<MainHostedService>();
+                var ununsedHost = services.AddHostedService<MainHostedService>();
             });
 
         // Configure Windows Service support if in service mode
         if (cmd.IsServiceMode)
         {
-            builder.UseWindowsService(options => options.ServiceName = "MCP-Nexus");
+            _ = builder.UseWindowsService(options => options.ServiceName = "MCP-Nexus");
         }
 
         return builder;

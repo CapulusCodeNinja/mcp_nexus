@@ -21,18 +21,18 @@ public class SharedConfigurationTests
         var config = new SharedConfiguration();
 
         // Assert
-        config.Logging.Should().NotBeNull();
-        config.Logging.LogLevel.Should().Be("Information");
-        config.McpNexus.Should().NotBeNull();
-        config.McpNexus.Server.Should().NotBeNull();
-        config.McpNexus.Transport.Should().NotBeNull();
-        config.McpNexus.Debugging.Should().NotBeNull();
-        config.McpNexus.AutomatedRecovery.Should().NotBeNull();
-        config.McpNexus.Service.Should().NotBeNull();
-        config.McpNexus.SessionManagement.Should().NotBeNull();
-        config.McpNexus.Extensions.Should().NotBeNull();
-        config.McpNexus.Batching.Should().NotBeNull();
-        config.IpRateLimiting.Should().NotBeNull();
+        _ = config.Logging.Should().NotBeNull();
+        _ = config.Logging.LogLevel.Should().Be("Information");
+        _ = config.McpNexus.Should().NotBeNull();
+        _ = config.McpNexus.Server.Should().NotBeNull();
+        _ = config.McpNexus.Transport.Should().NotBeNull();
+        _ = config.McpNexus.Debugging.Should().NotBeNull();
+        _ = config.McpNexus.AutomatedRecovery.Should().NotBeNull();
+        _ = config.McpNexus.Service.Should().NotBeNull();
+        _ = config.McpNexus.SessionManagement.Should().NotBeNull();
+        _ = config.McpNexus.Extensions.Should().NotBeNull();
+        _ = config.McpNexus.Batching.Should().NotBeNull();
+        _ = config.IpRateLimiting.Should().NotBeNull();
     }
 
     /// <summary>
@@ -45,19 +45,19 @@ public class SharedConfigurationTests
         var settings = new McpNexusSettings();
 
         // Assert
-        settings.Server.Should().NotBeNull();
-        settings.Server.Host.Should().Be("0.0.0.0");
-        settings.Server.Port.Should().Be(5511);
-        settings.Transport.Should().NotBeNull();
-        settings.Transport.Mode.Should().Be("http");
-        settings.Transport.ServiceMode.Should().BeTrue();
-        settings.Debugging.Should().NotBeNull();
-        settings.AutomatedRecovery.Should().NotBeNull();
-        settings.Service.Should().NotBeNull();
-        settings.SessionManagement.Should().NotBeNull();
-        settings.SessionManagement.MaxConcurrentSessions.Should().Be(1000);
-        settings.Extensions.Should().NotBeNull();
-        settings.Batching.Should().NotBeNull();
+        _ = settings.Server.Should().NotBeNull();
+        _ = settings.Server.Host.Should().Be("0.0.0.0");
+        _ = settings.Server.Port.Should().Be(5511);
+        _ = settings.Transport.Should().NotBeNull();
+        _ = settings.Transport.Mode.Should().Be("http");
+        _ = settings.Transport.ServiceMode.Should().BeTrue();
+        _ = settings.Debugging.Should().NotBeNull();
+        _ = settings.AutomatedRecovery.Should().NotBeNull();
+        _ = settings.Service.Should().NotBeNull();
+        _ = settings.SessionManagement.Should().NotBeNull();
+        _ = settings.SessionManagement.MaxConcurrentSessions.Should().Be(1000);
+        _ = settings.Extensions.Should().NotBeNull();
+        _ = settings.Batching.Should().NotBeNull();
     }
 
     /// <summary>
@@ -70,10 +70,10 @@ public class SharedConfigurationTests
         var settings = new ExtensionsSettings();
 
         // Assert
-        settings.Enabled.Should().BeTrue();
-        settings.ExtensionsPath.Should().Be("extensions");
-        settings.CallbackPort.Should().Be(0);
-        settings.GracefulTerminationTimeoutMs.Should().Be(2000);
+        _ = settings.Enabled.Should().BeTrue();
+        _ = settings.ExtensionsPath.Should().Be("extensions");
+        _ = settings.CallbackPort.Should().Be(0);
+        _ = settings.GracefulTerminationTimeoutMs.Should().Be(2000);
     }
 
     /// <summary>
@@ -86,13 +86,13 @@ public class SharedConfigurationTests
         var settings = new BatchingSettings();
 
         // Assert
-        settings.Enabled.Should().BeTrue();
-        settings.MaxBatchSize.Should().Be(5);
-        settings.BatchWaitTimeoutMs.Should().Be(2000);
-        settings.BatchTimeoutMultiplier.Should().Be(1.0);
-        settings.MaxBatchTimeoutMinutes.Should().Be(30);
-        settings.ExcludedCommands.Should().NotBeNull();
-        settings.ExcludedCommands.Should().BeEmpty();
+        _ = settings.Enabled.Should().BeTrue();
+        _ = settings.MaxBatchSize.Should().Be(5);
+        _ = settings.BatchWaitTimeoutMs.Should().Be(2000);
+        _ = settings.BatchTimeoutMultiplier.Should().Be(1.0);
+        _ = settings.MaxBatchTimeoutMinutes.Should().Be(30);
+        _ = settings.ExcludedCommands.Should().NotBeNull();
+        _ = settings.ExcludedCommands.Should().BeEmpty();
     }
 
     /// <summary>
@@ -110,9 +110,9 @@ public class SharedConfigurationTests
         config.McpNexus.Debugging.CommandTimeoutMs = 600000;
 
         // Assert
-        config.Logging.LogLevel.Should().Be("Debug");
-        config.McpNexus.SessionManagement.MaxConcurrentSessions.Should().Be(20);
-        config.McpNexus.Debugging.CommandTimeoutMs.Should().Be(600000);
+        _ = config.Logging.LogLevel.Should().Be("Debug");
+        _ = config.McpNexus.SessionManagement.MaxConcurrentSessions.Should().Be(20);
+        _ = config.McpNexus.Debugging.CommandTimeoutMs.Should().Be(600000);
     }
 
     /// <summary>
@@ -132,10 +132,10 @@ public class SharedConfigurationTests
         };
 
         // Assert
-        settings.Enabled.Should().BeFalse();
-        settings.ExtensionsPath.Should().Be("custom_extensions");
-        settings.CallbackPort.Should().Be(8080);
-        settings.GracefulTerminationTimeoutMs.Should().Be(5000);
+        _ = settings.Enabled.Should().BeFalse();
+        _ = settings.ExtensionsPath.Should().Be("custom_extensions");
+        _ = settings.CallbackPort.Should().Be(8080);
+        _ = settings.GracefulTerminationTimeoutMs.Should().Be(5000);
     }
 
     /// <summary>
@@ -158,14 +158,14 @@ public class SharedConfigurationTests
         settings.ExcludedCommands.Add("!dump");
 
         // Assert
-        settings.Enabled.Should().BeFalse();
-        settings.MaxBatchSize.Should().Be(10);
-        settings.BatchWaitTimeoutMs.Should().Be(5000);
-        settings.BatchTimeoutMultiplier.Should().Be(2.0);
-        settings.MaxBatchTimeoutMinutes.Should().Be(60);
-        settings.ExcludedCommands.Should().HaveCount(2);
-        settings.ExcludedCommands.Should().Contain("!analyze");
-        settings.ExcludedCommands.Should().Contain("!dump");
+        _ = settings.Enabled.Should().BeFalse();
+        _ = settings.MaxBatchSize.Should().Be(10);
+        _ = settings.BatchWaitTimeoutMs.Should().Be(5000);
+        _ = settings.BatchTimeoutMultiplier.Should().Be(2.0);
+        _ = settings.MaxBatchTimeoutMinutes.Should().Be(60);
+        _ = settings.ExcludedCommands.Should().HaveCount(2);
+        _ = settings.ExcludedCommands.Should().Contain("!analyze");
+        _ = settings.ExcludedCommands.Should().Contain("!dump");
     }
 
     /// <summary>
@@ -178,8 +178,8 @@ public class SharedConfigurationTests
         var settings = new ServerSettings();
 
         // Assert
-        settings.Host.Should().Be("0.0.0.0");
-        settings.Port.Should().Be(5511);
+        _ = settings.Host.Should().Be("0.0.0.0");
+        _ = settings.Port.Should().Be(5511);
     }
 
     /// <summary>
@@ -192,8 +192,8 @@ public class SharedConfigurationTests
         var settings = new TransportSettings();
 
         // Assert
-        settings.Mode.Should().Be("http");
-        settings.ServiceMode.Should().BeTrue();
+        _ = settings.Mode.Should().Be("http");
+        _ = settings.ServiceMode.Should().BeTrue();
     }
 
     /// <summary>
@@ -206,14 +206,14 @@ public class SharedConfigurationTests
         var settings = new DebuggingSettings();
 
         // Assert
-        settings.CdbPath.Should().BeNull();
-        settings.CommandTimeoutMs.Should().Be(600000);
-        settings.IdleTimeoutMs.Should().Be(300000);
-        settings.SymbolServerMaxRetries.Should().Be(1);
-        settings.SymbolSearchPath.Should().Be("srv*T:\\symbols*https://symbols.int.avast.com/symbols;srv*T:\\symbols*https://msdl.microsoft.com/download/symbols");
-        settings.StartupDelayMs.Should().Be(500);
-        settings.OutputReadingTimeoutMs.Should().Be(300000);
-        settings.EnableCommandPreprocessing.Should().BeTrue();
+        _ = settings.CdbPath.Should().BeNull();
+        _ = settings.CommandTimeoutMs.Should().Be(600000);
+        _ = settings.IdleTimeoutMs.Should().Be(300000);
+        _ = settings.SymbolServerMaxRetries.Should().Be(1);
+        _ = settings.SymbolSearchPath.Should().Be("srv*T:\\symbols*https://symbols.int.avast.com/symbols;srv*T:\\symbols*https://msdl.microsoft.com/download/symbols");
+        _ = settings.StartupDelayMs.Should().Be(500);
+        _ = settings.OutputReadingTimeoutMs.Should().Be(300000);
+        _ = settings.EnableCommandPreprocessing.Should().BeTrue();
     }
 
     /// <summary>
@@ -226,12 +226,12 @@ public class SharedConfigurationTests
         var settings = new SessionManagementSettings();
 
         // Assert
-        settings.MaxConcurrentSessions.Should().Be(1000);
-        settings.SessionTimeoutMinutes.Should().Be(30);
-        settings.CleanupIntervalMinutes.Should().Be(5);
-        settings.DisposalTimeoutSeconds.Should().Be(30);
-        settings.DefaultCommandTimeoutMinutes.Should().Be(10);
-        settings.MemoryCleanupThresholdMB.Should().Be(1024);
+        _ = settings.MaxConcurrentSessions.Should().Be(1000);
+        _ = settings.SessionTimeoutMinutes.Should().Be(30);
+        _ = settings.CleanupIntervalMinutes.Should().Be(5);
+        _ = settings.DisposalTimeoutSeconds.Should().Be(30);
+        _ = settings.DefaultCommandTimeoutMinutes.Should().Be(10);
+        _ = settings.MemoryCleanupThresholdMB.Should().Be(1024);
     }
 
     /// <summary>
@@ -244,11 +244,11 @@ public class SharedConfigurationTests
         var settings = new IpRateLimitingSettings();
 
         // Assert
-        settings.EnableEndpointRateLimiting.Should().BeTrue();
-        settings.StackBlockedRequests.Should().BeFalse();
-        settings.RealIpHeader.Should().Be("X-Real-IP");
-        settings.ClientIdHeader.Should().Be("X-ClientId");
-        settings.GeneralRules.Should().NotBeNull();
-        settings.GeneralRules.Should().BeEmpty();
+        _ = settings.EnableEndpointRateLimiting.Should().BeTrue();
+        _ = settings.StackBlockedRequests.Should().BeFalse();
+        _ = settings.RealIpHeader.Should().Be("X-Real-IP");
+        _ = settings.ClientIdHeader.Should().Be("X-ClientId");
+        _ = settings.GeneralRules.Should().NotBeNull();
+        _ = settings.GeneralRules.Should().BeEmpty();
     }
 }

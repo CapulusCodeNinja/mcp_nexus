@@ -16,13 +16,13 @@ public class HttpServerConfigurationTests
     {
         var config = new HttpServerConfiguration();
 
-        config.MaxRequestBodySize.Should().Be(50 * 1024 * 1024); // 50MB
-        config.RequestHeadersTimeoutSeconds.Should().Be(60);
-        config.KeepAliveTimeoutSeconds.Should().Be(120);
-        config.MaxRequestLineSize.Should().Be(8192); // 8KB
-        config.MaxRequestHeadersTotalSize.Should().Be(32768); // 32KB
-        config.EnableCors.Should().BeTrue();
-        config.EnableRateLimit.Should().BeTrue();
+        _ = config.MaxRequestBodySize.Should().Be(50 * 1024 * 1024); // 50MB
+        _ = config.RequestHeadersTimeoutSeconds.Should().Be(60);
+        _ = config.KeepAliveTimeoutSeconds.Should().Be(120);
+        _ = config.MaxRequestLineSize.Should().Be(8192); // 8KB
+        _ = config.MaxRequestHeadersTotalSize.Should().Be(32768); // 32KB
+        _ = config.EnableCors.Should().BeTrue();
+        _ = config.EnableRateLimit.Should().BeTrue();
     }
 
     /// <summary>
@@ -35,7 +35,7 @@ public class HttpServerConfigurationTests
 
         var action = () => config.Validate();
 
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public class HttpServerConfigurationTests
 
         var action = () => config.Validate();
 
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ public class HttpServerConfigurationTests
 
         var action = () => config.Validate();
 
-        action.Should().Throw<ArgumentException>()
+        _ = action.Should().Throw<ArgumentException>()
             .WithMessage("*MaxRequestBodySize*")
             .WithParameterName("MaxRequestBodySize");
     }
@@ -85,7 +85,7 @@ public class HttpServerConfigurationTests
 
         var action = () => config.Validate();
 
-        action.Should().Throw<ArgumentException>()
+        _ = action.Should().Throw<ArgumentException>()
             .WithParameterName("MaxRequestBodySize");
     }
 
@@ -99,7 +99,7 @@ public class HttpServerConfigurationTests
 
         var action = () => config.Validate();
 
-        action.Should().Throw<ArgumentException>()
+        _ = action.Should().Throw<ArgumentException>()
             .WithParameterName("RequestHeadersTimeoutSeconds");
     }
 
@@ -113,7 +113,7 @@ public class HttpServerConfigurationTests
 
         var action = () => config.Validate();
 
-        action.Should().Throw<ArgumentException>()
+        _ = action.Should().Throw<ArgumentException>()
             .WithParameterName("RequestHeadersTimeoutSeconds");
     }
 
@@ -127,7 +127,7 @@ public class HttpServerConfigurationTests
 
         var action = () => config.Validate();
 
-        action.Should().Throw<ArgumentException>()
+        _ = action.Should().Throw<ArgumentException>()
             .WithParameterName("KeepAliveTimeoutSeconds");
     }
 
@@ -141,7 +141,7 @@ public class HttpServerConfigurationTests
 
         var action = () => config.Validate();
 
-        action.Should().Throw<ArgumentException>()
+        _ = action.Should().Throw<ArgumentException>()
             .WithParameterName("KeepAliveTimeoutSeconds");
     }
 
@@ -155,7 +155,7 @@ public class HttpServerConfigurationTests
 
         var action = () => config.Validate();
 
-        action.Should().Throw<ArgumentException>()
+        _ = action.Should().Throw<ArgumentException>()
             .WithParameterName("MaxRequestLineSize");
     }
 
@@ -169,7 +169,7 @@ public class HttpServerConfigurationTests
 
         var action = () => config.Validate();
 
-        action.Should().Throw<ArgumentException>()
+        _ = action.Should().Throw<ArgumentException>()
             .WithParameterName("MaxRequestLineSize");
     }
 
@@ -183,7 +183,7 @@ public class HttpServerConfigurationTests
 
         var action = () => config.Validate();
 
-        action.Should().Throw<ArgumentException>()
+        _ = action.Should().Throw<ArgumentException>()
             .WithParameterName("MaxRequestHeadersTotalSize");
     }
 
@@ -197,7 +197,7 @@ public class HttpServerConfigurationTests
 
         var action = () => config.Validate();
 
-        action.Should().Throw<ArgumentException>()
+        _ = action.Should().Throw<ArgumentException>()
             .WithParameterName("MaxRequestHeadersTotalSize");
     }
 
@@ -218,13 +218,13 @@ public class HttpServerConfigurationTests
             EnableRateLimit = false
         };
 
-        config.MaxRequestBodySize.Should().Be(123456);
-        config.RequestHeadersTimeoutSeconds.Should().Be(45);
-        config.KeepAliveTimeoutSeconds.Should().Be(90);
-        config.MaxRequestLineSize.Should().Be(4096);
-        config.MaxRequestHeadersTotalSize.Should().Be(16384);
-        config.EnableCors.Should().BeFalse();
-        config.EnableRateLimit.Should().BeFalse();
+        _ = config.MaxRequestBodySize.Should().Be(123456);
+        _ = config.RequestHeadersTimeoutSeconds.Should().Be(45);
+        _ = config.KeepAliveTimeoutSeconds.Should().Be(90);
+        _ = config.MaxRequestLineSize.Should().Be(4096);
+        _ = config.MaxRequestHeadersTotalSize.Should().Be(16384);
+        _ = config.EnableCors.Should().BeFalse();
+        _ = config.EnableRateLimit.Should().BeFalse();
     }
 }
 

@@ -1,5 +1,3 @@
-using FluentAssertions;
-
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +21,7 @@ public class HttpServerSetupTests
     public HttpServerSetupTests()
     {
         var configBuilder = new ConfigurationBuilder();
-        configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+        _ = configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["IpRateLimiting:EnableEndpointRateLimiting"] = "true",
             ["IpRateLimiting:StackBlockedRequests"] = "false"
@@ -42,7 +40,7 @@ public class HttpServerSetupTests
         HttpServerSetup.ConfigureHttpServices(services, m_Configuration);
 
         var serviceProvider = services.BuildServiceProvider();
-        serviceProvider.Should().NotBeNull();
+        _ = serviceProvider.Should().NotBeNull();
     }
 
     /// <summary>
@@ -67,7 +65,7 @@ public class HttpServerSetupTests
 
         var serviceProvider = services.BuildServiceProvider();
         var kestrelOptions = serviceProvider.GetService<IOptions<KestrelServerOptions>>();
-        kestrelOptions.Should().NotBeNull();
+        _ = kestrelOptions.Should().NotBeNull();
     }
 
     /// <summary>
@@ -81,7 +79,7 @@ public class HttpServerSetupTests
         HttpServerSetup.ConfigureHttpServices(services, m_Configuration, null);
 
         var serviceProvider = services.BuildServiceProvider();
-        serviceProvider.Should().NotBeNull();
+        _ = serviceProvider.Should().NotBeNull();
     }
 
     /// <summary>
@@ -101,7 +99,7 @@ public class HttpServerSetupTests
 
         // Service collection should not throw when built
         var serviceProvider = services.BuildServiceProvider();
-        serviceProvider.Should().NotBeNull();
+        _ = serviceProvider.Should().NotBeNull();
     }
 
     /// <summary>
@@ -120,7 +118,7 @@ public class HttpServerSetupTests
         HttpServerSetup.ConfigureHttpServices(services, m_Configuration, serverConfig);
 
         var serviceProvider = services.BuildServiceProvider();
-        serviceProvider.Should().NotBeNull();
+        _ = serviceProvider.Should().NotBeNull();
     }
 
     /// <summary>
@@ -137,7 +135,7 @@ public class HttpServerSetupTests
 
         var action = () => HttpServerSetup.ConfigureHttpServices(services, m_Configuration, serverConfig);
 
-        action.Should().Throw<ArgumentException>()
+        _ = action.Should().Throw<ArgumentException>()
             .WithMessage("*MaxRequestBodySize*");
     }
 
@@ -157,7 +155,7 @@ public class HttpServerSetupTests
         HttpServerSetup.ConfigureHttpServices(services, m_Configuration, serverConfig);
 
         var serviceProvider = services.BuildServiceProvider();
-        serviceProvider.Should().NotBeNull();
+        _ = serviceProvider.Should().NotBeNull();
     }
 
     /// <summary>
@@ -182,7 +180,7 @@ public class HttpServerSetupTests
         var kestrelOptions = serviceProvider.GetService<IOptions<KestrelServerOptions>>();
 
         // Verify options are registered
-        kestrelOptions.Should().NotBeNull();
+        _ = kestrelOptions.Should().NotBeNull();
     }
 
     /// <summary>
@@ -197,7 +195,7 @@ public class HttpServerSetupTests
 
         // JSON options should be configured
         var serviceProvider = services.BuildServiceProvider();
-        serviceProvider.Should().NotBeNull();
+        _ = serviceProvider.Should().NotBeNull();
     }
 
     /// <summary>
@@ -207,13 +205,13 @@ public class HttpServerSetupTests
     public void ConfigureHttpServices_ConfiguresMcpServer()
     {
         var services = new ServiceCollection();
-        services.AddLogging(); // Required for MCP server
+        _ = services.AddLogging(); // Required for MCP server
 
         HttpServerSetup.ConfigureHttpServices(services, m_Configuration);
 
         // MCP server services should be registered
         var serviceProvider = services.BuildServiceProvider();
-        serviceProvider.Should().NotBeNull();
+        _ = serviceProvider.Should().NotBeNull();
     }
 
     /// <summary>
@@ -236,7 +234,7 @@ public class HttpServerSetupTests
 
         var action = () => HttpServerSetup.ConfigureHttpServices(services, m_Configuration, serverConfig);
 
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -259,7 +257,7 @@ public class HttpServerSetupTests
 
         var action = () => HttpServerSetup.ConfigureHttpServices(services, m_Configuration, serverConfig);
 
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -278,7 +276,7 @@ public class HttpServerSetupTests
 
         // Verify IIS options are configured
         var serviceProvider = services.BuildServiceProvider();
-        serviceProvider.Should().NotBeNull();
+        _ = serviceProvider.Should().NotBeNull();
     }
 
     /// <summary>
@@ -288,13 +286,13 @@ public class HttpServerSetupTests
     public void ConfigureHttpServices_AddsMcpServerWithTransport()
     {
         var services = new ServiceCollection();
-        services.AddLogging();
+        _ = services.AddLogging();
 
         HttpServerSetup.ConfigureHttpServices(services, m_Configuration);
 
         // Verify MCP server services are added
         var serviceProvider = services.BuildServiceProvider();
-        serviceProvider.Should().NotBeNull();
+        _ = serviceProvider.Should().NotBeNull();
     }
 
     /// <summary>
@@ -312,7 +310,7 @@ public class HttpServerSetupTests
         HttpServerSetup.ConfigureHttpServices(services, m_Configuration, serverConfig);
 
         var serviceProvider = services.BuildServiceProvider();
-        serviceProvider.Should().NotBeNull();
+        _ = serviceProvider.Should().NotBeNull();
     }
 
     /// <summary>
@@ -326,6 +324,6 @@ public class HttpServerSetupTests
         HttpServerSetup.ConfigureHttpServices(services, m_Configuration);
         var action = () => HttpServerSetup.ConfigureHttpServices(services, m_Configuration);
 
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 }

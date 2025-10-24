@@ -25,9 +25,9 @@ public class McpModelsTests
 
         var json = JsonSerializer.Serialize(response);
 
-        json.Should().Contain("\"jsonrpc\":\"2.0\"");
-        json.Should().Contain("\"result\"");
-        json.Should().Contain("\"status\":\"success\"");
+        _ = json.Should().Contain("\"jsonrpc\":\"2.0\"");
+        _ = json.Should().Contain("\"result\"");
+        _ = json.Should().Contain("\"status\":\"success\"");
     }
 
     /// <summary>
@@ -49,9 +49,9 @@ public class McpModelsTests
 
         var json = JsonSerializer.Serialize(response);
 
-        json.Should().Contain("\"error\"");
-        json.Should().Contain("\"code\":-32603");
-        json.Should().Contain("\"message\":\"Internal error\"");
+        _ = json.Should().Contain("\"error\"");
+        _ = json.Should().Contain("\"code\":-32603");
+        _ = json.Should().Contain("\"message\":\"Internal error\"");
     }
 
     /// <summary>
@@ -80,9 +80,9 @@ public class McpModelsTests
         var json = JsonSerializer.Serialize(schema);
         var deserialized = JsonSerializer.Deserialize<McpToolSchema>(json);
 
-        deserialized.Should().NotBeNull();
-        deserialized!.Name.Should().Be("test_tool");
-        deserialized.Description.Should().Be("Test tool description");
+        _ = deserialized.Should().NotBeNull();
+        _ = deserialized!.Name.Should().Be("test_tool");
+        _ = deserialized.Description.Should().Be("Test tool description");
     }
 
     /// <summary>
@@ -102,9 +102,9 @@ public class McpModelsTests
             Timestamp = DateTimeOffset.Now
         };
 
-        notification.SessionId.Should().Be("sess-001");
-        notification.CommandId.Should().Be("cmd-123");
-        notification.Status.Should().Be("Executing");
-        notification.Progress.Should().Be(50);
+        _ = notification.SessionId.Should().Be("sess-001");
+        _ = notification.CommandId.Should().Be("cmd-123");
+        _ = notification.Status.Should().Be("Executing");
+        _ = notification.Progress.Should().Be(50);
     }
 }

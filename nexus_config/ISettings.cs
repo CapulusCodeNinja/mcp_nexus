@@ -1,10 +1,10 @@
-﻿namespace Nexus.Config
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+
+using Nexus.Config.Models;
+
+namespace Nexus.Config
 {
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Logging;
-
-    using Models;
-
     /// <summary>
     /// Provides access to shared application settings loaded from configuration.
     /// </summary>

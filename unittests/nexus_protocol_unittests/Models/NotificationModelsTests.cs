@@ -18,13 +18,13 @@ public class NotificationModelsTests
     {
         var notification = new McpCommandHeartbeatNotification();
 
-        notification.SessionId.Should().BeNull();
-        notification.CommandId.Should().BeEmpty();
-        notification.Command.Should().BeEmpty();
-        notification.ElapsedSeconds.Should().Be(0);
-        notification.ElapsedDisplay.Should().BeEmpty();
-        notification.Details.Should().BeNull();
-        notification.Timestamp.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(5));
+        _ = notification.SessionId.Should().BeNull();
+        _ = notification.CommandId.Should().BeEmpty();
+        _ = notification.Command.Should().BeEmpty();
+        _ = notification.ElapsedSeconds.Should().Be(0);
+        _ = notification.ElapsedDisplay.Should().BeEmpty();
+        _ = notification.Details.Should().BeNull();
+        _ = notification.Timestamp.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(5));
     }
 
     /// <summary>
@@ -44,13 +44,13 @@ public class NotificationModelsTests
             Timestamp = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero)
         };
 
-        notification.SessionId.Should().Be("sess-001");
-        notification.CommandId.Should().Be("cmd-123");
-        notification.Command.Should().Be("!analyze -v");
-        notification.ElapsedSeconds.Should().Be(120.5);
-        notification.ElapsedDisplay.Should().Be("2m 1s");
-        notification.Details.Should().Be("Still analyzing");
-        notification.Timestamp.Year.Should().Be(2025);
+        _ = notification.SessionId.Should().Be("sess-001");
+        _ = notification.CommandId.Should().Be("cmd-123");
+        _ = notification.Command.Should().Be("!analyze -v");
+        _ = notification.ElapsedSeconds.Should().Be(120.5);
+        _ = notification.ElapsedDisplay.Should().Be("2m 1s");
+        _ = notification.Details.Should().Be("Still analyzing");
+        _ = notification.Timestamp.Year.Should().Be(2025);
     }
 
     /// <summary>
@@ -70,10 +70,10 @@ public class NotificationModelsTests
 
         var json = JsonSerializer.Serialize(notification);
 
-        json.Should().Contain("\"sessionId\":\"sess-001\"");
-        json.Should().Contain("\"commandId\":\"cmd-123\"");
-        json.Should().Contain("\"command\":\"kL\"");
-        json.Should().Contain("\"elapsedSeconds\":10.5");
+        _ = json.Should().Contain("\"sessionId\":\"sess-001\"");
+        _ = json.Should().Contain("\"commandId\":\"cmd-123\"");
+        _ = json.Should().Contain("\"command\":\"kL\"");
+        _ = json.Should().Contain("\"elapsedSeconds\":10.5");
     }
 
     /// <summary>
@@ -84,15 +84,15 @@ public class NotificationModelsTests
     {
         var notification = new McpCommandStatusNotification();
 
-        notification.SessionId.Should().BeNull();
-        notification.CommandId.Should().BeEmpty();
-        notification.Command.Should().BeEmpty();
-        notification.Status.Should().BeEmpty();
-        notification.Result.Should().BeNull();
-        notification.Progress.Should().BeNull();
-        notification.Message.Should().BeNull();
-        notification.Error.Should().BeNull();
-        notification.Timestamp.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(5));
+        _ = notification.SessionId.Should().BeNull();
+        _ = notification.CommandId.Should().BeEmpty();
+        _ = notification.Command.Should().BeEmpty();
+        _ = notification.Status.Should().BeEmpty();
+        _ = notification.Result.Should().BeNull();
+        _ = notification.Progress.Should().BeNull();
+        _ = notification.Message.Should().BeNull();
+        _ = notification.Error.Should().BeNull();
+        _ = notification.Timestamp.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(5));
     }
 
     /// <summary>
@@ -114,12 +114,12 @@ public class NotificationModelsTests
             Timestamp = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero)
         };
 
-        notification.SessionId.Should().Be("sess-001");
-        notification.CommandId.Should().Be("cmd-123");
-        notification.Status.Should().Be("Completed");
-        notification.Result.Should().Be("Success");
-        notification.Progress.Should().Be(100);
-        notification.Message.Should().Be("Done");
+        _ = notification.SessionId.Should().Be("sess-001");
+        _ = notification.CommandId.Should().Be("cmd-123");
+        _ = notification.Status.Should().Be("Completed");
+        _ = notification.Result.Should().Be("Success");
+        _ = notification.Progress.Should().Be(100);
+        _ = notification.Message.Should().Be("Done");
     }
 
     /// <summary>
@@ -130,12 +130,12 @@ public class NotificationModelsTests
     {
         var notification = new McpServerHealthNotification();
 
-        notification.Status.Should().BeEmpty();
-        notification.CdbSessionActive.Should().BeFalse();
-        notification.QueueSize.Should().Be(0);
-        notification.ActiveCommands.Should().Be(0);
-        notification.Uptime.Should().BeNull();
-        notification.Timestamp.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(5));
+        _ = notification.Status.Should().BeEmpty();
+        _ = notification.CdbSessionActive.Should().BeFalse();
+        _ = notification.QueueSize.Should().Be(0);
+        _ = notification.ActiveCommands.Should().Be(0);
+        _ = notification.Uptime.Should().BeNull();
+        _ = notification.Timestamp.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(5));
     }
 
     /// <summary>
@@ -154,11 +154,11 @@ public class NotificationModelsTests
             Timestamp = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero)
         };
 
-        notification.Status.Should().Be("healthy");
-        notification.CdbSessionActive.Should().BeTrue();
-        notification.QueueSize.Should().Be(5);
-        notification.ActiveCommands.Should().Be(10);
-        notification.Uptime.Should().Be(TimeSpan.FromHours(2));
+        _ = notification.Status.Should().Be("healthy");
+        _ = notification.CdbSessionActive.Should().BeTrue();
+        _ = notification.QueueSize.Should().Be(5);
+        _ = notification.ActiveCommands.Should().Be(10);
+        _ = notification.Uptime.Should().Be(TimeSpan.FromHours(2));
     }
 
     /// <summary>
@@ -169,12 +169,12 @@ public class NotificationModelsTests
     {
         var notification = new McpSessionRecoveryNotification();
 
-        notification.Reason.Should().BeEmpty();
-        notification.RecoveryStep.Should().BeEmpty();
-        notification.Success.Should().BeFalse();
-        notification.Message.Should().BeEmpty();
-        notification.AffectedCommands.Should().BeNull();
-        notification.Timestamp.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(5));
+        _ = notification.Reason.Should().BeEmpty();
+        _ = notification.RecoveryStep.Should().BeEmpty();
+        _ = notification.Success.Should().BeFalse();
+        _ = notification.Message.Should().BeEmpty();
+        _ = notification.AffectedCommands.Should().BeNull();
+        _ = notification.Timestamp.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(5));
     }
 
     /// <summary>
@@ -193,11 +193,11 @@ public class NotificationModelsTests
             Timestamp = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero)
         };
 
-        notification.Reason.Should().Be("Timeout");
-        notification.RecoveryStep.Should().Be("Restart");
-        notification.Success.Should().BeTrue();
-        notification.Message.Should().Be("Session recovered");
-        notification.AffectedCommands.Should().HaveCount(2);
+        _ = notification.Reason.Should().Be("Timeout");
+        _ = notification.RecoveryStep.Should().Be("Restart");
+        _ = notification.Success.Should().BeTrue();
+        _ = notification.Message.Should().Be("Session recovered");
+        _ = notification.AffectedCommands.Should().HaveCount(2);
     }
 
     /// <summary>
@@ -208,9 +208,9 @@ public class NotificationModelsTests
     {
         var error = new McpError();
 
-        error.Code.Should().Be(0);
-        error.Message.Should().BeEmpty();
-        error.Data.Should().BeNull();
+        _ = error.Code.Should().Be(0);
+        _ = error.Message.Should().BeEmpty();
+        _ = error.Data.Should().BeNull();
     }
 
     /// <summary>
@@ -226,9 +226,9 @@ public class NotificationModelsTests
             Data = "Additional details"
         };
 
-        error.Code.Should().Be(-32700);
-        error.Message.Should().Be("Parse error");
-        error.Data.Should().Be("Additional details");
+        _ = error.Code.Should().Be(-32700);
+        _ = error.Message.Should().Be("Parse error");
+        _ = error.Data.Should().Be("Additional details");
     }
 
     /// <summary>
@@ -239,10 +239,10 @@ public class NotificationModelsTests
     {
         var response = new McpResponse();
 
-        response.JsonRpc.Should().Be("2.0");
-        response.Id.Should().BeNull();
-        response.Result.Should().BeNull();
-        response.Error.Should().BeNull();
+        _ = response.JsonRpc.Should().Be("2.0");
+        _ = response.Id.Should().BeNull();
+        _ = response.Result.Should().BeNull();
+        _ = response.Error.Should().BeNull();
     }
 
     /// <summary>
@@ -260,10 +260,10 @@ public class NotificationModelsTests
             Error = error
         };
 
-        response.JsonRpc.Should().Be("2.0");
-        response.Id.Should().Be(123);
-        response.Result.Should().BeNull();
-        response.Error.Should().NotBeNull();
-        response.Error!.Code.Should().Be(-32600);
+        _ = response.JsonRpc.Should().Be("2.0");
+        _ = response.Id.Should().Be(123);
+        _ = response.Result.Should().BeNull();
+        _ = response.Error.Should().NotBeNull();
+        _ = response.Error!.Code.Should().Be(-32600);
     }
 }

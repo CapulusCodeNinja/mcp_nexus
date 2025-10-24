@@ -1,8 +1,3 @@
-using System.Text;
-
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-
 using Nexus.Protocol.Models;
 using Nexus.Protocol.Notifications;
 
@@ -49,7 +44,7 @@ public class StdioNotificationBridgeTests : IDisposable
     {
         var action = () => new StdioNotificationBridge();
 
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -68,8 +63,8 @@ public class StdioNotificationBridgeTests : IDisposable
         await m_Bridge.SendNotificationAsync(notification);
 
         var output = m_CapturedOutput.ToString();
-        output.Should().Contain("\"jsonrpc\":\"2.0\"");
-        output.Should().Contain("\"method\":\"test/notification\"");
+        _ = output.Should().Contain("\"jsonrpc\":\"2.0\"");
+        _ = output.Should().Contain("\"method\":\"test/notification\"");
     }
 
     /// <summary>
@@ -80,7 +75,7 @@ public class StdioNotificationBridgeTests : IDisposable
     {
         var action = async () => await m_Bridge.SendNotificationAsync(null!);
 
-        await action.Should().ThrowAsync<ArgumentNullException>()
+        _ = await action.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("notification");
     }
 
@@ -100,8 +95,8 @@ public class StdioNotificationBridgeTests : IDisposable
         await m_Bridge.SendNotificationAsync(notification);
 
         var output = m_CapturedOutput.ToString().Trim();
-        output.Should().StartWith("{");
-        output.Should().EndWith("}");
+        _ = output.Should().StartWith("{");
+        _ = output.Should().EndWith("}");
     }
 
     /// <summary>
@@ -128,11 +123,11 @@ public class StdioNotificationBridgeTests : IDisposable
         await m_Bridge.SendNotificationAsync(notification2);
 
         var output = m_CapturedOutput.ToString();
-        output.Should().Contain("test/first");
-        output.Should().Contain("test/second");
+        _ = output.Should().Contain("test/first");
+        _ = output.Should().Contain("test/second");
 
         var lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-        lines.Should().HaveCountGreaterOrEqualTo(2);
+        _ = lines.Should().HaveCountGreaterOrEqualTo(2);
     }
 
     /// <summary>
@@ -155,7 +150,7 @@ public class StdioNotificationBridgeTests : IDisposable
         var output = m_CapturedOutput.ToString();
         for (var i = 0; i < 10; i++)
         {
-            output.Should().Contain($"test/notification{i}");
+            _ = output.Should().Contain($"test/notification{i}");
         }
     }
 
@@ -183,8 +178,8 @@ public class StdioNotificationBridgeTests : IDisposable
         await m_Bridge.SendNotificationAsync(notification);
 
         var output = m_CapturedOutput.ToString();
-        output.Should().Contain("\"nested\"");
-        output.Should().Contain("\"value\":123");
-        output.Should().Contain("\"text\":\"test\"");
+        _ = output.Should().Contain("\"nested\"");
+        _ = output.Should().Contain("\"value\":123");
+        _ = output.Should().Contain("\"text\":\"test\"");
     }
 }

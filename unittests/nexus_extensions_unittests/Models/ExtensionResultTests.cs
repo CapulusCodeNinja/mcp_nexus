@@ -2,8 +2,6 @@ using FluentAssertions;
 
 using Nexus.Extensions.Models;
 
-using Xunit;
-
 namespace Nexus.Extensions_unittests.Models;
 
 /// <summary>
@@ -21,12 +19,12 @@ public class ExtensionResultTests
         var result = new ExtensionResult();
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Output.Should().Be(string.Empty);
-        result.Error.Should().BeNull();
-        result.ExitCode.Should().Be(0);
-        result.ExecutionTime.Should().Be(TimeSpan.Zero);
-        result.StandardError.Should().BeNull();
+        _ = result.Success.Should().BeFalse();
+        _ = result.Output.Should().Be(string.Empty);
+        _ = result.Error.Should().BeNull();
+        _ = result.ExitCode.Should().Be(0);
+        _ = result.ExecutionTime.Should().Be(TimeSpan.Zero);
+        _ = result.StandardError.Should().BeNull();
     }
 
     /// <summary>
@@ -43,7 +41,7 @@ public class ExtensionResultTests
         };
 
         // Assert
-        result.Success.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
     }
 
     /// <summary>
@@ -60,7 +58,7 @@ public class ExtensionResultTests
         result.Output = output;
 
         // Assert
-        result.Output.Should().Be(output);
+        _ = result.Output.Should().Be(output);
     }
 
     /// <summary>
@@ -77,7 +75,7 @@ public class ExtensionResultTests
         result.Error = error;
 
         // Assert
-        result.Error.Should().Be(error);
+        _ = result.Error.Should().Be(error);
     }
 
     /// <summary>
@@ -96,7 +94,7 @@ public class ExtensionResultTests
         result.Error = null;
 
         // Assert
-        result.Error.Should().BeNull();
+        _ = result.Error.Should().BeNull();
     }
 
     /// <summary>
@@ -113,7 +111,7 @@ public class ExtensionResultTests
         result.ExitCode = exitCode;
 
         // Assert
-        result.ExitCode.Should().Be(exitCode);
+        _ = result.ExitCode.Should().Be(exitCode);
     }
 
     /// <summary>
@@ -130,7 +128,7 @@ public class ExtensionResultTests
         result.ExecutionTime = executionTime;
 
         // Assert
-        result.ExecutionTime.Should().Be(executionTime);
+        _ = result.ExecutionTime.Should().Be(executionTime);
     }
 
     /// <summary>
@@ -147,7 +145,7 @@ public class ExtensionResultTests
         result.StandardError = standardError;
 
         // Assert
-        result.StandardError.Should().Be(standardError);
+        _ = result.StandardError.Should().Be(standardError);
     }
 
     /// <summary>
@@ -166,7 +164,7 @@ public class ExtensionResultTests
         result.StandardError = null;
 
         // Assert
-        result.StandardError.Should().BeNull();
+        _ = result.StandardError.Should().BeNull();
     }
 
     /// <summary>
@@ -187,12 +185,12 @@ public class ExtensionResultTests
         };
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Output.Should().Be("{\"result\": \"success\"}");
-        result.Error.Should().BeNull();
-        result.ExitCode.Should().Be(0);
-        result.ExecutionTime.Should().Be(TimeSpan.FromSeconds(2.5));
-        result.StandardError.Should().BeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.Output.Should().Be("{\"result\": \"success\"}");
+        _ = result.Error.Should().BeNull();
+        _ = result.ExitCode.Should().Be(0);
+        _ = result.ExecutionTime.Should().Be(TimeSpan.FromSeconds(2.5));
+        _ = result.StandardError.Should().BeNull();
     }
 
     /// <summary>
@@ -213,12 +211,12 @@ public class ExtensionResultTests
         };
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Output.Should().Be(string.Empty);
-        result.Error.Should().Be("Extension execution failed");
-        result.ExitCode.Should().Be(1);
-        result.ExecutionTime.Should().Be(TimeSpan.FromSeconds(1.2));
-        result.StandardError.Should().Be("Process error details");
+        _ = result.Success.Should().BeFalse();
+        _ = result.Output.Should().Be(string.Empty);
+        _ = result.Error.Should().Be("Extension execution failed");
+        _ = result.ExitCode.Should().Be(1);
+        _ = result.ExecutionTime.Should().Be(TimeSpan.FromSeconds(1.2));
+        _ = result.StandardError.Should().Be("Process error details");
     }
 }
 

@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-
 using Nexus.Protocol.Notifications;
 using Nexus.Protocol.Services;
 
@@ -32,8 +29,8 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        tools.Should().NotBeNull();
-        tools.Should().HaveCount(6);
+        _ = tools.Should().NotBeNull();
+        _ = tools.Should().HaveCount(6);
     }
 
     /// <summary>
@@ -44,7 +41,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        tools.Should().Contain(t => t.Name == "nexus_open_dump_analyze_session");
+        _ = tools.Should().Contain(t => t.Name == "nexus_open_dump_analyze_session");
     }
 
     /// <summary>
@@ -55,7 +52,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        tools.Should().Contain(t => t.Name == "nexus_enqueue_async_dump_analyze_command");
+        _ = tools.Should().Contain(t => t.Name == "nexus_enqueue_async_dump_analyze_command");
     }
 
     /// <summary>
@@ -66,7 +63,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        tools.Should().Contain(t => t.Name == "nexus_read_dump_analyze_command_result");
+        _ = tools.Should().Contain(t => t.Name == "nexus_read_dump_analyze_command_result");
     }
 
     /// <summary>
@@ -77,7 +74,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        tools.Should().Contain(t => t.Name == "nexus_get_dump_analyze_commands_status");
+        _ = tools.Should().Contain(t => t.Name == "nexus_get_dump_analyze_commands_status");
     }
 
     /// <summary>
@@ -88,7 +85,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        tools.Should().Contain(t => t.Name == "nexus_close_dump_analyze_session");
+        _ = tools.Should().Contain(t => t.Name == "nexus_close_dump_analyze_session");
     }
 
     /// <summary>
@@ -99,7 +96,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        tools.Should().Contain(t => t.Name == "nexus_cancel_command");
+        _ = tools.Should().Contain(t => t.Name == "nexus_cancel_command");
     }
 
     /// <summary>
@@ -110,8 +107,8 @@ public class McpToolDefinitionServiceTests
     {
         var tool = m_Service.GetTool("nexus_open_dump_analyze_session");
 
-        tool.Should().NotBeNull();
-        tool!.Name.Should().Be("nexus_open_dump_analyze_session");
+        _ = tool.Should().NotBeNull();
+        _ = tool!.Name.Should().Be("nexus_open_dump_analyze_session");
     }
 
     /// <summary>
@@ -122,7 +119,7 @@ public class McpToolDefinitionServiceTests
     {
         var tool = m_Service.GetTool("nonexistent_tool");
 
-        tool.Should().BeNull();
+        _ = tool.Should().BeNull();
     }
 
     /// <summary>
@@ -146,11 +143,11 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        tools.Should().AllSatisfy(tool =>
+        _ = tools.Should().AllSatisfy(tool =>
         {
-            tool.Name.Should().NotBeNullOrEmpty();
-            tool.Description.Should().NotBeNullOrEmpty();
-            tool.InputSchema.Should().NotBeNull();
+            _ = tool.Name.Should().NotBeNullOrEmpty();
+            _ = tool.Description.Should().NotBeNullOrEmpty();
+            _ = tool.InputSchema.Should().NotBeNull();
         });
     }
 }

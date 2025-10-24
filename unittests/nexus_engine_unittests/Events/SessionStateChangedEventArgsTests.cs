@@ -32,11 +32,11 @@ public class SessionStateChangedEventArgsTests
         };
 
         // Assert
-        args.SessionId.Should().Be(m_SessionId);
-        args.OldState.Should().Be(SessionState.Initializing);
-        args.NewState.Should().Be(SessionState.Active);
-        args.Timestamp.Should().Be(m_TestTime);
-        args.Message.Should().Be("Session initialized successfully");
+        _ = args.SessionId.Should().Be(m_SessionId);
+        _ = args.OldState.Should().Be(SessionState.Initializing);
+        _ = args.NewState.Should().Be(SessionState.Active);
+        _ = args.Timestamp.Should().Be(m_TestTime);
+        _ = args.Message.Should().Be("Session initialized successfully");
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public class SessionStateChangedEventArgsTests
         };
 
         // Assert
-        args.Message.Should().BeNull();
+        _ = args.Message.Should().BeNull();
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ public class SessionStateChangedEventArgsTests
         };
 
         // Assert
-        args.OldState.Should().Be(oldState);
-        args.NewState.Should().Be(newState);
+        _ = args.OldState.Should().Be(oldState);
+        _ = args.NewState.Should().Be(newState);
     }
 }

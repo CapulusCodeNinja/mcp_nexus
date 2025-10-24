@@ -1,12 +1,4 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
-
 using FluentAssertions;
-
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
@@ -48,7 +40,7 @@ public class FileManagerTests
         var action = () => new FileManager(null!);
 
         // Assert
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("fileSystem");
     }
 
@@ -59,10 +51,10 @@ public class FileManagerTests
     public async Task CopyApplicationFilesAsync_WithValidDirectories_CallsCreateDirectory()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.CreateDirectory(It.IsAny<string>()));
-        m_MockFileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>()))
+        _ = m_MockFileSystem.Setup(fs => fs.CreateDirectory(It.IsAny<string>()));
+        _ = m_MockFileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>()))
             .Returns(Array.Empty<string>());
-        m_MockFileSystem.Setup(fs => fs.GetDirectoryInfo(It.IsAny<string>()))
+        _ = m_MockFileSystem.Setup(fs => fs.GetDirectoryInfo(It.IsAny<string>()))
             .Throws(new IOException("File system error")); // Force exception path
 
         // Act
@@ -79,14 +71,14 @@ public class FileManagerTests
     public async Task CopyApplicationFilesAsync_WithException_ShouldReturnFalse()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.CreateDirectory(It.IsAny<string>()))
+        _ = m_MockFileSystem.Setup(fs => fs.CreateDirectory(It.IsAny<string>()))
             .Throws(new IOException("Access denied"));
 
         // Act
         var result = await m_FileManager.CopyApplicationFilesAsync("C:\\source", "C:\\dest");
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     /// <summary>
@@ -96,15 +88,15 @@ public class FileManagerTests
     public void RemoveApplicationFiles_WithExistingDirectory_ShouldReturnTrue()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\app"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\app"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.DeleteDirectory("C:\\app", true));
+        _ = m_MockFileSystem.Setup(fs => fs.DeleteDirectory("C:\\app", true));
 
         // Act
         var result = m_FileManager.RemoveApplicationFiles("C:\\app");
 
         // Assert
-        result.Should().BeTrue();
+        _ = result.Should().BeTrue();
         m_MockFileSystem.Verify(fs => fs.DeleteDirectory("C:\\app", true), Times.Once);
     }
 
@@ -115,14 +107,14 @@ public class FileManagerTests
     public void RemoveApplicationFiles_WithNonExistentDirectory_ShouldReturnTrue()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
             .Returns(false);
 
         // Act
         var result = m_FileManager.RemoveApplicationFiles("C:\\app");
 
         // Assert
-        result.Should().BeTrue();
+        _ = result.Should().BeTrue();
         m_MockFileSystem.Verify(fs => fs.DeleteDirectory(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
     }
 
@@ -133,16 +125,16 @@ public class FileManagerTests
     public void RemoveApplicationFiles_WithException_ShouldReturnFalse()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.DeleteDirectory(It.IsAny<string>(), It.IsAny<bool>()))
+        _ = m_MockFileSystem.Setup(fs => fs.DeleteDirectory(It.IsAny<string>(), It.IsAny<bool>()))
             .Throws(new IOException("Access denied"));
 
         // Act
         var result = m_FileManager.RemoveApplicationFiles("C:\\app");
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     /// <summary>
@@ -152,8 +144,8 @@ public class FileManagerTests
     public async Task CopyApplicationFilesAsync_WithEmptySource_CallsCreateDirectory()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.CreateDirectory(It.IsAny<string>()));
-        m_MockFileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>()))
+        _ = m_MockFileSystem.Setup(fs => fs.CreateDirectory(It.IsAny<string>()));
+        _ = m_MockFileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>()))
             .Throws(new IOException("Path error")); // Force exception with empty/invalid path
 
         // Act
@@ -170,14 +162,14 @@ public class FileManagerTests
     public void RemoveApplicationFiles_WithEmptyPath_ShouldReturnTrue()
     {
         // Arrange
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists(""))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists(""))
             .Returns(false);
 
         // Act
         var result = m_FileManager.RemoveApplicationFiles("");
 
         // Assert
-        result.Should().BeTrue();
+        _ = result.Should().BeTrue();
     }
 }
 

@@ -2,8 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Moq;
-
 using Nexus.Engine;
 using Nexus.Engine.Models;
 using Nexus.Protocol.Tools;
@@ -27,8 +25,8 @@ public class ReadDumpAnalyzeCommandResultToolTests
         m_MockEngine = new Mock<IDebugEngine>();
 
         var services = new ServiceCollection();
-        services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
-        services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
+        _ = services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
+        _ = services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
@@ -50,17 +48,17 @@ public class ReadDumpAnalyzeCommandResultToolTests
             QueuedTime = DateTime.Now
         };
 
-        m_MockEngine.Setup(e => e.GetCommandInfoAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _ = m_MockEngine.Setup(e => e.GetCommandInfoAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(commandInfo);
 
         var result = await ReadDumpAnalyzeCommandResultTool.nexus_read_dump_analyze_command_result(
             m_ServiceProvider, sessionId, commandId);
 
         dynamic response = result;
-        ((string)response.commandId).Should().Be(commandId);
-        ((string)response.state).Should().Be("Completed");
-        ((string)response.output).Should().Be("Stack output");
-        ((bool)response.isSuccess).Should().BeTrue();
+        _ = ((string)response.commandId).Should().Be(commandId);
+        _ = ((string)response.state).Should().Be("Completed");
+        _ = ((string)response.output).Should().Be("Stack output");
+        _ = ((bool)response.isSuccess).Should().BeTrue();
     }
 
     /// <summary>
@@ -72,16 +70,16 @@ public class ReadDumpAnalyzeCommandResultToolTests
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
 
-        m_MockEngine.Setup(e => e.GetCommandInfoAsync(sessionId, commandId, It.IsAny<CancellationToken>()))
+        _ = m_MockEngine.Setup(e => e.GetCommandInfoAsync(sessionId, commandId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentException("Invalid session"));
 
         var result = await ReadDumpAnalyzeCommandResultTool.nexus_read_dump_analyze_command_result(
             m_ServiceProvider, sessionId, commandId);
 
         dynamic response = result;
-        ((string)response.state).Should().Be("Failed");
-        ((bool)response.isSuccess).Should().BeFalse();
-        ((string)response.errorMessage).Should().Be("Invalid session");
+        _ = ((string)response.state).Should().Be("Failed");
+        _ = ((bool)response.isSuccess).Should().BeFalse();
+        _ = ((string)response.errorMessage).Should().Be("Invalid session");
     }
 
     /// <summary>
@@ -93,16 +91,16 @@ public class ReadDumpAnalyzeCommandResultToolTests
         const string sessionId = "sess-123";
         const string commandId = "cmd-missing";
 
-        m_MockEngine.Setup(e => e.GetCommandInfoAsync(sessionId, commandId, It.IsAny<CancellationToken>()))
+        _ = m_MockEngine.Setup(e => e.GetCommandInfoAsync(sessionId, commandId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new KeyNotFoundException("Command not found"));
 
         var result = await ReadDumpAnalyzeCommandResultTool.nexus_read_dump_analyze_command_result(
             m_ServiceProvider, sessionId, commandId);
 
         dynamic response = result;
-        ((string)response.state).Should().Be("NotFound");
-        ((bool)response.isSuccess).Should().BeFalse();
-        ((string)response.errorMessage).Should().Be("Command not found");
+        _ = ((string)response.state).Should().Be("NotFound");
+        _ = ((bool)response.isSuccess).Should().BeFalse();
+        _ = ((string)response.errorMessage).Should().Be("Command not found");
     }
 
     /// <summary>
@@ -114,16 +112,16 @@ public class ReadDumpAnalyzeCommandResultToolTests
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
 
-        m_MockEngine.Setup(e => e.GetCommandInfoAsync(sessionId, commandId, It.IsAny<CancellationToken>()))
+        _ = m_MockEngine.Setup(e => e.GetCommandInfoAsync(sessionId, commandId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Unexpected error"));
 
         var result = await ReadDumpAnalyzeCommandResultTool.nexus_read_dump_analyze_command_result(
             m_ServiceProvider, sessionId, commandId);
 
         dynamic response = result;
-        ((string)response.state).Should().Be("Failed");
-        ((bool)response.isSuccess).Should().BeFalse();
-        ((string)response.errorMessage).Should().Contain("Unexpected error");
+        _ = ((string)response.state).Should().Be("Failed");
+        _ = ((bool)response.isSuccess).Should().BeFalse();
+        _ = ((string)response.errorMessage).Should().Contain("Unexpected error");
     }
 
     /// <summary>
@@ -142,17 +140,17 @@ public class ReadDumpAnalyzeCommandResultToolTests
             QueuedTime = DateTime.Now
         };
 
-        m_MockEngine.Setup(e => e.GetCommandInfoAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _ = m_MockEngine.Setup(e => e.GetCommandInfoAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(commandInfo);
 
         var result = await ReadDumpAnalyzeCommandResultTool.nexus_read_dump_analyze_command_result(
             m_ServiceProvider, sessionId, commandId);
 
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
         var resultType = result.GetType();
         var usageProperty = resultType.GetProperty("usage");
-        usageProperty.Should().NotBeNull();
+        _ = usageProperty.Should().NotBeNull();
         var usageValue = usageProperty!.GetValue(result);
-        usageValue.Should().NotBeNull();
+        _ = usageValue.Should().NotBeNull();
     }
 }

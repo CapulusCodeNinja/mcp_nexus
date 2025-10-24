@@ -4,7 +4,6 @@ using Microsoft.Extensions.Configuration;
 
 using Moq;
 
-using Nexus.Config.Internal;
 using Nexus.Config.Models;
 
 using Xunit;
@@ -30,9 +29,9 @@ public class ConfigurationLoaderTests
         m_MockMcpNexusSection = new Mock<IConfigurationSection>();
 
         // Setup default configuration
-        m_MockLogLevelSection.Setup(x => x.Value).Returns("Information");
-        m_MockConfiguration.Setup(x => x["Logging:LogLevel"]).Returns("Information");
-        m_MockConfiguration.Setup(x => x.GetSection("Logging:LogLevel")).Returns(m_MockLogLevelSection.Object);
+        _ = m_MockLogLevelSection.Setup(x => x.Value).Returns("Information");
+        _ = m_MockConfiguration.Setup(x => x["Logging:LogLevel"]).Returns("Information");
+        _ = m_MockConfiguration.Setup(x => x.GetSection("Logging:LogLevel")).Returns(m_MockLogLevelSection.Object);
     }
 
     /// <summary>
@@ -48,8 +47,8 @@ public class ConfigurationLoaderTests
         var result = testAccessor.TestLoadConfiguration();
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().BeAssignableTo<IConfiguration>();
+        _ = result.Should().NotBeNull();
+        _ = result.Should().BeAssignableTo<IConfiguration>();
     }
 
     /// <summary>
@@ -65,7 +64,7 @@ public class ConfigurationLoaderTests
         var result = testAccessor.TestLoadConfiguration(null);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     /// <summary>
@@ -81,8 +80,8 @@ public class ConfigurationLoaderTests
         var result = testAccessor.TestGetSharedConfiguration();
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().BeOfType<SharedConfiguration>();
+        _ = result.Should().NotBeNull();
+        _ = result.Should().BeOfType<SharedConfiguration>();
     }
 
     /// <summary>
@@ -98,8 +97,8 @@ public class ConfigurationLoaderTests
         var result = testAccessor.TestGetSharedConfiguration();
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().BeOfType<SharedConfiguration>();
+        _ = result.Should().NotBeNull();
+        _ = result.Should().BeOfType<SharedConfiguration>();
     }
 
     /// <summary>
@@ -116,6 +115,6 @@ public class ConfigurationLoaderTests
         var result = testAccessor.TestLoadConfiguration(customPath);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 }

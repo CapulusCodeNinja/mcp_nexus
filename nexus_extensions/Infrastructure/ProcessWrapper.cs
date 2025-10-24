@@ -65,35 +65,53 @@ internal class ProcessWrapper : IProcessWrapper
         /// <summary>
         /// Starts the process.
         /// </summary>
-        public void Start() => m_Process.Start();
+        public void Start()
+        {
+            _ = m_Process.Start();
+        }
 
         /// <summary>
         /// Begins asynchronous reading of standard output.
         /// </summary>
-        public void BeginOutputReadLine() => m_Process.BeginOutputReadLine();
+        public void BeginOutputReadLine()
+        {
+            m_Process.BeginOutputReadLine();
+        }
 
         /// <summary>
         /// Begins asynchronous reading of standard error.
         /// </summary>
-        public void BeginErrorReadLine() => m_Process.BeginErrorReadLine();
+        public void BeginErrorReadLine()
+        {
+            m_Process.BeginErrorReadLine();
+        }
 
         /// <summary>
         /// Waits asynchronously for the process to exit.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Task that completes when process exits.</returns>
-        public Task WaitForExitAsync(CancellationToken cancellationToken) => m_Process.WaitForExitAsync(cancellationToken);
+        public Task WaitForExitAsync(CancellationToken cancellationToken)
+        {
+            return m_Process.WaitForExitAsync(cancellationToken);
+        }
 
         /// <summary>
         /// Waits synchronously for the process to exit.
         /// </summary>
-        public void WaitForExit() => m_Process.WaitForExit();
+        public void WaitForExit()
+        {
+            m_Process.WaitForExit();
+        }
 
         /// <summary>
         /// Kills the process.
         /// </summary>
         /// <param name="entireProcessTree">Whether to kill the entire process tree.</param>
-        public void Kill(bool entireProcessTree) => m_Process.Kill(entireProcessTree);
+        public void Kill(bool entireProcessTree)
+        {
+            m_Process.Kill(entireProcessTree);
+        }
 
         /// <summary>
         /// Gets whether the process has exited.

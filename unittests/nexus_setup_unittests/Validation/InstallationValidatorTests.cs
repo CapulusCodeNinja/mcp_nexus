@@ -1,10 +1,4 @@
-using System;
-
 using FluentAssertions;
-
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
@@ -50,7 +44,7 @@ public class InstallationValidatorTests
         var action = () => new InstallationValidator(null!, m_MockServiceController.Object);
 
         // Assert
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("fileSystem");
     }
 
@@ -64,7 +58,7 @@ public class InstallationValidatorTests
         var action = () => new InstallationValidator(m_MockFileSystem.Object, null!);
 
         // Assert
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("serviceController");
     }
 
@@ -76,14 +70,14 @@ public class InstallationValidatorTests
     {
         // Arrange
         var config = CreateTestConfiguration();
-        m_MockServiceController.Setup(sc => sc.IsServiceInstalled("TestService"))
+        _ = m_MockServiceController.Setup(sc => sc.IsServiceInstalled("TestService"))
             .Returns(true);
 
         // Act
         var result = m_Validator.ValidateInstallation(config, "C:\\source");
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     /// <summary>
@@ -94,16 +88,16 @@ public class InstallationValidatorTests
     {
         // Arrange
         var config = CreateTestConfiguration();
-        m_MockServiceController.Setup(sc => sc.IsServiceInstalled(It.IsAny<string>()))
+        _ = m_MockServiceController.Setup(sc => sc.IsServiceInstalled(It.IsAny<string>()))
             .Returns(false);
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\source"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\source"))
             .Returns(false);
 
         // Act
         var result = m_Validator.ValidateInstallation(config, "C:\\source");
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     /// <summary>
@@ -114,18 +108,18 @@ public class InstallationValidatorTests
     {
         // Arrange
         var config = CreateTestConfiguration();
-        m_MockServiceController.Setup(sc => sc.IsServiceInstalled(It.IsAny<string>()))
+        _ = m_MockServiceController.Setup(sc => sc.IsServiceInstalled(It.IsAny<string>()))
             .Returns(false);
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\source"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\source"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.FileExists("C:\\source\\nexus.exe"))
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists("C:\\source\\nexus.exe"))
             .Returns(false);
 
         // Act
         var result = m_Validator.ValidateInstallation(config, "C:\\source");
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     /// <summary>
@@ -136,20 +130,20 @@ public class InstallationValidatorTests
     {
         // Arrange
         var config = CreateTestConfiguration();
-        m_MockServiceController.Setup(sc => sc.IsServiceInstalled(It.IsAny<string>()))
+        _ = m_MockServiceController.Setup(sc => sc.IsServiceInstalled(It.IsAny<string>()))
             .Returns(false);
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\source"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\source"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.FileExists("C:\\source\\nexus.exe"))
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists("C:\\source\\nexus.exe"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\Program Files"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\Program Files"))
             .Returns(false);
 
         // Act
         var result = m_Validator.ValidateInstallation(config, "C:\\source");
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     /// <summary>
@@ -160,22 +154,22 @@ public class InstallationValidatorTests
     {
         // Arrange
         var config = CreateTestConfiguration();
-        m_MockServiceController.Setup(sc => sc.IsServiceInstalled(It.IsAny<string>()))
+        _ = m_MockServiceController.Setup(sc => sc.IsServiceInstalled(It.IsAny<string>()))
             .Returns(false);
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\source"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\source"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.FileExists("C:\\source\\nexus.exe"))
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists("C:\\source\\nexus.exe"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\Program Files"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\Program Files"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\Backups"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\Backups"))
             .Returns(false);
 
         // Act
         var result = m_Validator.ValidateInstallation(config, "C:\\source");
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     /// <summary>

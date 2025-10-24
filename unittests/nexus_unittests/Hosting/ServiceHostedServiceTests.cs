@@ -1,6 +1,4 @@
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
@@ -38,7 +36,7 @@ public class ServiceHostedServiceTests
     [Fact]
     public void Constructor_ThrowsArgumentNullException_WhenProtocolServerIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() =>
+        _ = Assert.Throws<ArgumentNullException>(() =>
             new ServiceHostedService(null!, m_MockLifetime.Object));
     }
 
@@ -48,7 +46,7 @@ public class ServiceHostedServiceTests
     [Fact]
     public void Constructor_ThrowsArgumentNullException_WhenLifetimeIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() =>
+        _ = Assert.Throws<ArgumentNullException>(() =>
             new ServiceHostedService(m_MockProtocolServer.Object, null!));
     }
 

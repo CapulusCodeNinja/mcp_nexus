@@ -1,7 +1,4 @@
-using System.Text;
-
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Nexus.Protocol.Middleware;
@@ -35,7 +32,7 @@ public class ResponseFormattingMiddlewareTests
 
         var action = () => new ResponseFormattingMiddleware(null!);
 
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("next");
     }
 
@@ -49,7 +46,7 @@ public class ResponseFormattingMiddlewareTests
 
         var action = () => new ResponseFormattingMiddleware(next);
 
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
 
@@ -71,7 +68,7 @@ public class ResponseFormattingMiddlewareTests
 
         await middleware.InvokeAsync(context);
 
-        nextCalled.Should().BeTrue();
+        _ = nextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -88,14 +85,14 @@ public class ResponseFormattingMiddlewareTests
 
         await middleware.InvokeAsync(context);
 
-        context.Response.StatusCode.Should().Be(500);
-        context.Response.ContentType.Should().StartWith("application/json");
+        _ = context.Response.StatusCode.Should().Be(500);
+        _ = context.Response.ContentType.Should().StartWith("application/json");
 
         context.Response.Body.Position = 0;
         var reader = new StreamReader(context.Response.Body);
         var responseBody = await reader.ReadToEndAsync();
-        responseBody.Should().Contain("Test error");
-        responseBody.Should().Contain("\"jsonrpc\":\"2.0\"");
+        _ = responseBody.Should().Contain("Test error");
+        _ = responseBody.Should().Contain("\"jsonrpc\":\"2.0\"");
     }
 
     /// <summary>
@@ -111,11 +108,11 @@ public class ResponseFormattingMiddlewareTests
 
         await middleware.InvokeAsync(context);
 
-        context.Response.StatusCode.Should().Be(500);
+        _ = context.Response.StatusCode.Should().Be(500);
         context.Response.Body.Position = 0;
         var reader = new StreamReader(context.Response.Body);
         var responseBody = await reader.ReadToEndAsync();
-        responseBody.Should().Contain("Invalid argument");
+        _ = responseBody.Should().Contain("Invalid argument");
     }
 
     /// <summary>
@@ -131,11 +128,11 @@ public class ResponseFormattingMiddlewareTests
 
         await middleware.InvokeAsync(context);
 
-        context.Response.StatusCode.Should().Be(500);
+        _ = context.Response.StatusCode.Should().Be(500);
         context.Response.Body.Position = 0;
         var reader = new StreamReader(context.Response.Body);
         var responseBody = await reader.ReadToEndAsync();
-        responseBody.Should().Contain("Parameter is null");
+        _ = responseBody.Should().Contain("Parameter is null");
     }
 
     /// <summary>
@@ -151,10 +148,10 @@ public class ResponseFormattingMiddlewareTests
 
         await middleware.InvokeAsync(context);
 
-        context.Response.StatusCode.Should().Be(500);
+        _ = context.Response.StatusCode.Should().Be(500);
         context.Response.Body.Position = 0;
         var reader = new StreamReader(context.Response.Body);
         var responseBody = await reader.ReadToEndAsync();
-        responseBody.Should().Contain("File not found");
+        _ = responseBody.Should().Contain("File not found");
     }
 }

@@ -1,10 +1,4 @@
-using System;
-
 using FluentAssertions;
-
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
@@ -50,7 +44,7 @@ public class UninstallValidatorTests
         var action = () => new UninstallValidator(null!, m_MockServiceController.Object);
 
         // Assert
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("fileSystem");
     }
 
@@ -64,7 +58,7 @@ public class UninstallValidatorTests
         var action = () => new UninstallValidator(m_MockFileSystem.Object, null!);
 
         // Assert
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("serviceController");
     }
 
@@ -76,14 +70,14 @@ public class UninstallValidatorTests
     {
         // Arrange
         var config = CreateTestConfiguration();
-        m_MockServiceController.Setup(sc => sc.IsServiceInstalled("TestService"))
+        _ = m_MockServiceController.Setup(sc => sc.IsServiceInstalled("TestService"))
             .Returns(false);
 
         // Act
         var result = m_Validator.ValidateUninstall(config);
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     /// <summary>
@@ -94,16 +88,16 @@ public class UninstallValidatorTests
     {
         // Arrange
         var config = CreateTestConfiguration();
-        m_MockServiceController.Setup(sc => sc.IsServiceInstalled("TestService"))
+        _ = m_MockServiceController.Setup(sc => sc.IsServiceInstalled("TestService"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\Program Files\\MCP-Nexus"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\Program Files\\MCP-Nexus"))
             .Returns(false);
 
         // Act - Note: This will return false because it can't validate admin privileges in tests
         var result = m_Validator.ValidateUninstall(config);
 
         // Assert - Should return false due to admin privilege check failure
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
         // Note: DirectoryExists and IsServiceInstalled are not called because admin check fails first
     }
 
@@ -115,16 +109,16 @@ public class UninstallValidatorTests
     {
         // Arrange
         var config = CreateTestConfiguration();
-        m_MockServiceController.Setup(sc => sc.IsServiceInstalled("TestService"))
+        _ = m_MockServiceController.Setup(sc => sc.IsServiceInstalled("TestService"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
             .Returns(true);
 
         // Act
         var result = m_Validator.ValidateUninstall(config);
 
         // Assert - Should return false due to admin privilege check failure
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
         // Note: IsServiceInstalled is not called because admin check fails first
     }
 
@@ -136,14 +130,14 @@ public class UninstallValidatorTests
     {
         // Arrange
         var config = CreateTestConfiguration();
-        m_MockServiceController.Setup(sc => sc.IsServiceInstalled("TestService"))
+        _ = m_MockServiceController.Setup(sc => sc.IsServiceInstalled("TestService"))
             .Returns(true);
-        m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\Program Files\\MCP-Nexus"))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\Program Files\\MCP-Nexus"))
             .Returns(true);
 
         // Act & Assert - Should not throw, even if admin check fails
         var action = () => m_Validator.ValidateUninstall(config);
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>

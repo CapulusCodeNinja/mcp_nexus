@@ -1,8 +1,6 @@
 using System.Text;
 
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 using Nexus.Protocol.Middleware;
 
@@ -40,7 +38,7 @@ public class JsonRpcLoggingMiddlewareTests
     {
         var action = () => new JsonRpcLoggingMiddleware(null!);
 
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("next");
     }
 
@@ -52,7 +50,7 @@ public class JsonRpcLoggingMiddlewareTests
     {
         var action = () => new JsonRpcLoggingMiddleware(m_NextDelegate);
 
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
 
@@ -70,7 +68,7 @@ public class JsonRpcLoggingMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -86,7 +84,7 @@ public class JsonRpcLoggingMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -103,7 +101,7 @@ public class JsonRpcLoggingMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -121,7 +119,7 @@ public class JsonRpcLoggingMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -138,7 +136,7 @@ public class JsonRpcLoggingMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -163,7 +161,7 @@ public class JsonRpcLoggingMiddlewareTests
         context.Response.Body.Position = 0;
         var reader = new StreamReader(context.Response.Body);
         var actualResponse = await reader.ReadToEndAsync();
-        actualResponse.Should().Be(responseText);
+        _ = actualResponse.Should().Be(responseText);
     }
 
     /// <summary>
@@ -180,7 +178,7 @@ public class JsonRpcLoggingMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -198,7 +196,7 @@ public class JsonRpcLoggingMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -220,8 +218,8 @@ public class JsonRpcLoggingMiddlewareTests
 
         var action = async () => await middleware.InvokeAsync(context);
 
-        await action.Should().ThrowAsync<InvalidOperationException>();
-        context.Response.Body.Should().BeSameAs(originalBody); // Body should be restored
+        _ = await action.Should().ThrowAsync<InvalidOperationException>();
+        _ = context.Response.Body.Should().BeSameAs(originalBody); // Body should be restored
     }
 
     /// <summary>
@@ -239,7 +237,7 @@ public class JsonRpcLoggingMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -256,7 +254,7 @@ public class JsonRpcLoggingMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -272,7 +270,7 @@ public class JsonRpcLoggingMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>

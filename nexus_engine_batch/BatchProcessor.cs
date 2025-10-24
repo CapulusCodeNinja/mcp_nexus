@@ -1,14 +1,10 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
 using Nexus.Engine.Batch.Internal;
-
-namespace Nexus.Engine.Batch;
 
 using Nexus.Config;
 
 using NLog;
 
+namespace Nexus.Engine.Batch;
 /// <summary>
 /// Implements batch processing logic for commands and results.
 /// </summary>

@@ -6,11 +6,6 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using Nexus.Config.Internal;
-
-using NLog;
-using NLog.Config;
-
 using Xunit;
 
 using MELogLevel = Microsoft.Extensions.Logging.LogLevel;
@@ -34,7 +29,7 @@ public class LoggingConfigurationTests
         m_MockLoggingBuilder = new Mock<ILoggingBuilder>();
 
         // Setup default configuration
-        m_MockConfiguration.Setup(x => x["Logging:LogLevel"]).Returns("Information");
+        _ = m_MockConfiguration.Setup(x => x["Logging:LogLevel"]).Returns("Information");
     }
 
     /// <summary>
@@ -51,14 +46,14 @@ public class LoggingConfigurationTests
     public void GetLogLevelFromConfiguration_WithValidLogLevel_ShouldReturnCorrectLevel(string logLevelString, MELogLevel expectedLevel)
     {
         // Arrange
-        m_MockConfiguration.Setup(x => x["Logging:LogLevel"]).Returns(logLevelString);
+        _ = m_MockConfiguration.Setup(x => x["Logging:LogLevel"]).Returns(logLevelString);
         var testAccessor = new LoggingConfigurationTestAccessor();
 
         // Act
         var result = testAccessor.TestGetLogLevelFromConfiguration(m_MockConfiguration.Object);
 
         // Assert
-        result.Should().Be(expectedLevel);
+        _ = result.Should().Be(expectedLevel);
     }
 
     /// <summary>
@@ -74,7 +69,7 @@ public class LoggingConfigurationTests
         var result = testAccessor.TestGetLogLevelFromConfiguration(null!);
 
         // Assert
-        result.Should().Be(MELogLevel.Information);
+        _ = result.Should().Be(MELogLevel.Information);
     }
 
     /// <summary>
@@ -102,7 +97,7 @@ public class LoggingConfigurationTests
         var result = testAccessor.TestParseLogLevel(logLevelString!);
 
         // Assert
-        result.Should().Be(expectedLevel);
+        _ = result.Should().Be(expectedLevel);
     }
 
     /// <summary>
@@ -127,7 +122,7 @@ public class LoggingConfigurationTests
         var result = testAccessor.TestGetNLogLevel(microsoftLevel);
 
         // Assert
-        result.Should().Be(expectedNLogLevel);
+        _ = result.Should().Be(expectedNLogLevel);
     }
 
     /// <summary>
@@ -139,11 +134,11 @@ public class LoggingConfigurationTests
         // Arrange
         var testAccessor = new LoggingConfigurationTestAccessor();
         var mockLoggingBuilder = new Mock<ILoggingBuilder>();
-        mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
+        _ = mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
 
         // Act & Assert
         var action = () => testAccessor.ConfigureLogging(mockLoggingBuilder.Object, m_MockConfiguration.Object, false);
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -155,11 +150,11 @@ public class LoggingConfigurationTests
         // Arrange
         var testAccessor = new LoggingConfigurationTestAccessor();
         var mockLoggingBuilder = new Mock<ILoggingBuilder>();
-        mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
+        _ = mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
 
         // Act & Assert
         var action = () => testAccessor.ConfigureLogging(mockLoggingBuilder.Object, m_MockConfiguration.Object, true);
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -171,11 +166,11 @@ public class LoggingConfigurationTests
         // Arrange
         var testAccessor = new LoggingConfigurationTestAccessor();
         var mockLoggingBuilder = new Mock<ILoggingBuilder>();
-        mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
+        _ = mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
 
         // Act & Assert
         var action = () => testAccessor.TestConfigureNLogProvider(mockLoggingBuilder.Object, MELogLevel.Information);
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -187,11 +182,11 @@ public class LoggingConfigurationTests
         // Arrange
         var testAccessor = new LoggingConfigurationTestAccessor();
         var mockLoggingBuilder = new Mock<ILoggingBuilder>();
-        mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
+        _ = mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
 
         // Act & Assert
         var action = () => testAccessor.TestConfigureMicrosoftLogging(mockLoggingBuilder.Object, MELogLevel.Information);
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -206,7 +201,7 @@ public class LoggingConfigurationTests
 
         // Act & Assert
         var action = () => testAccessor.TestConfigureLogPaths(nlogConfig, true);
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -221,7 +216,7 @@ public class LoggingConfigurationTests
 
         // Act & Assert
         var action = () => testAccessor.TestConfigureLogPaths(nlogConfig, false);
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -235,7 +230,7 @@ public class LoggingConfigurationTests
 
         // Act & Assert
         var action = () => testAccessor.TestSetInternalLogFile(true);
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -249,6 +244,6 @@ public class LoggingConfigurationTests
 
         // Act & Assert
         var action = () => testAccessor.TestSetInternalLogFile(false);
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 }

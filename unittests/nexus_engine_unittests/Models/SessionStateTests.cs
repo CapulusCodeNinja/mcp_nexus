@@ -23,7 +23,7 @@ public class SessionStateTests
     public void EnumValues_ShouldHaveCorrectNumericValues(SessionState state, int expectedValue)
     {
         // Act & Assert
-        ((int)state).Should().Be(expectedValue);
+        _ = ((int)state).Should().Be(expectedValue);
     }
 
     /// <summary>
@@ -36,12 +36,12 @@ public class SessionStateTests
         var values = Enum.GetValues<SessionState>();
 
         // Assert
-        values.Should().HaveCount(5);
-        values.Should().Contain(SessionState.Initializing);
-        values.Should().Contain(SessionState.Active);
-        values.Should().Contain(SessionState.Closing);
-        values.Should().Contain(SessionState.Closed);
-        values.Should().Contain(SessionState.Faulted);
+        _ = values.Should().HaveCount(5);
+        _ = values.Should().Contain(SessionState.Initializing);
+        _ = values.Should().Contain(SessionState.Active);
+        _ = values.Should().Contain(SessionState.Closing);
+        _ = values.Should().Contain(SessionState.Closed);
+        _ = values.Should().Contain(SessionState.Faulted);
     }
 
     /// <summary>
@@ -54,6 +54,6 @@ public class SessionStateTests
         var values = Enum.GetValues<SessionState>().Cast<int>();
 
         // Assert
-        values.Should().OnlyHaveUniqueItems();
+        _ = values.Should().OnlyHaveUniqueItems();
     }
 }

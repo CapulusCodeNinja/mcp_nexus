@@ -24,7 +24,7 @@ public class CommandStateTests
     public void EnumValues_ShouldHaveCorrectNumericValues(CommandState state, int expectedValue)
     {
         // Act & Assert
-        ((int)state).Should().Be(expectedValue);
+        _ = ((int)state).Should().Be(expectedValue);
     }
 
     /// <summary>
@@ -37,13 +37,13 @@ public class CommandStateTests
         var values = Enum.GetValues<CommandState>();
 
         // Assert
-        values.Should().HaveCount(6);
-        values.Should().Contain(CommandState.Queued);
-        values.Should().Contain(CommandState.Executing);
-        values.Should().Contain(CommandState.Completed);
-        values.Should().Contain(CommandState.Failed);
-        values.Should().Contain(CommandState.Cancelled);
-        values.Should().Contain(CommandState.Timeout);
+        _ = values.Should().HaveCount(6);
+        _ = values.Should().Contain(CommandState.Queued);
+        _ = values.Should().Contain(CommandState.Executing);
+        _ = values.Should().Contain(CommandState.Completed);
+        _ = values.Should().Contain(CommandState.Failed);
+        _ = values.Should().Contain(CommandState.Cancelled);
+        _ = values.Should().Contain(CommandState.Timeout);
     }
 
     /// <summary>
@@ -56,6 +56,6 @@ public class CommandStateTests
         var values = Enum.GetValues<CommandState>().Cast<int>();
 
         // Assert
-        values.Should().OnlyHaveUniqueItems();
+        _ = values.Should().OnlyHaveUniqueItems();
     }
 }

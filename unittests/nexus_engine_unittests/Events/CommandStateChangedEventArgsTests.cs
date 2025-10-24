@@ -35,12 +35,12 @@ public class CommandStateChangedEventArgsTests
         };
 
         // Assert
-        args.SessionId.Should().Be(m_SessionId);
-        args.CommandId.Should().Be(m_CommandId);
-        args.OldState.Should().Be(CommandState.Queued);
-        args.NewState.Should().Be(CommandState.Executing);
-        args.Timestamp.Should().Be(m_TestTime);
-        args.Command.Should().Be(m_Command);
+        _ = args.SessionId.Should().Be(m_SessionId);
+        _ = args.CommandId.Should().Be(m_CommandId);
+        _ = args.OldState.Should().Be(CommandState.Queued);
+        _ = args.NewState.Should().Be(CommandState.Executing);
+        _ = args.Timestamp.Should().Be(m_TestTime);
+        _ = args.Command.Should().Be(m_Command);
     }
 
     /// <summary>
@@ -61,7 +61,7 @@ public class CommandStateChangedEventArgsTests
         };
 
         // Assert
-        args.Command.Should().BeNull();
+        _ = args.Command.Should().BeNull();
     }
 
     /// <summary>
@@ -89,7 +89,7 @@ public class CommandStateChangedEventArgsTests
         };
 
         // Assert
-        args.OldState.Should().Be(oldState);
-        args.NewState.Should().Be(newState);
+        _ = args.OldState.Should().Be(oldState);
+        _ = args.NewState.Should().Be(newState);
     }
 }

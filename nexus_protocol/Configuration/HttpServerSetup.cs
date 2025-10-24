@@ -11,9 +11,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using ModelContextProtocol.AspNetCore;
-using ModelContextProtocol.Server;
-
 using Nexus.Config;
 
 namespace Nexus.Protocol.Configuration;
@@ -61,7 +58,7 @@ public static class HttpServerSetup
     /// <param name="config">The server configuration.</param>
     private static void ConfigureServerLimits(IServiceCollection services, HttpServerConfiguration config)
     {
-        services.Configure<KestrelServerOptions>(options =>
+        _ = services.Configure<KestrelServerOptions>(options =>
         {
             options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(config.RequestHeadersTimeoutSeconds);
             options.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(config.KeepAliveTimeoutSeconds);
@@ -77,7 +74,7 @@ public static class HttpServerSetup
     /// <param name="services">The service collection to configure.</param>
     private static void ConfigureCors(IServiceCollection services)
     {
-        services.AddCors(options => options.AddDefaultPolicy(builder => builder.AllowAnyOrigin()
+        _ = services.AddCors(options => options.AddDefaultPolicy(builder => builder.AllowAnyOrigin()
                        .AllowAnyMethod()
                        .AllowAnyHeader()));
     }
@@ -89,12 +86,12 @@ public static class HttpServerSetup
     /// <param name="configuration">The application configuration.</param>
     private static void ConfigureRateLimit(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddMemoryCache();
-        services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
-        services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
-        services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
-        services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
-        services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
+        _ = services.AddMemoryCache();
+        _ = services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
+        _ = services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+        _ = services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+        _ = services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+        _ = services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
     }
 
     /// <summary>
@@ -103,7 +100,7 @@ public static class HttpServerSetup
     /// <param name="services">The service collection to configure.</param>
     private static void ConfigureJsonOptions(IServiceCollection services)
     {
-        services.Configure<JsonOptions>(options =>
+        _ = services.Configure<JsonOptions>(options =>
         {
             options.SerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
             options.SerializerOptions.PropertyNamingPolicy = null;
@@ -121,7 +118,7 @@ public static class HttpServerSetup
     /// <param name="services">The service collection to configure.</param>
     private static void ConfigureMcpServer(IServiceCollection services)
     {
-        services.AddMcpServer()
+        _ = services.AddMcpServer()
             .WithHttpTransport()
             .WithToolsFromAssembly()
             .WithResourcesFromAssembly();
@@ -136,12 +133,12 @@ public static class HttpServerSetup
         ArgumentNullException.ThrowIfNull(app);
 
         // Add middleware
-        app.UseMiddleware<Middleware.ContentTypeValidationMiddleware>();
-        app.UseCors();
-        app.UseRouting();
+        _ = app.UseMiddleware<Middleware.ContentTypeValidationMiddleware>();
+        _ = app.UseCors();
+        _ = app.UseRouting();
 
         // CRITICAL: Map MCP endpoints
-        app.MapMcp();
+        _ = app.MapMcp();
     }
 
     /// <summary>
@@ -153,7 +150,7 @@ public static class HttpServerSetup
         ArgumentNullException.ThrowIfNull(services);
 
         // Use official SDK for stdio mode
-        services.AddMcpServer()
+        _ = services.AddMcpServer()
             .WithStdioServerTransport()
             .WithToolsFromAssembly()
             .WithResourcesFromAssembly();
@@ -185,7 +182,7 @@ public static class HttpServerSetup
         var webBuilder = WebApplication.CreateBuilder();
 
         // Configure the URLs
-        webBuilder.WebHost.UseUrls(url);
+        _ = webBuilder.WebHost.UseUrls(url);
 
         // Configure logging
         Settings.GetInstance().ConfigureLogging(webBuilder.Logging, configuration, isServiceMode);

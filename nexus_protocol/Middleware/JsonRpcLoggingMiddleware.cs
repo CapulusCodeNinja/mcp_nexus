@@ -1,7 +1,6 @@
 using System.Text;
 
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 
 using NLog;
 
@@ -108,9 +107,9 @@ internal class JsonRpcLoggingMiddleware
     /// <returns>The response body as a string.</returns>
     private static async Task<string> ReadResponseBodyAsync(MemoryStream responseBody)
     {
-        responseBody.Seek(0, SeekOrigin.Begin);
+        _ = responseBody.Seek(0, SeekOrigin.Begin);
         var text = await new StreamReader(responseBody, Encoding.UTF8).ReadToEndAsync();
-        responseBody.Seek(0, SeekOrigin.Begin);
+        _ = responseBody.Seek(0, SeekOrigin.Begin);
         return text;
     }
 

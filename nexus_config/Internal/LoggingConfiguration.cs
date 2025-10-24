@@ -1,7 +1,3 @@
-using System.Collections.Concurrent;
-using System.IO;
-using System.Linq;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -137,8 +133,8 @@ internal class LoggingConfiguration
             // Ensure ProgramData directories exist
             try
             {
-                Directory.CreateDirectory(logDirectory);
-                Directory.CreateDirectory(Path.Combine(logDirectory, "archive"));
+                _ = Directory.CreateDirectory(logDirectory);
+                _ = Directory.CreateDirectory(Path.Combine(logDirectory, "archive"));
             }
             catch (Exception)
             {
@@ -207,9 +203,9 @@ internal class LoggingConfiguration
     /// <param name="logLevel">The log level to set.</param>
     protected virtual void ConfigureNLogProvider(ILoggingBuilder logging, Microsoft.Extensions.Logging.LogLevel logLevel)
     {
-        logging.ClearProviders();
-        logging.AddNLogWeb();
-        logging.SetMinimumLevel(logLevel);
+        _ = logging.ClearProviders();
+        _ = logging.AddNLogWeb();
+        _ = logging.SetMinimumLevel(logLevel);
     }
 
     /// <summary>
@@ -223,16 +219,16 @@ internal class LoggingConfiguration
         if (logLevel == Microsoft.Extensions.Logging.LogLevel.Trace)
         {
             // Allow Microsoft categories to flow at Trace if explicitly requested
-            logging.AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.Trace);
-            logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Trace);
-            logging.AddFilter("Microsoft.AspNetCore.Server.Kestrel", Microsoft.Extensions.Logging.LogLevel.Trace);
+            _ = logging.AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.Trace);
+            _ = logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Trace);
+            _ = logging.AddFilter("Microsoft.AspNetCore.Server.Kestrel", Microsoft.Extensions.Logging.LogLevel.Trace);
         }
         else
         {
             // Suppress Microsoft categories entirely for non-Trace configurations to avoid noise
-            logging.AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.None);
-            logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.None);
-            logging.AddFilter("Microsoft.AspNetCore.Server.Kestrel", Microsoft.Extensions.Logging.LogLevel.None);
+            _ = logging.AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.None);
+            _ = logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.None);
+            _ = logging.AddFilter("Microsoft.AspNetCore.Server.Kestrel", Microsoft.Extensions.Logging.LogLevel.None);
         }
     }
 

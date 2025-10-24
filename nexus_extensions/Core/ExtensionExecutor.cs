@@ -4,8 +4,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-using Microsoft.Extensions.Logging;
-
 using Nexus.Extensions.Configuration;
 using Nexus.Extensions.Infrastructure;
 using Nexus.Extensions.Models;
@@ -146,7 +144,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
                 if (!string.IsNullOrEmpty(e.Data))
                 {
                     var sanitized = StripAnsi(e.Data);
-                    outputBuilder.AppendLine(sanitized);
+                    _ = outputBuilder.AppendLine(sanitized);
 
                     progressCallback?.Invoke(e.Data.Trim());
                 }
@@ -157,7 +155,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
                 if (!string.IsNullOrEmpty(e.Data))
                 {
                     var sanitized = StripAnsi(e.Data);
-                    errorBuilder.AppendLine(sanitized);
+                    _ = errorBuilder.AppendLine(sanitized);
                     m_Logger.Warn("Extension {Extension} stderr: {Message}", extensionName, sanitized);
                 }
             };
@@ -277,7 +275,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
                 try { m_TokenValidator.RevokeToken(callbackToken); } catch { }
             }
             // Cleanup
-            m_RunningExtensions.TryRemove(commandId, out _);
+            _ = m_RunningExtensions.TryRemove(commandId, out _);
             if (m_Processes.TryRemove(commandId, out var process))
             {
                 try
@@ -328,7 +326,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
 
             // Build PowerShell arguments with parameters
             var argumentsBuilder = new StringBuilder();
-            argumentsBuilder.Append($"-NoProfile -ExecutionPolicy Bypass -File \"{metadata.FullScriptPath}\"");
+            _ = argumentsBuilder.Append($"-NoProfile -ExecutionPolicy Bypass -File \"{metadata.FullScriptPath}\"");
 
             // Add parameters as PowerShell command-line arguments
             if (parameters != null)
@@ -336,8 +334,8 @@ internal partial class ExtensionExecutor : IExtensionExecutor
                 var paramArgs = BuildPowerShellParameterArguments(parameters);
                 if (!string.IsNullOrWhiteSpace(paramArgs))
                 {
-                    argumentsBuilder.Append(' ');
-                    argumentsBuilder.Append(paramArgs);
+                    _ = argumentsBuilder.Append(' ');
+                    _ = argumentsBuilder.Append(paramArgs);
                 }
             }
 
@@ -428,10 +426,10 @@ internal partial class ExtensionExecutor : IExtensionExecutor
 
             if (argumentsBuilder.Length > 0)
             {
-                argumentsBuilder.Append(' ');
+                _ = argumentsBuilder.Append(' ');
             }
 
-            argumentsBuilder.Append($"-{paramName}");
+            _ = argumentsBuilder.Append($"-{paramName}");
 
             // Handle different value types
             switch (property.Value.ValueKind)
@@ -445,36 +443,36 @@ internal partial class ExtensionExecutor : IExtensionExecutor
                     {
                         // Escape single quotes and wrap in single quotes
                         stringValue = stringValue.Replace("'", "''");
-                        argumentsBuilder.Append($" '{stringValue}'");
+                        _ = argumentsBuilder.Append($" '{stringValue}'");
                     }
                     else
                     {
                         // Simple value, no quotes needed
-                        argumentsBuilder.Append($" {stringValue}");
+                        _ = argumentsBuilder.Append($" {stringValue}");
                     }
                     break;
 
                 case JsonValueKind.Number:
-                    argumentsBuilder.Append($" {property.Value.GetRawText()}");
+                    _ = argumentsBuilder.Append($" {property.Value.GetRawText()}");
                     break;
 
                 case JsonValueKind.True:
-                    argumentsBuilder.Append(" $true");
+                    _ = argumentsBuilder.Append(" $true");
                     break;
 
                 case JsonValueKind.False:
-                    argumentsBuilder.Append(" $false");
+                    _ = argumentsBuilder.Append(" $false");
                     break;
 
                 case JsonValueKind.Null:
-                    argumentsBuilder.Append(" $null");
+                    _ = argumentsBuilder.Append(" $null");
                     break;
 
                 default:
                     // For complex types (objects, arrays), pass as JSON string
                     var jsonValue = property.Value.GetRawText();
                     jsonValue = jsonValue.Replace("'", "''");
-                    argumentsBuilder.Append($" '{jsonValue}'");
+                    _ = argumentsBuilder.Append($" '{jsonValue}'");
                     break;
             }
         }

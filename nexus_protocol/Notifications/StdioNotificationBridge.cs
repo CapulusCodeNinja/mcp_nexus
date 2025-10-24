@@ -1,7 +1,5 @@
 using System.Text.Json;
 
-using Microsoft.Extensions.Logging;
-
 using Nexus.Protocol.Models;
 
 using NLog;
@@ -53,7 +51,7 @@ internal class StdioNotificationBridge : INotificationBridge
         }
         finally
         {
-            m_WriteSemaphore.Release();
+            _ = m_WriteSemaphore.Release();
         }
     }
 }

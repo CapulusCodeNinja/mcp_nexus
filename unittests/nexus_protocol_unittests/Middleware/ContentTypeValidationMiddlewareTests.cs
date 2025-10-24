@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Nexus.Protocol.Middleware;
@@ -41,7 +40,7 @@ public class ContentTypeValidationMiddlewareTests
 
         var action = () => new ContentTypeValidationMiddleware(null!);
 
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("next");
     }
 
@@ -53,7 +52,7 @@ public class ContentTypeValidationMiddlewareTests
     {
         var action = () => new ContentTypeValidationMiddleware(m_NextDelegate);
 
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
 
@@ -68,7 +67,7 @@ public class ContentTypeValidationMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -83,7 +82,7 @@ public class ContentTypeValidationMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -98,7 +97,7 @@ public class ContentTypeValidationMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -115,8 +114,8 @@ public class ContentTypeValidationMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeFalse();
-        context.Response.StatusCode.Should().Be(400);
+        _ = m_NextCalled.Should().BeFalse();
+        _ = context.Response.StatusCode.Should().Be(400);
     }
 
     /// <summary>
@@ -133,8 +132,8 @@ public class ContentTypeValidationMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeFalse();
-        context.Response.StatusCode.Should().Be(400);
+        _ = m_NextCalled.Should().BeFalse();
+        _ = context.Response.StatusCode.Should().Be(400);
     }
 
     /// <summary>
@@ -151,8 +150,8 @@ public class ContentTypeValidationMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeFalse();
-        context.Response.StatusCode.Should().Be(400);
+        _ = m_NextCalled.Should().BeFalse();
+        _ = context.Response.StatusCode.Should().Be(400);
     }
 
     /// <summary>
@@ -166,6 +165,6 @@ public class ContentTypeValidationMiddlewareTests
 
         await m_Middleware.InvokeAsync(context);
 
-        m_NextCalled.Should().BeTrue();
+        _ = m_NextCalled.Should().BeTrue();
     }
 }

@@ -15,13 +15,19 @@ internal static class BatchSentinels
     /// </summary>
     /// <param name="commandId">The command identifier.</param>
     /// <returns>The start marker string.</returns>
-    public static string GetStartMarker(string commandId) => $"{CommandSeparator}_{commandId}_START";
+    public static string GetStartMarker(string commandId)
+    {
+        return $"{CommandSeparator}_{commandId}_START";
+    }
 
     /// <summary>
     /// Gets the end marker for a specific command.
     /// </summary>
     /// <param name="commandId">The command identifier.</param>
     /// <returns>The end marker string.</returns>
-    public static string GetEndMarker(string commandId) => $"{CommandSeparator}_{commandId}_END";
+    public static string GetEndMarker(string commandId)
+    {
+        return $"{CommandSeparator}_{commandId}_END";
+    }
 }
 

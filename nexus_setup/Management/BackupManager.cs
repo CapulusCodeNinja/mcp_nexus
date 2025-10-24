@@ -1,11 +1,7 @@
 using System.Runtime.Versioning;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
 using Nexus.External.Apis.FileSystem;
 using Nexus.Setup.Utilities;
-using Nexus.Setup.Validation;
 
 using NLog;
 

@@ -2,8 +2,6 @@ using FluentAssertions;
 
 using Nexus.Extensions.Configuration;
 
-using Xunit;
-
 namespace Nexus.Extensions_unittests.Configuration;
 
 /// <summary>
@@ -21,10 +19,10 @@ public class ExtensionConfigurationTests
         var config = new ExtensionConfiguration();
 
         // Assert
-        config.Enabled.Should().BeTrue();
-        config.ExtensionsPath.Should().Be("extensions");
-        config.CallbackPort.Should().Be(0);
-        config.GracefulTerminationTimeoutMs.Should().Be(2000);
+        _ = config.Enabled.Should().BeTrue();
+        _ = config.ExtensionsPath.Should().Be("extensions");
+        _ = config.CallbackPort.Should().Be(0);
+        _ = config.GracefulTerminationTimeoutMs.Should().Be(2000);
     }
 
     /// <summary>
@@ -41,7 +39,7 @@ public class ExtensionConfigurationTests
         };
 
         // Assert
-        config.Enabled.Should().BeFalse();
+        _ = config.Enabled.Should().BeFalse();
     }
 
     /// <summary>
@@ -58,7 +56,7 @@ public class ExtensionConfigurationTests
         config.ExtensionsPath = path;
 
         // Assert
-        config.ExtensionsPath.Should().Be(path);
+        _ = config.ExtensionsPath.Should().Be(path);
     }
 
     /// <summary>
@@ -75,7 +73,7 @@ public class ExtensionConfigurationTests
         config.CallbackPort = port;
 
         // Assert
-        config.CallbackPort.Should().Be(port);
+        _ = config.CallbackPort.Should().Be(port);
     }
 
     /// <summary>
@@ -92,7 +90,7 @@ public class ExtensionConfigurationTests
         config.GracefulTerminationTimeoutMs = timeout;
 
         // Assert
-        config.GracefulTerminationTimeoutMs.Should().Be(timeout);
+        _ = config.GracefulTerminationTimeoutMs.Should().Be(timeout);
     }
 
     /// <summary>
@@ -111,10 +109,10 @@ public class ExtensionConfigurationTests
         };
 
         // Assert
-        config.Enabled.Should().BeFalse();
-        config.ExtensionsPath.Should().Be("/opt/extensions");
-        config.CallbackPort.Should().Be(9000);
-        config.GracefulTerminationTimeoutMs.Should().Be(3000);
+        _ = config.Enabled.Should().BeFalse();
+        _ = config.ExtensionsPath.Should().Be("/opt/extensions");
+        _ = config.CallbackPort.Should().Be(9000);
+        _ = config.GracefulTerminationTimeoutMs.Should().Be(3000);
     }
 
     /// <summary>
@@ -133,7 +131,7 @@ public class ExtensionConfigurationTests
         config.CallbackPort = 0;
 
         // Assert
-        config.CallbackPort.Should().Be(0);
+        _ = config.CallbackPort.Should().Be(0);
     }
 
     /// <summary>
@@ -150,7 +148,7 @@ public class ExtensionConfigurationTests
         };
 
         // Assert
-        config.ExtensionsPath.Should().Be("custom/extensions");
+        _ = config.ExtensionsPath.Should().Be("custom/extensions");
     }
 
     /// <summary>
@@ -167,7 +165,7 @@ public class ExtensionConfigurationTests
         };
 
         // Assert
-        config.ExtensionsPath.Should().Be("C:\\Program Files\\Extensions");
+        _ = config.ExtensionsPath.Should().Be("C:\\Program Files\\Extensions");
     }
 }
 

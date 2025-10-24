@@ -1,7 +1,5 @@
 using System.Text.Json;
 
-using Microsoft.Extensions.Logging;
-
 using Nexus.Extensions.Models;
 
 using NLog;
@@ -72,7 +70,7 @@ internal class ExtensionManager : IExtensionManager
         if (!Directory.Exists(m_ExtensionsPath))
         {
             m_Logger.Warn("Extensions directory does not exist: {ExtensionsPath}", m_ExtensionsPath);
-            Directory.CreateDirectory(m_ExtensionsPath);
+            _ = Directory.CreateDirectory(m_ExtensionsPath);
             m_Logger.Info("Created extensions directory: {ExtensionsPath}", m_ExtensionsPath);
             return;
         }
@@ -115,7 +113,7 @@ internal class ExtensionManager : IExtensionManager
             }
         }
 
-        Interlocked.Increment(ref m_Version);
+        _ = Interlocked.Increment(ref m_Version);
         m_Logger.Info("Loaded {Count} extensions successfully", m_Extensions.Count);
     }
 
@@ -199,7 +197,10 @@ internal class ExtensionManager : IExtensionManager
     /// Gets a monotonically increasing version of the extensions set for cache invalidation.
     /// </summary>
     /// <returns>Version number that increments each time extensions are reloaded.</returns>
-    public int GetExtensionsVersion() => Volatile.Read(ref m_Version);
+    public int GetExtensionsVersion()
+    {
+        return Volatile.Read(ref m_Version);
+    }
 
     /// <summary>
     /// Handles file system changes in the extensions directory.

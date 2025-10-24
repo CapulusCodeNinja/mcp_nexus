@@ -25,17 +25,17 @@ public class CommandInfoTests
         var commandInfo = CommandInfo.Queued(m_TestCommandId, m_TestCommand, m_TestTime);
 
         // Assert
-        commandInfo.CommandId.Should().Be(m_TestCommandId);
-        commandInfo.Command.Should().Be(m_TestCommand);
-        commandInfo.State.Should().Be(CommandState.Queued);
-        commandInfo.QueuedTime.Should().Be(m_TestTime);
-        commandInfo.StartTime.Should().BeNull();
-        commandInfo.EndTime.Should().BeNull();
-        commandInfo.Output.Should().BeNull();
-        commandInfo.IsSuccess.Should().BeNull();
-        commandInfo.ErrorMessage.Should().BeNull();
-        commandInfo.ExecutionTime.Should().BeNull();
-        commandInfo.TotalTime.Should().BeNull();
+        _ = commandInfo.CommandId.Should().Be(m_TestCommandId);
+        _ = commandInfo.Command.Should().Be(m_TestCommand);
+        _ = commandInfo.State.Should().Be(CommandState.Queued);
+        _ = commandInfo.QueuedTime.Should().Be(m_TestTime);
+        _ = commandInfo.StartTime.Should().BeNull();
+        _ = commandInfo.EndTime.Should().BeNull();
+        _ = commandInfo.Output.Should().BeNull();
+        _ = commandInfo.IsSuccess.Should().BeNull();
+        _ = commandInfo.ErrorMessage.Should().BeNull();
+        _ = commandInfo.ExecutionTime.Should().BeNull();
+        _ = commandInfo.TotalTime.Should().BeNull();
     }
 
     /// <summary>
@@ -51,17 +51,17 @@ public class CommandInfoTests
         var commandInfo = CommandInfo.Executing(m_TestCommandId, m_TestCommand, m_TestTime, startTime);
 
         // Assert
-        commandInfo.CommandId.Should().Be(m_TestCommandId);
-        commandInfo.Command.Should().Be(m_TestCommand);
-        commandInfo.State.Should().Be(CommandState.Executing);
-        commandInfo.QueuedTime.Should().Be(m_TestTime);
-        commandInfo.StartTime.Should().Be(startTime);
-        commandInfo.EndTime.Should().BeNull();
-        commandInfo.Output.Should().BeNull();
-        commandInfo.IsSuccess.Should().BeNull();
-        commandInfo.ErrorMessage.Should().BeNull();
-        commandInfo.ExecutionTime.Should().BeNull();
-        commandInfo.TotalTime.Should().BeNull();
+        _ = commandInfo.CommandId.Should().Be(m_TestCommandId);
+        _ = commandInfo.Command.Should().Be(m_TestCommand);
+        _ = commandInfo.State.Should().Be(CommandState.Executing);
+        _ = commandInfo.QueuedTime.Should().Be(m_TestTime);
+        _ = commandInfo.StartTime.Should().Be(startTime);
+        _ = commandInfo.EndTime.Should().BeNull();
+        _ = commandInfo.Output.Should().BeNull();
+        _ = commandInfo.IsSuccess.Should().BeNull();
+        _ = commandInfo.ErrorMessage.Should().BeNull();
+        _ = commandInfo.ExecutionTime.Should().BeNull();
+        _ = commandInfo.TotalTime.Should().BeNull();
     }
 
     /// <summary>
@@ -80,17 +80,17 @@ public class CommandInfoTests
         var commandInfo = CommandInfo.Completed(m_TestCommandId, m_TestCommand, m_TestTime, startTime, endTime, output, isSuccess);
 
         // Assert
-        commandInfo.CommandId.Should().Be(m_TestCommandId);
-        commandInfo.Command.Should().Be(m_TestCommand);
-        commandInfo.State.Should().Be(CommandState.Completed);
-        commandInfo.QueuedTime.Should().Be(m_TestTime);
-        commandInfo.StartTime.Should().Be(startTime);
-        commandInfo.EndTime.Should().Be(endTime);
-        commandInfo.Output.Should().Be(output);
-        commandInfo.IsSuccess.Should().Be(isSuccess);
-        commandInfo.ErrorMessage.Should().BeNull();
-        commandInfo.ExecutionTime.Should().Be(TimeSpan.FromSeconds(4));
-        commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(5));
+        _ = commandInfo.CommandId.Should().Be(m_TestCommandId);
+        _ = commandInfo.Command.Should().Be(m_TestCommand);
+        _ = commandInfo.State.Should().Be(CommandState.Completed);
+        _ = commandInfo.QueuedTime.Should().Be(m_TestTime);
+        _ = commandInfo.StartTime.Should().Be(startTime);
+        _ = commandInfo.EndTime.Should().Be(endTime);
+        _ = commandInfo.Output.Should().Be(output);
+        _ = commandInfo.IsSuccess.Should().Be(isSuccess);
+        _ = commandInfo.ErrorMessage.Should().BeNull();
+        _ = commandInfo.ExecutionTime.Should().Be(TimeSpan.FromSeconds(4));
+        _ = commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(5));
     }
 
     /// <summary>
@@ -110,17 +110,17 @@ public class CommandInfoTests
         var commandInfo = CommandInfo.Completed(m_TestCommandId, m_TestCommand, m_TestTime, startTime, endTime, output, isSuccess, errorMessage);
 
         // Assert
-        commandInfo.CommandId.Should().Be(m_TestCommandId);
-        commandInfo.Command.Should().Be(m_TestCommand);
-        commandInfo.State.Should().Be(CommandState.Failed);
-        commandInfo.QueuedTime.Should().Be(m_TestTime);
-        commandInfo.StartTime.Should().Be(startTime);
-        commandInfo.EndTime.Should().Be(endTime);
-        commandInfo.Output.Should().Be(output);
-        commandInfo.IsSuccess.Should().Be(isSuccess);
-        commandInfo.ErrorMessage.Should().Be(errorMessage);
-        commandInfo.ExecutionTime.Should().Be(TimeSpan.FromSeconds(4));
-        commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(5));
+        _ = commandInfo.CommandId.Should().Be(m_TestCommandId);
+        _ = commandInfo.Command.Should().Be(m_TestCommand);
+        _ = commandInfo.State.Should().Be(CommandState.Failed);
+        _ = commandInfo.QueuedTime.Should().Be(m_TestTime);
+        _ = commandInfo.StartTime.Should().Be(startTime);
+        _ = commandInfo.EndTime.Should().Be(endTime);
+        _ = commandInfo.Output.Should().Be(output);
+        _ = commandInfo.IsSuccess.Should().Be(isSuccess);
+        _ = commandInfo.ErrorMessage.Should().Be(errorMessage);
+        _ = commandInfo.ExecutionTime.Should().Be(TimeSpan.FromSeconds(4));
+        _ = commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(5));
     }
 
     /// <summary>
@@ -137,17 +137,17 @@ public class CommandInfoTests
         var commandInfo = CommandInfo.Cancelled(m_TestCommandId, m_TestCommand, m_TestTime, startTime, endTime);
 
         // Assert
-        commandInfo.CommandId.Should().Be(m_TestCommandId);
-        commandInfo.Command.Should().Be(m_TestCommand);
-        commandInfo.State.Should().Be(CommandState.Cancelled);
-        commandInfo.QueuedTime.Should().Be(m_TestTime);
-        commandInfo.StartTime.Should().Be(startTime);
-        commandInfo.EndTime.Should().Be(endTime);
-        commandInfo.Output.Should().BeNull();
-        commandInfo.IsSuccess.Should().Be(false);
-        commandInfo.ErrorMessage.Should().Be("Command was cancelled");
-        commandInfo.ExecutionTime.Should().Be(TimeSpan.FromSeconds(2));
-        commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(3));
+        _ = commandInfo.CommandId.Should().Be(m_TestCommandId);
+        _ = commandInfo.Command.Should().Be(m_TestCommand);
+        _ = commandInfo.State.Should().Be(CommandState.Cancelled);
+        _ = commandInfo.QueuedTime.Should().Be(m_TestTime);
+        _ = commandInfo.StartTime.Should().Be(startTime);
+        _ = commandInfo.EndTime.Should().Be(endTime);
+        _ = commandInfo.Output.Should().BeNull();
+        _ = commandInfo.IsSuccess.Should().Be(false);
+        _ = commandInfo.ErrorMessage.Should().Be("Command was cancelled");
+        _ = commandInfo.ExecutionTime.Should().Be(TimeSpan.FromSeconds(2));
+        _ = commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(3));
     }
 
     /// <summary>
@@ -165,17 +165,17 @@ public class CommandInfoTests
         var commandInfo = CommandInfo.TimedOut(m_TestCommandId, m_TestCommand, m_TestTime, startTime, endTime, errorMessage);
 
         // Assert
-        commandInfo.CommandId.Should().Be(m_TestCommandId);
-        commandInfo.Command.Should().Be(m_TestCommand);
-        commandInfo.State.Should().Be(CommandState.Timeout);
-        commandInfo.QueuedTime.Should().Be(m_TestTime);
-        commandInfo.StartTime.Should().Be(startTime);
-        commandInfo.EndTime.Should().Be(endTime);
-        commandInfo.Output.Should().BeNull();
-        commandInfo.IsSuccess.Should().Be(false);
-        commandInfo.ErrorMessage.Should().Be(errorMessage);
-        commandInfo.ExecutionTime.Should().Be(TimeSpan.FromSeconds(9));
-        commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(10));
+        _ = commandInfo.CommandId.Should().Be(m_TestCommandId);
+        _ = commandInfo.Command.Should().Be(m_TestCommand);
+        _ = commandInfo.State.Should().Be(CommandState.Timeout);
+        _ = commandInfo.QueuedTime.Should().Be(m_TestTime);
+        _ = commandInfo.StartTime.Should().Be(startTime);
+        _ = commandInfo.EndTime.Should().Be(endTime);
+        _ = commandInfo.Output.Should().BeNull();
+        _ = commandInfo.IsSuccess.Should().Be(false);
+        _ = commandInfo.ErrorMessage.Should().Be(errorMessage);
+        _ = commandInfo.ExecutionTime.Should().Be(TimeSpan.FromSeconds(9));
+        _ = commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(10));
     }
 
     /// <summary>
@@ -188,7 +188,7 @@ public class CommandInfoTests
         var commandInfo = CommandInfo.Queued(m_TestCommandId, m_TestCommand, m_TestTime);
 
         // Act & Assert
-        commandInfo.ExecutionTime.Should().BeNull();
+        _ = commandInfo.ExecutionTime.Should().BeNull();
     }
 
     /// <summary>
@@ -202,7 +202,7 @@ public class CommandInfoTests
         var commandInfo = CommandInfo.Executing(m_TestCommandId, m_TestCommand, m_TestTime, startTime);
 
         // Act & Assert
-        commandInfo.ExecutionTime.Should().BeNull();
+        _ = commandInfo.ExecutionTime.Should().BeNull();
     }
 
     /// <summary>
@@ -216,6 +216,6 @@ public class CommandInfoTests
         var commandInfo = CommandInfo.Executing(m_TestCommandId, m_TestCommand, m_TestTime, startTime);
 
         // Act & Assert
-        commandInfo.TotalTime.Should().BeNull();
+        _ = commandInfo.TotalTime.Should().BeNull();
     }
 }

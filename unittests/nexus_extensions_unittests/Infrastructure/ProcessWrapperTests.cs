@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 
 using FluentAssertions;
 
 using Nexus.Extensions.Infrastructure;
-
-using Xunit;
 
 namespace Nexus.Extensions.Unittests.Infrastructure;
 
@@ -34,7 +30,7 @@ public class ProcessWrapperTests
         var process = wrapper.CreateProcess(fileName, arguments, envVars);
 
         // Assert
-        process.Should().NotBeNull();
+        _ = process.Should().NotBeNull();
     }
 
     /// <summary>
@@ -53,7 +49,7 @@ public class ProcessWrapperTests
         var process = wrapper.CreateProcess(fileName, arguments, envVars);
 
         // Assert
-        process.Should().NotBeNull();
+        _ = process.Should().NotBeNull();
     }
 
     /// <summary>
@@ -73,7 +69,7 @@ public class ProcessWrapperTests
         var action = () => process.Dispose();
 
         // Assert
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     /// <summary>
@@ -101,7 +97,7 @@ public class ProcessWrapperTests
         };
 
         // Assert
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
 
         // Cleanup
         process.Dispose();
@@ -127,8 +123,8 @@ public class ProcessWrapperTests
             process.WaitForExit();
 
             // Assert
-            process.HasExited.Should().BeTrue();
-            process.ExitCode.Should().Be(0);
+            _ = process.HasExited.Should().BeTrue();
+            _ = process.ExitCode.Should().Be(0);
         }
         finally
         {
@@ -156,7 +152,7 @@ public class ProcessWrapperTests
             process.Start();
 
             // Assert
-            process.Id.Should().BeGreaterThan(0);
+            _ = process.Id.Should().BeGreaterThan(0);
         }
         finally
         {

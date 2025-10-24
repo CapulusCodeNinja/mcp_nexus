@@ -1,12 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
-namespace Nexus.Engine.Batch.Internal;
-
 using Nexus.Config;
 
 using NLog;
 
+namespace Nexus.Engine.Batch.Internal;
 /// <summary>
 /// Filters commands to determine if they should be batched.
 /// </summary>

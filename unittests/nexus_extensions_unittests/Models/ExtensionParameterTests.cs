@@ -2,8 +2,6 @@ using FluentAssertions;
 
 using Nexus.Extensions.Models;
 
-using Xunit;
-
 namespace Nexus.Extensions_unittests.Models;
 
 /// <summary>
@@ -21,11 +19,11 @@ public class ExtensionParameterTests
         var parameter = new ExtensionParameter();
 
         // Assert
-        parameter.Name.Should().Be(string.Empty);
-        parameter.Type.Should().Be("string");
-        parameter.Description.Should().Be(string.Empty);
-        parameter.Required.Should().BeFalse();
-        parameter.Default.Should().BeNull();
+        _ = parameter.Name.Should().Be(string.Empty);
+        _ = parameter.Type.Should().Be("string");
+        _ = parameter.Description.Should().Be(string.Empty);
+        _ = parameter.Required.Should().BeFalse();
+        _ = parameter.Default.Should().BeNull();
     }
 
     /// <summary>
@@ -42,7 +40,7 @@ public class ExtensionParameterTests
         parameter.Name = name;
 
         // Assert
-        parameter.Name.Should().Be(name);
+        _ = parameter.Name.Should().Be(name);
     }
 
     /// <summary>
@@ -59,7 +57,7 @@ public class ExtensionParameterTests
         parameter.Type = type;
 
         // Assert
-        parameter.Type.Should().Be(type);
+        _ = parameter.Type.Should().Be(type);
     }
 
     /// <summary>
@@ -76,7 +74,7 @@ public class ExtensionParameterTests
         parameter.Description = description;
 
         // Assert
-        parameter.Description.Should().Be(description);
+        _ = parameter.Description.Should().Be(description);
     }
 
     /// <summary>
@@ -93,7 +91,7 @@ public class ExtensionParameterTests
         };
 
         // Assert
-        parameter.Required.Should().BeTrue();
+        _ = parameter.Required.Should().BeTrue();
     }
 
     /// <summary>
@@ -110,7 +108,7 @@ public class ExtensionParameterTests
         parameter.Default = defaultValue;
 
         // Assert
-        parameter.Default.Should().Be(defaultValue);
+        _ = parameter.Default.Should().Be(defaultValue);
     }
 
     /// <summary>
@@ -127,7 +125,7 @@ public class ExtensionParameterTests
         parameter.Default = defaultValue;
 
         // Assert
-        parameter.Default.Should().Be(defaultValue);
+        _ = parameter.Default.Should().Be(defaultValue);
     }
 
     /// <summary>
@@ -146,7 +144,7 @@ public class ExtensionParameterTests
         parameter.Default = null;
 
         // Assert
-        parameter.Default.Should().BeNull();
+        _ = parameter.Default.Should().BeNull();
     }
 
     /// <summary>
@@ -166,11 +164,11 @@ public class ExtensionParameterTests
         };
 
         // Assert
-        parameter.Name.Should().Be("sessionId");
-        parameter.Type.Should().Be("string");
-        parameter.Description.Should().Be("The session identifier");
-        parameter.Required.Should().BeTrue();
-        parameter.Default.Should().Be("default-session");
+        _ = parameter.Name.Should().Be("sessionId");
+        _ = parameter.Type.Should().Be("string");
+        _ = parameter.Description.Should().Be("The session identifier");
+        _ = parameter.Required.Should().BeTrue();
+        _ = parameter.Default.Should().Be("default-session");
     }
 }
 

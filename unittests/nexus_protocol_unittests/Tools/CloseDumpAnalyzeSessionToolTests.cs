@@ -2,8 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Moq;
-
 using Nexus.Engine;
 using Nexus.Protocol.Tools;
 
@@ -26,8 +24,8 @@ public class CloseDumpAnalyzeSessionToolTests
         m_MockEngine = new Mock<IDebugEngine>();
 
         var services = new ServiceCollection();
-        services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
-        services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
+        _ = services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
+        _ = services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
@@ -39,16 +37,16 @@ public class CloseDumpAnalyzeSessionToolTests
     {
         const string sessionId = "sess-123";
 
-        m_MockEngine.Setup(e => e.CloseSessionAsync(It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.CloseSessionAsync(It.IsAny<string>()))
             .Returns(Task.CompletedTask);
 
         var result = await CloseDumpAnalyzeSessionTool.nexus_close_dump_analyze_session(m_ServiceProvider, sessionId);
 
         m_MockEngine.Verify(e => e.CloseSessionAsync(sessionId), Times.Once);
         dynamic response = result;
-        ((string)response.sessionId).Should().Be(sessionId);
-        ((string)response.status).Should().Be("Success");
-        ((string)response.operation).Should().Be("nexus_close_dump_analyze_session");
+        _ = ((string)response.sessionId).Should().Be(sessionId);
+        _ = ((string)response.status).Should().Be("Success");
+        _ = ((string)response.operation).Should().Be("nexus_close_dump_analyze_session");
     }
 
     /// <summary>
@@ -59,15 +57,15 @@ public class CloseDumpAnalyzeSessionToolTests
     {
         const string sessionId = "sess-invalid";
 
-        m_MockEngine.Setup(e => e.CloseSessionAsync(It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.CloseSessionAsync(It.IsAny<string>()))
             .ThrowsAsync(new ArgumentException("Invalid session ID"));
 
         var result = await CloseDumpAnalyzeSessionTool.nexus_close_dump_analyze_session(m_ServiceProvider, sessionId);
 
         dynamic response = result;
-        ((string)response.sessionId).Should().Be(sessionId);
-        ((string)response.status).Should().Be("Failed");
-        ((string)response.message).Should().Be("Invalid session ID");
+        _ = ((string)response.sessionId).Should().Be(sessionId);
+        _ = ((string)response.status).Should().Be("Failed");
+        _ = ((string)response.message).Should().Be("Invalid session ID");
     }
 
     /// <summary>
@@ -78,15 +76,15 @@ public class CloseDumpAnalyzeSessionToolTests
     {
         const string sessionId = "sess-123";
 
-        m_MockEngine.Setup(e => e.CloseSessionAsync(It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.CloseSessionAsync(It.IsAny<string>()))
             .ThrowsAsync(new Exception("Unexpected error"));
 
         var result = await CloseDumpAnalyzeSessionTool.nexus_close_dump_analyze_session(m_ServiceProvider, sessionId);
 
         dynamic response = result;
-        ((string)response.sessionId).Should().Be(sessionId);
-        ((string)response.status).Should().Be("Failed");
-        ((string)response.message).Should().Contain("Unexpected error");
+        _ = ((string)response.sessionId).Should().Be(sessionId);
+        _ = ((string)response.status).Should().Be("Failed");
+        _ = ((string)response.message).Should().Contain("Unexpected error");
     }
 
     /// <summary>
@@ -97,16 +95,16 @@ public class CloseDumpAnalyzeSessionToolTests
     {
         const string sessionId = "sess-789";
 
-        m_MockEngine.Setup(e => e.CloseSessionAsync(It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.CloseSessionAsync(It.IsAny<string>()))
             .Returns(Task.CompletedTask);
 
         var result = await CloseDumpAnalyzeSessionTool.nexus_close_dump_analyze_session(m_ServiceProvider, sessionId);
 
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
         var resultType = result.GetType();
         var usageProperty = resultType.GetProperty("usage");
-        usageProperty.Should().NotBeNull();
+        _ = usageProperty.Should().NotBeNull();
         var usageValue = usageProperty!.GetValue(result);
-        usageValue.Should().NotBeNull();
+        _ = usageValue.Should().NotBeNull();
     }
 }

@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-
 using Nexus.Protocol.Models;
 
 using NLog;

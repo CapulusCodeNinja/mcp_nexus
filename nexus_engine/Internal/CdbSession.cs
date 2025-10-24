@@ -1,18 +1,14 @@
 using System.Diagnostics;
 using System.Text;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
-
-namespace Nexus.Engine.Internal;
 
 using Nexus.Config;
 
 using NLog;
 
+namespace Nexus.Engine.Internal;
 /// <summary>
 /// Internal CDB session that manages a single CDB process and command execution.
 /// </summary>
@@ -117,7 +113,7 @@ internal class CdbSession : ICdbSession
             }
             finally
             {
-                m_ExecutionSemaphore.Release();
+                _ = m_ExecutionSemaphore.Release();
             }
         }
         catch (Exception ex)
@@ -166,7 +162,7 @@ internal class CdbSession : ICdbSession
             }
             finally
             {
-                m_ExecutionSemaphore.Release();
+                _ = m_ExecutionSemaphore.Release();
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -575,7 +571,7 @@ internal class CdbSession : ICdbSession
                 return (false, true); // Don't continue, break
             }
 
-            output.AppendLine(line);
+            _ = output.AppendLine(line);
         }
 
         return (true, false); // Continue, don't break
@@ -634,7 +630,7 @@ internal class CdbSession : ICdbSession
                 }
                 finally
                 {
-                    m_ExecutionSemaphore.Release();
+                    var unused = m_ExecutionSemaphore.Release();
                 }
             }, cancellationToken).Unwrap();
         }

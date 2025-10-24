@@ -2,8 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Moq;
-
 using Nexus.Engine;
 using Nexus.Protocol.Tools;
 
@@ -26,8 +24,8 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         m_MockEngine = new Mock<IDebugEngine>();
 
         var services = new ServiceCollection();
-        services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
-        services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
+        _ = services.AddSingleton<IDebugEngine>(m_MockEngine.Object);
+        _ = services.AddSingleton<ILoggerFactory>(_ => NullLoggerFactory.Instance);
         m_ServiceProvider = services.BuildServiceProvider();
     }
 
@@ -41,17 +39,17 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         const string command = "kL";
         const string commandId = "cmd-456";
 
-        m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(commandId);
 
         var result = await EnqueueAsyncDumpAnalyzeCommandTool.nexus_enqueue_async_dump_analyze_command(
             m_ServiceProvider, sessionId, command);
 
         dynamic response = result;
-        ((string)response.commandId).Should().Be(commandId);
-        ((string)response.sessionId).Should().Be(sessionId);
-        ((string)response.status).Should().Be("Queued");
-        ((string)response.operation).Should().Be("nexus_enqueue_async_dump_analyze_command");
+        _ = ((string)response.commandId).Should().Be(commandId);
+        _ = ((string)response.sessionId).Should().Be(sessionId);
+        _ = ((string)response.status).Should().Be("Queued");
+        _ = ((string)response.operation).Should().Be("nexus_enqueue_async_dump_analyze_command");
     }
 
     /// <summary>
@@ -63,16 +61,16 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         const string sessionId = "sess-123";
         const string command = "kL";
 
-        m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Throws(new ArgumentException("Invalid session"));
 
         var result = await EnqueueAsyncDumpAnalyzeCommandTool.nexus_enqueue_async_dump_analyze_command(
             m_ServiceProvider, sessionId, command);
 
         dynamic response = result;
-        ((string?)response.commandId).Should().BeNull();
-        ((string)response.status).Should().Be("Failed");
-        ((string)response.message).Should().Be("Invalid session");
+        _ = ((string?)response.commandId).Should().BeNull();
+        _ = ((string)response.status).Should().Be("Failed");
+        _ = ((string)response.message).Should().Be("Invalid session");
     }
 
     /// <summary>
@@ -84,16 +82,16 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         const string sessionId = "sess-123";
         const string command = "kL";
 
-        m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Throws(new InvalidOperationException("Queue full"));
 
         var result = await EnqueueAsyncDumpAnalyzeCommandTool.nexus_enqueue_async_dump_analyze_command(
             m_ServiceProvider, sessionId, command);
 
         dynamic response = result;
-        ((string?)response.commandId).Should().BeNull();
-        ((string)response.status).Should().Be("Failed");
-        ((string)response.message).Should().Be("Queue full");
+        _ = ((string?)response.commandId).Should().BeNull();
+        _ = ((string)response.status).Should().Be("Failed");
+        _ = ((string)response.message).Should().Be("Queue full");
     }
 
     /// <summary>
@@ -105,16 +103,16 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         const string sessionId = "sess-123";
         const string command = "kL";
 
-        m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Throws(new Exception("Unexpected error"));
 
         var result = await EnqueueAsyncDumpAnalyzeCommandTool.nexus_enqueue_async_dump_analyze_command(
             m_ServiceProvider, sessionId, command);
 
         dynamic response = result;
-        ((string?)response.commandId).Should().BeNull();
-        ((string)response.status).Should().Be("Failed");
-        ((string)response.message).Should().Contain("Unexpected error");
+        _ = ((string?)response.commandId).Should().BeNull();
+        _ = ((string)response.status).Should().Be("Failed");
+        _ = ((string)response.message).Should().Contain("Unexpected error");
     }
 
     /// <summary>
@@ -127,17 +125,17 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
         const string command = "kL";
         const string commandId = "cmd-789";
 
-        m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
+        _ = m_MockEngine.Setup(e => e.EnqueueCommand(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(commandId);
 
         var result = await EnqueueAsyncDumpAnalyzeCommandTool.nexus_enqueue_async_dump_analyze_command(
             m_ServiceProvider, sessionId, command);
 
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
         var resultType = result.GetType();
         var usageProperty = resultType.GetProperty("usage");
-        usageProperty.Should().NotBeNull();
+        _ = usageProperty.Should().NotBeNull();
         var usageValue = usageProperty!.GetValue(result);
-        usageValue.Should().NotBeNull();
+        _ = usageValue.Should().NotBeNull();
     }
 }

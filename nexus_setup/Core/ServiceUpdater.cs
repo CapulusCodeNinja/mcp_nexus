@@ -1,21 +1,17 @@
 using System.Runtime.Versioning;
 using System.ServiceProcess;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ServiceManagement;
 using Nexus.Setup.Interfaces;
 using Nexus.Setup.Models;
 using Nexus.Setup.Utilities;
 
-namespace Nexus.Setup.Core;
-
 using Nexus.External.Apis.ProcessManagement;
 
 using NLog;
 
+namespace Nexus.Setup.Core;
 /// <summary>
 /// Implements Windows service update functionality.
 /// </summary>
@@ -235,7 +231,7 @@ internal class ServiceUpdater
             // Stop the service
             m_Logger.Info("Stopping service {ServiceName}...", serviceName);
             var status = m_ServiceController.GetServiceStatus(serviceName);
-            if (status != null && status != ServiceControllerStatus.Stopped)
+            if (status is not null and not ServiceControllerStatus.Stopped)
             {
                 m_ServiceController.StopService(serviceName);
                 m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));

@@ -1,16 +1,12 @@
 using System.Runtime.Versioning;
 
-using Microsoft.Extensions.Logging;
-
 using Nexus.External.Apis.FileSystem;
 using Nexus.Setup.Utilities;
 
+using NLog;
+
 namespace Nexus.Setup.Management
 {
-    using Microsoft.Extensions.DependencyInjection;
-
-    using NLog;
-
     /// <summary>
     /// Manages file operations for service installation using utility interfaces.
     /// </summary>

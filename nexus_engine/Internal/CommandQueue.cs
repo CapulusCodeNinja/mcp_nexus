@@ -1,20 +1,14 @@
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
 using Nexus.Engine.Events;
 using Nexus.Engine.Models;
-
-namespace Nexus.Engine.Internal;
-
-using System;
 
 using Nexus.Engine.Batch;
 
 using NLog;
 
+namespace Nexus.Engine.Internal;
 /// <summary>
 /// Internal command queue that manages command execution with batching support.
 /// </summary>
@@ -140,7 +134,7 @@ internal class CommandQueue : IDisposable
         // Enqueue for processing
         if (!m_CommandChannel.Writer.TryWrite(queuedCommand))
         {
-            m_ActiveCommands.TryRemove(commandId, out _);
+            _ = m_ActiveCommands.TryRemove(commandId, out _);
             throw new InvalidOperationException("Command queue is not accepting new commands");
         }
 
@@ -177,7 +171,7 @@ internal class CommandQueue : IDisposable
         if (m_ActiveCommands.TryGetValue(commandId, out var command))
         {
             // Wait for completion
-            await command.CompletionSource.Task.WaitAsync(cancellationToken);
+            _ = await command.CompletionSource.Task.WaitAsync(cancellationToken);
 
             // Get result from cache
             if (m_ResultCache.TryGetValue(commandId, out var result))
@@ -321,7 +315,7 @@ internal class CommandQueue : IDisposable
         try
         {
             // Cancel all commands
-            CancelAllCommands("Queue disposal");
+            _ = CancelAllCommands("Queue disposal");
 
             // Stop processing
             StopAsync().GetAwaiter().GetResult();
@@ -720,13 +714,13 @@ internal class CommandQueue : IDisposable
     protected void SetCommandResult(QueuedCommand command, CommandInfo result)
     {
         // Cache the result
-        m_ResultCache.TryAdd(command.Id, result);
+        _ = m_ResultCache.TryAdd(command.Id, result);
 
         // Complete the task
         command.CompletionSource.SetResult(result);
 
         // Remove from active commands
-        m_ActiveCommands.TryRemove(command.Id, out _);
+        _ = m_ActiveCommands.TryRemove(command.Id, out _);
     }
 
     /// <summary>

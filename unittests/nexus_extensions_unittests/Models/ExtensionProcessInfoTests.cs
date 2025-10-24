@@ -2,8 +2,6 @@ using FluentAssertions;
 
 using Nexus.Extensions.Models;
 
-using Xunit;
-
 namespace Nexus.Extensions_unittests.Models;
 
 /// <summary>
@@ -21,12 +19,12 @@ public class ExtensionProcessInfoTests
         var processInfo = new ExtensionProcessInfo();
 
         // Assert
-        processInfo.CommandId.Should().Be(string.Empty);
-        processInfo.ExtensionName.Should().Be(string.Empty);
-        processInfo.SessionId.Should().Be(string.Empty);
-        processInfo.ProcessId.Should().BeNull();
-        processInfo.StartedAt.Should().Be(default);
-        processInfo.IsRunning.Should().BeFalse();
+        _ = processInfo.CommandId.Should().Be(string.Empty);
+        _ = processInfo.ExtensionName.Should().Be(string.Empty);
+        _ = processInfo.SessionId.Should().Be(string.Empty);
+        _ = processInfo.ProcessId.Should().BeNull();
+        _ = processInfo.StartedAt.Should().Be(default);
+        _ = processInfo.IsRunning.Should().BeFalse();
     }
 
     /// <summary>
@@ -43,7 +41,7 @@ public class ExtensionProcessInfoTests
         processInfo.CommandId = commandId;
 
         // Assert
-        processInfo.CommandId.Should().Be(commandId);
+        _ = processInfo.CommandId.Should().Be(commandId);
     }
 
     /// <summary>
@@ -60,7 +58,7 @@ public class ExtensionProcessInfoTests
         processInfo.ExtensionName = extensionName;
 
         // Assert
-        processInfo.ExtensionName.Should().Be(extensionName);
+        _ = processInfo.ExtensionName.Should().Be(extensionName);
     }
 
     /// <summary>
@@ -77,7 +75,7 @@ public class ExtensionProcessInfoTests
         processInfo.SessionId = sessionId;
 
         // Assert
-        processInfo.SessionId.Should().Be(sessionId);
+        _ = processInfo.SessionId.Should().Be(sessionId);
     }
 
     /// <summary>
@@ -94,7 +92,7 @@ public class ExtensionProcessInfoTests
         processInfo.ProcessId = processId;
 
         // Assert
-        processInfo.ProcessId.Should().Be(processId);
+        _ = processInfo.ProcessId.Should().Be(processId);
     }
 
     /// <summary>
@@ -113,7 +111,7 @@ public class ExtensionProcessInfoTests
         processInfo.ProcessId = null;
 
         // Assert
-        processInfo.ProcessId.Should().BeNull();
+        _ = processInfo.ProcessId.Should().BeNull();
     }
 
     /// <summary>
@@ -130,7 +128,7 @@ public class ExtensionProcessInfoTests
         processInfo.StartedAt = startedAt;
 
         // Assert
-        processInfo.StartedAt.Should().Be(startedAt);
+        _ = processInfo.StartedAt.Should().Be(startedAt);
     }
 
     /// <summary>
@@ -147,7 +145,7 @@ public class ExtensionProcessInfoTests
         };
 
         // Assert
-        processInfo.IsRunning.Should().BeTrue();
+        _ = processInfo.IsRunning.Should().BeTrue();
     }
 
     /// <summary>
@@ -171,12 +169,12 @@ public class ExtensionProcessInfoTests
         };
 
         // Assert
-        processInfo.CommandId.Should().Be("cmd-789");
-        processInfo.ExtensionName.Should().Be("MyExtension");
-        processInfo.SessionId.Should().Be("session-012");
-        processInfo.ProcessId.Should().Be(5678);
-        processInfo.StartedAt.Should().Be(startedAt);
-        processInfo.IsRunning.Should().BeTrue();
+        _ = processInfo.CommandId.Should().Be("cmd-789");
+        _ = processInfo.ExtensionName.Should().Be("MyExtension");
+        _ = processInfo.SessionId.Should().Be("session-012");
+        _ = processInfo.ProcessId.Should().Be(5678);
+        _ = processInfo.StartedAt.Should().Be(startedAt);
+        _ = processInfo.IsRunning.Should().BeTrue();
     }
 }
 
