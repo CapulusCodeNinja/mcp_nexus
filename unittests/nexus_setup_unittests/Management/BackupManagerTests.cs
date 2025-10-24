@@ -17,7 +17,7 @@ using NLog;
 
 using Xunit;
 
-namespace Nexus.Setup.unittests.Management;
+namespace Nexus.Setup.Unittests.Management;
 
 /// <summary>
 /// Unit tests for BackupManager class.

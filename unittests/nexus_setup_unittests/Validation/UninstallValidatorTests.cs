@@ -17,7 +17,7 @@ using NLog;
 
 using Xunit;
 
-namespace Nexus.Setup.unittests.Validation;
+namespace Nexus.Setup.Unittests.Validation;
 
 /// <summary>
 /// Unit tests for UninstallValidator class.

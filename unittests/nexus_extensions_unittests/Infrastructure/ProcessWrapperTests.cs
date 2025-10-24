@@ -8,7 +8,7 @@ using Nexus.Extensions.Infrastructure;
 
 using Xunit;
 
-namespace Nexus.Extensions.unittests.Infrastructure;
+namespace Nexus.Extensions.Unittests.Infrastructure;
 
 /// <summary>
 /// Unit tests for ProcessWrapper class.
