@@ -7,7 +7,6 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <RootNamespace>nexus.engine.batch.tests</RootNamespace>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,8 +1,6 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-using Microsoft.Extensions.Configuration;
-
 using Nexus.CommandLine;
 using Nexus.Config;
 

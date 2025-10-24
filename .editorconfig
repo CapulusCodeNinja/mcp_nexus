@@ -250,6 +250,9 @@ dotnet_remove_unnecessary_suppression_exclusions = none
 #### C# Coding Conventions ####
 [*.cs]
 
+# IDE0005: Remove unnecessary using directives
+dotnet_diagnostic.IDE0005.severity = warning
+
 # var preferences
 # Don't use "var" for other types (use explicit type)
 # false:                         | true:
@@ -719,6 +722,9 @@ csharp_preserve_single_line_statements = true
 
 #### Naming styles ####
 [*.{cs,vb}]
+
+# IDE0005: Remove unnecessary using directives
+dotnet_diagnostic.IDE0005.severity = warning
 
 # Naming rules
 
