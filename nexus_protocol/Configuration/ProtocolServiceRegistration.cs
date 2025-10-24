@@ -50,7 +50,7 @@ public static class ProtocolServiceRegistration
                 loggerFactory);
         });
 
-        // Register debug engine (depends on centrally registered IFileSystem and IProcessManager)
+        // Register debug engine
         services.AddSingleton<IDebugEngine>(sp =>
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
@@ -64,6 +64,7 @@ public static class ProtocolServiceRegistration
         services.AddSingleton<INotificationBridge, StdioNotificationBridge>();
         services.AddSingleton<IMcpNotificationService, McpNotificationService>();
         services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
+        services.AddSingleton<IFileSystem, external_apis.FileSystem.FileSystem>();
 
         services.AddTransient<Middleware.ContentTypeValidationMiddleware>();
         services.AddTransient<Middleware.JsonRpcLoggingMiddleware>();

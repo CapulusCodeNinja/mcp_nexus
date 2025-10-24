@@ -10,8 +10,7 @@ using nexus.Hosting;
 using nexus.Startup;
 using nexus.config;
 using nexus.config.ServiceRegistration;
-using nexus.Configuration;
-using nexus.protocol.Configuration;
+using nexus.setup.Configuration;
 
 namespace nexus;
 
@@ -73,15 +72,8 @@ internal static class Program
                 // Register mode
                 services.AddSingleton(cmd);
 
-                // Register common dependencies first (project-wide)
-                services.AddCommonServices(context.Configuration);
-
-                // Register configuration services
-                services.AddNexusConfiguration();
-
-                // Register library-specific services
-                services.AddProtocolServices(context.Configuration);
-                services.AddSetupServices(context.Configuration);
+                // Register ALL services for ALL modes (consistent architecture)
+                services.AddNexusServices(context.Configuration);
 
                 // Register ONLY the main hosted service (no others)
                 services.AddHostedService<MainHostedService>();
