@@ -51,13 +51,26 @@ public class DebugEngine : IDebugEngine
         m_Logger.Info("DebugEngine initialized with max {MaxSessions} concurrent sessions", Settings.GetInstance().Get().McpNexus.SessionManagement.MaxConcurrentSessions);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Occurs when a command's state changes.
+    /// </summary>
     public event EventHandler<CommandStateChangedEventArgs>? CommandStateChanged;
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Occurs when a session's state changes.
+    /// </summary>
     public event EventHandler<SessionStateChangedEventArgs>? SessionStateChanged;
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Creates a new debug session for analyzing a dump file.
+    /// </summary>
+    /// <param name="dumpFilePath">The path to the dump file to analyze.</param>
+    /// <param name="symbolPath">Optional symbol path for debugging symbols.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the session ID.</returns>
+    /// <exception cref="ArgumentException">Thrown when dumpFilePath is null or empty.</exception>
+    /// <exception cref="FileNotFoundException">Thrown when the dump file does not exist.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the maximum number of concurrent sessions is reached.</exception>
     public async Task<string> CreateSessionAsync(string dumpFilePath, string? symbolPath = null, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -100,7 +113,12 @@ public class DebugEngine : IDebugEngine
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Closes a debug session and cleans up resources.
+    /// </summary>
+    /// <param name="sessionId">The session ID to close.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <exception cref="ArgumentException">Thrown when sessionId is null or empty.</exception>
     public async Task CloseSessionAsync(string sessionId)
     {
         ThrowIfDisposed();
@@ -131,7 +149,12 @@ public class DebugEngine : IDebugEngine
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Checks if a session is currently active.
+    /// </summary>
+    /// <param name="sessionId">The session ID to check.</param>
+    /// <returns>True if the session is active, false otherwise.</returns>
+    /// <exception cref="ArgumentException">Thrown when sessionId is null or empty.</exception>
     public bool IsSessionActive(string sessionId)
     {
         ThrowIfDisposed();
@@ -140,7 +163,14 @@ public class DebugEngine : IDebugEngine
         return m_Sessions.TryGetValue(sessionId, out var session) && session.IsActive;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Enqueues a command for execution in the specified session.
+    /// </summary>
+    /// <param name="sessionId">The session ID to execute the command in.</param>
+    /// <param name="command">The debug command to execute.</param>
+    /// <returns>The unique command ID for tracking the command.</returns>
+    /// <exception cref="ArgumentException">Thrown when sessionId or command is null or empty.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the session is not active or the command queue is full.</exception>
     public string EnqueueCommand(string sessionId, string command)
     {
         ThrowIfDisposed();
@@ -158,7 +188,16 @@ public class DebugEngine : IDebugEngine
         return commandId;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets the information about a command.
+    /// </summary>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="commandId">The command ID to get the information for.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the command information.</returns>
+    /// <exception cref="ArgumentException">Thrown when sessionId or commandId is null or empty.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the session is not active.</exception>
+    /// <exception cref="KeyNotFoundException">Thrown when the command is not found.</exception>
     public async Task<CommandInfo> GetCommandInfoAsync(string sessionId, string commandId, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -174,7 +213,13 @@ public class DebugEngine : IDebugEngine
         return await session.GetCommandInfoAsync(commandId, cancellationToken);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets the current information about a command without waiting for completion.
+    /// </summary>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="commandId">The command ID to get the information for.</param>
+    /// <returns>The command information, or null if the command is not found.</returns>
+    /// <exception cref="ArgumentException">Thrown when sessionId or commandId is null or empty.</exception>
     public CommandInfo? GetCommandInfo(string sessionId, string commandId)
     {
         ThrowIfDisposed();
@@ -187,7 +232,12 @@ public class DebugEngine : IDebugEngine
         return session.GetCommandInfo(commandId);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets the information about all commands in a session.
+    /// </summary>
+    /// <param name="sessionId">The session ID.</param>
+    /// <returns>A dictionary of command IDs to their information.</returns>
+    /// <exception cref="ArgumentException">Thrown when sessionId is null or empty.</exception>
     public Dictionary<string, CommandInfo> GetAllCommandInfos(string sessionId)
     {
         ThrowIfDisposed();
@@ -199,7 +249,13 @@ public class DebugEngine : IDebugEngine
         return session.GetAllCommandInfos();
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Cancels a queued or executing command.
+    /// </summary>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="commandId">The command ID to cancel.</param>
+    /// <returns>True if the command was found and cancelled, false otherwise.</returns>
+    /// <exception cref="ArgumentException">Thrown when sessionId or commandId is null or empty.</exception>
     public bool CancelCommand(string sessionId, string commandId)
     {
         ThrowIfDisposed();
@@ -212,7 +268,13 @@ public class DebugEngine : IDebugEngine
         return session.CancelCommand(commandId);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Cancels all commands in a session.
+    /// </summary>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="reason">Optional reason for cancellation.</param>
+    /// <returns>The number of commands that were cancelled.</returns>
+    /// <exception cref="ArgumentException">Thrown when sessionId is null or empty.</exception>
     public int CancelAllCommands(string sessionId, string? reason = null)
     {
         ThrowIfDisposed();
@@ -224,7 +286,12 @@ public class DebugEngine : IDebugEngine
         return session.CancelAllCommands(reason);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets the current state of a session.
+    /// </summary>
+    /// <param name="sessionId">The session ID.</param>
+    /// <returns>The session state, or null if the session is not found.</returns>
+    /// <exception cref="ArgumentException">Thrown when sessionId is null or empty.</exception>
     public SessionState? GetSessionState(string sessionId)
     {
         ThrowIfDisposed();
@@ -237,7 +304,9 @@ public class DebugEngine : IDebugEngine
     }
 
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Disposes of the debug engine and releases all resources.
+    /// </summary>
     public void Dispose()
     {
         if (m_Disposed)

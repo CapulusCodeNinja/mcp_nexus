@@ -286,7 +286,9 @@ internal class CdbSession : ICdbSession
         m_Initialized = false;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Disposes of the CDB session and releases all resources.
+    /// </summary>
     public void Dispose()
     {
         if (m_Disposed)

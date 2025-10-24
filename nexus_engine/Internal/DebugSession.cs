@@ -218,7 +218,9 @@ internal class DebugSession : IDisposable
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Disposes of the debug session and releases all resources.
+    /// </summary>
     public void Dispose()
     {
         if (m_Disposed)
@@ -234,6 +236,11 @@ internal class DebugSession : IDisposable
         }
     }
 
+    /// <summary>
+    /// Handles command state changed events from the command queue and forwards them with session context.
+    /// </summary>
+    /// <param name="sender">The event sender.</param>
+    /// <param name="e">The event arguments.</param>
     protected void OnCommandStateChanged(object? sender, CommandStateChangedEventArgs e)
     {
         // Forward the event with session context
@@ -250,6 +257,10 @@ internal class DebugSession : IDisposable
         CommandStateChanged?.Invoke(this, args);
     }
 
+    /// <summary>
+    /// Sets the session state and notifies listeners if the state changed.
+    /// </summary>
+    /// <param name="newState">The new session state.</param>
     protected void SetState(SessionState newState)
     {
         SessionState oldState;
@@ -273,12 +284,20 @@ internal class DebugSession : IDisposable
         }
     }
 
+    /// <summary>
+    /// Throws an exception if the session has been disposed.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException">Thrown when the session is disposed.</exception>
     protected void ThrowIfDisposed()
     {
         if (m_Disposed)
             throw new ObjectDisposedException(nameof(DebugSession));
     }
 
+    /// <summary>
+    /// Throws an exception if the session is not in an active state.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when the session is not active.</exception>
     protected void ThrowIfNotActive()
     {
         if (!IsActive)

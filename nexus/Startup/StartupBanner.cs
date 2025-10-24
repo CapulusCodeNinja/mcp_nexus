@@ -19,6 +19,12 @@ internal class StartupBanner
     private readonly bool m_IsServiceMode;
     private readonly CommandLineContext m_CommandLineContext;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StartupBanner"/> class.
+    /// </summary>
+    /// <param name="configuration">The application configuration.</param>
+    /// <param name="isServiceMode">Indicates whether the application is running as a Windows Service.</param>
+    /// <param name="commandLineContext">The command line context.</param>
     public StartupBanner(IConfiguration configuration, bool isServiceMode, CommandLineContext commandLineContext)
     {
         m_Logger = LogManager.GetCurrentClassLogger();

@@ -294,7 +294,9 @@ internal class CommandQueue : IDisposable
         return count;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Disposes of the command queue and releases all resources.
+    /// </summary>
     public void Dispose()
     {
         if (m_Disposed)
@@ -681,6 +683,11 @@ internal class CommandQueue : IDisposable
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Updates the state of a command and notifies listeners.
+    /// </summary>
+    /// <param name="command">The command to update.</param>
+    /// <param name="newState">The new state to set.</param>
     protected void UpdateCommandState(QueuedCommand command, CommandState newState)
     {
         var oldState = command.State;
@@ -689,6 +696,11 @@ internal class CommandQueue : IDisposable
         NotifyCommandStateChanged(command.Id, oldState, newState, command.Command);
     }
 
+    /// <summary>
+    /// Caches the command result and completes the associated task.
+    /// </summary>
+    /// <param name="command">The command to set the result for.</param>
+    /// <param name="result">The command result to cache.</param>
     protected void SetCommandResult(QueuedCommand command, CommandInfo result)
     {
         // Cache the result
@@ -701,6 +713,13 @@ internal class CommandQueue : IDisposable
         m_ActiveCommands.TryRemove(command.Id, out _);
     }
 
+    /// <summary>
+    /// Notifies listeners that a command's state has changed.
+    /// </summary>
+    /// <param name="commandId">The ID of the command.</param>
+    /// <param name="oldState">The previous state.</param>
+    /// <param name="newState">The new state.</param>
+    /// <param name="command">The command text.</param>
     private void NotifyCommandStateChanged(string commandId, CommandState oldState, CommandState newState, string command)
     {
         var args = new CommandStateChangedEventArgs
@@ -716,11 +735,19 @@ internal class CommandQueue : IDisposable
         CommandStateChanged?.Invoke(this, args);
     }
 
+    /// <summary>
+    /// Generates a unique command identifier.
+    /// </summary>
+    /// <returns>A unique command ID string.</returns>
     private static string GenerateCommandId()
     {
         return $"cmd-{Guid.NewGuid():N}";
     }
 
+    /// <summary>
+    /// Throws an exception if the command queue has been disposed.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException">Thrown when the queue is disposed.</exception>
     private void ThrowIfDisposed()
     {
         if (m_Disposed)

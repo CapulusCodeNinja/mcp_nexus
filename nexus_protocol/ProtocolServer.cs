@@ -36,10 +36,17 @@ public class ProtocolServer : IProtocolServer
         m_Logger = LogManager.GetCurrentClassLogger();
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets a value indicating whether the protocol server is currently running.
+    /// </summary>
     public bool IsRunning => m_IsRunning;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Starts the protocol server with the current configuration.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A task that represents the asynchronous start operation.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the server is already running.</exception>
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(m_Disposed, this);
@@ -72,7 +79,11 @@ public class ProtocolServer : IProtocolServer
         m_IsRunning = true;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Stops the protocol server gracefully.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A task that represents the asynchronous stop operation.</returns>
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(m_Disposed, this);
@@ -98,7 +109,12 @@ public class ProtocolServer : IProtocolServer
         m_Logger.Info("MCP protocol server stopped successfully.");
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Sets the configuration for the protocol server.
+    /// </summary>
+    /// <param name="configuration">The configuration object to set.</param>
+    /// <exception cref="ArgumentNullException">Thrown when configuration is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when trying to change configuration while server is running.</exception>
     public void SetConfiguration(object configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -114,7 +130,12 @@ public class ProtocolServer : IProtocolServer
         m_Logger.Info("Protocol server configuration updated.");
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Sets the WebApplication instance for HTTP mode operation.
+    /// </summary>
+    /// <param name="app">The configured web application.</param>
+    /// <exception cref="ArgumentNullException">Thrown when app is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when trying to set WebApplication while server is running.</exception>
     public void SetWebApplication(WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
@@ -153,7 +174,9 @@ public class ProtocolServer : IProtocolServer
         m_Logger.Info("Host set successfully for Stdio mode.");
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Disposes of the protocol server and releases all resources.
+    /// </summary>
     public void Dispose()
     {
         if (m_Disposed)
