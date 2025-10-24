@@ -122,12 +122,12 @@ public class BatchCommandBuilderTests
         _ = result.CommandText.Should().Contain("k");
         _ = result.CommandText.Should().Contain("lm");
         _ = result.CommandText.Should().Contain("!threads");
-        
+
         // Verify order
         var indexK = result.CommandText.IndexOf("k", StringComparison.Ordinal);
         var indexLm = result.CommandText.IndexOf("lm", StringComparison.Ordinal);
         var indexThreads = result.CommandText.IndexOf("!threads", StringComparison.Ordinal);
-        
+
         _ = indexK.Should().BeLessThan(indexLm);
         _ = indexLm.Should().BeLessThan(indexThreads);
     }

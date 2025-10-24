@@ -166,5 +166,59 @@ public class BackupManagerTests
         // Assert - The method should attempt to query backup directories
         m_MockFileSystem.Verify(fs => fs.GetDirectoryInfo("C:\\backup"), Times.Once);
     }
+
+    /// <summary>
+    /// Verifies that CreateBackupAsync with null path throws exception which is handled.
+    /// </summary>
+    [Fact]
+    public async Task CreateBackupAsync_WithNullPath_ReturnsTrue()
+    {
+        // Arrange
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
+            .Returns(false);
+
+        // Act
+        var result = await m_BackupManager.CreateBackupAsync(null!, "C:\\backup");
+
+        // Assert - Should return true because directory doesn't exist check handles null
+        _ = result.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that RollbackInstallationAsync with null paths handles gracefully.
+    /// </summary>
+    [Fact]
+    public async Task RollbackInstallationAsync_WithNullPaths_HandlesGracefully()
+    {
+        // Arrange
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
+            .Returns(false);
+
+        // Act
+        var action = async () => await m_BackupManager.RollbackInstallationAsync(null!, null!, false);
+
+        // Assert
+        _ = await action.Should().NotThrowAsync();
+    }
+
+    /// <summary>
+    /// Verifies that CreateBackupAsync handles directory creation failure.
+    /// </summary>
+    [Fact]
+    public async Task CreateBackupAsync_WhenCreateDirectoryFails_ReturnsFalse()
+    {
+        // Arrange
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\source"))
+            .Returns(true);
+        _ = m_MockFileSystem.Setup(fs => fs.CreateDirectory("C:\\backup"))
+            .Throws(new UnauthorizedAccessException("Access denied"));
+
+        // Act
+        var result = await m_BackupManager.CreateBackupAsync("C:\\source", "C:\\backup");
+
+        // Assert
+        _ = result.Should().BeFalse();
+    }
+
 }
 

@@ -164,8 +164,17 @@ public class McpModelsTests
                 required = new[] { "param1", "param2" },
                 properties = new
                 {
-                    param1 = new { type = "string", description = "First parameter" },
-                    param2 = new { type = "integer", minimum = 0, maximum = 100 }
+                    param1 = new
+                    {
+                        type = "string",
+                        description = "First parameter"
+                    },
+                    param2 = new
+                    {
+                        type = "integer",
+                        minimum = 0,
+                        maximum = 100
+                    }
                 }
             }
         };
