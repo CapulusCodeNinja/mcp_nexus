@@ -109,7 +109,6 @@ nexus_extensions/           - Extension system (PowerShell workflow support)
   - `CloseSessionTool.cs` - `nexus_close_dump_analyze_session`
 - `Resources/` - MCP resource implementations
 - `Configuration/HttpServerSetup.cs` - HTTP server configuration factory
-- `Configuration/ProtocolServiceRegistration.cs` - DI registration
 - `Middleware/` - HTTP middleware (logging, content-type validation)
 - `Models/` - MCP response models, notifications
 
@@ -181,59 +180,6 @@ nexus_extensions/           - Extension system (PowerShell workflow support)
 ### Service Registration Architecture
 
 **CRITICAL**: Each library must register ONLY its own services. Cross-library service registration violates modular architecture.
-
-#### Service Registration Rules
-
-1. **Each library registers its own services**: Every library should have a `ServiceRegistration/ServiceRegistrationExtensions.cs` file with an `Add[LibraryName]Services()` method.
-
-2. **Dependency graph**: nexus → protocol → engine → engine_batch
-   - Each library can only register services for itself and its direct dependencies
-   - Protocol library CANNOT register engine services
-   - Engine library CANNOT register protocol services
-
-3. **Configuration loading**: Each library loads its own configuration section from `IConfiguration`:
-   ```csharp
-   var config = new MyLibraryConfiguration();
-   configuration.GetSection("McpNexus:MyLibrary").Bind(config);
-   services.AddSingleton(config);
-   ```
-
-4. **Dependency resolution**: Libraries resolve dependencies from DI container, never forward them as parameters:
-   ```csharp
-   services.AddSingleton<IMyService>(sp =>
-   {
-       var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-       var fileSystem = sp.GetRequiredService<IFileSystem>();
-       return new MyService(loggerFactory, fileSystem);
-   });
-   ```
-
-5. **Shared dependencies**: Only `nexus_external_apis` and `nexus_config` are registered once in setup and available to all libraries.
-
-#### Service Registration Pattern
-
-Each library should follow this pattern:
-
-```csharp
-// nexus_[library]/ServiceRegistration/ServiceRegistrationExtensions.cs
-public static class ServiceRegistrationExtensions
-{
-    public static IServiceCollection Add[LibraryName]Services(
-        this IServiceCollection services,
-        IConfiguration configuration)
-    {
-        // Load library-specific configuration
-        var config = new MyLibraryConfiguration();
-        configuration.GetSection("McpNexus:MyLibrary").Bind(config);
-        services.AddSingleton(config);
-
-        // Register library services
-        services.AddSingleton<IMyService, MyService>();
-        
-        return services;
-    }
-}
-```
 
 #### Common Violations to Avoid
 

@@ -9,7 +9,6 @@ using nexus.CommandLine;
 using nexus.Hosting;
 using nexus.Startup;
 using nexus.config;
-using nexus.ServiceRegistration;
 
 namespace nexus;
 
@@ -58,21 +57,10 @@ internal static class Program
     internal static IHostBuilder CreateHostBuilder(CommandLineContext cmd)
     {
         var builder = Host.CreateDefaultBuilder(cmd.Args)
-            .ConfigureLogging((context, logging) =>
-            {
-                logging.AddNexusLogging(context.Configuration,
-                    cmd.IsServiceMode ||
-                    cmd.IsInstallMode ||
-                    cmd.IsUpdateMode ||
-                    cmd.IsUninstallMode);
-            })
             .ConfigureServices((context, services) =>
             {
                 // Register mode
                 services.AddSingleton(cmd);
-
-                // Register ALL services for ALL modes (consistent architecture)
-                services.AddNexusServices(context.Configuration);
 
                 // Register ONLY the main hosted service (no others)
                 services.AddHostedService<MainHostedService>();
