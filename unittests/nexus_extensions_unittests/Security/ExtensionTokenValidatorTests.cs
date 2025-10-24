@@ -8,15 +8,6 @@ namespace Nexus.Extensions_unittests.Security;
 public class ExtensionTokenValidatorTests
 {
     /// <summary>
-    /// Verifies constructor throws when logger is null.
-    /// </summary>
-    [Fact]
-    public void Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
-    {
-        _ = Assert.Throws<ArgumentNullException>(() => new ExtensionTokenValidator());
-    }
-
-    /// <summary>
     /// Verifies CreateToken throws when session ID is null or empty.
     /// </summary>
     [Theory]

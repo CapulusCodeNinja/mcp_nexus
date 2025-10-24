@@ -37,20 +37,6 @@ public class ResponseFormattingMiddlewareTests
     }
 
     /// <summary>
-    /// Verifies that constructor throws ArgumentNullException when logger is null.
-    /// </summary>
-    [Fact]
-    public void Constructor_WithNullLogger_ThrowsArgumentNullException()
-    {
-        RequestDelegate next = (HttpContext context) => Task.CompletedTask;
-
-        var action = () => new ResponseFormattingMiddleware(next);
-
-        _ = action.Should().Throw<ArgumentNullException>()
-            .WithParameterName("logger");
-    }
-
-    /// <summary>
     /// Verifies that InvokeAsync calls next middleware with normal execution.
     /// </summary>
     [Fact]

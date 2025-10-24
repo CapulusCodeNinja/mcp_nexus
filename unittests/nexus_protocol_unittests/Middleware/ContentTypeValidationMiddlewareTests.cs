@@ -45,18 +45,6 @@ public class ContentTypeValidationMiddlewareTests
     }
 
     /// <summary>
-    /// Verifies that constructor throws ArgumentNullException when logger is null.
-    /// </summary>
-    [Fact]
-    public void Constructor_WithNullLogger_ThrowsArgumentNullException()
-    {
-        var action = () => new ContentTypeValidationMiddleware(m_NextDelegate);
-
-        _ = action.Should().Throw<ArgumentNullException>()
-            .WithParameterName("logger");
-    }
-
-    /// <summary>
     /// Verifies that InvokeAsync calls next middleware with GET request.
     /// </summary>
     [Fact]
