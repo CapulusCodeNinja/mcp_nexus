@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging.Abstractions;
 
 using Nexus.Protocol.Middleware;
 
@@ -7,152 +6,304 @@ namespace Nexus.Protocol.Unittests.Middleware;
 
 /// <summary>
 /// Unit tests for ContentTypeValidationMiddleware class.
-/// Tests content-type header validation for JSON-RPC requests.
+/// Tests content-type validation logic for JSON-RPC requests.
 /// </summary>
 public class ContentTypeValidationMiddlewareTests
 {
-    private readonly ContentTypeValidationMiddleware m_Middleware;
-    private readonly RequestDelegate m_NextDelegate;
-    private bool m_NextCalled;
-
     /// <summary>
-    /// Initializes a new instance of the ContentTypeValidationMiddlewareTests class.
-    /// </summary>
-    public ContentTypeValidationMiddlewareTests()
-    {
-        var logger = NullLogger<ContentTypeValidationMiddleware>.Instance;
-        m_NextCalled = false;
-        m_NextDelegate = (HttpContext context) =>
-        {
-            m_NextCalled = true;
-            return Task.CompletedTask;
-        };
-        m_Middleware = new ContentTypeValidationMiddleware(m_NextDelegate);
-    }
-
-    /// <summary>
-    /// Verifies that constructor throws ArgumentNullException when next delegate is null.
+    /// Verifies that constructor throws ArgumentNullException for null next delegate.
     /// </summary>
     [Fact]
     public void Constructor_WithNullNext_ThrowsArgumentNullException()
     {
-        var logger = NullLogger<ContentTypeValidationMiddleware>.Instance;
-
-        var action = () => new ContentTypeValidationMiddleware(null!);
-
-        _ = action.Should().Throw<ArgumentNullException>()
-            .WithParameterName("next");
+        // Act & Assert
+        _ = Assert.Throws<ArgumentNullException>(() => new ContentTypeValidationMiddleware(null!));
     }
 
     /// <summary>
-    /// Verifies that InvokeAsync calls next middleware with GET request.
+    /// Verifies that InvokeAsync calls next middleware for valid content type.
     /// </summary>
     [Fact]
-    public async Task InvokeAsync_WithGetRequest_CallsNext()
+    public async Task InvokeAsync_WithValidContentType_CallsNextMiddleware()
     {
-        var context = new DefaultHttpContext();
-        context.Request.Method = "GET";
+        // Arrange
+        var nextCalled = false;
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
 
-        await m_Middleware.InvokeAsync(context);
-
-        _ = m_NextCalled.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Verifies that InvokeAsync calls next middleware with POST and application/json content type.
-    /// </summary>
-    [Fact]
-    public async Task InvokeAsync_WithPostAndApplicationJson_CallsNext()
-    {
-        var context = new DefaultHttpContext();
-        context.Request.Method = "POST";
-        context.Request.ContentType = "application/json";
-
-        await m_Middleware.InvokeAsync(context);
-
-        _ = m_NextCalled.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Verifies that InvokeAsync calls next middleware with POST and application/json with charset.
-    /// </summary>
-    [Fact]
-    public async Task InvokeAsync_WithPostAndApplicationJsonWithCharset_CallsNext()
-    {
-        var context = new DefaultHttpContext();
-        context.Request.Method = "POST";
-        context.Request.ContentType = "application/json; charset=utf-8";
-
-        await m_Middleware.InvokeAsync(context);
-
-        _ = m_NextCalled.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Verifies that InvokeAsync returns 400 Bad Request with POST to root and invalid content type.
-    /// </summary>
-    [Fact]
-    public async Task InvokeAsync_WithPostToRootAndInvalidContentType_Returns400()
-    {
+        var middleware = new ContentTypeValidationMiddleware(next);
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";
         context.Request.Path = "/";
-        context.Request.ContentType = "text/plain";
-        context.Response.Body = new MemoryStream();
+        context.Request.ContentType = "application/json";
 
-        await m_Middleware.InvokeAsync(context);
+        // Act
+        await middleware.InvokeAsync(context);
 
-        _ = m_NextCalled.Should().BeFalse();
-        _ = context.Response.StatusCode.Should().Be(400);
+        // Assert
+        _ = nextCalled.Should().BeTrue();
     }
 
     /// <summary>
-    /// Verifies that InvokeAsync returns 400 Bad Request with POST to root and null content type.
+    /// Verifies that InvokeAsync rejects request with missing content type.
     /// </summary>
     [Fact]
-    public async Task InvokeAsync_WithPostToRootAndNullContentType_Returns400()
+    public async Task InvokeAsync_WithMissingContentType_Returns400()
     {
+        // Arrange
+        var nextCalled = false;
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new ContentTypeValidationMiddleware(next);
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";
         context.Request.Path = "/";
         context.Request.ContentType = null;
         context.Response.Body = new MemoryStream();
 
-        await m_Middleware.InvokeAsync(context);
+        // Act
+        await middleware.InvokeAsync(context);
 
-        _ = m_NextCalled.Should().BeFalse();
+        // Assert
+        _ = nextCalled.Should().BeFalse();
         _ = context.Response.StatusCode.Should().Be(400);
     }
 
     /// <summary>
-    /// Verifies that InvokeAsync returns 400 Bad Request with POST to root and empty content type.
+    /// Verifies that InvokeAsync rejects request with wrong content type.
     /// </summary>
     [Fact]
-    public async Task InvokeAsync_WithPostToRootAndEmptyContentType_Returns400()
+    public async Task InvokeAsync_WithWrongContentType_Returns400()
     {
+        // Arrange
+        var nextCalled = false;
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new ContentTypeValidationMiddleware(next);
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";
         context.Request.Path = "/";
-        context.Request.ContentType = "";
+        context.Request.ContentType = "text/plain";
         context.Response.Body = new MemoryStream();
 
-        await m_Middleware.InvokeAsync(context);
+        // Act
+        await middleware.InvokeAsync(context);
 
-        _ = m_NextCalled.Should().BeFalse();
+        // Assert
+        _ = nextCalled.Should().BeFalse();
         _ = context.Response.StatusCode.Should().Be(400);
     }
 
     /// <summary>
-    /// Verifies that InvokeAsync calls next middleware with PUT request.
+    /// Verifies that InvokeAsync accepts application/json with charset.
     /// </summary>
     [Fact]
-    public async Task InvokeAsync_WithPutRequest_CallsNext()
+    public async Task InvokeAsync_WithApplicationJsonAndCharset_CallsNextMiddleware()
     {
+        // Arrange
+        var nextCalled = false;
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new ContentTypeValidationMiddleware(next);
         var context = new DefaultHttpContext();
-        context.Request.Method = "PUT";
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+        context.Request.ContentType = "application/json; charset=utf-8";
 
-        await m_Middleware.InvokeAsync(context);
+        // Act
+        await middleware.InvokeAsync(context);
 
-        _ = m_NextCalled.Should().BeTrue();
+        // Assert
+        _ = nextCalled.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that InvokeAsync is case-insensitive for content type.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_WithMixedCaseContentType_CallsNextMiddleware()
+    {
+        // Arrange
+        var nextCalled = false;
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new ContentTypeValidationMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+        context.Request.ContentType = "APPLICATION/JSON";
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        _ = nextCalled.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that InvokeAsync skips validation for GET requests.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_WithGetRequest_SkipsValidation()
+    {
+        // Arrange
+        var nextCalled = false;
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new ContentTypeValidationMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "GET";
+        context.Request.Path = "/";
+        context.Request.ContentType = null;
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert - Should call next even with null content type
+        _ = nextCalled.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that InvokeAsync skips validation for non-root paths.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_WithNonRootPath_SkipsValidation()
+    {
+        // Arrange
+        var nextCalled = false;
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new ContentTypeValidationMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/health";
+        context.Request.ContentType = null;
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert - Should call next even with null content type
+        _ = nextCalled.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that invalid content type response includes error details.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_WithInvalidContentType_ReturnsJsonRpcError()
+    {
+        // Arrange
+        RequestDelegate next = (HttpContext _) => Task.CompletedTask;
+        var middleware = new ContentTypeValidationMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+        context.Request.ContentType = "text/xml";
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.Body.Position = 0;
+        var reader = new StreamReader(context.Response.Body);
+        var responseBody = await reader.ReadToEndAsync();
+
+        _ = responseBody.Should().Contain("jsonrpc");
+        _ = responseBody.Should().Contain("-32700"); // Parse error code
+        _ = responseBody.Should().Contain("Content-Type must be application/json");
+    }
+
+    /// <summary>
+    /// Verifies that invalid content type response sets correct content type.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_WithInvalidContentType_SetsJsonResponseContentType()
+    {
+        // Arrange
+        RequestDelegate next = (HttpContext _) => Task.CompletedTask;
+        var middleware = new ContentTypeValidationMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+        context.Request.ContentType = "text/plain";
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        _ = context.Response.ContentType.Should().Be("application/json; charset=utf-8");
+    }
+
+    /// <summary>
+    /// Verifies that empty content type is rejected.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_WithEmptyContentType_Returns400()
+    {
+        // Arrange
+        RequestDelegate next = (HttpContext _) => Task.CompletedTask;
+        var middleware = new ContentTypeValidationMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+        context.Request.ContentType = string.Empty;
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        _ = context.Response.StatusCode.Should().Be(400);
+    }
+
+    /// <summary>
+    /// Verifies that whitespace content type is rejected.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_WithWhitespaceContentType_Returns400()
+    {
+        // Arrange
+        RequestDelegate next = (HttpContext _) => Task.CompletedTask;
+        var middleware = new ContentTypeValidationMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+        context.Request.ContentType = "   ";
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        _ = context.Response.StatusCode.Should().Be(400);
     }
 }

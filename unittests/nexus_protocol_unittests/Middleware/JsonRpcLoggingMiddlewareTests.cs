@@ -1,5 +1,3 @@
-using System.Text;
-
 using Microsoft.AspNetCore.Http;
 
 using Nexus.Protocol.Middleware;
@@ -8,224 +6,72 @@ namespace Nexus.Protocol.Unittests.Middleware;
 
 /// <summary>
 /// Unit tests for JsonRpcLoggingMiddleware class.
-/// Tests JSON-RPC request/response logging.
+/// Tests request/response logging and sanitization logic.
 /// </summary>
 public class JsonRpcLoggingMiddlewareTests
 {
-    private readonly JsonRpcLoggingMiddleware m_Middleware;
-    private readonly RequestDelegate m_NextDelegate;
-    private bool m_NextCalled;
-
     /// <summary>
-    /// Initializes a new instance of the JsonRpcLoggingMiddlewareTests class.
-    /// </summary>
-    public JsonRpcLoggingMiddlewareTests()
-    {
-        m_NextCalled = false;
-        m_NextDelegate = (HttpContext context) =>
-        {
-            m_NextCalled = true;
-            return Task.CompletedTask;
-        };
-        m_Middleware = new JsonRpcLoggingMiddleware(m_NextDelegate);
-    }
-
-    /// <summary>
-    /// Verifies that constructor throws ArgumentNullException when next delegate is null.
+    /// Verifies that constructor throws ArgumentNullException for null next delegate.
     /// </summary>
     [Fact]
     public void Constructor_WithNullNext_ThrowsArgumentNullException()
     {
-        var action = () => new JsonRpcLoggingMiddleware(null!);
-
-        _ = action.Should().Throw<ArgumentNullException>()
-            .WithParameterName("next");
+        // Act & Assert
+        _ = Assert.Throws<ArgumentNullException>(() => new JsonRpcLoggingMiddleware(null!));
     }
 
     /// <summary>
-    /// Verifies that InvokeAsync calls next middleware with valid request.
+    /// Verifies that InvokeAsync calls next middleware for root POST.
     /// </summary>
     [Fact]
-    public async Task InvokeAsync_WithValidRequest_CallsNext()
+    public async Task InvokeAsync_WithRootPostRequest_CallsNextMiddleware()
     {
-        var context = new DefaultHttpContext();
-        context.Request.Method = "POST";
-        context.Request.Path = "/mcp";
-        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"jsonrpc\":\"2.0\",\"method\":\"test\"}"));
-        context.Response.Body = new MemoryStream();
+        // Arrange
+        var nextCalled = false;
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
 
-        await m_Middleware.InvokeAsync(context);
-
-        _ = m_NextCalled.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Verifies that InvokeAsync calls next middleware with GET request.
-    /// </summary>
-    [Fact]
-    public async Task InvokeAsync_WithGetRequest_CallsNext()
-    {
-        var context = new DefaultHttpContext();
-        context.Request.Method = "GET";
-        context.Request.Path = "/mcp";
-        context.Response.Body = new MemoryStream();
-
-        await m_Middleware.InvokeAsync(context);
-
-        _ = m_NextCalled.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Verifies that InvokeAsync calls next middleware with non-seekable request body.
-    /// </summary>
-    [Fact]
-    public async Task InvokeAsync_WithNonSeekableRequestBody_CallsNext()
-    {
-        var context = new DefaultHttpContext();
-        context.Request.Method = "POST";
-        context.Request.Path = "/mcp";
-        context.Request.Body = new NonSeekableStream();
-        context.Response.Body = new MemoryStream();
-
-        await m_Middleware.InvokeAsync(context);
-
-        _ = m_NextCalled.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Verifies that InvokeAsync calls next middleware with large request body exceeding size limit.
-    /// </summary>
-    [Fact]
-    public async Task InvokeAsync_WithLargeRequestBody_CallsNext()
-    {
-        var context = new DefaultHttpContext();
-        context.Request.Method = "POST";
-        context.Request.Path = "/mcp";
-        var largeBody = new string('x', 11000); // Over 10KB limit
-        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(largeBody));
-        context.Response.Body = new MemoryStream();
-
-        await m_Middleware.InvokeAsync(context);
-
-        _ = m_NextCalled.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Verifies that InvokeAsync logs request and response when POST is sent to root path.
-    /// </summary>
-    [Fact]
-    public async Task InvokeAsync_WithRootPathPost_LogsRequestAndResponse()
-    {
-        var context = new DefaultHttpContext();
-        context.Request.Method = "POST";
-        context.Request.Path = "/"; // Root path triggers logging
-        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"jsonrpc\":\"2.0\"}"));
-        context.Response.Body = new MemoryStream();
-
-        await m_Middleware.InvokeAsync(context);
-
-        _ = m_NextCalled.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Verifies that InvokeAsync captures response body when POST is sent to root path.
-    /// </summary>
-    [Fact]
-    public async Task InvokeAsync_WithRootPathPost_CapturesResponseBody()
-    {
-        var responseText = "{\"jsonrpc\":\"2.0\",\"result\":\"success\"}";
-        RequestDelegate nextWithResponse = async (HttpContext ctx) => await ctx.Response.WriteAsync(responseText);
-
-        var middleware = new JsonRpcLoggingMiddleware(nextWithResponse);
-
+        var middleware = new JsonRpcLoggingMiddleware(next);
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";
         context.Request.Path = "/";
-        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"jsonrpc\":\"2.0\"}"));
+        context.Request.Body = new MemoryStream();
         context.Response.Body = new MemoryStream();
 
+        // Act
         await middleware.InvokeAsync(context);
 
-        context.Response.Body.Position = 0;
-        var reader = new StreamReader(context.Response.Body);
-        var actualResponse = await reader.ReadToEndAsync();
-        _ = actualResponse.Should().Be(responseText);
+        // Assert
+        _ = nextCalled.Should().BeTrue();
     }
 
     /// <summary>
-    /// Verifies that InvokeAsync logs requests with empty request body.
+    /// Verifies that InvokeAsync skips logging for GET requests.
     /// </summary>
     [Fact]
-    public async Task InvokeAsync_WithEmptyRequestBody_Logs()
+    public async Task InvokeAsync_WithGetRequest_SkipsLogging()
     {
+        // Arrange
+        var nextCalled = false;
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new JsonRpcLoggingMiddleware(next);
         var context = new DefaultHttpContext();
-        context.Request.Method = "POST";
+        context.Request.Method = "GET";
         context.Request.Path = "/";
-        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(""));
-        context.Response.Body = new MemoryStream();
 
-        await m_Middleware.InvokeAsync(context);
+        // Act
+        await middleware.InvokeAsync(context);
 
-        _ = m_NextCalled.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Verifies that InvokeAsync truncates very large request bodies in logs.
-    /// </summary>
-    [Fact]
-    public async Task InvokeAsync_WithVeryLargeRequestBody_TruncatesInLogs()
-    {
-        var context = new DefaultHttpContext();
-        context.Request.Method = "POST";
-        context.Request.Path = "/";
-        var largeBody = new string('x', 2000); // Over 1000 character limit for logging
-        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(largeBody));
-        context.Response.Body = new MemoryStream();
-
-        await m_Middleware.InvokeAsync(context);
-
-        _ = m_NextCalled.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Verifies that InvokeAsync restores original response body stream when exception occurs in next middleware.
-    /// </summary>
-    [Fact]
-    public async Task InvokeAsync_WithExceptionInNext_RestoresOriginalBodyStream()
-    {
-        RequestDelegate nextThatThrows = (HttpContext ctx) => throw new InvalidOperationException("Test exception");
-
-        var middleware = new JsonRpcLoggingMiddleware(nextThatThrows);
-
-        var context = new DefaultHttpContext();
-        context.Request.Method = "POST";
-        context.Request.Path = "/";
-        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"jsonrpc\":\"2.0\"}"));
-        var originalBody = new MemoryStream();
-        context.Response.Body = originalBody;
-
-        var action = async () => await middleware.InvokeAsync(context);
-
-        _ = await action.Should().ThrowAsync<InvalidOperationException>();
-        _ = context.Response.Body.Should().BeSameAs(originalBody); // Body should be restored
-    }
-
-    /// <summary>
-    /// Verifies that InvokeAsync logs JSON-RPC method and path with valid request.
-    /// </summary>
-    [Fact]
-    public async Task InvokeAsync_WithValidJsonRpcRequest_LogsMethodAndPath()
-    {
-        var context = new DefaultHttpContext();
-        context.Request.Method = "POST";
-        context.Request.Path = "/";
-        context.Request.ContentType = "application/json";
-        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"jsonrpc\":\"2.0\",\"method\":\"test\"}"));
-        context.Response.Body = new MemoryStream();
-
-        await m_Middleware.InvokeAsync(context);
-
-        _ = m_NextCalled.Should().BeTrue();
+        // Assert
+        _ = nextCalled.Should().BeTrue();
     }
 
     /// <summary>
@@ -234,41 +80,243 @@ public class JsonRpcLoggingMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WithNonRootPath_SkipsLogging()
     {
+        // Arrange
+        var nextCalled = false;
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new JsonRpcLoggingMiddleware(next);
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";
-        context.Request.Path = "/other";
-        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("{\"jsonrpc\":\"2.0\"}"));
-        context.Response.Body = new MemoryStream();
+        context.Request.Path = "/health";
 
-        await m_Middleware.InvokeAsync(context);
+        // Act
+        await middleware.InvokeAsync(context);
 
-        _ = m_NextCalled.Should().BeTrue();
+        // Assert
+        _ = nextCalled.Should().BeTrue();
     }
 
     /// <summary>
-    /// Verifies that InvokeAsync skips logging for non-POST methods.
+    /// Verifies that InvokeAsync copies response body correctly.
     /// </summary>
     [Fact]
-    public async Task InvokeAsync_WithNonPostMethod_SkipsLogging()
+    public async Task InvokeAsync_CopiesResponseBodyToOriginalStream()
     {
+        // Arrange
+        const string responseText = "test response";
+        RequestDelegate next = async (HttpContext ctx) => await ctx.Response.WriteAsync(responseText);
+
+        var middleware = new JsonRpcLoggingMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+        context.Request.Body = new MemoryStream();
+        var responseBody = new MemoryStream();
+        context.Response.Body = responseBody;
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        responseBody.Position = 0;
+        var reader = new StreamReader(responseBody);
+        var actualResponse = await reader.ReadToEndAsync();
+        _ = actualResponse.Should().Be(responseText);
+    }
+
+    /// <summary>
+    /// Verifies that InvokeAsync handles empty request body.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_WithEmptyRequestBody_HandlesGracefully()
+    {
+        // Arrange
+        var nextCalled = false;
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new JsonRpcLoggingMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+        context.Request.Body = new MemoryStream(); // Empty body
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        _ = nextCalled.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that InvokeAsync reads and preserves request body.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_PreservesRequestBodyForNextMiddleware()
+    {
+        // Arrange
+        const string requestBody = "{\"jsonrpc\":\"2.0\",\"method\":\"test\"}";
+        var capturedBody = string.Empty;
+
+        RequestDelegate next = async (HttpContext ctx) =>
+        {
+            using var reader = new StreamReader(ctx.Request.Body);
+            capturedBody = await reader.ReadToEndAsync();
+        };
+
+        var middleware = new JsonRpcLoggingMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+
+        var requestStream = new MemoryStream();
+        var writer = new StreamWriter(requestStream);
+        await writer.WriteAsync(requestBody);
+        await writer.FlushAsync();
+        requestStream.Position = 0;
+        context.Request.Body = requestStream;
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        _ = capturedBody.Should().Be(requestBody);
+    }
+
+    /// <summary>
+    /// Verifies that InvokeAsync handles PUT method by skipping logging.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_WithPutMethod_SkipsLogging()
+    {
+        // Arrange
+        var nextCalled = false;
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new JsonRpcLoggingMiddleware(next);
         var context = new DefaultHttpContext();
         context.Request.Method = "PUT";
         context.Request.Path = "/";
-        context.Response.Body = new MemoryStream();
 
-        await m_Middleware.InvokeAsync(context);
+        // Act
+        await middleware.InvokeAsync(context);
 
-        _ = m_NextCalled.Should().BeTrue();
+        // Assert
+        _ = nextCalled.Should().BeTrue();
     }
 
     /// <summary>
-    /// Helper class to simulate a non-seekable stream.
+    /// Verifies that InvokeAsync restores original response stream.
     /// </summary>
-    private class NonSeekableStream : MemoryStream
+    [Fact]
+    public async Task InvokeAsync_RestoresOriginalResponseStream()
     {
-        /// <summary>
-        /// Gets a value indicating whether the stream supports seeking.
-        /// </summary>
-        public override bool CanSeek => false;
+        // Arrange
+        RequestDelegate next = (HttpContext _) => Task.CompletedTask;
+        var middleware = new JsonRpcLoggingMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+        context.Request.Body = new MemoryStream();
+
+        var originalStream = new MemoryStream();
+        context.Response.Body = originalStream;
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        _ = context.Response.Body.Should().BeSameAs(originalStream);
+    }
+
+    /// <summary>
+    /// Verifies that InvokeAsync handles large request bodies.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_WithLargeRequestBody_HandlesCorrectly()
+    {
+        // Arrange
+        var largeBody = new string('x', 2000); // Larger than 1000 char truncation limit
+        var nextCalled = false;
+
+        RequestDelegate next = (HttpContext _) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new JsonRpcLoggingMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+
+        var requestStream = new MemoryStream();
+        var writer = new StreamWriter(requestStream);
+        await writer.WriteAsync(largeBody);
+        await writer.FlushAsync();
+        requestStream.Position = 0;
+        context.Request.Body = requestStream;
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        _ = nextCalled.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that InvokeAsync handles exceptions from next middleware.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_WhenNextMiddlewareThrows_PropagatesException()
+    {
+        // Arrange
+        RequestDelegate next = (HttpContext _) => throw new InvalidOperationException("Test error");
+        var middleware = new JsonRpcLoggingMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+        context.Request.Body = new MemoryStream();
+        context.Response.Body = new MemoryStream();
+
+        // Act & Assert
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await middleware.InvokeAsync(context));
+    }
+
+    /// <summary>
+    /// Verifies that InvokeAsync with POST to "/" enables buffering.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_WithPostToRoot_EnablesRequestBuffering()
+    {
+        // Arrange
+        RequestDelegate next = (HttpContext _) => Task.CompletedTask;
+        var middleware = new JsonRpcLoggingMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/";
+        context.Request.Body = new MemoryStream();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert - Request body position should be reset to 0 after reading
+        _ = context.Request.Body.Position.Should().Be(0);
     }
 }

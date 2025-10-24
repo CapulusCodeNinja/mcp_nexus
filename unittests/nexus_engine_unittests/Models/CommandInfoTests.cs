@@ -7,215 +7,375 @@ using Xunit;
 namespace Nexus.Engine.Unittests.Models;
 
 /// <summary>
-/// Unit tests for the CommandInfo class.
+/// Unit tests for CommandInfo class.
+/// Tests factory methods, computed properties, and state transitions.
 /// </summary>
 public class CommandInfoTests
 {
-    private readonly DateTime m_TestTime = new(2024, 1, 15, 10, 30, 0);
-    private readonly string m_TestCommandId = "cmd-123";
-    private readonly string m_TestCommand = "lm";
-
     /// <summary>
-    /// Verifies that Queued factory method creates a queued CommandInfo correctly.
+    /// Verifies that Queued factory method creates correct state.
     /// </summary>
     [Fact]
-    public void Queued_WithValidParameters_ShouldCreateQueuedCommandInfo()
-    {
-        // Act
-        var commandInfo = CommandInfo.Queued(m_TestCommandId, m_TestCommand, m_TestTime);
-
-        // Assert
-        _ = commandInfo.CommandId.Should().Be(m_TestCommandId);
-        _ = commandInfo.Command.Should().Be(m_TestCommand);
-        _ = commandInfo.State.Should().Be(CommandState.Queued);
-        _ = commandInfo.QueuedTime.Should().Be(m_TestTime);
-        _ = commandInfo.StartTime.Should().BeNull();
-        _ = commandInfo.EndTime.Should().BeNull();
-        _ = commandInfo.Output.Should().BeNull();
-        _ = commandInfo.IsSuccess.Should().BeNull();
-        _ = commandInfo.ErrorMessage.Should().BeNull();
-        _ = commandInfo.ExecutionTime.Should().BeNull();
-        _ = commandInfo.TotalTime.Should().BeNull();
-    }
-
-    /// <summary>
-    /// Verifies that Executing factory method creates an executing CommandInfo correctly.
-    /// </summary>
-    [Fact]
-    public void Executing_WithValidParameters_ShouldCreateExecutingCommandInfo()
+    public void Queued_CreatesCommandInfoWithQueuedState()
     {
         // Arrange
-        var startTime = m_TestTime.AddSeconds(1);
+        var commandId = "cmd-123";
+        var command = "k";
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
 
         // Act
-        var commandInfo = CommandInfo.Executing(m_TestCommandId, m_TestCommand, m_TestTime, startTime);
+        var result = CommandInfo.Queued(commandId, command, queuedTime);
 
         // Assert
-        _ = commandInfo.CommandId.Should().Be(m_TestCommandId);
-        _ = commandInfo.Command.Should().Be(m_TestCommand);
-        _ = commandInfo.State.Should().Be(CommandState.Executing);
-        _ = commandInfo.QueuedTime.Should().Be(m_TestTime);
-        _ = commandInfo.StartTime.Should().Be(startTime);
-        _ = commandInfo.EndTime.Should().BeNull();
-        _ = commandInfo.Output.Should().BeNull();
-        _ = commandInfo.IsSuccess.Should().BeNull();
-        _ = commandInfo.ErrorMessage.Should().BeNull();
-        _ = commandInfo.ExecutionTime.Should().BeNull();
-        _ = commandInfo.TotalTime.Should().BeNull();
+        _ = result.CommandId.Should().Be(commandId);
+        _ = result.Command.Should().Be(command);
+        _ = result.State.Should().Be(CommandState.Queued);
+        _ = result.QueuedTime.Should().Be(queuedTime);
+        _ = result.StartTime.Should().BeNull();
+        _ = result.EndTime.Should().BeNull();
+        _ = result.Output.Should().BeNull();
+        _ = result.IsSuccess.Should().BeNull();
+        _ = result.ErrorMessage.Should().BeNull();
     }
 
     /// <summary>
-    /// Verifies that Completed factory method creates a successful completed CommandInfo correctly.
+    /// Verifies that Executing factory method creates correct state.
     /// </summary>
     [Fact]
-    public void Completed_WithSuccessfulCommand_ShouldCreateCompletedCommandInfo()
+    public void Executing_CreatesCommandInfoWithExecutingState()
     {
         // Arrange
-        var startTime = m_TestTime.AddSeconds(1);
-        var endTime = m_TestTime.AddSeconds(5);
-        var output = "Module list output";
-        var isSuccess = true;
+        var commandId = "cmd-123";
+        var command = "lm";
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
+        var startTime = new DateTime(2025, 1, 15, 10, 30, 5);
 
         // Act
-        var commandInfo = CommandInfo.Completed(m_TestCommandId, m_TestCommand, m_TestTime, startTime, endTime, output, isSuccess);
+        var result = CommandInfo.Executing(commandId, command, queuedTime, startTime);
 
         // Assert
-        _ = commandInfo.CommandId.Should().Be(m_TestCommandId);
-        _ = commandInfo.Command.Should().Be(m_TestCommand);
-        _ = commandInfo.State.Should().Be(CommandState.Completed);
-        _ = commandInfo.QueuedTime.Should().Be(m_TestTime);
-        _ = commandInfo.StartTime.Should().Be(startTime);
-        _ = commandInfo.EndTime.Should().Be(endTime);
-        _ = commandInfo.Output.Should().Be(output);
-        _ = commandInfo.IsSuccess.Should().Be(isSuccess);
-        _ = commandInfo.ErrorMessage.Should().BeNull();
-        _ = commandInfo.ExecutionTime.Should().Be(TimeSpan.FromSeconds(4));
-        _ = commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(5));
+        _ = result.CommandId.Should().Be(commandId);
+        _ = result.Command.Should().Be(command);
+        _ = result.State.Should().Be(CommandState.Executing);
+        _ = result.QueuedTime.Should().Be(queuedTime);
+        _ = result.StartTime.Should().Be(startTime);
+        _ = result.EndTime.Should().BeNull();
     }
 
     /// <summary>
-    /// Verifies that Completed factory method creates a failed CommandInfo correctly.
+    /// Verifies that Completed factory method with success creates correct state.
     /// </summary>
     [Fact]
-    public void Completed_WithFailedCommand_ShouldCreateFailedCommandInfo()
+    public void Completed_WithSuccess_CreatesCommandInfoWithCompletedState()
     {
         // Arrange
-        var startTime = m_TestTime.AddSeconds(1);
-        var endTime = m_TestTime.AddSeconds(5);
-        var output = string.Empty;
-        var isSuccess = false;
-        var errorMessage = "Command failed";
+        var commandId = "cmd-123";
+        var command = "!analyze -v";
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
+        var startTime = new DateTime(2025, 1, 15, 10, 30, 5);
+        var endTime = new DateTime(2025, 1, 15, 10, 30, 15);
+        var output = "Analysis output";
 
         // Act
-        var commandInfo = CommandInfo.Completed(m_TestCommandId, m_TestCommand, m_TestTime, startTime, endTime, output, isSuccess, errorMessage);
+        var result = CommandInfo.Completed(commandId, command, queuedTime, startTime, endTime, output, true);
 
         // Assert
-        _ = commandInfo.CommandId.Should().Be(m_TestCommandId);
-        _ = commandInfo.Command.Should().Be(m_TestCommand);
-        _ = commandInfo.State.Should().Be(CommandState.Failed);
-        _ = commandInfo.QueuedTime.Should().Be(m_TestTime);
-        _ = commandInfo.StartTime.Should().Be(startTime);
-        _ = commandInfo.EndTime.Should().Be(endTime);
-        _ = commandInfo.Output.Should().Be(output);
-        _ = commandInfo.IsSuccess.Should().Be(isSuccess);
-        _ = commandInfo.ErrorMessage.Should().Be(errorMessage);
-        _ = commandInfo.ExecutionTime.Should().Be(TimeSpan.FromSeconds(4));
-        _ = commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(5));
+        _ = result.CommandId.Should().Be(commandId);
+        _ = result.State.Should().Be(CommandState.Completed);
+        _ = result.QueuedTime.Should().Be(queuedTime);
+        _ = result.StartTime.Should().Be(startTime);
+        _ = result.EndTime.Should().Be(endTime);
+        _ = result.Output.Should().Be(output);
+        _ = result.IsSuccess.Should().BeTrue();
+        _ = result.ErrorMessage.Should().BeNull();
     }
 
     /// <summary>
-    /// Verifies that Cancelled factory method creates a cancelled CommandInfo correctly.
+    /// Verifies that Completed factory method with failure creates correct state.
     /// </summary>
     [Fact]
-    public void Cancelled_WithValidParameters_ShouldCreateCancelledCommandInfo()
+    public void Completed_WithFailure_CreatesCommandInfoWithFailedState()
     {
         // Arrange
-        var startTime = m_TestTime.AddSeconds(1);
-        var endTime = m_TestTime.AddSeconds(3);
+        var commandId = "cmd-123";
+        var command = "invalid";
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
+        var startTime = new DateTime(2025, 1, 15, 10, 30, 5);
+        var endTime = new DateTime(2025, 1, 15, 10, 30, 6);
+        var output = "";
+        var errorMessage = "Command not recognized";
 
         // Act
-        var commandInfo = CommandInfo.Cancelled(m_TestCommandId, m_TestCommand, m_TestTime, startTime, endTime);
+        var result = CommandInfo.Completed(commandId, command, queuedTime, startTime, endTime, output, false, errorMessage);
 
         // Assert
-        _ = commandInfo.CommandId.Should().Be(m_TestCommandId);
-        _ = commandInfo.Command.Should().Be(m_TestCommand);
-        _ = commandInfo.State.Should().Be(CommandState.Cancelled);
-        _ = commandInfo.QueuedTime.Should().Be(m_TestTime);
-        _ = commandInfo.StartTime.Should().Be(startTime);
-        _ = commandInfo.EndTime.Should().Be(endTime);
-        _ = commandInfo.Output.Should().BeNull();
-        _ = commandInfo.IsSuccess.Should().Be(false);
-        _ = commandInfo.ErrorMessage.Should().Be("Command was cancelled");
-        _ = commandInfo.ExecutionTime.Should().Be(TimeSpan.FromSeconds(2));
-        _ = commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(3));
+        _ = result.CommandId.Should().Be(commandId);
+        _ = result.State.Should().Be(CommandState.Failed);
+        _ = result.IsSuccess.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Be(errorMessage);
     }
 
     /// <summary>
-    /// Verifies that TimedOut factory method creates a timed out CommandInfo correctly.
+    /// Verifies that Cancelled factory method creates correct state.
     /// </summary>
     [Fact]
-    public void TimedOut_WithValidParameters_ShouldCreateTimedOutCommandInfo()
+    public void Cancelled_CreatesCommandInfoWithCancelledState()
     {
         // Arrange
-        var startTime = m_TestTime.AddSeconds(1);
-        var endTime = m_TestTime.AddSeconds(10);
-        var errorMessage = "Command timed out after 5 minutes";
+        var commandId = "cmd-123";
+        var command = "k";
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
 
         // Act
-        var commandInfo = CommandInfo.TimedOut(m_TestCommandId, m_TestCommand, m_TestTime, startTime, endTime, errorMessage);
+        var result = CommandInfo.Cancelled(commandId, command, queuedTime);
 
         // Assert
-        _ = commandInfo.CommandId.Should().Be(m_TestCommandId);
-        _ = commandInfo.Command.Should().Be(m_TestCommand);
-        _ = commandInfo.State.Should().Be(CommandState.Timeout);
-        _ = commandInfo.QueuedTime.Should().Be(m_TestTime);
-        _ = commandInfo.StartTime.Should().Be(startTime);
-        _ = commandInfo.EndTime.Should().Be(endTime);
-        _ = commandInfo.Output.Should().BeNull();
-        _ = commandInfo.IsSuccess.Should().Be(false);
-        _ = commandInfo.ErrorMessage.Should().Be(errorMessage);
-        _ = commandInfo.ExecutionTime.Should().Be(TimeSpan.FromSeconds(9));
-        _ = commandInfo.TotalTime.Should().Be(TimeSpan.FromSeconds(10));
+        _ = result.CommandId.Should().Be(commandId);
+        _ = result.State.Should().Be(CommandState.Cancelled);
+        _ = result.QueuedTime.Should().Be(queuedTime);
+        _ = result.IsSuccess.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Be("Command was cancelled");
     }
 
     /// <summary>
-    /// Verifies that ExecutionTime returns null when StartTime is null.
+    /// Verifies that Cancelled factory method with start and end times.
     /// </summary>
     [Fact]
-    public void ExecutionTime_WhenStartTimeIsNull_ShouldReturnNull()
+    public void Cancelled_WithStartAndEndTimes_SetsTimesCorrectly()
     {
         // Arrange
-        var commandInfo = CommandInfo.Queued(m_TestCommandId, m_TestCommand, m_TestTime);
+        var commandId = "cmd-123";
+        var command = "k";
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
+        var startTime = new DateTime(2025, 1, 15, 10, 30, 5);
+        var endTime = new DateTime(2025, 1, 15, 10, 30, 7);
 
-        // Act & Assert
-        _ = commandInfo.ExecutionTime.Should().BeNull();
+        // Act
+        var result = CommandInfo.Cancelled(commandId, command, queuedTime, startTime, endTime);
+
+        // Assert
+        _ = result.StartTime.Should().Be(startTime);
+        _ = result.EndTime.Should().Be(endTime);
     }
 
     /// <summary>
-    /// Verifies that ExecutionTime returns null when EndTime is null.
+    /// Verifies that TimedOut factory method creates correct state.
     /// </summary>
     [Fact]
-    public void ExecutionTime_WhenEndTimeIsNull_ShouldReturnNull()
+    public void TimedOut_CreatesCommandInfoWithTimeoutState()
     {
         // Arrange
-        var startTime = m_TestTime.AddSeconds(1);
-        var commandInfo = CommandInfo.Executing(m_TestCommandId, m_TestCommand, m_TestTime, startTime);
+        var commandId = "cmd-123";
+        var command = "!analyze -v";
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
+        var startTime = new DateTime(2025, 1, 15, 10, 30, 5);
+        var endTime = new DateTime(2025, 1, 15, 10, 35, 5);
+        var errorMessage = "Command timed out after 300 seconds";
 
-        // Act & Assert
-        _ = commandInfo.ExecutionTime.Should().BeNull();
+        // Act
+        var result = CommandInfo.TimedOut(commandId, command, queuedTime, startTime, endTime, errorMessage);
+
+        // Assert
+        _ = result.CommandId.Should().Be(commandId);
+        _ = result.State.Should().Be(CommandState.Timeout);
+        _ = result.QueuedTime.Should().Be(queuedTime);
+        _ = result.StartTime.Should().Be(startTime);
+        _ = result.EndTime.Should().Be(endTime);
+        _ = result.IsSuccess.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Be(errorMessage);
     }
 
     /// <summary>
-    /// Verifies that TotalTime returns null when EndTime is null.
+    /// Verifies that ExecutionTime is null when not started.
     /// </summary>
     [Fact]
-    public void TotalTime_WhenEndTimeIsNull_ShouldReturnNull()
+    public void ExecutionTime_WhenNotStarted_ReturnsNull()
     {
         // Arrange
-        var startTime = m_TestTime.AddSeconds(1);
-        var commandInfo = CommandInfo.Executing(m_TestCommandId, m_TestCommand, m_TestTime, startTime);
+        var info = CommandInfo.Queued("cmd-123", "k", DateTime.Now);
 
-        // Act & Assert
-        _ = commandInfo.TotalTime.Should().BeNull();
+        // Act
+        var result = info.ExecutionTime;
+
+        // Assert
+        _ = result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that ExecutionTime is null when started but not ended.
+    /// </summary>
+    [Fact]
+    public void ExecutionTime_WhenStartedButNotEnded_ReturnsNull()
+    {
+        // Arrange
+        var info = CommandInfo.Executing("cmd-123", "k", DateTime.Now, DateTime.Now.AddSeconds(5));
+
+        // Act
+        var result = info.ExecutionTime;
+
+        // Assert
+        _ = result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that ExecutionTime calculates correctly when completed.
+    /// </summary>
+    [Fact]
+    public void ExecutionTime_WhenCompleted_CalculatesCorrectDuration()
+    {
+        // Arrange
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
+        var startTime = new DateTime(2025, 1, 15, 10, 30, 5);
+        var endTime = new DateTime(2025, 1, 15, 10, 30, 15);
+        var info = CommandInfo.Completed("cmd-123", "k", queuedTime, startTime, endTime, "output", true);
+
+        // Act
+        var result = info.ExecutionTime;
+
+        // Assert
+        _ = result.Should().NotBeNull();
+        _ = result!.Value.TotalSeconds.Should().Be(10);
+    }
+
+    /// <summary>
+    /// Verifies that TotalTime is null when not completed.
+    /// </summary>
+    [Fact]
+    public void TotalTime_WhenNotCompleted_ReturnsNull()
+    {
+        // Arrange
+        var info = CommandInfo.Queued("cmd-123", "k", DateTime.Now);
+
+        // Act
+        var result = info.TotalTime;
+
+        // Assert
+        _ = result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that TotalTime calculates correctly from queue to completion.
+    /// </summary>
+    [Fact]
+    public void TotalTime_WhenCompleted_CalculatesFromQueueToEnd()
+    {
+        // Arrange
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
+        var startTime = new DateTime(2025, 1, 15, 10, 30, 5);
+        var endTime = new DateTime(2025, 1, 15, 10, 30, 15);
+        var info = CommandInfo.Completed("cmd-123", "k", queuedTime, startTime, endTime, "output", true);
+
+        // Act
+        var result = info.TotalTime;
+
+        // Assert
+        _ = result.Should().NotBeNull();
+        _ = result!.Value.TotalSeconds.Should().Be(15);
+    }
+
+    /// <summary>
+    /// Verifies that TotalTime includes queue wait time.
+    /// </summary>
+    [Fact]
+    public void TotalTime_IncludesQueueWaitTime()
+    {
+        // Arrange - Command queued, waited 10s, executed for 5s
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
+        var startTime = new DateTime(2025, 1, 15, 10, 30, 10);
+        var endTime = new DateTime(2025, 1, 15, 10, 30, 15);
+        var info = CommandInfo.Completed("cmd-123", "k", queuedTime, startTime, endTime, "output", true);
+
+        // Act
+        var executionTime = info.ExecutionTime;
+        var totalTime = info.TotalTime;
+
+        // Assert
+        _ = executionTime!.Value.TotalSeconds.Should().Be(5);
+        _ = totalTime!.Value.TotalSeconds.Should().Be(15);
+    }
+
+    /// <summary>
+    /// Verifies that Completed without error message sets null.
+    /// </summary>
+    [Fact]
+    public void Completed_WithoutErrorMessage_SetsErrorMessageToNull()
+    {
+        // Arrange & Act
+        var result = CommandInfo.Completed("cmd-123", "k", DateTime.Now, DateTime.Now, DateTime.Now, "output", true);
+
+        // Assert
+        _ = result.ErrorMessage.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that Cancelled without times sets null values.
+    /// </summary>
+    [Fact]
+    public void Cancelled_WithoutTimes_SetsNullTimes()
+    {
+        // Arrange & Act
+        var result = CommandInfo.Cancelled("cmd-123", "k", DateTime.Now);
+
+        // Assert
+        _ = result.StartTime.Should().BeNull();
+        _ = result.EndTime.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies ExecutionTime with exact second boundaries.
+    /// </summary>
+    [Fact]
+    public void ExecutionTime_WithExactSecondBoundaries_CalculatesCorrectly()
+    {
+        // Arrange - Exactly 60 seconds
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
+        var startTime = new DateTime(2025, 1, 15, 10, 30, 0);
+        var endTime = new DateTime(2025, 1, 15, 10, 31, 0);
+        var info = CommandInfo.Completed("cmd-123", "k", queuedTime, startTime, endTime, "output", true);
+
+        // Act
+        var result = info.ExecutionTime;
+
+        // Assert
+        _ = result!.Value.TotalSeconds.Should().Be(60);
+        _ = result.Value.TotalMinutes.Should().Be(1);
+    }
+
+    /// <summary>
+    /// Verifies TotalTime with millisecond precision.
+    /// </summary>
+    [Fact]
+    public void TotalTime_WithMillisecondPrecision_CalculatesCorrectly()
+    {
+        // Arrange
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0, 0);
+        var startTime = new DateTime(2025, 1, 15, 10, 30, 0, 100);
+        var endTime = new DateTime(2025, 1, 15, 10, 30, 0, 500);
+        var info = CommandInfo.Completed("cmd-123", "k", queuedTime, startTime, endTime, "output", true);
+
+        // Act
+        var result = info.TotalTime;
+
+        // Assert
+        _ = result!.Value.TotalMilliseconds.Should().Be(500);
+    }
+
+    /// <summary>
+    /// Verifies that factory methods preserve all parameters.
+    /// </summary>
+    [Fact]
+    public void FactoryMethods_PreserveAllParameters()
+    {
+        // Arrange
+        var commandId = "cmd-very-long-id-12345";
+        var command = "!analyze -v -hang -f";
+        var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
+
+        // Act
+        var result = CommandInfo.Queued(commandId, command, queuedTime);
+
+        // Assert - Verify no truncation or modification
+        _ = result.CommandId.Should().Be(commandId);
+        _ = result.Command.Should().Be(command);
     }
 }
