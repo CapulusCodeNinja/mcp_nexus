@@ -161,16 +161,13 @@ public static class HttpServerSetup
     /// Creates and configures a WebApplication for HTTP mode with all required settings.
     /// </summary>
     /// <param name="configuration">The application configuration.</param>
-    /// <param name="settingLoader">The settings loader</param>
     /// <param name="isServiceMode">Whether running in service mode.</param>
     /// <returns>A fully configured WebApplication ready to start.</returns>
     public static WebApplication CreateConfiguredWebApplication(
         IConfiguration configuration,
-        ISettingsLoader settingLoader,
         bool isServiceMode)
     {
         ArgumentNullException.ThrowIfNull(configuration);
-        ArgumentNullException.ThrowIfNull(settingLoader);
 
         // Read host and port from configuration
         var host = configuration["McpNexus:Server:Host"] ?? "localhost";
@@ -188,11 +185,8 @@ public static class HttpServerSetup
         // Configure the URLs
         webBuilder.WebHost.UseUrls(url);
 
-        // Load configuration settings
-        settingLoader.LoadConfiguration();
-
         // Configure logging
-        settingLoader.ConfigureLogging(webBuilder.Logging, configuration, isServiceMode);
+        Settings.GetInstance().ConfigureLogging(webBuilder.Logging, configuration, isServiceMode);
 
         // Configure services
         ConfigureHttpServices(webBuilder.Services, configuration);
@@ -210,25 +204,19 @@ public static class HttpServerSetup
     /// Creates and configures a Host for stdio mode with all required settings.
     /// </summary>
     /// <param name="configuration">The application configuration.</param>
-    /// <param name="settingsLoader">The settings loader.</param>
     /// <param name="isServiceMode">Whether running in service mode.</param>
     /// <returns>A fully configured Host ready to start.</returns>
     public static IHost CreateConfiguredHost(
         IConfiguration configuration,
-        ISettingsLoader settingsLoader,
         bool isServiceMode)
     {
         ArgumentNullException.ThrowIfNull(configuration);
-        ArgumentNullException.ThrowIfNull(settingsLoader);
 
         // Create Host builder for stdio mode
         var hostBuilder = Host.CreateApplicationBuilder();
-
-        // Load configuration settings
-        settingsLoader.LoadConfiguration();
-
+        
         // Configure logging
-        settingsLoader.ConfigureLogging(hostBuilder.Logging, configuration, isServiceMode);
+        Settings.GetInstance().ConfigureLogging(hostBuilder.Logging, configuration, isServiceMode);
 
         // Configure stdio services
         ConfigureStdioServices(hostBuilder.Services);

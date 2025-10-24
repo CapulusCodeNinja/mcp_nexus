@@ -8,27 +8,24 @@ namespace nexus.config
     /// <summary>
     /// Concrete settings facade providing access to configuration and logging setup.
     /// </summary>
-    public class Settings : ISettingsLoader, ISettings
+    public class Settings : ISettings
     {
         private static Settings? m_Instance;
 
-        private ConfigurationLoader? m_ConfigurationLoader;
-        private LoggingConfiguration m_LoggingConfiguration = new();
+        private ConfigurationLoader m_ConfigurationLoader;
+        private LoggingConfiguration m_LoggingConfiguration;
+
+        private Settings()
+        {
+            m_ConfigurationLoader = new ConfigurationLoader();
+            m_LoggingConfiguration = new LoggingConfiguration();
+        }
 
         /// <summary>
         /// Gets a singleton instance exposing the <see cref="ISettings"/> API.
         /// </summary>
         /// <returns>The singleton <see cref="ISettings"/> instance.</returns>
         public static ISettings GetInstance()
-        {
-            return m_Instance ??= new Settings();
-        }
-
-        /// <summary>
-        /// Gets a singleton instance exposing the <see cref="ISettingsLoader"/> API.
-        /// </summary>
-        /// <returns>The singleton <see cref="ISettingsLoader"/> instance.</returns>
-        public static ISettingsLoader GetLoader()
         {
             return m_Instance ??= new Settings();
         }
@@ -60,8 +57,7 @@ namespace nexus.config
         /// <exception cref="InvalidOperationException">Thrown if configuration wasn't loaded.</exception>
         public SharedConfiguration Get()
         {
-            return m_ConfigurationLoader?.GetSharedConfiguration()
-                ?? throw new InvalidOperationException("Configuration has not been loaded");
+            return m_ConfigurationLoader!.GetSharedConfiguration();
         }
     }
 }

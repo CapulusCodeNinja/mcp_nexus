@@ -24,7 +24,7 @@ public static class LoggingExtensions
         bool isServiceMode)
     {
         // Configure logging
-        Settings.GetLoader().ConfigureLogging(logging, configuration, isServiceMode);
+        Settings.GetInstance().ConfigureLogging(logging, configuration, isServiceMode);
         
         return logging;
     }

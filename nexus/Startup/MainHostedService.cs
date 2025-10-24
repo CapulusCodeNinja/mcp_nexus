@@ -6,11 +6,8 @@ using nexus.CommandLine;
 using nexus.protocol;
 using nexus.protocol.Configuration;
 using nexus.setup;
-using nexus.config.Internal;
 
 namespace nexus.Startup;
-
-using config;
 
 /// <summary>
 /// Main hosted service that orchestrates the entire application startup sequence.
@@ -95,7 +92,6 @@ public class MainHostedService : IHostedService
             // Create and configure WebApplication using protocol library (all logic encapsulated)
             var app = HttpServerSetup.CreateConfiguredWebApplication(
                 m_Configuration,
-                Settings.GetLoader(),
                 m_CommandLineContext.IsServiceMode);
 
             ProtocolServer.GetInstance(m_ServiceProvider).SetWebApplication(app);
@@ -127,7 +123,6 @@ public class MainHostedService : IHostedService
             // Create and configure Host using protocol library (all logic encapsulated)
             var host = HttpServerSetup.CreateConfiguredHost(
                 m_Configuration,
-                Settings.GetLoader(),
                 m_CommandLineContext.IsServiceMode);
 
             // Get the protocol server from DI and configure it
