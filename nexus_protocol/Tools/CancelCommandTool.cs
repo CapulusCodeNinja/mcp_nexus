@@ -33,7 +33,7 @@ internal static class CancelCommandTool
 
         try
         {
-            var cancelled = DebugEngine.GetInstance(serviceProvider).CancelCommand(sessionId, commandId);
+            var cancelled = DebugEngine.Instance.CancelCommand(sessionId, commandId);
 
             logger.LogInformation("Command {CommandId} cancellation: {Result}", commandId, cancelled ? "Success" : "NotFound");
 

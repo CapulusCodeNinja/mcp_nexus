@@ -19,9 +19,8 @@ public class McpNotificationServiceTests
     /// </summary>
     public McpNotificationServiceTests()
     {
-        var logger = NullLoggerFactory.Instance.CreateLogger<McpNotificationService>();
         m_MockBridge = new Mock<INotificationBridge>();
-        m_Service = new McpNotificationService(logger, m_MockBridge.Object);
+        m_Service = new McpNotificationService(m_MockBridge.Object);
     }
 
     /// <summary>

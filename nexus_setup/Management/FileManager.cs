@@ -29,6 +29,7 @@ namespace nexus.setup.Management
         /// <summary>
         /// Initializes a new instance of the <see cref="FileManager"/> class.
         /// </summary>
+        /// <param name="fileSystem">File system abstraction.</param>
         internal FileManager(IFileSystem fileSystem)
         {
             m_Logger = LogManager.GetCurrentClassLogger();

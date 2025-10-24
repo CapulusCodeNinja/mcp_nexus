@@ -28,6 +28,9 @@ namespace nexus.setup
         private readonly FileManager m_FileManager;
         private readonly IFileSystem m_FileSystem;
 
+        /// <summary>
+        /// Gets the singleton instance of the product installation manager.
+        /// </summary>
         public static IProductInstallation Instance { get; } = new ProductInstallation();
 
         /// <summary>

@@ -43,7 +43,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
                 throw new ArgumentException("command cannot be empty", nameof(command));
             }
 
-            var commandId = DebugEngine.GetInstance(serviceProvider).EnqueueCommand(sessionId, command);
+            var commandId = DebugEngine.Instance.EnqueueCommand(sessionId, command);
 
             logger.LogInformation("Command enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
 

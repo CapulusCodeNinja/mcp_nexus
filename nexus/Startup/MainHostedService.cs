@@ -77,6 +77,10 @@ public class MainHostedService : IHostedService
         }
     }
 
+    /// <summary>
+    /// Starts the HTTP server mode with MCP protocol support.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for graceful shutdown.</param>
     private async Task StartHttpServer(CancellationToken cancellationToken)
     {
         m_Logger.Info("Starting HTTP server mode...");
@@ -108,6 +112,10 @@ public class MainHostedService : IHostedService
         }
     }
 
+    /// <summary>
+    /// Starts the Stdio server mode with MCP protocol support.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for graceful shutdown.</param>
     private async Task StartStdioServer(CancellationToken cancellationToken)
     {
         m_Logger.Info("Starting Stdio server mode...");
@@ -140,12 +148,19 @@ public class MainHostedService : IHostedService
         }
     }
 
+    /// <summary>
+    /// Starts the Windows Service mode (uses HTTP transport internally).
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for graceful shutdown.</param>
     private async Task StartServiceServer(CancellationToken cancellationToken)
     {
         // Service mode uses HTTP transport
         await StartHttpServer(cancellationToken);
     }
 
+    /// <summary>
+    /// Handles the install command to install the application as a Windows Service.
+    /// </summary>
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private async Task HandleInstallCommand()
     {
@@ -163,6 +178,9 @@ public class MainHostedService : IHostedService
         Environment.Exit(0);
     }
 
+    /// <summary>
+    /// Handles the update command to update an existing Windows Service installation.
+    /// </summary>
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private async Task HandleUpdateCommand()
     {
@@ -180,6 +198,9 @@ public class MainHostedService : IHostedService
         Environment.Exit(0);
     }
 
+    /// <summary>
+    /// Handles the uninstall command to remove the Windows Service.
+    /// </summary>
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private async Task HandleUninstallCommand()
     {

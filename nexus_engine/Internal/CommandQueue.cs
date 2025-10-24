@@ -323,6 +323,10 @@ internal class CommandQueue : IDisposable
         }
     }
 
+    /// <summary>
+    /// Main loop that processes commands from the queue, collecting and batching them when appropriate.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
     private async Task ProcessCommandsAsync(CancellationToken cancellationToken)
     {
         m_Logger.Debug("Starting command processing for session {SessionId}", m_SessionId);
@@ -503,6 +507,11 @@ internal class CommandQueue : IDisposable
         return command != null ? [command] : [];
     }
 
+    /// <summary>
+    /// Processes a single command through the CDB session (used when batching is not applicable).
+    /// </summary>
+    /// <param name="command">The command to process.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     protected async Task ProcessCommandAsync(QueuedCommand command, CancellationToken cancellationToken)
     {
         ValidateCdbSession();

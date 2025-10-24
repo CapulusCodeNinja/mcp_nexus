@@ -31,7 +31,7 @@ internal static class GetDumpAnalyzeCommandsStatusTool
 
         try
         {
-            var allCommands = DebugEngine.GetInstance(serviceProvider).GetAllCommandInfos(sessionId);
+            var allCommands = DebugEngine.Instance.GetAllCommandInfos(sessionId);
 
             var commandStatuses = allCommands.Values.Select(cmd => new
             {

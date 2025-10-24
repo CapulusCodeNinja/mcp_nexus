@@ -24,13 +24,24 @@ public class DebugEngine : IDebugEngine
     private readonly ConcurrentDictionary<string, Internal.DebugSession> m_Sessions = new();
     private volatile bool m_Disposed = false;
 
+    /// <summary>
+    /// Gets the singleton instance of the debug engine.
+    /// </summary>
     public static IDebugEngine Instance { get; } = new DebugEngine();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DebugEngine"/> class with default dependencies.
+    /// </summary>
     internal DebugEngine() : this(new FileSystem(), new ProcessManager())
     {
 
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DebugEngine"/> class with specified dependencies.
+    /// </summary>
+    /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="processManager">The process manager abstraction.</param>
     internal DebugEngine(IFileSystem fileSystem, IProcessManager processManager)
     {
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
@@ -285,23 +296,45 @@ public class DebugEngine : IDebugEngine
         SessionStateChanged?.Invoke(this, e);
     }
 
+    /// <summary>
+    /// Generates a unique session identifier.
+    /// </summary>
+    /// <returns>A unique session ID string.</returns>
     private static string GenerateSessionId()
     {
         return $"sess-{Guid.NewGuid():N}";
     }
 
+    /// <summary>
+    /// Validates that a session ID is not null or empty.
+    /// </summary>
+    /// <param name="sessionId">The session ID to validate.</param>
+    /// <param name="paramName">The parameter name for the exception message.</param>
+    /// <exception cref="ArgumentException">Thrown when sessionId is null or whitespace.</exception>
     private static void ValidateSessionId(string sessionId, string paramName)
     {
         if (string.IsNullOrWhiteSpace(sessionId))
             throw new ArgumentException("Session ID cannot be null or empty", paramName);
     }
 
+    /// <summary>
+    /// Validates that a command ID is not null or empty.
+    /// </summary>
+    /// <param name="commandId">The command ID to validate.</param>
+    /// <param name="paramName">The parameter name for the exception message.</param>
+    /// <exception cref="ArgumentException">Thrown when commandId is null or whitespace.</exception>
     private static void ValidateCommandId(string commandId, string paramName)
     {
         if (string.IsNullOrWhiteSpace(commandId))
             throw new ArgumentException("Command ID cannot be null or empty", paramName);
     }
 
+    /// <summary>
+    /// Validates that a command is not null or empty.
+    /// </summary>
+    /// <param name="command">The command to validate.</param>
+    /// <param name="paramName">The parameter name for the exception message.</param>
+    /// <exception cref="ArgumentException">Thrown when command is null or whitespace.</exception>
     private static void ValidateCommand(string command, string paramName)
     {
         if (string.IsNullOrWhiteSpace(command))

@@ -22,7 +22,7 @@ namespace nexus.setup.Validation
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseValidator"/> class.
         /// </summary>
-        /// <param name="logger">Logger instance.</param>
+        /// <param name="logger">NLog logger instance.</param>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
         protected BaseValidator(Logger logger, IFileSystem fileSystem, IServiceController serviceController)

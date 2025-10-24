@@ -346,6 +346,12 @@ internal class CdbSession : ICdbSession
         return StartCdbProcessAsync(cdbPath, arguments);
     }
 
+    /// <summary>
+    /// Builds the command line arguments for starting the CDB process.
+    /// </summary>
+    /// <param name="dumpFilePath">Path to the dump file.</param>
+    /// <param name="symbolPath">Optional symbol path.</param>
+    /// <returns>The formatted command line arguments string.</returns>
     private static string BuildCommandLineArguments(string dumpFilePath, string? symbolPath)
     {
         var arguments = new List<string>
@@ -363,6 +369,12 @@ internal class CdbSession : ICdbSession
         return string.Join(" ", arguments);
     }
 
+    /// <summary>
+    /// Starts the CDB process with the specified arguments.
+    /// </summary>
+    /// <param name="cdbPath">Path to the CDB executable.</param>
+    /// <param name="arguments">Command line arguments for CDB.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private Task StartCdbProcessAsync(string cdbPath, string arguments)
     {
         var startInfo = new ProcessStartInfo
@@ -392,6 +404,12 @@ internal class CdbSession : ICdbSession
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Waits for the CDB process to initialize.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the asynchronous wait operation.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when CDB process exits during initialization.</exception>
     protected async Task WaitForCdbInitializationAsync(CancellationToken cancellationToken)
     {
         var timeout = TimeSpan.FromMilliseconds(5000);
@@ -432,11 +450,23 @@ internal class CdbSession : ICdbSession
         await Task.Delay(100, cancellationToken);
     }
 
+    /// <summary>
+    /// Creates a CDB command wrapped with start and end sentinel markers.
+    /// </summary>
+    /// <param name="command">The CDB command to wrap.</param>
+    /// <returns>The command string with sentinels.</returns>
     protected static string CreateCommandWithSentinels(string command)
     {
         return $".echo {CdbSentinels.StartMarker}; {command}; .echo {CdbSentinels.EndMarker}";
     }
 
+    /// <summary>
+    /// Sends a command to the CDB process input stream.
+    /// </summary>
+    /// <param name="command">The command to send.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when CDB input stream is not available.</exception>
     protected async Task SendCommandToCdbAsync(string command, CancellationToken cancellationToken)
     {
         if (m_InputWriter == null)
@@ -446,6 +476,13 @@ internal class CdbSession : ICdbSession
         await m_InputWriter.FlushAsync();
     }
 
+    /// <summary>
+    /// Reads the command output from the CDB process, extracting text between sentinel markers.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The command output as a string.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when CDB output stream is not available.</exception>
+    /// <exception cref="TimeoutException">Thrown when command execution exceeds the configured timeout.</exception>
     protected async Task<string> ReadCommandOutputAsync(CancellationToken cancellationToken)
     {
         if (m_OutputReader == null)
@@ -514,12 +551,20 @@ internal class CdbSession : ICdbSession
         return (true, false); // Continue, don't break
     }
 
+    /// <summary>
+    /// Throws an exception if the session has been disposed.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException">Thrown when the session is disposed.</exception>
     protected void ThrowIfDisposed()
     {
         if (m_Disposed)
             throw new ObjectDisposedException(nameof(CdbSession));
     }
 
+    /// <summary>
+    /// Throws an exception if the session is not initialized.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when the session is not initialized.</exception>
     protected void ThrowIfNotInitialized()
     {
         if (!m_Initialized)

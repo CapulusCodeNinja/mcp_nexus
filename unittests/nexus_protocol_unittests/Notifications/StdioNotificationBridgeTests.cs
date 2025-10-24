@@ -21,8 +21,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// </summary>
     public StdioNotificationBridgeTests()
     {
-        var logger = NullLogger<StdioNotificationBridge>.Instance;
-        m_Bridge = new StdioNotificationBridge(logger);
+        m_Bridge = new StdioNotificationBridge();
 
         // Capture console output
         m_OriginalOutput = Console.Out;
@@ -41,15 +40,14 @@ public class StdioNotificationBridgeTests : IDisposable
     }
 
     /// <summary>
-    /// Verifies that constructor throws ArgumentNullException when logger is null.
+    /// Verifies that constructor creates instance successfully.
     /// </summary>
     [Fact]
-    public void Constructor_WithNullLogger_ThrowsArgumentNullException()
+    public void Constructor_CreatesInstance()
     {
-        var action = () => new StdioNotificationBridge(null!);
+        var action = () => new StdioNotificationBridge();
 
-        action.Should().Throw<ArgumentNullException>()
-            .WithParameterName("logger");
+        action.Should().NotThrow();
     }
 
     /// <summary>

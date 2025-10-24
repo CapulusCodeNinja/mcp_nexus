@@ -17,7 +17,6 @@ internal class ServiceHostedService : IHostedService
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceHostedService"/> class.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
     /// <param name="protocolServer">Protocol server instance.</param>
     /// <param name="lifetime">Application lifetime.</param>
     public ServiceHostedService(

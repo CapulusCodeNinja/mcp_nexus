@@ -18,8 +18,15 @@ public class BatchProcessor : IBatchProcessor
 
     private readonly Logger m_Logger;
 
+    /// <summary>
+    /// Gets the singleton instance of the batch processor.
+    /// </summary>
     public static IBatchProcessor Instance { get; } = new BatchProcessor();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BatchProcessor"/> class.
+    /// Creates internal batch processing components (filter, builder, parser).
+    /// </summary>
     internal BatchProcessor()
     {
         m_Logger = LogManager.GetCurrentClassLogger();

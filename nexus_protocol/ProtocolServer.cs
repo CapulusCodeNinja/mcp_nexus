@@ -20,6 +20,9 @@ public class ProtocolServer : IProtocolServer
     private bool m_IsRunning;
     private bool m_Disposed;
 
+    /// <summary>
+    /// Gets the singleton instance of the protocol server.
+    /// </summary>
     public static IProtocolServer Instance { get; } = new ProtocolServer();
 
 

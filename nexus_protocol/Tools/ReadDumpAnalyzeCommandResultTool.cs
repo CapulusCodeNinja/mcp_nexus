@@ -33,7 +33,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
 
         try
         {
-            var commandInfo = await DebugEngine.GetInstance(serviceProvider).GetCommandInfoAsync(sessionId, commandId);
+            var commandInfo = await DebugEngine.Instance.GetCommandInfoAsync(sessionId, commandId);
 
             logger.LogInformation("Command {CommandId} result retrieved: State={State}", commandId, commandInfo.State);
 

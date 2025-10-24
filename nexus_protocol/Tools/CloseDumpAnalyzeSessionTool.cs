@@ -31,7 +31,7 @@ internal static class CloseDumpAnalyzeSessionTool
 
         try
         {
-            await DebugEngine.GetInstance(serviceProvider).CloseSessionAsync(sessionId);
+            await DebugEngine.Instance.CloseSessionAsync(sessionId);
 
             logger.LogInformation("Successfully closed session: {SessionId}", sessionId);
 

@@ -54,7 +54,7 @@ internal static class OpenDumpAnalyzeSessionTool
                 };
             }
 
-            var sessionId = await DebugEngine.GetInstance(serviceProvider).CreateSessionAsync(dumpPath, symbolsPath);
+            var sessionId = await DebugEngine.Instance.CreateSessionAsync(dumpPath, symbolsPath);
 
             logger.LogInformation("Successfully created session: {SessionId}", sessionId);
 
