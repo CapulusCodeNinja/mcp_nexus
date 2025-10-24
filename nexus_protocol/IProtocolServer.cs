@@ -23,6 +23,10 @@ public interface IProtocolServer : IDisposable
     /// <returns>A task that represents the asynchronous stop operation.</returns>
     Task StopAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Sets the host instance for the protocol server.
+    /// </summary>
+    /// <param name="host">The host instance to set.</param>
     void SetHost(IHost host);
 
     /// <summary>

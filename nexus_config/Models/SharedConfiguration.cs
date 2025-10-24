@@ -166,6 +166,10 @@ public class AutomatedRecoverySettings
     /// </summary>
     public int DefaultCommandTimeoutMinutes { get; set; } = 10;
 
+    /// <summary>
+    /// Gets the default command timeout as a TimeSpan.
+    /// </summary>
+    /// <returns>The default command timeout.</returns>
     public TimeSpan GetDefaultCommandTimeout()
     {
         return TimeSpan.FromMinutes(DefaultCommandTimeoutMinutes);
@@ -243,6 +247,10 @@ public class SessionManagementSettings
     /// </summary>
     public int CleanupIntervalMinutes { get; set; } = 5;
 
+    /// <summary>
+    /// Gets the cleanup interval as a TimeSpan.
+    /// </summary>
+    /// <returns>The cleanup interval.</returns>
     public TimeSpan GetCleanupInterval()
     {
         return TimeSpan.FromMinutes(CleanupIntervalMinutes);

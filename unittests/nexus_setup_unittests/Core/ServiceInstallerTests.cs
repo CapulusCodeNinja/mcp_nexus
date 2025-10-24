@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -36,8 +37,10 @@ public class ServiceInstallerTests
         var mockProcessManager = new Mock<IProcessManager>();
         var mockServiceController = new Mock<IServiceController>();
 
+        var serviceProvider = new Mock<IServiceProvider>();
+        serviceProvider.Setup(x => x.GetRequiredService<ILogger<ServiceInstaller>>()).Returns(m_Logger);
         var installer = new ServiceInstaller(
-            m_Logger,
+            serviceProvider.Object,
             mockFileSystem.Object,
             mockProcessManager.Object,
             mockServiceController.Object);

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -27,7 +28,9 @@ public class BackupManagerTests
     {
         m_MockFileSystem = new Mock<IFileSystem>();
         m_Logger = NullLogger<BackupManager>.Instance;
-        m_BackupManager = new BackupManager(m_Logger, m_MockFileSystem.Object);
+        var serviceProvider = new Mock<IServiceProvider>();
+        serviceProvider.Setup(x => x.GetRequiredService<ILogger<BackupManager>>()).Returns(m_Logger);
+        m_BackupManager = new BackupManager(serviceProvider.Object, m_MockFileSystem.Object);
     }
 
     /// <summary>
@@ -51,7 +54,9 @@ public class BackupManagerTests
     public void Constructor_WithNullFileSystem_ShouldThrowArgumentNullException()
     {
         // Act
-        var action = () => new BackupManager(m_Logger, null!);
+        var serviceProvider = new Mock<IServiceProvider>();
+        serviceProvider.Setup(x => x.GetRequiredService<ILogger<BackupManager>>()).Returns(m_Logger);
+        var action = () => new BackupManager(serviceProvider.Object, null!);
 
         // Assert
         action.Should().Throw<ArgumentNullException>()

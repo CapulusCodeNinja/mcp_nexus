@@ -163,8 +163,7 @@ public class MainHostedService : IHostedService
         m_Logger.LogInformation("Handling install command...");
 
         // Get the installation handler from DI
-        var installationHandler = setup.ProductInstallation.Instance;
-        var success = await installationHandler.InstallServiceAsync();
+        var success = await ProductInstallation.GetInstance(m_ServiceProvider).InstallServiceAsync();
 
         if (!success)
         {
@@ -181,8 +180,7 @@ public class MainHostedService : IHostedService
         m_Logger.LogInformation("Handling update command...");
 
         // Get the installation handler from DI
-        var installationHandler = CreateProductInstallation();
-        var success = await installationHandler.UpdateServiceAsync();
+        var success = await ProductInstallation.GetInstance(m_ServiceProvider).UpdateServiceAsync();
 
         if (!success)
         {
@@ -199,8 +197,7 @@ public class MainHostedService : IHostedService
         m_Logger.LogInformation("Handling uninstall command...");
 
         // Get the installation handler from DI
-        var installationHandler = CreateProductInstallation();
-        var success = await installationHandler.UninstallServiceAsync();
+        var success = await ProductInstallation.GetInstance(m_ServiceProvider).UninstallServiceAsync();
 
         if (!success)
         {

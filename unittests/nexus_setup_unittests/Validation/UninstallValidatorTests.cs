@@ -1,5 +1,6 @@
 using System;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -29,7 +30,9 @@ public class UninstallValidatorTests
         m_MockFileSystem = new Mock<IFileSystem>();
         m_MockServiceController = new Mock<IServiceController>();
         m_Logger = NullLogger<UninstallValidator>.Instance;
-        m_Validator = new UninstallValidator(m_Logger, m_MockFileSystem.Object, m_MockServiceController.Object);
+        var serviceProvider = new Mock<IServiceProvider>();
+        serviceProvider.Setup(x => x.GetRequiredService<ILogger<UninstallValidator>>()).Returns(m_Logger);
+        m_Validator = new UninstallValidator(serviceProvider.Object, m_MockFileSystem.Object, m_MockServiceController.Object);
     }
 
     /// <summary>
@@ -53,7 +56,9 @@ public class UninstallValidatorTests
     public void Constructor_WithNullFileSystem_ShouldThrowArgumentNullException()
     {
         // Act
-        var action = () => new UninstallValidator(m_Logger, null!, m_MockServiceController.Object);
+        var serviceProvider = new Mock<IServiceProvider>();
+        serviceProvider.Setup(x => x.GetRequiredService<ILogger<UninstallValidator>>()).Returns(m_Logger);
+        var action = () => new UninstallValidator(serviceProvider.Object, null!, m_MockServiceController.Object);
 
         // Assert
         action.Should().Throw<ArgumentNullException>()
@@ -67,7 +72,9 @@ public class UninstallValidatorTests
     public void Constructor_WithNullServiceController_ShouldThrowArgumentNullException()
     {
         // Act
-        var action = () => new UninstallValidator(m_Logger, m_MockFileSystem.Object, null!);
+        var serviceProvider = new Mock<IServiceProvider>();
+        serviceProvider.Setup(x => x.GetRequiredService<ILogger<UninstallValidator>>()).Returns(m_Logger);
+        var action = () => new UninstallValidator(serviceProvider.Object, m_MockFileSystem.Object, null!);
 
         // Assert
         action.Should().Throw<ArgumentNullException>()

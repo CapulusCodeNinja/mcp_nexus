@@ -24,14 +24,19 @@ public class ProtocolServer : IProtocolServer
     /// <summary>
     /// Initializes a new instance of the <see cref="ProtocolServer"/> class.
     /// </summary>
-    /// <param name="logger">Logger instance for the protocol server.</param>
-    /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
+    /// <param name="serviceProvider">Service provider for dependency injection.</param>
+    /// <exception cref="ArgumentNullException">Thrown when serviceProvider is null.</exception>
     private ProtocolServer(IServiceProvider serviceProvider)
     {
         m_Logger = serviceProvider.GetRequiredService<ILogger<ProtocolServer>>();
         m_IsRunning = false;
     }
 
+    /// <summary>
+    /// Gets the singleton instance of the protocol server.
+    /// </summary>
+    /// <param name="serviceProvider">Service provider for dependency injection.</param>
+    /// <returns>The protocol server instance.</returns>
     public static IProtocolServer GetInstance(IServiceProvider serviceProvider)
     {
         return m_Instance ??= new ProtocolServer(serviceProvider);

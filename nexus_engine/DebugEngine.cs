@@ -26,6 +26,11 @@ public class DebugEngine : IDebugEngine
 
     private static IDebugEngine? m_Instance;
 
+    /// <summary>
+    /// Gets the singleton instance of the debug engine.
+    /// </summary>
+    /// <param name="serviceProvider">Service provider for dependency injection.</param>
+    /// <returns>The debug engine instance.</returns>
     public static IDebugEngine GetInstance(IServiceProvider serviceProvider)
     {
         return m_Instance ??= new DebugEngine(serviceProvider);

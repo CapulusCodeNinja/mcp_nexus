@@ -161,16 +161,16 @@ public static class HttpServerSetup
     /// Creates and configures a WebApplication for HTTP mode with all required settings.
     /// </summary>
     /// <param name="configuration">The application configuration.</param>
-    /// <param name="loggingConfigurator">The logging configurator.</param>
+    /// <param name="settingLoader">The settings loader</param>
     /// <param name="isServiceMode">Whether running in service mode.</param>
     /// <returns>A fully configured WebApplication ready to start.</returns>
     public static WebApplication CreateConfiguredWebApplication(
         IConfiguration configuration,
-        ILoggingConfigurator loggingConfigurator,
+        ISettingsLoader settingLoader,
         bool isServiceMode)
     {
         ArgumentNullException.ThrowIfNull(configuration);
-        ArgumentNullException.ThrowIfNull(loggingConfigurator);
+        ArgumentNullException.ThrowIfNull(settingLoader);
 
         // Read host and port from configuration
         var host = configuration["McpNexus:Server:Host"] ?? "localhost";
@@ -188,8 +188,11 @@ public static class HttpServerSetup
         // Configure the URLs
         webBuilder.WebHost.UseUrls(url);
 
+        // Load configuration settings
+        settingLoader.LoadConfiguration();
+
         // Configure logging
-        loggingConfigurator.ConfigureLogging(webBuilder.Logging, configuration, isServiceMode);
+        settingLoader.ConfigureLogging(webBuilder.Logging, configuration, isServiceMode);
 
         // Configure services
         ConfigureHttpServices(webBuilder.Services, configuration);

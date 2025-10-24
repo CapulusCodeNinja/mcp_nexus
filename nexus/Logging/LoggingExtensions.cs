@@ -23,11 +23,8 @@ public static class LoggingExtensions
         IConfiguration configuration,
         bool isServiceMode)
     {
-        // Create logging configurator
-        var loggingConfigurator = new LoggingConfiguration();
-        
         // Configure logging
-        loggingConfigurator.ConfigureLogging(logging, configuration, isServiceMode);
+        Settings.GetLoader().ConfigureLogging(logging, configuration, isServiceMode);
         
         return logging;
     }
