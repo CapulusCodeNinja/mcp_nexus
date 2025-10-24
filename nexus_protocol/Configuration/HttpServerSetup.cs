@@ -25,11 +25,9 @@ public static class HttpServerSetup
     /// Configures all HTTP services required for MCP server operation.
     /// </summary>
     /// <param name="services">The service collection to configure.</param>
-    /// <param name="configuration">The application configuration.</param>
     /// <param name="serverConfig">Optional server configuration. Uses defaults if not provided.</param>
     public static void ConfigureHttpServices(
         IServiceCollection services,
-        IConfiguration configuration,
         HttpServerConfiguration? serverConfig = null)
     {
         serverConfig ??= new HttpServerConfiguration();
@@ -44,7 +42,7 @@ public static class HttpServerSetup
 
         if (serverConfig.EnableRateLimit)
         {
-            ConfigureRateLimit(services, configuration);
+            ConfigureRateLimit(services);
         }
 
         ConfigureJsonOptions(services);
@@ -83,11 +81,10 @@ public static class HttpServerSetup
     /// Configures rate limiting to prevent abuse.
     /// </summary>
     /// <param name="services">The service collection to configure.</param>
-    /// <param name="configuration">The application configuration.</param>
-    private static void ConfigureRateLimit(IServiceCollection services, IConfiguration configuration)
+    private static void ConfigureRateLimit(IServiceCollection services)
     {
+
         _ = services.AddMemoryCache();
-        _ = services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
         _ = services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
         _ = services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
         _ = services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
@@ -159,22 +156,14 @@ public static class HttpServerSetup
     /// <summary>
     /// Creates and configures a WebApplication for HTTP mode with all required settings.
     /// </summary>
-    /// <param name="configuration">The application configuration.</param>
     /// <param name="isServiceMode">Whether running in service mode.</param>
     /// <returns>A fully configured WebApplication ready to start.</returns>
     public static WebApplication CreateConfiguredWebApplication(
-        IConfiguration configuration,
         bool isServiceMode)
     {
-        ArgumentNullException.ThrowIfNull(configuration);
-
         // Read host and port from configuration
-        var host = configuration["McpNexus:Server:Host"] ?? "localhost";
-        var portStr = configuration["McpNexus:Server:Port"] ?? "5000";
-        if (!int.TryParse(portStr, out var port))
-        {
-            port = 5000;
-        }
+        var host = Settings.GetInstance().Get().McpNexus.Server.Host ?? "localhost";
+        var port = Settings.GetInstance().Get().McpNexus.Server.Port;
 
         var url = $"http://{host}:{port}";
 
@@ -185,10 +174,10 @@ public static class HttpServerSetup
         _ = webBuilder.WebHost.UseUrls(url);
 
         // Configure logging
-        Settings.GetInstance().ConfigureLogging(webBuilder.Logging, configuration, isServiceMode);
+        Settings.GetInstance().ConfigureLogging(webBuilder.Logging, isServiceMode);
 
         // Configure services
-        ConfigureHttpServices(webBuilder.Services, configuration);
+        ConfigureHttpServices(webBuilder.Services);
 
         // Build the application
         var app = webBuilder.Build();
@@ -202,20 +191,15 @@ public static class HttpServerSetup
     /// <summary>
     /// Creates and configures a Host for stdio mode with all required settings.
     /// </summary>
-    /// <param name="configuration">The application configuration.</param>
     /// <param name="isServiceMode">Whether running in service mode.</param>
     /// <returns>A fully configured Host ready to start.</returns>
-    public static IHost CreateConfiguredHost(
-        IConfiguration configuration,
-        bool isServiceMode)
+    public static IHost CreateConfiguredHost(bool isServiceMode)
     {
-        ArgumentNullException.ThrowIfNull(configuration);
-
         // Create Host builder for stdio mode
         var hostBuilder = Host.CreateApplicationBuilder();
 
         // Configure logging
-        Settings.GetInstance().ConfigureLogging(hostBuilder.Logging, configuration, isServiceMode);
+        Settings.GetInstance().ConfigureLogging(hostBuilder.Logging, isServiceMode);
 
         // Configure stdio services
         ConfigureStdioServices(hostBuilder.Services);

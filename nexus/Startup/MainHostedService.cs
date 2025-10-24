@@ -16,20 +16,16 @@ namespace Nexus.Startup;
 public class MainHostedService : IHostedService
 {
     private readonly Logger m_Logger;
-    private readonly IConfiguration m_Configuration;
     private readonly CommandLineContext m_CommandLineContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MainHostedService"/> class.
     /// </summary>
-    /// <param name="configuration">Application configuration.</param>
     /// <param name="commandLineContext">Command line context.</param>
     public MainHostedService(
-        IConfiguration configuration,
         CommandLineContext commandLineContext)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
-        m_Configuration = configuration;
         m_CommandLineContext = commandLineContext;
     }
 
@@ -42,7 +38,7 @@ public class MainHostedService : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         // 1. Display startup banner FIRST (guaranteed first log output)
-        var startupBanner = new StartupBanner(m_Configuration, m_CommandLineContext.IsServiceMode, m_CommandLineContext);
+        var startupBanner = new StartupBanner(m_CommandLineContext.IsServiceMode, m_CommandLineContext);
         startupBanner.DisplayBanner();
 
         // 2. Handle the appropriate command based on command line context
@@ -89,7 +85,6 @@ public class MainHostedService : IHostedService
         {
             // Create and configure WebApplication using protocol library (all logic encapsulated)
             var app = HttpServerSetup.CreateConfiguredWebApplication(
-                m_Configuration,
                 m_CommandLineContext.IsServiceMode);
 
             ProtocolServer.Instance.SetWebApplication(app);
@@ -123,9 +118,7 @@ public class MainHostedService : IHostedService
         try
         {
             // Create and configure Host using protocol library (all logic encapsulated)
-            var host = HttpServerSetup.CreateConfiguredHost(
-                m_Configuration,
-                m_CommandLineContext.IsServiceMode);
+            var host = HttpServerSetup.CreateConfiguredHost(m_CommandLineContext.IsServiceMode);
 
             // Get the protocol server from DI and configure it
             ProtocolServer.Instance.SetHost(host);

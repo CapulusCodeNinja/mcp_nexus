@@ -13,22 +13,20 @@ internal class LoggingConfigurationTestAccessor : LoggingConfiguration
     /// <summary>
     /// Exposes the GetLogLevelFromConfiguration method for testing.
     /// </summary>
-    /// <param name="configuration">The application configuration.</param>
     /// <returns>The configured log level.</returns>
-    public LogLevel TestGetLogLevelFromConfiguration(IConfiguration configuration)
+    public LogLevel TestGetLogLevelFromConfiguration()
     {
-        return GetLogLevelFromConfiguration(configuration);
+        return GetLogLevelFromConfiguration();
     }
 
     /// <summary>
     /// Exposes the ConfigureNLogDynamically method for testing.
     /// </summary>
-    /// <param name="configuration">The application configuration.</param>
     /// <param name="logLevel">The log level to configure.</param>
     /// <param name="isServiceMode">Whether the application is running in service mode.</param>
-    public void TestConfigureNLogDynamically(IConfiguration configuration, LogLevel logLevel, bool isServiceMode)
+    public void TestConfigureNLogDynamically(LogLevel logLevel, bool isServiceMode)
     {
-        ConfigureNLogDynamically(configuration, logLevel, isServiceMode);
+        ConfigureNLogDynamically(logLevel, isServiceMode);
     }
 
     /// <summary>

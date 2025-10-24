@@ -56,7 +56,7 @@ internal static class Program
     internal static IHostBuilder CreateHostBuilder(CommandLineContext cmd)
     {
         var builder = Host.CreateDefaultBuilder(cmd.Args)
-            .ConfigureLogging((context, logging) => logging.AddNexusLogging(context.Configuration,
+            .ConfigureLogging((context, logging) => logging.AddNexusLogging(
                     cmd.IsServiceMode ||
                     cmd.IsInstallMode ||
                     cmd.IsUpdateMode ||

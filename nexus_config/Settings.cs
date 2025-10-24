@@ -35,11 +35,10 @@ namespace Nexus.Config
         /// Configures logging using NLog and provided configuration.
         /// </summary>
         /// <param name="logging">The logging builder.</param>
-        /// <param name="configuration">The configuration root.</param>
         /// <param name="isServiceMode">Whether running as Windows Service.</param>
-        public void ConfigureLogging(ILoggingBuilder logging, IConfiguration configuration, bool isServiceMode)
+        public void ConfigureLogging(ILoggingBuilder logging, bool isServiceMode)
         {
-            m_LoggingConfiguration.ConfigureLogging(logging, configuration, isServiceMode);
+            m_LoggingConfiguration.ConfigureLogging(logging, isServiceMode);
         }
 
         /// <summary>

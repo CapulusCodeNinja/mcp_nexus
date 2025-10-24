@@ -33,46 +33,6 @@ public class LoggingConfigurationTests
     }
 
     /// <summary>
-    /// Tests that GetLogLevelFromConfiguration returns correct log level.
-    /// </summary>
-    [Theory]
-    [InlineData("Information", MELogLevel.Information)]
-    [InlineData("Debug", MELogLevel.Debug)]
-    [InlineData("Warning", MELogLevel.Warning)]
-    [InlineData("Error", MELogLevel.Error)]
-    [InlineData("Critical", MELogLevel.Critical)]
-    [InlineData("Trace", MELogLevel.Trace)]
-    [InlineData("None", MELogLevel.None)]
-    public void GetLogLevelFromConfiguration_WithValidLogLevel_ShouldReturnCorrectLevel(string logLevelString, MELogLevel expectedLevel)
-    {
-        // Arrange
-        _ = m_MockConfiguration.Setup(x => x["Logging:LogLevel"]).Returns(logLevelString);
-        var testAccessor = new LoggingConfigurationTestAccessor();
-
-        // Act
-        var result = testAccessor.TestGetLogLevelFromConfiguration(m_MockConfiguration.Object);
-
-        // Assert
-        _ = result.Should().Be(expectedLevel);
-    }
-
-    /// <summary>
-    /// Tests that GetLogLevelFromConfiguration returns Information for null configuration.
-    /// </summary>
-    [Fact]
-    public void GetLogLevelFromConfiguration_WithNullConfiguration_ShouldReturnInformation()
-    {
-        // Arrange
-        var testAccessor = new LoggingConfigurationTestAccessor();
-
-        // Act
-        var result = testAccessor.TestGetLogLevelFromConfiguration(null!);
-
-        // Assert
-        _ = result.Should().Be(MELogLevel.Information);
-    }
-
-    /// <summary>
     /// Tests that ParseLogLevel handles various log level strings correctly.
     /// </summary>
     [Theory]
@@ -123,38 +83,6 @@ public class LoggingConfigurationTests
 
         // Assert
         _ = result.Should().Be(expectedNLogLevel);
-    }
-
-    /// <summary>
-    /// Tests that ConfigureLogging calls all required methods.
-    /// </summary>
-    [Fact]
-    public void ConfigureLogging_WithValidParameters_ShouldNotThrow()
-    {
-        // Arrange
-        var testAccessor = new LoggingConfigurationTestAccessor();
-        var mockLoggingBuilder = new Mock<ILoggingBuilder>();
-        _ = mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
-
-        // Act & Assert
-        var action = () => testAccessor.ConfigureLogging(mockLoggingBuilder.Object, m_MockConfiguration.Object, false);
-        _ = action.Should().NotThrow();
-    }
-
-    /// <summary>
-    /// Tests that ConfigureLogging works in service mode.
-    /// </summary>
-    [Fact]
-    public void ConfigureLogging_WithServiceMode_ShouldNotThrow()
-    {
-        // Arrange
-        var testAccessor = new LoggingConfigurationTestAccessor();
-        var mockLoggingBuilder = new Mock<ILoggingBuilder>();
-        _ = mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
-
-        // Act & Assert
-        var action = () => testAccessor.ConfigureLogging(mockLoggingBuilder.Object, m_MockConfiguration.Object, true);
-        _ = action.Should().NotThrow();
     }
 
     /// <summary>

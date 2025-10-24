@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Extensions.Configuration;
 
 using Nexus.CommandLine;
+using Nexus.Config;
 
 using NLog;
 
@@ -15,20 +16,17 @@ namespace Nexus.Startup;
 internal class StartupBanner
 {
     private readonly Logger m_Logger;
-    private readonly IConfiguration m_Configuration;
     private readonly bool m_IsServiceMode;
     private readonly CommandLineContext m_CommandLineContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StartupBanner"/> class.
     /// </summary>
-    /// <param name="configuration">The application configuration.</param>
     /// <param name="isServiceMode">Indicates whether the application is running as a Windows Service.</param>
     /// <param name="commandLineContext">The command line context.</param>
-    public StartupBanner(IConfiguration configuration, bool isServiceMode, CommandLineContext commandLineContext)
+    public StartupBanner(bool isServiceMode, CommandLineContext commandLineContext)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
-        m_Configuration = configuration;
         m_IsServiceMode = isServiceMode;
         m_CommandLineContext = commandLineContext;
     }
@@ -149,8 +147,8 @@ internal class StartupBanner
     /// </summary>
     private void DisplayServerConfiguration()
     {
-        var host = m_Configuration["McpNexus:Server:Host"] ?? "0.0.0.0";
-        var port = m_Configuration["McpNexus:Server:Port"] ?? "5511";
+        var host = Settings.GetInstance().Get().McpNexus.Server.Host ?? "0.0.0.0";
+        var port = Settings.GetInstance().Get().McpNexus.Server.Port;
 
         m_Logger.Info("┌─ Server Configuration ─────────────────────────────────────────────");
         m_Logger.Info("│ Host: {Host}", host);
@@ -163,7 +161,7 @@ internal class StartupBanner
     /// </summary>
     private void DisplayTransportConfiguration()
     {
-        var transportMode = m_Configuration["McpNexus:Transport:Mode"] ?? "http";
+        var transportMode = Settings.GetInstance().Get().McpNexus.Transport.Mode ?? "http";
 
         m_Logger.Info("┌─ Transport Configuration ──────────────────────────────────────────");
         m_Logger.Info("│ Mode:         {TransportMode}", transportMode);
@@ -176,11 +174,11 @@ internal class StartupBanner
     /// </summary>
     private void DisplayDebuggingConfiguration()
     {
-        var cdbPath = m_Configuration["McpNexus:Debugging:CdbPath"] ?? "";
-        var commandTimeout = m_Configuration["McpNexus:Debugging:CommandTimeoutMs"] ?? "600000";
-        var symbolRetries = m_Configuration["McpNexus:Debugging:SymbolServerMaxRetries"] ?? "1";
-        var symbolPath = m_Configuration["McpNexus:Debugging:SymbolSearchPath"] ?? "";
-        var startupDelay = m_Configuration["McpNexus:Debugging:StartupDelayMs"] ?? "500";
+        var cdbPath = Settings.GetInstance().Get().McpNexus.Debugging.CdbPath ?? "";
+        var commandTimeout = Settings.GetInstance().Get().McpNexus.Debugging.CommandTimeoutMs;
+        var symbolRetries = Settings.GetInstance().Get().McpNexus.Debugging.SymbolServerMaxRetries;
+        var symbolPath = Settings.GetInstance().Get().McpNexus.Debugging.SymbolSearchPath ?? "";
+        var startupDelay = Settings.GetInstance().Get().McpNexus.Debugging.StartupDelayMs;
 
         m_Logger.Info("┌─ Debugging Configuration ──────────────────────────────────────────");
         m_Logger.Info("│ CDB Path:                 {CdbPath}", string.IsNullOrEmpty(cdbPath) ? "Not specified" : cdbPath);
@@ -197,8 +195,8 @@ internal class StartupBanner
     /// </summary>
     private void DisplayServiceConfiguration()
     {
-        var installPath = m_Configuration["McpNexus:Service:InstallPath"] ?? "";
-        var backupPath = m_Configuration["McpNexus:Service:BackupPath"] ?? "";
+        var installPath = Settings.GetInstance().Get().McpNexus.Service.InstallPath ?? "";
+        var backupPath = Settings.GetInstance().Get().McpNexus.Service.BackupPath ?? "";
 
         if (!string.IsNullOrEmpty(installPath))
         {
@@ -214,7 +212,7 @@ internal class StartupBanner
     /// </summary>
     private void DisplayLoggingConfiguration()
     {
-        var logLevel = m_Configuration["Logging:LogLevel"] ?? "Information";
+        var logLevel = Settings.GetInstance().Get().Logging.LogLevel ?? "Information";
 
         m_Logger.Info("┌─ Logging Configuration ────────────────────────────────────────────");
         m_Logger.Info("│ Log Level:         {LogLevel}", logLevel);
