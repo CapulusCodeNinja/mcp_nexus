@@ -1,8 +1,8 @@
-using nexus.engine.batch.Internal;
+using Nexus.Engine.Batch.Internal;
 
 using Xunit;
 
-namespace nexus.engine.batch.tests;
+namespace Nexus.Engine.Batch.Tests;
 
 /// <summary>
 /// Tests for <see cref="BatchSentinels"/>.

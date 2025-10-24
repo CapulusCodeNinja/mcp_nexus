@@ -1,4 +1,4 @@
-namespace nexus.engine;
+namespace Nexus.Engine;
 
 /// <summary>
 /// Interface for CDB session operations to enable mocking in tests.

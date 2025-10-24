@@ -4,11 +4,11 @@ using System.Diagnostics;
 
 using FluentAssertions;
 
-using nexus.extensions.Infrastructure;
+using Nexus.Extensions.Infrastructure;
 
 using Xunit;
 
-namespace nexus.extensions.unittests.Infrastructure;
+namespace Nexus.Extensions.unittests.Infrastructure;
 
 /// <summary>
 /// Unit tests for ProcessWrapper class.

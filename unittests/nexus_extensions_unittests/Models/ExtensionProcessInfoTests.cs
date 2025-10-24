@@ -1,10 +1,10 @@
 using FluentAssertions;
 
-using nexus.extensions.Models;
+using Nexus.Extensions.Models;
 
 using Xunit;
 
-namespace nexus.extensions_unittests.Models;
+namespace Nexus.Extensions_unittests.Models;
 
 /// <summary>
 /// Unit tests for the ExtensionProcessInfo class.

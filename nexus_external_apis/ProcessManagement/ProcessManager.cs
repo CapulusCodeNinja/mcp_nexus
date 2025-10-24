@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace nexus.external_apis.ProcessManagement;
+namespace Nexus.External.Apis.ProcessManagement;
 
 /// <summary>
 /// Concrete implementation of IProcessManager that uses the real process management.

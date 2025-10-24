@@ -4,10 +4,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using nexus.engine;
-using nexus.protocol.Resources;
+using Nexus.Engine;
+using Nexus.Protocol.Resources;
 
-namespace nexus.protocol.unittests.Resources;
+namespace Nexus.Protocol.Unittests.Resources;
 
 /// <summary>
 /// Unit tests for SessionsResource class.

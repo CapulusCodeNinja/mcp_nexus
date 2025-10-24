@@ -4,10 +4,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
-using nexus.engine;
-using nexus.protocol.Tools;
+using Nexus.Engine;
+using Nexus.Protocol.Tools;
 
-namespace nexus.protocol.unittests.Tools;
+namespace Nexus.Protocol.Unittests.Tools;
 
 /// <summary>
 /// Unit tests for EnqueueAsyncDumpAnalyzeCommandTool class.
@@ -35,7 +35,7 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
     /// Verifies that nexus_enqueue_async_dump_analyze_command returns queued result with valid parameters.
     /// </summary>
     [Fact]
-    public async Task nexus_enqueue_async_dump_analyze_command_WithValidParameters_ReturnsQueuedResult()
+    public async Task Nexus_enqueue_async_dump_analyze_command_WithValidParameters_ReturnsQueuedResult()
     {
         const string sessionId = "sess-123";
         const string command = "kL";
@@ -58,7 +58,7 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
     /// Verifies that nexus_enqueue_async_dump_analyze_command returns failed result with ArgumentException.
     /// </summary>
     [Fact]
-    public async Task nexus_enqueue_async_dump_analyze_command_WithArgumentException_ReturnsFailedResult()
+    public async Task Nexus_enqueue_async_dump_analyze_command_WithArgumentException_ReturnsFailedResult()
     {
         const string sessionId = "sess-123";
         const string command = "kL";
@@ -79,7 +79,7 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
     /// Verifies that nexus_enqueue_async_dump_analyze_command returns failed result with InvalidOperationException.
     /// </summary>
     [Fact]
-    public async Task nexus_enqueue_async_dump_analyze_command_WithInvalidOperationException_ReturnsFailedResult()
+    public async Task Nexus_enqueue_async_dump_analyze_command_WithInvalidOperationException_ReturnsFailedResult()
     {
         const string sessionId = "sess-123";
         const string command = "kL";
@@ -100,7 +100,7 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
     /// Verifies that nexus_enqueue_async_dump_analyze_command returns failed result with unexpected exception.
     /// </summary>
     [Fact]
-    public async Task nexus_enqueue_async_dump_analyze_command_WithUnexpectedException_ReturnsFailedResult()
+    public async Task Nexus_enqueue_async_dump_analyze_command_WithUnexpectedException_ReturnsFailedResult()
     {
         const string sessionId = "sess-123";
         const string command = "kL";
@@ -121,7 +121,7 @@ public class EnqueueAsyncDumpAnalyzeCommandToolTests
     /// Verifies that nexus_enqueue_async_dump_analyze_command includes usage field in response.
     /// </summary>
     [Fact]
-    public async Task nexus_enqueue_async_dump_analyze_command_IncludesUsageField()
+    public async Task Nexus_enqueue_async_dump_analyze_command_IncludesUsageField()
     {
         const string sessionId = "sess-123";
         const string command = "kL";

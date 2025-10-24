@@ -1,6 +1,6 @@
-using nexus.engine.Models;
+using Nexus.Engine.Models;
 
-namespace nexus.engine.Events;
+namespace Nexus.Engine.Events;
 
 /// <summary>
 /// Event arguments for command state change events.

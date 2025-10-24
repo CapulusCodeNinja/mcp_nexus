@@ -4,10 +4,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
-using nexus.engine;
-using nexus.protocol.Tools;
+using Nexus.Engine;
+using Nexus.Protocol.Tools;
 
-namespace nexus.protocol.unittests.Tools;
+namespace Nexus.Protocol.Unittests.Tools;
 
 /// <summary>
 /// Unit tests for CloseDumpAnalyzeSessionTool class.
@@ -35,7 +35,7 @@ public class CloseDumpAnalyzeSessionToolTests
     /// Verifies that nexus_close_dump_analyze_session returns success result with valid session ID.
     /// </summary>
     [Fact]
-    public async Task nexus_close_dump_analyze_session_WithValidSessionId_ReturnsSuccessResult()
+    public async Task Nexus_close_dump_analyze_session_WithValidSessionId_ReturnsSuccessResult()
     {
         const string sessionId = "sess-123";
 
@@ -55,7 +55,7 @@ public class CloseDumpAnalyzeSessionToolTests
     /// Verifies that nexus_close_dump_analyze_session returns failed result with ArgumentException.
     /// </summary>
     [Fact]
-    public async Task nexus_close_dump_analyze_session_WithArgumentException_ReturnsFailedResult()
+    public async Task Nexus_close_dump_analyze_session_WithArgumentException_ReturnsFailedResult()
     {
         const string sessionId = "sess-invalid";
 
@@ -74,7 +74,7 @@ public class CloseDumpAnalyzeSessionToolTests
     /// Verifies that nexus_close_dump_analyze_session returns failed result with unexpected exception.
     /// </summary>
     [Fact]
-    public async Task nexus_close_dump_analyze_session_WithUnexpectedException_ReturnsFailedResult()
+    public async Task Nexus_close_dump_analyze_session_WithUnexpectedException_ReturnsFailedResult()
     {
         const string sessionId = "sess-123";
 
@@ -93,7 +93,7 @@ public class CloseDumpAnalyzeSessionToolTests
     /// Verifies that nexus_close_dump_analyze_session includes usage field in response.
     /// </summary>
     [Fact]
-    public async Task nexus_close_dump_analyze_session_IncludesUsageField()
+    public async Task Nexus_close_dump_analyze_session_IncludesUsageField()
     {
         const string sessionId = "sess-789";
 

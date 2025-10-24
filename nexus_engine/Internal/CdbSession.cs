@@ -4,12 +4,12 @@ using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ProcessManagement;
+using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ProcessManagement;
 
-namespace nexus.engine.Internal;
+namespace Nexus.Engine.Internal;
 
-using config;
+using Nexus.Config;
 
 using NLog;
 

@@ -10,14 +10,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
-using nexus.external_apis.FileSystem;
-using nexus.setup.Management;
+using Nexus.External.Apis.FileSystem;
+using Nexus.Setup.Management;
 
 using NLog;
 
 using Xunit;
 
-namespace nexus.setup.unittests.Management;
+namespace Nexus.Setup.unittests.Management;
 
 /// <summary>
 /// Unit tests for FileManager class.

@@ -1,4 +1,4 @@
-namespace nexus.engine.batch;
+namespace Nexus.Engine.Batch;
 
 /// <summary>
 /// Represents a command to be executed.

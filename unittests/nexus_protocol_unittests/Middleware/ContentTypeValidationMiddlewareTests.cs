@@ -2,9 +2,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using nexus.protocol.Middleware;
+using Nexus.Protocol.Middleware;
 
-namespace nexus.protocol.unittests.Middleware;
+namespace Nexus.Protocol.Unittests.Middleware;
 
 /// <summary>
 /// Unit tests for ContentTypeValidationMiddleware class.

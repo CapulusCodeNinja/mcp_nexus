@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using nexus.protocol;
+using Nexus.Protocol;
 
 using NLog;
 
-namespace nexus.Hosting;
+namespace Nexus.Hosting;
 
 /// <summary>
 /// Hosted service for HTTP server mode.

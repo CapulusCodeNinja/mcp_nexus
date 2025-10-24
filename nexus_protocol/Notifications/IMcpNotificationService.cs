@@ -1,4 +1,4 @@
-namespace nexus.protocol.Notifications;
+namespace Nexus.Protocol.Notifications;
 
 /// <summary>
 /// Interface for the Model Context Protocol (MCP) notification service.

@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace nexus.external_apis.FileSystem;
+namespace Nexus.External.Apis.FileSystem;
 
 /// <summary>
 /// Concrete implementation of IFileSystem that uses the real file system.

@@ -1,4 +1,4 @@
-namespace nexus.engine.Internal;
+namespace Nexus.Engine.Internal;
 
 /// <summary>
 /// Constants for CDB sentinel markers used to identify command boundaries in output.

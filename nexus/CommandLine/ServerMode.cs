@@ -1,4 +1,4 @@
-namespace nexus.CommandLine;
+namespace Nexus.CommandLine;
 
 /// <summary>
 /// Defines the server execution mode.

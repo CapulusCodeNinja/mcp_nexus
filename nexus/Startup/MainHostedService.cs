@@ -3,14 +3,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using nexus.CommandLine;
-using nexus.protocol;
-using nexus.protocol.Configuration;
-using nexus.setup;
+using Nexus.CommandLine;
+using Nexus.Protocol;
+using Nexus.Protocol.Configuration;
+using Nexus.Setup;
 
 using NLog;
 
-namespace nexus.Startup;
+namespace Nexus.Startup;
 
 /// <summary>
 /// Main hosted service that orchestrates the entire application startup sequence.

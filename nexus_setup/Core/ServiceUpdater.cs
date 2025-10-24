@@ -4,15 +4,15 @@ using System.ServiceProcess;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ServiceManagement;
-using nexus.setup.Interfaces;
-using nexus.setup.Models;
-using nexus.setup.Utilities;
+using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ServiceManagement;
+using Nexus.Setup.Interfaces;
+using Nexus.Setup.Models;
+using Nexus.Setup.Utilities;
 
-namespace nexus.setup.Core;
+namespace Nexus.Setup.Core;
 
-using external_apis.ProcessManagement;
+using Nexus.External.Apis.ProcessManagement;
 
 using NLog;
 

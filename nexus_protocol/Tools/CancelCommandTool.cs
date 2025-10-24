@@ -5,9 +5,9 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol.Server;
 
-using nexus.engine;
+using Nexus.Engine;
 
-namespace nexus.protocol.Tools;
+namespace Nexus.Protocol.Tools;
 
 /// <summary>
 /// MCP tool for canceling a queued or executing command.
@@ -25,6 +25,7 @@ internal static class CancelCommandTool
     /// <param name="commandId">Command ID from nexus_enqueue_async_dump_analyze_command.</param>
     /// <returns>Command cancellation result.</returns>
     [McpServerTool, Description("Cancels a queued or executing command.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     public static Task<object> nexus_cancel_dump_analyze_command(
         IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,

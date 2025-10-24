@@ -6,13 +6,13 @@ using System.Text.RegularExpressions;
 
 using Microsoft.Extensions.Logging;
 
-using nexus.extensions.Configuration;
-using nexus.extensions.Infrastructure;
-using nexus.extensions.Models;
+using Nexus.Extensions.Configuration;
+using Nexus.Extensions.Infrastructure;
+using Nexus.Extensions.Models;
 
 using NLog;
 
-namespace nexus.extensions.Core;
+namespace Nexus.Extensions.Core;
 
 /// <summary>
 /// Executes extension scripts and manages their lifecycle.

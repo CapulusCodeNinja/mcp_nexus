@@ -1,7 +1,7 @@
 using System.Runtime.Versioning;
 using System.ServiceProcess;
 
-namespace nexus.external_apis.ServiceManagement;
+namespace Nexus.External.Apis.ServiceManagement;
 
 /// <summary>
 /// Interface for Windows Service Controller operations to enable mocking in tests.

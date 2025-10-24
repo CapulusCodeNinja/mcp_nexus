@@ -1,14 +1,14 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.engine.Events;
-using nexus.engine.Models;
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ProcessManagement;
+using Nexus.Engine.Events;
+using Nexus.Engine.Models;
+using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ProcessManagement;
 
 using NLog;
 
-namespace nexus.engine.Internal;
+namespace Nexus.Engine.Internal;
 
 /// <summary>
 /// Internal implementation of a debug session that manages a single CDB process and command queue.

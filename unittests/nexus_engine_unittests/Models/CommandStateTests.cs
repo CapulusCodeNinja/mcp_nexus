@@ -1,10 +1,10 @@
 using FluentAssertions;
 
-using nexus.engine.Models;
+using Nexus.Engine.Models;
 
 using Xunit;
 
-namespace nexus.engine.unittests.Models;
+namespace Nexus.Engine.Unittests.Models;
 
 /// <summary>
 /// Unit tests for the CommandState enum.

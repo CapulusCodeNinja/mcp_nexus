@@ -6,11 +6,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using nexus.CommandLine;
+using Nexus.CommandLine;
 
 using NLog;
 
-namespace nexus.Startup;
+namespace Nexus.Startup;
 
 /// <summary>
 /// Displays the startup banner with configuration information.

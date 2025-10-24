@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging;
 
-using nexus.protocol.Models;
-using nexus.protocol.Notifications;
+using Nexus.Protocol.Models;
+using Nexus.Protocol.Notifications;
 
 using NLog;
 
-namespace nexus.protocol.Services;
+namespace Nexus.Protocol.Services;
 
 /// <summary>
 /// Implementation of the MCP tool definition service.

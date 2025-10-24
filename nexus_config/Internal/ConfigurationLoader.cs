@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
 
-using nexus.config.Models;
+using Nexus.Config.Models;
 
-namespace nexus.config.Internal;
+namespace Nexus.Config.Internal;
 
 /// <summary>
 /// Internal implementation of configuration loading functionality.

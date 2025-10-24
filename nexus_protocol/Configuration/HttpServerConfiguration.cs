@@ -1,4 +1,4 @@
-namespace nexus.protocol.Configuration;
+namespace Nexus.Protocol.Configuration;
 
 /// <summary>
 /// Configuration options for the HTTP-based MCP server.

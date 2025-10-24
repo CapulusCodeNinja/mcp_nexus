@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging;
 
-using nexus.protocol.Models;
+using Nexus.Protocol.Models;
 
 using NLog;
 
-namespace nexus.protocol.Notifications;
+namespace Nexus.Protocol.Notifications;
 
 /// <summary>
 /// Implementation of the MCP notification service.

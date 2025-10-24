@@ -1,4 +1,4 @@
-namespace nexus.config.Models;
+namespace Nexus.Config.Models;
 
 /// <summary>
 /// Shared configuration settings for all Nexus libraries.

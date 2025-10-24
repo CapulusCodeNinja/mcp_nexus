@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace nexus.external_apis.ProcessManagement;
+namespace Nexus.External.Apis.ProcessManagement;
 
 /// <summary>
 /// Interface for process management operations to enable mocking in tests.

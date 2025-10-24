@@ -1,11 +1,11 @@
 using FluentAssertions;
 
-using nexus.engine.Events;
-using nexus.engine.Models;
+using Nexus.Engine.Events;
+using Nexus.Engine.Models;
 
 using Xunit;
 
-namespace nexus.engine.unittests.Events;
+namespace Nexus.Engine.Unittests.Events;
 
 /// <summary>
 /// Unit tests for the CommandStateChangedEventArgs class.

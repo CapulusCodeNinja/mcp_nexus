@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace nexus.protocol.Models;
+namespace Nexus.Protocol.Models;
 
 /// <summary>
 /// Represents an error in a Model Context Protocol (MCP) response.

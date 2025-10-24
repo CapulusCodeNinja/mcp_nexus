@@ -1,4 +1,4 @@
-namespace nexus.extensions.Models;
+namespace Nexus.Extensions.Models;
 
 /// <summary>
 /// Information about a running extension process.

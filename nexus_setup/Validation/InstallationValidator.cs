@@ -3,13 +3,13 @@ using System.Runtime.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.config.Models;
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ServiceManagement;
+using Nexus.Config.Models;
+using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ServiceManagement;
 
 using NLog;
 
-namespace nexus.setup.Validation
+namespace Nexus.Setup.Validation
 {
     /// <summary>
     /// Validates pre-installation conditions for service installation.

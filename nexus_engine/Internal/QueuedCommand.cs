@@ -1,6 +1,6 @@
-using nexus.engine.Models;
+using Nexus.Engine.Models;
 
-namespace nexus.engine.Internal;
+namespace Nexus.Engine.Internal;
 
 /// <summary>
 /// Represents a command that has been queued for execution.

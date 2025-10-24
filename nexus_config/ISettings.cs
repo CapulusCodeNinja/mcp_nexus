@@ -1,4 +1,4 @@
-﻿namespace nexus.config
+﻿namespace Nexus.Config
 {
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;

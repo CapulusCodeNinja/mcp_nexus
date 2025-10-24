@@ -2,7 +2,7 @@ using System.Runtime.Versioning;
 
 using Microsoft.Win32;
 
-namespace nexus.external_apis.Registry;
+namespace Nexus.External.Apis.Registry;
 
 /// <summary>
 /// Interface for Windows Registry operations to enable mocking in tests.

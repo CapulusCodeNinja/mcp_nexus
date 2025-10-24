@@ -5,9 +5,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-using nexus.protocol.Configuration;
+using Nexus.Protocol.Configuration;
 
-namespace nexus.protocol.unittests.Configuration;
+namespace Nexus.Protocol.Unittests.Configuration;
 
 /// <summary>
 /// Unit tests for HttpServerSetup class.

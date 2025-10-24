@@ -1,10 +1,10 @@
 using FluentAssertions;
 
-using nexus.config.Models;
+using Nexus.Config.Models;
 
 using Xunit;
 
-namespace nexus.config_unittests.Models;
+namespace Nexus.Config_unittests.Models;
 
 /// <summary>
 /// Unit tests for SharedConfiguration models.

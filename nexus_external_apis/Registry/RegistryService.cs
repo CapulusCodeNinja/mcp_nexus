@@ -2,7 +2,7 @@ using System.Runtime.Versioning;
 
 using Microsoft.Win32;
 
-namespace nexus.external_apis.Registry;
+namespace Nexus.External.Apis.Registry;
 
 /// <summary>
 /// Concrete implementation of IRegistryService that uses the real Windows Registry.

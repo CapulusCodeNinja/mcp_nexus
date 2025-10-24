@@ -4,15 +4,15 @@ using System.ServiceProcess;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ProcessManagement;
-using nexus.external_apis.ServiceManagement;
-using nexus.setup.Interfaces;
-using nexus.setup.Models;
+using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ProcessManagement;
+using Nexus.External.Apis.ServiceManagement;
+using Nexus.Setup.Interfaces;
+using Nexus.Setup.Models;
 
 using NLog;
 
-namespace nexus.setup.Core;
+namespace Nexus.Setup.Core;
 
 /// <summary>
 /// Implements Windows service installation.

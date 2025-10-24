@@ -2,7 +2,7 @@ using nexus.CommandLine;
 
 using Xunit;
 
-namespace nexus_unittests.CommandLine;
+namespace Nexus.Unittests.CommandLine;
 
 /// <summary>
 /// Unit tests for ServerMode enum.

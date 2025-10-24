@@ -4,11 +4,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
-using nexus.engine;
-using nexus.engine.Models;
-using nexus.protocol.Tools;
+using Nexus.Engine;
+using Nexus.Engine.Models;
+using Nexus.Protocol.Tools;
 
-namespace nexus.protocol.unittests.Tools;
+namespace Nexus.Protocol.Unittests.Tools;
 
 /// <summary>
 /// Unit tests for ReadDumpAnalyzeCommandResultTool class.
@@ -36,7 +36,7 @@ public class ReadDumpAnalyzeCommandResultToolTests
     /// Verifies that nexus_read_dump_analyze_command_result returns result with completed command.
     /// </summary>
     [Fact]
-    public async Task nexus_read_dump_analyze_command_result_WithCompletedCommand_ReturnsResult()
+    public async Task Nexus_read_dump_analyze_command_result_WithCompletedCommand_ReturnsResult()
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
@@ -67,7 +67,7 @@ public class ReadDumpAnalyzeCommandResultToolTests
     /// Verifies that nexus_read_dump_analyze_command_result returns failed result with ArgumentException.
     /// </summary>
     [Fact]
-    public async Task nexus_read_dump_analyze_command_result_WithArgumentException_ReturnsFailedResult()
+    public async Task Nexus_read_dump_analyze_command_result_WithArgumentException_ReturnsFailedResult()
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
@@ -88,7 +88,7 @@ public class ReadDumpAnalyzeCommandResultToolTests
     /// Verifies that nexus_read_dump_analyze_command_result returns NotFound result with KeyNotFoundException.
     /// </summary>
     [Fact]
-    public async Task nexus_read_dump_analyze_command_result_WithKeyNotFoundException_ReturnsNotFoundResult()
+    public async Task Nexus_read_dump_analyze_command_result_WithKeyNotFoundException_ReturnsNotFoundResult()
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-missing";
@@ -109,7 +109,7 @@ public class ReadDumpAnalyzeCommandResultToolTests
     /// Verifies that nexus_read_dump_analyze_command_result returns failed result with unexpected exception.
     /// </summary>
     [Fact]
-    public async Task nexus_read_dump_analyze_command_result_WithUnexpectedException_ReturnsFailedResult()
+    public async Task Nexus_read_dump_analyze_command_result_WithUnexpectedException_ReturnsFailedResult()
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
@@ -130,7 +130,7 @@ public class ReadDumpAnalyzeCommandResultToolTests
     /// Verifies that nexus_read_dump_analyze_command_result includes usage field in response.
     /// </summary>
     [Fact]
-    public async Task nexus_read_dump_analyze_command_result_IncludesUsageField()
+    public async Task Nexus_read_dump_analyze_command_result_IncludesUsageField()
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-789";

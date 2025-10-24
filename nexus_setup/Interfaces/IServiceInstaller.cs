@@ -1,9 +1,9 @@
 using System.Runtime.Versioning;
 using System.ServiceProcess;
 
-using nexus.setup.Models;
+using Nexus.Setup.Models;
 
-namespace nexus.setup.Interfaces;
+namespace Nexus.Setup.Interfaces;
 
 /// <summary>
 /// Interface for Windows service installation operations.

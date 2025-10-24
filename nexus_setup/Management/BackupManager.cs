@@ -3,13 +3,13 @@ using System.Runtime.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.external_apis.FileSystem;
-using nexus.setup.Utilities;
-using nexus.setup.Validation;
+using Nexus.External.Apis.FileSystem;
+using Nexus.Setup.Utilities;
+using Nexus.Setup.Validation;
 
 using NLog;
 
-namespace nexus.setup.Management
+namespace Nexus.Setup.Management
 {
     /// <summary>
     /// Manages backup and rollback operations for service installation.

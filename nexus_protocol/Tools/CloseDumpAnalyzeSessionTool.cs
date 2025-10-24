@@ -5,9 +5,9 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol.Server;
 
-using nexus.engine;
+using Nexus.Engine;
 
-namespace nexus.protocol.Tools;
+namespace Nexus.Protocol.Tools;
 
 /// <summary>
 /// MCP tool for closing a debugging session and releasing resources.
@@ -24,6 +24,7 @@ internal static class CloseDumpAnalyzeSessionTool
     /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
     /// <returns>Session closure result.</returns>
     [McpServerTool, Description("Closes a debugging session and releases resources.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     public static async Task<object> nexus_close_dump_analyze_session(
         IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)

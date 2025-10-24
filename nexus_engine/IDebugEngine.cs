@@ -1,7 +1,7 @@
-using nexus.engine.Events;
-using nexus.engine.Models;
+using Nexus.Engine.Events;
+using Nexus.Engine.Models;
 
-namespace nexus.engine;
+namespace Nexus.Engine;
 
 /// <summary>
 /// Main interface for the debug engine that manages CDB sessions and command execution.

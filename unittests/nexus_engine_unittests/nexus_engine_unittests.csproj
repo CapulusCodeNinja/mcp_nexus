@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>nexus_engine_unittests</AssemblyName>
-    <RootNamespace>nexus.engine.unittests</RootNamespace>
+    <RootNamespace>Nexus.Engine.Unittests</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>

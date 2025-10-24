@@ -4,11 +4,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
-using nexus.engine;
-using nexus.external_apis.FileSystem;
-using nexus.protocol.Tools;
+using Nexus.Engine;
+using Nexus.External.Apis.FileSystem;
+using Nexus.Protocol.Tools;
 
-namespace nexus.protocol.unittests.Tools;
+namespace Nexus.Protocol.Unittests.Tools;
 
 /// <summary>
 /// Unit tests for OpenDumpAnalyzeSessionTool class.
@@ -43,7 +43,7 @@ public class OpenDumpAnalyzeSessionToolTests
     /// Verifies that nexus_open_dump_analyze_session returns success result with valid dump path.
     /// </summary>
     [Fact]
-    public async Task nexus_open_dump_analyze_session_WithValidDumpPath_ReturnsSuccessResult()
+    public async Task Nexus_open_dump_analyze_session_WithValidDumpPath_ReturnsSuccessResult()
     {
         const string dumpPath = @"C:\dumps\test.dmp";
         const string sessionId = "sess-123";
@@ -63,7 +63,7 @@ public class OpenDumpAnalyzeSessionToolTests
     /// Verifies that nexus_open_dump_analyze_session passes symbols path to engine.
     /// </summary>
     [Fact]
-    public async Task nexus_open_dump_analyze_session_WithSymbolsPath_PassesToEngine()
+    public async Task Nexus_open_dump_analyze_session_WithSymbolsPath_PassesToEngine()
     {
         const string dumpPath = @"C:\dumps\test.dmp";
         const string symbolsPath = @"C:\symbols";
@@ -84,7 +84,7 @@ public class OpenDumpAnalyzeSessionToolTests
     /// Verifies that nexus_open_dump_analyze_session returns failed result when file not found.
     /// </summary>
     [Fact]
-    public async Task nexus_open_dump_analyze_session_WithFileNotFoundException_ReturnsFailedResult()
+    public async Task Nexus_open_dump_analyze_session_WithFileNotFoundException_ReturnsFailedResult()
     {
         const string dumpPath = @"C:\dumps\missing.dmp";
 
@@ -103,7 +103,7 @@ public class OpenDumpAnalyzeSessionToolTests
     /// Verifies that nexus_open_dump_analyze_session returns failed result with InvalidOperationException.
     /// </summary>
     [Fact]
-    public async Task nexus_open_dump_analyze_session_WithInvalidOperationException_ReturnsFailedResult()
+    public async Task Nexus_open_dump_analyze_session_WithInvalidOperationException_ReturnsFailedResult()
     {
         const string dumpPath = @"C:\dumps\test.dmp";
 
@@ -122,7 +122,7 @@ public class OpenDumpAnalyzeSessionToolTests
     /// Verifies that nexus_open_dump_analyze_session returns failed result with unexpected exception.
     /// </summary>
     [Fact]
-    public async Task nexus_open_dump_analyze_session_WithUnexpectedException_ReturnsFailedResult()
+    public async Task Nexus_open_dump_analyze_session_WithUnexpectedException_ReturnsFailedResult()
     {
         const string dumpPath = @"C:\dumps\test.dmp";
 
@@ -141,7 +141,7 @@ public class OpenDumpAnalyzeSessionToolTests
     /// Verifies that nexus_open_dump_analyze_session includes usage field in response.
     /// </summary>
     [Fact]
-    public async Task nexus_open_dump_analyze_session_IncludesUsageField()
+    public async Task Nexus_open_dump_analyze_session_IncludesUsageField()
     {
         const string dumpPath = @"C:\dumps\test.dmp";
         const string sessionId = "sess-789";

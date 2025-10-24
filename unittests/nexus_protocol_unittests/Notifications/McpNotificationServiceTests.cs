@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using nexus.protocol.Models;
-using nexus.protocol.Notifications;
+using Nexus.Protocol.Models;
+using Nexus.Protocol.Notifications;
 
-namespace nexus.protocol.unittests.Notifications;
+namespace Nexus.Protocol.Unittests.Notifications;
 
 /// <summary>
 /// Unit tests for McpNotificationService class.

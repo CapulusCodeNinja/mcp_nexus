@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Web;
 
-namespace nexus.config.Internal;
+namespace Nexus.Config.Internal;
 
 /// <summary>
 /// Handles logging configuration for different environments.

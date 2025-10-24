@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace nexus.extensions.Models;
+namespace Nexus.Extensions.Models;
 
 /// <summary>
 /// Metadata for an extension script that defines its capabilities and requirements.

@@ -3,11 +3,11 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-using nexus.protocol.Models;
+using Nexus.Protocol.Models;
 
 using NLog;
 
-namespace nexus.protocol.Middleware;
+namespace Nexus.Protocol.Middleware;
 
 /// <summary>
 /// Middleware that ensures proper JSON-RPC response formatting.

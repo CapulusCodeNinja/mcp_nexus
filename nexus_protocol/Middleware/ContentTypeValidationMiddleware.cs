@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 using NLog;
 
-namespace nexus.protocol.Middleware;
+namespace Nexus.Protocol.Middleware;
 
 /// <summary>
 /// Middleware that validates the Content-Type header for JSON-RPC requests.

@@ -1,8 +1,8 @@
 using System.Text.Json;
 
-using nexus.protocol.Models;
+using Nexus.Protocol.Models;
 
-namespace nexus.protocol.unittests.Models;
+namespace Nexus.Protocol.Unittests.Models;
 
 /// <summary>
 /// Unit tests for MCP model classes.

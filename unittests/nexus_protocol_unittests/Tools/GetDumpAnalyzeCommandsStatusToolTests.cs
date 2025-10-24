@@ -4,11 +4,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
-using nexus.engine;
-using nexus.engine.Models;
-using nexus.protocol.Tools;
+using Nexus.Engine;
+using Nexus.Engine.Models;
+using Nexus.Protocol.Tools;
 
-namespace nexus.protocol.unittests.Tools;
+namespace Nexus.Protocol.Unittests.Tools;
 
 /// <summary>
 /// Unit tests for GetDumpAnalyzeCommandsStatusTool.
@@ -36,7 +36,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     /// Verifies that nexus_get_dump_analyze_commands_status returns all commands with valid session.
     /// </summary>
     [Fact]
-    public async Task nexus_get_dump_analyze_commands_status_WithValidSession_ReturnsAllCommands()
+    public async Task Nexus_get_dump_analyze_commands_status_WithValidSession_ReturnsAllCommands()
     {
         const string sessionId = "sess-123";
         var commandInfos = new Dictionary<string, CommandInfo>
@@ -82,7 +82,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     /// Verifies that nexus_get_dump_analyze_commands_status returns empty array with empty session.
     /// </summary>
     [Fact]
-    public async Task nexus_get_dump_analyze_commands_status_WithEmptySession_ReturnsEmptyArray()
+    public async Task Nexus_get_dump_analyze_commands_status_WithEmptySession_ReturnsEmptyArray()
     {
         const string sessionId = "sess-empty";
         var commandInfos = new Dictionary<string, CommandInfo>();
@@ -101,7 +101,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     /// Verifies that nexus_get_dump_analyze_commands_status returns error with ArgumentException.
     /// </summary>
     [Fact]
-    public async Task nexus_get_dump_analyze_commands_status_WithArgumentException_ReturnsError()
+    public async Task Nexus_get_dump_analyze_commands_status_WithArgumentException_ReturnsError()
     {
         const string sessionId = "sess-invalid";
 
@@ -120,7 +120,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     /// Verifies that nexus_get_dump_analyze_commands_status returns error with unexpected exception.
     /// </summary>
     [Fact]
-    public async Task nexus_get_dump_analyze_commands_status_WithUnexpectedException_ReturnsError()
+    public async Task Nexus_get_dump_analyze_commands_status_WithUnexpectedException_ReturnsError()
     {
         const string sessionId = "sess-123";
 
@@ -139,7 +139,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     /// Verifies that nexus_get_dump_analyze_commands_status includes usage field in response.
     /// </summary>
     [Fact]
-    public async Task nexus_get_dump_analyze_commands_status_IncludesUsageField()
+    public async Task Nexus_get_dump_analyze_commands_status_IncludesUsageField()
     {
         const string sessionId = "sess-789";
         var commandInfos = new Dictionary<string, CommandInfo>();
@@ -162,7 +162,7 @@ public class GetDumpAnalyzeCommandsStatusToolTests
     /// Verifies that nexus_get_dump_analyze_commands_status sets hasOutput correctly.
     /// </summary>
     [Fact]
-    public async Task nexus_get_dump_analyze_commands_status_SetsHasOutputCorrectly()
+    public async Task Nexus_get_dump_analyze_commands_status_SetsHasOutputCorrectly()
     {
         const string sessionId = "sess-123";
         var commandInfos = new Dictionary<string, CommandInfo>

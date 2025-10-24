@@ -1,4 +1,4 @@
-namespace nexus.setup.Models;
+namespace Nexus.Setup.Models;
 
 /// <summary>
 /// Result of a service installation or update operation.

@@ -1,4 +1,4 @@
-namespace nexus.setup.Models;
+namespace Nexus.Setup.Models;
 
 /// <summary>
 /// Defines the account under which a service runs.

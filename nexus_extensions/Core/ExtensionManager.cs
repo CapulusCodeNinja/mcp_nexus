@@ -2,11 +2,11 @@ using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
 
-using nexus.extensions.Models;
+using Nexus.Extensions.Models;
 
 using NLog;
 
-namespace nexus.extensions.Core;
+namespace Nexus.Extensions.Core;
 
 /// <summary>
 /// Manages discovery, loading, and validation of extension scripts.

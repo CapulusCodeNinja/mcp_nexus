@@ -1,4 +1,4 @@
-namespace nexus.extensions;
+namespace Nexus.Extensions;
 
 /// <summary>
 /// Validates extension callback tokens for secure authentication.

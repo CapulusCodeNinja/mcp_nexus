@@ -4,10 +4,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
-using nexus.engine;
-using nexus.protocol.Tools;
+using Nexus.Engine;
+using Nexus.Protocol.Tools;
 
-namespace nexus.protocol.unittests.Tools;
+namespace Nexus.Protocol.Unittests.Tools;
 
 /// <summary>
 /// Unit tests for CancelCommandTool.
@@ -35,7 +35,7 @@ public class CancelCommandToolTests
     /// Verifies that nexus_cancel_command returns success with valid command.
     /// </summary>
     [Fact]
-    public async Task nexus_cancel_command_WithValidCommand_ReturnsSuccess()
+    public async Task Nexus_cancel_command_WithValidCommand_ReturnsSuccess()
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
@@ -58,7 +58,7 @@ public class CancelCommandToolTests
     /// Verifies that nexus_cancel_dump_analyze_command returns NotFound with command not found.
     /// </summary>
     [Fact]
-    public async Task nexus_cancel_command_WithNotFoundCommand_ReturnsNotFound()
+    public async Task Nexus_cancel_command_WithNotFoundCommand_ReturnsNotFound()
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-missing";
@@ -80,7 +80,7 @@ public class CancelCommandToolTests
     /// Verifies that nexus_cancel_dump_analyze_command returns failed result with ArgumentException.
     /// </summary>
     [Fact]
-    public async Task nexus_cancel_command_WithArgumentException_ReturnsFailedResult()
+    public async Task Nexus_cancel_command_WithArgumentException_ReturnsFailedResult()
     {
         const string sessionId = "sess-invalid";
         const string commandId = "cmd-456";
@@ -101,7 +101,7 @@ public class CancelCommandToolTests
     /// Verifies that nexus_cancel_dump_analyze_command returns failed result with unexpected exception.
     /// </summary>
     [Fact]
-    public async Task nexus_cancel_command_WithUnexpectedException_ReturnsFailedResult()
+    public async Task Nexus_cancel_command_WithUnexpectedException_ReturnsFailedResult()
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-456";
@@ -122,7 +122,7 @@ public class CancelCommandToolTests
     /// Verifies that nexus_cancel_dump_analyze_command includes usage field in response.
     /// </summary>
     [Fact]
-    public async Task nexus_cancel_command_IncludesUsageField()
+    public async Task Nexus_cancel_command_IncludesUsageField()
     {
         const string sessionId = "sess-789";
         const string commandId = "cmd-101";
@@ -145,7 +145,7 @@ public class CancelCommandToolTests
     /// Verifies that nexus_cancel_dump_analyze_command calls engine method.
     /// </summary>
     [Fact]
-    public async Task nexus_cancel_command_VerifiesEngineIsCalled()
+    public async Task Nexus_cancel_command_VerifiesEngineIsCalled()
     {
         const string sessionId = "sess-123";
         const string commandId = "cmd-789";

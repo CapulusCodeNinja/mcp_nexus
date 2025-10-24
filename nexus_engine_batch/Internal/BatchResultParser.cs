@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 using NLog;
 
-namespace nexus.engine.batch.Internal;
+namespace Nexus.Engine.Batch.Internal;
 
 /// <summary>
 /// Parses batched command results and splits them into individual command results.

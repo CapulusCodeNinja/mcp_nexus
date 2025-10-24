@@ -2,10 +2,10 @@ using System.Runtime.Versioning;
 
 using Microsoft.Extensions.Logging;
 
-using nexus.external_apis.FileSystem;
-using nexus.setup.Utilities;
+using Nexus.External.Apis.FileSystem;
+using Nexus.Setup.Utilities;
 
-namespace nexus.setup.Management
+namespace Nexus.Setup.Management
 {
     using Microsoft.Extensions.DependencyInjection;
 

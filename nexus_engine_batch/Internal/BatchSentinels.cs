@@ -1,4 +1,4 @@
-namespace nexus.engine.batch.Internal;
+namespace Nexus.Engine.Batch.Internal;
 
 /// <summary>
 /// Constants for batch sentinel markers used to identify command boundaries in batched output.

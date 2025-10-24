@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using nexus.config.Internal;
+using Nexus.Config.Internal;
 
 using NLog;
 using NLog.Config;
@@ -15,7 +15,7 @@ using Xunit;
 
 using MELogLevel = Microsoft.Extensions.Logging.LogLevel;
 
-namespace nexus.config_unittests.Internal;
+namespace Nexus.Config_unittests.Internal;
 
 /// <summary>
 /// Unit tests for LoggingConfiguration.

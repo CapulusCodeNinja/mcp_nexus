@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-using nexus.config.Internal;
-using nexus.config.Models;
+using Nexus.Config.Internal;
+using Nexus.Config.Models;
 
-namespace nexus.config
+namespace Nexus.Config
 {
     /// <summary>
     /// Concrete settings facade providing access to configuration and logging setup.

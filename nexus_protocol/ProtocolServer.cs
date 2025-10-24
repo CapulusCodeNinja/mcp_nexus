@@ -3,11 +3,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using nexus.engine;
 
 using NLog;
 
-namespace nexus.protocol;
+namespace Nexus.Protocol;
 
 /// <summary>
 /// Implementation of the MCP protocol server lifecycle management.

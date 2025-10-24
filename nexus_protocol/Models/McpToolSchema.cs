@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace nexus.protocol.Models;
+namespace Nexus.Protocol.Models;
 
 /// <summary>
 /// Represents the schema definition for a Model Context Protocol (MCP) tool.

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace nexus.extensions.Infrastructure;
+namespace Nexus.Extensions.Infrastructure;
 
 /// <summary>
 /// Default implementation of IProcessWrapper using real System.Diagnostics.Process.

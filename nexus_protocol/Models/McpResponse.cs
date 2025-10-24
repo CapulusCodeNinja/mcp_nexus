@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace nexus.protocol.Models;
+namespace Nexus.Protocol.Models;
 
 /// <summary>
 /// Represents a Model Context Protocol (MCP) JSON-RPC 2.0 response.

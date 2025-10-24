@@ -1,4 +1,4 @@
-namespace nexus.engine.batch;
+namespace Nexus.Engine.Batch;
 
 /// <summary>
 /// Stateless batch processing utility.

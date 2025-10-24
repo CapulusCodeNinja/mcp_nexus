@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Hosting;
 
-namespace nexus.protocol;
+namespace Nexus.Protocol;
 
 /// <summary>
 /// Main interface for the MCP protocol server lifecycle management.

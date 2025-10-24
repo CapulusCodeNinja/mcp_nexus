@@ -3,13 +3,13 @@ using System.Runtime.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ServiceManagement;
-using nexus.setup.Management;
+using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ServiceManagement;
+using Nexus.Setup.Management;
 
 using NLog;
 
-namespace nexus.setup.Validation
+namespace Nexus.Setup.Validation
 {
     /// <summary>
     /// Base class for validation operations with common functionality.

@@ -1,10 +1,10 @@
 using FluentAssertions;
 
-using nexus.extensions.Configuration;
+using Nexus.Extensions.Configuration;
 
 using Xunit;
 
-namespace nexus.extensions_unittests.Configuration;
+namespace Nexus.Extensions_unittests.Configuration;
 
 /// <summary>
 /// Unit tests for the ExtensionConfiguration class.

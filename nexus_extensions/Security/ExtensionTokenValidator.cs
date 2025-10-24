@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 using NLog;
 
-namespace nexus.extensions.Security;
+namespace Nexus.Extensions.Security;
 
 /// <summary>
 /// Implementation of extension token validator.

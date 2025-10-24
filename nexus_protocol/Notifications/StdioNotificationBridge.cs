@@ -2,11 +2,11 @@ using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
 
-using nexus.protocol.Models;
+using Nexus.Protocol.Models;
 
 using NLog;
 
-namespace nexus.protocol.Notifications;
+namespace Nexus.Protocol.Notifications;
 
 /// <summary>
 /// Implementation of the notification bridge that sends notifications to stdout.

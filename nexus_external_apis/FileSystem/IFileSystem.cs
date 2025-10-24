@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace nexus.external_apis.FileSystem;
+namespace Nexus.External.Apis.FileSystem;
 
 /// <summary>
 /// Interface for file system operations to enable mocking in tests.

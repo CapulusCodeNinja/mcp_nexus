@@ -1,4 +1,4 @@
-namespace nexus.setup.Models;
+namespace Nexus.Setup.Models;
 
 /// <summary>
 /// Options for service installation.

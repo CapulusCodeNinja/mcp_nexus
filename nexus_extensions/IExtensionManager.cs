@@ -1,6 +1,6 @@
-using nexus.extensions.Models;
+using Nexus.Extensions.Models;
 
-namespace nexus.extensions;
+namespace Nexus.Extensions;
 
 /// <summary>
 /// Interface for managing and discovering extension scripts.

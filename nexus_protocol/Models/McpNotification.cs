@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace nexus.protocol.Models;
+namespace Nexus.Protocol.Models;
 
 /// <summary>
 /// Represents a server-initiated Model Context Protocol (MCP) notification.

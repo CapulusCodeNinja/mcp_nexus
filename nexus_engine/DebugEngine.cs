@@ -3,16 +3,16 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.engine.Events;
-using nexus.engine.Models;
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ProcessManagement;
+using Nexus.Engine.Events;
+using Nexus.Engine.Models;
+using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ProcessManagement;
 
-namespace nexus.engine;
+namespace Nexus.Engine;
 
 using System;
 
-using config;
+using Nexus.Config;
 
 using NLog;
 

@@ -5,9 +5,9 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol.Server;
 
-using nexus.engine;
+using Nexus.Engine;
 
-namespace nexus.protocol.Tools;
+namespace Nexus.Protocol.Tools;
 
 /// <summary>
 /// MCP tool for enqueuing debugging commands for asynchronous execution.
@@ -25,6 +25,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
     /// <param name="command">WinDbg/CDB command to execute.</param>
     /// <returns>Command enqueue result with commandId.</returns>
     [McpServerTool, Description("Enqueues a debugging command for asynchronous execution. Returns commandId for tracking.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     public static Task<object> nexus_enqueue_async_dump_analyze_command(
         IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,

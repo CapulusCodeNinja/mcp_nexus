@@ -5,9 +5,9 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol.Server;
 
-using nexus.engine;
+using Nexus.Engine;
 
-namespace nexus.protocol.Tools;
+namespace Nexus.Protocol.Tools;
 
 /// <summary>
 /// MCP tool for reading the result of a previously enqueued command.
@@ -25,6 +25,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
     /// <param name="commandId">Command ID from nexus_enqueue_async_dump_analyze_command.</param>
     /// <returns>Command result with output and status.</returns>
     [McpServerTool, Description("Reads the result of a command. Waits for completion if still executing.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     public static async Task<object> nexus_read_dump_analyze_command_result(
         IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,

@@ -4,14 +4,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
-using nexus.Hosting;
-using nexus.protocol;
+using Nexus.Hosting;
+using Nexus.Protocol;
 
 using NLog;
 
 using Xunit;
 
-namespace nexus_unittests.Hosting;
+namespace Nexus.Unittests.Hosting;
 
 /// <summary>
 /// Unit tests for StdioServerHostedService.

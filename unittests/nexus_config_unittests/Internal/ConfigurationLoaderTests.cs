@@ -4,12 +4,12 @@ using Microsoft.Extensions.Configuration;
 
 using Moq;
 
-using nexus.config.Internal;
-using nexus.config.Models;
+using Nexus.Config.Internal;
+using Nexus.Config.Models;
 
 using Xunit;
 
-namespace nexus.config_unittests.Internal;
+namespace Nexus.Config_unittests.Internal;
 
 /// <summary>
 /// Unit tests for ConfigurationLoader.

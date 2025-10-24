@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 using NLog;
 
-namespace nexus.protocol.Middleware;
+namespace Nexus.Protocol.Middleware;
 
 /// <summary>
 /// Middleware that logs JSON-RPC requests and responses for debugging and auditing.

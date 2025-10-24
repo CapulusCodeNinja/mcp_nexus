@@ -8,16 +8,16 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
-using nexus.config.Models;
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ServiceManagement;
-using nexus.setup.Validation;
+using Nexus.Config.Models;
+using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ServiceManagement;
+using Nexus.Setup.Validation;
 
 using NLog;
 
 using Xunit;
 
-namespace nexus.setup.unittests.Validation;
+namespace Nexus.Setup.unittests.Validation;
 
 /// <summary>
 /// Unit tests for UninstallValidator class.

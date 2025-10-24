@@ -3,12 +3,12 @@ using System.Runtime.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.external_apis.FileSystem;
-using nexus.setup.Core;
+using Nexus.External.Apis.FileSystem;
+using Nexus.Setup.Core;
 
 using NLog;
 
-namespace nexus.setup.Utilities
+namespace Nexus.Setup.Utilities
 {
     /// <summary>
     /// Utility class for directory copying operations with infinite loop prevention.

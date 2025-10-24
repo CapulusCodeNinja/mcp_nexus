@@ -2,10 +2,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.config;
-using nexus.config.Internal;
+using Nexus.Config;
+using Nexus.Config.Internal;
 
-namespace nexus.Logging;
+namespace Nexus.Logging;
 
 /// <summary>
 /// Extension methods for configuring logging.

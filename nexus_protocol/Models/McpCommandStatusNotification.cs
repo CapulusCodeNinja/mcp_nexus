@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace nexus.protocol.Models;
+namespace Nexus.Protocol.Models;
 
 /// <summary>
 /// Represents command status notification parameters for MCP.

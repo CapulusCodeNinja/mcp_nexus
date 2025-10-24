@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using nexus.protocol.Notifications;
-using nexus.protocol.Services;
+using Nexus.Protocol.Notifications;
+using Nexus.Protocol.Services;
 
-namespace nexus.protocol.unittests.Services;
+namespace Nexus.Protocol.Unittests.Services;
 
 /// <summary>
 /// Unit tests for McpToolDefinitionService class.

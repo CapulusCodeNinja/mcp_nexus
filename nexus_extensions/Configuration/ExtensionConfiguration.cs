@@ -1,4 +1,4 @@
-namespace nexus.extensions.Configuration;
+namespace Nexus.Extensions.Configuration;
 
 /// <summary>
 /// Configuration settings for extension execution.

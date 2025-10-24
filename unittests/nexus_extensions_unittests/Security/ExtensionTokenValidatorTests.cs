@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using nexus.extensions.Security;
+using Nexus.Extensions.Security;
 
 using NLog;
 
-namespace nexus.extensions_unittests.Security;
+namespace Nexus.Extensions_unittests.Security;
 
 /// <summary>
 /// Unit tests for ExtensionTokenValidator.

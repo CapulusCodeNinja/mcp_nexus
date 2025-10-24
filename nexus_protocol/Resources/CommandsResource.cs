@@ -6,9 +6,7 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol.Server;
 
-using nexus.engine;
-
-namespace nexus.protocol.Resources;
+namespace Nexus.Protocol.Resources;
 
 /// <summary>
 /// MCP resource for listing commands from all active sessions.

@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-using nexus.config.Internal;
+using Nexus.Config.Internal;
 
-namespace nexus.config_unittests.Internal;
+namespace Nexus.Config_unittests.Internal;
 
 /// <summary>
 /// Test accessor for LoggingConfiguration to expose protected methods for testing.

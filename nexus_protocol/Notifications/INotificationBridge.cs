@@ -1,6 +1,6 @@
-using nexus.protocol.Models;
+using Nexus.Protocol.Models;
 
-namespace nexus.protocol.Notifications;
+namespace Nexus.Protocol.Notifications;
 
 /// <summary>
 /// Interface for bridging MCP notifications to a transport mechanism.

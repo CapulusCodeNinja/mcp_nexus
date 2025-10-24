@@ -3,18 +3,18 @@ using System.Runtime.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.config;
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ProcessManagement;
-using nexus.external_apis.ServiceManagement;
-using nexus.setup.Core;
-using nexus.setup.Management;
-using nexus.setup.Models;
-using nexus.setup.Validation;
+using Nexus.Config;
+using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ProcessManagement;
+using Nexus.External.Apis.ServiceManagement;
+using Nexus.Setup.Core;
+using Nexus.Setup.Management;
+using Nexus.Setup.Models;
+using Nexus.Setup.Validation;
 
 using NLog;
 
-namespace nexus.setup
+namespace Nexus.Setup
 {
     /// <summary>
     /// Handles product installation operations including file copying and service installation.

@@ -1,9 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace nexus.engine.batch.Internal;
+namespace Nexus.Engine.Batch.Internal;
 
-using config;
+using Nexus.Config;
 
 using NLog;
 

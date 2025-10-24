@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace nexus.extensions.Infrastructure;
+namespace Nexus.Extensions.Infrastructure;
 
 /// <summary>
 /// Interface for wrapping Process to enable testing.

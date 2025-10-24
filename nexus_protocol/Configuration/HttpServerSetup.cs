@@ -14,9 +14,9 @@ using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.Server;
 
-using nexus.config;
+using Nexus.Config;
 
-namespace nexus.protocol.Configuration;
+namespace Nexus.Protocol.Configuration;
 
 /// <summary>
 /// Static helper class for configuring HTTP server services for MCP.

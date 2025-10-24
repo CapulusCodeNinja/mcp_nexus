@@ -1,8 +1,8 @@
-using nexus.setup.Models;
+using Nexus.Setup.Models;
 
 using Xunit;
 
-namespace nexus.setup_unittests.Models;
+namespace Nexus.Setup_unittests.Models;
 
 /// <summary>
 /// Unit tests for ServiceStartMode enum.

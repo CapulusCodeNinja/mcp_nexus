@@ -1,4 +1,4 @@
-namespace nexus.engine.Models;
+namespace Nexus.Engine.Models;
 
 /// <summary>
 /// Represents the current state of a debug command.

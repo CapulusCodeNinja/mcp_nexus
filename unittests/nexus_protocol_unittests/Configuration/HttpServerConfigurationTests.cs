@@ -1,6 +1,6 @@
-using nexus.protocol.Configuration;
+using Nexus.Protocol.Configuration;
 
-namespace nexus.protocol.unittests.Configuration;
+namespace Nexus.Protocol.Unittests.Configuration;
 
 /// <summary>
 /// Unit tests for HttpServerConfiguration class.

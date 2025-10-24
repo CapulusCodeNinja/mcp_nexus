@@ -2,7 +2,7 @@ using FluentAssertions;
 
 using Xunit;
 
-namespace nexus.engine.unittests.Internal;
+namespace Nexus.Engine.Unittests.Internal;
 
 /// <summary>
 /// Unit tests for the CdbSentinels class.

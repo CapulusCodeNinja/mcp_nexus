@@ -3,13 +3,13 @@ using System.Runtime.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using nexus.CommandLine;
-using nexus.Logging;
-using nexus.Startup;
+using Nexus.CommandLine;
+using Nexus.Logging;
+using Nexus.Startup;
 
 using NLog;
 
-namespace nexus;
+namespace Nexus;
 
 /// <summary>
 /// Main entry point for the Nexus application.

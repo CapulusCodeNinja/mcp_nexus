@@ -1,4 +1,4 @@
-namespace nexus.CommandLine;
+namespace Nexus.CommandLine;
 
 /// <summary>
 /// Represents the command line context for the application.

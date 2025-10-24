@@ -1,11 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.config;
+using Nexus.Config;
 
 using NLog;
 
-namespace nexus.engine.batch.Internal;
+namespace Nexus.Engine.Batch.Internal;
 
 /// <summary>
 /// Builds batched commands with sentinel markers.

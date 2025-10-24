@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace nexus.extensions.Models;
+namespace Nexus.Extensions.Models;
 
 /// <summary>
 /// Result of an extension execution.

@@ -1,6 +1,6 @@
-using nexus.protocol.Models;
+using Nexus.Protocol.Models;
 
-namespace nexus.protocol.Services;
+namespace Nexus.Protocol.Services;
 
 /// <summary>
 /// Interface for managing Model Context Protocol (MCP) tool definitions.

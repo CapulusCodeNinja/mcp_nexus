@@ -4,12 +4,14 @@ using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using nexus.engine.Events;
-using nexus.engine.Models;
+using Nexus.Engine.Events;
+using Nexus.Engine.Models;
 
-namespace nexus.engine.Internal;
+namespace Nexus.Engine.Internal;
 
 using System;
+
+using Nexus.Engine.Batch;
 
 using NLog;
 
@@ -426,20 +428,20 @@ internal class CommandQueue : IDisposable
         ValidateCdbSession();
 
         // Convert to batch commands
-        var batchCommands = queuedCommands.Select(qc => new batch.Command
+        var batchCommands = queuedCommands.Select(qc => new Command
         {
             CommandId = qc.Id,
             CommandText = qc.Command
         }).ToList();
 
         // Apply batching (library decides whether to batch or pass through)
-        var commandsToExecute = batch.BatchProcessor.Instance.BatchCommands(batchCommands);
+        var commandsToExecute = BatchProcessor.Instance.BatchCommands(batchCommands);
 
         m_Logger.Debug("Processing {OriginalCount} commands as {ExecutionCount} execution units",
             queuedCommands.Count, commandsToExecute.Count);
 
         // Execute each command (batched or not)
-        var executionResults = new List<batch.CommandResult>();
+        var executionResults = new List<CommandResult>();
         foreach (var cmd in commandsToExecute)
         {
             // Mark corresponding queued commands as executing
@@ -454,7 +456,7 @@ internal class CommandQueue : IDisposable
                 // Execute the command
                 var result = await m_CdbSession!.ExecuteCommandAsync(cmd.CommandText, cancellationToken);
 
-                executionResults.Add(new batch.CommandResult
+                executionResults.Add(new CommandResult
                 {
                     CommandId = cmd.CommandId,
                     ResultText = result
@@ -465,7 +467,7 @@ internal class CommandQueue : IDisposable
                 m_Logger.Error(ex, "Error executing command {CommandId}", cmd.CommandId);
 
                 // Add error result
-                executionResults.Add(new batch.CommandResult
+                executionResults.Add(new CommandResult
                 {
                     CommandId = cmd.CommandId,
                     ResultText = $"ERROR: {ex.Message}"
@@ -474,7 +476,7 @@ internal class CommandQueue : IDisposable
         }
 
         // Unbatch results (library decides whether to unbatch or pass through)
-        var individualResults = batch.BatchProcessor.Instance.UnbatchResults(executionResults);
+        var individualResults = BatchProcessor.Instance.UnbatchResults(executionResults);
 
         m_Logger.Debug("Unbatched {ExecutionCount} execution results into {IndividualCount} individual results",
             executionResults.Count, individualResults.Count);

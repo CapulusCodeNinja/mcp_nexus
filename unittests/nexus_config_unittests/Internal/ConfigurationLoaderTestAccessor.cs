@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Configuration;
 
-using nexus.config.Internal;
-using nexus.config.Models;
+using Nexus.Config.Internal;
+using Nexus.Config.Models;
 
-namespace nexus.config_unittests.Internal;
+namespace Nexus.Config_unittests.Internal;
 
 /// <summary>
 /// Test accessor for ConfigurationLoader to expose protected methods for testing.
