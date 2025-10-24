@@ -1,6 +1,8 @@
 using System.Text;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+
 using NLog;
 
 namespace nexus.protocol.Middleware;
@@ -18,8 +20,7 @@ internal class JsonRpcLoggingMiddleware
     /// Initializes a new instance of the <see cref="JsonRpcLoggingMiddleware"/> class.
     /// </summary>
     /// <param name="next">The next middleware in the pipeline.</param>
-    /// <param name="logger">The logger for recording request/response information.</param>
-    public JsonRpcLoggingMiddleware(RequestDelegate next, ILogger<JsonRpcLoggingMiddleware> logger)
+    public JsonRpcLoggingMiddleware(RequestDelegate next)
     {
         m_Next = next ?? throw new ArgumentNullException(nameof(next));
         m_Logger = LogManager.GetCurrentClassLogger();
@@ -132,13 +133,12 @@ internal class JsonRpcLoggingMiddleware
     private static string SanitizeForLogging(string body)
     {
         if (string.IsNullOrEmpty(body))
+        {
             return string.Empty;
+        }
 
         const int maxLength = 1000;
-        if (body.Length > maxLength)
-            return body[..maxLength] + "... (truncated)";
-
-        return body;
+        return body.Length > maxLength ? body[..maxLength] + "... (truncated)" : body;
     }
 }
 

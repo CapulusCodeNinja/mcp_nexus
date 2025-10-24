@@ -1,13 +1,16 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using nexus.external_apis.FileSystem;
-using nexus.external_apis.ProcessManagement;
 using System.Diagnostics;
 using System.Text;
+
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+using nexus.external_apis.FileSystem;
+using nexus.external_apis.ProcessManagement;
 
 namespace nexus.engine.Internal;
 
 using config;
+
 using NLog;
 
 /// <summary>
@@ -28,8 +31,6 @@ internal class CdbSession : ICdbSession
     private StreamReader? m_ErrorReader;
     private volatile bool m_Disposed = false;
     private volatile bool m_Initialized = false;
-    private string m_DumpFilePath = string.Empty;
-    private string? m_SymbolPath;
 
     /// <summary>
     /// Gets a value indicating whether the session is active.
@@ -39,17 +40,20 @@ internal class CdbSession : ICdbSession
     /// <summary>
     /// Gets the dump file path.
     /// </summary>
-    public string DumpFilePath => m_DumpFilePath;
+    public string DumpFilePath { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the symbol path.
     /// </summary>
-    public string? SymbolPath => m_SymbolPath;
+    public string? SymbolPath => SymbolPath1;
 
     /// <summary>
     /// Gets a value indicating whether the session is initialized.
     /// </summary>
     public bool IsInitialized => m_Initialized;
+
+    public string? SymbolPath1 { get;
+        set; }
 
     public CdbSession(
         IFileSystem fileSystem,
@@ -72,14 +76,18 @@ internal class CdbSession : ICdbSession
         ThrowIfDisposed();
 
         if (string.IsNullOrWhiteSpace(dumpFilePath))
+        {
             throw new ArgumentException("Dump file path cannot be null or empty", nameof(dumpFilePath));
+        }
 
         if (!m_FileSystem.FileExists(dumpFilePath))
+        {
             throw new FileNotFoundException($"Dump file not found: {dumpFilePath}", dumpFilePath);
+        }
 
         // Store the paths
-        m_DumpFilePath = dumpFilePath;
-        m_SymbolPath = symbolPath;
+        DumpFilePath = dumpFilePath;
+        SymbolPath1 = symbolPath;
 
         m_Logger.Info("Initializing CDB session for dump file: {DumpFilePath}", dumpFilePath);
 
@@ -129,7 +137,9 @@ internal class CdbSession : ICdbSession
         ThrowIfNotInitialized();
 
         if (string.IsNullOrWhiteSpace(command))
+        {
             throw new ArgumentException("Command cannot be null or empty", nameof(command));
+        }
 
         m_Logger.Debug("Executing CDB command: {Command}", command);
 
@@ -143,7 +153,7 @@ internal class CdbSession : ICdbSession
                 var wrappedCommand = CreateCommandWithSentinels(command);
 
                 // Send command to CDB
-                await SendCommandToCdbAsync(wrappedCommand, cancellationToken);
+                await SendCommandToCdbAsync(wrappedCommand);
 
                 // Read output until completion
                 var output = await ReadCommandOutputAsync(cancellationToken);
@@ -175,7 +185,9 @@ internal class CdbSession : ICdbSession
     public async Task DisposeAsync()
     {
         if (m_Disposed)
+        {
             return;
+        }
 
         m_Logger.Debug("Disposing CDB session");
 
@@ -292,7 +304,9 @@ internal class CdbSession : ICdbSession
     public void Dispose()
     {
         if (m_Disposed)
+        {
             return;
+        }
 
         try
         {
@@ -307,7 +321,7 @@ internal class CdbSession : ICdbSession
     public Task<string> FindCdbExecutableAsync()
     {
         // If configured path exists, use it
-        if (!string.IsNullOrEmpty(Settings.GetInstance().Get().McpNexus.Debugging.CdbPath) && 
+        if (!string.IsNullOrEmpty(Settings.GetInstance().Get().McpNexus.Debugging.CdbPath) &&
             m_FileSystem.FileExists(Settings.GetInstance().Get().McpNexus.Debugging.CdbPath ?? string.Empty))
         {
             return Task.FromResult(Settings.GetInstance().Get().McpNexus.Debugging.CdbPath)!;
@@ -339,11 +353,13 @@ internal class CdbSession : ICdbSession
         ThrowIfDisposed();
         ThrowIfNotInitialized();
 
-        if (string.IsNullOrEmpty(m_DumpFilePath))
+        if (string.IsNullOrEmpty(DumpFilePath))
+        {
             throw new InvalidOperationException("Session not initialized with dump file");
+        }
 
         var cdbPath = FindCdbExecutableAsync().Result;
-        var arguments = BuildCommandLineArguments(m_DumpFilePath, m_SymbolPath);
+        var arguments = BuildCommandLineArguments(DumpFilePath, SymbolPath1);
 
         return StartCdbProcessAsync(cdbPath, arguments);
     }
@@ -466,13 +482,14 @@ internal class CdbSession : ICdbSession
     /// Sends a command to the CDB process input stream.
     /// </summary>
     /// <param name="command">The command to send.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="InvalidOperationException">Thrown when CDB input stream is not available.</exception>
-    protected async Task SendCommandToCdbAsync(string command, CancellationToken cancellationToken)
+    protected async Task SendCommandToCdbAsync(string command)
     {
         if (m_InputWriter == null)
+        {
             throw new InvalidOperationException("CDB input stream is not available");
+        }
 
         await m_InputWriter.WriteLineAsync(command);
         await m_InputWriter.FlushAsync();
@@ -488,7 +505,9 @@ internal class CdbSession : ICdbSession
     protected async Task<string> ReadCommandOutputAsync(CancellationToken cancellationToken)
     {
         if (m_OutputReader == null)
+        {
             throw new InvalidOperationException("CDB output stream is not available");
+        }
 
         var output = new StringBuilder();
         var startMarkerFound = false;
@@ -503,11 +522,15 @@ internal class CdbSession : ICdbSession
             {
                 var line = await ReadLineFromOutputAsync();
                 if (line == null)
+                {
                     break;
+                }
 
                 var (shouldContinue, shouldBreak) = ProcessOutputLine(line, ref startMarkerFound, output);
                 if (shouldBreak)
+                {
                     break;
+                }
             }
         }
         catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
@@ -545,7 +568,9 @@ internal class CdbSession : ICdbSession
         if (startMarkerFound)
         {
             if (line.Contains(CdbSentinels.EndMarker))
+            {
                 return (false, true); // Don't continue, break
+            }
 
             output.AppendLine(line);
         }
@@ -560,7 +585,9 @@ internal class CdbSession : ICdbSession
     protected void ThrowIfDisposed()
     {
         if (m_Disposed)
+        {
             throw new ObjectDisposedException(nameof(CdbSession));
+        }
     }
 
     /// <summary>
@@ -570,7 +597,9 @@ internal class CdbSession : ICdbSession
     protected void ThrowIfNotInitialized()
     {
         if (!m_Initialized)
+        {
             throw new InvalidOperationException("CDB session is not initialized");
+        }
     }
 
     public Task<string> ExecuteBatchCommandAsync(IEnumerable<string> commands, CancellationToken cancellationToken = default)
@@ -579,11 +608,15 @@ internal class CdbSession : ICdbSession
         ThrowIfNotInitialized();
 
         if (commands == null)
+        {
             throw new ArgumentNullException(nameof(commands));
+        }
 
         var commandList = commands.ToList();
         if (commandList.Count == 0)
+        {
             throw new ArgumentException("Commands list cannot be empty", nameof(commands));
+        }
 
         m_Logger.Debug("Executing batch of {CommandCount} CDB commands", commandList.Count);
 

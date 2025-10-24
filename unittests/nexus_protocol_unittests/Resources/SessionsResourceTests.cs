@@ -1,9 +1,11 @@
+using System.Text.Json;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using nexus.engine;
 using nexus.protocol.Resources;
-using System.Text.Json;
 
 namespace nexus.protocol.unittests.Resources;
 
@@ -54,7 +56,7 @@ public class SessionsResourceTests
         var result = await SessionsResource.Sessions(m_ServiceProvider);
 
         var json = JsonDocument.Parse(result);
-        json.RootElement.TryGetProperty("timestamp", out var timestampProperty).Should().BeTrue();
+        json.RootElement.TryGetProperty("timestamp", out _).Should().BeTrue();
     }
 
 

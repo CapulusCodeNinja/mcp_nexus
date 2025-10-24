@@ -18,19 +18,28 @@ internal class McpServerHealthNotification
     /// Gets or sets whether the CDB debugging session is active.
     /// </summary>
     [JsonPropertyName("cdbSessionActive")]
-    public bool CdbSessionActive { get; set; }
+    public bool CdbSessionActive
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the current command queue size.
     /// </summary>
     [JsonPropertyName("queueSize")]
-    public int QueueSize { get; set; }
+    public int QueueSize
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the number of currently executing commands.
     /// </summary>
     [JsonPropertyName("activeCommands")]
-    public int ActiveCommands { get; set; }
+    public int ActiveCommands
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the notification timestamp.
@@ -42,6 +51,9 @@ internal class McpServerHealthNotification
     /// Gets or sets the server uptime since last restart.
     /// </summary>
     [JsonPropertyName("uptime")]
-    public TimeSpan? Uptime { get; set; }
+    public TimeSpan? Uptime
+    {
+        get; set;
+    }
 }
 

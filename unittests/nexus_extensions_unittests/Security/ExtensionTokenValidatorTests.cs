@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using nexus.extensions.Security;
+
 using NLog;
 
 namespace nexus.extensions_unittests.Security;

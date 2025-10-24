@@ -1,9 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
+using Moq;
+
 using nexus.engine;
 using nexus.protocol.Tools;
-using Moq;
 
 namespace nexus.protocol.unittests.Tools;
 

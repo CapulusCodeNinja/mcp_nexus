@@ -1,5 +1,7 @@
 using FluentAssertions;
+
 using nexus.config.Models;
+
 using Xunit;
 
 namespace nexus.config_unittests.Models;
@@ -120,13 +122,14 @@ public class SharedConfigurationTests
     public void ExtensionsSettings_CanBeModified_ShouldWork()
     {
         // Arrange
-        var settings = new ExtensionsSettings();
-
-        // Act
-        settings.Enabled = false;
-        settings.ExtensionsPath = "custom_extensions";
-        settings.CallbackPort = 8080;
-        settings.GracefulTerminationTimeoutMs = 5000;
+        var settings = new ExtensionsSettings
+        {
+            // Act
+            Enabled = false,
+            ExtensionsPath = "custom_extensions",
+            CallbackPort = 8080,
+            GracefulTerminationTimeoutMs = 5000
+        };
 
         // Assert
         settings.Enabled.Should().BeFalse();
@@ -142,14 +145,15 @@ public class SharedConfigurationTests
     public void BatchingSettings_CanBeModified_ShouldWork()
     {
         // Arrange
-        var settings = new BatchingSettings();
-
-        // Act
-        settings.Enabled = false;
-        settings.MaxBatchSize = 10;
-        settings.BatchWaitTimeoutMs = 5000;
-        settings.BatchTimeoutMultiplier = 2.0;
-        settings.MaxBatchTimeoutMinutes = 60;
+        var settings = new BatchingSettings
+        {
+            // Act
+            Enabled = false,
+            MaxBatchSize = 10,
+            BatchWaitTimeoutMs = 5000,
+            BatchTimeoutMultiplier = 2.0,
+            MaxBatchTimeoutMinutes = 60
+        };
         settings.ExcludedCommands.Add("!analyze");
         settings.ExcludedCommands.Add("!dump");
 

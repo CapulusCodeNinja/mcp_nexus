@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+
 using nexus.config.Internal;
 using nexus.config.Models;
 
@@ -29,11 +30,7 @@ internal class ConfigurationLoaderTestAccessor : ConfigurationLoader
     /// <returns>Loaded configuration.</returns>
     public IConfiguration TestLoadConfiguration(string? configPath = null)
     {
-        if (m_MockConfiguration != null)
-        {
-            return m_MockConfiguration;
-        }
-        return LoadConfiguration(configPath);
+        return m_MockConfiguration ?? LoadConfiguration(configPath);
     }
 
     /// <summary>

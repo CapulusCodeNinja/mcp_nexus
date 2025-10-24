@@ -1,14 +1,17 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using nexus.engine.Events;
-using nexus.engine.Models;
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+using nexus.engine.Events;
+using nexus.engine.Models;
+
 namespace nexus.engine.Internal;
 
-using NLog;
 using System;
+
+using NLog;
 
 /// <summary>
 /// Internal command queue that manages command execution with batching support.
@@ -77,7 +80,9 @@ internal class CommandQueue : IDisposable
     public async Task StopAsync()
     {
         if (m_Disposed)
+        {
             return;
+        }
 
         m_Logger.Debug("Stopping command queue for session {SessionId}", m_SessionId);
 
@@ -111,7 +116,9 @@ internal class CommandQueue : IDisposable
         ThrowIfDisposed();
 
         if (string.IsNullOrWhiteSpace(command))
+        {
             throw new ArgumentException("Command cannot be null or empty", nameof(command));
+        }
 
         var commandId = GenerateCommandId();
         var queuedCommand = new QueuedCommand
@@ -154,7 +161,9 @@ internal class CommandQueue : IDisposable
         ThrowIfDisposed();
 
         if (string.IsNullOrWhiteSpace(commandId))
+        {
             throw new ArgumentException("Command ID cannot be null or empty", nameof(commandId));
+        }
 
         // Check cache first
         if (m_ResultCache.TryGetValue(commandId, out var cachedResult))
@@ -188,7 +197,9 @@ internal class CommandQueue : IDisposable
         ThrowIfDisposed();
 
         if (string.IsNullOrWhiteSpace(commandId))
+        {
             return null;
+        }
 
         // Check cache first
         if (m_ResultCache.TryGetValue(commandId, out var cachedResult))
@@ -197,9 +208,8 @@ internal class CommandQueue : IDisposable
         }
 
         // Check if command is still active
-        if (m_ActiveCommands.TryGetValue(commandId, out var command))
-        {
-            return new CommandInfo
+        return m_ActiveCommands.TryGetValue(commandId, out var command)
+            ? new CommandInfo
             {
                 CommandId = command.Id,
                 Command = command.Command,
@@ -207,10 +217,8 @@ internal class CommandQueue : IDisposable
                 QueuedTime = command.QueuedTime,
                 StartTime = null, // We don't track this in QueuedCommand anymore
                 EndTime = null
-            };
-        }
-
-        return null;
+            }
+            : null;
     }
 
     /// <summary>
@@ -256,7 +264,9 @@ internal class CommandQueue : IDisposable
         ThrowIfDisposed();
 
         if (string.IsNullOrWhiteSpace(commandId))
+        {
             return false;
+        }
 
         if (m_ActiveCommands.TryGetValue(commandId, out var command))
         {
@@ -300,7 +310,9 @@ internal class CommandQueue : IDisposable
     public void Dispose()
     {
         if (m_Disposed)
+        {
             return;
+        }
 
         m_Logger.Debug("Disposing command queue for session {SessionId}", m_SessionId);
 
@@ -500,7 +512,7 @@ internal class CommandQueue : IDisposable
         // If it's a batch ID (starts with "batch_"), extract individual command IDs
         if (batchCommandId.StartsWith("batch_", StringComparison.Ordinal))
         {
-            var commandIds = batchCommandId.Substring(6).Split('_');
+            var commandIds = batchCommandId[6..].Split('_');
             return queuedCommands.Where(qc => commandIds.Contains(qc.Id)).ToList();
         }
 
@@ -548,7 +560,9 @@ internal class CommandQueue : IDisposable
     protected virtual void ValidateCdbSession()
     {
         if (m_CdbSession == null)
+        {
             throw new InvalidOperationException("CDB session not initialized");
+        }
     }
 
     /// <summary>
@@ -751,6 +765,8 @@ internal class CommandQueue : IDisposable
     private void ThrowIfDisposed()
     {
         if (m_Disposed)
+        {
             throw new ObjectDisposedException(nameof(CommandQueue));
+        }
     }
 }

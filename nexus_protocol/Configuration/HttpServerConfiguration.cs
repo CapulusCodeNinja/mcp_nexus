@@ -55,19 +55,29 @@ public class HttpServerConfiguration
     public void Validate()
     {
         if (MaxRequestBodySize <= 0)
+        {
             throw new ArgumentException("MaxRequestBodySize must be positive", nameof(MaxRequestBodySize));
+        }
 
         if (RequestHeadersTimeoutSeconds <= 0)
+        {
             throw new ArgumentException("RequestHeadersTimeoutSeconds must be positive", nameof(RequestHeadersTimeoutSeconds));
+        }
 
         if (KeepAliveTimeoutSeconds <= 0)
+        {
             throw new ArgumentException("KeepAliveTimeoutSeconds must be positive", nameof(KeepAliveTimeoutSeconds));
+        }
 
         if (MaxRequestLineSize <= 0)
+        {
             throw new ArgumentException("MaxRequestLineSize must be positive", nameof(MaxRequestLineSize));
+        }
 
         if (MaxRequestHeadersTotalSize <= 0)
+        {
             throw new ArgumentException("MaxRequestHeadersTotalSize must be positive", nameof(MaxRequestHeadersTotalSize));
+        }
     }
 }
 

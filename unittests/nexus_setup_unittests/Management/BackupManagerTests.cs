@@ -1,15 +1,21 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+
 using FluentAssertions;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Moq;
-using Xunit;
+
 using nexus.external_apis.FileSystem;
 using nexus.setup.Management;
+
 using NLog;
+
+using Xunit;
 
 namespace nexus.setup.unittests.Management;
 
@@ -168,7 +174,7 @@ public class BackupManagerTests
     {
         // Arrange
         var backupDirInfo = new DirectoryInfo("C:\\backup");
-        
+
         m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\backup"))
             .Returns(true);
         m_MockFileSystem.Setup(fs => fs.DirectoryExists("C:\\install"))

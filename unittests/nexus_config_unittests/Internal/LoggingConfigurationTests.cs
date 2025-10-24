@@ -1,12 +1,18 @@
 using FluentAssertions;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using Moq;
+
+using nexus.config.Internal;
+
 using NLog;
 using NLog.Config;
-using nexus.config.Internal;
+
 using Xunit;
+
 using MELogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace nexus.config_unittests.Internal;

@@ -1,11 +1,13 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
+
 using nexus.CommandLine;
 using nexus.protocol;
 using nexus.protocol.Configuration;
 using nexus.setup;
+
 using NLog;
 
 namespace nexus.Startup;

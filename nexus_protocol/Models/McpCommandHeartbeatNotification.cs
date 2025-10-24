@@ -12,7 +12,10 @@ internal class McpCommandHeartbeatNotification
     /// Gets or sets the session identifier.
     /// </summary>
     [JsonPropertyName("sessionId")]
-    public string? SessionId { get; set; }
+    public string? SessionId
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the command identifier.
@@ -30,7 +33,10 @@ internal class McpCommandHeartbeatNotification
     /// Gets or sets the elapsed time in seconds since command started.
     /// </summary>
     [JsonPropertyName("elapsedSeconds")]
-    public double ElapsedSeconds { get; set; }
+    public double ElapsedSeconds
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the human-readable elapsed time display (e.g., "2m 5s").
@@ -42,7 +48,10 @@ internal class McpCommandHeartbeatNotification
     /// Gets or sets additional details about the command execution.
     /// </summary>
     [JsonPropertyName("details")]
-    public string? Details { get; set; }
+    public string? Details
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the notification timestamp.

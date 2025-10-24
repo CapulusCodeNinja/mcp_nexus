@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using nexus.protocol.Notifications;
 using nexus.protocol.Services;
 
@@ -19,9 +20,8 @@ public class McpToolDefinitionServiceTests
     /// </summary>
     public McpToolDefinitionServiceTests()
     {
-        var logger = NullLoggerFactory.Instance.CreateLogger<McpToolDefinitionService>();
         m_MockNotificationService = new Mock<IMcpNotificationService>();
-        m_Service = new McpToolDefinitionService(logger, m_MockNotificationService.Object);
+        m_Service = new McpToolDefinitionService(m_MockNotificationService.Object);
     }
 
     /// <summary>

@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
 using nexus.engine;
+
 using NLog;
 
 namespace nexus.protocol;
@@ -17,7 +19,6 @@ public class ProtocolServer : IProtocolServer
     private object? m_Configuration;
     private WebApplication? m_WebApplication;
     private IHost? m_Host;
-    private bool m_IsRunning;
     private bool m_Disposed;
 
     /// <summary>
@@ -32,14 +33,18 @@ public class ProtocolServer : IProtocolServer
     /// <exception cref="ArgumentNullException">Thrown when serviceProvider is null.</exception>
     private ProtocolServer()
     {
-        m_IsRunning = false;
+        IsRunning = false;
         m_Logger = LogManager.GetCurrentClassLogger();
     }
 
     /// <summary>
     /// Gets a value indicating whether the protocol server is currently running.
     /// </summary>
-    public bool IsRunning => m_IsRunning;
+    public bool IsRunning
+    {
+        get;
+        private set;
+    }
 
     /// <summary>
     /// Starts the protocol server with the current configuration.
@@ -51,7 +56,7 @@ public class ProtocolServer : IProtocolServer
     {
         ObjectDisposedException.ThrowIf(m_Disposed, this);
 
-        if (m_IsRunning)
+        if (IsRunning)
         {
             throw new InvalidOperationException("Protocol server is already running.");
         }
@@ -76,7 +81,7 @@ public class ProtocolServer : IProtocolServer
             m_Logger.Info("MCP protocol server (Stdio) started successfully");
         }
 
-        m_IsRunning = true;
+        IsRunning = true;
     }
 
     /// <summary>
@@ -88,7 +93,7 @@ public class ProtocolServer : IProtocolServer
     {
         ObjectDisposedException.ThrowIf(m_Disposed, this);
 
-        if (!m_IsRunning)
+        if (!IsRunning)
         {
             m_Logger.Warn("Protocol server is not running.");
             return;
@@ -105,7 +110,7 @@ public class ProtocolServer : IProtocolServer
             await m_Host.StopAsync(cancellationToken);
         }
 
-        m_IsRunning = false;
+        IsRunning = false;
         m_Logger.Info("MCP protocol server stopped successfully.");
     }
 
@@ -120,7 +125,7 @@ public class ProtocolServer : IProtocolServer
         ArgumentNullException.ThrowIfNull(configuration);
         ObjectDisposedException.ThrowIf(m_Disposed, this);
 
-        if (m_IsRunning)
+        if (IsRunning)
         {
             throw new InvalidOperationException("Cannot change configuration while server is running. Stop the server first.");
         }
@@ -141,7 +146,7 @@ public class ProtocolServer : IProtocolServer
         ArgumentNullException.ThrowIfNull(app);
         ObjectDisposedException.ThrowIf(m_Disposed, this);
 
-        if (m_IsRunning)
+        if (IsRunning)
         {
             throw new InvalidOperationException("Cannot set WebApplication while server is running. Stop the server first.");
         }
@@ -163,7 +168,7 @@ public class ProtocolServer : IProtocolServer
         ArgumentNullException.ThrowIfNull(host);
         ObjectDisposedException.ThrowIf(m_Disposed, this);
 
-        if (m_IsRunning)
+        if (IsRunning)
         {
             throw new InvalidOperationException("Cannot set Host while server is running. Stop the server first.");
         }
@@ -186,7 +191,7 @@ public class ProtocolServer : IProtocolServer
 
         m_Logger.Debug("Disposing protocol server...");
 
-        if (m_IsRunning)
+        if (IsRunning)
         {
             StopAsync().GetAwaiter().GetResult();
         }

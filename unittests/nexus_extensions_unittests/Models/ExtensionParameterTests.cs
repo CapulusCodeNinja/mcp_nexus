@@ -1,6 +1,8 @@
 using FluentAssertions;
-using Xunit;
+
 using nexus.extensions.Models;
+
+using Xunit;
 
 namespace nexus.extensions_unittests.Models;
 
@@ -84,10 +86,11 @@ public class ExtensionParameterTests
     public void Required_ShouldSetAndGetValue()
     {
         // Arrange
-        var parameter = new ExtensionParameter();
-
-        // Act
-        parameter.Required = true;
+        var parameter = new ExtensionParameter
+        {
+            // Act
+            Required = true
+        };
 
         // Assert
         parameter.Required.Should().BeTrue();

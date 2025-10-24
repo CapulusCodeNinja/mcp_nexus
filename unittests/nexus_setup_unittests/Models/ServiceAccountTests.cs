@@ -1,4 +1,5 @@
 using nexus.setup.Models;
+
 using Xunit;
 
 namespace nexus.setup_unittests.Models;

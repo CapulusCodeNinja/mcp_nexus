@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
-using nexus.config.Models;
 using Microsoft.Extensions.Primitives;
+
+using nexus.config.Models;
 
 namespace nexus.config.Internal;
 

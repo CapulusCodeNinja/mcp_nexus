@@ -40,6 +40,9 @@ public interface IProtocolServer : IDisposable
     /// <summary>
     /// Gets a value indicating whether the protocol server is currently running.
     /// </summary>
-    bool IsRunning { get; }
+    bool IsRunning
+    {
+        get;
+    }
 }
 

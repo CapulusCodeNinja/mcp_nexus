@@ -14,7 +14,10 @@ internal class McpError
     /// </summary>
     [JsonPropertyName("code")]
     [Required(ErrorMessage = "error code is required")]
-    public int Code { get; set; }
+    public int Code
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the error message providing a short description.
@@ -28,6 +31,9 @@ internal class McpError
     /// Gets or sets optional additional error data.
     /// </summary>
     [JsonPropertyName("data")]
-    public object? Data { get; set; }
+    public object? Data
+    {
+        get; set;
+    }
 }
 

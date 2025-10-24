@@ -1,15 +1,21 @@
 using System;
+
 using FluentAssertions;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Moq;
-using Xunit;
+
+using nexus.config.Models;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ServiceManagement;
-using nexus.config.Models;
 using nexus.setup.Validation;
+
 using NLog;
+
+using Xunit;
 
 namespace nexus.setup.unittests.Validation;
 

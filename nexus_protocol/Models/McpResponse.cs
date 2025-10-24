@@ -18,20 +18,29 @@ internal class McpResponse
     /// Gets or sets the response identifier, matching the request ID.
     /// </summary>
     [JsonPropertyName("id")]
-    public object? Id { get; set; }
+    public object? Id
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the result data on success.
     /// Mutually exclusive with <see cref="Error"/>.
     /// </summary>
     [JsonPropertyName("result")]
-    public object? Result { get; set; }
+    public object? Result
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the error information on failure.
     /// Mutually exclusive with <see cref="Result"/>.
     /// </summary>
     [JsonPropertyName("error")]
-    public McpError? Error { get; set; }
+    public McpError? Error
+    {
+        get; set;
+    }
 }
 

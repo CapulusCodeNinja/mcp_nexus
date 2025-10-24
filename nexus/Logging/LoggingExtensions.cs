@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using nexus.config;
 using nexus.config.Internal;
 
@@ -25,7 +26,7 @@ public static class LoggingExtensions
     {
         // Configure logging
         Settings.GetInstance().ConfigureLogging(logging, configuration, isServiceMode);
-        
+
         return logging;
     }
 }

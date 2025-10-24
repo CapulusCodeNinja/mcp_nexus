@@ -23,16 +23,25 @@ public class ExtensionProcessInfo
     /// <summary>
     /// Process ID of the extension.
     /// </summary>
-    public int? ProcessId { get; set; }
+    public int? ProcessId
+    {
+        get; set;
+    }
 
     /// <summary>
     /// When the extension started.
     /// </summary>
-    public DateTime StartedAt { get; set; }
+    public DateTime StartedAt
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Whether the extension is still running.
     /// </summary>
-    public bool IsRunning { get; set; }
+    public bool IsRunning
+    {
+        get; set;
+    }
 }
 

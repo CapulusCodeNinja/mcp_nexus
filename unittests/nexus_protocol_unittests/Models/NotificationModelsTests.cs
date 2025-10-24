@@ -1,5 +1,6 @@
-using nexus.protocol.Models;
 using System.Text.Json;
+
+using nexus.protocol.Models;
 
 namespace nexus.protocol.unittests.Models;
 

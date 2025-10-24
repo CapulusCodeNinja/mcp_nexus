@@ -1,6 +1,8 @@
 using FluentAssertions;
-using Xunit;
+
 using nexus.extensions.Models;
+
+using Xunit;
 
 namespace nexus.extensions_unittests.Models;
 
@@ -34,10 +36,11 @@ public class ExtensionResultTests
     public void Success_ShouldSetAndGetValue()
     {
         // Arrange
-        var result = new ExtensionResult();
-
-        // Act
-        result.Success = true;
+        var result = new ExtensionResult
+        {
+            // Act
+            Success = true
+        };
 
         // Assert
         result.Success.Should().BeTrue();

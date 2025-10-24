@@ -1,8 +1,10 @@
+using System.Text;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using nexus.protocol.Middleware;
-using System.Text;
 
 namespace nexus.protocol.unittests.Middleware;
 
@@ -20,7 +22,7 @@ public class ResponseFormattingMiddlewareTests
     public ResponseFormattingMiddlewareTests()
     {
         var logger = NullLogger<ResponseFormattingMiddleware>.Instance;
-        m_Middleware = new ResponseFormattingMiddleware((HttpContext context) => Task.CompletedTask, logger);
+        m_Middleware = new ResponseFormattingMiddleware((HttpContext context) => Task.CompletedTask);
     }
 
     /// <summary>
@@ -31,7 +33,7 @@ public class ResponseFormattingMiddlewareTests
     {
         var logger = NullLogger<ResponseFormattingMiddleware>.Instance;
 
-        var action = () => new ResponseFormattingMiddleware(null!, logger);
+        var action = () => new ResponseFormattingMiddleware(null!);
 
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("next");
@@ -45,7 +47,7 @@ public class ResponseFormattingMiddlewareTests
     {
         RequestDelegate next = (HttpContext context) => Task.CompletedTask;
 
-        var action = () => new ResponseFormattingMiddleware(next, null!);
+        var action = () => new ResponseFormattingMiddleware(next);
 
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
@@ -63,7 +65,7 @@ public class ResponseFormattingMiddlewareTests
             nextCalled = true;
             return Task.CompletedTask;
         };
-        var middleware = new ResponseFormattingMiddleware(next, NullLogger<ResponseFormattingMiddleware>.Instance);
+        var middleware = new ResponseFormattingMiddleware(next);
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
 
@@ -78,11 +80,9 @@ public class ResponseFormattingMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WithException_ReturnsErrorResponse()
     {
-        RequestDelegate next = (HttpContext context) =>
-        {
-            throw new InvalidOperationException("Test error");
-        };
-        var middleware = new ResponseFormattingMiddleware(next, NullLogger<ResponseFormattingMiddleware>.Instance);
+        RequestDelegate next = (HttpContext context) => throw new InvalidOperationException("Test error");
+
+        var middleware = new ResponseFormattingMiddleware(next);
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
 
@@ -104,11 +104,8 @@ public class ResponseFormattingMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WithArgumentException_Returns500()
     {
-        RequestDelegate next = (HttpContext context) =>
-        {
-            throw new ArgumentException("Invalid argument");
-        };
-        var middleware = new ResponseFormattingMiddleware(next, NullLogger<ResponseFormattingMiddleware>.Instance);
+        RequestDelegate next = (HttpContext context) => throw new ArgumentException("Invalid argument");
+        var middleware = new ResponseFormattingMiddleware(next);
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
 
@@ -127,11 +124,8 @@ public class ResponseFormattingMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WithArgumentNullException_Returns500()
     {
-        RequestDelegate next = (HttpContext context) =>
-        {
-            throw new ArgumentNullException("param", "Parameter is null");
-        };
-        var middleware = new ResponseFormattingMiddleware(next, NullLogger<ResponseFormattingMiddleware>.Instance);
+        RequestDelegate next = (HttpContext context) => throw new ArgumentNullException("param");
+        var middleware = new ResponseFormattingMiddleware(next);
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
 
@@ -150,11 +144,8 @@ public class ResponseFormattingMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WithFileNotFoundException_Returns500()
     {
-        RequestDelegate next = (HttpContext context) =>
-        {
-            throw new FileNotFoundException("File not found");
-        };
-        var middleware = new ResponseFormattingMiddleware(next, NullLogger<ResponseFormattingMiddleware>.Instance);
+        RequestDelegate next = (HttpContext context) => throw new FileNotFoundException("File not found");
+        var middleware = new ResponseFormattingMiddleware(next);
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
 

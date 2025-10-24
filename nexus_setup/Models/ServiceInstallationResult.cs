@@ -8,7 +8,10 @@ public class ServiceInstallationResult
     /// <summary>
     /// Gets or sets a value indicating whether the operation succeeded.
     /// </summary>
-    public bool Success { get; set; }
+    public bool Success
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the result message.
@@ -18,7 +21,10 @@ public class ServiceInstallationResult
     /// <summary>
     /// Gets or sets the error details (if operation failed).
     /// </summary>
-    public string? ErrorDetails { get; set; }
+    public string? ErrorDetails
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the service name.

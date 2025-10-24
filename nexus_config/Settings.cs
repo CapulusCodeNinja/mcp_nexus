@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+
 using nexus.config.Internal;
 using nexus.config.Models;
 
@@ -13,7 +14,7 @@ namespace nexus.config
         private static Settings? m_Instance;
 
         private ConfigurationLoader m_ConfigurationLoader;
-        private LoggingConfiguration m_LoggingConfiguration;
+        private readonly LoggingConfiguration m_LoggingConfiguration;
 
         private Settings()
         {

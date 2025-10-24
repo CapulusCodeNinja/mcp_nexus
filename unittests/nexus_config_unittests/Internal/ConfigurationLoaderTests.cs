@@ -1,8 +1,12 @@
 using FluentAssertions;
+
 using Microsoft.Extensions.Configuration;
+
 using Moq;
+
 using nexus.config.Internal;
 using nexus.config.Models;
+
 using Xunit;
 
 namespace nexus.config_unittests.Internal;

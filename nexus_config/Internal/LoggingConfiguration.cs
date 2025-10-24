@@ -1,10 +1,12 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using NLog;
-using NLog.Web;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
+
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+
+using NLog;
+using NLog.Web;
 
 namespace nexus.config.Internal;
 
@@ -36,7 +38,9 @@ internal class LoggingConfiguration
     protected virtual Microsoft.Extensions.Logging.LogLevel GetLogLevelFromConfiguration(IConfiguration configuration)
     {
         if (configuration == null)
+        {
             return Microsoft.Extensions.Logging.LogLevel.Information;
+        }
 
         var logLevelString = configuration["Logging:LogLevel"] ?? "Information";
         return ParseLogLevel(logLevelString);
@@ -239,10 +243,9 @@ internal class LoggingConfiguration
     /// <returns>The corresponding LogLevel enum value.</returns>
     protected virtual Microsoft.Extensions.Logging.LogLevel ParseLogLevel(string logLevelString)
     {
-        if (string.IsNullOrEmpty(logLevelString))
-            return Microsoft.Extensions.Logging.LogLevel.Information;
-
-        return logLevelString.ToLowerInvariant() switch
+        return string.IsNullOrEmpty(logLevelString)
+            ? Microsoft.Extensions.Logging.LogLevel.Information
+            : logLevelString.ToLowerInvariant() switch
         {
             "trace" => Microsoft.Extensions.Logging.LogLevel.Trace,
             "debug" => Microsoft.Extensions.Logging.LogLevel.Debug,

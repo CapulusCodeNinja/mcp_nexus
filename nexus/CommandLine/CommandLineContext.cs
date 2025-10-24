@@ -5,15 +5,13 @@ namespace nexus.CommandLine;
 /// </summary>
 public class CommandLineContext
 {
-    private readonly string[] m_Args;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandLineContext"/> class.
     /// </summary>
     /// <param name="args">Command line arguments.</param>
     public CommandLineContext(string[] args)
     {
-        m_Args = args ?? throw new ArgumentNullException(nameof(args));
+        Args = args ?? throw new ArgumentNullException(nameof(args));
     }
 
     /// <summary>
@@ -49,7 +47,10 @@ public class CommandLineContext
     /// <summary>
     /// Gets the raw command line arguments.
     /// </summary>
-    public string[] Args => m_Args;
+    public string[] Args
+    {
+        get;
+    }
 
     /// <summary>
     /// Checks if a specific argument is present in the command line.
@@ -58,6 +59,6 @@ public class CommandLineContext
     /// <returns>True if the argument is present, false otherwise.</returns>
     private bool HasArgument(string argument)
     {
-        return m_Args.Contains(argument, StringComparer.OrdinalIgnoreCase);
+        return Args.Contains(argument, StringComparer.OrdinalIgnoreCase);
     }
 }

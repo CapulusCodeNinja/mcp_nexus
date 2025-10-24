@@ -1,6 +1,8 @@
 using FluentAssertions;
-using Xunit;
+
 using nexus.extensions.Configuration;
+
+using Xunit;
 
 namespace nexus.extensions_unittests.Configuration;
 
@@ -32,10 +34,11 @@ public class ExtensionConfigurationTests
     public void Enabled_ShouldSetAndGetValue()
     {
         // Arrange
-        var config = new ExtensionConfiguration();
-
-        // Act
-        config.Enabled = false;
+        var config = new ExtensionConfiguration
+        {
+            // Act
+            Enabled = false
+        };
 
         // Assert
         config.Enabled.Should().BeFalse();
@@ -140,10 +143,11 @@ public class ExtensionConfigurationTests
     public void ExtensionsPath_ShouldAllowRelativePath()
     {
         // Arrange
-        var config = new ExtensionConfiguration();
-
-        // Act
-        config.ExtensionsPath = "custom/extensions";
+        var config = new ExtensionConfiguration
+        {
+            // Act
+            ExtensionsPath = "custom/extensions"
+        };
 
         // Assert
         config.ExtensionsPath.Should().Be("custom/extensions");
@@ -156,10 +160,11 @@ public class ExtensionConfigurationTests
     public void ExtensionsPath_ShouldAllowAbsolutePath()
     {
         // Arrange
-        var config = new ExtensionConfiguration();
-
-        // Act
-        config.ExtensionsPath = "C:\\Program Files\\Extensions";
+        var config = new ExtensionConfiguration
+        {
+            // Act
+            ExtensionsPath = "C:\\Program Files\\Extensions"
+        };
 
         // Assert
         config.ExtensionsPath.Should().Be("C:\\Program Files\\Extensions");

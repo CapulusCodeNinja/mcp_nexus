@@ -1,9 +1,12 @@
+using System.Runtime.Versioning;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using nexus.external_apis.FileSystem;
 using nexus.setup.Core;
+
 using NLog;
-using System.Runtime.Versioning;
 
 namespace nexus.setup.Utilities
 {

@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
+
 using Microsoft.Extensions.Logging;
+
 using NLog;
 
 namespace nexus.extensions.Security;
@@ -33,10 +35,14 @@ internal class ExtensionTokenValidator : IExtensionTokenValidator
     public string CreateToken(string sessionId, string commandId)
     {
         if (string.IsNullOrWhiteSpace(sessionId))
+        {
             throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
+        }
 
         if (string.IsNullOrWhiteSpace(commandId))
+        {
             throw new ArgumentException("Command ID cannot be null or empty", nameof(commandId));
+        }
 
         // Generate secure random token
         var tokenBytes = new byte[32];
@@ -116,7 +122,9 @@ internal class ExtensionTokenValidator : IExtensionTokenValidator
     public void RevokeToken(string token)
     {
         if (string.IsNullOrWhiteSpace(token))
+        {
             return;
+        }
 
         if (m_Tokens.TryGetValue(token, out var tokenInfo))
         {
@@ -133,7 +141,9 @@ internal class ExtensionTokenValidator : IExtensionTokenValidator
     public void RevokeSessionTokens(string sessionId)
     {
         if (string.IsNullOrWhiteSpace(sessionId))
+        {
             return;
+        }
 
         var count = 0;
         foreach (var kvp in m_Tokens)
@@ -160,7 +170,9 @@ internal class ExtensionTokenValidator : IExtensionTokenValidator
         {
             // Only cleanup every 5 minutes
             if ((DateTime.Now - m_LastCleanup).TotalMinutes < 5)
+            {
                 return;
+            }
 
             var removed = 0;
             foreach (var kvp in m_Tokens)
@@ -208,16 +220,25 @@ internal class ExtensionTokenInfo
     /// <summary>
     /// When the token was created.
     /// </summary>
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt
+    {
+        get; set;
+    }
 
     /// <summary>
     /// When the token expires.
     /// </summary>
-    public DateTime ExpiresAt { get; set; }
+    public DateTime ExpiresAt
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Whether the token has been revoked.
     /// </summary>
-    public bool IsRevoked { get; set; }
+    public bool IsRevoked
+    {
+        get; set;
+    }
 }
 

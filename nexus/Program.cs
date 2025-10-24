@@ -1,10 +1,13 @@
 using System.Runtime.Versioning;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NLog;
+
 using nexus.CommandLine;
-using nexus.Startup;
 using nexus.Logging;
+using nexus.Startup;
+
+using NLog;
 
 namespace nexus;
 
@@ -53,14 +56,11 @@ internal static class Program
     internal static IHostBuilder CreateHostBuilder(CommandLineContext cmd)
     {
         var builder = Host.CreateDefaultBuilder(cmd.Args)
-            .ConfigureLogging((context, logging) =>
-            {
-                logging.AddNexusLogging(context.Configuration,
+            .ConfigureLogging((context, logging) => logging.AddNexusLogging(context.Configuration,
                     cmd.IsServiceMode ||
                     cmd.IsInstallMode ||
                     cmd.IsUpdateMode ||
-                    cmd.IsUninstallMode);
-            })
+                    cmd.IsUninstallMode))
             .ConfigureServices((_, services) =>
             {
                 // Register mode
@@ -73,10 +73,7 @@ internal static class Program
         // Configure Windows Service support if in service mode
         if (cmd.IsServiceMode)
         {
-            builder.UseWindowsService(options =>
-            {
-                options.ServiceName = "MCP-Nexus";
-            });
+            builder.UseWindowsService(options => options.ServiceName = "MCP-Nexus");
         }
 
         return builder;

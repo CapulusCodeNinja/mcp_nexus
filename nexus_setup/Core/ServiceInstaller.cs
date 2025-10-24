@@ -1,13 +1,16 @@
+using System.Runtime.Versioning;
+using System.ServiceProcess;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
 using nexus.external_apis.ServiceManagement;
 using nexus.setup.Interfaces;
 using nexus.setup.Models;
+
 using NLog;
-using System.Runtime.Versioning;
-using System.ServiceProcess;
 
 namespace nexus.setup.Core;
 
@@ -56,16 +59,24 @@ internal class ServiceInstaller : IServiceInstaller
     public async Task<ServiceInstallationResult> InstallServiceAsync(ServiceInstallationOptions options, CancellationToken cancellationToken = default)
     {
         if (options == null)
+        {
             throw new ArgumentNullException(nameof(options));
+        }
 
         if (string.IsNullOrWhiteSpace(options.ServiceName))
+        {
             throw new ArgumentException("Service name cannot be null or empty.", nameof(options));
+        }
 
         if (string.IsNullOrWhiteSpace(options.ExecutablePath))
+        {
             throw new ArgumentException("Executable path cannot be null or empty.", nameof(options));
+        }
 
         if (!m_FileSystem.FileExists(options.ExecutablePath))
+        {
             return ServiceInstallationResult.CreateFailure(options.ServiceName, "Executable file not found", options.ExecutablePath);
+        }
 
         m_Logger.Info("Installing service: {ServiceName}", options.ServiceName);
 
@@ -97,12 +108,12 @@ internal class ServiceInstaller : IServiceInstaller
                 }
             }
 
-            var result = await ExecuteScCommandAsync(arguments, cancellationToken);
+            var (Success, Output, ErrorDetails) = await ExecuteScCommandAsync(arguments, cancellationToken);
 
-            if (!result.Success)
+            if (!Success)
             {
-                m_Logger.Error("Failed to install service: {Error}", result.ErrorDetails);
-                return ServiceInstallationResult.CreateFailure(options.ServiceName, "Failed to install service", result.ErrorDetails);
+                m_Logger.Error("Failed to install service: {Error}", ErrorDetails);
+                return ServiceInstallationResult.CreateFailure(options.ServiceName, "Failed to install service", ErrorDetails);
             }
 
             // Set service description
@@ -131,7 +142,9 @@ internal class ServiceInstaller : IServiceInstaller
     public async Task<ServiceInstallationResult> UninstallServiceAsync(string serviceName, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(serviceName))
+        {
             throw new ArgumentException("Service name cannot be null or empty.", nameof(serviceName));
+        }
 
         m_Logger.Info("Uninstalling service: {ServiceName}", serviceName);
 
@@ -171,12 +184,12 @@ internal class ServiceInstaller : IServiceInstaller
 
             // Delete the service
             var arguments = $"delete \"{serviceName}\"";
-            var result = await ExecuteScCommandAsync(arguments, cancellationToken);
+            var (Success, Output, ErrorDetails) = await ExecuteScCommandAsync(arguments, cancellationToken);
 
-            if (!result.Success)
+            if (!Success)
             {
-                m_Logger.Error("Failed to uninstall service: {Error}", result.ErrorDetails);
-                return ServiceInstallationResult.CreateFailure(serviceName, "Failed to uninstall service", result.ErrorDetails);
+                m_Logger.Error("Failed to uninstall service: {Error}", ErrorDetails);
+                return ServiceInstallationResult.CreateFailure(serviceName, "Failed to uninstall service", ErrorDetails);
             }
 
             m_Logger.Info("Service {ServiceName} uninstalled successfully", serviceName);
@@ -196,10 +209,7 @@ internal class ServiceInstaller : IServiceInstaller
     /// <returns>True if the service is installed, false otherwise.</returns>
     public bool IsServiceInstalled(string serviceName)
     {
-        if (string.IsNullOrWhiteSpace(serviceName))
-            return false;
-
-        return m_ServiceController.IsServiceInstalled(serviceName);
+        return !string.IsNullOrWhiteSpace(serviceName) && m_ServiceController.IsServiceInstalled(serviceName);
     }
 
     /// <summary>
@@ -209,10 +219,7 @@ internal class ServiceInstaller : IServiceInstaller
     /// <returns>The service status, or null if the service doesn't exist.</returns>
     public ServiceControllerStatus? GetServiceStatus(string serviceName)
     {
-        if (string.IsNullOrWhiteSpace(serviceName))
-            return null;
-
-        return m_ServiceController.GetServiceStatus(serviceName);
+        return string.IsNullOrWhiteSpace(serviceName) ? null : m_ServiceController.GetServiceStatus(serviceName);
     }
 
     /// <summary>
@@ -226,10 +233,14 @@ internal class ServiceInstaller : IServiceInstaller
     public async Task<bool> WaitForServiceStatusAsync(string serviceName, string targetStatus, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(serviceName))
+        {
             throw new ArgumentException("Service name cannot be null or empty.", nameof(serviceName));
+        }
 
         if (string.IsNullOrWhiteSpace(targetStatus))
+        {
             throw new ArgumentException("Target status cannot be null or empty.", nameof(targetStatus));
+        }
 
         var startTime = DateTime.Now;
         var pollInterval = TimeSpan.FromMilliseconds(100);
@@ -281,10 +292,14 @@ internal class ServiceInstaller : IServiceInstaller
     public async Task<bool> BuildProjectAsync(string projectPath, string configuration = "Release", string? outputPath = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(projectPath))
+        {
             throw new ArgumentException("Project path cannot be null or empty.", nameof(projectPath));
+        }
 
         if (string.IsNullOrWhiteSpace(configuration))
+        {
             throw new ArgumentException("Configuration cannot be null or empty.", nameof(configuration));
+        }
 
         try
         {
@@ -351,10 +366,14 @@ internal class ServiceInstaller : IServiceInstaller
     public async Task<bool> CopyApplicationFilesAsync(string sourceDirectory, string targetDirectory, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(sourceDirectory))
+        {
             throw new ArgumentException("Source directory cannot be null or empty.", nameof(sourceDirectory));
+        }
 
         if (string.IsNullOrWhiteSpace(targetDirectory))
+        {
             throw new ArgumentException("Target directory cannot be null or empty.", nameof(targetDirectory));
+        }
 
         try
         {

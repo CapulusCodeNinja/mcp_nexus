@@ -10,17 +10,26 @@ internal class QueuedCommand
     /// <summary>
     /// Gets or sets the unique identifier of the command.
     /// </summary>
-    public required string Id { get; set; }
+    public required string Id
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the command text to execute.
     /// </summary>
-    public required string Command { get; set; }
+    public required string Command
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the time when the command was queued.
     /// </summary>
-    public required DateTime QueuedTime { get; set; }
+    public required DateTime QueuedTime
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the current state of the command.

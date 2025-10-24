@@ -1,6 +1,8 @@
 using FluentAssertions;
-using Xunit;
+
 using nexus.engine.Models;
+
+using Xunit;
 
 namespace nexus.engine.unittests.Models;
 

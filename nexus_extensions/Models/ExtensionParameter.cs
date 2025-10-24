@@ -35,6 +35,9 @@ public class ExtensionParameter
     /// Default value for the parameter.
     /// </summary>
     [JsonPropertyName("default")]
-    public object? Default { get; set; }
+    public object? Default
+    {
+        get; set;
+    }
 }
 

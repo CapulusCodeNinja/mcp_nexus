@@ -1,5 +1,6 @@
-using System.ServiceProcess;
 using System.Runtime.Versioning;
+using System.ServiceProcess;
+
 using nexus.setup.Models;
 
 namespace nexus.setup.Interfaces;

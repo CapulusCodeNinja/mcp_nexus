@@ -1,6 +1,9 @@
 using System.Text.Json;
+
 using Microsoft.Extensions.Logging;
+
 using nexus.protocol.Models;
+
 using NLog;
 
 namespace nexus.protocol.Notifications;
@@ -30,7 +33,9 @@ internal class StdioNotificationBridge : INotificationBridge
     public async Task SendNotificationAsync(McpNotification notification)
     {
         if (notification == null)
+        {
             throw new ArgumentNullException(nameof(notification));
+        }
 
         await m_WriteSemaphore.WaitAsync();
         try

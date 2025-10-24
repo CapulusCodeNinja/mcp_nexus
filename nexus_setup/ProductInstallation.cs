@@ -1,14 +1,17 @@
+using System.Runtime.Versioning;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using nexus.setup.Core;
-using nexus.setup.Management;
-using nexus.setup.Models;
-using nexus.setup.Validation;
-using System.Runtime.Versioning;
+
 using nexus.config;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
 using nexus.external_apis.ServiceManagement;
+using nexus.setup.Core;
+using nexus.setup.Management;
+using nexus.setup.Models;
+using nexus.setup.Validation;
+
 using NLog;
 
 namespace nexus.setup
@@ -51,7 +54,7 @@ namespace nexus.setup
             IProcessManager processManager,
             IServiceController serviceController)
         {
-            m_FileSystem= fileSystem;
+            m_FileSystem = fileSystem;
 
             m_Logger = LogManager.GetCurrentClassLogger();
 
@@ -98,9 +101,9 @@ namespace nexus.setup
             }
 
             // PHASE 2: Installation execution (with rollback protection)
-            bool backupCreated = false;
-            bool filesCopied = false;
-            bool serviceInstalled = false;
+            var backupCreated = false;
+            var filesCopied = false;
+            var serviceInstalled = false;
 
             try
             {
@@ -242,9 +245,9 @@ namespace nexus.setup
             }
 
             // PHASE 2: Uninstall execution
-            bool serviceRemoved = false;
-            bool filesRemoved = false;
-            bool backupCreated = false;
+            var serviceRemoved = false;
+            var filesRemoved = false;
+            var backupCreated = false;
 
             try
             {

@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
+
 using nexus.protocol.Models;
 using nexus.protocol.Notifications;
+
 using NLog;
 
 namespace nexus.protocol.Services;
@@ -18,10 +20,8 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <summary>
     /// Initializes a new instance of the <see cref="McpToolDefinitionService"/> class.
     /// </summary>
-    /// <param name="logger">The logger for recording service events.</param>
     /// <param name="notificationService">Optional notification service for tool list changes.</param>
     public McpToolDefinitionService(
-        ILogger<McpToolDefinitionService> logger,
         IMcpNotificationService? notificationService = null)
     {
         m_Logger = LogManager.GetCurrentClassLogger();

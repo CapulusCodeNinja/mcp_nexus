@@ -24,7 +24,10 @@ internal class McpSessionRecoveryNotification
     /// Gets or sets whether the recovery was successful.
     /// </summary>
     [JsonPropertyName("success")]
-    public bool Success { get; set; }
+    public bool Success
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the recovery message providing additional details.
@@ -42,6 +45,9 @@ internal class McpSessionRecoveryNotification
     /// Gets or sets the array of command IDs affected by the recovery.
     /// </summary>
     [JsonPropertyName("affectedCommands")]
-    public string[]? AffectedCommands { get; set; }
+    public string[]? AffectedCommands
+    {
+        get; set;
+    }
 }
 

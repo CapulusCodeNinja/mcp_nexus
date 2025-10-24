@@ -3,10 +3,13 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+
 using Microsoft.Extensions.Logging;
+
 using nexus.extensions.Configuration;
 using nexus.extensions.Infrastructure;
 using nexus.extensions.Models;
+
 using NLog;
 
 namespace nexus.extensions.Core;
@@ -32,7 +35,6 @@ internal partial class ExtensionExecutor : IExtensionExecutor
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionExecutor"/> class.
     /// </summary>
-    /// <param name="logger">The logger instance for recording execution operations.</param>
     /// <param name="extensionManager">The extension manager for retrieving extension metadata.</param>
     /// <param name="callbackUrl">The base URL for extension callbacks.</param>
     /// <param name="configuration">Configuration settings for extension execution.</param>
@@ -41,7 +43,6 @@ internal partial class ExtensionExecutor : IExtensionExecutor
     /// <exception cref="ArgumentNullException">Thrown when logger, extensionManager, configuration, or tokenValidator is null.</exception>
     /// <exception cref="ArgumentException">Thrown when callbackUrl is null or empty.</exception>
     public ExtensionExecutor(
-        ILogger<ExtensionExecutor> logger,
         IExtensionManager extensionManager,
         string callbackUrl,
         ExtensionConfiguration configuration,
@@ -54,7 +55,9 @@ internal partial class ExtensionExecutor : IExtensionExecutor
         m_TokenValidator = tokenValidator ?? throw new ArgumentNullException(nameof(tokenValidator));
 
         if (string.IsNullOrWhiteSpace(callbackUrl))
+        {
             throw new ArgumentException("Callback URL cannot be null or empty", nameof(callbackUrl));
+        }
 
         m_CallbackUrl = callbackUrl;
         m_ProcessWrapper = processWrapper ?? new ProcessWrapper();
@@ -81,13 +84,19 @@ internal partial class ExtensionExecutor : IExtensionExecutor
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(extensionName))
+        {
             throw new ArgumentException("Extension name cannot be null or empty", nameof(extensionName));
+        }
 
         if (string.IsNullOrWhiteSpace(sessionId))
+        {
             throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
+        }
 
         if (string.IsNullOrWhiteSpace(commandId))
+        {
             throw new ArgumentException("Command ID cannot be null or empty", nameof(commandId));
+        }
 
         m_Logger.Info("Starting extension: {Extension} for session {SessionId} with command ID {CommandId}",
             extensionName, sessionId, commandId);
@@ -125,7 +134,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
             callbackToken = m_TokenValidator.CreateToken(sessionId, commandId);
 
             // Get process info for error messages (before creating process)
-            string processDescription = $"{metadata.ScriptType} extension: {extensionName}";
+            var processDescription = $"{metadata.ScriptType} extension: {extensionName}";
 
             // Create process
             var process = CreateProcess(metadata, sessionId, commandId, callbackToken, parameters);
@@ -314,7 +323,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
         if (scriptType == "powershell")
         {
             // Try to find PowerShell - prefer pwsh (PowerShell 7+), fall back to powershell (5.1)
-            string? powershellPath = FindPowerShell() ?? throw new InvalidOperationException("PowerShell not found. Please ensure pwsh.exe or powershell.exe is in PATH or installed.");
+            var powershellPath = FindPowerShell() ?? throw new InvalidOperationException("PowerShell not found. Please ensure pwsh.exe or powershell.exe is in PATH or installed.");
             fileName = powershellPath;
 
             // Build PowerShell arguments with parameters
@@ -354,7 +363,9 @@ internal partial class ExtensionExecutor : IExtensionExecutor
     private string BuildPowerShellParameterArguments(object parameters)
     {
         if (parameters == null)
+        {
             return string.Empty;
+        }
 
         var argumentsBuilder = new StringBuilder();
 
@@ -416,7 +427,9 @@ internal partial class ExtensionExecutor : IExtensionExecutor
             var paramName = char.ToUpper(property.Name[0]) + property.Name[1..];
 
             if (argumentsBuilder.Length > 0)
+            {
                 argumentsBuilder.Append(' ');
+            }
 
             argumentsBuilder.Append($"-{paramName}");
 
@@ -524,10 +537,14 @@ internal partial class ExtensionExecutor : IExtensionExecutor
     public bool KillExtension(string commandId)
     {
         if (string.IsNullOrWhiteSpace(commandId))
+        {
             return false;
+        }
 
         if (!m_Processes.TryGetValue(commandId, out var process))
+        {
             return false;
+        }
 
         try
         {
@@ -553,10 +570,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
     /// <returns>Extension process information, or null if not found.</returns>
     public ExtensionProcessInfo? GetExtensionInfo(string commandId)
     {
-        if (string.IsNullOrWhiteSpace(commandId))
-            return null;
-
-        return m_RunningExtensions.TryGetValue(commandId, out var info) ? info : null;
+        return string.IsNullOrWhiteSpace(commandId) ? null : m_RunningExtensions.TryGetValue(commandId, out var info) ? info : null;
     }
 
     /// <summary>

@@ -1,10 +1,13 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using System.Reflection;
 using System.Runtime.InteropServices;
+
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
 using nexus.CommandLine;
+
 using NLog;
 
 namespace nexus.Startup;
@@ -131,13 +134,17 @@ internal class StartupBanner
     /// <returns>String representation of the detected mode.</returns>
     private string GetDetectedMode()
     {
-        if (m_CommandLineContext.IsHttpMode) return "HTTP Server";
-        if (m_CommandLineContext.IsStdioMode) return "Stdio Server";
-        if (m_CommandLineContext.IsServiceMode) return "Windows Service";
-        if (m_CommandLineContext.IsInstallMode) return "Install Command";
-        if (m_CommandLineContext.IsUpdateMode) return "Update Command";
-        if (m_CommandLineContext.IsUninstallMode) return "Uninstall Command";
-        return "HTTP Server (default)";
+        return m_CommandLineContext.IsHttpMode
+            ? "HTTP Server"
+            : m_CommandLineContext.IsStdioMode
+            ? "Stdio Server"
+            : m_CommandLineContext.IsServiceMode
+            ? "Windows Service"
+            : m_CommandLineContext.IsInstallMode
+            ? "Install Command"
+            : m_CommandLineContext.IsUpdateMode
+            ? "Update Command"
+            : m_CommandLineContext.IsUninstallMode ? "Uninstall Command" : "HTTP Server (default)";
     }
 
     /// <summary>

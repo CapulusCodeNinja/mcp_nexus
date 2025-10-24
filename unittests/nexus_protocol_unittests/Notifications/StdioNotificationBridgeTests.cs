@@ -1,8 +1,10 @@
+using System.Text;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using nexus.protocol.Models;
 using nexus.protocol.Notifications;
-using System.Text;
 
 namespace nexus.protocol.unittests.Notifications;
 
@@ -151,7 +153,7 @@ public class StdioNotificationBridgeTests : IDisposable
         await Task.WhenAll(tasks);
 
         var output = m_CapturedOutput.ToString();
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             output.Should().Contain($"test/notification{i}");
         }

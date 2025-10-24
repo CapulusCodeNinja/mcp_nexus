@@ -1,7 +1,10 @@
 using System.Text.Json;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+
 using nexus.protocol.Models;
+
 using NLog;
 
 namespace nexus.protocol.Middleware;
@@ -19,8 +22,7 @@ internal class ResponseFormattingMiddleware
     /// Initializes a new instance of the <see cref="ResponseFormattingMiddleware"/> class.
     /// </summary>
     /// <param name="next">The next middleware in the pipeline.</param>
-    /// <param name="logger">The logger for recording response formatting events.</param>
-    public ResponseFormattingMiddleware(RequestDelegate next, ILogger<ResponseFormattingMiddleware> logger)
+    public ResponseFormattingMiddleware(RequestDelegate next)
     {
         m_Next = next ?? throw new ArgumentNullException(nameof(next));
         m_Logger = LogManager.GetCurrentClassLogger();

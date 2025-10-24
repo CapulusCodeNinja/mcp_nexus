@@ -1,6 +1,8 @@
 using FluentAssertions;
-using Xunit;
+
 using nexus.extensions.Models;
+
+using Xunit;
 
 namespace nexus.extensions_unittests.Models;
 
@@ -23,7 +25,7 @@ public class ExtensionProcessInfoTests
         processInfo.ExtensionName.Should().Be(string.Empty);
         processInfo.SessionId.Should().Be(string.Empty);
         processInfo.ProcessId.Should().BeNull();
-        processInfo.StartedAt.Should().Be(default(DateTime));
+        processInfo.StartedAt.Should().Be(default);
         processInfo.IsRunning.Should().BeFalse();
     }
 
@@ -138,10 +140,11 @@ public class ExtensionProcessInfoTests
     public void IsRunning_ShouldSetAndGetValue()
     {
         // Arrange
-        var processInfo = new ExtensionProcessInfo();
-
-        // Act
-        processInfo.IsRunning = true;
+        var processInfo = new ExtensionProcessInfo
+        {
+            // Act
+            IsRunning = true
+        };
 
         // Assert
         processInfo.IsRunning.Should().BeTrue();

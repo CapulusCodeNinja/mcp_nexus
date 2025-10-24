@@ -8,22 +8,34 @@ public interface ICdbSession : IDisposable
     /// <summary>
     /// Gets a value indicating whether the CDB session is active.
     /// </summary>
-    bool IsActive { get; }
+    bool IsActive
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the dump file path.
     /// </summary>
-    string DumpFilePath { get; }
+    string DumpFilePath
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the symbol path.
     /// </summary>
-    string? SymbolPath { get; }
+    string? SymbolPath
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether the session is initialized.
     /// </summary>
-    bool IsInitialized { get; }
+    bool IsInitialized
+    {
+        get;
+    }
 
     /// <summary>
     /// Starts the CDB process asynchronously.

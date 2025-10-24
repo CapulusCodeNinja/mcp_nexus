@@ -8,47 +8,74 @@ public class CommandInfo
     /// <summary>
     /// Gets the unique identifier of the command.
     /// </summary>
-    public required string CommandId { get; init; }
+    public required string CommandId
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Gets the command text that was executed.
     /// </summary>
-    public required string Command { get; init; }
+    public required string Command
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Gets the current state of the command.
     /// </summary>
-    public required CommandState State { get; init; }
+    public required CommandState State
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Gets the time when the command was queued.
     /// </summary>
-    public required DateTime QueuedTime { get; init; }
+    public required DateTime QueuedTime
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Gets the time when the command started executing, or null if not started.
     /// </summary>
-    public DateTime? StartTime { get; init; }
+    public DateTime? StartTime
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Gets the time when the command completed, or null if not completed.
     /// </summary>
-    public DateTime? EndTime { get; init; }
+    public DateTime? EndTime
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Gets the output from the command execution, or null if not completed.
     /// </summary>
-    public string? Output { get; init; }
+    public string? Output
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Gets a value indicating whether the command executed successfully, or null if not completed.
     /// </summary>
-    public bool? IsSuccess { get; init; }
+    public bool? IsSuccess
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Gets the error message if the command failed, or null if not failed.
     /// </summary>
-    public string? ErrorMessage { get; init; }
+    public string? ErrorMessage
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Gets the execution time if the command has completed, otherwise null.

@@ -68,16 +68,25 @@ public interface IProcessHandle : IDisposable
     /// <summary>
     /// Gets whether the process has exited.
     /// </summary>
-    bool HasExited { get; }
+    bool HasExited
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the process ID.
     /// </summary>
-    int Id { get; }
+    int Id
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the exit code of the process.
     /// </summary>
-    int ExitCode { get; }
+    int ExitCode
+    {
+        get;
+    }
 }
 

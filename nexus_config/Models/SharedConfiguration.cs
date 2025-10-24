@@ -118,7 +118,10 @@ public class DebuggingSettings
     /// <summary>
     /// Gets or sets the CDB path.
     /// </summary>
-    public string? CdbPath { get; set; }
+    public string? CdbPath
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the command timeout in milliseconds.
@@ -369,7 +372,7 @@ public class BatchingSettings
     /// Gets or sets the minimum batch size.
     /// </summary>
     public int MinBatchSize { get; set; } = 2;
-    
+
     /// <summary>
     /// Gets or sets the batch wait timeout in milliseconds.
     /// </summary>

@@ -1,15 +1,21 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+
 using FluentAssertions;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Moq;
-using Xunit;
+
 using nexus.external_apis.FileSystem;
 using nexus.setup.Management;
+
 using NLog;
+
+using Xunit;
 
 namespace nexus.setup.unittests.Management;
 

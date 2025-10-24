@@ -1,16 +1,19 @@
+using System.Runtime.Versioning;
+using System.ServiceProcess;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ServiceManagement;
 using nexus.setup.Interfaces;
 using nexus.setup.Models;
 using nexus.setup.Utilities;
-using System.Runtime.Versioning;
-using System.ServiceProcess;
 
 namespace nexus.setup.Core;
 
 using external_apis.ProcessManagement;
+
 using NLog;
 
 /// <summary>
@@ -55,18 +58,23 @@ internal class ServiceUpdater
     /// </summary>
     /// <param name="serviceName">The name of the service to update.</param>
     /// <param name="newExecutablePath">Path to the new executable.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The update result.</returns>
-    public async Task<ServiceInstallationResult> UpdateServiceAsync(string serviceName, string newExecutablePath, CancellationToken cancellationToken = default)
+    public async Task<ServiceInstallationResult> UpdateServiceAsync(string serviceName, string newExecutablePath)
     {
         if (string.IsNullOrWhiteSpace(serviceName))
+        {
             throw new ArgumentException("Service name cannot be null or empty.", nameof(serviceName));
+        }
 
         if (string.IsNullOrWhiteSpace(newExecutablePath))
+        {
             throw new ArgumentException("Executable path cannot be null or empty.", nameof(newExecutablePath));
+        }
 
         if (!m_FileSystem.FileExists(newExecutablePath))
+        {
             return ServiceInstallationResult.CreateFailure(serviceName, "New executable file not found", newExecutablePath);
+        }
 
         m_Logger.Info("Updating service: {ServiceName}", serviceName);
 
@@ -154,10 +162,14 @@ internal class ServiceUpdater
     public async Task<bool> BackupServiceAsync(string serviceName, string backupPath)
     {
         if (string.IsNullOrWhiteSpace(serviceName))
+        {
             throw new ArgumentException("Service name cannot be null or empty.", nameof(serviceName));
+        }
 
         if (string.IsNullOrWhiteSpace(backupPath))
+        {
             throw new ArgumentException("Backup path cannot be null or empty.", nameof(backupPath));
+        }
 
         try
         {
@@ -190,18 +202,23 @@ internal class ServiceUpdater
     /// </summary>
     /// <param name="serviceName">The name of the service.</param>
     /// <param name="backupPath">Path to the backup.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The restore result.</returns>
-    public async Task<ServiceInstallationResult> RestoreServiceAsync(string serviceName, string backupPath, CancellationToken cancellationToken = default)
+    public async Task<ServiceInstallationResult> RestoreServiceAsync(string serviceName, string backupPath)
     {
         if (string.IsNullOrWhiteSpace(serviceName))
+        {
             throw new ArgumentException("Service name cannot be null or empty.", nameof(serviceName));
+        }
 
         if (string.IsNullOrWhiteSpace(backupPath))
+        {
             throw new ArgumentException("Backup path cannot be null or empty.", nameof(backupPath));
+        }
 
         if (!m_FileSystem.DirectoryExists(backupPath))
+        {
             return ServiceInstallationResult.CreateFailure(serviceName, "Backup directory not found", backupPath);
+        }
 
         m_Logger.Info("Restoring service {ServiceName} from backup: {BackupPath}", serviceName, backupPath);
 

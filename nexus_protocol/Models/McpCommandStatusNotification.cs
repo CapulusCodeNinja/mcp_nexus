@@ -13,7 +13,10 @@ internal class McpCommandStatusNotification
     /// Gets or sets the session identifier.
     /// </summary>
     [JsonPropertyName("sessionId")]
-    public string? SessionId { get; set; }
+    public string? SessionId
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the command identifier.
@@ -37,13 +40,19 @@ internal class McpCommandStatusNotification
     /// Gets or sets the progress percentage (0-100).
     /// </summary>
     [JsonPropertyName("progress")]
-    public int? Progress { get; set; }
+    public int? Progress
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the status message providing additional context.
     /// </summary>
     [JsonPropertyName("message")]
-    public string? Message { get; set; }
+    public string? Message
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the notification timestamp.
@@ -55,12 +64,18 @@ internal class McpCommandStatusNotification
     /// Gets or sets the command result when completed.
     /// </summary>
     [JsonPropertyName("result")]
-    public string? Result { get; set; }
+    public string? Result
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the error message if the command failed.
     /// </summary>
     [JsonPropertyName("error")]
-    public string? Error { get; set; }
+    public string? Error
+    {
+        get; set;
+    }
 }
 

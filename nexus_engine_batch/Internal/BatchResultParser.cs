@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using NLog;
 
 namespace nexus.engine.batch.Internal;
@@ -24,7 +25,9 @@ internal class BatchResultParser
     public List<CommandResult> ParseResult(CommandResult result)
     {
         if (result == null)
+        {
             throw new ArgumentNullException(nameof(result));
+        }
 
         // Check if this is a batch result by parsing the CommandId
         if (!IsBatchResult(result.CommandId))
@@ -79,7 +82,9 @@ internal class BatchResultParser
     private static List<string> ExtractCommandIdsFromBatchId(string batchId)
     {
         if (!batchId.StartsWith("batch_"))
+        {
             return new List<string>();
+        }
 
         // Remove "batch_" prefix
         var idsString = batchId.Substring(6);

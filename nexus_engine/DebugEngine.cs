@@ -1,16 +1,20 @@
+using System.Collections.Concurrent;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using nexus.engine.Events;
 using nexus.engine.Models;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
-using System.Collections.Concurrent;
 
 namespace nexus.engine;
 
-using config;
-using NLog;
 using System;
+
+using config;
+
+using NLog;
 
 /// <summary>
 /// Main implementation of the debug engine that manages CDB sessions and command execution.
@@ -77,10 +81,14 @@ public class DebugEngine : IDebugEngine
         ValidateSessionId(dumpFilePath, nameof(dumpFilePath));
 
         if (!m_FileSystem.FileExists(dumpFilePath))
+        {
             throw new FileNotFoundException($"Dump file not found: {dumpFilePath}", dumpFilePath);
+        }
 
         if (m_Sessions.Count >= Settings.GetInstance().Get().McpNexus.SessionManagement.MaxConcurrentSessions)
+        {
             throw new InvalidOperationException($"Maximum number of concurrent sessions ({Settings.GetInstance().Get().McpNexus.SessionManagement.MaxConcurrentSessions}) reached");
+        }
 
         var sessionId = GenerateSessionId();
         m_Logger.Info("Creating debug session {SessionId} for dump file: {DumpFilePath}", sessionId, dumpFilePath);
@@ -178,10 +186,14 @@ public class DebugEngine : IDebugEngine
         ValidateCommand(command, nameof(command));
 
         if (!m_Sessions.TryGetValue(sessionId, out var session))
+        {
             throw new InvalidOperationException($"Session {sessionId} not found");
+        }
 
         if (!session.IsActive)
+        {
             throw new InvalidOperationException($"Session {sessionId} is not active");
+        }
 
         var commandId = session.EnqueueCommand(command);
         m_Logger.Debug("Command {CommandId} enqueued in session {SessionId}: {Command}", commandId, sessionId, command);
@@ -204,13 +216,11 @@ public class DebugEngine : IDebugEngine
         ValidateSessionId(sessionId, nameof(sessionId));
         ValidateCommandId(commandId, nameof(commandId));
 
-        if (!m_Sessions.TryGetValue(sessionId, out var session))
-            throw new InvalidOperationException($"Session {sessionId} not found");
-
-        if (!session.IsActive)
-            throw new InvalidOperationException($"Session {sessionId} is not active");
-
-        return await session.GetCommandInfoAsync(commandId, cancellationToken);
+        return !m_Sessions.TryGetValue(sessionId, out var session)
+            ? throw new InvalidOperationException($"Session {sessionId} not found")
+            : !session.IsActive
+            ? throw new InvalidOperationException($"Session {sessionId} is not active")
+            : await session.GetCommandInfoAsync(commandId, cancellationToken);
     }
 
     /// <summary>
@@ -226,10 +236,7 @@ public class DebugEngine : IDebugEngine
         ValidateSessionId(sessionId, nameof(sessionId));
         ValidateCommandId(commandId, nameof(commandId));
 
-        if (!m_Sessions.TryGetValue(sessionId, out var session))
-            return null;
-
-        return session.GetCommandInfo(commandId);
+        return !m_Sessions.TryGetValue(sessionId, out var session) ? null : session.GetCommandInfo(commandId);
     }
 
     /// <summary>
@@ -243,10 +250,7 @@ public class DebugEngine : IDebugEngine
         ThrowIfDisposed();
         ValidateSessionId(sessionId, nameof(sessionId));
 
-        if (!m_Sessions.TryGetValue(sessionId, out var session))
-            return new Dictionary<string, CommandInfo>();
-
-        return session.GetAllCommandInfos();
+        return !m_Sessions.TryGetValue(sessionId, out var session) ? new Dictionary<string, CommandInfo>() : session.GetAllCommandInfos();
     }
 
     /// <summary>
@@ -262,10 +266,7 @@ public class DebugEngine : IDebugEngine
         ValidateSessionId(sessionId, nameof(sessionId));
         ValidateCommandId(commandId, nameof(commandId));
 
-        if (!m_Sessions.TryGetValue(sessionId, out var session))
-            return false;
-
-        return session.CancelCommand(commandId);
+        return m_Sessions.TryGetValue(sessionId, out var session) && session.CancelCommand(commandId);
     }
 
     /// <summary>
@@ -280,10 +281,7 @@ public class DebugEngine : IDebugEngine
         ThrowIfDisposed();
         ValidateSessionId(sessionId, nameof(sessionId));
 
-        if (!m_Sessions.TryGetValue(sessionId, out var session))
-            return 0;
-
-        return session.CancelAllCommands(reason);
+        return !m_Sessions.TryGetValue(sessionId, out var session) ? 0 : session.CancelAllCommands(reason);
     }
 
     /// <summary>
@@ -297,10 +295,7 @@ public class DebugEngine : IDebugEngine
         ThrowIfDisposed();
         ValidateSessionId(sessionId, nameof(sessionId));
 
-        if (!m_Sessions.TryGetValue(sessionId, out var session))
-            return null;
-
-        return session.State;
+        return !m_Sessions.TryGetValue(sessionId, out var session) ? null : session.State;
     }
 
 
@@ -310,7 +305,9 @@ public class DebugEngine : IDebugEngine
     public void Dispose()
     {
         if (m_Disposed)
+        {
             return;
+        }
 
         m_Logger.Info("Disposing DebugEngine with {SessionCount} active sessions", m_Sessions.Count);
 
@@ -383,7 +380,9 @@ public class DebugEngine : IDebugEngine
     private static void ValidateSessionId(string sessionId, string paramName)
     {
         if (string.IsNullOrWhiteSpace(sessionId))
+        {
             throw new ArgumentException("Session ID cannot be null or empty", paramName);
+        }
     }
 
     /// <summary>
@@ -395,7 +394,9 @@ public class DebugEngine : IDebugEngine
     private static void ValidateCommandId(string commandId, string paramName)
     {
         if (string.IsNullOrWhiteSpace(commandId))
+        {
             throw new ArgumentException("Command ID cannot be null or empty", paramName);
+        }
     }
 
     /// <summary>
@@ -407,7 +408,9 @@ public class DebugEngine : IDebugEngine
     private static void ValidateCommand(string command, string paramName)
     {
         if (string.IsNullOrWhiteSpace(command))
+        {
             throw new ArgumentException("Command cannot be null or empty", paramName);
+        }
     }
 
     /// <summary>
@@ -417,6 +420,8 @@ public class DebugEngine : IDebugEngine
     protected void ThrowIfDisposed()
     {
         if (m_Disposed)
+        {
             throw new ObjectDisposedException(nameof(DebugEngine));
+        }
     }
 }

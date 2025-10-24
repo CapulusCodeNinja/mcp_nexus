@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+
 using FluentAssertions;
-using Xunit;
+
 using nexus.extensions.Infrastructure;
+
+using Xunit;
 
 namespace nexus.extensions.unittests.Infrastructure;
 

@@ -38,11 +38,17 @@ public class ServiceInstallationOptions
     /// <summary>
     /// Gets or sets the service account username (if using custom account).
     /// </summary>
-    public string? AccountUsername { get; set; }
+    public string? AccountUsername
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the service account password (if using custom account).
     /// </summary>
-    public string? AccountPassword { get; set; }
+    public string? AccountPassword
+    {
+        get; set;
+    }
 }
 

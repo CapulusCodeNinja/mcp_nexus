@@ -1,6 +1,9 @@
 using System.Text.Json;
+
 using Microsoft.Extensions.Logging;
+
 using nexus.extensions.Models;
+
 using NLog;
 
 namespace nexus.extensions.Core;
@@ -21,16 +24,17 @@ internal class ExtensionManager : IExtensionManager
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionManager"/> class.
     /// </summary>
-    /// <param name="logger">The logger instance for recording extension operations.</param>
     /// <param name="extensionsPath">The path to the extensions directory.</param>
     /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
     /// <exception cref="ArgumentException">Thrown when extensionsPath is null or empty.</exception>
-    public ExtensionManager(ILogger<ExtensionManager> logger, string extensionsPath)
+    public ExtensionManager(string extensionsPath)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
 
         if (string.IsNullOrWhiteSpace(extensionsPath))
+        {
             throw new ArgumentException("Extensions path cannot be null or empty", nameof(extensionsPath));
+        }
 
         m_ExtensionsPath = extensionsPath;
 
@@ -169,7 +173,9 @@ internal class ExtensionManager : IExtensionManager
     public ExtensionMetadata? GetExtension(string extensionName)
     {
         if (string.IsNullOrWhiteSpace(extensionName))
+        {
             return null;
+        }
 
         lock (m_Lock)
         {
@@ -204,7 +210,10 @@ internal class ExtensionManager : IExtensionManager
     {
         // Debounce: if a reload is already pending, ignore
         if (m_ReloadPending)
+        {
             return;
+        }
+
         m_ReloadPending = true;
         _ = Task.Run(async () =>
         {
@@ -232,7 +241,9 @@ internal class ExtensionManager : IExtensionManager
     public bool ExtensionExists(string extensionName)
     {
         if (string.IsNullOrWhiteSpace(extensionName))
+        {
             return false;
+        }
 
         lock (m_Lock)
         {
@@ -269,12 +280,9 @@ internal class ExtensionManager : IExtensionManager
         }
 
         var supportedScriptTypes = new[] { "powershell" };
-        if (!supportedScriptTypes.Contains(metadata.ScriptType.ToLowerInvariant()))
-        {
-            return (false, $"Extension '{extensionName}' has unsupported script type: {metadata.ScriptType}");
-        }
-
-        return (true, null);
+        return !supportedScriptTypes.Contains(metadata.ScriptType.ToLowerInvariant())
+            ? ((bool isValid, string? errorMessage))(false, $"Extension '{extensionName}' has unsupported script type: {metadata.ScriptType}")
+            : ((bool isValid, string? errorMessage))(true, null);
     }
 }
 

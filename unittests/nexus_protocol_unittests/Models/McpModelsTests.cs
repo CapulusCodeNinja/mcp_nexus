@@ -1,4 +1,5 @@
 using System.Text.Json;
+
 using nexus.protocol.Models;
 
 namespace nexus.protocol.unittests.Models;
@@ -68,7 +69,10 @@ public class McpModelsTests
                 type = "object",
                 properties = new
                 {
-                    param1 = new { type = "string" }
+                    param1 = new
+                    {
+                        type = "string"
+                    }
                 }
             }
         };

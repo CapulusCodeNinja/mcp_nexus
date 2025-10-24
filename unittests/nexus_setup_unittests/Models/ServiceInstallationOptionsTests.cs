@@ -1,4 +1,5 @@
 using nexus.setup.Models;
+
 using Xunit;
 
 namespace nexus.setup_unittests.Models;
@@ -35,17 +36,18 @@ public class ServiceInstallationOptionsTests
     public void Properties_CanBeSet()
     {
         // Arrange
-        var options = new ServiceInstallationOptions();
-
-        // Act
-        options.ServiceName = "TestService";
-        options.DisplayName = "Test Display Name";
-        options.Description = "Test Description";
-        options.ExecutablePath = @"C:\test\service.exe";
-        options.StartMode = ServiceStartMode.Manual;
-        options.Account = ServiceAccount.Custom;
-        options.AccountUsername = "TestUser";
-        options.AccountPassword = "TestPassword";
+        var options = new ServiceInstallationOptions
+        {
+            // Act
+            ServiceName = "TestService",
+            DisplayName = "Test Display Name",
+            Description = "Test Description",
+            ExecutablePath = @"C:\test\service.exe",
+            StartMode = ServiceStartMode.Manual,
+            Account = ServiceAccount.Custom,
+            AccountUsername = "TestUser",
+            AccountPassword = "TestPassword"
+        };
 
         // Assert
         Assert.Equal("TestService", options.ServiceName);

@@ -1,6 +1,8 @@
 using System.Text.Json;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+
 using NLog;
 
 namespace nexus.protocol.Middleware;
@@ -18,8 +20,7 @@ internal class ContentTypeValidationMiddleware
     /// Initializes a new instance of the <see cref="ContentTypeValidationMiddleware"/> class.
     /// </summary>
     /// <param name="next">The next middleware in the pipeline.</param>
-    /// <param name="logger">The logger for recording validation events.</param>
-    public ContentTypeValidationMiddleware(RequestDelegate next, ILogger<ContentTypeValidationMiddleware> logger)
+    public ContentTypeValidationMiddleware(RequestDelegate next)
     {
         m_Next = next ?? throw new ArgumentNullException(nameof(next));
         m_Logger = LogManager.GetCurrentClassLogger();

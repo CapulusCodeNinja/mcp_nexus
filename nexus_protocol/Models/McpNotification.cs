@@ -24,6 +24,9 @@ public class McpNotification
     /// Gets or sets the notification parameters.
     /// </summary>
     [JsonPropertyName("params")]
-    public object? Params { get; set; }
+    public object? Params
+    {
+        get; set;
+    }
 }
 

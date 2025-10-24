@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using nexus.protocol.Middleware;
 
 namespace nexus.protocol.unittests.Middleware;
@@ -27,7 +28,7 @@ public class ContentTypeValidationMiddlewareTests
             m_NextCalled = true;
             return Task.CompletedTask;
         };
-        m_Middleware = new ContentTypeValidationMiddleware(m_NextDelegate, logger);
+        m_Middleware = new ContentTypeValidationMiddleware(m_NextDelegate);
     }
 
     /// <summary>
@@ -38,7 +39,7 @@ public class ContentTypeValidationMiddlewareTests
     {
         var logger = NullLogger<ContentTypeValidationMiddleware>.Instance;
 
-        var action = () => new ContentTypeValidationMiddleware(null!, logger);
+        var action = () => new ContentTypeValidationMiddleware(null!);
 
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("next");
@@ -50,7 +51,7 @@ public class ContentTypeValidationMiddlewareTests
     [Fact]
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
-        var action = () => new ContentTypeValidationMiddleware(m_NextDelegate, null!);
+        var action = () => new ContentTypeValidationMiddleware(m_NextDelegate);
 
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");

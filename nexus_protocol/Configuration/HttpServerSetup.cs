@@ -1,4 +1,8 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 using AspNetCoreRateLimit;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Json;
@@ -6,11 +10,11 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.Server;
+
 using nexus.config;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace nexus.protocol.Configuration;
 
@@ -37,10 +41,14 @@ public static class HttpServerSetup
         ConfigureServerLimits(services, serverConfig);
 
         if (serverConfig.EnableCors)
+        {
             ConfigureCors(services);
+        }
 
         if (serverConfig.EnableRateLimit)
+        {
             ConfigureRateLimit(services, configuration);
+        }
 
         ConfigureJsonOptions(services);
         ConfigureMcpServer(services);
@@ -69,15 +77,9 @@ public static class HttpServerSetup
     /// <param name="services">The service collection to configure.</param>
     private static void ConfigureCors(IServiceCollection services)
     {
-        services.AddCors(options =>
-        {
-            options.AddDefaultPolicy(builder =>
-            {
-                builder.AllowAnyOrigin()
+        services.AddCors(options => options.AddDefaultPolicy(builder => builder.AllowAnyOrigin()
                        .AllowAnyMethod()
-                       .AllowAnyHeader();
-            });
-        });
+                       .AllowAnyHeader()));
     }
 
     /// <summary>
@@ -214,7 +216,7 @@ public static class HttpServerSetup
 
         // Create Host builder for stdio mode
         var hostBuilder = Host.CreateApplicationBuilder();
-        
+
         // Configure logging
         Settings.GetInstance().ConfigureLogging(hostBuilder.Logging, configuration, isServiceMode);
 

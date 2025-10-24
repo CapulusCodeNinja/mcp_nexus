@@ -1,8 +1,10 @@
+using System.Text;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using nexus.protocol.Middleware;
-using System.Text;
 
 namespace nexus.protocol.unittests.Middleware;
 
@@ -21,14 +23,13 @@ public class JsonRpcLoggingMiddlewareTests
     /// </summary>
     public JsonRpcLoggingMiddlewareTests()
     {
-        var logger = NullLogger<JsonRpcLoggingMiddleware>.Instance;
         m_NextCalled = false;
         m_NextDelegate = (HttpContext context) =>
         {
             m_NextCalled = true;
             return Task.CompletedTask;
         };
-        m_Middleware = new JsonRpcLoggingMiddleware(m_NextDelegate, logger);
+        m_Middleware = new JsonRpcLoggingMiddleware(m_NextDelegate);
     }
 
     /// <summary>
@@ -37,9 +38,7 @@ public class JsonRpcLoggingMiddlewareTests
     [Fact]
     public void Constructor_WithNullNext_ThrowsArgumentNullException()
     {
-        var logger = NullLogger<JsonRpcLoggingMiddleware>.Instance;
-
-        var action = () => new JsonRpcLoggingMiddleware(null!, logger);
+        var action = () => new JsonRpcLoggingMiddleware(null!);
 
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("next");
@@ -51,7 +50,7 @@ public class JsonRpcLoggingMiddlewareTests
     [Fact]
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
-        var action = () => new JsonRpcLoggingMiddleware(m_NextDelegate, null!);
+        var action = () => new JsonRpcLoggingMiddleware(m_NextDelegate);
 
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
@@ -149,13 +148,9 @@ public class JsonRpcLoggingMiddlewareTests
     public async Task InvokeAsync_WithRootPathPost_CapturesResponseBody()
     {
         var responseText = "{\"jsonrpc\":\"2.0\",\"result\":\"success\"}";
-        RequestDelegate nextWithResponse = async (HttpContext ctx) =>
-        {
-            await ctx.Response.WriteAsync(responseText);
-        };
+        RequestDelegate nextWithResponse = async (HttpContext ctx) => await ctx.Response.WriteAsync(responseText);
 
-        var logger = NullLogger<JsonRpcLoggingMiddleware>.Instance;
-        var middleware = new JsonRpcLoggingMiddleware(nextWithResponse, logger);
+        var middleware = new JsonRpcLoggingMiddleware(nextWithResponse);
 
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";
@@ -212,13 +207,9 @@ public class JsonRpcLoggingMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WithExceptionInNext_RestoresOriginalBodyStream()
     {
-        RequestDelegate nextThatThrows = (HttpContext ctx) =>
-        {
-            throw new InvalidOperationException("Test exception");
-        };
+        RequestDelegate nextThatThrows = (HttpContext ctx) => throw new InvalidOperationException("Test exception");
 
-        var logger = NullLogger<JsonRpcLoggingMiddleware>.Instance;
-        var middleware = new JsonRpcLoggingMiddleware(nextThatThrows, logger);
+        var middleware = new JsonRpcLoggingMiddleware(nextThatThrows);
 
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";

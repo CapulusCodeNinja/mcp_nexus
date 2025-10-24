@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
+
 using nexus.protocol.Models;
+
 using NLog;
 
 namespace nexus.protocol.Notifications;
@@ -172,11 +174,9 @@ internal class McpNotificationService : IMcpNotificationService
     /// <returns>The formatted string.</returns>
     private static string FormatTimeSpan(TimeSpan timeSpan)
     {
-        if (timeSpan.TotalHours >= 1)
-            return $"{(int)timeSpan.TotalHours}h {timeSpan.Minutes}m {timeSpan.Seconds}s";
-        if (timeSpan.TotalMinutes >= 1)
-            return $"{(int)timeSpan.TotalMinutes}m {timeSpan.Seconds}s";
-        return $"{timeSpan.Seconds}s";
+        return timeSpan.TotalHours >= 1
+            ? $"{(int)timeSpan.TotalHours}h {timeSpan.Minutes}m {timeSpan.Seconds}s"
+            : timeSpan.TotalMinutes >= 1 ? $"{(int)timeSpan.TotalMinutes}m {timeSpan.Seconds}s" : $"{timeSpan.Seconds}s";
     }
 }
 

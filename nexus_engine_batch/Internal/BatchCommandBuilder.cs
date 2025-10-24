@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using nexus.config;
+
 using NLog;
 
 namespace nexus.engine.batch.Internal;
@@ -25,7 +27,9 @@ internal class BatchCommandBuilder
     public Command BuildBatch(List<Command> commands)
     {
         if (commands == null || commands.Count == 0)
+        {
             throw new ArgumentException("Commands list cannot be null or empty", nameof(commands));
+        }
 
         if (commands.Count == 1)
         {

@@ -1,4 +1,5 @@
 using nexus.CommandLine;
+
 using Xunit;
 
 namespace nexus_unittests.CommandLine;

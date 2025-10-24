@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace nexus.engine.batch.Internal;
 
 using config;
+
 using NLog;
 
 /// <summary>
@@ -65,7 +66,9 @@ internal class BatchCommandFilter
     public bool IsCommandExcluded(string commandText)
     {
         if (string.IsNullOrWhiteSpace(commandText))
+        {
             return false;
+        }
 
         var trimmedCommand = commandText.Trim();
 

@@ -1,10 +1,14 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Moq;
+
 using nexus.Hosting;
 using nexus.protocol;
+
 using NLog;
+
 using Xunit;
 
 namespace nexus_unittests.Hosting;

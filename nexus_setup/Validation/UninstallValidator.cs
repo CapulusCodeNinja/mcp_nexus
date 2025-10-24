@@ -1,10 +1,13 @@
+using System.Runtime.Versioning;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using nexus.config.Models;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ServiceManagement;
+
 using NLog;
-using System.Runtime.Versioning;
 
 namespace nexus.setup.Validation
 {

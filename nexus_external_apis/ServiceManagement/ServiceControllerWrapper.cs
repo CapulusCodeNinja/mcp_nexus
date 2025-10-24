@@ -1,6 +1,8 @@
-using Microsoft.Win32;
 using System.Runtime.Versioning;
 using System.ServiceProcess;
+
+using Microsoft.Win32;
+
 using nexus.external_apis.Registry;
 
 namespace nexus.external_apis.ServiceManagement;
@@ -117,14 +119,16 @@ public class ServiceControllerWrapper : IServiceController
             var imagePath = m_RegistryService.ReadString(RegistryHive.LocalMachine, keyPath, "ImagePath");
 
             if (string.IsNullOrEmpty(imagePath))
+            {
                 return null;
+            }
 
             // Remove quotes and arguments
             imagePath = imagePath.Trim('\"');
             var spaceIndex = imagePath.IndexOf(" --", StringComparison.Ordinal);
             if (spaceIndex > 0)
             {
-                imagePath = imagePath.Substring(0, spaceIndex);
+                imagePath = imagePath[..spaceIndex];
             }
 
             return imagePath.Trim();

@@ -11,7 +11,10 @@ public class ExtensionResult
     /// Whether the extension executed successfully.
     /// </summary>
     [JsonPropertyName("success")]
-    public bool Success { get; set; }
+    public bool Success
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Output from the extension (typically JSON).
@@ -23,24 +26,36 @@ public class ExtensionResult
     /// Error message if execution failed.
     /// </summary>
     [JsonPropertyName("error")]
-    public string? Error { get; set; }
+    public string? Error
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Exit code of the extension process.
     /// </summary>
     [JsonPropertyName("exitCode")]
-    public int ExitCode { get; set; }
+    public int ExitCode
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Total execution time.
     /// </summary>
     [JsonPropertyName("executionTime")]
-    public TimeSpan ExecutionTime { get; set; }
+    public TimeSpan ExecutionTime
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Standard error output from the extension.
     /// </summary>
     [JsonPropertyName("standardError")]
-    public string? StandardError { get; set; }
+    public string? StandardError
+    {
+        get; set;
+    }
 }
 

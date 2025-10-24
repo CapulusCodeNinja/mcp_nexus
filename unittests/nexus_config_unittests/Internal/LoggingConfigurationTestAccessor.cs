@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+
 using nexus.config.Internal;
 
 namespace nexus.config_unittests.Internal;
