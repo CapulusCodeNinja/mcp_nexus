@@ -10,7 +10,7 @@ namespace nexus.config.Internal;
 /// <summary>
 /// Handles logging configuration for different environments.
 /// </summary>
-internal class LoggingConfiguration : ILoggingConfigurator
+public class LoggingConfiguration : ILoggingConfigurator
 {
     /// <summary>
     /// Configures logging for the application.
