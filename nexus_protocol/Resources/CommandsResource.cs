@@ -43,7 +43,7 @@ internal static class CommandsResource
         try
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CommandsResource");
-            var debugEngine = serviceProvider.GetRequiredService<IDebugEngine>();
+            var debugEngine = Loader.EngineLoader.GetDebugEngine();
 
             logger.LogDebug("Commands resource accessed - returning limited data due to IDebugEngine interface constraints");
 

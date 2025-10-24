@@ -13,9 +13,9 @@ internal class BatchResultParser
     /// Initializes a new instance of the <see cref="BatchResultParser"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
-    public BatchResultParser(ILogger<BatchResultParser> logger)
+    public BatchResultParser()
     {
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("BatchResultParser");
     }
 
     /// <summary>

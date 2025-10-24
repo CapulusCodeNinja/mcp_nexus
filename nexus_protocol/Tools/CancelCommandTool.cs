@@ -28,7 +28,7 @@ internal static class CancelCommandTool
         [Description("Command ID to cancel")] string commandId)
     {
         var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CancelCommandTool");
-        var debugEngine = serviceProvider.GetRequiredService<IDebugEngine>();
+        var debugEngine = Loader.EngineLoader.GetDebugEngine();
 
         logger.LogInformation("Cancelling command {CommandId} in session {SessionId}", commandId, sessionId);
 

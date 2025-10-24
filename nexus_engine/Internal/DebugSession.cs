@@ -75,16 +75,16 @@ internal class DebugSession : IDisposable
         string dumpFilePath,
         string? symbolPath,
         DebugEngineConfiguration configuration,
-        ILoggerFactory loggerFactory,
         IFileSystem fileSystem,
         IProcessManager processManager,
-        IBatchProcessor? batchProcessor = null)
+        IBatchProcessor batchProcessor)
     {
         m_SessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
         m_DumpFilePath = dumpFilePath ?? throw new ArgumentNullException(nameof(dumpFilePath));
         m_SymbolPath = symbolPath;
         m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        m_Logger = loggerFactory.CreateLogger<DebugSession>();
+        
+        m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DebugSession");
 
         // Create CDB session
         var cdbLogger = loggerFactory.CreateLogger<CdbSession>();

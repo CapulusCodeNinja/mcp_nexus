@@ -6,7 +6,7 @@ namespace nexus.config.Internal;
 /// <summary>
 /// Internal implementation of configuration loading functionality.
 /// </summary>
-internal class ConfigurationLoader : IConfigurationProvider
+public class ConfigurationLoader : IConfigurationProvider
 {
     private readonly IConfiguration m_Configuration;
 

@@ -15,11 +15,12 @@ namespace nexus.engine;
 public class DebugEngine : IDebugEngine
 {
     private readonly ILogger<DebugEngine> m_Logger;
-    private readonly ILoggerFactory m_LoggerFactory;
-    private readonly DebugEngineConfiguration m_Configuration;
-    private readonly IFileSystem m_FileSystem;
-    private readonly IProcessManager m_ProcessManager;
-    private readonly IBatchProcessor? m_BatchProcessor;
+
+    private readonly DebugEngineConfiguration m_Configuration = new DebugEngineConfiguration();
+    private readonly IFileSystem m_FileSystem = new nexus.external_apis.FileSystem.FileSystem();
+    private readonly IProcessManager m_ProcessManager = new nexus.external_apis.ProcessManagement.ProcessManager();
+    private readonly IBatchProcessor m_BatchProcessor = new nexus.engine.batch.Internal.BatchProcessor();
+
     private readonly ConcurrentDictionary<string, Internal.DebugSession> m_Sessions = new();
     private volatile bool m_Disposed = false;
 
@@ -32,15 +33,9 @@ public class DebugEngine : IDebugEngine
     /// <param name="processManager">The process manager interface.</param>
     /// <param name="batchProcessor">Optional batch processor for command batching.</param>
     /// <exception cref="ArgumentNullException">Thrown when loggerFactory or configuration is null.</exception>
-    public DebugEngine(ILoggerFactory loggerFactory, DebugEngineConfiguration configuration, IFileSystem fileSystem, IProcessManager processManager, IBatchProcessor? batchProcessor = null)
+    public DebugEngine(ILoggerFactory loggerFactory, DebugEngineConfiguration configuration, IFileSystem fileSystem, IProcessManager processManager, IBatchProcessor batchProcessor)
     {
-        m_LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-        m_Logger = loggerFactory.CreateLogger<DebugEngine>();
-        m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
-        m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
-        m_BatchProcessor = batchProcessor;
-
+        m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DebugEngine");
         m_Logger.LogInformation("DebugEngine initialized with max {MaxSessions} concurrent sessions", m_Configuration.MaxConcurrentSessions);
     }
 
@@ -67,7 +62,7 @@ public class DebugEngine : IDebugEngine
 
         try
         {
-            var session = new Internal.DebugSession(sessionId, dumpFilePath, symbolPath, m_Configuration, m_LoggerFactory, m_FileSystem, m_ProcessManager, m_BatchProcessor);
+            var session = new Internal.DebugSession(sessionId, dumpFilePath, symbolPath, m_Configuration, m_FileSystem, m_ProcessManager, m_BatchProcessor);
 
             // Subscribe to session events
             session.CommandStateChanged += OnSessionCommandStateChanged;

@@ -19,7 +19,7 @@ internal class BatchCommandFilter
     public BatchCommandFilter(BatchingConfiguration configuration, ILogger<BatchCommandFilter> logger)
     {
         m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("BatchCommandBuilder");
     }
 
     /// <summary>

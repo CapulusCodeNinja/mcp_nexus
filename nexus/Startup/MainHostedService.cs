@@ -43,35 +43,6 @@ public class MainHostedService : IHostedService
     }
 
     /// <summary>
-    /// Creates the debug engine with direct dependencies.
-    /// </summary>
-    /// <returns>Configured debug engine.</returns>
-    private IDebugEngine CreateDebugEngine()
-    {
-        // Create dependencies directly
-        var fileSystem = new nexus.external_apis.FileSystem.FileSystem();
-        var processManager = new nexus.external_apis.ProcessManagement.ProcessManager();
-        
-        // Create logger factory for engine
-        var loggerFactory = m_ServiceProvider.GetRequiredService<ILoggerFactory>();
-        
-        // Create engine configuration
-        var engineConfig = new nexus.engine.Configuration.DebugEngineConfiguration();
-        m_Configuration.GetSection("McpNexus:DebugEngine").Bind(engineConfig);
-        
-        // Create batch processor
-        var batchProcessor = new nexus.engine.batch.Internal.BatchProcessor(
-            engineConfig.Batching.Enabled,
-            engineConfig.Batching.MinBatchSize,
-            engineConfig.Batching.MaxBatchSize,
-            engineConfig.Batching.ExcludedCommands,
-            loggerFactory);
-        
-        // Create debug engine
-        return new nexus.engine.DebugEngine(loggerFactory, engineConfig, fileSystem, processManager, batchProcessor);
-    }
-
-    /// <summary>
     /// Creates the protocol server with direct dependencies.
     /// </summary>
     /// <returns>Configured protocol server.</returns>
@@ -166,7 +137,7 @@ public class MainHostedService : IHostedService
         try
         {
             // Get logging configurator from DI
-            var loggingConfigurator = m_ServiceProvider.GetRequiredService<nexus.config.ILoggingConfigurator>();
+            var loggingConfigurator = new nexus.config.Internal.LoggingConfiguration();
 
             // Create and configure WebApplication using protocol library (all logic encapsulated)
             var app = HttpServerSetup.CreateConfiguredWebApplication(
@@ -203,7 +174,7 @@ public class MainHostedService : IHostedService
         try
         {
             // Get logging configurator from DI
-            var loggingConfigurator = m_ServiceProvider.GetRequiredService<nexus.config.ILoggingConfigurator>();
+            var loggingConfigurator = new nexus.config.Internal.LoggingConfiguration();
 
             // Create and configure Host using protocol library (all logic encapsulated)
             var host = HttpServerSetup.CreateConfiguredHost(

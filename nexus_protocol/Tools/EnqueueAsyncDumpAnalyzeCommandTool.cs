@@ -28,7 +28,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
         [Description("WinDbg/CDB command to execute (e.g., 'k', '!analyze -v', 'lm')")] string command)
     {
         var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("EnqueueAsyncDumpAnalyzeCommandTool");
-        var debugEngine = serviceProvider.GetRequiredService<IDebugEngine>();
+        var debugEngine = Loader.EngineLoader.GetDebugEngine();
 
         logger.LogInformation("Enqueuing command in session {SessionId}: {Command}", sessionId, command);
 

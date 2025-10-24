@@ -4,38 +4,6 @@ namespace nexus.protocol;
 /// Main interface for the MCP protocol server lifecycle management.
 /// Provides methods to start, stop, and configure the protocol server.
 /// </summary>
-/// <remarks>
-/// <para><b>Integration with Main Project:</b></para>
-/// <para>
-/// 1. Register services in dependency injection:
-/// <code>
-/// services.AddProtocolServices(configuration);
-/// </code>
-/// </para>
-/// <para>
-/// 2. Resolve and configure the protocol server:
-/// <code>
-/// var protocolServer = serviceProvider.GetRequiredService&lt;IProtocolServer&gt;();
-/// protocolServer.SetConfiguration(myProtocolConfig);
-/// </code>
-/// </para>
-/// <para>
-/// 3. Start the server:
-/// <code>
-/// await protocolServer.StartAsync(cancellationToken);
-/// </code>
-/// </para>
-/// <para>
-/// 4. Stop the server gracefully:
-/// <code>
-/// await protocolServer.StopAsync(cancellationToken);
-/// </code>
-/// </para>
-/// <para>
-/// <b>Important:</b> Configuration must be set before starting the server.
-/// Configuration cannot be changed while the server is running.
-/// </para>
-/// </remarks>
 public interface IProtocolServer : IDisposable
 {
     /// <summary>

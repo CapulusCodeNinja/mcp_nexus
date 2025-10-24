@@ -26,7 +26,7 @@ internal static class CloseDumpAnalyzeSessionTool
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
     {
         var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CloseDumpAnalyzeSessionTool");
-        var debugEngine = serviceProvider.GetRequiredService<IDebugEngine>();
+        var debugEngine = Loader.EngineLoader.GetDebugEngine();
 
         logger.LogInformation("Closing debugging session: {SessionId}", sessionId);
 

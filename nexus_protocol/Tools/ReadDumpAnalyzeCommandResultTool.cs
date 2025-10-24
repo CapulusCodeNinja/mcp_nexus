@@ -28,7 +28,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
         [Description("Command ID from nexus_enqueue_async_dump_analyze_command")] string commandId)
     {
         var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("ReadDumpAnalyzeCommandResultTool");
-        var debugEngine = serviceProvider.GetRequiredService<IDebugEngine>();
+        var debugEngine = Loader.EngineLoader.GetDebugEngine();
 
         logger.LogInformation("Reading command result: {CommandId} in session {SessionId}", commandId, sessionId);
 

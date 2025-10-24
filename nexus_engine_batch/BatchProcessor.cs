@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Logging;
 using nexus.engine.batch.Configuration;
+using nexus.engine.batch.Internal;
 
-namespace nexus.engine.batch.Internal;
+namespace nexus.engine.batch;
 
 /// <summary>
 /// Implements batch processing logic for commands and results.
@@ -22,22 +23,16 @@ public class BatchProcessor : IBatchProcessor
     /// <param name="maxBatchSize">Maximum batch size.</param>
     /// <param name="excludedCommands">List of excluded commands.</param>
     /// <param name="loggerFactory">The logger factory.</param>
-    public BatchProcessor(bool enabled, int minBatchSize, int maxBatchSize, List<string> excludedCommands, ILoggerFactory loggerFactory)
+    public BatchProcessor()
     {
-        ArgumentNullException.ThrowIfNull(loggerFactory);
+        var config = new nexus.config.ConfigurationLoader().GetSharedConfiguration();
+        config.GetSection("McpNexus:Batching").Bind(m_Configuration);
 
-        m_Configuration = new BatchingConfiguration
-        {
-            Enabled = enabled,
-            MinBatchSize = minBatchSize,
-            MaxBatchSize = maxBatchSize,
-            ExcludedCommands = excludedCommands
-        };
-
-        m_Logger = loggerFactory.CreateLogger<BatchProcessor>();
-        m_Filter = new BatchCommandFilter(m_Configuration, loggerFactory.CreateLogger<BatchCommandFilter>());
-        m_Builder = new BatchCommandBuilder(m_Configuration, loggerFactory.CreateLogger<BatchCommandBuilder>());
-        m_Parser = new BatchResultParser(loggerFactory.CreateLogger<BatchResultParser>());
+        m_Logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("BatchProcessor");
+        
+        m_Filter = new BatchCommandFilter(m_Configuration);
+        m_Builder = new BatchCommandBuilder(m_Configuration);
+        m_Parser = new BatchResultParser();
     }
 
     /// <summary>
