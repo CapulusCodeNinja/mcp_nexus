@@ -118,7 +118,7 @@ public class ResponseFormattingMiddlewareTests
         context.Response.Body.Position = 0;
         var reader = new StreamReader(context.Response.Body);
         var responseBody = await reader.ReadToEndAsync();
-        _ = responseBody.Should().Contain("Parameter is null");
+        _ = responseBody.Should().Contain("Value cannot be null");
     }
 
     /// <summary>

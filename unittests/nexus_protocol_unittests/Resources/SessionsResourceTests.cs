@@ -78,14 +78,9 @@ public class SessionsResourceTests
     [Fact]
     public async Task Sessions_WithException_ReturnsErrorResponse()
     {
-        // Create a service provider that throws when getting IDebugEngine
+        // Create a service provider that throws when getting ILoggerFactory
         var mockServiceProvider = new Mock<IServiceProvider>();
-        var mockLoggerFactory = new Mock<ILoggerFactory>();
-        var mockLogger = NullLogger.Instance;
-
-        _ = mockLoggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(mockLogger);
-        _ = mockServiceProvider.Setup(sp => sp.GetService(typeof(ILoggerFactory))).Returns(mockLoggerFactory.Object);
-        _ = mockServiceProvider.Setup(sp => sp.GetService(typeof(IDebugEngine))).Throws(new InvalidOperationException("Test error"));
+        _ = mockServiceProvider.Setup(sp => sp.GetService(typeof(ILoggerFactory))).Throws(new InvalidOperationException("Test error"));
 
         var result = await SessionsResource.Sessions(mockServiceProvider.Object);
 
