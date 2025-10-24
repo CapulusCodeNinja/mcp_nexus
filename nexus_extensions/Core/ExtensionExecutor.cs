@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using nexus.extensions.Configuration;
 using nexus.extensions.Infrastructure;
 using nexus.extensions.Models;
+using NLog;
 
 namespace nexus.extensions.Core;
 
@@ -15,7 +16,7 @@ namespace nexus.extensions.Core;
 /// </summary>
 internal partial class ExtensionExecutor : IExtensionExecutor
 {
-    private readonly ILogger<ExtensionExecutor> m_Logger;
+    private readonly Logger m_Logger;
     private readonly IExtensionManager m_ExtensionManager;
     private readonly string m_CallbackUrl;
     private readonly IProcessWrapper m_ProcessWrapper;
@@ -47,7 +48,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
         IExtensionTokenValidator tokenValidator,
         IProcessWrapper? processWrapper = null)
     {
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = LogManager.GetCurrentClassLogger();
         m_ExtensionManager = extensionManager ?? throw new ArgumentNullException(nameof(extensionManager));
         m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         m_TokenValidator = tokenValidator ?? throw new ArgumentNullException(nameof(tokenValidator));
@@ -88,7 +89,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
         if (string.IsNullOrWhiteSpace(commandId))
             throw new ArgumentException("Command ID cannot be null or empty", nameof(commandId));
 
-        m_Logger.LogInformation("Starting extension: {Extension} for session {SessionId} with command ID {CommandId}",
+        m_Logger.Info("Starting extension: {Extension} for session {SessionId} with command ID {CommandId}",
             extensionName, sessionId, commandId);
 
         // Get extension metadata
@@ -148,7 +149,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
                 {
                     var sanitized = StripAnsi(e.Data);
                     errorBuilder.AppendLine(sanitized);
-                    m_Logger.LogWarning("Extension {Extension} stderr: {Message}", extensionName, sanitized);
+                    m_Logger.Warn("Extension {Extension} stderr: {Message}", extensionName, sanitized);
                 }
             };
 
@@ -162,12 +163,12 @@ internal partial class ExtensionExecutor : IExtensionExecutor
                 // Set process ID after successful start
                 processInfo.ProcessId = process.Id;
 
-                m_Logger.LogInformation("Extension {Extension} started with PID {ProcessId}",
+                m_Logger.Info("Extension {Extension} started with PID {ProcessId}",
                     extensionName, process.Id);
             }
             catch (Exception startEx)
             {
-                m_Logger.LogError(startEx, "Failed to start extension process for {ProcessDescription}",
+                m_Logger.Error(startEx, "Failed to start extension process for {ProcessDescription}",
                     processDescription);
                 throw new InvalidOperationException(
                     $"Failed to start extension process for '{processDescription}': {startEx.Message}", startEx);
@@ -183,9 +184,9 @@ internal partial class ExtensionExecutor : IExtensionExecutor
 
             try
             {
-                m_Logger.LogDebug("Waiting for extension {Extension} to exit...", extensionName);
+                m_Logger.Debug("Waiting for extension {Extension} to exit...", extensionName);
                 await process.WaitForExitAsync(cts.Token);
-                m_Logger.LogDebug("Extension {Extension} WaitForExitAsync completed", extensionName);
+                m_Logger.Debug("Extension {Extension} WaitForExitAsync completed", extensionName);
             }
             catch (OperationCanceledException)
             {
@@ -200,13 +201,13 @@ internal partial class ExtensionExecutor : IExtensionExecutor
             // This is required after WaitForExitAsync() when using redirected streams
             try
             {
-                m_Logger.LogDebug("Calling WaitForExit() for extension {Extension}...", extensionName);
+                m_Logger.Debug("Calling WaitForExit() for extension {Extension}...", extensionName);
                 process.WaitForExit();
-                m_Logger.LogDebug("WaitForExit() completed for extension {Extension}", extensionName);
+                m_Logger.Debug("WaitForExit() completed for extension {Extension}", extensionName);
             }
             catch (Exception waitEx)
             {
-                m_Logger.LogError(waitEx, "WaitForExit() failed for extension {Extension}", extensionName);
+                m_Logger.Error(waitEx, "WaitForExit() failed for extension {Extension}", extensionName);
                 throw new InvalidOperationException($"Failed to wait for extension to complete: {waitEx.Message}", waitEx);
             }
 
@@ -216,20 +217,20 @@ internal partial class ExtensionExecutor : IExtensionExecutor
             int exitCode;
             try
             {
-                m_Logger.LogDebug("Getting exit code for extension {Extension}...", extensionName);
+                m_Logger.Debug("Getting exit code for extension {Extension}...", extensionName);
                 exitCode = process.ExitCode;
-                m_Logger.LogDebug("Exit code for extension {Extension}: {ExitCode}", extensionName, exitCode);
+                m_Logger.Debug("Exit code for extension {Extension}: {ExitCode}", extensionName, exitCode);
             }
             catch (Exception exCodeEx)
             {
-                m_Logger.LogError(exCodeEx, "Failed to get ExitCode for extension {Extension}", extensionName);
+                m_Logger.Error(exCodeEx, "Failed to get ExitCode for extension {Extension}", extensionName);
                 throw new InvalidOperationException($"Failed to get exit code: {exCodeEx.Message}", exCodeEx);
             }
 
             var output = outputBuilder.ToString();
             var standardError = errorBuilder.ToString();
 
-            m_Logger.LogInformation(
+            m_Logger.Info(
                 "Extension {Extension} completed with exit code {ExitCode} in {Elapsed}ms",
                 extensionName, exitCode, stopwatch.ElapsedMilliseconds);
 
@@ -246,7 +247,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
         catch (Exception ex)
         {
             stopwatch.Stop();
-            m_Logger.LogError(ex, "Extension {Extension} failed after {Elapsed}ms",
+            m_Logger.Error(ex, "Extension {Extension} failed after {Elapsed}ms",
                 extensionName, stopwatch.ElapsedMilliseconds);
 
             return new ExtensionResult
@@ -338,7 +339,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
             throw new InvalidOperationException($"Unsupported script type: {metadata.ScriptType}. Only 'powershell' is supported at the moment.");
         }
 
-        m_Logger.LogDebug("Extension process: {FileName} {Arguments}", fileName, arguments);
+        m_Logger.Debug("Extension process: {FileName} {Arguments}", fileName, arguments);
 
         return m_ProcessWrapper.CreateProcess(fileName, arguments, environmentVariables);
     }
@@ -358,53 +359,53 @@ internal partial class ExtensionExecutor : IExtensionExecutor
         var argumentsBuilder = new StringBuilder();
 
         // Log parameter type for debugging
-        m_Logger.LogDebug("BuildPowerShellParameterArguments called with type: {Type}, value: {Value}",
+        m_Logger.Debug("BuildPowerShellParameterArguments called with type: {Type}, value: {Value}",
             parameters.GetType().FullName, parameters);
 
         // Handle case where parameters might be a JsonElement, JSON string, or object
         string json;
         if (parameters is JsonElement jsonElement)
         {
-            m_Logger.LogDebug("Parameters is a JsonElement, type: {Type}", jsonElement.ValueKind);
+            m_Logger.Debug("Parameters is a JsonElement, type: {Type}", jsonElement.ValueKind);
 
             // If JsonElement is a string, it's a JSON string that needs to be unwrapped
             if (jsonElement.ValueKind == JsonValueKind.String)
             {
                 json = jsonElement.GetString() ?? "{}";
-                m_Logger.LogDebug("Unwrapped JSON string from JsonElement: {Json}", json);
+                m_Logger.Debug("Unwrapped JSON string from JsonElement: {Json}", json);
             }
             else if (jsonElement.ValueKind == JsonValueKind.Object)
             {
                 json = jsonElement.GetRawText();
-                m_Logger.LogDebug("Got JSON object from JsonElement: {Json}", json);
+                m_Logger.Debug("Got JSON object from JsonElement: {Json}", json);
             }
             else
             {
-                m_Logger.LogWarning("JsonElement is not an object or string, type: {Type}", jsonElement.ValueKind);
+                m_Logger.Warn("JsonElement is not an object or string, type: {Type}", jsonElement.ValueKind);
                 return string.Empty;
             }
         }
         else if (parameters is string jsonString)
         {
-            m_Logger.LogDebug("Parameters is already a JSON string: {Json}", jsonString);
+            m_Logger.Debug("Parameters is already a JSON string: {Json}", jsonString);
             json = jsonString;
         }
         else
         {
-            m_Logger.LogDebug("Parameters is an object, serializing to JSON");
+            m_Logger.Debug("Parameters is an object, serializing to JSON");
             json = JsonSerializer.Serialize(parameters, new JsonSerializerOptions { WriteIndented = true });
-            m_Logger.LogDebug("Serialized JSON: {Json}", json);
+            m_Logger.Debug("Serialized JSON: {Json}", json);
         }
 
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
-        m_Logger.LogDebug("JSON root element type: {Type}", root.ValueKind);
+        m_Logger.Debug("JSON root element type: {Type}", root.ValueKind);
 
         // If root is a string (not an object), we can't enumerate properties
         if (root.ValueKind != JsonValueKind.Object)
         {
-            m_Logger.LogWarning("Parameters is not a JSON object, cannot convert to PowerShell arguments. Type: {Type}, Raw JSON: {Json}",
+            m_Logger.Warn("Parameters is not a JSON object, cannot convert to PowerShell arguments. Type: {Type}, Raw JSON: {Json}",
                 root.ValueKind, json);
             return string.Empty;
         }
@@ -466,7 +467,7 @@ internal partial class ExtensionExecutor : IExtensionExecutor
         }
 
         var result = argumentsBuilder.ToString();
-        m_Logger.LogDebug("Built PowerShell arguments: {Arguments}", result);
+        m_Logger.Debug("Built PowerShell arguments: {Arguments}", result);
         return result;
     }
 
@@ -494,24 +495,24 @@ internal partial class ExtensionExecutor : IExtensionExecutor
                 // Check if full path exists
                 if (Path.IsPathRooted(path) && File.Exists(path))
                 {
-                    m_Logger.LogDebug("Found PowerShell at: {Path}", path);
+                    m_Logger.Debug("Found PowerShell at: {Path}", path);
                     return path;
                 }
 
                 // For simple names, just return them and let Process.Start handle PATH lookup
                 if (!Path.IsPathRooted(path))
                 {
-                    m_Logger.LogDebug("Trying PowerShell from PATH: {Path}", path);
+                    m_Logger.Debug("Trying PowerShell from PATH: {Path}", path);
                     return path;
                 }
             }
             catch (Exception ex)
             {
-                m_Logger.LogDebug(ex, "Error checking PowerShell path: {Path}", path);
+                m_Logger.Debug(ex, "Error checking PowerShell path: {Path}", path);
             }
         }
 
-        m_Logger.LogError("PowerShell not found. Tried: {Paths}", string.Join(", ", paths));
+        m_Logger.Error("PowerShell not found. Tried: {Paths}", string.Join(", ", paths));
         return null;
     }
 
@@ -533,13 +534,13 @@ internal partial class ExtensionExecutor : IExtensionExecutor
             if (!process.HasExited)
             {
                 process.Kill(entireProcessTree: true);
-                m_Logger.LogInformation("Killed extension with command ID: {CommandId}", commandId);
+                m_Logger.Info("Killed extension with command ID: {CommandId}", commandId);
                 return true;
             }
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Failed to kill extension with command ID: {CommandId}", commandId);
+            m_Logger.Error(ex, "Failed to kill extension with command ID: {CommandId}", commandId);
         }
 
         return false;
@@ -593,20 +594,20 @@ internal partial class ExtensionExecutor : IExtensionExecutor
         {
             if (!process.HasExited)
             {
-                m_Logger.LogWarning("Killing extension script '{Extension}' (command {CommandId}) due to timeout after {Elapsed:F1} seconds (timeout: {Timeout}ms)",
+                m_Logger.Warn("Killing extension script '{Extension}' (command {CommandId}) due to timeout after {Elapsed:F1} seconds (timeout: {Timeout}ms)",
                     extensionName, commandId, elapsed.TotalSeconds, timeout);
 
                 process.Kill(entireProcessTree: true);
-                m_Logger.LogWarning("Killed extension script '{Extension}' (command {CommandId})", extensionName, commandId);
+                m_Logger.Warn("Killed extension script '{Extension}' (command {CommandId})", extensionName, commandId);
             }
             else
             {
-                m_Logger.LogDebug("Extension {Extension} already exited, no need to kill", extensionName);
+                m_Logger.Debug("Extension {Extension} already exited, no need to kill", extensionName);
             }
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Failed to kill extension {Extension} (command {CommandId})", extensionName, commandId);
+            m_Logger.Error(ex, "Failed to kill extension {Extension} (command {CommandId})", extensionName, commandId);
         }
     }
 
@@ -636,14 +637,14 @@ internal partial class ExtensionExecutor : IExtensionExecutor
                     {
                         if (!kvp.Value.HasExited)
                         {
-                            m_Logger.LogWarning("Killing extension process {CommandId} during disposal", kvp.Key);
+                            m_Logger.Warn("Killing extension process {CommandId} during disposal", kvp.Key);
                             kvp.Value.Kill(entireProcessTree: true);
                         }
                         kvp.Value.Dispose();
                     }
                     catch (Exception ex)
                     {
-                        m_Logger.LogError(ex, "Error disposing extension process {CommandId}", kvp.Key);
+                        m_Logger.Error(ex, "Error disposing extension process {CommandId}", kvp.Key);
                     }
                 }
 
@@ -651,11 +652,11 @@ internal partial class ExtensionExecutor : IExtensionExecutor
                 m_Processes.Clear();
                 m_RunningExtensions.Clear();
 
-                m_Logger.LogInformation("ExtensionExecutor disposed successfully");
+                m_Logger.Info("ExtensionExecutor disposed successfully");
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Error during ExtensionExecutor disposal");
+                m_Logger.Error(ex, "Error during ExtensionExecutor disposal");
             }
         }
     }

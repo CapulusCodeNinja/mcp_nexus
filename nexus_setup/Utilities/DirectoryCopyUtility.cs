@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using nexus.external_apis.FileSystem;
 using nexus.setup.Core;
+using NLog;
 using System.Runtime.Versioning;
 
 namespace nexus.setup.Utilities
@@ -12,13 +13,13 @@ namespace nexus.setup.Utilities
     [SupportedOSPlatform("windows")]
     internal class DirectoryCopyUtility
     {
-        private readonly ILogger m_Logger;
+        private readonly Logger m_Logger;
         private readonly IFileSystem m_FileSystem;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectoryCopyUtility"/> class.
         /// </summary>
-        public DirectoryCopyUtility(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem())
+        public DirectoryCopyUtility() : this(new FileSystem())
         {
 
         }
@@ -26,11 +27,10 @@ namespace nexus.setup.Utilities
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectoryCopyUtility"/> class.
         /// </summary>
-        /// <param name="serviceProvider">Service provider for dependency injection.</param>
         /// <param name="fileSystem">File system abstraction.</param>
-        internal DirectoryCopyUtility(IServiceProvider serviceProvider, IFileSystem fileSystem)
+        internal DirectoryCopyUtility(IFileSystem fileSystem)
         {
-            m_Logger = serviceProvider.GetRequiredService<ILogger<DirectoryCopyUtility>>();
+            m_Logger = LogManager.GetCurrentClassLogger();
             m_FileSystem = fileSystem;
         }
 
@@ -48,7 +48,7 @@ namespace nexus.setup.Utilities
 
             if (normalizedDestDir.StartsWith(normalizedSourceDir, StringComparison.OrdinalIgnoreCase))
             {
-                m_Logger.LogDebug("Skipping copy to prevent infinite loop: {SourceDir} -> {DestDir}", sourceDir, destDir);
+                m_Logger.Debug("Skipping copy to prevent infinite loop: {SourceDir} -> {DestDir}", sourceDir, destDir);
                 return;
             }
 

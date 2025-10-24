@@ -5,6 +5,7 @@ using nexus.engine.batch.Internal;
 namespace nexus.engine.batch;
 
 using config;
+using NLog;
 
 /// <summary>
 /// Implements batch processing logic for commands and results.
@@ -15,27 +16,17 @@ public class BatchProcessor : IBatchProcessor
     private readonly BatchCommandBuilder m_Builder;
     private readonly BatchResultParser m_Parser;
 
-    private readonly ILogger<BatchProcessor> m_Logger;
+    private readonly Logger m_Logger;
 
-    private static IBatchProcessor? m_Instance;
+    public static IBatchProcessor Instance { get; } = new BatchProcessor();
 
-    /// <summary>
-    /// Gets the singleton instance of the batch processor.
-    /// </summary>
-    /// <param name="serviceProvider">Service provider for dependency injection.</param>
-    /// <returns>The batch processor instance.</returns>
-    public static IBatchProcessor GetInstance(IServiceProvider serviceProvider)
+    internal BatchProcessor()
     {
-        return m_Instance ??= new BatchProcessor(serviceProvider);
-    }
+        m_Logger = LogManager.GetCurrentClassLogger();
 
-    internal BatchProcessor(IServiceProvider serviceProvider)
-    {
-        m_Logger = serviceProvider.GetRequiredService<ILogger<BatchProcessor>>();
-
-        m_Filter = new BatchCommandFilter(serviceProvider);
-        m_Builder = new BatchCommandBuilder(serviceProvider);
-        m_Parser = new BatchResultParser(serviceProvider);
+        m_Filter = new BatchCommandFilter();
+        m_Builder = new BatchCommandBuilder();
+        m_Parser = new BatchResultParser();
     }
 
     /// <summary>
@@ -47,14 +38,14 @@ public class BatchProcessor : IBatchProcessor
     {
         if (commands == null || commands.Count == 0)
         {
-            m_Logger.LogDebug("No commands to batch");
+            m_Logger.Debug("No commands to batch");
             return commands ?? new List<Command>();
         }
 
         // Check if batching should be applied
         if (!m_Filter.ShouldBatch(commands))
         {
-            m_Logger.LogDebug("Batching not applicable, passing through {Count} commands", commands.Count);
+            m_Logger.Debug("Batching not applicable, passing through {Count} commands", commands.Count);
             return commands;
         }
 
@@ -72,18 +63,18 @@ public class BatchProcessor : IBatchProcessor
             {
                 var batchedCommand = m_Builder.BuildBatch(batch);
                 batchedCommands.Add(batchedCommand);
-                m_Logger.LogInformation("Batched {Count} commands into {BatchId}",
+                m_Logger.Info("Batched {Count} commands into {BatchId}",
                     batch.Count, batchedCommand.CommandId);
             }
             else
             {
                 // Pass through individually
                 batchedCommands.AddRange(batch);
-                m_Logger.LogDebug("Passing through {Count} commands individually", batch.Count);
+                m_Logger.Debug("Passing through {Count} commands individually", batch.Count);
             }
         }
 
-        m_Logger.LogInformation("Transformed {InputCount} commands into {OutputCount} batched commands",
+        m_Logger.Info("Transformed {InputCount} commands into {OutputCount} batched commands",
             commands.Count, batchedCommands.Count);
 
         return batchedCommands;
@@ -98,7 +89,7 @@ public class BatchProcessor : IBatchProcessor
     {
         if (results == null || results.Count == 0)
         {
-            m_Logger.LogDebug("No results to unbatch");
+            m_Logger.Debug("No results to unbatch");
             return results ?? new List<CommandResult>();
         }
 
@@ -111,12 +102,12 @@ public class BatchProcessor : IBatchProcessor
 
             if (parsedResults.Count > 1)
             {
-                m_Logger.LogInformation("Unbatched {BatchId} into {Count} individual results",
+                m_Logger.Info("Unbatched {BatchId} into {Count} individual results",
                     result.CommandId, parsedResults.Count);
             }
         }
 
-        m_Logger.LogInformation("Transformed {InputCount} results into {OutputCount} individual results",
+        m_Logger.Info("Transformed {InputCount} results into {OutputCount} individual results",
             results.Count, unbatchedResults.Count);
 
         return unbatchedResults;

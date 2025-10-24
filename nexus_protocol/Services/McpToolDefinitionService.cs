@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using nexus.protocol.Models;
 using nexus.protocol.Notifications;
+using NLog;
 
 namespace nexus.protocol.Services;
 
@@ -10,7 +11,7 @@ namespace nexus.protocol.Services;
 /// </summary>
 internal class McpToolDefinitionService : IMcpToolDefinitionService
 {
-    private readonly ILogger<McpToolDefinitionService> m_Logger;
+    private readonly Logger m_Logger;
     private readonly IMcpNotificationService? m_NotificationService;
     private readonly McpToolSchema[] m_Tools;
 
@@ -23,11 +24,11 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
         ILogger<McpToolDefinitionService> logger,
         IMcpNotificationService? notificationService = null)
     {
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = LogManager.GetCurrentClassLogger();
         m_NotificationService = notificationService;
 
         m_Tools = InitializeToolSchemas();
-        m_Logger.LogDebug("Initialized {ToolCount} MCP tool definitions", m_Tools.Length);
+        m_Logger.Debug("Initialized {ToolCount} MCP tool definitions", m_Tools.Length);
     }
 
     /// <summary>
@@ -58,7 +59,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
         if (m_NotificationService != null)
         {
             await m_NotificationService.NotifyToolsListChangedAsync();
-            m_Logger.LogInformation("Notified clients of tools list change");
+            m_Logger.Info("Notified clients of tools list change");
         }
     }
 

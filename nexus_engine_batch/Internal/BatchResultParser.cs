@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace nexus.engine.batch.Internal;
 
@@ -8,11 +9,11 @@ namespace nexus.engine.batch.Internal;
 /// </summary>
 internal class BatchResultParser
 {
-    private readonly ILogger<BatchResultParser> m_Logger;
+    private readonly Logger m_Logger;
 
-    public BatchResultParser(IServiceProvider serviceProvider)
+    public BatchResultParser()
     {
-        m_Logger = serviceProvider.GetRequiredService<ILogger<BatchResultParser>>();
+        m_Logger = LogManager.GetCurrentClassLogger();
     }
 
     /// <summary>
@@ -29,7 +30,7 @@ internal class BatchResultParser
         if (!IsBatchResult(result.CommandId))
         {
             // Not a batch, pass through as-is
-            m_Logger.LogDebug("Result {CommandId} is not a batch, passing through", result.CommandId);
+            m_Logger.Debug("Result {CommandId} is not a batch, passing through", result.CommandId);
             return new List<CommandResult> { result };
         }
 
@@ -37,14 +38,14 @@ internal class BatchResultParser
         var commandIds = ExtractCommandIdsFromBatchId(result.CommandId);
         if (commandIds.Count == 0)
         {
-            m_Logger.LogWarning("Failed to extract command IDs from batch ID: {BatchId}", result.CommandId);
+            m_Logger.Warn("Failed to extract command IDs from batch ID: {BatchId}", result.CommandId);
             return new List<CommandResult> { result };
         }
 
         // Check if result text contains sentinels
         if (!ContainsSentinels(result.ResultText))
         {
-            m_Logger.LogWarning("Batch result does not contain sentinels: {BatchId}", result.CommandId);
+            m_Logger.Warn("Batch result does not contain sentinels: {BatchId}", result.CommandId);
             // Return single result for first command (fallback behavior)
             return new List<CommandResult>
             {
@@ -123,7 +124,7 @@ internal class BatchResultParser
                 ResultText = individualResult
             });
 
-            m_Logger.LogDebug("Extracted result for command {CommandId} ({Length} chars)",
+            m_Logger.Debug("Extracted result for command {CommandId} ({Length} chars)",
                 commandId, individualResult.Length);
         }
 

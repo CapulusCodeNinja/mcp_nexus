@@ -6,6 +6,7 @@ using nexus.CommandLine;
 using nexus.protocol;
 using nexus.protocol.Configuration;
 using nexus.setup;
+using NLog;
 
 namespace nexus.Startup;
 
@@ -14,28 +15,22 @@ namespace nexus.Startup;
 /// </summary>
 public class MainHostedService : IHostedService
 {
-    private readonly ILogger<MainHostedService> m_Logger;
+    private readonly Logger m_Logger;
     private readonly IConfiguration m_Configuration;
     private readonly CommandLineContext m_CommandLineContext;
-    private readonly IServiceProvider m_ServiceProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MainHostedService"/> class.
     /// </summary>
-    /// <param name="logger">Logger instance.</param>
     /// <param name="configuration">Application configuration.</param>
     /// <param name="commandLineContext">Command line context.</param>
-    /// <param name="serviceProvider">Service provider.</param>
     public MainHostedService(
-        ILogger<MainHostedService> logger,
         IConfiguration configuration,
-        CommandLineContext commandLineContext,
-        IServiceProvider serviceProvider)
+        CommandLineContext commandLineContext)
     {
-        m_Logger = logger;
+        m_Logger = LogManager.GetCurrentClassLogger();
         m_Configuration = configuration;
         m_CommandLineContext = commandLineContext;
-        m_ServiceProvider = serviceProvider;
     }
 
     /// <summary>
@@ -47,8 +42,7 @@ public class MainHostedService : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         // 1. Display startup banner FIRST (guaranteed first log output)
-        var startupBannerLogger = m_ServiceProvider.GetRequiredService<ILogger<StartupBanner>>();
-        var startupBanner = new StartupBanner(m_Configuration, startupBannerLogger, m_CommandLineContext.IsServiceMode, m_CommandLineContext);
+        var startupBanner = new StartupBanner(m_Configuration, m_CommandLineContext.IsServiceMode, m_CommandLineContext);
         startupBanner.DisplayBanner();
 
         // 2. Handle the appropriate command based on command line context
@@ -85,7 +79,7 @@ public class MainHostedService : IHostedService
 
     private async Task StartHttpServer(CancellationToken cancellationToken)
     {
-        m_Logger.LogInformation("Starting HTTP server mode...");
+        m_Logger.Info("Starting HTTP server mode...");
 
         try
         {
@@ -94,10 +88,10 @@ public class MainHostedService : IHostedService
                 m_Configuration,
                 m_CommandLineContext.IsServiceMode);
 
-            ProtocolServer.GetInstance(m_ServiceProvider).SetWebApplication(app);
+            ProtocolServer.Instance.SetWebApplication(app);
 
             // Start the protocol server (which starts the WebApplication)
-            await ProtocolServer.GetInstance(m_ServiceProvider).StartAsync(cancellationToken);
+            await ProtocolServer.Instance.StartAsync(cancellationToken);
 
             // Keep running until cancellation
             await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -105,18 +99,18 @@ public class MainHostedService : IHostedService
         catch (OperationCanceledException)
         {
             // Normal shutdown - don't log as error
-            m_Logger.LogInformation("HTTP server shutdown requested");
+            m_Logger.Info("HTTP server shutdown requested");
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Failed to start HTTP server");
+            m_Logger.Error(ex, "Failed to start HTTP server");
             throw;
         }
     }
 
     private async Task StartStdioServer(CancellationToken cancellationToken)
     {
-        m_Logger.LogInformation("Starting Stdio server mode...");
+        m_Logger.Info("Starting Stdio server mode...");
 
         try
         {
@@ -126,10 +120,10 @@ public class MainHostedService : IHostedService
                 m_CommandLineContext.IsServiceMode);
 
             // Get the protocol server from DI and configure it
-            ProtocolServer.GetInstance(m_ServiceProvider).SetHost(host);
+            ProtocolServer.Instance.SetHost(host);
 
             // Start the protocol server (which starts the Host)
-            await ProtocolServer.GetInstance(m_ServiceProvider).StartAsync(cancellationToken);
+            await ProtocolServer.Instance.StartAsync(cancellationToken);
 
             // Keep running until cancellation
             await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -137,11 +131,11 @@ public class MainHostedService : IHostedService
         catch (OperationCanceledException)
         {
             // Normal shutdown - don't log as error
-            m_Logger.LogInformation("Stdio server shutdown requested");
+            m_Logger.Info("Stdio server shutdown requested");
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Failed to start Stdio server");
+            m_Logger.Error(ex, "Failed to start Stdio server");
             throw;
         }
     }
@@ -155,10 +149,10 @@ public class MainHostedService : IHostedService
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private async Task HandleInstallCommand()
     {
-        m_Logger.LogInformation("Handling install command...");
+        m_Logger.Info("Handling install command...");
 
         // Get the installation handler from DI
-        var success = await ProductInstallation.GetInstance(m_ServiceProvider).InstallServiceAsync();
+        var success = await ProductInstallation.Instance.InstallServiceAsync();
 
         if (!success)
         {
@@ -172,10 +166,10 @@ public class MainHostedService : IHostedService
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private async Task HandleUpdateCommand()
     {
-        m_Logger.LogInformation("Handling update command...");
+        m_Logger.Info("Handling update command...");
 
         // Get the installation handler from DI
-        var success = await ProductInstallation.GetInstance(m_ServiceProvider).UpdateServiceAsync();
+        var success = await ProductInstallation.Instance.UpdateServiceAsync();
 
         if (!success)
         {
@@ -189,10 +183,10 @@ public class MainHostedService : IHostedService
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private async Task HandleUninstallCommand()
     {
-        m_Logger.LogInformation("Handling uninstall command...");
+        m_Logger.Info("Handling uninstall command...");
 
         // Get the installation handler from DI
-        var success = await ProductInstallation.GetInstance(m_ServiceProvider).UninstallServiceAsync();
+        var success = await ProductInstallation.Instance.UninstallServiceAsync();
 
         if (!success)
         {
@@ -210,12 +204,12 @@ public class MainHostedService : IHostedService
     /// <returns>Task representing the stop operation.</returns>
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        m_Logger.LogInformation("Stopping main hosted service...");
+        m_Logger.Info("Stopping main hosted service...");
 
         try
         {
             // Stop the protocol server if it's running
-            var protocolServer = m_ServiceProvider.GetService<IProtocolServer>();
+            var protocolServer = ProtocolServer.Instance;
             if (protocolServer is { IsRunning: true })
             {
                 await protocolServer.StopAsync(cancellationToken);
@@ -223,9 +217,9 @@ public class MainHostedService : IHostedService
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Error stopping protocol server");
+            m_Logger.Error(ex, "Error stopping protocol server");
         }
 
-        m_Logger.LogInformation("Main hosted service stopped");
+        m_Logger.Info("Main hosted service stopped");
     }
 }

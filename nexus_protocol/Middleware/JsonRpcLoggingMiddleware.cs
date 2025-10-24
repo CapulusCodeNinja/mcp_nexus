@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace nexus.protocol.Middleware;
 
@@ -11,7 +12,7 @@ namespace nexus.protocol.Middleware;
 internal class JsonRpcLoggingMiddleware
 {
     private readonly RequestDelegate m_Next;
-    private readonly ILogger<JsonRpcLoggingMiddleware> m_Logger;
+    private readonly Logger m_Logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonRpcLoggingMiddleware"/> class.
@@ -21,7 +22,7 @@ internal class JsonRpcLoggingMiddleware
     public JsonRpcLoggingMiddleware(RequestDelegate next, ILogger<JsonRpcLoggingMiddleware> logger)
     {
         m_Next = next ?? throw new ArgumentNullException(nameof(next));
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = LogManager.GetCurrentClassLogger();
     }
 
     /// <summary>
@@ -60,9 +61,9 @@ internal class JsonRpcLoggingMiddleware
     {
         var requestBody = await ReadRequestBodyAsync(context);
 
-        m_Logger.LogDebug("JSON-RPC Request: Method={Method}, Path={Path}, ContentType={ContentType}",
+        m_Logger.Debug("JSON-RPC Request: Method={Method}, Path={Path}, ContentType={ContentType}",
             context.Request.Method, context.Request.Path, context.Request.ContentType);
-        m_Logger.LogTrace("JSON-RPC Request Body: {RequestBody}", SanitizeForLogging(requestBody));
+        m_Logger.Trace("JSON-RPC Request Body: {RequestBody}", SanitizeForLogging(requestBody));
 
         var originalBodyStream = context.Response.Body;
         using var responseBody = new MemoryStream();
@@ -74,9 +75,9 @@ internal class JsonRpcLoggingMiddleware
 
             var responseBodyText = await ReadResponseBodyAsync(responseBody);
 
-            m_Logger.LogDebug("JSON-RPC Response: StatusCode={StatusCode}, ContentType={ContentType}",
+            m_Logger.Debug("JSON-RPC Response: StatusCode={StatusCode}, ContentType={ContentType}",
                 context.Response.StatusCode, context.Response.ContentType);
-            m_Logger.LogTrace("JSON-RPC Response Body: {ResponseBody}", SanitizeForLogging(responseBodyText));
+            m_Logger.Trace("JSON-RPC Response Body: {ResponseBody}", SanitizeForLogging(responseBodyText));
 
             await CopyResponseBodyAsync(responseBody, originalBodyStream);
         }

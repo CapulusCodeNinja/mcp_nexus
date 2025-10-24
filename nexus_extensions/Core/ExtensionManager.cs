@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using nexus.extensions.Models;
+using NLog;
 
 namespace nexus.extensions.Core;
 
@@ -9,7 +10,7 @@ namespace nexus.extensions.Core;
 /// </summary>
 internal class ExtensionManager : IExtensionManager
 {
-    private readonly ILogger<ExtensionManager> m_Logger;
+    private readonly Logger m_Logger;
     private readonly string m_ExtensionsPath;
     private readonly Dictionary<string, ExtensionMetadata> m_Extensions = [];
     private readonly object m_Lock = new();
@@ -26,7 +27,7 @@ internal class ExtensionManager : IExtensionManager
     /// <exception cref="ArgumentException">Thrown when extensionsPath is null or empty.</exception>
     public ExtensionManager(ILogger<ExtensionManager> logger, string extensionsPath)
     {
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = LogManager.GetCurrentClassLogger();
 
         if (string.IsNullOrWhiteSpace(extensionsPath))
             throw new ArgumentException("Extensions path cannot be null or empty", nameof(extensionsPath));
@@ -52,7 +53,7 @@ internal class ExtensionManager : IExtensionManager
         }
         catch (Exception ex)
         {
-            m_Logger.LogWarning(ex, "Failed to initialize extensions FileSystemWatcher");
+            m_Logger.Warn(ex, "Failed to initialize extensions FileSystemWatcher");
         }
     }
 
@@ -62,18 +63,18 @@ internal class ExtensionManager : IExtensionManager
     /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task LoadExtensionsAsync()
     {
-        m_Logger.LogInformation("Loading extensions from: {ExtensionsPath}", m_ExtensionsPath);
+        m_Logger.Info("Loading extensions from: {ExtensionsPath}", m_ExtensionsPath);
 
         if (!Directory.Exists(m_ExtensionsPath))
         {
-            m_Logger.LogWarning("Extensions directory does not exist: {ExtensionsPath}", m_ExtensionsPath);
+            m_Logger.Warn("Extensions directory does not exist: {ExtensionsPath}", m_ExtensionsPath);
             Directory.CreateDirectory(m_ExtensionsPath);
-            m_Logger.LogInformation("Created extensions directory: {ExtensionsPath}", m_ExtensionsPath);
+            m_Logger.Info("Created extensions directory: {ExtensionsPath}", m_ExtensionsPath);
             return;
         }
 
         var metadataFiles = Directory.GetFiles(m_ExtensionsPath, "*.json", SearchOption.AllDirectories);
-        m_Logger.LogInformation("Found {Count} metadata files", metadataFiles.Length);
+        m_Logger.Info("Found {Count} metadata files", metadataFiles.Length);
 
         // Build a new map to replace atomically
         var newMap = new Dictionary<string, ExtensionMetadata>(StringComparer.OrdinalIgnoreCase);
@@ -91,13 +92,13 @@ internal class ExtensionManager : IExtensionManager
                     }
                     else
                     {
-                        m_Logger.LogWarning("Duplicate extension name '{Name}' encountered; keeping first", meta.Name);
+                        m_Logger.Warn("Duplicate extension name '{Name}' encountered; keeping first", meta.Name);
                     }
                 }
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Failed to load extension from: {MetadataFile}", metadataFile);
+                m_Logger.Error(ex, "Failed to load extension from: {MetadataFile}", metadataFile);
             }
         }
 
@@ -111,7 +112,7 @@ internal class ExtensionManager : IExtensionManager
         }
 
         Interlocked.Increment(ref m_Version);
-        m_Logger.LogInformation("Loaded {Count} extensions successfully", m_Extensions.Count);
+        m_Logger.Info("Loaded {Count} extensions successfully", m_Extensions.Count);
     }
 
     /// <summary>
@@ -121,7 +122,7 @@ internal class ExtensionManager : IExtensionManager
     /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task<ExtensionMetadata?> LoadExtensionMetadataAsync(string metadataFile)
     {
-        m_Logger.LogDebug("Loading extension metadata from: {MetadataFile}", metadataFile);
+        m_Logger.Debug("Loading extension metadata from: {MetadataFile}", metadataFile);
 
         var json = await File.ReadAllTextAsync(metadataFile);
         var metadata = JsonSerializer.Deserialize<ExtensionMetadata>(json, new JsonSerializerOptions
@@ -131,19 +132,19 @@ internal class ExtensionManager : IExtensionManager
 
         if (metadata == null)
         {
-            m_Logger.LogWarning("Failed to deserialize metadata from: {MetadataFile}", metadataFile);
+            m_Logger.Warn("Failed to deserialize metadata from: {MetadataFile}", metadataFile);
             return null;
         }
 
         if (string.IsNullOrWhiteSpace(metadata.Name))
         {
-            m_Logger.LogWarning("Extension metadata missing name: {MetadataFile}", metadataFile);
+            m_Logger.Warn("Extension metadata missing name: {MetadataFile}", metadataFile);
             return null;
         }
 
         if (string.IsNullOrWhiteSpace(metadata.ScriptFile))
         {
-            m_Logger.LogWarning("Extension {Name} missing script file reference", metadata.Name);
+            m_Logger.Warn("Extension {Name} missing script file reference", metadata.Name);
             return null;
         }
 
@@ -153,7 +154,7 @@ internal class ExtensionManager : IExtensionManager
         // Validate script file exists
         if (!File.Exists(metadata.FullScriptPath))
         {
-            m_Logger.LogWarning("Extension {Name} script file not found: {ScriptPath}",
+            m_Logger.Warn("Extension {Name} script file not found: {ScriptPath}",
                 metadata.Name, metadata.FullScriptPath);
             return null;
         }
@@ -209,12 +210,12 @@ internal class ExtensionManager : IExtensionManager
         {
             try
             {
-                m_Logger.LogInformation("Detected extensions change: {Change} on {Path}. Reloading...", e.ChangeType, e.FullPath);
+                m_Logger.Info("Detected extensions change: {Change} on {Path}. Reloading...", e.ChangeType, e.FullPath);
                 await LoadExtensionsAsync();
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Error reloading extensions after change");
+                m_Logger.Error(ex, "Error reloading extensions after change");
             }
             finally
             {

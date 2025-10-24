@@ -5,6 +5,7 @@ using nexus.external_apis.ProcessManagement;
 using nexus.external_apis.ServiceManagement;
 using nexus.setup.Interfaces;
 using nexus.setup.Models;
+using NLog;
 using System.Runtime.Versioning;
 using System.ServiceProcess;
 
@@ -16,7 +17,7 @@ namespace nexus.setup.Core;
 [SupportedOSPlatform("windows")]
 internal class ServiceInstaller : IServiceInstaller
 {
-    private readonly ILogger<ServiceInstaller> m_Logger;
+    private readonly Logger m_Logger;
     private readonly IFileSystem m_FileSystem;
     private readonly IProcessManager m_ProcessManager;
     private readonly IServiceController m_ServiceController;
@@ -24,23 +25,22 @@ internal class ServiceInstaller : IServiceInstaller
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceInstaller"/> class.
     /// </summary>
-    public ServiceInstaller(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
+    public ServiceInstaller() : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceInstaller"/> class.
     /// </summary>
-    /// <param name="serviceProvider">Service provider for dependency injection.</param>
     /// <param name="fileSystem">File system abstraction.</param>
     /// <param name="processManager">Process manager abstraction.</param>
     /// <param name="serviceController">Service controller abstraction.</param>
-    internal ServiceInstaller(IServiceProvider serviceProvider,
+    internal ServiceInstaller(
         IFileSystem fileSystem,
         IProcessManager processManager,
         IServiceController serviceController)
     {
-        m_Logger = serviceProvider.GetRequiredService<ILogger<ServiceInstaller>>();
+        m_Logger = LogManager.GetCurrentClassLogger();
 
         m_FileSystem = fileSystem;
         m_ProcessManager = processManager;
@@ -67,11 +67,11 @@ internal class ServiceInstaller : IServiceInstaller
         if (!m_FileSystem.FileExists(options.ExecutablePath))
             return ServiceInstallationResult.CreateFailure(options.ServiceName, "Executable file not found", options.ExecutablePath);
 
-        m_Logger.LogInformation("Installing service: {ServiceName}", options.ServiceName);
+        m_Logger.Info("Installing service: {ServiceName}", options.ServiceName);
 
         if (m_ServiceController.IsServiceInstalled(options.ServiceName))
         {
-            m_Logger.LogWarning("Service {ServiceName} is already installed", options.ServiceName);
+            m_Logger.Warn("Service {ServiceName} is already installed", options.ServiceName);
             return ServiceInstallationResult.CreateFailure(options.ServiceName, "Service is already installed");
         }
 
@@ -101,7 +101,7 @@ internal class ServiceInstaller : IServiceInstaller
 
             if (!result.Success)
             {
-                m_Logger.LogError("Failed to install service: {Error}", result.ErrorDetails);
+                m_Logger.Error("Failed to install service: {Error}", result.ErrorDetails);
                 return ServiceInstallationResult.CreateFailure(options.ServiceName, "Failed to install service", result.ErrorDetails);
             }
 
@@ -112,12 +112,12 @@ internal class ServiceInstaller : IServiceInstaller
                 await ExecuteScCommandAsync(descArgs, cancellationToken);
             }
 
-            m_Logger.LogInformation("Service {ServiceName} installed successfully", options.ServiceName);
+            m_Logger.Info("Service {ServiceName} installed successfully", options.ServiceName);
             return ServiceInstallationResult.CreateSuccess(options.ServiceName, "Service installed successfully");
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Exception while installing service {ServiceName}", options.ServiceName);
+            m_Logger.Error(ex, "Exception while installing service {ServiceName}", options.ServiceName);
             return ServiceInstallationResult.CreateFailure(options.ServiceName, "Exception during installation", ex.Message);
         }
     }
@@ -133,11 +133,11 @@ internal class ServiceInstaller : IServiceInstaller
         if (string.IsNullOrWhiteSpace(serviceName))
             throw new ArgumentException("Service name cannot be null or empty.", nameof(serviceName));
 
-        m_Logger.LogInformation("Uninstalling service: {ServiceName}", serviceName);
+        m_Logger.Info("Uninstalling service: {ServiceName}", serviceName);
 
         if (!m_ServiceController.IsServiceInstalled(serviceName))
         {
-            m_Logger.LogWarning("Service {ServiceName} is not installed", serviceName);
+            m_Logger.Warn("Service {ServiceName} is not installed", serviceName);
             return ServiceInstallationResult.CreateFailure(serviceName, "Service is not installed");
         }
 
@@ -147,25 +147,25 @@ internal class ServiceInstaller : IServiceInstaller
             var status = m_ServiceController.GetServiceStatus(serviceName);
             if (status == null)
             {
-                m_Logger.LogInformation("Service {ServiceName} is not installed - nothing to stop", serviceName);
+                m_Logger.Info("Service {ServiceName} is not installed - nothing to stop", serviceName);
             }
             else if (status == ServiceControllerStatus.Stopped)
             {
-                m_Logger.LogInformation("Service {ServiceName} is already stopped", serviceName);
+                m_Logger.Info("Service {ServiceName} is already stopped", serviceName);
             }
             else
             {
                 // Service is running or in transitional state - try to stop it
                 try
                 {
-                    m_Logger.LogInformation("Stopping service {ServiceName}...", serviceName);
+                    m_Logger.Info("Stopping service {ServiceName}...", serviceName);
                     m_ServiceController.StopService(serviceName);
                     m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
-                    m_Logger.LogInformation("Service {ServiceName} stopped successfully", serviceName);
+                    m_Logger.Info("Service {ServiceName} stopped successfully", serviceName);
                 }
                 catch (Exception ex)
                 {
-                    m_Logger.LogWarning(ex, "Failed to stop service {ServiceName}, but continuing with uninstall", serviceName);
+                    m_Logger.Warn(ex, "Failed to stop service {ServiceName}, but continuing with uninstall", serviceName);
                 }
             }
 
@@ -175,16 +175,16 @@ internal class ServiceInstaller : IServiceInstaller
 
             if (!result.Success)
             {
-                m_Logger.LogError("Failed to uninstall service: {Error}", result.ErrorDetails);
+                m_Logger.Error("Failed to uninstall service: {Error}", result.ErrorDetails);
                 return ServiceInstallationResult.CreateFailure(serviceName, "Failed to uninstall service", result.ErrorDetails);
             }
 
-            m_Logger.LogInformation("Service {ServiceName} uninstalled successfully", serviceName);
+            m_Logger.Info("Service {ServiceName} uninstalled successfully", serviceName);
             return ServiceInstallationResult.CreateSuccess(serviceName, "Service uninstalled successfully");
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Exception while uninstalling service {ServiceName}", serviceName);
+            m_Logger.Error(ex, "Exception while uninstalling service {ServiceName}", serviceName);
             return ServiceInstallationResult.CreateFailure(serviceName, "Exception during uninstallation", ex.Message);
         }
     }
@@ -234,13 +234,13 @@ internal class ServiceInstaller : IServiceInstaller
         var startTime = DateTime.Now;
         var pollInterval = TimeSpan.FromMilliseconds(100);
 
-        m_Logger.LogDebug("Waiting for service {ServiceName} to reach status {TargetStatus}", serviceName, targetStatus);
+        m_Logger.Debug("Waiting for service {ServiceName} to reach status {TargetStatus}", serviceName, targetStatus);
 
         while (DateTime.Now - startTime < timeout)
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                m_Logger.LogInformation("Wait for service status cancelled");
+                m_Logger.Info("Wait for service status cancelled");
                 return false;
             }
 
@@ -250,22 +250,22 @@ internal class ServiceInstaller : IServiceInstaller
 
                 if (currentStatus != null && currentStatus.Value.ToString().Equals(targetStatus, StringComparison.OrdinalIgnoreCase))
                 {
-                    m_Logger.LogDebug("Service {ServiceName} reached target status {Status}", serviceName, targetStatus);
+                    m_Logger.Debug("Service {ServiceName} reached target status {Status}", serviceName, targetStatus);
                     return true;
                 }
 
-                m_Logger.LogDebug("Service {ServiceName} status: {CurrentStatus}, waiting for {TargetStatus}",
+                m_Logger.Debug("Service {ServiceName} status: {CurrentStatus}, waiting for {TargetStatus}",
                     serviceName, currentStatus, targetStatus);
             }
             catch (Exception ex)
             {
-                m_Logger.LogDebug(ex, "Error checking service {ServiceName} status", serviceName);
+                m_Logger.Debug(ex, "Error checking service {ServiceName} status", serviceName);
             }
 
             await Task.Delay(pollInterval, cancellationToken);
         }
 
-        m_Logger.LogWarning("Service {ServiceName} did not reach status {Status} within {Timeout}ms",
+        m_Logger.Warn("Service {ServiceName} did not reach status {Status} within {Timeout}ms",
             serviceName, targetStatus, timeout.TotalMilliseconds);
         return false;
     }
@@ -288,7 +288,7 @@ internal class ServiceInstaller : IServiceInstaller
 
         try
         {
-            m_Logger.LogInformation("Building project for deployment: {ProjectPath}", projectPath);
+            m_Logger.Info("Building project for deployment: {ProjectPath}", projectPath);
 
             var workingDirectory = m_FileSystem.DirectoryExists(projectPath)
                 ? projectPath
@@ -323,20 +323,20 @@ internal class ServiceInstaller : IServiceInstaller
 
             if (process.ExitCode == 0)
             {
-                m_Logger.LogInformation("Build completed successfully");
-                m_Logger.LogDebug("Build output: {Output}", output);
+                m_Logger.Info("Build completed successfully");
+                m_Logger.Debug("Build output: {Output}", output);
                 return true;
             }
             else
             {
-                m_Logger.LogError("Build failed with exit code {ExitCode}. Output: {Output}. Error: {Error}",
+                m_Logger.Error("Build failed with exit code {ExitCode}. Output: {Output}. Error: {Error}",
                     process.ExitCode, output, error);
                 return false;
             }
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Exception during project build");
+            m_Logger.Error(ex, "Exception during project build");
             return false;
         }
     }
@@ -358,11 +358,11 @@ internal class ServiceInstaller : IServiceInstaller
 
         try
         {
-            m_Logger.LogInformation("Copying application files from {Source} to {Target}", sourceDirectory, targetDirectory);
+            m_Logger.Info("Copying application files from {Source} to {Target}", sourceDirectory, targetDirectory);
 
             if (!m_FileSystem.DirectoryExists(sourceDirectory))
             {
-                m_Logger.LogError("Source directory does not exist: {SourceDir}", sourceDirectory);
+                m_Logger.Error("Source directory does not exist: {SourceDir}", sourceDirectory);
                 return false;
             }
 
@@ -370,7 +370,7 @@ internal class ServiceInstaller : IServiceInstaller
             if (!m_FileSystem.DirectoryExists(targetDirectory))
             {
                 m_FileSystem.CreateDirectory(targetDirectory);
-                m_Logger.LogDebug("Created installation directory: {TargetDir}", targetDirectory);
+                m_Logger.Debug("Created installation directory: {TargetDir}", targetDirectory);
             }
 
             // Copy all files from source to target
@@ -381,7 +381,7 @@ internal class ServiceInstaller : IServiceInstaller
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    m_Logger.LogInformation("File copy operation cancelled");
+                    m_Logger.Info("File copy operation cancelled");
                     return false;
                 }
 
@@ -396,15 +396,15 @@ internal class ServiceInstaller : IServiceInstaller
 
                 await m_FileSystem.CopyFileAsync(file, targetFile, overwrite: true, cancellationToken);
                 copiedCount++;
-                m_Logger.LogDebug("Copied file: {RelativePath}", relativePath);
+                m_Logger.Debug("Copied file: {RelativePath}", relativePath);
             }
 
-            m_Logger.LogInformation("Successfully copied {FileCount} files to installation directory", copiedCount);
+            m_Logger.Info("Successfully copied {FileCount} files to installation directory", copiedCount);
             return true;
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Exception during file copy operation");
+            m_Logger.Error(ex, "Exception during file copy operation");
             return false;
         }
     }
@@ -458,13 +458,13 @@ internal class ServiceInstaller : IServiceInstaller
             var error = await errorTask;
 
             var success = process.ExitCode == 0;
-            m_Logger.LogDebug("sc.exe exit code: {ExitCode}, Output: {Output}", process.ExitCode, output);
+            m_Logger.Debug("sc.exe exit code: {ExitCode}, Output: {Output}", process.ExitCode, output);
 
             return (success, output, success ? null : error);
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Exception executing sc.exe command");
+            m_Logger.Error(ex, "Exception executing sc.exe command");
             return (false, string.Empty, ex.Message);
         }
     }

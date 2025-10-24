@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using nexus.config;
+using NLog;
 
 namespace nexus.engine.batch.Internal;
 
@@ -9,11 +10,11 @@ namespace nexus.engine.batch.Internal;
 /// </summary>
 internal class BatchCommandBuilder
 {
-    private readonly ILogger<BatchCommandBuilder> m_Logger;
+    private readonly Logger m_Logger;
 
-    public BatchCommandBuilder(IServiceProvider serviceProvider)
+    public BatchCommandBuilder()
     {
-        m_Logger = serviceProvider.GetRequiredService<ILogger<BatchCommandBuilder>>();
+        m_Logger = LogManager.GetCurrentClassLogger();
     }
 
     /// <summary>
@@ -38,7 +39,7 @@ internal class BatchCommandBuilder
         // Build batched command text with sentinels
         var batchedCommandText = BuildBatchedCommandText(commands);
 
-        m_Logger.LogDebug("Built batch {BatchId} with {Count} commands", batchId, commands.Count);
+        m_Logger.Debug("Built batch {BatchId} with {Count} commands", batchId, commands.Count);
 
         return new Command
         {

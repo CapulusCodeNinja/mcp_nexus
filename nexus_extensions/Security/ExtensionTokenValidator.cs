@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace nexus.extensions.Security;
 
@@ -8,7 +9,7 @@ namespace nexus.extensions.Security;
 /// </summary>
 internal class ExtensionTokenValidator : IExtensionTokenValidator
 {
-    private readonly ILogger<ExtensionTokenValidator> m_Logger;
+    private readonly Logger m_Logger;
     private readonly ConcurrentDictionary<string, ExtensionTokenInfo> m_Tokens = new();
     private readonly object m_CleanupLock = new();
     private DateTime m_LastCleanup = DateTime.Now;
@@ -16,11 +17,10 @@ internal class ExtensionTokenValidator : IExtensionTokenValidator
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionTokenValidator"/> class.
     /// </summary>
-    /// <param name="logger">The logger instance.</param>
     /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
-    public ExtensionTokenValidator(ILogger<ExtensionTokenValidator> logger)
+    public ExtensionTokenValidator()
     {
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = LogManager.GetCurrentClassLogger();
     }
 
     /// <summary>
@@ -60,7 +60,7 @@ internal class ExtensionTokenValidator : IExtensionTokenValidator
 
         m_Tokens[token] = tokenInfo;
 
-        m_Logger.LogDebug("Created extension token for session {SessionId}, command {CommandId}",
+        m_Logger.Debug("Created extension token for session {SessionId}, command {CommandId}",
             sessionId, commandId);
 
         // Periodic cleanup of expired tokens
@@ -78,32 +78,32 @@ internal class ExtensionTokenValidator : IExtensionTokenValidator
     {
         if (string.IsNullOrWhiteSpace(token))
         {
-            m_Logger.LogWarning("Token validation failed: Token is null or empty");
+            m_Logger.Warn("Token validation failed: Token is null or empty");
             return (false, null, null);
         }
 
         if (!m_Tokens.TryGetValue(token, out var tokenInfo))
         {
-            m_Logger.LogWarning("Token validation failed: Token not found");
+            m_Logger.Warn("Token validation failed: Token not found");
             return (false, null, null);
         }
 
         if (tokenInfo.IsRevoked)
         {
-            m_Logger.LogWarning("Token validation failed: Token is revoked for session {SessionId}",
+            m_Logger.Warn("Token validation failed: Token is revoked for session {SessionId}",
                 tokenInfo.SessionId);
             return (false, null, null);
         }
 
         if (tokenInfo.ExpiresAt < DateTime.Now)
         {
-            m_Logger.LogWarning("Token validation failed: Token expired for session {SessionId}",
+            m_Logger.Warn("Token validation failed: Token expired for session {SessionId}",
                 tokenInfo.SessionId);
             m_Tokens.TryRemove(token, out _);
             return (false, null, null);
         }
 
-        m_Logger.LogTrace("Token validated successfully for session {SessionId}, command {CommandId}",
+        m_Logger.Trace("Token validated successfully for session {SessionId}, command {CommandId}",
             tokenInfo.SessionId, tokenInfo.CommandId);
 
         return (true, tokenInfo.SessionId, tokenInfo.CommandId);
@@ -121,7 +121,7 @@ internal class ExtensionTokenValidator : IExtensionTokenValidator
         if (m_Tokens.TryGetValue(token, out var tokenInfo))
         {
             tokenInfo.IsRevoked = true;
-            m_Logger.LogInformation("Revoked token for session {SessionId}, command {CommandId}",
+            m_Logger.Info("Revoked token for session {SessionId}, command {CommandId}",
                 tokenInfo.SessionId, tokenInfo.CommandId);
         }
     }
@@ -147,7 +147,7 @@ internal class ExtensionTokenValidator : IExtensionTokenValidator
 
         if (count > 0)
         {
-            m_Logger.LogInformation("Revoked {Count} tokens for session {SessionId}", count, sessionId);
+            m_Logger.Info("Revoked {Count} tokens for session {SessionId}", count, sessionId);
         }
     }
 
@@ -177,7 +177,7 @@ internal class ExtensionTokenValidator : IExtensionTokenValidator
 
             if (removed > 0)
             {
-                m_Logger.LogDebug("Cleaned up {Count} expired/revoked tokens", removed);
+                m_Logger.Debug("Cleaned up {Count} expired/revoked tokens", removed);
             }
 
             m_LastCleanup = DateTime.Now;

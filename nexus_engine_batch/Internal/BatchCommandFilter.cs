@@ -4,17 +4,18 @@ using Microsoft.Extensions.Logging;
 namespace nexus.engine.batch.Internal;
 
 using config;
+using NLog;
 
 /// <summary>
 /// Filters commands to determine if they should be batched.
 /// </summary>
 internal class BatchCommandFilter
 {
-    private readonly ILogger<BatchCommandFilter> m_Logger;
+    private readonly Logger m_Logger;
 
-    public BatchCommandFilter(IServiceProvider serviceProvider)
+    public BatchCommandFilter()
     {
-        m_Logger = serviceProvider.GetRequiredService<ILogger<BatchCommandFilter>>();
+        m_Logger = LogManager.GetCurrentClassLogger();
     }
 
     /// <summary>
@@ -26,19 +27,19 @@ internal class BatchCommandFilter
     {
         if (commands == null || commands.Count == 0)
         {
-            m_Logger.LogDebug("No commands to batch");
+            m_Logger.Debug("No commands to batch");
             return false;
         }
 
         if (!Settings.GetInstance().Get().McpNexus.Batching.Enabled)
         {
-            m_Logger.LogDebug("Batching is disabled");
+            m_Logger.Debug("Batching is disabled");
             return false;
         }
 
         if (commands.Count < Settings.GetInstance().Get().McpNexus.Batching.MinBatchSize)
         {
-            m_Logger.LogDebug("Not enough commands to batch (count: {Count}, min: {Min})",
+            m_Logger.Debug("Not enough commands to batch (count: {Count}, min: {Min})",
                 commands.Count, Settings.GetInstance().Get().McpNexus.Batching.MinBatchSize);
             return false;
         }
@@ -48,7 +49,7 @@ internal class BatchCommandFilter
         {
             if (IsCommandExcluded(command.CommandText))
             {
-                m_Logger.LogDebug("Command excluded from batching: {Command}", command.CommandText);
+                m_Logger.Debug("Command excluded from batching: {Command}", command.CommandText);
                 return false;
             }
         }

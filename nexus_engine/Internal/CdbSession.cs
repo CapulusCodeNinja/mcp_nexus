@@ -8,13 +8,14 @@ using System.Text;
 namespace nexus.engine.Internal;
 
 using config;
+using NLog;
 
 /// <summary>
 /// Internal CDB session that manages a single CDB process and command execution.
 /// </summary>
 internal class CdbSession : ICdbSession
 {
-    private readonly ILogger<CdbSession> m_Logger;
+    private readonly Logger m_Logger;
 
     private readonly IFileSystem m_FileSystem;
     private readonly IProcessManager m_ProcessManager;
@@ -51,11 +52,10 @@ internal class CdbSession : ICdbSession
     public bool IsInitialized => m_Initialized;
 
     public CdbSession(
-        IServiceProvider serviceProvider,
         IFileSystem fileSystem,
         IProcessManager processManager)
     {
-        m_Logger = serviceProvider.GetRequiredService<ILogger<CdbSession>>();
+        m_Logger = LogManager.GetCurrentClassLogger();
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
     }
@@ -81,7 +81,7 @@ internal class CdbSession : ICdbSession
         m_DumpFilePath = dumpFilePath;
         m_SymbolPath = symbolPath;
 
-        m_Logger.LogInformation("Initializing CDB session for dump file: {DumpFilePath}", dumpFilePath);
+        m_Logger.Info("Initializing CDB session for dump file: {DumpFilePath}", dumpFilePath);
 
         try
         {
@@ -102,7 +102,7 @@ internal class CdbSession : ICdbSession
                 await WaitForCdbInitializationAsync(cancellationToken);
 
                 m_Initialized = true;
-                m_Logger.LogInformation("CDB session initialized successfully");
+                m_Logger.Info("CDB session initialized successfully");
             }
             finally
             {
@@ -111,7 +111,7 @@ internal class CdbSession : ICdbSession
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Failed to initialize CDB session");
+            m_Logger.Error(ex, "Failed to initialize CDB session");
             await DisposeAsync();
             throw;
         }
@@ -131,7 +131,7 @@ internal class CdbSession : ICdbSession
         if (string.IsNullOrWhiteSpace(command))
             throw new ArgumentException("Command cannot be null or empty", nameof(command));
 
-        m_Logger.LogDebug("Executing CDB command: {Command}", command);
+        m_Logger.Debug("Executing CDB command: {Command}", command);
 
         try
         {
@@ -148,7 +148,7 @@ internal class CdbSession : ICdbSession
                 // Read output until completion
                 var output = await ReadCommandOutputAsync(cancellationToken);
 
-                m_Logger.LogDebug("CDB command completed with {OutputLength} characters of output", output.Length);
+                m_Logger.Debug("CDB command completed with {OutputLength} characters of output", output.Length);
                 return output;
             }
             finally
@@ -158,12 +158,12 @@ internal class CdbSession : ICdbSession
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            m_Logger.LogDebug("CDB command cancelled");
+            m_Logger.Debug("CDB command cancelled");
             throw;
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Error executing CDB command: {Command}", command);
+            m_Logger.Error(ex, "Error executing CDB command: {Command}", command);
             throw;
         }
     }
@@ -177,7 +177,7 @@ internal class CdbSession : ICdbSession
         if (m_Disposed)
             return;
 
-        m_Logger.LogDebug("Disposing CDB session");
+        m_Logger.Debug("Disposing CDB session");
 
         try
         {
@@ -187,7 +187,7 @@ internal class CdbSession : ICdbSession
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Error disposing CDB session");
+            m_Logger.Error(ex, "Error disposing CDB session");
         }
         finally
         {
@@ -210,7 +210,7 @@ internal class CdbSession : ICdbSession
             }
             catch (Exception ex)
             {
-                m_Logger.LogWarning(ex, "Error sending quit command to CDB");
+                m_Logger.Warn(ex, "Error sending quit command to CDB");
             }
         }
     }
@@ -245,13 +245,13 @@ internal class CdbSession : ICdbSession
             {
                 if (!m_CdbProcess.WaitForExit((int)Settings.GetInstance().Get().McpNexus.SessionManagement.GetCleanupInterval().TotalMilliseconds))
                 {
-                    m_Logger.LogWarning("CDB process did not exit within timeout, killing process");
+                    m_Logger.Warn("CDB process did not exit within timeout, killing process");
                     KillProcess();
                 }
             }
             catch (Exception ex)
             {
-                m_Logger.LogWarning(ex, "Error waiting for CDB process to exit");
+                m_Logger.Warn(ex, "Error waiting for CDB process to exit");
             }
         }
 
@@ -298,7 +298,7 @@ internal class CdbSession : ICdbSession
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Error during synchronous disposal of CDB session");
+            m_Logger.Error(ex, "Error during synchronous disposal of CDB session");
         }
     }
 
@@ -324,7 +324,7 @@ internal class CdbSession : ICdbSession
         {
             if (m_FileSystem.FileExists(path))
             {
-                m_Logger.LogDebug("Found CDB at: {CdbPath}", path);
+                m_Logger.Debug("Found CDB at: {CdbPath}", path);
                 return Task.FromResult(path);
             }
         }
@@ -388,7 +388,7 @@ internal class CdbSession : ICdbSession
         m_OutputReader = m_CdbProcess.StandardOutput;
         m_ErrorReader = m_CdbProcess.StandardError;
 
-        m_Logger.LogDebug("CDB process started with PID: {ProcessId}", m_CdbProcess.Id);
+        m_Logger.Debug("CDB process started with PID: {ProcessId}", m_CdbProcess.Id);
         return Task.CompletedTask;
     }
 
@@ -538,7 +538,7 @@ internal class CdbSession : ICdbSession
         if (commandList.Count == 0)
             throw new ArgumentException("Commands list cannot be empty", nameof(commands));
 
-        m_Logger.LogDebug("Executing batch of {CommandCount} CDB commands", commandList.Count);
+        m_Logger.Debug("Executing batch of {CommandCount} CDB commands", commandList.Count);
 
         try
         {
@@ -557,7 +557,7 @@ internal class CdbSession : ICdbSession
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Error executing batch command");
+            m_Logger.Error(ex, "Error executing batch command");
             throw;
         }
     }
@@ -572,12 +572,12 @@ internal class CdbSession : ICdbSession
             {
                 try
                 {
-                    m_Logger.LogDebug("Stopping CDB process with PID: {ProcessId}", m_CdbProcess.Id);
+                    m_Logger.Debug("Stopping CDB process with PID: {ProcessId}", m_CdbProcess.Id);
                     m_ProcessManager.KillProcess(m_CdbProcess);
                 }
                 catch (Exception ex)
                 {
-                    m_Logger.LogWarning(ex, "Error stopping CDB process");
+                    m_Logger.Warn(ex, "Error stopping CDB process");
                 }
             }
         }

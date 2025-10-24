@@ -14,14 +14,14 @@ namespace nexus.setup.Management
     [SupportedOSPlatform("windows")]
     internal class FileManager
     {
-        private readonly ILogger<FileManager> m_Logger;
+        private readonly Logger m_Logger;
         private readonly IFileSystem m_FileSystem;
         private readonly DirectoryCopyUtility m_DirectoryCopyUtility;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FileManager"/> class.
         /// </summary>
-        public FileManager(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem())
+        public FileManager() : this(new FileSystem())
         {
 
         }
@@ -29,14 +29,13 @@ namespace nexus.setup.Management
         /// <summary>
         /// Initializes a new instance of the <see cref="FileManager"/> class.
         /// </summary>
-        internal FileManager(IServiceProvider serviceProvider, IFileSystem fileSystem)
+        internal FileManager(IFileSystem fileSystem)
         {
-            m_Logger = serviceProvider.GetRequiredService<ILogger<FileManager>>();
+            m_Logger = LogManager.GetCurrentClassLogger();
 
             m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
 
             m_DirectoryCopyUtility = new DirectoryCopyUtility(
-                serviceProvider,
                 fileSystem);
         }
 
@@ -50,7 +49,7 @@ namespace nexus.setup.Management
         {
             try
             {
-                m_Logger.LogInformation("Copying application files from {SourceDirectory} to {DestinationDirectory}",
+                m_Logger.Info("Copying application files from {SourceDirectory} to {DestinationDirectory}",
                     sourceDirectory, destinationDirectory);
 
                 // Create destination directory if it doesn't exist
@@ -59,12 +58,12 @@ namespace nexus.setup.Management
                 // Copy all files and subdirectories
                 await m_DirectoryCopyUtility.CopyDirectoryAsync(sourceDirectory, destinationDirectory);
 
-                m_Logger.LogInformation("Application files copied successfully");
+                m_Logger.Info("Application files copied successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Failed to copy application files");
+                m_Logger.Error(ex, "Failed to copy application files");
                 return false;
             }
         }
@@ -80,18 +79,18 @@ namespace nexus.setup.Management
             {
                 if (!m_FileSystem.DirectoryExists(directoryPath))
                 {
-                    m_Logger.LogInformation("Directory does not exist: {DirectoryPath}", directoryPath);
+                    m_Logger.Info("Directory does not exist: {DirectoryPath}", directoryPath);
                     return true; // Nothing to remove
                 }
 
-                m_Logger.LogInformation("Removing application files from: {DirectoryPath}", directoryPath);
+                m_Logger.Info("Removing application files from: {DirectoryPath}", directoryPath);
                 m_FileSystem.DeleteDirectory(directoryPath, true);
-                m_Logger.LogInformation("Application files removed successfully");
+                m_Logger.Info("Application files removed successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Failed to remove application files from {DirectoryPath}", directoryPath);
+                m_Logger.Error(ex, "Failed to remove application files from {DirectoryPath}", directoryPath);
                 return false;
             }
         }

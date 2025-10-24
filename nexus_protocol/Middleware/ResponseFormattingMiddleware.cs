@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using nexus.protocol.Models;
+using NLog;
 
 namespace nexus.protocol.Middleware;
 
@@ -12,7 +13,7 @@ namespace nexus.protocol.Middleware;
 internal class ResponseFormattingMiddleware
 {
     private readonly RequestDelegate m_Next;
-    private readonly ILogger<ResponseFormattingMiddleware> m_Logger;
+    private readonly Logger m_Logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ResponseFormattingMiddleware"/> class.
@@ -22,7 +23,7 @@ internal class ResponseFormattingMiddleware
     public ResponseFormattingMiddleware(RequestDelegate next, ILogger<ResponseFormattingMiddleware> logger)
     {
         m_Next = next ?? throw new ArgumentNullException(nameof(next));
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = LogManager.GetCurrentClassLogger();
     }
 
     /// <summary>
@@ -50,7 +51,7 @@ internal class ResponseFormattingMiddleware
     /// <returns>A task representing the asynchronous operation.</returns>
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        m_Logger.LogError(exception, "Unhandled exception in JSON-RPC pipeline: {Message}", exception.Message);
+        m_Logger.Error(exception, "Unhandled exception in JSON-RPC pipeline: {Message}", exception.Message);
 
         context.Response.ContentType = "application/json; charset=utf-8";
         context.Response.StatusCode = 500;

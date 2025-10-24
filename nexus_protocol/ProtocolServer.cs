@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using nexus.engine;
+using NLog;
 
 namespace nexus.protocol;
 
@@ -12,34 +13,24 @@ namespace nexus.protocol;
 /// </summary>
 public class ProtocolServer : IProtocolServer
 {
-    private readonly ILogger<ProtocolServer> m_Logger;
+    private readonly Logger m_Logger;
     private object? m_Configuration;
     private WebApplication? m_WebApplication;
     private IHost? m_Host;
     private bool m_IsRunning;
     private bool m_Disposed;
 
-    private static IProtocolServer? m_Instance;
+    public static IProtocolServer Instance { get; } = new ProtocolServer();
+
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProtocolServer"/> class.
     /// </summary>
-    /// <param name="serviceProvider">Service provider for dependency injection.</param>
     /// <exception cref="ArgumentNullException">Thrown when serviceProvider is null.</exception>
-    private ProtocolServer(IServiceProvider serviceProvider)
+    private ProtocolServer()
     {
-        m_Logger = serviceProvider.GetRequiredService<ILogger<ProtocolServer>>();
         m_IsRunning = false;
-    }
-
-    /// <summary>
-    /// Gets the singleton instance of the protocol server.
-    /// </summary>
-    /// <param name="serviceProvider">Service provider for dependency injection.</param>
-    /// <returns>The protocol server instance.</returns>
-    public static IProtocolServer GetInstance(IServiceProvider serviceProvider)
-    {
-        return m_Instance ??= new ProtocolServer(serviceProvider);
+        m_Logger = LogManager.GetCurrentClassLogger();
     }
 
     /// <inheritdoc/>
@@ -60,19 +51,19 @@ public class ProtocolServer : IProtocolServer
             throw new InvalidOperationException("Server instance must be set before starting. Call SetWebApplication() for HTTP mode or set Host for Stdio mode.");
         }
 
-        m_Logger.LogInformation("Starting MCP protocol server...");
+        m_Logger.Info("Starting MCP protocol server...");
 
         if (m_WebApplication != null)
         {
             // HTTP mode
             await m_WebApplication.StartAsync(cancellationToken);
-            m_Logger.LogInformation("MCP protocol server (HTTP) started successfully on {Urls}", string.Join(", ", m_WebApplication.Urls));
+            m_Logger.Info("MCP protocol server (HTTP) started successfully on {Urls}", string.Join(", ", m_WebApplication.Urls));
         }
         else if (m_Host != null)
         {
             // Stdio mode
             await m_Host.StartAsync(cancellationToken);
-            m_Logger.LogInformation("MCP protocol server (Stdio) started successfully");
+            m_Logger.Info("MCP protocol server (Stdio) started successfully");
         }
 
         m_IsRunning = true;
@@ -85,11 +76,11 @@ public class ProtocolServer : IProtocolServer
 
         if (!m_IsRunning)
         {
-            m_Logger.LogWarning("Protocol server is not running.");
+            m_Logger.Warn("Protocol server is not running.");
             return;
         }
 
-        m_Logger.LogInformation("Stopping MCP protocol server...");
+        m_Logger.Info("Stopping MCP protocol server...");
 
         if (m_WebApplication != null)
         {
@@ -101,7 +92,7 @@ public class ProtocolServer : IProtocolServer
         }
 
         m_IsRunning = false;
-        m_Logger.LogInformation("MCP protocol server stopped successfully.");
+        m_Logger.Info("MCP protocol server stopped successfully.");
     }
 
     /// <inheritdoc/>
@@ -115,9 +106,9 @@ public class ProtocolServer : IProtocolServer
             throw new InvalidOperationException("Cannot change configuration while server is running. Stop the server first.");
         }
 
-        m_Logger.LogDebug("Updating protocol server configuration.");
+        m_Logger.Debug("Updating protocol server configuration.");
         m_Configuration = configuration;
-        m_Logger.LogInformation("Protocol server configuration updated.");
+        m_Logger.Info("Protocol server configuration updated.");
     }
 
     /// <inheritdoc/>
@@ -131,10 +122,10 @@ public class ProtocolServer : IProtocolServer
             throw new InvalidOperationException("Cannot set WebApplication while server is running. Stop the server first.");
         }
 
-        m_Logger.LogDebug("Setting WebApplication for protocol server (HTTP mode).");
+        m_Logger.Debug("Setting WebApplication for protocol server (HTTP mode).");
         m_WebApplication = app;
         m_Host = null; // Ensure only one mode is active
-        m_Logger.LogInformation("WebApplication set successfully for HTTP mode.");
+        m_Logger.Info("WebApplication set successfully for HTTP mode.");
     }
 
     /// <summary>
@@ -153,10 +144,10 @@ public class ProtocolServer : IProtocolServer
             throw new InvalidOperationException("Cannot set Host while server is running. Stop the server first.");
         }
 
-        m_Logger.LogDebug("Setting Host for protocol server (Stdio mode).");
+        m_Logger.Debug("Setting Host for protocol server (Stdio mode).");
         m_Host = host;
         m_WebApplication = null; // Ensure only one mode is active
-        m_Logger.LogInformation("Host set successfully for Stdio mode.");
+        m_Logger.Info("Host set successfully for Stdio mode.");
     }
 
     /// <inheritdoc/>
@@ -167,7 +158,7 @@ public class ProtocolServer : IProtocolServer
             return;
         }
 
-        m_Logger.LogDebug("Disposing protocol server...");
+        m_Logger.Debug("Disposing protocol server...");
 
         if (m_IsRunning)
         {
@@ -187,7 +178,7 @@ public class ProtocolServer : IProtocolServer
         }
 
         m_Disposed = true;
-        m_Logger.LogDebug("Protocol server disposed.");
+        m_Logger.Debug("Protocol server disposed.");
     }
 }
 

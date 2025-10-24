@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace nexus.protocol.Middleware;
 
@@ -11,7 +12,7 @@ namespace nexus.protocol.Middleware;
 internal class ContentTypeValidationMiddleware
 {
     private readonly RequestDelegate m_Next;
-    private readonly ILogger<ContentTypeValidationMiddleware> m_Logger;
+    private readonly Logger m_Logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ContentTypeValidationMiddleware"/> class.
@@ -21,7 +22,7 @@ internal class ContentTypeValidationMiddleware
     public ContentTypeValidationMiddleware(RequestDelegate next, ILogger<ContentTypeValidationMiddleware> logger)
     {
         m_Next = next ?? throw new ArgumentNullException(nameof(next));
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = LogManager.GetCurrentClassLogger();
     }
 
     /// <summary>
@@ -70,7 +71,7 @@ internal class ContentTypeValidationMiddleware
     /// <returns>A task representing the asynchronous operation.</returns>
     private async Task HandleInvalidContentTypeAsync(HttpContext context)
     {
-        m_Logger.LogWarning("Invalid Content-Type received: {ContentType}", context.Request.ContentType);
+        m_Logger.Warn("Invalid Content-Type received: {ContentType}", context.Request.ContentType);
 
         context.Response.StatusCode = 400;
         context.Response.ContentType = "application/json; charset=utf-8";

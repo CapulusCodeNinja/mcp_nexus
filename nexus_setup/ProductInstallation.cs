@@ -9,6 +9,7 @@ using nexus.config;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
 using nexus.external_apis.ServiceManagement;
+using NLog;
 
 namespace nexus.setup
 {
@@ -18,34 +19,21 @@ namespace nexus.setup
     [SupportedOSPlatform("windows")]
     public class ProductInstallation : IProductInstallation
     {
-        private readonly ILogger<ProductInstallation> m_Logger;
+        private readonly Logger m_Logger;
         private readonly ServiceInstaller m_Installer;
         private readonly ServiceUpdater m_Updater;
-        private readonly IServiceProvider m_ServiceProvider;
         private readonly InstallationValidator m_InstallationValidator;
         private readonly UninstallValidator m_UninstallValidator;
         private readonly BackupManager m_BackupManager;
         private readonly FileManager m_FileManager;
         private readonly IFileSystem m_FileSystem;
 
-
-        private static IProductInstallation? m_Instance;
-
-        /// <summary>
-        /// Gets the singleton instance of the product installation.
-        /// </summary>
-        /// <param name="serviceProvider">Service provider for dependency injection.</param>
-        /// <returns>The product installation instance.</returns>
-        public static IProductInstallation GetInstance(IServiceProvider serviceProvider)
-        {
-            return m_Instance ??= new ProductInstallation(serviceProvider);
-        }
+        public static IProductInstallation Instance { get; } = new ProductInstallation();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
         /// </summary>
-        /// <param name="serviceProvider">Service provider for dependency injection.</param>
-        private ProductInstallation(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
+        private ProductInstallation() : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
         {
         }
 
@@ -53,27 +41,25 @@ namespace nexus.setup
         /// <summary>
         /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
         /// </summary>
-        /// <param name="serviceProvider">Service provider for dependency injection.</param>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="processManager">Process manager abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        internal ProductInstallation(IServiceProvider serviceProvider, IFileSystem fileSystem,
+        internal ProductInstallation(IFileSystem fileSystem,
             IProcessManager processManager,
             IServiceController serviceController)
         {
-            m_ServiceProvider = serviceProvider;
             m_FileSystem= fileSystem;
 
-            m_Logger = m_ServiceProvider.GetRequiredService<ILogger<ProductInstallation>>();
+            m_Logger = LogManager.GetCurrentClassLogger();
 
-            m_Installer = new ServiceInstaller(m_ServiceProvider, m_FileSystem, processManager, serviceController);
-            m_Updater = new ServiceUpdater(m_ServiceProvider, m_FileSystem, processManager, serviceController);
+            m_Installer = new ServiceInstaller(m_FileSystem, processManager, serviceController);
+            m_Updater = new ServiceUpdater(m_FileSystem, processManager, serviceController);
 
-            m_InstallationValidator = new InstallationValidator(m_ServiceProvider, fileSystem, serviceController);
-            m_UninstallValidator = new UninstallValidator(m_ServiceProvider, fileSystem, serviceController);
+            m_InstallationValidator = new InstallationValidator(fileSystem, serviceController);
+            m_UninstallValidator = new UninstallValidator(fileSystem, serviceController);
 
-            m_BackupManager = new BackupManager(m_ServiceProvider, fileSystem);
-            m_FileManager = new FileManager(m_ServiceProvider, fileSystem);
+            m_BackupManager = new BackupManager(fileSystem);
+            m_FileManager = new FileManager(fileSystem);
         }
 
         /// <summary>
@@ -95,7 +81,7 @@ namespace nexus.setup
             var displayName = Settings.GetInstance().Get().McpNexus.Service.DisplayName;
             var startMode = ServiceStartMode.Automatic; // Fixed value, not configurable
 
-            m_Logger.LogInformation("Installing {ServiceName} as Windows Service...", serviceName);
+            m_Logger.Info("Installing {ServiceName} as Windows Service...", serviceName);
 
             var installationDirectory = Settings.GetInstance().Get().McpNexus.Service.InstallPath;
             var backupDirectory = Settings.GetInstance().Get().McpNexus.Service.BackupPath;
@@ -118,22 +104,22 @@ namespace nexus.setup
                 // Step 1: Create backup of existing installation (if any)
                 if (m_FileSystem.DirectoryExists(installationDirectory))
                 {
-                    m_Logger.LogInformation("Creating backup of existing installation...");
+                    m_Logger.Info("Creating backup of existing installation...");
                     backupCreated = await m_BackupManager.CreateBackupAsync(installationDirectory, backupDirectory);
                     if (!backupCreated)
                     {
-                        m_Logger.LogWarning("Failed to create backup, but continuing with installation");
+                        m_Logger.Warn("Failed to create backup, but continuing with installation");
                     }
                 }
 
                 // Step 2: Copy application files
-                m_Logger.LogInformation("Copying application files to: {InstallationDirectory}", installationDirectory);
+                m_Logger.Info("Copying application files to: {InstallationDirectory}", installationDirectory);
                 filesCopied = await m_FileManager.CopyApplicationFilesAsync(sourceDirectory, installationDirectory);
 
                 if (!filesCopied)
                 {
-                    m_Logger.LogError("Failed to copy application files to Program Files");
-                    m_Logger.LogError("Please ensure you have administrator privileges and the target directory is accessible");
+                    m_Logger.Error("Failed to copy application files to Program Files");
+                    m_Logger.Error("Please ensure you have administrator privileges and the target directory is accessible");
                     return false;
                 }
 
@@ -153,29 +139,29 @@ namespace nexus.setup
                 if (result.Success)
                 {
                     serviceInstalled = true;
-                    m_Logger.LogInformation("{Message}", result.Message);
-                    m_Logger.LogInformation("Service '{ServiceName}' installed successfully.", serviceName);
+                    m_Logger.Info("{Message}", result.Message);
+                    m_Logger.Info("Service '{ServiceName}' installed successfully.", serviceName);
 
                     // Start the service
-                    m_Logger.LogInformation("Starting service '{ServiceName}'...", serviceName);
+                    m_Logger.Info("Starting service '{ServiceName}'...", serviceName);
                     serviceController.StartService(serviceName);
-                    m_Logger.LogInformation("Service '{ServiceName}' started successfully.", serviceName);
+                    m_Logger.Info("Service '{ServiceName}' started successfully.", serviceName);
 
                     return true;
                 }
                 else
                 {
-                    m_Logger.LogError("{Message}", result.Message);
+                    m_Logger.Error("{Message}", result.Message);
                     if (!string.IsNullOrEmpty(result.ErrorDetails))
                     {
-                        m_Logger.LogError("Details: {ErrorDetails}", result.ErrorDetails);
+                        m_Logger.Error("Details: {ErrorDetails}", result.ErrorDetails);
                     }
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Unexpected error during installation");
+                m_Logger.Error(ex, "Unexpected error during installation");
                 return false;
             }
             finally
@@ -183,7 +169,7 @@ namespace nexus.setup
                 // Rollback on failure
                 if (!serviceInstalled && filesCopied)
                 {
-                    m_Logger.LogWarning("Installation failed, attempting rollback...");
+                    m_Logger.Warn("Installation failed, attempting rollback...");
                     await m_BackupManager.RollbackInstallationAsync(installationDirectory, backupDirectory, backupCreated);
                 }
             }
@@ -197,23 +183,23 @@ namespace nexus.setup
         {
             var serviceName = Settings.GetInstance().Get().McpNexus.Service.ServiceName;
 
-            m_Logger.LogInformation("Updating Windows Service '{ServiceName}'...", serviceName);
+            m_Logger.Info("Updating Windows Service '{ServiceName}'...", serviceName);
 
             var newExecutablePath = Path.Combine(AppContext.BaseDirectory, "nexus.exe");
             var result = await m_Updater.UpdateServiceAsync(serviceName, newExecutablePath);
 
             if (result.Success)
             {
-                m_Logger.LogInformation("{Message}", result.Message);
-                m_Logger.LogInformation("Service '{ServiceName}' updated successfully.", serviceName);
+                m_Logger.Info("{Message}", result.Message);
+                m_Logger.Info("Service '{ServiceName}' updated successfully.", serviceName);
                 return true;
             }
             else
             {
-                m_Logger.LogError("{Message}", result.Message);
+                m_Logger.Error("{Message}", result.Message);
                 if (!string.IsNullOrEmpty(result.ErrorDetails))
                 {
-                    m_Logger.LogError("Details: {ErrorDetails}", result.ErrorDetails);
+                    m_Logger.Error("Details: {ErrorDetails}", result.ErrorDetails);
                 }
                 return false;
             }
@@ -238,7 +224,7 @@ namespace nexus.setup
             var installationDirectory = Settings.GetInstance().Get().McpNexus.Service.InstallPath;
             var backupDirectory = Settings.GetInstance().Get().McpNexus.Service.BackupPath;
 
-            m_Logger.LogInformation("Uninstalling {ServiceName} Windows Service...", serviceName);
+            m_Logger.Info("Uninstalling {ServiceName} Windows Service...", serviceName);
 
             // PHASE 1: Pre-uninstall validation
             if (!m_UninstallValidator.ValidateUninstall(Settings.GetInstance().Get()))
@@ -260,44 +246,44 @@ namespace nexus.setup
             try
             {
                 // Step 1: Stop the service if it's running
-                m_Logger.LogInformation("Stopping service {ServiceName}...", serviceName);
+                m_Logger.Info("Stopping service {ServiceName}...", serviceName);
                 try
                 {
                     serviceController.StopService(serviceName);
-                    m_Logger.LogInformation("Service {ServiceName} stopped successfully", serviceName);
+                    m_Logger.Info("Service {ServiceName} stopped successfully", serviceName);
                 }
                 catch (Exception ex)
                 {
-                    m_Logger.LogWarning(ex, "Failed to stop service {ServiceName}, continuing with uninstall", serviceName);
+                    m_Logger.Warn(ex, "Failed to stop service {ServiceName}, continuing with uninstall", serviceName);
                 }
 
                 // Step 2: Create backup of current installation (if directory exists)
                 if (m_FileSystem.DirectoryExists(installationDirectory))
                 {
-                    m_Logger.LogInformation("Creating backup of current installation...");
+                    m_Logger.Info("Creating backup of current installation...");
                     backupCreated = await m_BackupManager.CreateBackupAsync(installationDirectory, backupDirectory);
                     if (!backupCreated)
                     {
-                        m_Logger.LogWarning("Failed to create backup, but continuing with uninstall");
+                        m_Logger.Warn("Failed to create backup, but continuing with uninstall");
                     }
                 }
 
                 // Step 3: Remove the Windows service
-                m_Logger.LogInformation("Removing Windows service {ServiceName}...", serviceName);
+                m_Logger.Info("Removing Windows service {ServiceName}...", serviceName);
                 var uninstallResult = await m_Installer.UninstallServiceAsync(serviceName);
 
                 if (uninstallResult.Success)
                 {
                     serviceRemoved = true;
-                    m_Logger.LogInformation("{Message}", uninstallResult.Message);
-                    m_Logger.LogInformation("Service {ServiceName} removed successfully", serviceName);
+                    m_Logger.Info("{Message}", uninstallResult.Message);
+                    m_Logger.Info("Service {ServiceName} removed successfully", serviceName);
                 }
                 else
                 {
-                    m_Logger.LogError("{Message}", uninstallResult.Message);
+                    m_Logger.Error("{Message}", uninstallResult.Message);
                     if (!string.IsNullOrEmpty(uninstallResult.ErrorDetails))
                     {
-                        m_Logger.LogError("Details: {ErrorDetails}", uninstallResult.ErrorDetails);
+                        m_Logger.Error("Details: {ErrorDetails}", uninstallResult.ErrorDetails);
                     }
                     return false;
                 }
@@ -306,37 +292,37 @@ namespace nexus.setup
                 filesRemoved = m_FileManager.RemoveApplicationFiles(installationDirectory);
                 if (!filesRemoved)
                 {
-                    m_Logger.LogError("Failed to remove application files from {InstallationDirectory}", installationDirectory);
-                    m_Logger.LogError("You may need to manually remove the directory");
+                    m_Logger.Error("Failed to remove application files from {InstallationDirectory}", installationDirectory);
+                    m_Logger.Error("You may need to manually remove the directory");
                     return false;
                 }
 
-                m_Logger.LogInformation("Uninstall completed successfully");
-                m_Logger.LogInformation("Service {ServiceName} has been completely removed", serviceName);
+                m_Logger.Info("Uninstall completed successfully");
+                m_Logger.Info("Service {ServiceName} has been completely removed", serviceName);
 
                 if (backupCreated)
                 {
-                    m_Logger.LogInformation("Backup created at: {BackupDirectory}", backupDirectory);
+                    m_Logger.Info("Backup created at: {BackupDirectory}", backupDirectory);
                 }
 
                 return true;
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Unexpected error during uninstall");
+                m_Logger.Error(ex, "Unexpected error during uninstall");
 
                 // Attempt partial rollback if possible
                 if (serviceRemoved && !filesRemoved && m_FileSystem.DirectoryExists(backupDirectory))
                 {
-                    m_Logger.LogWarning("Attempting to restore from backup...");
+                    m_Logger.Warn("Attempting to restore from backup...");
                     try
                     {
                         await m_BackupManager.RollbackInstallationAsync(installationDirectory, backupDirectory, true);
-                        m_Logger.LogInformation("Files restored from backup");
+                        m_Logger.Info("Files restored from backup");
                     }
                     catch (Exception rollbackEx)
                     {
-                        m_Logger.LogError(rollbackEx, "Failed to restore from backup");
+                        m_Logger.Error(rollbackEx, "Failed to restore from backup");
                     }
                 }
 

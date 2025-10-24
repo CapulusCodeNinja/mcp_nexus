@@ -4,6 +4,7 @@ using nexus.engine.Events;
 using nexus.engine.Models;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
+using NLog;
 
 namespace nexus.engine.Internal;
 
@@ -12,7 +13,7 @@ namespace nexus.engine.Internal;
 /// </summary>
 internal class DebugSession : IDisposable
 {
-    private readonly ILogger<DebugSession> m_Logger;
+    private readonly Logger m_Logger;
     private readonly string m_SessionId;
     private readonly string m_DumpFilePath;
     private readonly string? m_SymbolPath;
@@ -60,7 +61,6 @@ internal class DebugSession : IDisposable
         string sessionId,
         string dumpFilePath,
         string? symbolPath,
-        IServiceProvider serviceProvider,
         IFileSystem fileSystem,
         IProcessManager processManager)
     {
@@ -68,13 +68,13 @@ internal class DebugSession : IDisposable
         m_DumpFilePath = dumpFilePath ?? throw new ArgumentNullException(nameof(dumpFilePath));
         m_SymbolPath = symbolPath;
 
-        m_Logger = serviceProvider.GetRequiredService<ILogger<DebugSession>>();
+        m_Logger = LogManager.GetCurrentClassLogger();
 
         // Create CDB session
-        m_CdbSession = new CdbSession(serviceProvider, fileSystem, processManager);
+        m_CdbSession = new CdbSession(fileSystem, processManager);
 
         // Create command queue
-        m_CommandQueue = new CommandQueue(m_SessionId, serviceProvider);
+        m_CommandQueue = new CommandQueue(m_SessionId);
 
         // Subscribe to command queue events
         m_CommandQueue.CommandStateChanged += OnCommandStateChanged;
@@ -89,7 +89,7 @@ internal class DebugSession : IDisposable
     {
         try
         {
-            m_Logger.LogInformation("Initializing debug session {SessionId}", m_SessionId);
+            m_Logger.Info("Initializing debug session {SessionId}", m_SessionId);
             SetState(SessionState.Initializing);
 
             // Initialize CDB session
@@ -99,11 +99,11 @@ internal class DebugSession : IDisposable
             await m_CommandQueue.StartAsync(m_CdbSession, cancellationToken);
 
             SetState(SessionState.Active);
-            m_Logger.LogInformation("Debug session {SessionId} initialized successfully", m_SessionId);
+            m_Logger.Info("Debug session {SessionId} initialized successfully", m_SessionId);
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Failed to initialize debug session {SessionId}", m_SessionId);
+            m_Logger.Error(ex, "Failed to initialize debug session {SessionId}", m_SessionId);
             SetState(SessionState.Faulted);
             throw;
         }
@@ -187,7 +187,7 @@ internal class DebugSession : IDisposable
         if (m_Disposed)
             return;
 
-        m_Logger.LogInformation("Disposing debug session {SessionId}", m_SessionId);
+        m_Logger.Info("Disposing debug session {SessionId}", m_SessionId);
 
         try
         {
@@ -195,7 +195,7 @@ internal class DebugSession : IDisposable
 
             // Cancel all commands
             var cancelledCount = m_CommandQueue.CancelAllCommands("Session closing");
-            m_Logger.LogDebug("Cancelled {Count} commands during session disposal", cancelledCount);
+            m_Logger.Debug("Cancelled {Count} commands during session disposal", cancelledCount);
 
             // Stop command queue
             await m_CommandQueue.StopAsync();
@@ -204,11 +204,11 @@ internal class DebugSession : IDisposable
             await m_CdbSession.DisposeAsync();
 
             SetState(SessionState.Closed);
-            m_Logger.LogInformation("Debug session {SessionId} disposed successfully", m_SessionId);
+            m_Logger.Info("Debug session {SessionId} disposed successfully", m_SessionId);
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Error disposing debug session {SessionId}", m_SessionId);
+            m_Logger.Error(ex, "Error disposing debug session {SessionId}", m_SessionId);
             SetState(SessionState.Faulted);
             throw;
         }
@@ -230,7 +230,7 @@ internal class DebugSession : IDisposable
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Error during synchronous disposal of session {SessionId}", m_SessionId);
+            m_Logger.Error(ex, "Error during synchronous disposal of session {SessionId}", m_SessionId);
         }
     }
 

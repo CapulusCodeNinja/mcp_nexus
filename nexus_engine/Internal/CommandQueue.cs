@@ -7,6 +7,7 @@ using System.Threading.Channels;
 
 namespace nexus.engine.Internal;
 
+using NLog;
 using System;
 
 /// <summary>
@@ -14,13 +15,12 @@ using System;
 /// </summary>
 internal class CommandQueue : IDisposable
 {
-    private readonly ILogger<CommandQueue> m_Logger;
+    private readonly Logger m_Logger;
     private readonly string m_SessionId;
     private readonly Channel<QueuedCommand> m_CommandChannel;
     private readonly ConcurrentDictionary<string, QueuedCommand> m_ActiveCommands = new();
     private readonly ConcurrentDictionary<string, CommandInfo> m_ResultCache = new();
     private readonly CancellationTokenSource m_CancellationTokenSource = new();
-    private readonly IServiceProvider m_ServiceProvider;
 
     private CdbSession? m_CdbSession;
     private Task? m_ProcessingTask;
@@ -32,10 +32,9 @@ internal class CommandQueue : IDisposable
     /// </summary>
     public event EventHandler<CommandStateChangedEventArgs>? CommandStateChanged;
 
-    public CommandQueue(string sessionId, IServiceProvider serviceProvider)
+    public CommandQueue(string sessionId)
     {
-        m_ServiceProvider = serviceProvider;
-        m_Logger = m_ServiceProvider.GetRequiredService<ILogger<CommandQueue>>();
+        m_Logger = LogManager.GetCurrentClassLogger();
 
         m_SessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
 
@@ -62,12 +61,12 @@ internal class CommandQueue : IDisposable
 
         m_CdbSession = cdbSession ?? throw new ArgumentNullException(nameof(cdbSession));
 
-        m_Logger.LogDebug("Starting command queue for session {SessionId}", m_SessionId);
+        m_Logger.Debug("Starting command queue for session {SessionId}", m_SessionId);
 
         // Start the processing task
         m_ProcessingTask = Task.Run(() => ProcessCommandsAsync(cancellationToken), cancellationToken);
 
-        m_Logger.LogDebug("Command queue started for session {SessionId}", m_SessionId);
+        m_Logger.Debug("Command queue started for session {SessionId}", m_SessionId);
         return Task.CompletedTask;
     }
 
@@ -80,7 +79,7 @@ internal class CommandQueue : IDisposable
         if (m_Disposed)
             return;
 
-        m_Logger.LogDebug("Stopping command queue for session {SessionId}", m_SessionId);
+        m_Logger.Debug("Stopping command queue for session {SessionId}", m_SessionId);
 
         // Signal shutdown
         await m_CancellationTokenSource.CancelAsync();
@@ -95,11 +94,11 @@ internal class CommandQueue : IDisposable
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Error waiting for command processing to complete in session {SessionId}", m_SessionId);
+                m_Logger.Error(ex, "Error waiting for command processing to complete in session {SessionId}", m_SessionId);
             }
         }
 
-        m_Logger.LogDebug("Command queue stopped for session {SessionId}", m_SessionId);
+        m_Logger.Debug("Command queue stopped for session {SessionId}", m_SessionId);
     }
 
     /// <summary>
@@ -140,7 +139,7 @@ internal class CommandQueue : IDisposable
         // Notify state change
         NotifyCommandStateChanged(commandId, CommandState.Queued, CommandState.Queued, command);
 
-        m_Logger.LogDebug("Command {CommandId} enqueued: {Command}", commandId, command);
+        m_Logger.Debug("Command {CommandId} enqueued: {Command}", commandId, command);
         return commandId;
     }
 
@@ -289,7 +288,7 @@ internal class CommandQueue : IDisposable
         }
 
 
-        m_Logger.LogInformation("Cancelled {Count} commands in session {SessionId}. Reason: {Reason}",
+        m_Logger.Info("Cancelled {Count} commands in session {SessionId}. Reason: {Reason}",
             count, m_SessionId, reason ?? "No reason specified");
 
         return count;
@@ -301,7 +300,7 @@ internal class CommandQueue : IDisposable
         if (m_Disposed)
             return;
 
-        m_Logger.LogDebug("Disposing command queue for session {SessionId}", m_SessionId);
+        m_Logger.Debug("Disposing command queue for session {SessionId}", m_SessionId);
 
         try
         {
@@ -316,7 +315,7 @@ internal class CommandQueue : IDisposable
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Error disposing command queue for session {SessionId}", m_SessionId);
+            m_Logger.Error(ex, "Error disposing command queue for session {SessionId}", m_SessionId);
         }
         finally
         {
@@ -326,7 +325,7 @@ internal class CommandQueue : IDisposable
 
     private async Task ProcessCommandsAsync(CancellationToken cancellationToken)
     {
-        m_Logger.LogDebug("Starting command processing for session {SessionId}", m_SessionId);
+        m_Logger.Debug("Starting command processing for session {SessionId}", m_SessionId);
 
         try
         {
@@ -342,7 +341,7 @@ internal class CommandQueue : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    m_Logger.LogError(ex, "Error processing command {CommandId} in session {SessionId}",
+                    m_Logger.Error(ex, "Error processing command {CommandId} in session {SessionId}",
                         command.Id, m_SessionId);
 
                     // Mark command as failed
@@ -364,15 +363,15 @@ internal class CommandQueue : IDisposable
         }
         catch (OperationCanceledException)
         {
-            m_Logger.LogDebug("Command processing cancelled for session {SessionId}", m_SessionId);
+            m_Logger.Debug("Command processing cancelled for session {SessionId}", m_SessionId);
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Fatal error in command processing for session {SessionId}", m_SessionId);
+            m_Logger.Error(ex, "Fatal error in command processing for session {SessionId}", m_SessionId);
         }
         finally
         {
-            m_Logger.LogDebug("Command processing ended for session {SessionId}", m_SessionId);
+            m_Logger.Debug("Command processing ended for session {SessionId}", m_SessionId);
         }
     }
 
@@ -416,9 +415,9 @@ internal class CommandQueue : IDisposable
         }).ToList();
 
         // Apply batching (library decides whether to batch or pass through)
-        var commandsToExecute = batch.BatchProcessor.GetInstance(m_ServiceProvider).BatchCommands(batchCommands);
+        var commandsToExecute = batch.BatchProcessor.Instance.BatchCommands(batchCommands);
 
-        m_Logger.LogDebug("Processing {OriginalCount} commands as {ExecutionCount} execution units",
+        m_Logger.Debug("Processing {OriginalCount} commands as {ExecutionCount} execution units",
             queuedCommands.Count, commandsToExecute.Count);
 
         // Execute each command (batched or not)
@@ -445,7 +444,7 @@ internal class CommandQueue : IDisposable
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Error executing command {CommandId}", cmd.CommandId);
+                m_Logger.Error(ex, "Error executing command {CommandId}", cmd.CommandId);
 
                 // Add error result
                 executionResults.Add(new batch.CommandResult
@@ -457,9 +456,9 @@ internal class CommandQueue : IDisposable
         }
 
         // Unbatch results (library decides whether to unbatch or pass through)
-        var individualResults = batch.BatchProcessor.GetInstance(m_ServiceProvider).UnbatchResults(executionResults);
+        var individualResults = batch.BatchProcessor.Instance.UnbatchResults(executionResults);
 
-        m_Logger.LogDebug("Unbatched {ExecutionCount} execution results into {IndividualCount} individual results",
+        m_Logger.Debug("Unbatched {ExecutionCount} execution results into {IndividualCount} individual results",
             executionResults.Count, individualResults.Count);
 
         // Complete each original command
@@ -547,7 +546,7 @@ internal class CommandQueue : IDisposable
     /// <param name="command">The command being processed.</param>
     protected virtual void LogCommandProcessing(QueuedCommand command)
     {
-        m_Logger.LogDebug("Processing command {CommandId}: {Command}", command.Id, command.Command);
+        m_Logger.Debug("Processing command {CommandId}: {Command}", command.Id, command.Command);
     }
 
     /// <summary>
@@ -586,7 +585,7 @@ internal class CommandQueue : IDisposable
         SetCommandResult(command, commandInfo);
 
         var executionTime = endTime - startTime;
-        m_Logger.LogDebug("Command {CommandId} completed successfully in {Elapsed}ms",
+        m_Logger.Debug("Command {CommandId} completed successfully in {Elapsed}ms",
             command.Id, executionTime.TotalMilliseconds);
 
         return Task.CompletedTask;
@@ -612,7 +611,7 @@ internal class CommandQueue : IDisposable
 
         SetCommandResult(command, commandInfo);
 
-        m_Logger.LogDebug("Command {CommandId} was cancelled", command.Id);
+        m_Logger.Debug("Command {CommandId} was cancelled", command.Id);
 
         return Task.CompletedTask;
     }
@@ -639,7 +638,7 @@ internal class CommandQueue : IDisposable
 
         SetCommandResult(command, commandInfo);
 
-        m_Logger.LogWarning("Command {CommandId} timed out", command.Id);
+        m_Logger.Warn("Command {CommandId} timed out", command.Id);
 
         return Task.CompletedTask;
     }
@@ -668,7 +667,7 @@ internal class CommandQueue : IDisposable
 
         SetCommandResult(command, commandInfo);
 
-        m_Logger.LogError(ex, "Command {CommandId} failed", command.Id);
+        m_Logger.Error(ex, "Command {CommandId} failed", command.Id);
 
         return Task.CompletedTask;
     }

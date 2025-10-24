@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using nexus.extensions.Security;
+using NLog;
 
 namespace nexus.extensions_unittests.Security;
 
@@ -9,23 +10,13 @@ namespace nexus.extensions_unittests.Security;
 /// </summary>
 public class ExtensionTokenValidatorTests
 {
-    private readonly ILogger<ExtensionTokenValidator> m_Logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ExtensionTokenValidatorTests"/> class.
-    /// </summary>
-    public ExtensionTokenValidatorTests()
-    {
-        m_Logger = NullLogger<ExtensionTokenValidator>.Instance;
-    }
-
     /// <summary>
     /// Verifies constructor throws when logger is null.
     /// </summary>
     [Fact]
     public void Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new ExtensionTokenValidator(null!));
+        Assert.Throws<ArgumentNullException>(() => new ExtensionTokenValidator());
     }
 
     /// <summary>
@@ -38,7 +29,7 @@ public class ExtensionTokenValidatorTests
     public void CreateToken_ThrowsArgumentException_WhenSessionIdIsNullOrEmpty(string? sessionId)
     {
         // Arrange
-        var validator = new ExtensionTokenValidator(m_Logger);
+        var validator = new ExtensionTokenValidator();
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() => validator.CreateToken(sessionId!, "cmd-123"));
@@ -54,7 +45,7 @@ public class ExtensionTokenValidatorTests
     public void CreateToken_ThrowsArgumentException_WhenCommandIdIsNullOrEmpty(string? commandId)
     {
         // Arrange
-        var validator = new ExtensionTokenValidator(m_Logger);
+        var validator = new ExtensionTokenValidator();
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() => validator.CreateToken("session-123", commandId!));
@@ -67,7 +58,7 @@ public class ExtensionTokenValidatorTests
     public void CreateToken_GeneratesValidToken()
     {
         // Arrange
-        var validator = new ExtensionTokenValidator(m_Logger);
+        var validator = new ExtensionTokenValidator();
 
         // Act
         var token = validator.CreateToken("session-123", "cmd-123");
@@ -85,7 +76,7 @@ public class ExtensionTokenValidatorTests
     public void ValidateToken_ReturnsTrue_ForValidToken()
     {
         // Arrange
-        var validator = new ExtensionTokenValidator(m_Logger);
+        var validator = new ExtensionTokenValidator();
         var token = validator.CreateToken("session-123", "cmd-123");
 
         // Act
@@ -107,7 +98,7 @@ public class ExtensionTokenValidatorTests
     public void ValidateToken_ReturnsFalse_ForNullOrEmptyToken(string? token)
     {
         // Arrange
-        var validator = new ExtensionTokenValidator(m_Logger);
+        var validator = new ExtensionTokenValidator();
 
         // Act
         var (isValid, _, _) = validator.ValidateToken(token!);
@@ -123,7 +114,7 @@ public class ExtensionTokenValidatorTests
     public void ValidateToken_ReturnsFalse_ForNonExistentToken()
     {
         // Arrange
-        var validator = new ExtensionTokenValidator(m_Logger);
+        var validator = new ExtensionTokenValidator();
 
         // Act
         var (isValid, _, _) = validator.ValidateToken("ext_nonexistent");
@@ -139,7 +130,7 @@ public class ExtensionTokenValidatorTests
     public void ValidateToken_ReturnsFalse_ForRevokedToken()
     {
         // Arrange
-        var validator = new ExtensionTokenValidator(m_Logger);
+        var validator = new ExtensionTokenValidator();
         var token = validator.CreateToken("session-123", "cmd-123");
         validator.RevokeToken(token);
 
@@ -157,7 +148,7 @@ public class ExtensionTokenValidatorTests
     public void RevokeToken_RevokesToken()
     {
         // Arrange
-        var validator = new ExtensionTokenValidator(m_Logger);
+        var validator = new ExtensionTokenValidator();
         var token = validator.CreateToken("session-123", "cmd-123");
 
         // Act
@@ -175,7 +166,7 @@ public class ExtensionTokenValidatorTests
     public void RevokeSessionTokens_RevokesAllTokensForSession()
     {
         // Arrange
-        var validator = new ExtensionTokenValidator(m_Logger);
+        var validator = new ExtensionTokenValidator();
         var token1 = validator.CreateToken("session-123", "cmd-1");
         var token2 = validator.CreateToken("session-123", "cmd-2");
         var token3 = validator.CreateToken("session-456", "cmd-3");
@@ -196,7 +187,7 @@ public class ExtensionTokenValidatorTests
     public void CreateToken_GeneratesUniqueTokens()
     {
         // Arrange
-        var validator = new ExtensionTokenValidator(m_Logger);
+        var validator = new ExtensionTokenValidator();
 
         // Act
         var token1 = validator.CreateToken("session-123", "cmd-1");

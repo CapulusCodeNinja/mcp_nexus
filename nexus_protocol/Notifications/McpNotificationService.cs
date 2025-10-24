@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using nexus.protocol.Models;
+using NLog;
 
 namespace nexus.protocol.Notifications;
 
@@ -9,19 +10,17 @@ namespace nexus.protocol.Notifications;
 /// </summary>
 internal class McpNotificationService : IMcpNotificationService
 {
-    private readonly ILogger<McpNotificationService> m_Logger;
+    private readonly Logger m_Logger;
     private readonly INotificationBridge m_NotificationBridge;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="McpNotificationService"/> class.
     /// </summary>
-    /// <param name="logger">The logger for recording notification events.</param>
     /// <param name="notificationBridge">The bridge for sending notifications to clients.</param>
     public McpNotificationService(
-        ILogger<McpNotificationService> logger,
         INotificationBridge notificationBridge)
     {
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = LogManager.GetCurrentClassLogger();
         m_NotificationBridge = notificationBridge ?? throw new ArgumentNullException(nameof(notificationBridge));
     }
 
@@ -43,11 +42,11 @@ internal class McpNotificationService : IMcpNotificationService
             };
 
             await m_NotificationBridge.SendNotificationAsync(notification);
-            m_Logger.LogDebug("Published notification: {EventType}", eventType);
+            m_Logger.Debug("Published notification: {EventType}", eventType);
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Failed to publish notification: {EventType}", eventType);
+            m_Logger.Error(ex, "Failed to publish notification: {EventType}", eventType);
         }
     }
 

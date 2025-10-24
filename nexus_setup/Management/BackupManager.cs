@@ -14,30 +14,28 @@ namespace nexus.setup.Management
     [SupportedOSPlatform("windows")]
     internal class BackupManager
     {
-        private readonly ILogger<BackupManager> m_Logger;
+        private readonly Logger m_Logger;
         private readonly IFileSystem m_FileSystem;
         private readonly DirectoryCopyUtility m_DirectoryCopyUtility;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BackupManager"/> class.
         /// </summary>
-        public BackupManager(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem())
+        public BackupManager() : this(new FileSystem())
         {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BackupManager"/> class.
         /// </summary>
-        /// <param name="serviceProvider">Service provider for dependency injection.</param>
         /// <param name="fileSystem">File system abstraction.</param>
-        internal BackupManager(IServiceProvider serviceProvider, IFileSystem fileSystem)
+        internal BackupManager(IFileSystem fileSystem)
         {
-            m_Logger = serviceProvider.GetRequiredService<ILogger<BackupManager>>();
+            m_Logger = LogManager.GetCurrentClassLogger();
 
             m_FileSystem = fileSystem;
 
             m_DirectoryCopyUtility = new DirectoryCopyUtility(
-                serviceProvider,
                 fileSystem);
         }
 
@@ -60,7 +58,7 @@ namespace nexus.setup.Management
                 var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                 var backupPath = Path.Combine(backupDirectory, $"backup-{timestamp}");
 
-                m_Logger.LogInformation("Creating backup at: {BackupPath}", backupPath);
+                m_Logger.Info("Creating backup at: {BackupPath}", backupPath);
 
                 // Ensure backup directory exists
                 m_FileSystem.CreateDirectory(backupDirectory);
@@ -68,12 +66,12 @@ namespace nexus.setup.Management
                 // Copy the entire installation directory to backup
                 await m_DirectoryCopyUtility.CopyDirectoryAsync(installationDirectory, backupPath);
 
-                m_Logger.LogInformation("Backup created successfully at: {BackupPath}", backupPath);
+                m_Logger.Info("Backup created successfully at: {BackupPath}", backupPath);
                 return true;
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Failed to create backup");
+                m_Logger.Error(ex, "Failed to create backup");
                 return false;
             }
         }
@@ -100,7 +98,7 @@ namespace nexus.setup.Management
                     if (backupDirs.Length > 0)
                     {
                         var latestBackup = backupDirs[0].FullName;
-                        m_Logger.LogInformation("Restoring from backup: {BackupPath}", latestBackup);
+                        m_Logger.Info("Restoring from backup: {BackupPath}", latestBackup);
 
                         // Remove current installation
                         if (m_FileSystem.DirectoryExists(installationDirectory))
@@ -110,22 +108,22 @@ namespace nexus.setup.Management
 
                         // Restore from backup
                         await m_DirectoryCopyUtility.CopyDirectoryAsync(latestBackup, installationDirectory);
-                        m_Logger.LogInformation("Rollback completed successfully");
+                        m_Logger.Info("Rollback completed successfully");
                         return;
                     }
                 }
 
                 // If no backup available, clean up the installation directory
-                m_Logger.LogWarning("No backup available, cleaning up installation directory");
+                m_Logger.Warn("No backup available, cleaning up installation directory");
                 if (m_FileSystem.DirectoryExists(installationDirectory))
                 {
                     m_FileSystem.DeleteDirectory(installationDirectory, true);
-                    m_Logger.LogInformation("Installation directory cleaned up");
+                    m_Logger.Info("Installation directory cleaned up");
                 }
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Failed to rollback installation");
+                m_Logger.Error(ex, "Failed to rollback installation");
             }
         }
 

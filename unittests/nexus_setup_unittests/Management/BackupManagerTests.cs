@@ -9,6 +9,7 @@ using Moq;
 using Xunit;
 using nexus.external_apis.FileSystem;
 using nexus.setup.Management;
+using NLog;
 
 namespace nexus.setup.unittests.Management;
 
@@ -18,7 +19,7 @@ namespace nexus.setup.unittests.Management;
 public class BackupManagerTests
 {
     private readonly Mock<IFileSystem> m_MockFileSystem;
-    private readonly ILogger<BackupManager> m_Logger;
+    private readonly Logger m_Logger;
     private readonly BackupManager m_BackupManager;
 
     /// <summary>
@@ -27,24 +28,8 @@ public class BackupManagerTests
     public BackupManagerTests()
     {
         m_MockFileSystem = new Mock<IFileSystem>();
-        m_Logger = NullLogger<BackupManager>.Instance;
-        var serviceProvider = new Mock<IServiceProvider>();
-        serviceProvider.Setup(x => x.GetRequiredService<ILogger<BackupManager>>()).Returns(m_Logger);
-        m_BackupManager = new BackupManager(serviceProvider.Object, m_MockFileSystem.Object);
-    }
-
-    /// <summary>
-    /// Verifies that constructor with null logger throws ArgumentNullException.
-    /// </summary>
-    [Fact]
-    public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
-    {
-        // Act
-        var action = () => new BackupManager(null!, m_MockFileSystem.Object);
-
-        // Assert
-        action.Should().Throw<ArgumentNullException>()
-            .WithParameterName("logger");
+        m_Logger = LogManager.GetCurrentClassLogger();
+        m_BackupManager = new BackupManager(m_MockFileSystem.Object);
     }
 
     /// <summary>
@@ -54,9 +39,7 @@ public class BackupManagerTests
     public void Constructor_WithNullFileSystem_ShouldThrowArgumentNullException()
     {
         // Act
-        var serviceProvider = new Mock<IServiceProvider>();
-        serviceProvider.Setup(x => x.GetRequiredService<ILogger<BackupManager>>()).Returns(m_Logger);
-        var action = () => new BackupManager(serviceProvider.Object, null!);
+        var action = () => new BackupManager(null!);
 
         // Assert
         action.Should().Throw<ArgumentNullException>()

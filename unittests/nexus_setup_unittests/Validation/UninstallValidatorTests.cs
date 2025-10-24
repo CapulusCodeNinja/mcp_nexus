@@ -9,6 +9,7 @@ using nexus.external_apis.FileSystem;
 using nexus.external_apis.ServiceManagement;
 using nexus.config.Models;
 using nexus.setup.Validation;
+using NLog;
 
 namespace nexus.setup.unittests.Validation;
 
@@ -19,7 +20,7 @@ public class UninstallValidatorTests
 {
     private readonly Mock<IFileSystem> m_MockFileSystem;
     private readonly Mock<IServiceController> m_MockServiceController;
-    private readonly ILogger<UninstallValidator> m_Logger;
+    private readonly Logger m_Logger;
     private readonly UninstallValidator m_Validator;
 
     /// <summary>
@@ -29,24 +30,8 @@ public class UninstallValidatorTests
     {
         m_MockFileSystem = new Mock<IFileSystem>();
         m_MockServiceController = new Mock<IServiceController>();
-        m_Logger = NullLogger<UninstallValidator>.Instance;
-        var serviceProvider = new Mock<IServiceProvider>();
-        serviceProvider.Setup(x => x.GetRequiredService<ILogger<UninstallValidator>>()).Returns(m_Logger);
-        m_Validator = new UninstallValidator(serviceProvider.Object, m_MockFileSystem.Object, m_MockServiceController.Object);
-    }
-
-    /// <summary>
-    /// Verifies that constructor with null logger throws ArgumentNullException.
-    /// </summary>
-    [Fact]
-    public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
-    {
-        // Act
-        var action = () => new UninstallValidator(null!, m_MockFileSystem.Object, m_MockServiceController.Object);
-
-        // Assert
-        action.Should().Throw<ArgumentNullException>()
-            .WithParameterName("logger");
+        m_Logger = LogManager.GetCurrentClassLogger();
+        m_Validator = new UninstallValidator(m_MockFileSystem.Object, m_MockServiceController.Object);
     }
 
     /// <summary>
@@ -56,9 +41,7 @@ public class UninstallValidatorTests
     public void Constructor_WithNullFileSystem_ShouldThrowArgumentNullException()
     {
         // Act
-        var serviceProvider = new Mock<IServiceProvider>();
-        serviceProvider.Setup(x => x.GetRequiredService<ILogger<UninstallValidator>>()).Returns(m_Logger);
-        var action = () => new UninstallValidator(serviceProvider.Object, null!, m_MockServiceController.Object);
+        var action = () => new UninstallValidator(null!, m_MockServiceController.Object);
 
         // Assert
         action.Should().Throw<ArgumentNullException>()
@@ -72,9 +55,7 @@ public class UninstallValidatorTests
     public void Constructor_WithNullServiceController_ShouldThrowArgumentNullException()
     {
         // Act
-        var serviceProvider = new Mock<IServiceProvider>();
-        serviceProvider.Setup(x => x.GetRequiredService<ILogger<UninstallValidator>>()).Returns(m_Logger);
-        var action = () => new UninstallValidator(serviceProvider.Object, m_MockFileSystem.Object, null!);
+        var action = () => new UninstallValidator(m_MockFileSystem.Object, null!);
 
         // Assert
         action.Should().Throw<ArgumentNullException>()

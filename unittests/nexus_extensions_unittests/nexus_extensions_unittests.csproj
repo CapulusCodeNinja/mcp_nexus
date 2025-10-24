@@ -28,5 +28,9 @@
     <ProjectReference Include="..\..\nexus_extensions\nexus_extensions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Core\" />
+  </ItemGroup>
+
 </Project>
 

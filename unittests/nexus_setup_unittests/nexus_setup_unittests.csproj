@@ -29,5 +29,9 @@
     <ProjectReference Include="..\..\nexus_config\nexus_config.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Core\" />
+  </ItemGroup>
+
 </Project>
 

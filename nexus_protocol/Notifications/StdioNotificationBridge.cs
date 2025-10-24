@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using nexus.protocol.Models;
+using NLog;
 
 namespace nexus.protocol.Notifications;
 
@@ -10,16 +11,15 @@ namespace nexus.protocol.Notifications;
 /// </summary>
 internal class StdioNotificationBridge : INotificationBridge
 {
-    private readonly ILogger<StdioNotificationBridge> m_Logger;
+    private readonly Logger m_Logger;
     private readonly SemaphoreSlim m_WriteSemaphore = new(1, 1);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StdioNotificationBridge"/> class.
     /// </summary>
-    /// <param name="logger">The logger for recording bridge events.</param>
-    public StdioNotificationBridge(ILogger<StdioNotificationBridge> logger)
+    public StdioNotificationBridge()
     {
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = LogManager.GetCurrentClassLogger();
     }
 
     /// <summary>
@@ -39,11 +39,11 @@ internal class StdioNotificationBridge : INotificationBridge
             await Console.Out.WriteLineAsync(json);
             await Console.Out.FlushAsync();
 
-            m_Logger.LogTrace("Sent notification via stdio: {Method}", notification.Method);
+            m_Logger.Trace("Sent notification via stdio: {Method}", notification.Method);
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Failed to send notification via stdio: {Method}", notification.Method);
+            m_Logger.Error(ex, "Failed to send notification via stdio: {Method}", notification.Method);
             throw;
         }
         finally

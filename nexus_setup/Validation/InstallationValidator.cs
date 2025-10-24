@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using nexus.config.Models;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ServiceManagement;
+using NLog;
 using System.Runtime.Versioning;
 
 namespace nexus.setup.Validation
@@ -16,18 +17,17 @@ namespace nexus.setup.Validation
         /// <summary>
         /// Initializes a new instance of the <see cref="InstallationValidator"/> class.
         /// </summary>
-        public InstallationValidator(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem(), new ServiceControllerWrapper())
+        public InstallationValidator() : this(new FileSystem(), new ServiceControllerWrapper())
         {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InstallationValidator"/> class.
         /// </summary>
-        /// <param name="serviceProvider">Service provider for dependency injection.</param>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        internal InstallationValidator(IServiceProvider serviceProvider, IFileSystem fileSystem, IServiceController serviceController) 
-            : base(serviceProvider.GetRequiredService<ILogger<InstallationValidator>>(), fileSystem, serviceController)
+        internal InstallationValidator(IFileSystem fileSystem, IServiceController serviceController) 
+            : base(LogManager.GetCurrentClassLogger(), fileSystem, serviceController)
         {
 
         }
@@ -41,7 +41,7 @@ namespace nexus.setup.Validation
         /// <returns>True if all validations pass, false otherwise.</returns>
         public bool ValidateInstallation(SharedConfiguration configuration, string sourceDirectory)
         {
-            m_Logger.LogInformation("Performing pre-installation validation...");
+            m_Logger.Info("Performing pre-installation validation...");
 
             // Check 1: Administrator privileges
             if (!ValidateAdministratorPrivileges())
@@ -73,7 +73,7 @@ namespace nexus.setup.Validation
                 return false;
             }
 
-            m_Logger.LogInformation("Pre-installation validation completed successfully");
+            m_Logger.Info("Pre-installation validation completed successfully");
             return true;
         }
 
@@ -88,8 +88,8 @@ namespace nexus.setup.Validation
             var isServiceInstalled = m_ServiceController.IsServiceInstalled(serviceName);
             if (isServiceInstalled)
             {
-                m_Logger.LogWarning("Service {ServiceName} is already installed", serviceName);
-                m_Logger.LogInformation("Use --update command to update an existing installation");
+                m_Logger.Warn("Service {ServiceName} is already installed", serviceName);
+                m_Logger.Info("Use --update command to update an existing installation");
                 return false;
             }
             return true;
@@ -104,15 +104,15 @@ namespace nexus.setup.Validation
         {
             if (!m_FileSystem.DirectoryExists(sourceDirectory))
             {
-                m_Logger.LogError("Source directory does not exist: {SourceDirectory}", sourceDirectory);
+                m_Logger.Error("Source directory does not exist: {SourceDirectory}", sourceDirectory);
                 return false;
             }
 
             var sourceExecutablePath = Path.Combine(sourceDirectory, "nexus.exe");
             if (!m_FileSystem.FileExists(sourceExecutablePath))
             {
-                m_Logger.LogError("Source executable not found: {SourceExecutablePath}", sourceExecutablePath);
-                m_Logger.LogError("Please ensure the application is properly built before installation");
+                m_Logger.Error("Source executable not found: {SourceExecutablePath}", sourceExecutablePath);
+                m_Logger.Error("Please ensure the application is properly built before installation");
                 return false;
             }
 

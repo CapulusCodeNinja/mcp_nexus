@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using nexus.Hosting;
 using nexus.protocol;
+using NLog;
 using Xunit;
 
 namespace nexus_unittests.Hosting;
@@ -13,7 +14,7 @@ namespace nexus_unittests.Hosting;
 /// </summary>
 public class HttpServerHostedServiceTests
 {
-    private readonly ILogger<HttpServerHostedService> m_Logger;
+    private readonly Logger m_Logger;
     private readonly Mock<IProtocolServer> m_MockProtocolServer;
     private readonly Mock<IHostApplicationLifetime> m_MockLifetime;
 
@@ -22,19 +23,9 @@ public class HttpServerHostedServiceTests
     /// </summary>
     public HttpServerHostedServiceTests()
     {
-        m_Logger = NullLogger<HttpServerHostedService>.Instance;
+        m_Logger = LogManager.GetCurrentClassLogger();
         m_MockProtocolServer = new Mock<IProtocolServer>();
         m_MockLifetime = new Mock<IHostApplicationLifetime>();
-    }
-
-    /// <summary>
-    /// Verifies constructor throws when logger is null.
-    /// </summary>
-    [Fact]
-    public void Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
-    {
-        Assert.Throws<ArgumentNullException>(() =>
-            new HttpServerHostedService(null!, m_MockProtocolServer.Object, m_MockLifetime.Object));
     }
 
     /// <summary>
@@ -44,7 +35,7 @@ public class HttpServerHostedServiceTests
     public void Constructor_ThrowsArgumentNullException_WhenProtocolServerIsNull()
     {
         Assert.Throws<ArgumentNullException>(() =>
-            new HttpServerHostedService(m_Logger, null!, m_MockLifetime.Object));
+            new HttpServerHostedService(null!, m_MockLifetime.Object));
     }
 
     /// <summary>
@@ -54,7 +45,7 @@ public class HttpServerHostedServiceTests
     public void Constructor_ThrowsArgumentNullException_WhenLifetimeIsNull()
     {
         Assert.Throws<ArgumentNullException>(() =>
-            new HttpServerHostedService(m_Logger, m_MockProtocolServer.Object, null!));
+            new HttpServerHostedService(m_MockProtocolServer.Object, null!));
     }
 
     /// <summary>
@@ -64,7 +55,7 @@ public class HttpServerHostedServiceTests
     public async Task StartAsync_CallsProtocolServerStartAsync()
     {
         // Arrange
-        var service = new HttpServerHostedService(m_Logger, m_MockProtocolServer.Object, m_MockLifetime.Object);
+        var service = new HttpServerHostedService(m_MockProtocolServer.Object, m_MockLifetime.Object);
         var cts = new CancellationTokenSource();
 
         // Act
@@ -81,7 +72,7 @@ public class HttpServerHostedServiceTests
     public async Task StopAsync_CallsProtocolServerStopAsync()
     {
         // Arrange
-        var service = new HttpServerHostedService(m_Logger, m_MockProtocolServer.Object, m_MockLifetime.Object);
+        var service = new HttpServerHostedService(m_MockProtocolServer.Object, m_MockLifetime.Object);
         var cts = new CancellationTokenSource();
 
         // Act

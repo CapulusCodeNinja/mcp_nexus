@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ServiceManagement;
 using nexus.setup.Management;
+using NLog;
 using System.Runtime.Versioning;
 
 namespace nexus.setup.Validation
@@ -13,7 +14,7 @@ namespace nexus.setup.Validation
     [SupportedOSPlatform("windows")]
     internal abstract class BaseValidator
     {
-        protected readonly ILogger m_Logger;
+        protected readonly Logger m_Logger;
         protected readonly IFileSystem m_FileSystem;
         protected readonly IServiceController m_ServiceController;
 
@@ -24,7 +25,7 @@ namespace nexus.setup.Validation
         /// <param name="logger">Logger instance.</param>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        protected BaseValidator(ILogger logger, IFileSystem fileSystem, IServiceController serviceController)
+        protected BaseValidator(Logger logger, IFileSystem fileSystem, IServiceController serviceController)
         {
             m_Logger = logger;
             m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
@@ -40,8 +41,8 @@ namespace nexus.setup.Validation
             var isAdmin = IsRunningAsAdministrator();
             if (!isAdmin)
             {
-                m_Logger.LogError("Administrator privileges required to install to Program Files");
-                m_Logger.LogError("Please run this command as Administrator (Run as Administrator)");
+                m_Logger.Error("Administrator privileges required to install to Program Files");
+                m_Logger.Error("Please run this command as Administrator (Run as Administrator)");
                 return false;
             }
             return true;
@@ -65,17 +66,17 @@ namespace nexus.setup.Validation
                     // Check if the installation's parent directory exists and is writable
                     if (!m_FileSystem.DirectoryExists(installationParentDir))
                     {
-                        m_Logger.LogError("{DirectoryName} installation parent directory does not exist: {InstallationParentDirectory}", directoryName, installationParentDir);
-                        m_Logger.LogError("Please ensure the installation parent directory exists and you have write permissions");
+                        m_Logger.Error("{DirectoryName} installation parent directory does not exist: {InstallationParentDirectory}", directoryName, installationParentDir);
+                        m_Logger.Error("Please ensure the installation parent directory exists and you have write permissions");
                         return false;
                     }
 
-                    m_Logger.LogDebug("Installation parent directory validation passed for {DirectoryName}: {InstallationParentDirectory}", directoryName, installationParentDir);
+                    m_Logger.Debug("Installation parent directory validation passed for {DirectoryName}: {InstallationParentDirectory}", directoryName, installationParentDir);
                 }
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Failed to validate {DirectoryName} directory path", directoryName);
+                m_Logger.Error(ex, "Failed to validate {DirectoryName} directory path", directoryName);
                 return false;
             }
 
@@ -129,7 +130,7 @@ namespace nexus.setup.Validation
             }
             catch (Exception ex)
             {
-                m_Logger.LogWarning(ex, "Failed to parse directory path: {DirectoryPath}", directoryPath);
+                m_Logger.Warn(ex, "Failed to parse directory path: {DirectoryPath}", directoryPath);
                 // Fallback to immediate parent
                 return Path.GetDirectoryName(directoryPath) ?? string.Empty;
             }

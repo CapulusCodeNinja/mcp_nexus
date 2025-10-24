@@ -11,6 +11,7 @@ using System.ServiceProcess;
 namespace nexus.setup.Core;
 
 using external_apis.ProcessManagement;
+using NLog;
 
 /// <summary>
 /// Implements Windows service update functionality.
@@ -18,7 +19,7 @@ using external_apis.ProcessManagement;
 [SupportedOSPlatform("windows")]
 internal class ServiceUpdater
 {
-    private readonly ILogger<ServiceUpdater> m_Logger;
+    private readonly Logger m_Logger;
     private readonly IServiceInstaller m_ServiceInstaller;
     private readonly IFileSystem m_FileSystem;
     private readonly IServiceController m_ServiceController;
@@ -27,27 +28,26 @@ internal class ServiceUpdater
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceUpdater"/> class.
     /// </summary>
-    public ServiceUpdater(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
+    public ServiceUpdater() : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceUpdater"/> class.
     /// </summary>
-    /// <param name="serviceProvider">Service provider for dependency injection.</param>
     /// <param name="fileSystem">File system abstraction.</param>
     /// <param name="processManager">Process manager abstraction.</param>
     /// <param name="serviceController">Service controller abstraction.</param>
-    internal ServiceUpdater(IServiceProvider serviceProvider, IFileSystem fileSystem, IProcessManager processManager, IServiceController serviceController)
+    internal ServiceUpdater(IFileSystem fileSystem, IProcessManager processManager, IServiceController serviceController)
     {
-        m_Logger = serviceProvider.GetRequiredService<ILogger<ServiceUpdater>>();
+        m_Logger = LogManager.GetCurrentClassLogger();
 
-        m_ServiceInstaller = new ServiceInstaller(serviceProvider, fileSystem, processManager, serviceController);
+        m_ServiceInstaller = new ServiceInstaller(fileSystem, processManager, serviceController);
 
         m_FileSystem = fileSystem;
         m_ServiceController = serviceController;
 
-        m_DirectoryCopyUtility = new DirectoryCopyUtility(serviceProvider, fileSystem);
+        m_DirectoryCopyUtility = new DirectoryCopyUtility(fileSystem);
     }
 
     /// <summary>
@@ -68,11 +68,11 @@ internal class ServiceUpdater
         if (!m_FileSystem.FileExists(newExecutablePath))
             return ServiceInstallationResult.CreateFailure(serviceName, "New executable file not found", newExecutablePath);
 
-        m_Logger.LogInformation("Updating service: {ServiceName}", serviceName);
+        m_Logger.Info("Updating service: {ServiceName}", serviceName);
 
         if (!m_ServiceInstaller.IsServiceInstalled(serviceName))
         {
-            m_Logger.LogWarning("Service {ServiceName} is not installed", serviceName);
+            m_Logger.Warn("Service {ServiceName} is not installed", serviceName);
             return ServiceInstallationResult.CreateFailure(serviceName, "Service is not installed");
         }
 
@@ -85,19 +85,19 @@ internal class ServiceUpdater
                 return ServiceInstallationResult.CreateFailure(serviceName, "Could not determine current executable path");
             }
 
-            m_Logger.LogInformation("Current service path: {CurrentPath}", currentPath);
-            m_Logger.LogInformation("New service path: {NewPath}", newExecutablePath);
+            m_Logger.Info("Current service path: {CurrentPath}", currentPath);
+            m_Logger.Info("New service path: {NewPath}", newExecutablePath);
 
             // Create backup directory
             var backupDir = m_FileSystem.CombinePaths(m_FileSystem.GetDirectoryName(currentPath)!, "backup", DateTime.Now.ToString("yyyyMMdd_HHmmss"));
             m_FileSystem.CreateDirectory(backupDir);
 
             // Backup current binaries
-            m_Logger.LogInformation("Creating backup in: {BackupDir}", backupDir);
+            m_Logger.Info("Creating backup in: {BackupDir}", backupDir);
             var backupSuccess = await BackupServiceAsync(serviceName, backupDir);
             if (!backupSuccess)
             {
-                m_Logger.LogWarning("Backup failed, continuing with update anyway");
+                m_Logger.Warn("Backup failed, continuing with update anyway");
             }
 
             // Check original service state and stop if running
@@ -106,18 +106,18 @@ internal class ServiceUpdater
 
             if (wasRunning)
             {
-                m_Logger.LogInformation("Service {ServiceName} is running - stopping it for update...", serviceName);
+                m_Logger.Info("Service {ServiceName} is running - stopping it for update...", serviceName);
                 m_ServiceController.StopService(serviceName);
                 m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
                 await Task.Delay(500);
             }
             else
             {
-                m_Logger.LogInformation("Service {ServiceName} is not running - no need to stop it", serviceName);
+                m_Logger.Info("Service {ServiceName} is not running - no need to stop it", serviceName);
             }
 
             // Copy new binaries
-            m_Logger.LogInformation("Copying new binaries...");
+            m_Logger.Info("Copying new binaries...");
             var sourceDir = m_FileSystem.GetDirectoryName(newExecutablePath)!;
             var targetDir = m_FileSystem.GetDirectoryName(currentPath)!;
 
@@ -126,21 +126,21 @@ internal class ServiceUpdater
             // Only start the service if it was running before the update
             if (wasRunning)
             {
-                m_Logger.LogInformation("Service {ServiceName} was running before update - starting it again...", serviceName);
+                m_Logger.Info("Service {ServiceName} was running before update - starting it again...", serviceName);
                 m_ServiceController.StartService(serviceName);
                 m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
             }
             else
             {
-                m_Logger.LogInformation("Service {ServiceName} was not running before update - leaving it stopped", serviceName);
+                m_Logger.Info("Service {ServiceName} was not running before update - leaving it stopped", serviceName);
             }
 
-            m_Logger.LogInformation("Service {ServiceName} updated successfully", serviceName);
+            m_Logger.Info("Service {ServiceName} updated successfully", serviceName);
             return ServiceInstallationResult.CreateSuccess(serviceName, $"Service updated successfully. Backup created at: {backupDir}");
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Exception while updating service {ServiceName}", serviceName);
+            m_Logger.Error(ex, "Exception while updating service {ServiceName}", serviceName);
             return ServiceInstallationResult.CreateFailure(serviceName, "Exception during update", ex.Message);
         }
     }
@@ -164,23 +164,23 @@ internal class ServiceUpdater
             var executablePath = m_ServiceController.GetServiceExecutablePath(serviceName);
             if (string.IsNullOrEmpty(executablePath))
             {
-                m_Logger.LogError("Could not determine executable path for service {ServiceName}", serviceName);
+                m_Logger.Error("Could not determine executable path for service {ServiceName}", serviceName);
                 return false;
             }
 
             var sourceDir = m_FileSystem.GetDirectoryName(executablePath)!;
 
-            m_Logger.LogInformation("Backing up service from {Source} to {Backup}", sourceDir, backupPath);
+            m_Logger.Info("Backing up service from {Source} to {Backup}", sourceDir, backupPath);
 
             m_FileSystem.CreateDirectory(backupPath);
             await m_DirectoryCopyUtility.CopyDirectoryAsync(sourceDir, backupPath);
 
-            m_Logger.LogInformation("Backup completed successfully");
+            m_Logger.Info("Backup completed successfully");
             return true;
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Failed to backup service {ServiceName}", serviceName);
+            m_Logger.Error(ex, "Failed to backup service {ServiceName}", serviceName);
             return false;
         }
     }
@@ -203,7 +203,7 @@ internal class ServiceUpdater
         if (!m_FileSystem.DirectoryExists(backupPath))
             return ServiceInstallationResult.CreateFailure(serviceName, "Backup directory not found", backupPath);
 
-        m_Logger.LogInformation("Restoring service {ServiceName} from backup: {BackupPath}", serviceName, backupPath);
+        m_Logger.Info("Restoring service {ServiceName} from backup: {BackupPath}", serviceName, backupPath);
 
         try
         {
@@ -216,7 +216,7 @@ internal class ServiceUpdater
             var targetDir = m_FileSystem.GetDirectoryName(executablePath)!;
 
             // Stop the service
-            m_Logger.LogInformation("Stopping service {ServiceName}...", serviceName);
+            m_Logger.Info("Stopping service {ServiceName}...", serviceName);
             var status = m_ServiceController.GetServiceStatus(serviceName);
             if (status != null && status != ServiceControllerStatus.Stopped)
             {
@@ -225,20 +225,20 @@ internal class ServiceUpdater
             }
 
             // Restore binaries
-            m_Logger.LogInformation("Restoring binaries...");
+            m_Logger.Info("Restoring binaries...");
             await m_DirectoryCopyUtility.CopyDirectoryAsync(backupPath, targetDir);
 
             // Start the service
-            m_Logger.LogInformation("Starting service {ServiceName}...", serviceName);
+            m_Logger.Info("Starting service {ServiceName}...", serviceName);
             m_ServiceController.StartService(serviceName);
             m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
 
-            m_Logger.LogInformation("Service {ServiceName} restored successfully", serviceName);
+            m_Logger.Info("Service {ServiceName} restored successfully", serviceName);
             return ServiceInstallationResult.CreateSuccess(serviceName, "Service restored successfully");
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Exception while restoring service {ServiceName}", serviceName);
+            m_Logger.Error(ex, "Exception while restoring service {ServiceName}", serviceName);
             return ServiceInstallationResult.CreateFailure(serviceName, "Exception during restore", ex.Message);
         }
     }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using nexus.config.Models;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ServiceManagement;
+using NLog;
 using System.Runtime.Versioning;
 
 namespace nexus.setup.Validation
@@ -16,18 +17,17 @@ namespace nexus.setup.Validation
         /// <summary>
         /// Initializes a new instance of the <see cref="UninstallValidator"/> class.
         /// </summary>
-        public UninstallValidator(IServiceProvider serviceProvider) : this(serviceProvider, new FileSystem(), new ServiceControllerWrapper())
+        public UninstallValidator() : this(new FileSystem(), new ServiceControllerWrapper())
         {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UninstallValidator"/> class.
         /// </summary>
-        /// <param name="serviceProvider">Service provider for dependency injection.</param>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        internal UninstallValidator(IServiceProvider serviceProvider, IFileSystem fileSystem, IServiceController serviceController)
-            : base(serviceProvider.GetRequiredService<ILogger<InstallationValidator>>(), fileSystem, serviceController)
+        internal UninstallValidator(IFileSystem fileSystem, IServiceController serviceController)
+            : base(LogManager.GetCurrentClassLogger(), fileSystem, serviceController)
         {
 
         }
@@ -39,7 +39,7 @@ namespace nexus.setup.Validation
         /// <returns>True if all validations pass, false otherwise.</returns>
         public bool ValidateUninstall(SharedConfiguration configuration)
         {
-            m_Logger.LogInformation("Performing pre-uninstall validation...");
+            m_Logger.Info("Performing pre-uninstall validation...");
 
             // Check 1: Administrator privileges
             if (!ValidateAdministratorPrivileges())
@@ -56,7 +56,7 @@ namespace nexus.setup.Validation
             // Check 3: Installation directory validation
             ValidateInstallationDirectory(configuration.McpNexus.Service.InstallPath);
 
-            m_Logger.LogInformation("Pre-uninstall validation completed successfully");
+            m_Logger.Info("Pre-uninstall validation completed successfully");
             return true;
         }
 
@@ -71,8 +71,8 @@ namespace nexus.setup.Validation
             var isServiceInstalled = m_ServiceController.IsServiceInstalled(serviceName);
             if (!isServiceInstalled)
             {
-                m_Logger.LogWarning("Service {ServiceName} is not installed", serviceName);
-                m_Logger.LogInformation("Nothing to uninstall");
+                m_Logger.Warn("Service {ServiceName} is not installed", serviceName);
+                m_Logger.Info("Nothing to uninstall");
                 return false; // This is actually a success case, but we return false to indicate "nothing to do"
             }
             return true;
@@ -86,8 +86,8 @@ namespace nexus.setup.Validation
         {
             if (!m_FileSystem.DirectoryExists(installationDirectory))
             {
-                m_Logger.LogWarning("Installation directory does not exist: {InstallationDirectory}", installationDirectory);
-                m_Logger.LogInformation("Service will be removed but no files to clean up");
+                m_Logger.Warn("Installation directory does not exist: {InstallationDirectory}", installationDirectory);
+                m_Logger.Info("Service will be removed but no files to clean up");
             }
         }
 

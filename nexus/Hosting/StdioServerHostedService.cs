@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using nexus.protocol;
+using NLog;
 
 namespace nexus.Hosting;
 
@@ -9,7 +10,7 @@ namespace nexus.Hosting;
 /// </summary>
 internal class StdioServerHostedService : IHostedService
 {
-    private readonly ILogger<StdioServerHostedService> m_Logger;
+    private readonly Logger m_Logger;
     private readonly IProtocolServer m_ProtocolServer;
     private readonly IHostApplicationLifetime m_Lifetime;
 
@@ -20,11 +21,10 @@ internal class StdioServerHostedService : IHostedService
     /// <param name="protocolServer">Protocol server instance.</param>
     /// <param name="lifetime">Application lifetime.</param>
     public StdioServerHostedService(
-        ILogger<StdioServerHostedService> logger,
         IProtocolServer protocolServer,
         IHostApplicationLifetime lifetime)
     {
-        m_Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        m_Logger = LogManager.GetCurrentClassLogger();
         m_ProtocolServer = protocolServer ?? throw new ArgumentNullException(nameof(protocolServer));
         m_Lifetime = lifetime ?? throw new ArgumentNullException(nameof(lifetime));
     }
@@ -36,16 +36,16 @@ internal class StdioServerHostedService : IHostedService
     /// <returns>Task representing the async operation.</returns>
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        m_Logger.LogInformation("Starting stdio mode...");
+        m_Logger.Info("Starting stdio mode...");
 
         try
         {
             await m_ProtocolServer.StartAsync(cancellationToken);
-            m_Logger.LogInformation("Stdio server started successfully");
+            m_Logger.Info("Stdio server started successfully");
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Failed to start stdio server");
+            m_Logger.Error(ex, "Failed to start stdio server");
             m_Lifetime.StopApplication();
             throw;
         }
@@ -58,16 +58,16 @@ internal class StdioServerHostedService : IHostedService
     /// <returns>Task representing the async operation.</returns>
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        m_Logger.LogInformation("Stopping stdio mode...");
+        m_Logger.Info("Stopping stdio mode...");
 
         try
         {
             await m_ProtocolServer.StopAsync(cancellationToken);
-            m_Logger.LogInformation("Stdio server stopped successfully");
+            m_Logger.Info("Stdio server stopped successfully");
         }
         catch (Exception ex)
         {
-            m_Logger.LogError(ex, "Error stopping stdio server");
+            m_Logger.Error(ex, "Error stopping stdio server");
         }
     }
 }
