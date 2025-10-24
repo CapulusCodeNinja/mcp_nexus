@@ -100,6 +100,7 @@ internal class ServiceUpdater
                 m_Logger.LogInformation("Service {ServiceName} is running - stopping it for update...", serviceName);
                 m_ServiceController.StopService(serviceName);
                 m_ServiceController.WaitForServiceStatus(serviceName, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
+                await Task.Delay(500);
             }
             else
             {
