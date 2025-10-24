@@ -10,7 +10,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Label="Shared Build Output">
@@ -22,7 +21,7 @@
   <PropertyGroup Label="Code Quality">
     <!-- Only treat warnings as errors in non-test projects -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors />
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <PropertyGroup Label="Documentation">
@@ -31,7 +30,7 @@
     <!-- Enforce XML documentation for ALL members (public, internal, protected, private) -->
     <NoWarn>$(NoWarn)</NoWarn>
   </PropertyGroup>
-  
+
   <PropertyGroup Label="Documentation Rules">
     <!-- CS1591: Missing XML comment for publicly visible type or member -->
     <!-- This is already enforced by GenerateDocumentationFile=true -->
