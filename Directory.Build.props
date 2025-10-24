@@ -41,7 +41,7 @@
     <VersionSuffix>2</VersionSuffix>
     
     <!-- Calculated version -->
-    <Version Condition="'$(Version)' == ''">$(VersionPrefix)$(VersionSuffix)</Version>
+    <Version Condition="'$(Version)' == ''">$(VersionPrefix).$(VersionSuffix)</Version>
     <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(Version)</AssemblyVersion>
     <FileVersion Condition="'$(FileVersion)' == ''">$(Version)</FileVersion>
   </PropertyGroup>
