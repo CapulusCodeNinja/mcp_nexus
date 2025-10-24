@@ -5,7 +5,6 @@ using Microsoft.Extensions.Hosting;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using nexus.CommandLine;
-using nexus.config.ServiceRegistration;
 
 namespace nexus.Startup;
 

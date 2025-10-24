@@ -178,6 +178,78 @@ nexus_extensions/           - Extension system (PowerShell workflow support)
 - **Factory Pattern**: Protocol library provides configuration factories
 - **Abstraction**: All external dependencies (file system, process, etc.) are abstracted
 
+### Service Registration Architecture
+
+**CRITICAL**: Each library must register ONLY its own services. Cross-library service registration violates modular architecture.
+
+#### Service Registration Rules
+
+1. **Each library registers its own services**: Every library should have a `ServiceRegistration/ServiceRegistrationExtensions.cs` file with an `Add[LibraryName]Services()` method.
+
+2. **Dependency graph**: nexus → protocol → engine → engine_batch
+   - Each library can only register services for itself and its direct dependencies
+   - Protocol library CANNOT register engine services
+   - Engine library CANNOT register protocol services
+
+3. **Configuration loading**: Each library loads its own configuration section from `IConfiguration`:
+   ```csharp
+   var config = new MyLibraryConfiguration();
+   configuration.GetSection("McpNexus:MyLibrary").Bind(config);
+   services.AddSingleton(config);
+   ```
+
+4. **Dependency resolution**: Libraries resolve dependencies from DI container, never forward them as parameters:
+   ```csharp
+   services.AddSingleton<IMyService>(sp =>
+   {
+       var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+       var fileSystem = sp.GetRequiredService<IFileSystem>();
+       return new MyService(loggerFactory, fileSystem);
+   });
+   ```
+
+5. **Shared dependencies**: Only `nexus_external_apis` and `nexus_config` are registered once in setup and available to all libraries.
+
+#### Service Registration Pattern
+
+Each library should follow this pattern:
+
+```csharp
+// nexus_[library]/ServiceRegistration/ServiceRegistrationExtensions.cs
+public static class ServiceRegistrationExtensions
+{
+    public static IServiceCollection Add[LibraryName]Services(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // Load library-specific configuration
+        var config = new MyLibraryConfiguration();
+        configuration.GetSection("McpNexus:MyLibrary").Bind(config);
+        services.AddSingleton(config);
+
+        // Register library services
+        services.AddSingleton<IMyService, MyService>();
+        
+        return services;
+    }
+}
+```
+
+#### Common Violations to Avoid
+
+❌ **NEVER do this**:
+- Protocol library registering engine services
+- Engine library registering protocol services  
+- Forwarding configuration objects between libraries
+- Forwarding logger factories between libraries
+- Cross-library parameter passing
+
+✅ **ALWAYS do this**:
+- Each library registers only its own services
+- Libraries resolve dependencies from DI container
+- Configuration loaded by each library from IConfiguration
+- Follow established pattern from nexus_config
+
 ### Technology Stack
 
 - **.NET 8**: Primary framework

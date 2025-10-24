@@ -5,26 +5,23 @@ using nexus.engine;
 using nexus.engine.batch;
 using nexus.engine.batch.Internal;
 using nexus.engine.Configuration;
-using nexus.protocol.Notifications;
-using nexus.protocol.Services;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
 
-namespace nexus.protocol.Configuration;
+namespace nexus.engine.ServiceRegistration;
 
 /// <summary>
-/// Static helper class for registering protocol services in the dependency injection container.
-/// Provides extension methods to add all MCP protocol services at once.
+/// Extension methods for registering nexus.engine services.
 /// </summary>
-public static class ProtocolServiceRegistration
+internal static class ServiceRegistrationExtensions
 {
     /// <summary>
-    /// Adds all MCP protocol services to the service collection.
+    /// Adds nexus engine services to the dependency injection container.
     /// </summary>
     /// <param name="services">The service collection to configure.</param>
     /// <param name="configuration">The application configuration.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddProtocolServices(
+    public static IServiceCollection AddNexusServices(
         this IServiceCollection services,
         IConfiguration configuration)
     {
@@ -60,17 +57,6 @@ public static class ProtocolServiceRegistration
             return new DebugEngine(loggerFactory, engineConfig, fileSystem, processManager, batchProcessor);
         });
 
-        services.AddSingleton<IProtocolServer, ProtocolServer>();
-        services.AddSingleton<INotificationBridge, StdioNotificationBridge>();
-        services.AddSingleton<IMcpNotificationService, McpNotificationService>();
-        services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
-        services.AddSingleton<IFileSystem, external_apis.FileSystem.FileSystem>();
-
-        services.AddTransient<Middleware.ContentTypeValidationMiddleware>();
-        services.AddTransient<Middleware.JsonRpcLoggingMiddleware>();
-        services.AddTransient<Middleware.ResponseFormattingMiddleware>();
-
         return services;
     }
 }
-

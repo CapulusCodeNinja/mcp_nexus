@@ -9,8 +9,7 @@ using nexus.CommandLine;
 using nexus.Hosting;
 using nexus.Startup;
 using nexus.config;
-using nexus.config.ServiceRegistration;
-using nexus.setup.Configuration;
+using nexus.ServiceRegistration;
 
 namespace nexus;
 

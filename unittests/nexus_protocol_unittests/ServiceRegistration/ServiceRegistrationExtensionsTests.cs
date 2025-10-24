@@ -1,17 +1,17 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using nexus.protocol.Configuration;
+using nexus.protocol.ServiceRegistration;
 using nexus.protocol.Middleware;
 using nexus.protocol.Notifications;
 using nexus.protocol.Services;
 
-namespace nexus.protocol.unittests.Configuration;
+namespace nexus.protocol.unittests.ServiceRegistration;
 
 /// <summary>
-/// Unit tests for ProtocolServiceRegistration class.
+/// Unit tests for ServiceRegistrationExtensions class.
 /// Tests service registration and dependency injection configuration.
 /// </summary>
-public class ProtocolServiceRegistrationTests
+public class ServiceRegistrationExtensionsTests
 {
     /// <summary>
     /// Verifies that AddProtocolServices registers all required services.
@@ -20,10 +20,9 @@ public class ProtocolServiceRegistrationTests
     public void AddProtocolServices_RegistersAllRequiredServices()
     {
         var services = new ServiceCollection();
-        var configuration = new ConfigurationBuilder().Build();
         services.AddLogging(); // Required for ILogger<T>
 
-        services.AddProtocolServices(configuration);
+        services.AddProtocolServices();
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -40,10 +39,9 @@ public class ProtocolServiceRegistrationTests
     public void AddProtocolServices_RegistersMiddleware()
     {
         var services = new ServiceCollection();
-        var configuration = new ConfigurationBuilder().Build();
         services.AddLogging(); // Required for ILogger<T>
 
-        services.AddProtocolServices(configuration);
+        services.AddProtocolServices();
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -60,26 +58,10 @@ public class ProtocolServiceRegistrationTests
     [Fact]
     public void AddProtocolServices_WithNullServices_ThrowsArgumentNullException()
     {
-        var configuration = new ConfigurationBuilder().Build();
-
-        var action = () => ProtocolServiceRegistration.AddProtocolServices(null!, configuration);
+        var action = () => ServiceRegistrationExtensions.AddProtocolServices(null!);
 
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("services");
-    }
-
-    /// <summary>
-    /// Verifies that AddProtocolServices throws ArgumentNullException when configuration is null.
-    /// </summary>
-    [Fact]
-    public void AddProtocolServices_WithNullConfiguration_ThrowsArgumentNullException()
-    {
-        var services = new ServiceCollection();
-
-        var action = () => services.AddProtocolServices(null!);
-
-        action.Should().Throw<ArgumentNullException>()
-            .WithParameterName("configuration");
     }
 
     /// <summary>
@@ -89,12 +71,12 @@ public class ProtocolServiceRegistrationTests
     public void AddProtocolServices_ReturnsServiceCollection()
     {
         var services = new ServiceCollection();
-        var configuration = new ConfigurationBuilder().Build();
 
-        var result = services.AddProtocolServices(configuration);
+        var result = services.AddProtocolServices();
 
         result.Should().BeSameAs(services);
     }
+
 
     /// <summary>
     /// Verifies that AddProtocolServices registers ProtocolServer as singleton.
@@ -103,10 +85,9 @@ public class ProtocolServiceRegistrationTests
     public void AddProtocolServices_RegistersProtocolServerAsSingleton()
     {
         var services = new ServiceCollection();
-        var configuration = new ConfigurationBuilder().Build();
         services.AddLogging();
 
-        services.AddProtocolServices(configuration);
+        services.AddProtocolServices();
 
         var serviceProvider = services.BuildServiceProvider();
         var instance1 = serviceProvider.GetService<IProtocolServer>();
@@ -122,10 +103,9 @@ public class ProtocolServiceRegistrationTests
     public void AddProtocolServices_RegistersNotificationServiceAsSingleton()
     {
         var services = new ServiceCollection();
-        var configuration = new ConfigurationBuilder().Build();
         services.AddLogging();
 
-        services.AddProtocolServices(configuration);
+        services.AddProtocolServices();
 
         var serviceProvider = services.BuildServiceProvider();
         var instance1 = serviceProvider.GetService<IMcpNotificationService>();
@@ -141,10 +121,9 @@ public class ProtocolServiceRegistrationTests
     public void AddProtocolServices_RegistersMiddlewareAsTransient()
     {
         var services = new ServiceCollection();
-        var configuration = new ConfigurationBuilder().Build();
         services.AddLogging();
 
-        services.AddProtocolServices(configuration);
+        services.AddProtocolServices();
 
         // Check that middleware are registered as transient (not singleton)
         var middlewareDescriptors = services.Where(sd =>

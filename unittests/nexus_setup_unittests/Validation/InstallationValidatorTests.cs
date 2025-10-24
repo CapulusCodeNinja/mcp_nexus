@@ -192,13 +192,12 @@ public class InstallationValidatorTests
     {
         return new SharedConfiguration
         {
-            McpNexus = new McpNexusConfiguration
+            McpNexus = new McpNexusSettings
             {
-                Service = new ServiceConfiguration
+                Service = new ServiceSettings
                 {
                     ServiceName = "TestService",
                     DisplayName = "Test Service",
-                    Description = "Test Description",
                     InstallPath = "C:\\Program Files\\MCP-Nexus",
                     BackupPath = "C:\\Backups\\MCP-Nexus"
                 }

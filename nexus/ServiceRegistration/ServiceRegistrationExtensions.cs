@@ -1,14 +1,12 @@
 using System.Runtime.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using nexus.setup.Core;
-using nexus.setup.Interfaces;
 using nexus.external_apis.FileSystem;
 using nexus.external_apis.ProcessManagement;
 using nexus.external_apis.Registry;
 using nexus.external_apis.ServiceManagement;
 
-namespace nexus.setup.ServiceRegistration;
+namespace nexus.ServiceRegistration;
 
 /// <summary>
 /// Extension methods for registering nexus.setup services.
@@ -32,9 +30,6 @@ internal static class ServiceRegistrationExtensions
         services.AddSingleton<IProcessManager, ProcessManager>();
         services.AddSingleton<IRegistryService, RegistryService>();
         services.AddSingleton<IServiceController, ServiceControllerWrapper>();
-
-        // Add setup services
-        services.AddTransient<IProductInstallation, ProductInstallation>();
 
         return services;
     }
