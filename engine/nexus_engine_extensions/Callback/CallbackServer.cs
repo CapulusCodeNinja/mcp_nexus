@@ -39,12 +39,12 @@ internal class CallbackServer
         m_Logger.Info("Configuring extension callback server routes");
 
         // Execute command endpoint
-        _ = app.MapPost("/extension-callback/execute", (HttpContext context) =>
+        _ = app.MapPost("/extension-callback/execute", async (HttpContext context) =>
         {
             try
             {
                 using var reader = new StreamReader(context.Request.Body);
-                var json = reader.ReadToEnd();
+                var json = await reader.ReadToEndAsync();
                 var request = JsonSerializer.Deserialize<ExecuteCommandRequest>(json);
 
                 if (request == null)
@@ -53,20 +53,24 @@ internal class CallbackServer
                 }
 
                 var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-                var (isValid, sessionId, commandId) = m_TokenValidator.ValidateToken(token ?? "");
+                var (isValid, sessionId, _) = m_TokenValidator.ValidateToken(token ?? "");
 
-                if (!isValid)
+                if (!isValid || sessionId == null)
                 {
                     return Results.Unauthorized();
                 }
 
-                // For now, return a placeholder response
-                // In a real implementation, this would call the debug engine
+                // Enqueue the command and wait for completion
+                var newCommandId = m_Engine.EnqueueCommand(sessionId, request.Command);
+                var commandInfo = await m_Engine.GetCommandInfoAsync(sessionId, newCommandId, CancellationToken.None);
+
                 var response = new CommandResponse
                 {
-                    Success = true,
-                    Output = "Command executed successfully (placeholder)",
-                    CommandId = commandId ?? "unknown"
+                    Success = commandInfo.IsSuccess ?? false,
+                    Output = commandInfo.Output ?? string.Empty,
+                    CommandId = newCommandId,
+                    State = commandInfo.State.ToString(),
+                    Error = commandInfo.ErrorMessage
                 };
 
                 return Results.Ok(response);
@@ -79,12 +83,12 @@ internal class CallbackServer
         });
 
         // Queue command endpoint
-        _ = app.MapPost("/extension-callback/queue", (HttpContext context) =>
+        _ = app.MapPost("/extension-callback/queue", async (HttpContext context) =>
         {
             try
             {
                 using var reader = new StreamReader(context.Request.Body);
-                var json = reader.ReadToEnd();
+                var json = await reader.ReadToEndAsync();
                 var request = JsonSerializer.Deserialize<QueueCommandRequest>(json);
 
                 if (request == null)
@@ -93,19 +97,22 @@ internal class CallbackServer
                 }
 
                 var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-                var (isValid, sessionId, commandId) = m_TokenValidator.ValidateToken(token ?? "");
+                var (isValid, sessionId, _) = m_TokenValidator.ValidateToken(token ?? "");
 
-                if (!isValid)
+                if (!isValid || sessionId == null)
                 {
                     return Results.Unauthorized();
                 }
 
-                // For now, return a placeholder response
+                // Enqueue the command without waiting
+                var newCommandId = m_Engine.EnqueueCommand(sessionId, request.Command);
+
                 var response = new CommandResponse
                 {
                     Success = true,
-                    Output = "Command queued successfully (placeholder)",
-                    CommandId = commandId ?? "unknown"
+                    Output = "Command queued successfully",
+                    CommandId = newCommandId,
+                    State = "Queued"
                 };
 
                 return Results.Ok(response);
@@ -118,24 +125,28 @@ internal class CallbackServer
         });
 
         // Read command result endpoint
-        _ = app.MapGet("/extension-callback/read/{commandId}", (HttpContext context, string commandId) =>
+        _ = app.MapGet("/extension-callback/read/{commandId}", async (HttpContext context, string commandId) =>
         {
             try
             {
                 var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
                 var (isValid, sessionId, _) = m_TokenValidator.ValidateToken(token ?? "");
 
-                if (!isValid)
+                if (!isValid || sessionId == null)
                 {
                     return Results.Unauthorized();
                 }
 
-                // For now, return a placeholder response
+                // Get command info and wait for completion
+                var commandInfo = await m_Engine.GetCommandInfoAsync(sessionId, commandId, CancellationToken.None);
+
                 var response = new CommandResponse
                 {
-                    Success = true,
-                    Output = $"Result for command {commandId} (placeholder)",
-                    CommandId = commandId
+                    Success = commandInfo.IsSuccess ?? false,
+                    Output = commandInfo.Output ?? string.Empty,
+                    CommandId = commandId,
+                    State = commandInfo.State.ToString(),
+                    Error = commandInfo.ErrorMessage
                 };
 
                 return Results.Ok(response);
@@ -155,17 +166,26 @@ internal class CallbackServer
                 var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
                 var (isValid, sessionId, _) = m_TokenValidator.ValidateToken(token ?? "");
 
-                if (!isValid)
+                if (!isValid || sessionId == null)
                 {
                     return Results.Unauthorized();
                 }
 
-                // For now, return a placeholder response
+                // Get command info without waiting
+                var commandInfo = m_Engine.GetCommandInfo(sessionId, commandId);
+
+                if (commandInfo == null)
+                {
+                    return Results.NotFound(new { error = "Command not found" });
+                }
+
                 var response = new CommandResponse
                 {
-                    Success = true,
-                    Output = $"Status for command {commandId} (placeholder)",
-                    CommandId = commandId
+                    Success = commandInfo.IsSuccess ?? true,
+                    Output = commandInfo.Output ?? string.Empty,
+                    CommandId = commandId,
+                    State = commandInfo.State.ToString(),
+                    Error = commandInfo.ErrorMessage
                 };
 
                 return Results.Ok(response);
@@ -178,12 +198,12 @@ internal class CallbackServer
         });
 
         // Log endpoint
-        _ = app.MapPost("/extension-callback/log", (HttpContext context) =>
+        _ = app.MapPost("/extension-callback/log", async (HttpContext context) =>
         {
             try
             {
                 using var reader = new StreamReader(context.Request.Body);
-                var json = reader.ReadToEnd();
+                var json = await reader.ReadToEndAsync();
                 var request = JsonSerializer.Deserialize<LogRequest>(json);
 
                 if (request == null)
