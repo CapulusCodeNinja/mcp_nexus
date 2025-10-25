@@ -45,7 +45,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 throw new ArgumentException("command cannot be empty", nameof(command));
             }
 
-            var commandId = DebugEngine.Instance.EnqueueCommand(sessionId, command);
+            var commandId = DebugEngine.Instance.EnqueueExtensionScript(sessionId, command);
 
             logger.Info("Extension Script enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
 

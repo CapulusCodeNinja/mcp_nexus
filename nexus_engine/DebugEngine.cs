@@ -193,7 +193,7 @@ public class DebugEngine : IDebugEngine
         return commandId;
     }
 
-    public string EnqueueExtensioScript(string sessionId, string command)
+    public string EnqueueExtensionScript(string sessionId, string command)
     {
 
     }
