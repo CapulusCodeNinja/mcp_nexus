@@ -1,7 +1,7 @@
 using FluentAssertions;
 
 using Nexus.Engine.Events;
-using Nexus.Engine.Models;
+using Nexus.Engine.Share.Models;
 
 using Xunit;
 

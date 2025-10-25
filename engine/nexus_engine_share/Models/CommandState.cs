@@ -1,4 +1,4 @@
-namespace Nexus.Engine.Models;
+namespace Nexus.Engine.Share.Models;
 
 /// <summary>
 /// Represents the current state of a debug command.
@@ -35,3 +35,4 @@ public enum CommandState
     /// </summary>
     Timeout
 }
+

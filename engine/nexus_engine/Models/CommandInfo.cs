@@ -1,3 +1,5 @@
+using Nexus.Engine.Share.Models;
+
 namespace Nexus.Engine.Models;
 
 /// <summary>

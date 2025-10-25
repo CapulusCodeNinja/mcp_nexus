@@ -1,4 +1,4 @@
-using Nexus.Engine.Models;
+using Nexus.Engine.Share.Models;
 
 namespace Nexus.Engine.Events;
 

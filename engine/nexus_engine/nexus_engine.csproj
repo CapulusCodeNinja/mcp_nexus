@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\nexus_external_apis\nexus_external_apis.csproj" />
     <ProjectReference Include="..\..\nexus_config\nexus_config.csproj" />
     <ProjectReference Include="..\nexus_engine_batch\nexus_engine_batch.csproj" />
+    <ProjectReference Include="..\nexus_engine_share\nexus_engine_share.csproj" />
   </ItemGroup>
 
 </Project>
