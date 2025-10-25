@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\engine\nexus_engine\nexus_engine.csproj" />
+    <ProjectReference Include="..\..\nexus_engine\nexus_engine\nexus_engine.csproj" />
     <ProjectReference Include="..\..\nexus_protocol\nexus_protocol.csproj" />
   </ItemGroup>
 

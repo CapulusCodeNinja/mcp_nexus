@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\engine\nexus_engine_share\nexus_engine_share.csproj" />
+    <ProjectReference Include="..\..\..\nexus_engine\nexus_engine_share\nexus_engine_share.csproj" />
   </ItemGroup>
 
 </Project>
