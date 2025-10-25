@@ -16,8 +16,6 @@ namespace Nexus.Protocol.Tools;
 [McpServerToolType]
 internal static class ReadDumpAnalyzeCommandResultTool
 {
-    private const string UsageField = "MCP Nexus Tool - See tool description for usage details";
-
     /// <summary>
     /// Reads the result of a previously enqueued command. Waits for command completion.
     /// </summary>

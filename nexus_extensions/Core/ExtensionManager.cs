@@ -1,5 +1,6 @@
 using System.Text.Json;
 
+using Nexus.Config;
 using Nexus.Extensions.Models;
 
 using NLog;
@@ -9,7 +10,7 @@ namespace Nexus.Extensions.Core;
 /// <summary>
 /// Manages discovery, loading, and validation of extension scripts.
 /// </summary>
-internal class ExtensionManager : IExtensionManager
+internal class ExtensionManager
 {
     private readonly Logger m_Logger;
     private readonly string m_ExtensionsPath;
@@ -22,19 +23,17 @@ internal class ExtensionManager : IExtensionManager
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionManager"/> class.
     /// </summary>
-    /// <param name="extensionsPath">The path to the extensions directory.</param>
     /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
     /// <exception cref="ArgumentException">Thrown when extensionsPath is null or empty.</exception>
-    public ExtensionManager(string extensionsPath)
+    public ExtensionManager()
     {
         m_Logger = LogManager.GetCurrentClassLogger();
 
-        if (string.IsNullOrWhiteSpace(extensionsPath))
+        m_ExtensionsPath = Settings.GetInstance().Get().McpNexus.Extensions.ExtensionsPath;
+        if (!Path.IsPathRooted(m_ExtensionsPath))
         {
-            throw new ArgumentException("Extensions path cannot be null or empty", nameof(extensionsPath));
+            m_ExtensionsPath = Path.Combine(AppContext.BaseDirectory, m_ExtensionsPath);
         }
-
-        m_ExtensionsPath = extensionsPath;
 
         try
         {

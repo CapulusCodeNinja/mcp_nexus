@@ -7,7 +7,7 @@ namespace Nexus.Extensions.Security;
 /// <summary>
 /// Implementation of extension token validator.
 /// </summary>
-internal class ExtensionTokenValidator : IExtensionTokenValidator
+internal class ExtensionTokenValidator
 {
     private readonly Logger m_Logger;
     private readonly ConcurrentDictionary<string, ExtensionTokenInfo> m_Tokens = new();

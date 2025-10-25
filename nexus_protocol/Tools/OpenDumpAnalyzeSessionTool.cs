@@ -17,8 +17,6 @@ namespace Nexus.Protocol.Tools;
 [McpServerToolType]
 internal static class OpenDumpAnalyzeSessionTool
 {
-    private const string UsageField = "MCP Nexus Tool - See tool description for usage details";
-
     /// <summary>
     /// Opens a new debugging session for analyzing a crash dump file.
     /// </summary>

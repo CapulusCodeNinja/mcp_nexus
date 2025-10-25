@@ -44,9 +44,9 @@ internal class LoggingConfiguration
         var nlogConfig = LogManager.Configuration ?? new NLog.Config.LoggingConfiguration();
 
         // Ensure main file target exists
-        if (nlogConfig.FindTargetByName("mainFile") is not NLog.Targets.FileTarget fileTarget)
+        if (nlogConfig.FindTargetByName("mainFile") is not NLog.Targets.FileTarget)
         {
-            fileTarget = new NLog.Targets.FileTarget("mainFile")
+            var fileTarget = new NLog.Targets.FileTarget("mainFile")
             {
                 FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp-nexus.log"),
                 ArchiveFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "archive", "mcp-nexus-${shortdate}-{##}.log"),
@@ -65,9 +65,9 @@ internal class LoggingConfiguration
         }
 
         // Ensure stderr console target exists
-        if (nlogConfig.FindTargetByName("stderr") is not NLog.Targets.ConsoleTarget stderrTarget)
+        if (nlogConfig.FindTargetByName("stderr") is not NLog.Targets.ConsoleTarget)
         {
-            stderrTarget = new NLog.Targets.ConsoleTarget("stderr")
+            var stderrTarget = new NLog.Targets.ConsoleTarget("stderr")
             {
                 StdErr = true,
                 Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}",
@@ -185,8 +185,10 @@ internal class LoggingConfiguration
     {
         // Only configure NLog for Microsoft.Extensions.Logging when Trace is enabled
         if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
+        {
             return;
-            
+        }
+
         _ = logging.ClearProviders();
         _ = logging.AddNLogWeb();
         _ = logging.SetMinimumLevel(logLevel);

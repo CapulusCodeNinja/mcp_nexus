@@ -5,12 +5,9 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol.Server;
 
+using nexus.extensions;
+
 using Nexus.Config;
-using Nexus.Extensions;
-using Nexus.Extensions.Configuration;
-using Nexus.Extensions.Core;
-using Nexus.Extensions.Infrastructure;
-using Nexus.Extensions.Security;
 using Nexus.Protocol.Utilities;
 
 namespace Nexus.Protocol.Tools;
@@ -21,8 +18,6 @@ namespace Nexus.Protocol.Tools;
 [McpServerToolType]
 internal static class EnqueueAsyncExtensionCommandTool
 {
-    private const string UsageField = "MCP Nexus Tool - See tool description for usage details";
-
     /// <summary>
     /// Enqueues an extension command for asynchronous execution in the specified session.
     /// </summary>
@@ -33,7 +28,7 @@ internal static class EnqueueAsyncExtensionCommandTool
     /// <returns>Extension command enqueue result with commandId.</returns>
     [McpServerTool, Description("Enqueues an extension command for asynchronous execution. Returns commandId for tracking.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    public static async Task<object> nexus_enqueue_async_extension_command(
+    public static Task<object> nexus_enqueue_async_extension_command(
         IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("Name of the extension to execute")] string extensionName,
@@ -62,46 +57,12 @@ internal static class EnqueueAsyncExtensionCommandTool
                 throw new InvalidOperationException("Extensions are disabled in configuration");
             }
 
-            // Create extension services manually
-            var extensionsPath = settings.McpNexus.Extensions.ExtensionsPath ?? "extensions";
-            var extensionManager = new ExtensionManager(extensionsPath);
-            var callbackUrl = $"http://127.0.0.1:{settings.McpNexus.Extensions.CallbackPort}";
-            var configuration = new ExtensionConfiguration();
-            var tokenValidator = new ExtensionTokenValidator();
-            var processWrapper = new ProcessWrapper();
-            
-            var extensionExecutor = new ExtensionExecutor(
-                extensionManager,
-                callbackUrl,
-                configuration,
-                tokenValidator,
-                processWrapper);
-
-            // Generate command ID with extension prefix
-            var commandId = $"ext-{Guid.NewGuid():N}";
-
-            // Execute extension asynchronously
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await extensionExecutor.ExecuteAsync(
-                        extensionName,
-                        sessionId,
-                        parameters,
-                        commandId,
-                        progressCallback: null,
-                        cancellationToken: CancellationToken.None);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Extension execution failed for {CommandId}: {Message}", commandId, ex.Message);
-                }
-                finally
-                {
-                    extensionExecutor.Dispose();
-                }
-            });
+            var commandId = ExtensionScripts.Instance.ExecuteAsync(
+                extensionName,
+                sessionId,
+                parameters,
+                progressCallback: null,
+                cancellationToken: CancellationToken.None);
 
             logger.LogInformation("Extension command enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
 
@@ -120,7 +81,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 $"Extension command {commandId} queued successfully",
                 true);
 
-            return markdown;
+            return Task.FromResult<object>(markdown);
         }
         catch (ArgumentException ex)
         {
@@ -140,7 +101,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 ex.Message,
                 false);
 
-            return markdown;
+            return Task.FromResult<object>(markdown);
         }
         catch (InvalidOperationException ex)
         {
@@ -160,7 +121,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 ex.Message,
                 false);
 
-            return markdown;
+            return Task.FromResult<object>(markdown);
         }
         catch (Exception ex)
         {
@@ -180,7 +141,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 $"Unexpected error: {ex.Message}",
                 false);
 
-            return markdown;
+            return Task.FromResult<object>(markdown);
         }
     }
 }

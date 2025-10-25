@@ -16,8 +16,6 @@ namespace Nexus.Protocol.Tools;
 [McpServerToolType]
 internal static class EnqueueAsyncDumpAnalyzeCommandTool
 {
-    private const string UsageField = "MCP Nexus Tool - See tool description for usage details";
-
     /// <summary>
     /// Enqueues a debugging command for asynchronous execution in the specified session.
     /// </summary>

@@ -4,9 +4,10 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-using Nexus.Extensions.Configuration;
+using Nexus.Config;
 using Nexus.Extensions.Infrastructure;
 using Nexus.Extensions.Models;
+using Nexus.Extensions.Security;
 
 using NLog;
 
@@ -15,14 +16,13 @@ namespace Nexus.Extensions.Core;
 /// <summary>
 /// Executes extension scripts and manages their lifecycle.
 /// </summary>
-internal partial class ExtensionExecutor : IExtensionExecutor
+internal partial class ExtensionExecutor
 {
     private readonly Logger m_Logger;
-    private readonly IExtensionManager m_ExtensionManager;
+    private readonly ExtensionManager m_ExtensionManager;
     private readonly string m_CallbackUrl;
     private readonly IProcessWrapper m_ProcessWrapper;
-    private readonly IExtensionTokenValidator m_TokenValidator;
-    private readonly ExtensionConfiguration m_Configuration;
+    private readonly ExtensionTokenValidator m_TokenValidator;
     private readonly ConcurrentDictionary<string, ExtensionProcessInfo> m_RunningExtensions = new();
     private readonly ConcurrentDictionary<string, IProcessHandle> m_Processes = new();
 
@@ -30,34 +30,26 @@ internal partial class ExtensionExecutor : IExtensionExecutor
     [GeneratedRegex("\x1B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled)]
     private static partial Regex AnsiRegex();
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ExtensionExecutor"/> class.
-    /// </summary>
-    /// <param name="extensionManager">The extension manager for retrieving extension metadata.</param>
-    /// <param name="callbackUrl">The base URL for extension callbacks.</param>
-    /// <param name="configuration">Configuration settings for extension execution.</param>
-    /// <param name="tokenValidator">Token validator for authentication.</param>
-    /// <param name="processWrapper">Optional process wrapper for testing (defaults to real Process).</param>
-    /// <exception cref="ArgumentNullException">Thrown when logger, extensionManager, configuration, or tokenValidator is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when callbackUrl is null or empty.</exception>
-    public ExtensionExecutor(
-        IExtensionManager extensionManager,
-        string callbackUrl,
-        ExtensionConfiguration configuration,
-        IExtensionTokenValidator tokenValidator,
+    public ExtensionExecutor(ExtensionManager extensionManager) : this(
+        extensionManager,
+        new ExtensionTokenValidator(),
+        new ProcessWrapper())
+    {
+
+    }
+
+    internal ExtensionExecutor(
+        ExtensionManager extensionManager,
+        ExtensionTokenValidator tokenValidator,
         IProcessWrapper? processWrapper = null)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
         m_ExtensionManager = extensionManager ?? throw new ArgumentNullException(nameof(extensionManager));
-        m_Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         m_TokenValidator = tokenValidator ?? throw new ArgumentNullException(nameof(tokenValidator));
 
-        if (string.IsNullOrWhiteSpace(callbackUrl))
-        {
-            throw new ArgumentException("Callback URL cannot be null or empty", nameof(callbackUrl));
-        }
+        var callbackPort = Settings.GetInstance().Get().McpNexus.Extensions.CallbackPort; // 0 = use MCP server port
 
-        m_CallbackUrl = callbackUrl;
+        m_CallbackUrl = $"http://127.0.0.1:{callbackPort}/extension-callback";
         m_ProcessWrapper = processWrapper ?? new ProcessWrapper();
     }
 
@@ -73,11 +65,10 @@ internal partial class ExtensionExecutor : IExtensionExecutor
     /// <returns>The extension execution result.</returns>
     /// <exception cref="ArgumentException">Thrown when extension name, session ID, or command ID is invalid.</exception>
     /// <exception cref="InvalidOperationException">Thrown when extension validation fails or script type is unsupported.</exception>
-    public async Task<ExtensionResult> ExecuteAsync(
+    public string ExecuteAsync(
         string extensionName,
         string sessionId,
         object? parameters,
-        string commandId,
         Action<string>? progressCallback = null,
         CancellationToken cancellationToken = default)
     {
@@ -89,11 +80,6 @@ internal partial class ExtensionExecutor : IExtensionExecutor
         if (string.IsNullOrWhiteSpace(sessionId))
         {
             throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
-        }
-
-        if (string.IsNullOrWhiteSpace(commandId))
-        {
-            throw new ArgumentException("Command ID cannot be null or empty", nameof(commandId));
         }
 
         m_Logger.Info("Starting extension: {Extension} for session {SessionId} with command ID {CommandId}",

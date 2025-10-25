@@ -16,8 +16,6 @@ namespace Nexus.Protocol.Tools;
 [McpServerToolType]
 internal static class CloseDumpAnalyzeSessionTool
 {
-    private const string UsageField = "MCP Nexus Tool - See tool description for usage details";
-
     /// <summary>
     /// Closes a debugging session and releases all associated resources.
     /// </summary>

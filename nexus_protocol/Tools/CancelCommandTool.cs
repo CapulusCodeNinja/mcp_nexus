@@ -16,8 +16,6 @@ namespace Nexus.Protocol.Tools;
 [McpServerToolType]
 internal static class CancelCommandTool
 {
-    private const string UsageField = "MCP Nexus Tool - See tool description for usage details";
-
     /// <summary>
     /// Cancels a queued or executing command in a session.
     /// </summary>

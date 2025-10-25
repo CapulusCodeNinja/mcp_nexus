@@ -16,8 +16,6 @@ namespace Nexus.Protocol.Tools;
 [McpServerToolType]
 internal static class GetDumpAnalyzeCommandsStatusTool
 {
-    private const string UsageField = "MCP Nexus Tool - See tool description for usage details";
-
     /// <summary>
     /// Gets the status of all commands in a session. Efficient for monitoring multiple commands.
     /// </summary>
