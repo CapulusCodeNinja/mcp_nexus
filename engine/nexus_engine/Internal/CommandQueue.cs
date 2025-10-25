@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Threading.Channels;
 
 using Nexus.Engine.Batch;
+using Nexus.Engine.Share;
 using Nexus.Engine.Share.Events;
 using Nexus.Engine.Share.Models;
 
@@ -120,7 +121,7 @@ internal class CommandQueue : IDisposable
             throw new ArgumentException("Command cannot be null or empty", nameof(command));
         }
 
-        var commandId = GenerateCommandId();
+        var commandId = CommandIdGenerator.Instance.GenerateCommandId(m_SessionId);
         var queuedCommand = new QueuedCommand
         {
             Id = commandId,
@@ -323,6 +324,9 @@ internal class CommandQueue : IDisposable
 
             // Stop processing
             StopAsync().GetAwaiter().GetResult();
+
+            // Reset the command ID generator for this session
+            _ = CommandIdGenerator.Instance.ResetSession(m_SessionId);
 
             // Dispose resources
             m_CancellationTokenSource.Dispose();
@@ -752,15 +756,6 @@ internal class CommandQueue : IDisposable
         };
 
         CommandStateChanged?.Invoke(this, args);
-    }
-
-    /// <summary>
-    /// Generates a unique command identifier.
-    /// </summary>
-    /// <returns>A unique command ID string.</returns>
-    private static string GenerateCommandId()
-    {
-        return $"cmd-{Guid.NewGuid():N}";
     }
 
     /// <summary>

@@ -160,8 +160,8 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         // The initialization task will be awaited in the background execution
         EnsureCallbackServerInitializedAsync().GetAwaiter().GetResult();
 
-        // Generate unique command ID using engine's ID generation to avoid duplicates
-        var commandId = GenerateCommandId(sessionId);
+        // Generate unique command ID using centralized generator
+        var commandId = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
         var queuedTime = DateTime.Now;
 
         // Store initial queued state
@@ -394,6 +394,9 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         if (!m_SessionCommands.TryGetValue(sessionId, out var commandIds))
         {
             m_Logger.Debug("No extension commands found for session {SessionId}", sessionId);
+            
+            // Still reset the command ID generator for this session
+            _ = CommandIdGenerator.Instance.ResetSession(sessionId);
             return;
         }
 
@@ -415,26 +418,10 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         // Remove session from tracking (but keep results in cache for potential final queries)
         _ = m_SessionCommands.TryRemove(sessionId, out _);
 
+        // Reset the command ID generator for this session
+        _ = CommandIdGenerator.Instance.ResetSession(sessionId);
+
         m_Logger.Info("Closed all extension scripts for session {SessionId}", sessionId);
-    }
-
-    /// <summary>
-    /// Generates a unique command ID for extension scripts.
-    /// Uses format cmd-{sessionId}-{timestamp} to avoid duplicates with regular commands.
-    /// </summary>
-    /// <param name="sessionId">The session ID to include in the command ID.</param>
-    /// <returns>A unique command ID in the format cmd-{sessionId}-{number}.</returns>
-    private static string GenerateCommandId(string sessionId)
-    {
-        if (string.IsNullOrWhiteSpace(sessionId))
-        {
-            throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
-        }
-
-        // Use timestamp-based approach for session-specific IDs
-        // This ensures uniqueness within the session and follows the cmd-{sessionId}-{number} format
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        return $"cmd-{sessionId}-{timestamp}";
     }
 
     /// <summary>

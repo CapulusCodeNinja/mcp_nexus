@@ -484,8 +484,8 @@ public class CommandQueueTests : IDisposable
         // Act
         var commandId = m_Queue.EnqueueCommand("k");
 
-        // Assert - Should be cmd-{guid without dashes}
-        _ = commandId.Should().MatchRegex(@"^cmd-[a-f0-9]{32}$");
+        // Assert - Should be cmd-{sessionId}-{number}
+        _ = commandId.Should().MatchRegex(@"^cmd-test-session-1-\d+$");
     }
 
     /// <summary>
