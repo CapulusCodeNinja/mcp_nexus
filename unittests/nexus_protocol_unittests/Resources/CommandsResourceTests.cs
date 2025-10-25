@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Nexus.Engine;
+using Nexus.Engine.Share;
 using Nexus.Protocol.Resources;
 
 namespace Nexus.Protocol.Unittests.Resources;

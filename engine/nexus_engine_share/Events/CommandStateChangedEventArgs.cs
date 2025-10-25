@@ -1,6 +1,6 @@
 using Nexus.Engine.Share.Models;
 
-namespace Nexus.Engine.Events;
+namespace Nexus.Engine.Share.Events;
 
 /// <summary>
 /// Event arguments for command state change events.
@@ -55,3 +55,4 @@ public class CommandStateChangedEventArgs : EventArgs
         get; init;
     }
 }
+

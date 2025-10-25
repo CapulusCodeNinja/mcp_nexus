@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Threading.Channels;
 
 using Nexus.Engine.Batch;
-using Nexus.Engine.Events;
+using Nexus.Engine.Share.Events;
 using Nexus.Engine.Share.Models;
 
 using NLog;

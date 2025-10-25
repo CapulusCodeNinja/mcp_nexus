@@ -1,6 +1,6 @@
-using Nexus.Engine.Models;
+using Nexus.Engine.Share.Models;
 
-namespace Nexus.Engine.Events;
+namespace Nexus.Engine.Share.Events;
 
 /// <summary>
 /// Event arguments for session state change events.
@@ -47,3 +47,4 @@ public class SessionStateChangedEventArgs : EventArgs
         get; init;
     }
 }
+

@@ -1,4 +1,4 @@
-namespace Nexus.Engine.Models;
+namespace Nexus.Engine.Share.Models;
 
 /// <summary>
 /// Represents the current state of a debug session.
@@ -30,3 +30,4 @@ public enum SessionState
     /// </summary>
     Faulted
 }
+

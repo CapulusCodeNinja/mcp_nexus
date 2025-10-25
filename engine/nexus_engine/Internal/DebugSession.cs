@@ -1,5 +1,4 @@
-using Nexus.Engine.Events;
-using Nexus.Engine.Models;
+using Nexus.Engine.Share.Events;
 using Nexus.Engine.Share.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;

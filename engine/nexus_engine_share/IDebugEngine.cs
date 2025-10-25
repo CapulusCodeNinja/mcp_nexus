@@ -1,8 +1,7 @@
-using Nexus.Engine.Events;
-using Nexus.Engine.Models;
+using Nexus.Engine.Share.Events;
 using Nexus.Engine.Share.Models;
 
-namespace Nexus.Engine;
+namespace Nexus.Engine.Share;
 
 /// <summary>
 /// Main interface for the debug engine that manages CDB sessions and command execution.
@@ -124,3 +123,4 @@ public interface IDebugEngine : IDisposable
     /// </summary>
     event EventHandler<SessionStateChangedEventArgs>? SessionStateChanged;
 }
+
