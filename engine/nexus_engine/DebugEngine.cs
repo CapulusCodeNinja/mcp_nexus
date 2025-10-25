@@ -19,6 +19,7 @@ public class DebugEngine : IDebugEngine
     private readonly Logger m_Logger;
     private readonly IFileSystem m_FileSystem;
     private readonly IProcessManager m_ProcessManager;
+    private readonly IExtensionScripts m_ExtensionScripts;
 
     private readonly ConcurrentDictionary<string, Internal.DebugSession> m_Sessions = new();
     private volatile bool m_Disposed = false;
@@ -45,6 +46,8 @@ public class DebugEngine : IDebugEngine
     {
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
+
+        m_ExtensionScripts = new ExtensionScripts(this);
 
         m_Logger = LogManager.GetCurrentClassLogger();
         m_Logger.Info("DebugEngine initialized with max {MaxSessions} concurrent sessions", Settings.GetInstance().Get().McpNexus.SessionManagement.MaxConcurrentSessions);
@@ -134,7 +137,7 @@ public class DebugEngine : IDebugEngine
             try
             {
                 // Close all extension scripts for this session
-                ExtensionScripts.Instance.CloseSession(sessionId);
+                m_ExtensionScripts.CloseSession(sessionId);
 
                 // Unsubscribe from events
                 session.CommandStateChanged -= OnSessionCommandStateChanged;
@@ -226,7 +229,7 @@ public class DebugEngine : IDebugEngine
         m_Logger.Info("Enqueuing extension script '{ExtensionName}' in session {SessionId}", extensionName, sessionId);
 
         // Delegate to the extensions library - it will handle all context management internally
-        var commandId = ExtensionScripts.Instance.EnqueueExtensionScript(sessionId, extensionName, parameters);
+        var commandId = m_ExtensionScripts.EnqueueExtensionScript(sessionId, extensionName, parameters);
 
         // Fire state changed event for the engine's tracking
         OnSessionCommandStateChanged(this, new CommandStateChangedEventArgs
@@ -289,7 +292,7 @@ public class DebugEngine : IDebugEngine
         }
 
         // If not found in session, check the extensions library
-        return ExtensionScripts.Instance.GetCommandStatus(commandId);
+        return m_ExtensionScripts.GetCommandStatus(commandId);
     }
 
     /// <summary>
@@ -312,7 +315,7 @@ public class DebugEngine : IDebugEngine
         }
 
         // Add extension commands for this session
-        var extensionCommands = ExtensionScripts.Instance.GetSessionCommands(sessionId);
+        var extensionCommands = m_ExtensionScripts.GetSessionCommands(sessionId);
         foreach (var extCmd in extensionCommands)
         {
             allCommands[extCmd.CommandId] = extCmd;
@@ -341,7 +344,7 @@ public class DebugEngine : IDebugEngine
         }
 
         // If not found in session, try to cancel in the extensions library
-        return ExtensionScripts.Instance.CancelCommand(commandId);
+        return m_ExtensionScripts.CancelCommand(commandId);
     }
 
     /// <summary>

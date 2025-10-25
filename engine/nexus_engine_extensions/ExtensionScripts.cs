@@ -3,6 +3,7 @@
 using Nexus.Engine.Extensions.Core;
 using Nexus.Engine.Extensions.Models;
 using Nexus.Engine.Extensions.Security;
+using Nexus.Engine.Share;
 using Nexus.Engine.Share.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
@@ -22,23 +23,13 @@ public class ExtensionScripts : IExtensionScripts
     private readonly ConcurrentDictionary<string, CommandInfo> m_CommandCache;
     private readonly ConcurrentDictionary<string, HashSet<string>> m_SessionCommands;
     private readonly ConcurrentDictionary<string, ExtensionStatus> m_RunningExtensions;
-
-    /// <summary>
-    /// Gets the singleton instance.
-    /// </summary>
-    public static IExtensionScripts Instance { get; } = new ExtensionScripts();
+    private readonly IDebugEngine m_Engine;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionScripts"/> class with default dependencies.
     /// </summary>
-    public ExtensionScripts()
+    public ExtensionScripts(IDebugEngine engine) : this(engine, new FileSystem(), new ProcessManager())
     {
-        m_Logger = LogManager.GetCurrentClassLogger();
-        m_Manager = new ExtensionManager();
-        m_Executor = new ExtensionExecutor(m_Manager);
-        m_CommandCache = new ConcurrentDictionary<string, CommandInfo>();
-        m_SessionCommands = new ConcurrentDictionary<string, HashSet<string>>();
-        m_RunningExtensions = new ConcurrentDictionary<string, ExtensionStatus>();
     }
 
     /// <summary>
@@ -46,9 +37,11 @@ public class ExtensionScripts : IExtensionScripts
     /// </summary>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
-    internal ExtensionScripts(IFileSystem fileSystem, IProcessManager processManager)
+    internal ExtensionScripts(IDebugEngine engine, IFileSystem fileSystem, IProcessManager processManager)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
+
+        m_Engine = engine;
         m_Manager = new ExtensionManager(fileSystem);
         m_Executor = new ExtensionExecutor(m_Manager, new ExtensionTokenValidator(), processManager);
         m_CommandCache = new ConcurrentDictionary<string, CommandInfo>();
