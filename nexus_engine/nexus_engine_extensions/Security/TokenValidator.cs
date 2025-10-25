@@ -98,6 +98,11 @@ public class TokenValidator : IDisposable
     /// <param name="token">The token to revoke.</param>
     public void RevokeToken(string token)
     {
+        if (string.IsNullOrEmpty(token))
+        {
+            return;
+        }
+
         lock (m_Lock)
         {
             if (m_ValidTokens.Remove(token))
