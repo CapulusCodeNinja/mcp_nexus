@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
+using Nexus.Engine.Extensions.Callback;
 using Nexus.Engine.Extensions.Core;
 using Nexus.Engine.Extensions.Models;
 using Nexus.Engine.Extensions.Security;
@@ -13,19 +14,19 @@ using NLog;
 namespace Nexus.Engine.Extensions;
 
 /// <summary>
-/// Singleton class for managing extension scripts.
+/// Manages extension scripts with integrated callback server.
 /// </summary>
-public class ExtensionScripts : IExtensionScripts
+public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
 {
     /// <summary>
     /// Executor for running extension scripts.
     /// </summary>
-    private readonly ExtensionExecutor m_Executor;
+    private readonly Executor m_Executor;
 
     /// <summary>
     /// Manager for discovering and loading extension scripts.
     /// </summary>
-    private readonly ExtensionManager m_Manager;
+    private readonly Manager m_Manager;
 
     /// <summary>
     /// Logger for extension script operations.
@@ -53,10 +54,21 @@ public class ExtensionScripts : IExtensionScripts
     private readonly IDebugEngine m_Engine;
 
     /// <summary>
+    /// Manager for the extension callback server.
+    /// </summary>
+    private readonly ICallbackServerManager m_CallbackServerManager;
+
+    /// <summary>
+    /// Flag indicating if resources have been disposed.
+    /// </summary>
+    private bool m_Disposed;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionScripts"/> class with default dependencies.
     /// </summary>
     /// <param name="engine">The debug engine instance for callback operations.</param>
-    public ExtensionScripts(IDebugEngine engine) : this(engine, new FileSystem(), new ProcessManager())
+    public ExtensionScripts(IDebugEngine engine)
+        : this(engine, new CallbackServerManager(engine), new FileSystem(), new ProcessManager())
     {
     }
 
@@ -64,18 +76,48 @@ public class ExtensionScripts : IExtensionScripts
     /// Initializes a new instance of the <see cref="ExtensionScripts"/> class with injected dependencies.
     /// </summary>
     /// <param name="engine">The debug engine instance for callback operations.</param>
+    /// <param name="callbackServerManager">The callback server manager.</param>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
-    internal ExtensionScripts(IDebugEngine engine, IFileSystem fileSystem, IProcessManager processManager)
+    internal ExtensionScripts(
+        IDebugEngine engine,
+        ICallbackServerManager callbackServerManager,
+        IFileSystem fileSystem,
+        IProcessManager processManager)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
 
-        m_Engine = engine;
-        m_Manager = new ExtensionManager(fileSystem);
-        m_Executor = new ExtensionExecutor(m_Manager, new ExtensionTokenValidator(), processManager);
+        m_Engine = engine ?? throw new ArgumentNullException(nameof(engine));
+        m_CallbackServerManager = callbackServerManager ?? throw new ArgumentNullException(nameof(callbackServerManager));
+        m_Manager = new Manager(fileSystem);
+        m_Executor = new Executor(m_Manager, new TokenValidator(), processManager);
         m_CommandCache = new ConcurrentDictionary<string, CommandInfo>();
         m_SessionCommands = new ConcurrentDictionary<string, HashSet<string>>();
         m_RunningExtensions = new ConcurrentDictionary<string, ExtensionStatus>();
+        m_Disposed = false;
+
+        // Start the callback server asynchronously
+        _ = StartCallbackServerAsync();
+    }
+
+    /// <summary>
+    /// Starts the extension callback HTTP server asynchronously.
+    /// </summary>
+    private async Task StartCallbackServerAsync()
+    {
+        try
+        {
+            await m_CallbackServerManager.StartAsync();
+
+            // Update the executor with the actual callback URL
+            m_Executor.UpdateCallbackUrl(m_CallbackServerManager.CallbackUrl);
+
+            m_Logger.Info("Extension system initialized with callback URL: {CallbackUrl}", m_CallbackServerManager.CallbackUrl);
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Error(ex, "Failed to start extension callback server during initialization");
+        }
     }
 
     /// <summary>
@@ -359,5 +401,32 @@ public class ExtensionScripts : IExtensionScripts
         // This ensures uniqueness within the session and follows the cmd-{sessionId}-{number} format
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         return $"cmd-{sessionId}-{timestamp}";
+    }
+
+    /// <summary>
+    /// Disposes resources asynchronously, including the callback server.
+    /// </summary>
+    /// <returns>A task representing the asynchronous dispose operation.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        if (m_Disposed)
+        {
+            return;
+        }
+
+        m_Disposed = true;
+
+        // Dispose the callback server manager
+        try
+        {
+            await m_CallbackServerManager.DisposeAsync();
+            m_Logger.Info("Extension scripts disposed successfully");
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Error(ex, "Error disposing extension scripts");
+        }
+
+        GC.SuppressFinalize(this);
     }
 }

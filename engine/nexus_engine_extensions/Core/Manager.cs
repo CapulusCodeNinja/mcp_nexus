@@ -11,7 +11,7 @@ namespace Nexus.Engine.Extensions.Core;
 /// <summary>
 /// Manages discovery, loading, and validation of extension scripts.
 /// </summary>
-internal class ExtensionManager
+internal class Manager
 {
     private readonly Logger m_Logger;
     private readonly IFileSystem m_FileSystem;
@@ -23,21 +23,21 @@ internal class ExtensionManager
     private int m_Version = 0;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ExtensionManager"/> class with default dependencies.
+    /// Initializes a new instance of the <see cref="Manager"/> class with default dependencies.
     /// </summary>
     /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
     /// <exception cref="ArgumentException">Thrown when extensionsPath is null or empty.</exception>
-    public ExtensionManager() : this(new FileSystem())
+    public Manager() : this(new FileSystem())
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ExtensionManager"/> class with specified dependencies.
+    /// Initializes a new instance of the <see cref="Manager"/> class with specified dependencies.
     /// </summary>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <exception cref="ArgumentNullException">Thrown when fileSystem is null.</exception>
     /// <exception cref="ArgumentException">Thrown when extensionsPath is null or empty.</exception>
-    internal ExtensionManager(IFileSystem fileSystem)
+    internal Manager(IFileSystem fileSystem)
     {
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_Logger = LogManager.GetCurrentClassLogger();

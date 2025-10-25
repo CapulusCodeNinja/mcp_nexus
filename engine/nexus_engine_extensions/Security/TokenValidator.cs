@@ -7,16 +7,16 @@ namespace Nexus.Engine.Extensions.Security;
 /// <summary>
 /// Validates security tokens for extension script callbacks.
 /// </summary>
-public class ExtensionTokenValidator
+public class TokenValidator
 {
     private readonly Logger m_Logger;
     private readonly Dictionary<string, TokenInfo> m_ValidTokens = new();
     private readonly object m_Lock = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ExtensionTokenValidator"/> class.
+    /// Initializes a new instance of the <see cref="TokenValidator"/> class.
     /// </summary>
-    public ExtensionTokenValidator()
+    public TokenValidator()
     {
         m_Logger = LogManager.GetCurrentClassLogger();
     }

@@ -15,41 +15,41 @@ namespace Nexus.Engine.Extensions.Core;
 /// <summary>
 /// Executes extension scripts and manages their lifecycle.
 /// </summary>
-internal class ExtensionExecutor
+internal class Executor
 {
     private readonly Logger m_Logger;
-    private readonly ExtensionManager m_ExtensionManager;
-    private readonly string m_CallbackUrl;
+    private readonly Manager m_Manager;
+    private string m_CallbackUrl;
     private readonly IProcessManager m_ProcessManager;
-    private readonly ExtensionTokenValidator m_TokenValidator;
+    private readonly TokenValidator m_TokenValidator;
 
     // Compiled regex to strip ANSI escape sequences from process output
     private static readonly Regex AnsiRegex = new("\x1B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ExtensionExecutor"/> class with default dependencies.
+    /// Initializes a new instance of the <see cref="Executor"/> class with default dependencies.
     /// </summary>
-    /// <param name="extensionManager">The extension manager.</param>
-    public ExtensionExecutor(ExtensionManager extensionManager) : this(
-        extensionManager,
-        new ExtensionTokenValidator(),
+    /// <param name="manager">The extension manager.</param>
+    public Executor(Manager manager) : this(
+        manager,
+        new TokenValidator(),
         new ProcessManager())
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ExtensionExecutor"/> class with injected dependencies.
+    /// Initializes a new instance of the <see cref="Executor"/> class with injected dependencies.
     /// </summary>
-    /// <param name="extensionManager">The extension manager.</param>
+    /// <param name="manager">The extension manager.</param>
     /// <param name="tokenValidator">The token validator.</param>
     /// <param name="processManager">The process manager.</param>
-    internal ExtensionExecutor(
-        ExtensionManager extensionManager,
-        ExtensionTokenValidator tokenValidator,
+    internal Executor(
+        Manager manager,
+        TokenValidator tokenValidator,
         IProcessManager processManager)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
-        m_ExtensionManager = extensionManager ?? throw new ArgumentNullException(nameof(extensionManager));
+        m_Manager = manager ?? throw new ArgumentNullException(nameof(manager));
         m_TokenValidator = tokenValidator ?? throw new ArgumentNullException(nameof(tokenValidator));
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
 
@@ -89,7 +89,7 @@ internal class ExtensionExecutor
         try
         {
             // Get extension metadata
-            var metadata = m_ExtensionManager.GetExtension(extensionName);
+            var metadata = m_Manager.GetExtension(extensionName);
             if (metadata == null)
             {
                 return new ExtensionResult
@@ -337,5 +337,16 @@ internal class ExtensionExecutor
                 ExecutionTimeMs = (long)(DateTime.Now - startTime).TotalMilliseconds
             };
         }
+    }
+
+    /// <summary>
+    /// Updates the callback URL used by extensions to communicate back to the server.
+    /// </summary>
+    /// <param name="callbackUrl">The new callback URL.</param>
+    public void UpdateCallbackUrl(string callbackUrl)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(callbackUrl);
+        m_CallbackUrl = callbackUrl;
+        m_Logger.Info("Updated extension callback URL to: {CallbackUrl}", m_CallbackUrl);
     }
 }

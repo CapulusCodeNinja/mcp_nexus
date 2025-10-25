@@ -14,19 +14,19 @@ namespace Nexus.Engine.Extensions.Callback;
 /// <summary>
 /// HTTP server for handling extension script callbacks.
 /// </summary>
-public class ExtensionCallbackServer
+public class CallbackServer
 {
     private readonly Logger m_Logger;
     private readonly IDebugEngine m_Engine;
-    private readonly ExtensionTokenValidator m_TokenValidator;
+    private readonly TokenValidator m_TokenValidator;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ExtensionCallbackServer"/> class.
+    /// Initializes a new instance of the <see cref="CallbackServer"/> class.
     /// </summary>
-    public ExtensionCallbackServer(IDebugEngine engine)
+    public CallbackServer(IDebugEngine engine)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
-        m_TokenValidator = new ExtensionTokenValidator();
+        m_TokenValidator = new TokenValidator();
         m_Engine = engine;
     }
 
