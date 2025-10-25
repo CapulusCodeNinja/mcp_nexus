@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AssemblyName>nexus_config</AssemblyName>
-    <RootNamespace>nexus.config</RootNamespace>
+    <RootNamespace>Nexus.Config</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>

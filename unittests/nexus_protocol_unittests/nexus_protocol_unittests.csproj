@@ -4,7 +4,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <AssemblyName>nexus_protocol_unittests</AssemblyName>
-    <RootNamespace>nexus.protocol.unittests</RootNamespace>
+    <RootNamespace>Nexus.Protocol.Unittests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

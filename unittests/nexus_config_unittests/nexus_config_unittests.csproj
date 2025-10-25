@@ -1,6 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
+    <RootNamespace>Nexus.Config.Unittests</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>

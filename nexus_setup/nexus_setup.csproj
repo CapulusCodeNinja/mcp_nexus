@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>nexus_setup</AssemblyName>
-    <RootNamespace>nexus.setup</RootNamespace>
+    <RootNamespace>Nexus.Setup</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

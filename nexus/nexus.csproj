@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <LangVersion>latest</LangVersion>
     <AssemblyName>nexus</AssemblyName>
-    <RootNamespace>nexus</RootNamespace>
+    <RootNamespace>Nexus</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

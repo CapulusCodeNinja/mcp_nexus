@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>nexus_protocol</AssemblyName>
-    <RootNamespace>nexus.protocol</RootNamespace>
+    <RootNamespace>Nexus.Protocol</RootNamespace>
     <OutputType>Library</OutputType>
   </PropertyGroup>
 

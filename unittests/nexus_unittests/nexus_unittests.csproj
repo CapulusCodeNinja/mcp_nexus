@@ -4,6 +4,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <RootNamespace>Nexus.Unittests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

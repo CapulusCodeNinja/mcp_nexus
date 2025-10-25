@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>nexus_engine</AssemblyName>
-    <RootNamespace>nexus.engine</RootNamespace>
+    <RootNamespace>Nexus.Engine</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
