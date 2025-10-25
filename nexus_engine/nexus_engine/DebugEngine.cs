@@ -478,7 +478,7 @@ public class DebugEngine : IDebugEngine
     /// <param name="sessionId">The session ID to validate.</param>
     /// <param name="paramName">The parameter name for the exception message.</param>
     /// <exception cref="ArgumentException">Thrown when sessionId is null or whitespace.</exception>
-    private static void ValidateSessionId(string sessionId, string paramName)
+    protected static void ValidateSessionId(string sessionId, string paramName)
     {
         if (string.IsNullOrWhiteSpace(sessionId))
         {
@@ -492,7 +492,7 @@ public class DebugEngine : IDebugEngine
     /// <param name="commandId">The command ID to validate.</param>
     /// <param name="paramName">The parameter name for the exception message.</param>
     /// <exception cref="ArgumentException">Thrown when commandId is null or whitespace.</exception>
-    private static void ValidateCommandId(string commandId, string paramName)
+    protected static void ValidateCommandId(string commandId, string paramName)
     {
         if (string.IsNullOrWhiteSpace(commandId))
         {
@@ -506,7 +506,7 @@ public class DebugEngine : IDebugEngine
     /// <param name="command">The command to validate.</param>
     /// <param name="paramName">The parameter name for the exception message.</param>
     /// <exception cref="ArgumentException">Thrown when command is null or whitespace.</exception>
-    private static void ValidateCommand(string command, string paramName)
+    protected static void ValidateCommand(string command, string paramName)
     {
         if (string.IsNullOrWhiteSpace(command))
         {
@@ -533,7 +533,7 @@ public class DebugEngine : IDebugEngine
     /// <param name="extensionName">The extension name to validate.</param>
     /// <param name="paramName">The parameter name for the exception message.</param>
     /// <exception cref="ArgumentException">Thrown when extensionName is null or whitespace.</exception>
-    private static void ValidateExtensionName(string extensionName, string paramName)
+    protected static void ValidateExtensionName(string extensionName, string paramName)
     {
         if (string.IsNullOrWhiteSpace(extensionName))
         {
