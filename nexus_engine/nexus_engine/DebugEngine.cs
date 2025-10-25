@@ -42,6 +42,11 @@ public class DebugEngine : IDebugEngine
     private readonly ConcurrentDictionary<string, Internal.DebugSession> m_Sessions = new();
 
     /// <summary>
+    /// Dictionary tracking session creation timestamps keyed by session ID.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, DateTime> m_SessionCreationTimes = new();
+
+    /// <summary>
     /// Indicates whether this instance has been disposed.
     /// </summary>
     private volatile bool m_Disposed = false;
@@ -111,6 +116,7 @@ public class DebugEngine : IDebugEngine
         }
 
         var sessionId = SessionIdGenerator.Instance.GenerateSessionId();
+        var creationTime = DateTime.Now;
         m_Logger.Info("Creating debug session {SessionId} for dump file: {DumpFilePath}", sessionId, dumpFilePath);
 
         try
@@ -130,6 +136,9 @@ public class DebugEngine : IDebugEngine
                 await session.DisposeAsync();
                 throw new InvalidOperationException($"Failed to add session {sessionId} to active sessions");
             }
+
+            // Track session creation time
+            _ = m_SessionCreationTimes.TryAdd(sessionId, creationTime);
 
             m_Logger.Info("Debug session {SessionId} created successfully", sessionId);
             return sessionId;
@@ -158,6 +167,39 @@ public class DebugEngine : IDebugEngine
         {
             try
             {
+                // Get session creation time
+                var closedAt = DateTime.Now;
+                var openedAt = m_SessionCreationTimes.TryGetValue(sessionId, out var creationTime) ? creationTime : closedAt;
+                var totalDuration = closedAt - openedAt;
+
+                // Collect command statistics from the session
+                var sessionCommands = session.GetAllCommandInfos();
+                var extensionCommands = m_ExtensionScripts.GetSessionCommands(sessionId);
+
+                // Combine all commands
+                var allCommands = new List<CommandInfo>(sessionCommands.Values);
+                allCommands.AddRange(extensionCommands);
+
+                // Count commands by state
+                var completedCount = allCommands.Count(c => c.State == CommandState.Completed);
+                var failedCount = allCommands.Count(c => c.State == CommandState.Failed);
+                var cancelledCount = allCommands.Count(c => c.State == CommandState.Cancelled);
+                var timedOutCount = allCommands.Count(c => c.State == CommandState.Timeout);
+                var totalCount = allCommands.Count;
+
+                // Emit session statistics
+                Statistics.EmitSessionStats(
+                    m_Logger,
+                    sessionId,
+                    openedAt,
+                    closedAt,
+                    totalDuration.TotalMilliseconds,
+                    totalCount,
+                    completedCount,
+                    failedCount,
+                    cancelledCount,
+                    timedOutCount);
+
                 // Close all extension scripts for this session
                 m_ExtensionScripts.CloseSession(sessionId);
 
@@ -166,6 +208,10 @@ public class DebugEngine : IDebugEngine
                 session.SessionStateChanged -= OnSessionStateChanged;
 
                 await session.DisposeAsync();
+
+                // Remove session creation time tracking
+                _ = m_SessionCreationTimes.TryRemove(sessionId, out _);
+
                 m_Logger.Info("Debug session {SessionId} closed successfully", sessionId);
             }
             catch (Exception ex)
