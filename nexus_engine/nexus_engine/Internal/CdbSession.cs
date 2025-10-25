@@ -40,7 +40,10 @@ internal class CdbSession : ICdbSession
     /// <summary>
     /// Gets the symbol path.
     /// </summary>
-    public string? SymbolPath { get; private set; }
+    public string? SymbolPath
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// Gets a value indicating whether the session is initialized.

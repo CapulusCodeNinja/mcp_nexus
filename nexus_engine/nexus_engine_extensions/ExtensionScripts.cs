@@ -225,49 +225,124 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
                     result.Output ?? string.Empty,
                     result.Success,
                     result.Success ? null : (result.Error ?? "Extension execution failed"));
+
+                // Emit statistics
+                var executionTime = endTime - startTime;
+                var queueTime = startTime - queuedTime;
+                var totalTime = endTime - queuedTime;
+
+                Statistics.EmitCommandStats(
+                    m_Logger,
+                    result.Success ? CommandState.Completed : CommandState.Failed,
+                    sessionId,
+                    commandId,
+                    $"Extension: {extensionName}",
+                    queuedTime,
+                    startTime,
+                    endTime,
+                    queueTime.TotalMilliseconds,
+                    executionTime.TotalMilliseconds,
+                    totalTime.TotalMilliseconds);
             }
             catch (OperationCanceledException)
             {
                 // Extension was cancelled
                 var endTime = DateTime.Now;
+                var cancelStartTime = commandInfo.StartTime ?? queuedTime;
                 m_CommandCache[commandId] = CommandInfo.Cancelled(
                     commandId,
                     $"Extension: {extensionName}",
                     queuedTime,
-                    commandInfo.StartTime,
+                    cancelStartTime,
                     endTime);
 
                 m_Logger.Warn("Extension script {ExtensionName} with command ID {CommandId} was cancelled", extensionName, commandId);
+
+                // Emit statistics
+                var executionTime = endTime - cancelStartTime;
+                var queueTime = cancelStartTime - queuedTime;
+                var totalTime = endTime - queuedTime;
+
+                Statistics.EmitCommandStats(
+                    m_Logger,
+                    CommandState.Cancelled,
+                    sessionId,
+                    commandId,
+                    $"Extension: {extensionName}",
+                    queuedTime,
+                    cancelStartTime,
+                    endTime,
+                    queueTime.TotalMilliseconds,
+                    executionTime.TotalMilliseconds,
+                    totalTime.TotalMilliseconds);
             }
             catch (TimeoutException ex)
             {
                 // Extension timed out
                 var endTime = DateTime.Now;
+                var timeoutStartTime = commandInfo.StartTime ?? queuedTime;
                 m_CommandCache[commandId] = CommandInfo.TimedOut(
                     commandId,
                     $"Extension: {extensionName}",
                     queuedTime,
-                    commandInfo.StartTime ?? queuedTime,
+                    timeoutStartTime,
                     endTime,
                     ex.Message);
 
                 m_Logger.Warn("Extension script {ExtensionName} with command ID {CommandId} timed out: {Message}", extensionName, commandId, ex.Message);
+
+                // Emit statistics
+                var executionTime = endTime - timeoutStartTime;
+                var queueTime = timeoutStartTime - queuedTime;
+                var totalTime = endTime - queuedTime;
+
+                Statistics.EmitCommandStats(
+                    m_Logger,
+                    CommandState.Timeout,
+                    sessionId,
+                    commandId,
+                    $"Extension: {extensionName}",
+                    queuedTime,
+                    timeoutStartTime,
+                    endTime,
+                    queueTime.TotalMilliseconds,
+                    executionTime.TotalMilliseconds,
+                    totalTime.TotalMilliseconds);
             }
             catch (Exception ex)
             {
                 // Extension failed with error
                 var endTime = DateTime.Now;
+                var failStartTime = commandInfo.StartTime ?? queuedTime;
                 m_CommandCache[commandId] = CommandInfo.Completed(
                     commandId,
                     $"Extension: {extensionName}",
                     queuedTime,
-                    commandInfo.StartTime ?? queuedTime,
+                    failStartTime,
                     endTime,
                     string.Empty,
                     false,
                     ex.Message);
 
                 m_Logger.Error(ex, "Extension script {ExtensionName} with command ID {CommandId} failed", extensionName, commandId);
+
+                // Emit statistics
+                var executionTime = endTime - failStartTime;
+                var queueTime = failStartTime - queuedTime;
+                var totalTime = endTime - queuedTime;
+
+                Statistics.EmitCommandStats(
+                    m_Logger,
+                    CommandState.Failed,
+                    sessionId,
+                    commandId,
+                    $"Extension: {extensionName}",
+                    queuedTime,
+                    failStartTime,
+                    endTime,
+                    queueTime.TotalMilliseconds,
+                    executionTime.TotalMilliseconds,
+                    totalTime.TotalMilliseconds);
             }
             finally
             {
@@ -394,7 +469,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         if (!m_SessionCommands.TryGetValue(sessionId, out var commandIds))
         {
             m_Logger.Debug("No extension commands found for session {SessionId}", sessionId);
-            
+
             // Still reset the command ID generator for this session
             _ = CommandIdGenerator.Instance.ResetSession(sessionId);
             return;
