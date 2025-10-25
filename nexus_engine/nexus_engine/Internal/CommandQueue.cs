@@ -616,8 +616,25 @@ internal class CommandQueue : IDisposable
         SetCommandResult(command, commandInfo);
 
         var executionTime = endTime - startTime;
+        var queueTime = startTime - command.QueuedTime;
+        var totalTime = endTime - command.QueuedTime;
+
         m_Logger.Debug("Command {CommandId} completed successfully in {Elapsed}ms",
             command.Id, executionTime.TotalMilliseconds);
+
+        // Emit detailed statistics
+        Statistics.EmitCommandStats(
+            m_Logger,
+            CommandState.Completed,
+            m_SessionId,
+            command.Id,
+            command.Command,
+            command.QueuedTime,
+            startTime,
+            endTime,
+            queueTime.TotalMilliseconds,
+            executionTime.TotalMilliseconds,
+            totalTime.TotalMilliseconds);
 
         return Task.CompletedTask;
     }
@@ -642,7 +659,25 @@ internal class CommandQueue : IDisposable
 
         SetCommandResult(command, commandInfo);
 
+        var executionTime = endTime - startTime;
+        var queueTime = startTime - command.QueuedTime;
+        var totalTime = endTime - command.QueuedTime;
+
         m_Logger.Debug("Command {CommandId} was cancelled", command.Id);
+
+        // Emit detailed statistics
+        Statistics.EmitCommandStats(
+            m_Logger,
+            CommandState.Cancelled,
+            m_SessionId,
+            command.Id,
+            command.Command,
+            command.QueuedTime,
+            startTime,
+            endTime,
+            queueTime.TotalMilliseconds,
+            executionTime.TotalMilliseconds,
+            totalTime.TotalMilliseconds);
 
         return Task.CompletedTask;
     }
@@ -669,7 +704,25 @@ internal class CommandQueue : IDisposable
 
         SetCommandResult(command, commandInfo);
 
+        var executionTime = endTime - startTime;
+        var queueTime = startTime - command.QueuedTime;
+        var totalTime = endTime - command.QueuedTime;
+
         m_Logger.Warn("Command {CommandId} timed out", command.Id);
+
+        // Emit detailed statistics
+        Statistics.EmitCommandStats(
+            m_Logger,
+            CommandState.Timeout,
+            m_SessionId,
+            command.Id,
+            command.Command,
+            command.QueuedTime,
+            startTime,
+            endTime,
+            queueTime.TotalMilliseconds,
+            executionTime.TotalMilliseconds,
+            totalTime.TotalMilliseconds);
 
         return Task.CompletedTask;
     }
@@ -698,7 +751,25 @@ internal class CommandQueue : IDisposable
 
         SetCommandResult(command, commandInfo);
 
+        var executionTime = endTime - startTime;
+        var queueTime = startTime - command.QueuedTime;
+        var totalTime = endTime - command.QueuedTime;
+
         m_Logger.Error(ex, "Command {CommandId} failed", command.Id);
+
+        // Emit detailed statistics
+        Statistics.EmitCommandStats(
+            m_Logger,
+            CommandState.Failed,
+            m_SessionId,
+            command.Id,
+            command.Command,
+            command.QueuedTime,
+            startTime,
+            endTime,
+            queueTime.TotalMilliseconds,
+            executionTime.TotalMilliseconds,
+            totalTime.TotalMilliseconds);
 
         return Task.CompletedTask;
     }
