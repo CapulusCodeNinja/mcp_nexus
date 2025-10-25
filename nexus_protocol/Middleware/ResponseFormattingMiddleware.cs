@@ -43,14 +43,14 @@ internal class ResponseFormattingMiddleware
             // SSE clients disconnecting is normal - log as warning with friendly message
             m_Logger.Warn("Client disconnected from SSE stream (Connection ID: {ConnectionId}). This is normal when clients close the connection.",
                 context.Connection.Id);
-            
+
             // Don't try to send error response for canceled operations
             return;
         }
         catch (Exception ex)
         {
             m_Logger.Error(ex, "Unhandled exception in JSON-RPC pipeline: {Message}", ex.Message);
-            
+
             // Check if response has already started (headers sent)
             if (context.Response.HasStarted)
             {
@@ -58,7 +58,7 @@ internal class ResponseFormattingMiddleware
                 m_Logger.Warn("Cannot send error response - headers already sent");
                 return;
             }
-            
+
             await HandleExceptionAsync(context, ex);
         }
     }

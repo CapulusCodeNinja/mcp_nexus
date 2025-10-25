@@ -1,7 +1,5 @@
 using FluentAssertions;
 
-using Nexus.Extensions.Security;
-
 namespace Nexus.Extensions.Unittests.Security;
 
 /// <summary>

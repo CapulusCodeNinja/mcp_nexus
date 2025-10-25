@@ -31,5 +31,10 @@ namespace Nexus.Engine.Extensions
                 progressCallback,
                 cancellationToken);
         }
+
+        public string ExecuteAsync(string extensionName, string sessionId, object? parameters, Action<string>? progressCallback = null, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

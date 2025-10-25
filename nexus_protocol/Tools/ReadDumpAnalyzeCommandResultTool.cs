@@ -1,8 +1,5 @@
 using System.ComponentModel;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
 using ModelContextProtocol.Server;
 
 using Nexus.Engine;
@@ -76,7 +73,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
                 "Failed",
                 false,
                 DateTime.Now);
-            
+
             markdown += MarkdownFormatter.CreateCodeBlock(ex.Message, "Error");
             return markdown;
         }
@@ -90,7 +87,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
                 "NotFound",
                 false,
                 DateTime.Now);
-            
+
             markdown += MarkdownFormatter.CreateCodeBlock("Command not found", "Error");
             return markdown;
         }
@@ -104,7 +101,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
                 "Failed",
                 false,
                 DateTime.Now);
-            
+
             markdown += MarkdownFormatter.CreateCodeBlock($"Unexpected error: {ex.Message}", "Error");
             return markdown;
         }

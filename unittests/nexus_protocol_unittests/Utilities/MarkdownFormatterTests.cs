@@ -17,7 +17,7 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateHeader("Test Title");
 
         // Assert
-        result.Should().Be($"## Test Title{Environment.NewLine}{Environment.NewLine}");
+        _ = result.Should().Be($"## Test Title{Environment.NewLine}{Environment.NewLine}");
     }
 
     /// <summary>
@@ -30,7 +30,7 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateHeader("Test Title", "Test Subtitle");
 
         // Assert
-        result.Should().Be($"## Test Title{Environment.NewLine}{Environment.NewLine}Test Subtitle{Environment.NewLine}{Environment.NewLine}");
+        _ = result.Should().Be($"## Test Title{Environment.NewLine}{Environment.NewLine}Test Subtitle{Environment.NewLine}{Environment.NewLine}");
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateKeyValue("Test Key", "Test Value", true);
 
         // Assert
-        result.Should().Be("**Test Key:** `Test Value`");
+        _ = result.Should().Be("**Test Key:** `Test Value`");
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateKeyValue("Test Key", "Test Value", false);
 
         // Assert
-        result.Should().Be("**Test Key:** Test Value");
+        _ = result.Should().Be("**Test Key:** Test Value");
     }
 
     /// <summary>
@@ -69,7 +69,7 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateKeyValue("Test Key", null, false);
 
         // Assert
-        result.Should().Be("**Test Key:** N/A");
+        _ = result.Should().Be("**Test Key:** N/A");
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateCodeBlock("test content");
 
         // Assert
-        result.Should().Be($"```{Environment.NewLine}test content{Environment.NewLine}```{Environment.NewLine}");
+        _ = result.Should().Be($"```{Environment.NewLine}test content{Environment.NewLine}```{Environment.NewLine}");
     }
 
     /// <summary>
@@ -95,7 +95,7 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateCodeBlock("test content", "Test Title");
 
         // Assert
-        result.Should().Be($"### Test Title{Environment.NewLine}{Environment.NewLine}```{Environment.NewLine}test content{Environment.NewLine}```{Environment.NewLine}");
+        _ = result.Should().Be($"### Test Title{Environment.NewLine}{Environment.NewLine}```{Environment.NewLine}test content{Environment.NewLine}```{Environment.NewLine}");
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateCodeBlock("");
 
         // Assert
-        result.Should().BeEmpty();
+        _ = result.Should().BeEmpty();
     }
 
     /// <summary>
@@ -121,7 +121,7 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateSuccessMessage("Operation completed");
 
         // Assert
-        result.Should().Be("✓ Operation completed");
+        _ = result.Should().Be("✓ Operation completed");
     }
 
     /// <summary>
@@ -134,7 +134,7 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateWarningMessage("Warning message");
 
         // Assert
-        result.Should().Be("⚠ Warning message");
+        _ = result.Should().Be("⚠ Warning message");
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateErrorMessage("Error message");
 
         // Assert
-        result.Should().Be("❌ Error message");
+        _ = result.Should().Be("❌ Error message");
     }
 
     /// <summary>
@@ -172,7 +172,7 @@ public class MarkdownFormatterTests
                       $"| --- | --- | --- |{Environment.NewLine}" +
                       $"| 1 | Test1 | Active |{Environment.NewLine}" +
                       $"| 2 | Test2 | Inactive |{Environment.NewLine}";
-        result.Should().Be(expected);
+        _ = result.Should().Be(expected);
     }
 
     /// <summary>
@@ -185,7 +185,7 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateTable(Array.Empty<string>(), Array.Empty<string[]>());
 
         // Assert
-        result.Should().BeEmpty();
+        _ = result.Should().BeEmpty();
     }
 
     /// <summary>
@@ -212,17 +212,17 @@ public class MarkdownFormatterTests
             startTime, endTime, executionTime, totalTime);
 
         // Assert
-        result.Should().Contain("## Command Result");
-        result.Should().Contain("**Command ID:** `cmd-123`");
-        result.Should().Contain("**Session ID:** `sess-456`");
-        result.Should().Contain("**Command:** `!analyze`");
-        result.Should().Contain("**State:** Completed");
-        result.Should().Contain("**Success:** True");
-        result.Should().Contain("**Queued Time:** 2024-01-01 10:00:00");
-        result.Should().Contain("**Start Time:** 2024-01-01 10:01:00");
-        result.Should().Contain("**End Time:** 2024-01-01 10:02:00");
-        result.Should().Contain("**Execution Time:** 60.00s");
-        result.Should().Contain("**Total Time:** 120.00s");
+        _ = result.Should().Contain("## Command Result");
+        _ = result.Should().Contain("**Command ID:** `cmd-123`");
+        _ = result.Should().Contain("**Session ID:** `sess-456`");
+        _ = result.Should().Contain("**Command:** `!analyze`");
+        _ = result.Should().Contain("**State:** Completed");
+        _ = result.Should().Contain("**Success:** True");
+        _ = result.Should().Contain("**Queued Time:** 2024-01-01 10:00:00");
+        _ = result.Should().Contain("**Start Time:** 2024-01-01 10:01:00");
+        _ = result.Should().Contain("**End Time:** 2024-01-01 10:02:00");
+        _ = result.Should().Contain("**Execution Time:** 60.00s");
+        _ = result.Should().Contain("**Total Time:** 120.00s");
     }
 
     /// <summary>
@@ -244,17 +244,17 @@ public class MarkdownFormatterTests
             commandId, sessionId, command, state, isSuccess, queuedTime);
 
         // Assert
-        result.Should().Contain("## Command Result");
-        result.Should().Contain("**Command ID:** `cmd-123`");
-        result.Should().Contain("**Session ID:** `sess-456`");
-        result.Should().Contain("**Command:** `!analyze`");
-        result.Should().Contain("**State:** Completed");
-        result.Should().Contain("**Success:** True");
-        result.Should().Contain("**Queued Time:** 2024-01-01 10:00:00");
-        result.Should().NotContain("**Start Time:**");
-        result.Should().NotContain("**End Time:**");
-        result.Should().NotContain("**Execution Time:**");
-        result.Should().NotContain("**Total Time:**");
+        _ = result.Should().Contain("## Command Result");
+        _ = result.Should().Contain("**Command ID:** `cmd-123`");
+        _ = result.Should().Contain("**Session ID:** `sess-456`");
+        _ = result.Should().Contain("**Command:** `!analyze`");
+        _ = result.Should().Contain("**State:** Completed");
+        _ = result.Should().Contain("**Success:** True");
+        _ = result.Should().Contain("**Queued Time:** 2024-01-01 10:00:00");
+        _ = result.Should().NotContain("**Start Time:**");
+        _ = result.Should().NotContain("**End Time:**");
+        _ = result.Should().NotContain("**Execution Time:**");
+        _ = result.Should().NotContain("**Total Time:**");
     }
 
     /// <summary>
@@ -268,12 +268,12 @@ public class MarkdownFormatterTests
             "sess-123", "dump.dmp", "Success", "C:\\symbols", "Session created");
 
         // Assert
-        result.Should().Contain("## Session Creation");
-        result.Should().Contain("**Session ID:** `sess-123`");
-        result.Should().Contain("**Dump File:** `dump.dmp`");
-        result.Should().Contain("**Status:** Success");
-        result.Should().Contain("**Symbols Path:** `C:\\symbols`");
-        result.Should().Contain("✓ Session created");
+        _ = result.Should().Contain("## Session Creation");
+        _ = result.Should().Contain("**Session ID:** `sess-123`");
+        _ = result.Should().Contain("**Dump File:** `dump.dmp`");
+        _ = result.Should().Contain("**Status:** Success");
+        _ = result.Should().Contain("**Symbols Path:** `C:\\symbols`");
+        _ = result.Should().Contain("✓ Session created");
     }
 
     /// <summary>
@@ -287,11 +287,11 @@ public class MarkdownFormatterTests
             "sess-123", "dump.dmp", "Success");
 
         // Assert
-        result.Should().Contain("## Session Creation");
-        result.Should().Contain("**Session ID:** `sess-123`");
-        result.Should().Contain("**Dump File:** `dump.dmp`");
-        result.Should().Contain("**Status:** Success");
-        result.Should().NotContain("**Symbols Path:**");
+        _ = result.Should().Contain("## Session Creation");
+        _ = result.Should().Contain("**Session ID:** `sess-123`");
+        _ = result.Should().Contain("**Dump File:** `dump.dmp`");
+        _ = result.Should().Contain("**Status:** Success");
+        _ = result.Should().NotContain("**Symbols Path:**");
     }
 
     /// <summary>
@@ -312,13 +312,13 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateCommandStatusSummary(sessionId, commands);
 
         // Assert
-        result.Should().Contain("## Command Status Summary");
-        result.Should().Contain("**Session ID:** `sess-123`");
-        result.Should().Contain("**Total Commands:** 2");
-        result.Should().Contain("### Commands");
-        result.Should().Contain("| Command ID | Command | State | Success | Execution Time |");
-        result.Should().Contain("| cmd-1 | !analyze | Completed | True | 30.00s |");
-        result.Should().Contain("| cmd-2 | kL | Running | N/A | N/A |");
+        _ = result.Should().Contain("## Command Status Summary");
+        _ = result.Should().Contain("**Session ID:** `sess-123`");
+        _ = result.Should().Contain("**Total Commands:** 2");
+        _ = result.Should().Contain("### Commands");
+        _ = result.Should().Contain("| Command ID | Command | State | Success | Execution Time |");
+        _ = result.Should().Contain("| cmd-1 | !analyze | Completed | True | 30.00s |");
+        _ = result.Should().Contain("| cmd-2 | kL | Running | N/A | N/A |");
     }
 
     /// <summary>
@@ -331,10 +331,10 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateCommandStatusSummary("sess-123", Array.Empty<object>());
 
         // Assert
-        result.Should().Contain("## Command Status Summary");
-        result.Should().Contain("**Session ID:** `sess-123`");
-        result.Should().Contain("**Total Commands:** 0");
-        result.Should().Contain("No commands found.");
+        _ = result.Should().Contain("## Command Status Summary");
+        _ = result.Should().Contain("**Session ID:** `sess-123`");
+        _ = result.Should().Contain("**Total Commands:** 0");
+        _ = result.Should().Contain("No commands found.");
     }
 
     /// <summary>
@@ -356,11 +356,11 @@ public class MarkdownFormatterTests
             "Command Enqueued", keyValues, "Command queued successfully", true);
 
         // Assert
-        result.Should().Contain("## Command Enqueued");
-        result.Should().Contain("**Command ID:** `cmd-123`");
-        result.Should().Contain("**Session ID:** `sess-456`");
-        result.Should().Contain("**Status:** Queued");
-        result.Should().Contain("✓ Command queued successfully");
+        _ = result.Should().Contain("## Command Enqueued");
+        _ = result.Should().Contain("**Command ID:** `cmd-123`");
+        _ = result.Should().Contain("**Session ID:** `sess-456`");
+        _ = result.Should().Contain("**Status:** Queued");
+        _ = result.Should().Contain("✓ Command queued successfully");
     }
 
     /// <summary>
@@ -382,11 +382,11 @@ public class MarkdownFormatterTests
             "Command Enqueue Failed", keyValues, "Invalid command", false);
 
         // Assert
-        result.Should().Contain("## Command Enqueue Failed");
-        result.Should().Contain("**Command ID:** `N/A`");
-        result.Should().Contain("**Session ID:** `sess-456`");
-        result.Should().Contain("**Status:** Failed");
-        result.Should().Contain("❌ Invalid command");
+        _ = result.Should().Contain("## Command Enqueue Failed");
+        _ = result.Should().Contain("**Command ID:** `N/A`");
+        _ = result.Should().Contain("**Session ID:** `sess-456`");
+        _ = result.Should().Contain("**Status:** Failed");
+        _ = result.Should().Contain("❌ Invalid command");
     }
 
     /// <summary>
@@ -407,11 +407,11 @@ public class MarkdownFormatterTests
             "Session Closed", keyValues, null, true);
 
         // Assert
-        result.Should().Contain("## Session Closed");
-        result.Should().Contain("**Session ID:** `sess-456`");
-        result.Should().Contain("**Status:** Success");
-        result.Should().NotContain("✓");
-        result.Should().NotContain("❌");
+        _ = result.Should().Contain("## Session Closed");
+        _ = result.Should().Contain("**Session ID:** `sess-456`");
+        _ = result.Should().Contain("**Status:** Success");
+        _ = result.Should().NotContain("✓");
+        _ = result.Should().NotContain("❌");
     }
 
     /// <summary>
@@ -432,8 +432,8 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateTable(headers, rows);
 
         // Assert
-        result.Should().Contain("| 1 | Test1 |  |  |");
-        result.Should().Contain("| 2 | Test2 | Active |  |");
+        _ = result.Should().Contain("| 1 | Test1 |  |  |");
+        _ = result.Should().Contain("| 2 | Test2 | Active |  |");
     }
 
     /// <summary>
@@ -453,8 +453,8 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateTable(headers, rows);
 
         // Assert
-        result.Should().Contain("| 1 | Test1 |");
-        result.Should().NotContain("Extra1");
-        result.Should().NotContain("Extra2");
+        _ = result.Should().Contain("| 1 | Test1 |");
+        _ = result.Should().NotContain("Extra1");
+        _ = result.Should().NotContain("Extra2");
     }
 }

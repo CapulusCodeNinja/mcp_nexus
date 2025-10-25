@@ -1,7 +1,5 @@
 using FluentAssertions;
 
-using Nexus.Extensions.Configuration;
-
 namespace Nexus.Extensions_unittests.Configuration;
 
 /// <summary>

@@ -5,7 +5,7 @@
     <IsTestProject>true</IsTestProject>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
-      <RootNamespace>Nexus.Setup..Unittests</RootNamespace>
+    <RootNamespace>Nexus.Setup.Unittests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

@@ -47,7 +47,7 @@ internal static class CancelCommandTool
                 { "Status", cancelled ? "Cancelled" : "NotFound" }
             };
 
-            var message = cancelled 
+            var message = cancelled
                 ? $"Command {commandId} cancelled successfully"
                 : $"Command {commandId} not found or already completed";
 

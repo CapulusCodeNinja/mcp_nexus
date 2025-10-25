@@ -2,8 +2,6 @@ using System.Text.Json;
 
 using FluentAssertions;
 
-using Nexus.Extensions.Models;
-
 namespace Nexus.Extensions_unittests.Models;
 
 /// <summary>

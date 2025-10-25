@@ -17,15 +17,15 @@ internal static class MarkdownFormatter
     public static string CreateHeader(string title, string? subtitle = null)
     {
         var markdown = new StringBuilder();
-        markdown.AppendLine($"## {title}");
-        markdown.AppendLine();
-        
+        _ = markdown.AppendLine($"## {title}");
+        _ = markdown.AppendLine();
+
         if (!string.IsNullOrEmpty(subtitle))
         {
-            markdown.AppendLine(subtitle);
-            markdown.AppendLine();
+            _ = markdown.AppendLine(subtitle);
+            _ = markdown.AppendLine();
         }
-        
+
         return markdown.ToString();
     }
 
@@ -39,8 +39,10 @@ internal static class MarkdownFormatter
     public static string CreateKeyValue(string key, object? value, bool codeFormat = false)
     {
         if (value == null)
+        {
             return $"**{key}:** N/A";
-        
+        }
+
         var formattedValue = codeFormat ? $"`{value}`" : value.ToString();
         return $"**{key}:** {formattedValue}";
     }
@@ -54,20 +56,22 @@ internal static class MarkdownFormatter
     public static string CreateCodeBlock(string content, string? title = null)
     {
         if (string.IsNullOrEmpty(content))
+        {
             return string.Empty;
+        }
 
         var markdown = new StringBuilder();
-        
+
         if (!string.IsNullOrEmpty(title))
         {
-            markdown.AppendLine($"### {title}");
-            markdown.AppendLine();
+            _ = markdown.AppendLine($"### {title}");
+            _ = markdown.AppendLine();
         }
-        
-        markdown.AppendLine("```");
-        markdown.AppendLine(content);
-        markdown.AppendLine("```");
-        
+
+        _ = markdown.AppendLine("```");
+        _ = markdown.AppendLine(content);
+        _ = markdown.AppendLine("```");
+
         return markdown.ToString();
     }
 
@@ -110,28 +114,30 @@ internal static class MarkdownFormatter
     public static string CreateTable(string[] headers, string[][] rows)
     {
         if (headers.Length == 0)
+        {
             return string.Empty;
+        }
 
         var markdown = new StringBuilder();
-        
+
         // Header row
-        markdown.AppendLine("| " + string.Join(" | ", headers) + " |");
-        
+        _ = markdown.AppendLine("| " + string.Join(" | ", headers) + " |");
+
         // Separator row
         var separators = headers.Select(_ => "---").ToArray();
-        markdown.AppendLine("| " + string.Join(" | ", separators) + " |");
-        
+        _ = markdown.AppendLine("| " + string.Join(" | ", separators) + " |");
+
         // Data rows
         foreach (var row in rows)
         {
             var paddedRow = new string[headers.Length];
-            for (int i = 0; i < headers.Length; i++)
+            for (var i = 0; i < headers.Length; i++)
             {
                 paddedRow[i] = i < row.Length ? row[i] : "";
             }
-            markdown.AppendLine("| " + string.Join(" | ", paddedRow) + " |");
+            _ = markdown.AppendLine("| " + string.Join(" | ", paddedRow) + " |");
         }
-        
+
         return markdown.ToString();
     }
 
@@ -162,29 +168,37 @@ internal static class MarkdownFormatter
         TimeSpan? totalTime = null)
     {
         var markdown = new StringBuilder();
-        markdown.AppendLine("## Command Result");
-        markdown.AppendLine();
-        markdown.AppendLine(CreateKeyValue("Command ID", commandId, true));
-        markdown.AppendLine(CreateKeyValue("Session ID", sessionId, true));
-        markdown.AppendLine(CreateKeyValue("Command", command, true));
-        markdown.AppendLine(CreateKeyValue("State", state));
-        markdown.AppendLine(CreateKeyValue("Success", isSuccess));
-        markdown.AppendLine(CreateKeyValue("Queued Time", queuedTime.ToString("yyyy-MM-dd HH:mm:ss")));
-        
+        _ = markdown.AppendLine("## Command Result");
+        _ = markdown.AppendLine();
+        _ = markdown.AppendLine(CreateKeyValue("Command ID", commandId, true));
+        _ = markdown.AppendLine(CreateKeyValue("Session ID", sessionId, true));
+        _ = markdown.AppendLine(CreateKeyValue("Command", command, true));
+        _ = markdown.AppendLine(CreateKeyValue("State", state));
+        _ = markdown.AppendLine(CreateKeyValue("Success", isSuccess));
+        _ = markdown.AppendLine(CreateKeyValue("Queued Time", queuedTime.ToString("yyyy-MM-dd HH:mm:ss")));
+
         if (startTime.HasValue)
-            markdown.AppendLine(CreateKeyValue("Start Time", startTime.Value.ToString("yyyy-MM-dd HH:mm:ss")));
-        
+        {
+            _ = markdown.AppendLine(CreateKeyValue("Start Time", startTime.Value.ToString("yyyy-MM-dd HH:mm:ss")));
+        }
+
         if (endTime.HasValue)
-            markdown.AppendLine(CreateKeyValue("End Time", endTime.Value.ToString("yyyy-MM-dd HH:mm:ss")));
-        
+        {
+            _ = markdown.AppendLine(CreateKeyValue("End Time", endTime.Value.ToString("yyyy-MM-dd HH:mm:ss")));
+        }
+
         if (executionTime.HasValue)
-            markdown.AppendLine(CreateKeyValue("Execution Time", $"{executionTime.Value.TotalSeconds:F2}s"));
-        
+        {
+            _ = markdown.AppendLine(CreateKeyValue("Execution Time", $"{executionTime.Value.TotalSeconds:F2}s"));
+        }
+
         if (totalTime.HasValue)
-            markdown.AppendLine(CreateKeyValue("Total Time", $"{totalTime.Value.TotalSeconds:F2}s"));
-        
-        markdown.AppendLine();
-        
+        {
+            _ = markdown.AppendLine(CreateKeyValue("Total Time", $"{totalTime.Value.TotalSeconds:F2}s"));
+        }
+
+        _ = markdown.AppendLine();
+
         return markdown.ToString();
     }
 
@@ -205,25 +219,26 @@ internal static class MarkdownFormatter
         string? message = null)
     {
         var markdown = new StringBuilder();
-        markdown.AppendLine("## Session Creation");
-        markdown.AppendLine();
-        markdown.AppendLine(CreateKeyValue("Session ID", sessionId, true));
-        markdown.AppendLine(CreateKeyValue("Dump File", dumpFile, true));
-        markdown.AppendLine(CreateKeyValue("Status", status));
-        
+        _ = markdown.AppendLine("## Session Creation");
+        _ = markdown.AppendLine();
+        _ = markdown.AppendLine(CreateKeyValue("Session ID", sessionId, true));
+        _ = markdown.AppendLine(CreateKeyValue("Dump File", dumpFile, true));
+        _ = markdown.AppendLine(CreateKeyValue("Status", status));
+
         if (!string.IsNullOrEmpty(symbolsPath))
-            markdown.AppendLine(CreateKeyValue("Symbols Path", symbolsPath, true));
-        
-        markdown.AppendLine();
-        
+        {
+            _ = markdown.AppendLine(CreateKeyValue("Symbols Path", symbolsPath, true));
+        }
+
+        _ = markdown.AppendLine();
+
         if (!string.IsNullOrEmpty(message))
         {
-            if (status.Equals("Success", StringComparison.OrdinalIgnoreCase))
-                markdown.AppendLine(CreateSuccessMessage(message));
-            else
-                markdown.AppendLine(CreateErrorMessage(message));
+            _ = status.Equals("Success", StringComparison.OrdinalIgnoreCase)
+                ? markdown.AppendLine(CreateSuccessMessage(message))
+                : markdown.AppendLine(CreateErrorMessage(message));
         }
-        
+
         return markdown.ToString();
     }
 
@@ -236,17 +251,17 @@ internal static class MarkdownFormatter
     public static string CreateCommandStatusSummary(string sessionId, object[] commands)
     {
         var markdown = new StringBuilder();
-        markdown.AppendLine("## Command Status Summary");
-        markdown.AppendLine();
-        markdown.AppendLine(CreateKeyValue("Session ID", sessionId, true));
-        markdown.AppendLine(CreateKeyValue("Total Commands", commands.Length));
-        markdown.AppendLine();
+        _ = markdown.AppendLine("## Command Status Summary");
+        _ = markdown.AppendLine();
+        _ = markdown.AppendLine(CreateKeyValue("Session ID", sessionId, true));
+        _ = markdown.AppendLine(CreateKeyValue("Total Commands", commands.Length));
+        _ = markdown.AppendLine();
 
         if (commands.Length > 0)
         {
-            markdown.AppendLine("### Commands");
-            markdown.AppendLine();
-            
+            _ = markdown.AppendLine("### Commands");
+            _ = markdown.AppendLine();
+
             var headers = new[] { "Command ID", "Command", "State", "Success", "Execution Time" };
             var rows = commands.Select(cmd => new string[]
             {
@@ -256,12 +271,12 @@ internal static class MarkdownFormatter
                 GetPropertyValue(cmd, "isSuccess")?.ToString() ?? "N/A",
                 FormatExecutionTime(GetPropertyValue(cmd, "executionTime"))
             }).ToArray();
-            
-            markdown.AppendLine(CreateTable(headers, rows));
+
+            _ = markdown.AppendLine(CreateTable(headers, rows));
         }
         else
         {
-            markdown.AppendLine("No commands found.");
+            _ = markdown.AppendLine("No commands found.");
         }
 
         return markdown.ToString();
@@ -282,22 +297,19 @@ internal static class MarkdownFormatter
         bool isSuccess = true)
     {
         var markdown = new StringBuilder();
-        markdown.AppendLine($"## {operation}");
-        markdown.AppendLine();
+        _ = markdown.AppendLine($"## {operation}");
+        _ = markdown.AppendLine();
 
         foreach (var kvp in keyValues)
         {
-            markdown.AppendLine(CreateKeyValue(kvp.Key, kvp.Value, ShouldCodeFormat(kvp.Key)));
+            _ = markdown.AppendLine(CreateKeyValue(kvp.Key, kvp.Value, ShouldCodeFormat(kvp.Key)));
         }
 
-        markdown.AppendLine();
+        _ = markdown.AppendLine();
 
         if (!string.IsNullOrEmpty(message))
         {
-            if (isSuccess)
-                markdown.AppendLine(CreateSuccessMessage(message));
-            else
-                markdown.AppendLine(CreateErrorMessage(message));
+            _ = isSuccess ? markdown.AppendLine(CreateSuccessMessage(message)) : markdown.AppendLine(CreateErrorMessage(message));
         }
 
         return markdown.ToString();
@@ -325,9 +337,7 @@ internal static class MarkdownFormatter
     /// </summary>
     private static string FormatExecutionTime(object? executionTime)
     {
-        if (executionTime is TimeSpan ts)
-            return $"{ts.TotalSeconds:F2}s";
-        return "N/A";
+        return executionTime is TimeSpan ts ? $"{ts.TotalSeconds:F2}s" : "N/A";
     }
 
     /// <summary>
@@ -335,9 +345,6 @@ internal static class MarkdownFormatter
     /// </summary>
     private static string TruncateString(string value, int maxLength)
     {
-        if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
-            return value;
-        
-        return value.Substring(0, maxLength - 3) + "...";
+        return string.IsNullOrEmpty(value) || value.Length <= maxLength ? value : value[..(maxLength - 3)] + "...";
     }
 }

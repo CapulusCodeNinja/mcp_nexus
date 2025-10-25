@@ -2,8 +2,6 @@ using System.Diagnostics;
 
 using FluentAssertions;
 
-using Nexus.Extensions.Infrastructure;
-
 namespace Nexus.Extensions.Unittests.Infrastructure;
 
 /// <summary>
