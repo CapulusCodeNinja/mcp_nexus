@@ -1,6 +1,5 @@
 using FluentAssertions;
 
-using Nexus.Engine.Models;
 using Nexus.Engine.Share.Models;
 
 using Xunit;

@@ -1,6 +1,4 @@
-using Nexus.Engine.Share.Models;
-
-namespace Nexus.Engine.Models;
+namespace Nexus.Engine.Share.Models;
 
 /// <summary>
 /// Represents information about a debug command at any stage of its lifecycle.
@@ -223,3 +221,4 @@ public class CommandInfo
         };
     }
 }
+

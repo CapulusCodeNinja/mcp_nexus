@@ -3,6 +3,7 @@
 using Nexus.Engine.Extensions.Core;
 using Nexus.Engine.Extensions.Models;
 using Nexus.Engine.Extensions.Security;
+using Nexus.Engine.Share.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 

@@ -3,7 +3,6 @@ using System.Threading.Channels;
 
 using Nexus.Engine.Batch;
 using Nexus.Engine.Events;
-using Nexus.Engine.Models;
 using Nexus.Engine.Share.Models;
 
 using NLog;

@@ -289,8 +289,7 @@ public class DebugEngine : IDebugEngine
         }
 
         // If not found in session, check the extensions library
-        var extensionCommand = ExtensionScripts.Instance.GetCommandStatus(commandId);
-        return extensionCommand != null ? Internal.ExtensionCommandMapper.ToEngineCommandInfo(extensionCommand) : null;
+        return ExtensionScripts.Instance.GetCommandStatus(commandId);
     }
 
     /// <summary>
@@ -316,8 +315,7 @@ public class DebugEngine : IDebugEngine
         var extensionCommands = ExtensionScripts.Instance.GetSessionCommands(sessionId);
         foreach (var extCmd in extensionCommands)
         {
-            var engineCmd = Internal.ExtensionCommandMapper.ToEngineCommandInfo(extCmd);
-            allCommands[engineCmd.CommandId] = engineCmd;
+            allCommands[extCmd.CommandId] = extCmd;
         }
 
         return allCommands;

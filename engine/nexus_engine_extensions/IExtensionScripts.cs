@@ -1,4 +1,4 @@
-﻿using Nexus.Engine.Extensions.Models;
+﻿using Nexus.Engine.Share.Models;
 
 namespace Nexus.Engine.Extensions;
 
