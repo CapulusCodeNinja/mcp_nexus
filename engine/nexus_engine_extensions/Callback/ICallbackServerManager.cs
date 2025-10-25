@@ -3,7 +3,7 @@ namespace Nexus.Engine.Extensions.Callback;
 /// <summary>
 /// Interface for managing the extension callback HTTP server lifecycle.
 /// </summary>
-public interface ICallbackServerManager : IAsyncDisposable
+internal interface ICallbackServerManager : IAsyncDisposable
 {
     /// <summary>
     /// Gets the port number the callback server is listening on.

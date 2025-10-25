@@ -5,7 +5,7 @@ namespace Nexus.Engine.Extensions.Callback;
 /// <summary>
 /// Request model for executing a command via callback.
 /// </summary>
-public class ExecuteCommandRequest
+internal class ExecuteCommandRequest
 {
     /// <summary>
     /// Gets or sets the command to execute.

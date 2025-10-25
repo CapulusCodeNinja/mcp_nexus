@@ -14,7 +14,7 @@ namespace Nexus.Engine.Extensions.Callback;
 /// <summary>
 /// HTTP server for handling extension script callbacks.
 /// </summary>
-public class CallbackServer
+internal class CallbackServer
 {
     private readonly Logger m_Logger;
     private readonly IDebugEngine m_Engine;

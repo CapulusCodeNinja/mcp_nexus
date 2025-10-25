@@ -12,7 +12,7 @@ namespace Nexus.Engine.Extensions.Callback;
 /// <summary>
 /// Manages the extension callback HTTP server lifecycle.
 /// </summary>
-public class CallbackServerManager : ICallbackServerManager
+internal class CallbackServerManager : ICallbackServerManager
 {
     private readonly Logger m_Logger;
     private readonly IDebugEngine m_Engine;
