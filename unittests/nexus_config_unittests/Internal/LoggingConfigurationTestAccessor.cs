@@ -57,15 +57,6 @@ internal class LoggingConfigurationTestAccessor : LoggingConfiguration
         ConfigureNLogProvider(logging, logLevel);
     }
 
-    /// <summary>
-    /// Exposes the ConfigureMicrosoftLogging method for testing.
-    /// </summary>
-    /// <param name="logging">The logging builder to configure.</param>
-    /// <param name="logLevel">The log level to set.</param>
-    public void TestConfigureMicrosoftLogging(ILoggingBuilder logging, LogLevel logLevel)
-    {
-        ConfigureMicrosoftLogging(logging, logLevel);
-    }
 
     /// <summary>
     /// Exposes the ParseLogLevel method for testing.

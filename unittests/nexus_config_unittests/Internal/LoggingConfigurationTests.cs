@@ -101,21 +101,6 @@ public class LoggingConfigurationTests
         _ = action.Should().NotThrow();
     }
 
-    /// <summary>
-    /// Tests that ConfigureMicrosoftLogging sets up filters correctly.
-    /// </summary>
-    [Fact]
-    public void ConfigureMicrosoftLogging_WithValidBuilder_ShouldNotThrow()
-    {
-        // Arrange
-        var testAccessor = new LoggingConfigurationTestAccessor();
-        var mockLoggingBuilder = new Mock<ILoggingBuilder>();
-        _ = mockLoggingBuilder.Setup(x => x.Services).Returns(new ServiceCollection());
-
-        // Act & Assert
-        var action = () => testAccessor.TestConfigureMicrosoftLogging(mockLoggingBuilder.Object, MELogLevel.Information);
-        _ = action.Should().NotThrow();
-    }
 
     /// <summary>
     /// Tests that ConfigureLogPaths handles service mode correctly.

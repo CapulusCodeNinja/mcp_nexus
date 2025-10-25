@@ -21,7 +21,6 @@ internal class LoggingConfiguration
         var logLevel = GetLogLevelFromConfiguration();
         ConfigureNLogDynamically(logLevel, isServiceMode);
         ConfigureNLogProvider(logging, logLevel);
-        ConfigureMicrosoftLogging(logging, logLevel);
     }
 
     /// <summary>
@@ -88,16 +87,6 @@ internal class LoggingConfiguration
             rule.SetLoggingLevels(nlogLevel, NLog.LogLevel.Fatal);
         }
 
-        // Add specific rules for Microsoft categories based on log level
-        if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
-        {
-            // Suppress Microsoft categories when not in Trace mode
-            var microsoftRule = new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, fileTarget);
-            nlogConfig.LoggingRules.Add(microsoftRule);
-
-            var microsoftStderrRule = new NLog.Config.LoggingRule("Microsoft*", NLog.LogLevel.Off, NLog.LogLevel.Off, stderrTarget);
-            nlogConfig.LoggingRules.Add(microsoftStderrRule);
-        }
 
         // Apply the configuration
         LogManager.Configuration = nlogConfig;
@@ -194,34 +183,15 @@ internal class LoggingConfiguration
     /// <param name="logLevel">The log level to set.</param>
     protected virtual void ConfigureNLogProvider(ILoggingBuilder logging, Microsoft.Extensions.Logging.LogLevel logLevel)
     {
+        // Only configure NLog for Microsoft.Extensions.Logging when Trace is enabled
+        if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
+            return;
+            
         _ = logging.ClearProviders();
         _ = logging.AddNLogWeb();
         _ = logging.SetMinimumLevel(logLevel);
     }
 
-    /// <summary>
-    /// Configures Microsoft.Extensions.Logging.
-    /// </summary>
-    /// <param name="logging">The logging builder to configure.</param>
-    /// <param name="logLevel">The log level to set.</param>
-    protected virtual void ConfigureMicrosoftLogging(ILoggingBuilder logging, Microsoft.Extensions.Logging.LogLevel logLevel)
-    {
-        // Show Microsoft/Kestrel logs only when Trace is enabled; otherwise suppress them
-        if (logLevel == Microsoft.Extensions.Logging.LogLevel.Trace)
-        {
-            // Allow Microsoft categories to flow at Trace if explicitly requested
-            _ = logging.AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.Trace);
-            _ = logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Trace);
-            _ = logging.AddFilter("Microsoft.AspNetCore.Server.Kestrel", Microsoft.Extensions.Logging.LogLevel.Trace);
-        }
-        else
-        {
-            // Suppress Microsoft categories entirely for non-Trace configurations to avoid noise
-            _ = logging.AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.None);
-            _ = logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.None);
-            _ = logging.AddFilter("Microsoft.AspNetCore.Server.Kestrel", Microsoft.Extensions.Logging.LogLevel.None);
-        }
-    }
 
     /// <summary>
     /// Parses log level string to LogLevel enum.
