@@ -164,10 +164,13 @@ internal class BatchResultParser
         }
 
         // Find the last newline before the end marker (to exclude the echo command)
-        var lastNewlineBeforeEnd = resultText.LastIndexOf('\n', endIndex - 1, endIndex - startIndex);
-        if (lastNewlineBeforeEnd >= startIndex)
+        if (startIndex < endIndex)
         {
-            endIndex = lastNewlineBeforeEnd;
+            var lastNewlineBeforeEnd = resultText.LastIndexOf('\n', endIndex - 1, endIndex - startIndex);
+            if (lastNewlineBeforeEnd >= startIndex)
+            {
+                endIndex = lastNewlineBeforeEnd;
+            }
         }
 
         return resultText[startIndex..endIndex].Trim();

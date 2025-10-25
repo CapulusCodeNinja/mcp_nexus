@@ -11,7 +11,7 @@ namespace Nexus.Engine.Extensions.Core;
 /// <summary>
 /// Manages discovery, loading, and validation of extension scripts.
 /// </summary>
-internal class Manager
+internal class Manager : IDisposable
 {
     private readonly Logger m_Logger;
     private readonly IFileSystem m_FileSystem;
@@ -19,8 +19,9 @@ internal class Manager
     private readonly Dictionary<string, ExtensionMetadata> m_Extensions = [];
     private readonly object m_Lock = new();
     private readonly FileSystemWatcher? m_Watcher;
-    private volatile bool m_ReloadPending = false;
+    private int m_ReloadPending = 0;
     private int m_Version = 0;
+    private bool m_Disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Manager"/> class with default dependencies.
@@ -221,13 +222,13 @@ internal class Manager
     /// <param name="e">Event arguments.</param>
     private void OnExtensionsChanged(object sender, FileSystemEventArgs e)
     {
-        // Debounce: if a reload is already pending, ignore
-        if (m_ReloadPending)
+        // Atomic check-and-set to prevent multiple concurrent reloads
+        if (Interlocked.CompareExchange(ref m_ReloadPending, 1, 0) == 1)
         {
+            // Already reloading, skip this event
             return;
         }
 
-        m_ReloadPending = true;
         _ = Task.Run(async () =>
         {
             try
@@ -241,7 +242,8 @@ internal class Manager
             }
             finally
             {
-                m_ReloadPending = false;
+                // Reset the flag using atomic operation
+                _ = Interlocked.Exchange(ref m_ReloadPending, 0);
             }
         });
     }
@@ -296,6 +298,39 @@ internal class Manager
         return !supportedScriptTypes.Contains(metadata.ScriptType.ToLowerInvariant())
             ? ((bool isValid, string? errorMessage))(false, $"Extension '{extensionName}' has unsupported script type: {metadata.ScriptType}")
             : ((bool isValid, string? errorMessage))(true, null);
+    }
+
+    /// <summary>
+    /// Disposes of the extension manager and releases all resources.
+    /// </summary>
+    public void Dispose()
+    {
+        if (m_Disposed)
+        {
+            return;
+        }
+
+        m_Disposed = true;
+
+        if (m_Watcher != null)
+        {
+            try
+            {
+                m_Watcher.EnableRaisingEvents = false;
+                m_Watcher.Changed -= OnExtensionsChanged;
+                m_Watcher.Created -= OnExtensionsChanged;
+                m_Watcher.Deleted -= OnExtensionsChanged;
+                m_Watcher.Renamed -= OnExtensionsChanged;
+                m_Watcher.Dispose();
+                m_Logger.Debug("FileSystemWatcher disposed successfully");
+            }
+            catch (Exception ex)
+            {
+                m_Logger.Warn(ex, "Error disposing FileSystemWatcher");
+            }
+        }
+
+        GC.SuppressFinalize(this);
     }
 }
 

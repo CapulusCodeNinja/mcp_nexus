@@ -409,26 +409,36 @@ public class DebugEngine : IDebugEngine
             return;
         }
 
+        // Mark as disposed first to prevent new operations
+        m_Disposed = true;
+
         m_Logger.Info("Disposing DebugEngine with {SessionCount} active sessions", m_Sessions.Count);
 
-        // Close all sessions
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+        // Close all sessions with proper async handling
         var closeTasks = m_Sessions.Values.Select(async session =>
         {
             try
             {
+                // Dispose session first, then unsubscribe to avoid race conditions
+                await session.DisposeAsync();
                 session.CommandStateChanged -= OnSessionCommandStateChanged;
                 session.SessionStateChanged -= OnSessionStateChanged;
-                await session.DisposeAsync();
             }
             catch (Exception ex)
             {
                 m_Logger.Error(ex, "Error disposing session {SessionId}", session.SessionId);
             }
-        });
+        }).ToArray();
 
         try
         {
-            _ = Task.WaitAll(closeTasks.ToArray(), TimeSpan.FromSeconds(30));
+            Task.WaitAll(closeTasks, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            m_Logger.Warn("Session disposal timed out after 30 seconds");
         }
         catch (Exception ex)
         {
@@ -436,7 +446,6 @@ public class DebugEngine : IDebugEngine
         }
 
         m_Sessions.Clear();
-        m_Disposed = true;
         m_Logger.Info("DebugEngine disposed");
     }
 

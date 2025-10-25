@@ -11,6 +11,7 @@ namespace Nexus.Config
     public class Settings : ISettings
     {
         private static Settings? m_Instance;
+        private static readonly object m_Lock = new();
 
         private ConfigurationLoader m_ConfigurationLoader;
         private readonly LoggingConfiguration m_LoggingConfiguration;
@@ -27,7 +28,14 @@ namespace Nexus.Config
         /// <returns>The singleton <see cref="ISettings"/> instance.</returns>
         public static ISettings GetInstance()
         {
-            return m_Instance ??= new Settings();
+            if (m_Instance == null)
+            {
+                lock (m_Lock)
+                {
+                    m_Instance ??= new Settings();
+                }
+            }
+            return m_Instance;
         }
 
         /// <summary>

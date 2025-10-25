@@ -7,11 +7,13 @@ namespace Nexus.Engine.Extensions.Security;
 /// <summary>
 /// Validates security tokens for extension script callbacks.
 /// </summary>
-public class TokenValidator
+public class TokenValidator : IDisposable
 {
     private readonly Logger m_Logger;
     private readonly Dictionary<string, TokenInfo> m_ValidTokens = new();
     private readonly object m_Lock = new();
+    private readonly Timer m_CleanupTimer;
+    private bool m_Disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TokenValidator"/> class.
@@ -19,6 +21,13 @@ public class TokenValidator
     public TokenValidator()
     {
         m_Logger = LogManager.GetCurrentClassLogger();
+
+        // Cleanup expired tokens every 5 minutes
+        m_CleanupTimer = new Timer(
+            _ => CleanupExpiredTokens(),
+            null,
+            TimeSpan.FromMinutes(5),
+            TimeSpan.FromMinutes(5));
     }
 
     /// <summary>
@@ -138,6 +147,36 @@ public class TokenValidator
         var bytes = new byte[32];
         rng.GetBytes(bytes);
         return Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
+    }
+
+    /// <summary>
+    /// Disposes of the token validator and releases all resources.
+    /// </summary>
+    public void Dispose()
+    {
+        if (m_Disposed)
+        {
+            return;
+        }
+
+        m_Disposed = true;
+
+        try
+        {
+            m_CleanupTimer?.Dispose();
+            m_Logger.Debug("Token validator cleanup timer disposed");
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Warn(ex, "Error disposing token validator cleanup timer");
+        }
+
+        lock (m_Lock)
+        {
+            m_ValidTokens.Clear();
+        }
+
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

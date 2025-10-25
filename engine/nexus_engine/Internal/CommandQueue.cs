@@ -403,12 +403,14 @@ internal class CommandQueue : IDisposable
     {
         var commands = new List<QueuedCommand> { firstCommand };
 
-        var timeout = TimeSpan.FromMilliseconds(100); // Short timeout to avoid blocking
+        // Short timeout to avoid blocking - collect immediately available commands
+        var timeout = TimeSpan.FromMilliseconds(100);
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(timeout);
 
-        while (m_CommandChannel.Reader.TryRead(out var nextCommand))
+        // Collect all immediately available commands without blocking
+        while (!cts.Token.IsCancellationRequested && m_CommandChannel.Reader.TryRead(out var nextCommand))
         {
             commands.Add(nextCommand);
         }
@@ -723,8 +725,11 @@ internal class CommandQueue : IDisposable
         // Complete the task
         command.CompletionSource.SetResult(result);
 
-        // Remove from active commands
-        _ = m_ActiveCommands.TryRemove(command.Id, out _);
+        // Remove from active commands and dispose
+        if (m_ActiveCommands.TryRemove(command.Id, out var removedCommand))
+        {
+            removedCommand.Dispose();
+        }
     }
 
     /// <summary>

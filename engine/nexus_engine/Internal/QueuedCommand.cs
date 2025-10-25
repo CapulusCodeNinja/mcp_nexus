@@ -5,7 +5,7 @@ namespace Nexus.Engine.Internal;
 /// <summary>
 /// Represents a command that has been queued for execution.
 /// </summary>
-internal class QueuedCommand
+internal class QueuedCommand : IDisposable
 {
     /// <summary>
     /// Gets or sets the unique identifier of the command.
@@ -45,4 +45,24 @@ internal class QueuedCommand
     /// Gets or sets the cancellation token source for the command.
     /// </summary>
     public CancellationTokenSource CancellationTokenSource { get; set; } = new();
+
+    /// <summary>
+    /// Flag indicating if the command has been disposed.
+    /// </summary>
+    private bool m_Disposed;
+
+    /// <summary>
+    /// Disposes of the queued command and releases all resources.
+    /// </summary>
+    public void Dispose()
+    {
+        if (m_Disposed)
+        {
+            return;
+        }
+
+        m_Disposed = true;
+        CancellationTokenSource?.Dispose();
+        GC.SuppressFinalize(this);
+    }
 }

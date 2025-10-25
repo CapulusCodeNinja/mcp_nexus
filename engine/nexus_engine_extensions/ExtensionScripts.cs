@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 
 using Nexus.Engine.Extensions.Callback;
 using Nexus.Engine.Extensions.Core;
@@ -64,6 +65,11 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     private bool m_Disposed;
 
     /// <summary>
+    /// Task for callback server initialization.
+    /// </summary>
+    private Task? m_CallbackServerInitTask;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionScripts"/> class with default dependencies.
     /// </summary>
     /// <param name="engine">The debug engine instance for callback operations.</param>
@@ -96,8 +102,14 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         m_RunningExtensions = new ConcurrentDictionary<string, ExtensionStatus>();
         m_Disposed = false;
 
-        // Start the callback server asynchronously
-        _ = StartCallbackServerAsync();
+        // Start the callback server asynchronously with error handling
+        m_CallbackServerInitTask = StartCallbackServerAsync().ContinueWith(t =>
+        {
+            if (t.IsFaulted)
+            {
+                m_Logger.Error(t.Exception, "Critical: Extension callback server initialization failed");
+            }
+        }, TaskScheduler.Default);
     }
 
     /// <summary>
@@ -117,6 +129,19 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         catch (Exception ex)
         {
             m_Logger.Error(ex, "Failed to start extension callback server during initialization");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Ensures the callback server is initialized before use.
+    /// </summary>
+    private async Task EnsureCallbackServerInitializedAsync()
+    {
+        if (m_CallbackServerInitTask != null)
+        {
+            await m_CallbackServerInitTask;
+            m_CallbackServerInitTask = null;
         }
     }
 
@@ -130,6 +155,10 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     public string EnqueueExtensionScript(string sessionId, string extensionName, object? parameters = null)
     {
         m_Logger.Info("Enqueuing extension script '{ExtensionName}' in session {SessionId}", extensionName, sessionId);
+
+        // Ensure callback server is ready (await synchronously since this is a sync method)
+        // The initialization task will be awaited in the background execution
+        EnsureCallbackServerInitializedAsync().GetAwaiter().GetResult();
 
         // Generate unique command ID using engine's ID generation to avoid duplicates
         var commandId = GenerateCommandId(sessionId);
@@ -305,22 +334,27 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
             return false;
         }
 
+        Process? process = null;
         try
         {
             // Kill the process using process ID
             try
             {
-                var process = System.Diagnostics.Process.GetProcessById(status.ProcessId);
+                process = System.Diagnostics.Process.GetProcessById(status.ProcessId);
                 if (!process.HasExited)
                 {
                     process.Kill();
                 }
-                process.Dispose(); // Dispose the process handle immediately
             }
             catch (ArgumentException)
             {
                 // Process already exited or doesn't exist
                 m_Logger.Debug("Process {ProcessId} for command {CommandId} already exited", status.ProcessId, commandId);
+            }
+            finally
+            {
+                // Always dispose the process handle
+                process?.Dispose();
             }
 
             // Cancel the token
@@ -420,12 +454,25 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         try
         {
             await m_CallbackServerManager.DisposeAsync();
-            m_Logger.Info("Extension scripts disposed successfully");
+            m_Logger.Info("Extension callback server disposed successfully");
         }
         catch (Exception ex)
         {
-            m_Logger.Error(ex, "Error disposing extension scripts");
+            m_Logger.Error(ex, "Error disposing extension callback server");
         }
+
+        // Dispose the extension manager
+        try
+        {
+            m_Manager.Dispose();
+            m_Logger.Info("Extension manager disposed successfully");
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Error(ex, "Error disposing extension manager");
+        }
+
+        m_Logger.Info("Extension scripts disposed successfully");
 
         GC.SuppressFinalize(this);
     }

@@ -40,21 +40,12 @@ internal class CdbSession : ICdbSession
     /// <summary>
     /// Gets the symbol path.
     /// </summary>
-    public string? SymbolPath => SymbolPath1;
+    public string? SymbolPath { get; private set; }
 
     /// <summary>
     /// Gets a value indicating whether the session is initialized.
     /// </summary>
     public bool IsInitialized => m_Initialized;
-
-    /// <summary>
-    /// Gets or sets the internal symbol path storage.
-    /// </summary>
-    public string? SymbolPath1
-    {
-        get;
-        set;
-    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CdbSession"/> class.
@@ -94,7 +85,7 @@ internal class CdbSession : ICdbSession
 
         // Store the paths
         DumpFilePath = dumpFilePath;
-        SymbolPath1 = symbolPath;
+        SymbolPath = symbolPath;
 
         m_Logger.Info("Initializing CDB session for dump file: {DumpFilePath}", dumpFilePath);
 
@@ -378,7 +369,7 @@ internal class CdbSession : ICdbSession
         }
 
         var cdbPath = FindCdbExecutableAsync().Result;
-        var arguments = BuildCommandLineArguments(DumpFilePath, SymbolPath1);
+        var arguments = BuildCommandLineArguments(DumpFilePath, SymbolPath);
 
         return StartCdbProcessAsync(cdbPath, arguments);
     }
@@ -631,7 +622,7 @@ internal class CdbSession : ICdbSession
     /// <exception cref="InvalidOperationException">Thrown when the session is not initialized.</exception>
     /// <exception cref="ArgumentNullException">Thrown when commands is null.</exception>
     /// <exception cref="ArgumentException">Thrown when commands list is empty.</exception>
-    public Task<string> ExecuteBatchCommandAsync(IEnumerable<string> commands, CancellationToken cancellationToken = default)
+    public async Task<string> ExecuteBatchCommandAsync(IEnumerable<string> commands, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         ThrowIfNotInitialized();
@@ -651,18 +642,8 @@ internal class CdbSession : ICdbSession
 
         try
         {
-            return m_ExecutionSemaphore.WaitAsync(cancellationToken).ContinueWith(async _ =>
-            {
-                try
-                {
-                    var batchCommand = string.Join("; ", commandList);
-                    return await ExecuteCommandAsync(batchCommand, cancellationToken);
-                }
-                finally
-                {
-                    var unused = m_ExecutionSemaphore.Release();
-                }
-            }, cancellationToken).Unwrap();
+            var batchCommand = string.Join("; ", commandList);
+            return await ExecuteCommandAsync(batchCommand, cancellationToken);
         }
         catch (Exception ex)
         {
