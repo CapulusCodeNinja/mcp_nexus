@@ -47,7 +47,7 @@ public interface IDebugEngine : IDisposable
     string EnqueueCommand(string sessionId, string command);
 
 
-    string EnqueueExtensioScript(string sessionId, string command);
+    string EnqueueExtensionScript(string sessionId, string command);
 
     /// <summary>
     /// Gets the information about a command.
