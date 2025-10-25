@@ -110,7 +110,7 @@ public class DebugEngine : IDebugEngine
             throw new InvalidOperationException($"Maximum number of concurrent sessions ({Settings.GetInstance().Get().McpNexus.SessionManagement.MaxConcurrentSessions}) reached");
         }
 
-        var sessionId = GenerateSessionId();
+        var sessionId = SessionIdGenerator.Instance.GenerateSessionId();
         m_Logger.Info("Creating debug session {SessionId} for dump file: {DumpFilePath}", sessionId, dumpFilePath);
 
         try
@@ -471,14 +471,6 @@ public class DebugEngine : IDebugEngine
         SessionStateChanged?.Invoke(this, e);
     }
 
-    /// <summary>
-    /// Generates a unique session identifier.
-    /// </summary>
-    /// <returns>A unique session ID string.</returns>
-    private static string GenerateSessionId()
-    {
-        return $"sess-{Guid.NewGuid():N}";
-    }
 
     /// <summary>
     /// Validates that a session ID is not null or empty.
