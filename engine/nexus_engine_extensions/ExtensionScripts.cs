@@ -17,17 +17,45 @@ namespace Nexus.Engine.Extensions;
 /// </summary>
 public class ExtensionScripts : IExtensionScripts
 {
+    /// <summary>
+    /// Executor for running extension scripts.
+    /// </summary>
     private readonly ExtensionExecutor m_Executor;
+
+    /// <summary>
+    /// Manager for discovering and loading extension scripts.
+    /// </summary>
     private readonly ExtensionManager m_Manager;
+
+    /// <summary>
+    /// Logger for extension script operations.
+    /// </summary>
     private readonly Logger m_Logger;
+
+    /// <summary>
+    /// Cache of command information keyed by command ID.
+    /// </summary>
     private readonly ConcurrentDictionary<string, CommandInfo> m_CommandCache;
+
+    /// <summary>
+    /// Mapping of session IDs to their associated command IDs.
+    /// </summary>
     private readonly ConcurrentDictionary<string, HashSet<string>> m_SessionCommands;
+
+    /// <summary>
+    /// Status of currently running extensions keyed by command ID.
+    /// </summary>
     private readonly ConcurrentDictionary<string, ExtensionStatus> m_RunningExtensions;
+
+    /// <summary>
+    /// Debug engine instance for callback operations.
+    /// </summary>
     private readonly IDebugEngine m_Engine;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionScripts"/> class with default dependencies.
     /// </summary>
+    /// <param name="engine">The debug engine instance for callback operations.</param>
     public ExtensionScripts(IDebugEngine engine) : this(engine, new FileSystem(), new ProcessManager())
     {
     }
@@ -35,6 +63,7 @@ public class ExtensionScripts : IExtensionScripts
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionScripts"/> class with injected dependencies.
     /// </summary>
+    /// <param name="engine">The debug engine instance for callback operations.</param>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
     internal ExtensionScripts(IDebugEngine engine, IFileSystem fileSystem, IProcessManager processManager)

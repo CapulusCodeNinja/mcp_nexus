@@ -16,12 +16,34 @@ namespace Nexus.Engine;
 /// </summary>
 public class DebugEngine : IDebugEngine
 {
+    /// <summary>
+    /// Logger for debug engine operations.
+    /// </summary>
     private readonly Logger m_Logger;
+
+    /// <summary>
+    /// File system abstraction for file operations.
+    /// </summary>
     private readonly IFileSystem m_FileSystem;
+
+    /// <summary>
+    /// Process manager abstraction for process operations.
+    /// </summary>
     private readonly IProcessManager m_ProcessManager;
+
+    /// <summary>
+    /// Extension scripts manager for PowerShell-based debugging workflows.
+    /// </summary>
     private readonly IExtensionScripts m_ExtensionScripts;
 
+    /// <summary>
+    /// Dictionary of active debug sessions keyed by session ID.
+    /// </summary>
     private readonly ConcurrentDictionary<string, Internal.DebugSession> m_Sessions = new();
+
+    /// <summary>
+    /// Indicates whether this instance has been disposed.
+    /// </summary>
     private volatile bool m_Disposed = false;
 
     /// <summary>
