@@ -18,14 +18,12 @@ internal static class ReadDumpAnalyzeCommandResultTool
     /// <summary>
     /// Reads the result of a previously enqueued command. Waits for command completion.
     /// </summary>
-    /// <param name="serviceProvider">The service provider for dependency injection.</param>
     /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
     /// <param name="commandId">Command ID from nexus_enqueue_async_dump_analyze_command.</param>
     /// <returns>Command result with output and status.</returns>
     [McpServerTool, Description("Reads the result of a command. Waits for completion if still executing.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     public static async Task<object> nexus_read_dump_analyze_command_result(
-        IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("Command ID from nexus_enqueue_async_dump_analyze_command")] string commandId)
     {

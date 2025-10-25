@@ -1,6 +1,8 @@
 using FluentAssertions;
 
-namespace Nexus.Extensions.Unittests.Security;
+using Nexus.Engine.Extensions.Security;
+
+namespace Nexus.Engine.Extensions.Tests.Security;
 
 /// <summary>
 /// Unit tests for ExtensionTokenValidator class.

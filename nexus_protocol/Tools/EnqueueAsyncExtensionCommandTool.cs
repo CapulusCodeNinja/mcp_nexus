@@ -16,22 +16,22 @@ namespace Nexus.Protocol.Tools;
 internal static class EnqueueAsyncExtensionCommandTool
 {
     /// <summary>
-    /// Enqueues a debugging command for asynchronous execution in the specified session.
+    /// Enqueues an extension script for asynchronous execution in the specified session.
     /// </summary>
-    /// <param name="serviceProvider">The service provider for dependency injection.</param>
     /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
-    /// <param name="command">WinDbg/CDB command to execute.</param>
+    /// <param name="extensionName">Name of the extension script to execute.</param>
+    /// <param name="parameters">Optional parameters to pass to the extension script.</param>
     /// <returns>Command enqueue result with commandId.</returns>
-    [McpServerTool, Description("Enqueues a debugging command for asynchronous execution. Returns commandId for tracking.")]
+    [McpServerTool, Description("Enqueues an extension script for asynchronous execution. Returns commandId for tracking.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     public static Task<object> nexus_enqueue_async_extension_command(
-        IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
-        [Description("WinDbg/CDB command to execute (e.g., 'k', '!analyze -v', 'lm')")] string command)
+        [Description("Name of the extension script to execute")] string extensionName,
+        [Description("Optional parameters to pass to the extension script")] object? parameters = null)
     {
         var logger = LogManager.GetCurrentClassLogger();
 
-        logger.Info("Enqueuing extension script in session {SessionId}: {Command}", sessionId, command);
+        logger.Info("Enqueuing extension script '{ExtensionName}' in session {SessionId}", extensionName, sessionId);
 
         try
         {
@@ -40,12 +40,12 @@ internal static class EnqueueAsyncExtensionCommandTool
                 throw new ArgumentException("sessionId cannot be empty", nameof(sessionId));
             }
 
-            if (string.IsNullOrWhiteSpace(command))
+            if (string.IsNullOrWhiteSpace(extensionName))
             {
-                throw new ArgumentException("command cannot be empty", nameof(command));
+                throw new ArgumentException("extensionName cannot be empty", nameof(extensionName));
             }
 
-            var commandId = DebugEngine.Instance.EnqueueExtensionScript(sessionId, command);
+            var commandId = DebugEngine.Instance.EnqueueExtensionScript(sessionId, extensionName, parameters);
 
             logger.Info("Extension Script enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
 
@@ -53,14 +53,15 @@ internal static class EnqueueAsyncExtensionCommandTool
             {
                 { "Command ID", commandId },
                 { "Session ID", sessionId },
-                { "Command", command },
+                { "Extension Name", extensionName },
+                { "Parameters", parameters?.ToString() ?? "None" },
                 { "Status", "Queued" }
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
                 "Extension Script Enqueued",
                 keyValues,
-                $"Extension Script {commandId} queued successfully",
+                $"Extension Script '{extensionName}' with command ID {commandId} queued successfully",
                 true);
 
             return Task.FromResult<object>(markdown);
@@ -72,7 +73,8 @@ internal static class EnqueueAsyncExtensionCommandTool
             {
                 { "Command ID", "N/A" },
                 { "Session ID", sessionId },
-                { "Command", command },
+                { "Extension Name", extensionName },
+                { "Parameters", parameters?.ToString() ?? "None" },
                 { "Status", "Failed" }
             };
 
@@ -91,7 +93,8 @@ internal static class EnqueueAsyncExtensionCommandTool
             {
                 { "Command ID", "N/A" },
                 { "Session ID", sessionId },
-                { "Command", command },
+                { "Extension Name", extensionName },
+                { "Parameters", parameters?.ToString() ?? "None" },
                 { "Status", "Failed" }
             };
 
@@ -110,7 +113,8 @@ internal static class EnqueueAsyncExtensionCommandTool
             {
                 { "Command ID", "N/A" },
                 { "Session ID", sessionId },
-                { "Command", command },
+                { "Extension Name", extensionName },
+                { "Parameters", parameters?.ToString() ?? "None" },
                 { "Status", "Failed" }
             };
 

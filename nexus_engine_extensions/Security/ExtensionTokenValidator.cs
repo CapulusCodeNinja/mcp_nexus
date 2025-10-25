@@ -1,242 +1,154 @@
-using System.Collections.Concurrent;
+using System.Security.Cryptography;
 
 using NLog;
 
 namespace Nexus.Engine.Extensions.Security;
 
 /// <summary>
-/// Implementation of extension token validator.
+/// Validates security tokens for extension script callbacks.
 /// </summary>
-internal class ExtensionTokenValidator
+public class ExtensionTokenValidator
 {
     private readonly Logger m_Logger;
-    private readonly ConcurrentDictionary<string, ExtensionTokenInfo> m_Tokens = new();
-    private readonly object m_CleanupLock = new();
-    private DateTime m_LastCleanup = DateTime.Now;
+    private readonly Dictionary<string, TokenInfo> m_ValidTokens = new();
+    private readonly object m_Lock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionTokenValidator"/> class.
     /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
     public ExtensionTokenValidator()
     {
         m_Logger = LogManager.GetCurrentClassLogger();
     }
 
     /// <summary>
-    /// Creates and registers a new extension token.
+    /// Generates a new security token for an extension script.
     /// </summary>
     /// <param name="sessionId">The session ID.</param>
     /// <param name="commandId">The command ID.</param>
-    /// <returns>A secure token string.</returns>
-    /// <exception cref="ArgumentException">Thrown when session ID or command ID is invalid.</exception>
-    public string CreateToken(string sessionId, string commandId)
+    /// <param name="validityMinutes">The validity period in minutes.</param>
+    /// <returns>A new security token.</returns>
+    public string GenerateToken(string sessionId, string commandId, int validityMinutes = 60)
     {
-        if (string.IsNullOrWhiteSpace(sessionId))
+        var token = GenerateSecureToken();
+        var expiresAt = DateTime.Now.AddMinutes(validityMinutes);
+
+        lock (m_Lock)
         {
-            throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
+            m_ValidTokens[token] = new TokenInfo
+            {
+                SessionId = sessionId,
+                CommandId = commandId,
+                ExpiresAt = expiresAt
+            };
         }
 
-        if (string.IsNullOrWhiteSpace(commandId))
-        {
-            throw new ArgumentException("Command ID cannot be null or empty", nameof(commandId));
-        }
-
-        // Generate secure random token
-        var tokenBytes = new byte[32];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(tokenBytes);
-        var randomPart = Convert.ToBase64String(tokenBytes)
-            .Replace("+", "")
-            .Replace("/", "")
-            .Replace("=", "");
-
-        var token = $"ext_{randomPart}";
-
-        var tokenInfo = new ExtensionTokenInfo
-        {
-            Token = token,
-            SessionId = sessionId,
-            CommandId = commandId,
-            CreatedAt = DateTime.Now,
-            ExpiresAt = DateTime.Now.AddHours(2), // 2 hour expiration
-            IsRevoked = false
-        };
-
-        m_Tokens[token] = tokenInfo;
-
-        m_Logger.Debug("Created extension token for session {SessionId}, command {CommandId}",
-            sessionId, commandId);
-
-        // Periodic cleanup of expired tokens
-        CleanupExpiredTokens();
+        m_Logger.Debug("Generated token for session {SessionId}, command {CommandId}, expires at {ExpiresAt}", 
+            sessionId, commandId, expiresAt);
 
         return token;
     }
 
     /// <summary>
-    /// Validates an extension token and returns associated session and command IDs.
+    /// Validates a security token and extracts session information.
     /// </summary>
     /// <param name="token">The token to validate.</param>
     /// <returns>A tuple containing validation result, session ID, and command ID.</returns>
-    public (bool isValid, string? sessionId, string? commandId) ValidateToken(string token)
+    public (bool IsValid, string? SessionId, string? CommandId) ValidateToken(string token)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        if (string.IsNullOrEmpty(token))
         {
-            m_Logger.Warn("Token validation failed: Token is null or empty");
             return (false, null, null);
         }
 
-        if (!m_Tokens.TryGetValue(token, out var tokenInfo))
+        lock (m_Lock)
         {
-            m_Logger.Warn("Token validation failed: Token not found");
-            return (false, null, null);
+            if (!m_ValidTokens.TryGetValue(token, out var tokenInfo))
+            {
+                m_Logger.Warn("Invalid token provided: {Token}", token);
+                return (false, null, null);
+            }
+
+            if (DateTime.Now > tokenInfo.ExpiresAt)
+            {
+                m_Logger.Warn("Expired token provided: {Token}, expired at {ExpiresAt}", token, tokenInfo.ExpiresAt);
+                _ = m_ValidTokens.Remove(token);
+                return (false, null, null);
+            }
+
+            m_Logger.Debug("Valid token for session {SessionId}, command {CommandId}", 
+                tokenInfo.SessionId, tokenInfo.CommandId);
+
+            return (true, tokenInfo.SessionId, tokenInfo.CommandId);
         }
-
-        if (tokenInfo.IsRevoked)
-        {
-            m_Logger.Warn("Token validation failed: Token is revoked for session {SessionId}",
-                tokenInfo.SessionId);
-            return (false, null, null);
-        }
-
-        if (tokenInfo.ExpiresAt < DateTime.Now)
-        {
-            m_Logger.Warn("Token validation failed: Token expired for session {SessionId}",
-                tokenInfo.SessionId);
-            _ = m_Tokens.TryRemove(token, out _);
-            return (false, null, null);
-        }
-
-        m_Logger.Trace("Token validated successfully for session {SessionId}, command {CommandId}",
-            tokenInfo.SessionId, tokenInfo.CommandId);
-
-        return (true, tokenInfo.SessionId, tokenInfo.CommandId);
     }
 
     /// <summary>
-    /// Revokes a token, making it invalid for future use.
+    /// Revokes a security token.
     /// </summary>
     /// <param name="token">The token to revoke.</param>
     public void RevokeToken(string token)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        lock (m_Lock)
         {
-            return;
-        }
-
-        if (m_Tokens.TryGetValue(token, out var tokenInfo))
-        {
-            tokenInfo.IsRevoked = true;
-            m_Logger.Info("Revoked token for session {SessionId}, command {CommandId}",
-                tokenInfo.SessionId, tokenInfo.CommandId);
+            if (m_ValidTokens.Remove(token))
+            {
+                m_Logger.Debug("Revoked token: {Token}", token);
+            }
         }
     }
 
     /// <summary>
-    /// Revokes all tokens for a given session.
+    /// Cleans up expired tokens.
     /// </summary>
-    /// <param name="sessionId">The session ID.</param>
-    public void RevokeSessionTokens(string sessionId)
+    public void CleanupExpiredTokens()
     {
-        if (string.IsNullOrWhiteSpace(sessionId))
-        {
-            return;
-        }
+        var now = DateTime.Now;
+        var expiredTokens = new List<string>();
 
-        var count = 0;
-        foreach (var kvp in m_Tokens)
+        lock (m_Lock)
         {
-            if (kvp.Value.SessionId == sessionId)
+            foreach (var kvp in m_ValidTokens)
             {
-                kvp.Value.IsRevoked = true;
-                count++;
-            }
-        }
-
-        if (count > 0)
-        {
-            m_Logger.Info("Revoked {Count} tokens for session {SessionId}", count, sessionId);
-        }
-    }
-
-    /// <summary>
-    /// Cleans up expired tokens periodically.
-    /// </summary>
-    private void CleanupExpiredTokens()
-    {
-        lock (m_CleanupLock)
-        {
-            // Only cleanup every 5 minutes
-            if ((DateTime.Now - m_LastCleanup).TotalMinutes < 5)
-            {
-                return;
-            }
-
-            var removed = 0;
-            foreach (var kvp in m_Tokens)
-            {
-                var info = kvp.Value;
-                if (info.ExpiresAt < DateTime.Now || info.IsRevoked)
+                if (now > kvp.Value.ExpiresAt)
                 {
-                    if (m_Tokens.TryRemove(kvp.Key, out _))
-                    {
-                        removed++;
-                    }
+                    expiredTokens.Add(kvp.Key);
                 }
             }
 
-            if (removed > 0)
+            foreach (var token in expiredTokens)
             {
-                m_Logger.Debug("Cleaned up {Count} expired/revoked tokens", removed);
+                _ = m_ValidTokens.Remove(token);
             }
+        }
 
-            m_LastCleanup = DateTime.Now;
+        if (expiredTokens.Count > 0)
+        {
+            m_Logger.Debug("Cleaned up {Count} expired tokens", expiredTokens.Count);
         }
     }
-}
-
-/// <summary>
-/// Information about an extension token.
-/// </summary>
-internal class ExtensionTokenInfo
-{
-    /// <summary>
-    /// The token string.
-    /// </summary>
-    public string Token { get; set; } = string.Empty;
 
     /// <summary>
-    /// Session ID associated with this token.
+    /// Generates a secure random token.
     /// </summary>
-    public string SessionId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Command ID associated with this token.
-    /// </summary>
-    public string CommandId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// When the token was created.
-    /// </summary>
-    public DateTime CreatedAt
+    /// <returns>A secure random token string.</returns>
+    private static string GenerateSecureToken()
     {
-        get; set;
+        using var rng = RandomNumberGenerator.Create();
+        var bytes = new byte[32];
+        rng.GetBytes(bytes);
+        return Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
     }
 
     /// <summary>
-    /// When the token expires.
+    /// Information about a token.
     /// </summary>
-    public DateTime ExpiresAt
+    private class TokenInfo
     {
-        get; set;
-    }
-
-    /// <summary>
-    /// Whether the token has been revoked.
-    /// </summary>
-    public bool IsRevoked
-    {
-        get; set;
+        public string SessionId { get; set; } = string.Empty;
+        public string CommandId { get; set; } = string.Empty;
+        public DateTime ExpiresAt { get; set; }
     }
 }
+
 

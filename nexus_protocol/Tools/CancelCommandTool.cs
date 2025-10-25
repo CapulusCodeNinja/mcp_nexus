@@ -18,14 +18,12 @@ internal static class CancelCommandTool
     /// <summary>
     /// Cancels a queued or executing command in a session.
     /// </summary>
-    /// <param name="serviceProvider">The service provider for dependency injection.</param>
     /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
     /// <param name="commandId">Command ID from nexus_enqueue_async_dump_analyze_command.</param>
     /// <returns>Command cancellation result.</returns>
     [McpServerTool, Description("Cancels a queued or executing command.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     public static Task<object> nexus_cancel_dump_analyze_command(
-        IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("Command ID to cancel")] string commandId)
     {

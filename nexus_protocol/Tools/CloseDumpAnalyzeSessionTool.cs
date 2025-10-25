@@ -18,13 +18,11 @@ internal static class CloseDumpAnalyzeSessionTool
     /// <summary>
     /// Closes a debugging session and releases all associated resources.
     /// </summary>
-    /// <param name="serviceProvider">The service provider for dependency injection.</param>
     /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
     /// <returns>Session closure result.</returns>
     [McpServerTool, Description("Closes a debugging session and releases resources.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     public static async Task<object> nexus_close_dump_analyze_session(
-        IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
     {
         var logger = LogManager.GetCurrentClassLogger();

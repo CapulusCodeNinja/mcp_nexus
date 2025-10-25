@@ -18,14 +18,12 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
     /// <summary>
     /// Enqueues a debugging command for asynchronous execution in the specified session.
     /// </summary>
-    /// <param name="serviceProvider">The service provider for dependency injection.</param>
     /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
     /// <param name="command">WinDbg/CDB command to execute.</param>
     /// <returns>Command enqueue result with commandId.</returns>
     [McpServerTool, Description("Enqueues a debugging command for asynchronous execution. Returns commandId for tracking.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     public static Task<object> nexus_enqueue_async_dump_analyze_command(
-        IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("WinDbg/CDB command to execute (e.g., 'k', '!analyze -v', 'lm')")] string command)
     {

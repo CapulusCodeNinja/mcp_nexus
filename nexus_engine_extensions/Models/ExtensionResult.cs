@@ -1,61 +1,47 @@
-using System.Text.Json.Serialization;
-
 namespace Nexus.Engine.Extensions.Models;
 
 /// <summary>
-/// Result of an extension execution.
+/// Represents the result of an extension script execution.
 /// </summary>
-public class ExtensionResult
+internal class ExtensionResult
 {
     /// <summary>
-    /// Whether the extension executed successfully.
+    /// Gets or sets a value indicating whether the extension execution was successful.
     /// </summary>
-    [JsonPropertyName("success")]
-    public bool Success
-    {
-        get; set;
-    }
+    public bool Success { get; set; }
 
     /// <summary>
-    /// Output from the extension (typically JSON).
+    /// Gets or sets the output from the extension script.
     /// </summary>
-    [JsonPropertyName("output")]
-    public string Output { get; set; } = string.Empty;
+    public string? Output { get; set; }
 
     /// <summary>
-    /// Error message if execution failed.
+    /// Gets or sets the error message if the execution failed.
     /// </summary>
-    [JsonPropertyName("error")]
-    public string? Error
-    {
-        get; set;
-    }
+    public string? Error { get; set; }
 
     /// <summary>
-    /// Exit code of the extension process.
+    /// Gets or sets the exit code from the extension script.
     /// </summary>
-    [JsonPropertyName("exitCode")]
-    public int ExitCode
-    {
-        get; set;
-    }
+    public int ExitCode { get; set; }
 
     /// <summary>
-    /// Total execution time.
+    /// Gets or sets the execution time in milliseconds.
     /// </summary>
-    [JsonPropertyName("executionTime")]
-    public TimeSpan ExecutionTime
-    {
-        get; set;
-    }
+    public long ExecutionTimeMs { get; set; }
 
     /// <summary>
-    /// Standard error output from the extension.
+    /// Gets or sets the timestamp when the execution started.
     /// </summary>
-    [JsonPropertyName("standardError")]
-    public string? StandardError
-    {
-        get; set;
-    }
+    public DateTime StartTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timestamp when the execution completed.
+    /// </summary>
+    public DateTime EndTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the process ID of the running extension (if still running).
+    /// </summary>
+    public int? ProcessId { get; set; }
 }
-

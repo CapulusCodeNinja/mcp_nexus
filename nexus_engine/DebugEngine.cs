@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 
 using Nexus.Config;
 using Nexus.Engine.Events;
+using Nexus.Engine.Extensions;
 using Nexus.Engine.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
@@ -131,6 +132,9 @@ public class DebugEngine : IDebugEngine
         {
             try
             {
+                // Close all extension scripts for this session
+                ExtensionScripts.Instance.CloseSession(sessionId);
+
                 // Unsubscribe from events
                 session.CommandStateChanged -= OnSessionCommandStateChanged;
                 session.SessionStateChanged -= OnSessionStateChanged;
@@ -193,9 +197,48 @@ public class DebugEngine : IDebugEngine
         return commandId;
     }
 
-    public string EnqueueExtensionScript(string sessionId, string command)
+    /// <summary>
+    /// Enqueues an extension script for execution in the specified session.
+    /// </summary>
+    /// <param name="sessionId">The session ID to execute the extension script in.</param>
+    /// <param name="extensionName">The name of the extension to execute.</param>
+    /// <param name="parameters">Optional parameters to pass to the extension.</param>
+    /// <returns>The unique command ID for tracking the extension execution.</returns>
+    /// <exception cref="ArgumentException">Thrown when sessionId or extensionName is null or empty.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the session is not active or the extension is not found.</exception>
+    public string EnqueueExtensionScript(string sessionId, string extensionName, object? parameters = null)
     {
+        ThrowIfDisposed();
+        ValidateSessionId(sessionId, nameof(sessionId));
+        ValidateExtensionName(extensionName, nameof(extensionName));
 
+        if (!m_Sessions.TryGetValue(sessionId, out var session))
+        {
+            throw new InvalidOperationException($"Session {sessionId} not found");
+        }
+
+        if (!session.IsActive)
+        {
+            throw new InvalidOperationException($"Session {sessionId} is not active");
+        }
+
+        m_Logger.Info("Enqueuing extension script '{ExtensionName}' in session {SessionId}", extensionName, sessionId);
+
+        // Delegate to the extensions library - it will handle all context management internally
+        var commandId = ExtensionScripts.Instance.EnqueueExtensionScript(sessionId, extensionName, parameters);
+
+        // Fire state changed event for the engine's tracking
+        OnSessionCommandStateChanged(this, new CommandStateChangedEventArgs
+        {
+            SessionId = sessionId,
+            CommandId = commandId,
+            OldState = CommandState.Queued,
+            NewState = CommandState.Queued,
+            Timestamp = DateTime.Now,
+            Command = $"Extension: {extensionName}"
+        });
+
+        return commandId;
     }
 
     /// <summary>
@@ -234,7 +277,19 @@ public class DebugEngine : IDebugEngine
         ValidateSessionId(sessionId, nameof(sessionId));
         ValidateCommandId(commandId, nameof(commandId));
 
-        return !m_Sessions.TryGetValue(sessionId, out var session) ? null : session.GetCommandInfo(commandId);
+        // First check the session's command cache
+        if (m_Sessions.TryGetValue(sessionId, out var session))
+        {
+            var commandInfo = session.GetCommandInfo(commandId);
+            if (commandInfo != null)
+            {
+                return commandInfo;
+            }
+        }
+
+            // If not found in session, check the extensions library
+            var extensionCommand = ExtensionScripts.Instance.GetCommandStatus(commandId);
+            return extensionCommand != null ? Internal.ExtensionCommandMapper.ToEngineCommandInfo(extensionCommand) : null;
     }
 
     /// <summary>
@@ -248,7 +303,23 @@ public class DebugEngine : IDebugEngine
         ThrowIfDisposed();
         ValidateSessionId(sessionId, nameof(sessionId));
 
-        return !m_Sessions.TryGetValue(sessionId, out var session) ? new Dictionary<string, CommandInfo>() : session.GetAllCommandInfos();
+        var allCommands = new Dictionary<string, CommandInfo>();
+
+        // Get commands from the session
+        if (m_Sessions.TryGetValue(sessionId, out var session))
+        {
+            allCommands = session.GetAllCommandInfos();
+        }
+
+        // Add extension commands for this session
+        var extensionCommands = ExtensionScripts.Instance.GetSessionCommands(sessionId);
+        foreach (var extCmd in extensionCommands)
+        {
+            var engineCmd = Internal.ExtensionCommandMapper.ToEngineCommandInfo(extCmd);
+            allCommands[engineCmd.CommandId] = engineCmd;
+        }
+
+        return allCommands;
     }
 
     /// <summary>
@@ -264,7 +335,14 @@ public class DebugEngine : IDebugEngine
         ValidateSessionId(sessionId, nameof(sessionId));
         ValidateCommandId(commandId, nameof(commandId));
 
-        return m_Sessions.TryGetValue(sessionId, out var session) && session.CancelCommand(commandId);
+        // Try to cancel in the session first
+        if (m_Sessions.TryGetValue(sessionId, out var session) && session.CancelCommand(commandId))
+        {
+            return true;
+        }
+
+        // If not found in session, try to cancel in the extensions library
+        return ExtensionScripts.Instance.CancelCommand(commandId);
     }
 
     /// <summary>
@@ -422,4 +500,20 @@ public class DebugEngine : IDebugEngine
             throw new ObjectDisposedException(nameof(DebugEngine));
         }
     }
+
+
+    /// <summary>
+    /// Validates that an extension name is not null or empty.
+    /// </summary>
+    /// <param name="extensionName">The extension name to validate.</param>
+    /// <param name="paramName">The parameter name for the exception message.</param>
+    /// <exception cref="ArgumentException">Thrown when extensionName is null or whitespace.</exception>
+    private static void ValidateExtensionName(string extensionName, string paramName)
+    {
+        if (string.IsNullOrWhiteSpace(extensionName))
+        {
+            throw new ArgumentException("Extension name cannot be null or empty", paramName);
+        }
+    }
+
 }

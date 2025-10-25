@@ -2,7 +2,9 @@ using System.Text.Json;
 
 using FluentAssertions;
 
-namespace Nexus.Extensions_unittests.Models;
+using Nexus.Engine.Extensions.Models;
+
+namespace Nexus.Engine.Extensions.Tests.Models;
 
 /// <summary>
 /// Unit tests for the ExtensionMetadata class.
@@ -21,15 +23,15 @@ public class ExtensionMetadataTests
         // Assert
         _ = metadata.Name.Should().Be(string.Empty);
         _ = metadata.Description.Should().Be(string.Empty);
-        _ = metadata.Version.Should().Be("1.0.0");
+        _ = metadata.Version.Should().Be(string.Empty);
         _ = metadata.Author.Should().Be(string.Empty);
-        _ = metadata.ScriptType.Should().Be("powershell");
+        _ = metadata.ScriptType.Should().Be(string.Empty);
         _ = metadata.ScriptFile.Should().Be(string.Empty);
-        _ = metadata.Timeout.Should().Be(1800000); // 30 minutes
-        _ = metadata.Requires.Should().NotBeNull();
-        _ = metadata.Requires.Should().BeEmpty();
-        _ = metadata.Parameters.Should().NotBeNull();
-        _ = metadata.Parameters.Should().BeEmpty();
+        _ = metadata.TimeoutMs.Should().Be(300000); // 5 minutes default
+        _ = metadata.RequiredParameters.Should().NotBeNull();
+        _ = metadata.RequiredParameters.Should().BeEmpty();
+        _ = metadata.OptionalParameters.Should().NotBeNull();
+        _ = metadata.OptionalParameters.Should().BeEmpty();
         _ = metadata.ExtensionPath.Should().Be(string.Empty);
     }
 
@@ -146,10 +148,10 @@ public class ExtensionMetadataTests
         const int timeout = 600000; // 10 minutes
 
         // Act
-        metadata.Timeout = timeout;
+        metadata.TimeoutMs = timeout;
 
         // Assert
-        _ = metadata.Timeout.Should().Be(timeout);
+        _ = metadata.TimeoutMs.Should().Be(timeout);
     }
 
     /// <summary>
@@ -162,13 +164,13 @@ public class ExtensionMetadataTests
         var metadata = new ExtensionMetadata();
 
         // Act
-        metadata.Requires.Add("Module1");
-        metadata.Requires.Add("Module2");
+        metadata.RequiredParameters.Add(new ExtensionParameter { Name = "Module1" });
+        metadata.RequiredParameters.Add(new ExtensionParameter { Name = "Module2" });
 
         // Assert
-        _ = metadata.Requires.Should().HaveCount(2);
-        _ = metadata.Requires.Should().Contain("Module1");
-        _ = metadata.Requires.Should().Contain("Module2");
+        _ = metadata.RequiredParameters.Should().HaveCount(2);
+        _ = metadata.RequiredParameters.Should().Contain(p => p.Name == "Module1");
+        _ = metadata.RequiredParameters.Should().Contain(p => p.Name == "Module2");
     }
 
     /// <summary>
@@ -183,13 +185,13 @@ public class ExtensionMetadataTests
         var param2 = new ExtensionParameter { Name = "param2", Type = "int" };
 
         // Act
-        metadata.Parameters.Add(param1);
-        metadata.Parameters.Add(param2);
+        metadata.OptionalParameters.Add(param1);
+        metadata.OptionalParameters.Add(param2);
 
         // Assert
-        _ = metadata.Parameters.Should().HaveCount(2);
-        _ = metadata.Parameters[0].Name.Should().Be("param1");
-        _ = metadata.Parameters[1].Name.Should().Be("param2");
+        _ = metadata.OptionalParameters.Should().HaveCount(2);
+        _ = metadata.OptionalParameters[0].Name.Should().Be("param1");
+        _ = metadata.OptionalParameters[1].Name.Should().Be("param2");
     }
 
     /// <summary>
@@ -244,11 +246,11 @@ public class ExtensionMetadataTests
             Author = "Test Author",
             ScriptType = "powershell",
             ScriptFile = "test.ps1",
-            Timeout = 300000,
+            TimeoutMs = 300000,
             ExtensionPath = "C:\\Test"
         };
-        metadata.Requires.Add("TestModule");
-        metadata.Parameters.Add(new ExtensionParameter { Name = "param1" });
+        metadata.RequiredParameters.Add(new ExtensionParameter { Name = "TestModule" });
+        metadata.OptionalParameters.Add(new ExtensionParameter { Name = "param1" });
 
         // Assert
         _ = metadata.Name.Should().Be("test_extension");
@@ -257,10 +259,10 @@ public class ExtensionMetadataTests
         _ = metadata.Author.Should().Be("Test Author");
         _ = metadata.ScriptType.Should().Be("powershell");
         _ = metadata.ScriptFile.Should().Be("test.ps1");
-        _ = metadata.Timeout.Should().Be(300000);
+        _ = metadata.TimeoutMs.Should().Be(300000);
         _ = metadata.ExtensionPath.Should().Be("C:\\Test");
-        _ = metadata.Requires.Should().HaveCount(1);
-        _ = metadata.Parameters.Should().HaveCount(1);
+        _ = metadata.RequiredParameters.Should().HaveCount(1);
+        _ = metadata.OptionalParameters.Should().HaveCount(1);
     }
 
     /// <summary>
@@ -278,9 +280,9 @@ public class ExtensionMetadataTests
             Author = "Author",
             ScriptType = "powershell",
             ScriptFile = "test.ps1",
-            Timeout = 600000
+            TimeoutMs = 600000
         };
-        metadata.Requires.Add("Module1");
+        metadata.RequiredParameters.Add(new ExtensionParameter { Name = "Module1" });
 
         // Act
         var json = JsonSerializer.Serialize(metadata);
@@ -325,9 +327,9 @@ public class ExtensionMetadataTests
         _ = metadata.Author.Should().Be("Test Author");
         _ = metadata.ScriptType.Should().Be("powershell");
         _ = metadata.ScriptFile.Should().Be("script.ps1");
-        _ = metadata.Timeout.Should().Be(900000);
-        _ = metadata.Requires.Should().HaveCount(2);
-        _ = metadata.Parameters.Should().BeEmpty();
+        _ = metadata.TimeoutMs.Should().Be(900000);
+        _ = metadata.RequiredParameters.Should().HaveCount(2);
+        _ = metadata.OptionalParameters.Should().BeEmpty();
     }
 
     /// <summary>

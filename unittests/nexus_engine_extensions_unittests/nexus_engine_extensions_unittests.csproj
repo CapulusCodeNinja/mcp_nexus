@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\nexus_extensions\nexus_engine_extensions.csproj" />
+    <ProjectReference Include="..\..\nexus_engine_extensions\nexus_engine_extensions.csproj" />
   </ItemGroup>
 
 </Project>

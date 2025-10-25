@@ -1,76 +1,62 @@
-using System.Text.Json.Serialization;
-
 namespace Nexus.Engine.Extensions.Models;
 
 /// <summary>
-/// Metadata for an extension script that defines its capabilities and requirements.
+/// Represents metadata for an extension script.
 /// </summary>
 public class ExtensionMetadata
 {
     /// <summary>
-    /// Unique name of the extension (e.g., "stack_with_sources").
+    /// Gets or sets the name of the extension.
     /// </summary>
-    [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Human-readable description of what the extension does.
+    /// Gets or sets the description of the extension.
     /// </summary>
-    [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
 
     /// <summary>
-    /// Version of the extension.
+    /// Gets or sets the version of the extension.
     /// </summary>
-    [JsonPropertyName("version")]
-    public string Version { get; set; } = "1.0.0";
+    public string Version { get; set; } = string.Empty;
 
     /// <summary>
-    /// Author of the extension.
+    /// Gets or sets the author of the extension.
     /// </summary>
-    [JsonPropertyName("author")]
     public string Author { get; set; } = string.Empty;
 
     /// <summary>
-    /// Script type (e.g., "powershell", "python").
+    /// Gets or sets the script file name.
     /// </summary>
-    [JsonPropertyName("scriptType")]
-    public string ScriptType { get; set; } = "powershell";
-
-    /// <summary>
-    /// Relative path to the script file from the extension directory.
-    /// </summary>
-    [JsonPropertyName("scriptFile")]
     public string ScriptFile { get; set; } = string.Empty;
 
     /// <summary>
-    /// Maximum execution timeout in milliseconds (0 = no timeout).
+    /// Gets or sets the full path to the script file.
     /// </summary>
-    [JsonPropertyName("timeout")]
-    public int Timeout { get; set; } = 1800000; // 30 minutes default
+    public string FullScriptPath { get; set; } = string.Empty;
 
     /// <summary>
-    /// List of required modules/dependencies.
+    /// Gets or sets the script type (e.g., "PowerShell").
     /// </summary>
-    [JsonPropertyName("requires")]
-    public List<string> Requires { get; set; } = [];
+    public string ScriptType { get; set; } = string.Empty;
 
     /// <summary>
-    /// Parameter definitions for the extension.
+    /// Gets or sets the timeout in milliseconds.
     /// </summary>
-    [JsonPropertyName("parameters")]
-    public List<ExtensionParameter> Parameters { get; set; } = [];
+    public int TimeoutMs { get; set; } = 300000; // 5 minutes default
 
     /// <summary>
-    /// Absolute path to the extension directory (set at runtime).
+    /// Gets or sets the required parameters for the extension.
     /// </summary>
-    [JsonIgnore]
+    public List<ExtensionParameter> RequiredParameters { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the optional parameters for the extension.
+    /// </summary>
+    public List<ExtensionParameter> OptionalParameters { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the extension path (directory containing the metadata file).
+    /// </summary>
     public string ExtensionPath { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Absolute path to the script file (set at runtime).
-    /// </summary>
-    [JsonIgnore]
-    public string FullScriptPath => Path.Combine(ExtensionPath, ScriptFile);
 }
-

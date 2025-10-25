@@ -1,6 +1,8 @@
 using FluentAssertions;
 
-namespace Nexus.Extensions_unittests.Models;
+using Nexus.Engine.Extensions.Models;
+
+namespace Nexus.Engine.Extensions.Tests.Models;
 
 /// <summary>
 /// Unit tests for the ExtensionResult class.

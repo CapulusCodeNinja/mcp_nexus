@@ -19,14 +19,12 @@ internal static class OpenDumpAnalyzeSessionTool
     /// <summary>
     /// Opens a new debugging session for analyzing a crash dump file.
     /// </summary>
-    /// <param name="serviceProvider">The service provider for dependency injection.</param>
     /// <param name="dumpPath">Full path to the crash dump file (.dmp).</param>
     /// <param name="symbolsPath">Optional path to symbol files directory.</param>
     /// <returns>Session creation result with sessionId.</returns>
     [McpServerTool, Description("Opens a new debugging session for crash dump analysis. Returns sessionId for subsequent operations.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     public static async Task<object> nexus_open_dump_analyze_session(
-        IServiceProvider serviceProvider,
         [Description("Full path to the crash dump file (.dmp)")] string dumpPath,
         [Description("Optional path to symbol files directory")] string? symbolsPath = null)
     {

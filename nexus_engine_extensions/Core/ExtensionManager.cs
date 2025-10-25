@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using Nexus.Config;
 using Nexus.Engine.Extensions.Models;
+using Nexus.External.Apis.FileSystem;
 
 using NLog;
 
@@ -13,6 +14,7 @@ namespace Nexus.Engine.Extensions.Core;
 internal class ExtensionManager
 {
     private readonly Logger m_Logger;
+    private readonly IFileSystem m_FileSystem;
     private readonly string m_ExtensionsPath;
     private readonly Dictionary<string, ExtensionMetadata> m_Extensions = [];
     private readonly object m_Lock = new();
@@ -21,12 +23,23 @@ internal class ExtensionManager
     private int m_Version = 0;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ExtensionManager"/> class.
+    /// Initializes a new instance of the <see cref="ExtensionManager"/> class with default dependencies.
     /// </summary>
     /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
     /// <exception cref="ArgumentException">Thrown when extensionsPath is null or empty.</exception>
-    public ExtensionManager()
+    public ExtensionManager() : this(new FileSystem())
     {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExtensionManager"/> class with specified dependencies.
+    /// </summary>
+    /// <param name="fileSystem">The file system abstraction.</param>
+    /// <exception cref="ArgumentNullException">Thrown when fileSystem is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when extensionsPath is null or empty.</exception>
+    internal ExtensionManager(IFileSystem fileSystem)
+    {
+        m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_Logger = LogManager.GetCurrentClassLogger();
 
         m_ExtensionsPath = Settings.GetInstance().Get().McpNexus.Extensions.ExtensionsPath;
@@ -37,7 +50,7 @@ internal class ExtensionManager
 
         try
         {
-            if (Directory.Exists(m_ExtensionsPath))
+            if (m_FileSystem.DirectoryExists(m_ExtensionsPath))
             {
                 m_Watcher = new FileSystemWatcher(m_ExtensionsPath)
                 {
@@ -66,15 +79,15 @@ internal class ExtensionManager
     {
         m_Logger.Info("Loading extensions from: {ExtensionsPath}", m_ExtensionsPath);
 
-        if (!Directory.Exists(m_ExtensionsPath))
+        if (!m_FileSystem.DirectoryExists(m_ExtensionsPath))
         {
             m_Logger.Warn("Extensions directory does not exist: {ExtensionsPath}", m_ExtensionsPath);
-            _ = Directory.CreateDirectory(m_ExtensionsPath);
+            m_FileSystem.CreateDirectory(m_ExtensionsPath);
             m_Logger.Info("Created extensions directory: {ExtensionsPath}", m_ExtensionsPath);
             return;
         }
 
-        var metadataFiles = Directory.GetFiles(m_ExtensionsPath, "*.json", SearchOption.AllDirectories);
+        var metadataFiles = m_FileSystem.GetFiles(m_ExtensionsPath, "*.json", SearchOption.AllDirectories);
         m_Logger.Info("Found {Count} metadata files", metadataFiles.Length);
 
         // Build a new map to replace atomically
@@ -153,7 +166,7 @@ internal class ExtensionManager
         metadata.ExtensionPath = Path.GetDirectoryName(metadataFile) ?? m_ExtensionsPath;
 
         // Validate script file exists
-        if (!File.Exists(metadata.FullScriptPath))
+        if (!m_FileSystem.FileExists(metadata.FullScriptPath))
         {
             m_Logger.Warn("Extension {Name} script file not found: {ScriptPath}",
                 metadata.Name, metadata.FullScriptPath);
@@ -269,7 +282,7 @@ internal class ExtensionManager
             return (false, $"Extension '{extensionName}' has no script file specified");
         }
 
-        if (!File.Exists(metadata.FullScriptPath))
+        if (!m_FileSystem.FileExists(metadata.FullScriptPath))
         {
             return (false, $"Extension '{extensionName}' script file not found: {metadata.FullScriptPath}");
         }

@@ -6,7 +6,6 @@
   "scriptType": "powershell",
   "scriptFile": "stack_with_sources.ps1",
   "timeout": 1800000,
-  "requires": ["McpNexusExtensions"],
   "parameters": [
     {
       "name": "threadId",
