@@ -70,9 +70,20 @@ internal class JsonRpcLoggingMiddleware
         m_Logger.Debug("JSON-RPC Request Body:{NewLine}{RequestBody}", Environment.NewLine, formattedRequest.Trim());
             foreach (var text in extractedTexts)
             {
-                var unescapedText = UnescapeJsonInText(text.Trim());
-                var formattedText = FormatAndTruncateJson(unescapedText);
-                m_Logger.Debug("Extracted Text Field:{NewLine}{TextField}", Environment.NewLine, formattedText);
+                if (IsMarkdown(text.Trim()))
+                {
+                    // Markdown - log as-is (no escaping needed!)
+                    m_Logger.Debug("Extracted Text Field (Markdown):{NewLine}{TextField}", 
+                        Environment.NewLine, text.Trim());
+                }
+                else
+                {
+                    // Legacy JSON format - unescape and format
+                    var unescapedText = UnescapeJsonInText(text.Trim());
+                    var formattedText = FormatAndTruncateJson(unescapedText);
+                    m_Logger.Debug("Extracted Text Field (JSON):{NewLine}{TextField}", 
+                        Environment.NewLine, formattedText);
+                }
             }
 
         var originalBodyStream = context.Response.Body;
@@ -93,9 +104,20 @@ internal class JsonRpcLoggingMiddleware
             m_Logger.Debug("JSON-RPC Response Body:{NewLine}{ResponseBody}", Environment.NewLine, formattedResponse.Trim());
             foreach (var text in extractedResponseTexts)
             {
-                var unescapedText = UnescapeJsonInText(text.Trim());
-                var formattedText = FormatAndTruncateJson(unescapedText);
-                m_Logger.Debug("Extracted Text Field:{NewLine}{TextField}", Environment.NewLine, formattedText);
+                if (IsMarkdown(text.Trim()))
+                {
+                    // Markdown - log as-is (no escaping needed!)
+                    m_Logger.Debug("Extracted Text Field (Markdown):{NewLine}{TextField}", 
+                        Environment.NewLine, text.Trim());
+                }
+                else
+                {
+                    // Legacy JSON format - unescape and format
+                    var unescapedText = UnescapeJsonInText(text.Trim());
+                    var formattedText = FormatAndTruncateJson(unescapedText);
+                    m_Logger.Debug("Extracted Text Field (JSON):{NewLine}{TextField}", 
+                        Environment.NewLine, formattedText);
+                }
             }
 
             await CopyResponseBodyAsync(responseBody, originalBodyStream);
@@ -204,6 +226,27 @@ internal class JsonRpcLoggingMiddleware
         }
 
         return string.Join(Environment.NewLine, result);
+    }
+
+    /// <summary>
+    /// Determines if the content is Markdown format.
+    /// </summary>
+    /// <param name="text">The text to check.</param>
+    /// <returns>True if the content appears to be Markdown.</returns>
+    protected static bool IsMarkdown(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+        
+        var trimmed = text.TrimStart();
+        // Check for common Markdown patterns
+        return trimmed.StartsWith("#") ||           // Headers
+               trimmed.StartsWith("##") ||          // Subheaders
+               trimmed.StartsWith("**") ||          // Bold
+               trimmed.StartsWith("- ") ||          // Lists
+               trimmed.StartsWith("| ") ||          // Tables
+               text.Contains("```") ||              // Code blocks
+               text.Contains("**Command ID:**");    // Our specific pattern
     }
 
     /// <summary>

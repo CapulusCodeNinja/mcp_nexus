@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -47,69 +48,83 @@ internal static class OpenDumpAnalyzeSessionTool
             if (!fileSystem.FileExists(dumpPath))
             {
                 logger.LogError("Dump file not found: {DumpPath}", dumpPath);
-                return new
-                {
-                    sessionId = (string?)null,
-                    dumpFile = fileSystem.GetFileName(dumpPath),
-                    status = "Failed",
-                    operation = "nexus_open_dump_analyze_session",
-                    message = $"Dump file not found: {dumpPath}",
-                    usage = UsageField
-                };
+                var errorMarkdown = new StringBuilder();
+                errorMarkdown.AppendLine("## Session Creation Failed");
+                errorMarkdown.AppendLine();
+                errorMarkdown.AppendLine($"**Session ID:** N/A");
+                errorMarkdown.AppendLine($"**Dump File:** `{fileSystem.GetFileName(dumpPath)}`");
+                errorMarkdown.AppendLine($"**Status:** Failed");
+                errorMarkdown.AppendLine();
+                errorMarkdown.AppendLine("### Error");
+                errorMarkdown.AppendLine("```");
+                errorMarkdown.AppendLine($"Dump file not found: {dumpPath}");
+                errorMarkdown.AppendLine("```");
+                return errorMarkdown.ToString();
             }
 
             var sessionId = await DebugEngine.Instance.CreateSessionAsync(dumpPath, symbolsPath);
 
             logger.LogInformation("Successfully created session: {SessionId}", sessionId);
 
-            return new
-            {
-                sessionId,
-                dumpFile = fileSystem.GetFileName(dumpPath),
-                status = "Success",
-                operation = "nexus_open_dump_analyze_session",
-                message = $"Session {sessionId} created successfully",
-                usage = UsageField
-            };
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Session Created");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Dump File:** `{fileSystem.GetFileName(dumpPath)}`");
+            markdown.AppendLine($"**Status:** Success");
+            if (!string.IsNullOrEmpty(symbolsPath))
+                markdown.AppendLine($"**Symbols Path:** `{symbolsPath}`");
+            markdown.AppendLine();
+            markdown.AppendLine($"✓ Session {sessionId} created successfully");
+            return markdown.ToString();
         }
         catch (FileNotFoundException ex)
         {
             logger.LogError(ex, "Dump file not found: {DumpPath}", dumpPath);
-            return new
-            {
-                sessionId = (string?)null,
-                dumpFile = fileSystem.GetFileName(dumpPath),
-                status = "Failed",
-                operation = "nexus_open_dump_analyze_session",
-                message = ex.Message,
-                usage = UsageField
-            };
+            var errorMarkdown = new StringBuilder();
+            errorMarkdown.AppendLine("## Session Creation Failed");
+            errorMarkdown.AppendLine();
+            errorMarkdown.AppendLine($"**Session ID:** N/A");
+            errorMarkdown.AppendLine($"**Dump File:** `{fileSystem.GetFileName(dumpPath)}`");
+            errorMarkdown.AppendLine($"**Status:** Failed");
+            errorMarkdown.AppendLine();
+            errorMarkdown.AppendLine("### Error");
+            errorMarkdown.AppendLine("```");
+            errorMarkdown.AppendLine(ex.Message);
+            errorMarkdown.AppendLine("```");
+            return errorMarkdown.ToString();
         }
         catch (InvalidOperationException ex)
         {
             logger.LogError(ex, "Cannot create session: {Message}", ex.Message);
-            return new
-            {
-                sessionId = (string?)null,
-                dumpFile = fileSystem.GetFileName(dumpPath),
-                status = "Failed",
-                operation = "nexus_open_dump_analyze_session",
-                message = ex.Message,
-                usage = UsageField
-            };
+            var errorMarkdown = new StringBuilder();
+            errorMarkdown.AppendLine("## Session Creation Failed");
+            errorMarkdown.AppendLine();
+            errorMarkdown.AppendLine($"**Session ID:** N/A");
+            errorMarkdown.AppendLine($"**Dump File:** `{fileSystem.GetFileName(dumpPath)}`");
+            errorMarkdown.AppendLine($"**Status:** Failed");
+            errorMarkdown.AppendLine();
+            errorMarkdown.AppendLine("### Error");
+            errorMarkdown.AppendLine("```");
+            errorMarkdown.AppendLine(ex.Message);
+            errorMarkdown.AppendLine("```");
+            return errorMarkdown.ToString();
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error creating session");
-            return new
-            {
-                sessionId = (string?)null,
-                dumpFile = fileSystem.GetFileName(dumpPath),
-                status = "Failed",
-                operation = "nexus_open_dump_analyze_session",
-                message = $"Unexpected error: {ex.Message}",
-                usage = UsageField
-            };
+            var errorMarkdown = new StringBuilder();
+            errorMarkdown.AppendLine("## Session Creation Failed");
+            errorMarkdown.AppendLine();
+            errorMarkdown.AppendLine($"**Session ID:** N/A");
+            errorMarkdown.AppendLine($"**Dump File:** `{fileSystem.GetFileName(dumpPath)}`");
+            errorMarkdown.AppendLine($"**Status:** Failed");
+            errorMarkdown.AppendLine();
+            errorMarkdown.AppendLine("### Error");
+            errorMarkdown.AppendLine("```");
+            errorMarkdown.AppendLine($"Unexpected error: {ex.Message}");
+            errorMarkdown.AppendLine("```");
+            return errorMarkdown.ToString();
         }
     }
 }

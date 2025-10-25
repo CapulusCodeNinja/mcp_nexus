@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -53,40 +54,64 @@ internal static class GetDumpAnalyzeCommandsStatusTool
 
             logger.LogInformation("Retrieved status for {Count} commands in session {SessionId}", commandStatuses.Length, sessionId);
 
-            return Task.FromResult<object>(new
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Command Status Summary");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Total Commands:** {commandStatuses.Length}");
+            markdown.AppendLine();
+
+            if (commandStatuses.Length > 0)
             {
-                commands = commandStatuses,
-                count = commandStatuses.Length,
-                sessionId,
-                operation = "nexus_get_dump_analyze_commands_status",
-                usage = UsageField
-            });
+                markdown.AppendLine("### Commands");
+                markdown.AppendLine();
+                markdown.AppendLine("| Command ID | Command | State | Success | Execution Time |");
+                markdown.AppendLine("|------------|---------|-------|---------|----------------|");
+                
+                foreach (var cmd in commandStatuses)
+                {
+                    var execTime = cmd.executionTime?.TotalSeconds.ToString("F2") ?? "N/A";
+                    var success = cmd.isSuccess?.ToString() ?? "N/A";
+                    var cmdText = cmd.command.Length > 50 ? cmd.command.Substring(0, 47) + "..." : cmd.command;
+                    markdown.AppendLine($"| `{cmd.commandId}` | `{cmdText}` | {cmd.state} | {success} | {execTime}s |");
+                }
+            }
+            else
+            {
+                markdown.AppendLine("No commands found.");
+            }
+
+            return Task.FromResult<object>(markdown.ToString());
         }
         catch (ArgumentException ex)
         {
             logger.LogError(ex, "Invalid session ID: {Message}", ex.Message);
-            return Task.FromResult<object>(new
-            {
-                commands = Array.Empty<object>(),
-                count = 0,
-                sessionId,
-                operation = "nexus_get_dump_analyze_commands_status",
-                error = ex.Message,
-                usage = UsageField
-            });
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Command Status Summary");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Total Commands:** 0");
+            markdown.AppendLine();
+            markdown.AppendLine("### Error");
+            markdown.AppendLine("```");
+            markdown.AppendLine(ex.Message);
+            markdown.AppendLine("```");
+            return Task.FromResult<object>(markdown.ToString());
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error getting command statuses");
-            return Task.FromResult<object>(new
-            {
-                commands = Array.Empty<object>(),
-                count = 0,
-                sessionId,
-                operation = "nexus_get_dump_analyze_commands_status",
-                error = $"Unexpected error: {ex.Message}",
-                usage = UsageField
-            });
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Command Status Summary");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Total Commands:** 0");
+            markdown.AppendLine();
+            markdown.AppendLine("### Error");
+            markdown.AppendLine("```");
+            markdown.AppendLine($"Unexpected error: {ex.Message}");
+            markdown.AppendLine("```");
+            return Task.FromResult<object>(markdown.ToString());
         }
     }
 }

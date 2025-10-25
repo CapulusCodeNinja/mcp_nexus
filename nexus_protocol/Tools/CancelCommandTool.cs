@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -41,44 +42,54 @@ internal static class CancelCommandTool
 
             logger.LogInformation("Command {CommandId} cancellation: {Result}", commandId, cancelled ? "Success" : "NotFound");
 
-            return Task.FromResult<object>(new
-            {
-                commandId,
-                sessionId,
-                cancelled,
-                status = cancelled ? "Cancelled" : "NotFound",
-                operation = "nexus_cancel_dump_analyze_command",
-                message = cancelled ? $"Command {commandId} cancelled successfully" : $"Command {commandId} not found or already completed",
-                usage = UsageField
-            });
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Command Cancellation");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Command ID:** `{commandId}`");
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Cancelled:** {cancelled}");
+            markdown.AppendLine($"**Status:** {(cancelled ? "Cancelled" : "NotFound")}");
+            markdown.AppendLine();
+            if (cancelled)
+                markdown.AppendLine($"✓ Command {commandId} cancelled successfully");
+            else
+                markdown.AppendLine($"⚠ Command {commandId} not found or already completed");
+
+            return Task.FromResult<object>(markdown.ToString());
         }
         catch (ArgumentException ex)
         {
             logger.LogError(ex, "Invalid argument: {Message}", ex.Message);
-            return Task.FromResult<object>(new
-            {
-                commandId,
-                sessionId,
-                cancelled = false,
-                status = "Failed",
-                operation = "nexus_cancel_dump_analyze_command",
-                message = ex.Message,
-                usage = UsageField
-            });
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Command Cancellation Failed");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Command ID:** `{commandId}`");
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Cancelled:** False");
+            markdown.AppendLine($"**Status:** Failed");
+            markdown.AppendLine();
+            markdown.AppendLine("### Error");
+            markdown.AppendLine("```");
+            markdown.AppendLine(ex.Message);
+            markdown.AppendLine("```");
+            return Task.FromResult<object>(markdown.ToString());
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error cancelling command");
-            return Task.FromResult<object>(new
-            {
-                commandId,
-                sessionId,
-                cancelled = false,
-                status = "Failed",
-                operation = "nexus_cancel_dump_analyze_command",
-                message = $"Unexpected error: {ex.Message}",
-                usage = UsageField
-            });
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Command Cancellation Failed");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Command ID:** `{commandId}`");
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Cancelled:** False");
+            markdown.AppendLine($"**Status:** Failed");
+            markdown.AppendLine();
+            markdown.AppendLine("### Error");
+            markdown.AppendLine("```");
+            markdown.AppendLine($"Unexpected error: {ex.Message}");
+            markdown.AppendLine("```");
+            return Task.FromResult<object>(markdown.ToString());
         }
     }
 }

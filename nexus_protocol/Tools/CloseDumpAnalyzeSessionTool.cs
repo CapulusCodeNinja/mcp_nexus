@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -39,38 +40,44 @@ internal static class CloseDumpAnalyzeSessionTool
 
             logger.LogInformation("Successfully closed session: {SessionId}", sessionId);
 
-            return new
-            {
-                sessionId,
-                status = "Success",
-                operation = "nexus_close_dump_analyze_session",
-                message = $"Session {sessionId} closed successfully",
-                usage = UsageField
-            };
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Session Closed");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Status:** Success");
+            markdown.AppendLine();
+            markdown.AppendLine($"✓ Session {sessionId} closed successfully");
+            return markdown.ToString();
         }
         catch (ArgumentException ex)
         {
             logger.LogError(ex, "Invalid session ID: {Message}", ex.Message);
-            return new
-            {
-                sessionId,
-                status = "Failed",
-                operation = "nexus_close_dump_analyze_session",
-                message = ex.Message,
-                usage = UsageField
-            };
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Session Close Failed");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Status:** Failed");
+            markdown.AppendLine();
+            markdown.AppendLine("### Error");
+            markdown.AppendLine("```");
+            markdown.AppendLine(ex.Message);
+            markdown.AppendLine("```");
+            return markdown.ToString();
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error closing session");
-            return new
-            {
-                sessionId,
-                status = "Failed",
-                operation = "nexus_close_dump_analyze_session",
-                message = $"Unexpected error: {ex.Message}",
-                usage = UsageField
-            };
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Session Close Failed");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Status:** Failed");
+            markdown.AppendLine();
+            markdown.AppendLine("### Error");
+            markdown.AppendLine("```");
+            markdown.AppendLine($"Unexpected error: {ex.Message}");
+            markdown.AppendLine("```");
+            return markdown.ToString();
         }
     }
 }

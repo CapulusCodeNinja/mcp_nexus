@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -51,58 +52,68 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
 
             logger.LogInformation("Command enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
 
-            return Task.FromResult<object>(new
-            {
-                commandId,
-                sessionId,
-                command,
-                status = "Queued",
-                operation = "nexus_enqueue_async_dump_analyze_command",
-                message = $"Command {commandId} queued successfully",
-                usage = UsageField
-            });
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Command Enqueued");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Command ID:** `{commandId}`");
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Command:** `{command}`");
+            markdown.AppendLine($"**Status:** Queued");
+            markdown.AppendLine();
+            markdown.AppendLine($"✓ Command {commandId} queued successfully");
+
+            return Task.FromResult<object>(markdown.ToString());
         }
         catch (ArgumentException ex)
         {
             logger.LogError(ex, "Invalid argument: {Message}", ex.Message);
-            return Task.FromResult<object>(new
-            {
-                commandId = (string?)null,
-                sessionId,
-                command,
-                status = "Failed",
-                operation = "nexus_enqueue_async_dump_analyze_command",
-                message = ex.Message,
-                usage = UsageField
-            });
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Command Enqueue Failed");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Command ID:** N/A");
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Command:** `{command}`");
+            markdown.AppendLine($"**Status:** Failed");
+            markdown.AppendLine();
+            markdown.AppendLine("### Error");
+            markdown.AppendLine("```");
+            markdown.AppendLine(ex.Message);
+            markdown.AppendLine("```");
+            return Task.FromResult<object>(markdown.ToString());
         }
         catch (InvalidOperationException ex)
         {
             logger.LogError(ex, "Cannot enqueue command: {Message}", ex.Message);
-            return Task.FromResult<object>(new
-            {
-                commandId = (string?)null,
-                sessionId,
-                command,
-                status = "Failed",
-                operation = "nexus_enqueue_async_dump_analyze_command",
-                message = ex.Message,
-                usage = UsageField
-            });
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Command Enqueue Failed");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Command ID:** N/A");
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Command:** `{command}`");
+            markdown.AppendLine($"**Status:** Failed");
+            markdown.AppendLine();
+            markdown.AppendLine("### Error");
+            markdown.AppendLine("```");
+            markdown.AppendLine(ex.Message);
+            markdown.AppendLine("```");
+            return Task.FromResult<object>(markdown.ToString());
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error enqueuing command");
-            return Task.FromResult<object>(new
-            {
-                commandId = (string?)null,
-                sessionId,
-                command,
-                status = "Failed",
-                operation = "nexus_enqueue_async_dump_analyze_command",
-                message = $"Unexpected error: {ex.Message}",
-                usage = UsageField
-            });
+            var markdown = new StringBuilder();
+            markdown.AppendLine("## Command Enqueue Failed");
+            markdown.AppendLine();
+            markdown.AppendLine($"**Command ID:** N/A");
+            markdown.AppendLine($"**Session ID:** `{sessionId}`");
+            markdown.AppendLine($"**Command:** `{command}`");
+            markdown.AppendLine($"**Status:** Failed");
+            markdown.AppendLine();
+            markdown.AppendLine("### Error");
+            markdown.AppendLine("```");
+            markdown.AppendLine($"Unexpected error: {ex.Message}");
+            markdown.AppendLine("```");
+            return Task.FromResult<object>(markdown.ToString());
         }
     }
 }
