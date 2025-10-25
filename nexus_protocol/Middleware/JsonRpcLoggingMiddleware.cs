@@ -70,7 +70,7 @@ internal class JsonRpcLoggingMiddleware
         m_Logger.Debug("JSON-RPC Request Body:{NewLine}{RequestBody}", Environment.NewLine, formattedRequest.Trim());
         foreach (var text in extractedTexts)
         {
-            m_Logger.Debug("  Extracted Text Field: {TextField}", text);
+            m_Logger.Debug("Extracted Text Field:{NewLine}{TextField}", Environment.NewLine, text.Trim());
         }
 
         var originalBodyStream = context.Response.Body;
@@ -91,7 +91,7 @@ internal class JsonRpcLoggingMiddleware
             m_Logger.Debug("JSON-RPC Response Body:{NewLine}{ResponseBody}", Environment.NewLine, formattedResponse.Trim());
             foreach (var text in extractedResponseTexts)
             {
-                m_Logger.Debug("  Extracted Text Field:{NewLine}{TextField}", Environment.NewLine, text.Trim());
+                m_Logger.Debug("Extracted Text Field:{NewLine}{TextField}", Environment.NewLine, text.Trim());
             }
 
             await CopyResponseBodyAsync(responseBody, originalBodyStream);
@@ -140,17 +140,109 @@ internal class JsonRpcLoggingMiddleware
     }
 
     /// <summary>
+    /// Determines if the content is in Server-Sent Events (SSE) format.
+    /// </summary>
+    /// <param name="content">The content to check.</param>
+    /// <returns>True if the content appears to be SSE format; otherwise, false.</returns>
+    protected static bool IsSseFormat(string content)
+    {
+        if (string.IsNullOrEmpty(content))
+        {
+            return false;
+        }
+
+        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        return lines.Any(line => line.TrimStart().StartsWith("event:") || line.TrimStart().StartsWith("data:"));
+    }
+
+    /// <summary>
+    /// Formats SSE content by preserving the SSE structure and formatting JSON data.
+    /// </summary>
+    /// <param name="sseContent">The SSE content to format.</param>
+    /// <returns>The formatted SSE content with formatted JSON data.</returns>
+    protected static string FormatSseContent(string sseContent)
+    {
+        if (string.IsNullOrEmpty(sseContent))
+        {
+            return string.Empty;
+        }
+
+        var lines = sseContent.Split('\n', StringSplitOptions.None);
+        var result = new List<string>();
+
+        foreach (var line in lines)
+        {
+            var trimmedLine = line.TrimEnd();
+            if (trimmedLine.StartsWith("data:"))
+            {
+                var jsonPart = ExtractJsonFromSseLine(trimmedLine);
+                if (!string.IsNullOrEmpty(jsonPart))
+                {
+                    try
+                    {
+                        var formattedJson = FormatAndTruncateJson(jsonPart);
+                        result.Add($"data: {formattedJson}");
+                    }
+                    catch
+                    {
+                        result.Add(trimmedLine);
+                    }
+                }
+                else
+                {
+                    result.Add(trimmedLine);
+                }
+            }
+            else
+            {
+                result.Add(trimmedLine);
+            }
+        }
+
+        return string.Join(Environment.NewLine, result);
+    }
+
+    /// <summary>
+    /// Extracts JSON content from an SSE data line.
+    /// </summary>
+    /// <param name="line">The SSE data line.</param>
+    /// <returns>The JSON content, or empty string if not found.</returns>
+    protected static string ExtractJsonFromSseLine(string line)
+    {
+        if (string.IsNullOrEmpty(line))
+        {
+            return string.Empty;
+        }
+
+        var trimmedLine = line.Trim();
+        if (!trimmedLine.StartsWith("data:"))
+        {
+            return string.Empty;
+        }
+
+        var jsonStart = trimmedLine.IndexOf('{');
+        return jsonStart == -1 ? string.Empty : trimmedLine[jsonStart..];
+    }
+
+    /// <summary>
     /// Formats JSON with indentation and truncates individual string fields to specified length.
     /// </summary>
     /// <param name="jsonString">The JSON string to format and truncate.</param>
     /// <returns>The formatted and truncated JSON string.</returns>
-    private static string FormatAndTruncateJson(string jsonString)
+    protected static string FormatAndTruncateJson(string jsonString)
     {
         if (string.IsNullOrEmpty(jsonString))
         {
             return string.Empty;
         }
 
+        // Check if this is SSE format
+        if (IsSseFormat(jsonString))
+        {
+            return FormatSseContent(jsonString);
+        }
+
+        // Otherwise, parse as regular JSON
         try
         {
             using var document = JsonDocument.Parse(jsonString);
@@ -169,13 +261,19 @@ internal class JsonRpcLoggingMiddleware
     /// </summary>
     /// <param name="jsonString">The JSON string to extract text fields from.</param>
     /// <returns>A list of extracted text content.</returns>
-    private static List<string> ExtractTextFields(string jsonString)
+    protected static List<string> ExtractTextFields(string jsonString)
     {
         var extractedTexts = new List<string>();
 
         if (string.IsNullOrEmpty(jsonString))
         {
             return extractedTexts;
+        }
+
+        // Check if this is SSE format
+        if (IsSseFormat(jsonString))
+        {
+            return ExtractTextFieldsFromSse(jsonString);
         }
 
         try
@@ -192,11 +290,50 @@ internal class JsonRpcLoggingMiddleware
     }
 
     /// <summary>
+    /// Extracts text fields from SSE format content.
+    /// </summary>
+    /// <param name="sseContent">The SSE content to process.</param>
+    /// <returns>A list of extracted text content.</returns>
+    protected static List<string> ExtractTextFieldsFromSse(string sseContent)
+    {
+        var extractedTexts = new List<string>();
+
+        if (string.IsNullOrEmpty(sseContent))
+        {
+            return extractedTexts;
+        }
+
+        var lines = sseContent.Split('\n', StringSplitOptions.None);
+        foreach (var line in lines)
+        {
+            var trimmedLine = line.Trim();
+            if (trimmedLine.StartsWith("data:"))
+            {
+                var jsonPart = ExtractJsonFromSseLine(trimmedLine);
+                if (!string.IsNullOrEmpty(jsonPart))
+                {
+                    try
+                    {
+                        using var document = JsonDocument.Parse(jsonPart);
+                        ExtractTextFieldsRecursive(document.RootElement, extractedTexts);
+                    }
+                    catch (JsonException)
+                    {
+                        // If JSON parsing fails, skip this data line
+                    }
+                }
+            }
+        }
+
+        return extractedTexts;
+    }
+
+    /// <summary>
     /// Recursively extracts text fields from JSON elements.
     /// </summary>
     /// <param name="element">The JSON element to process.</param>
     /// <param name="extractedTexts">The list to add extracted texts to.</param>
-    private static void ExtractTextFieldsRecursive(JsonElement element, List<string> extractedTexts)
+    protected static void ExtractTextFieldsRecursive(JsonElement element, List<string> extractedTexts)
     {
         switch (element.ValueKind)
         {
@@ -233,7 +370,7 @@ internal class JsonRpcLoggingMiddleware
     /// </summary>
     /// <param name="text">The text that may contain escaped JSON.</param>
     /// <returns>The unescaped text.</returns>
-    private static string UnescapeJsonInText(string text)
+    protected static string UnescapeJsonInText(string text)
     {
         if (string.IsNullOrEmpty(text))
         {
@@ -259,7 +396,7 @@ internal class JsonRpcLoggingMiddleware
     /// <param name="element">The JSON element to process.</param>
     /// <param name="maxLength">The maximum length for string values.</param>
     /// <returns>A new JSON element with truncated strings.</returns>
-    private static object? TruncateJsonElement(JsonElement element, int maxLength)
+    protected static object? TruncateJsonElement(JsonElement element, int maxLength)
     {
         switch (element.ValueKind)
         {
@@ -298,7 +435,7 @@ internal class JsonRpcLoggingMiddleware
     /// <param name="value">The string to truncate.</param>
     /// <param name="maxLength">The maximum length.</param>
     /// <returns>The truncated string with indicator.</returns>
-    private static string TruncateString(string value, int maxLength)
+    protected static string TruncateString(string value, int maxLength)
     {
         return string.IsNullOrEmpty(value) || value.Length <= maxLength
             ? value
