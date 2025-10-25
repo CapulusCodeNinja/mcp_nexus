@@ -11,7 +11,7 @@ using Nexus.Extensions.Security;
 
 using NLog;
 
-namespace Nexus.Extensions.Core;
+namespace Nexus.Engine.Extensions.Core;
 
 /// <summary>
 /// Executes extension scripts and manages their lifecycle.
@@ -53,18 +53,6 @@ internal partial class ExtensionExecutor
         m_ProcessWrapper = processWrapper ?? new ProcessWrapper();
     }
 
-    /// <summary>
-    /// Executes an extension script asynchronously.
-    /// </summary>
-    /// <param name="extensionName">The name of the extension to execute.</param>
-    /// <param name="sessionId">The session ID this extension is running for.</param>
-    /// <param name="parameters">Parameters to pass to the extension (will be serialized as JSON).</param>
-    /// <param name="commandId">The command ID for tracking this extension execution.</param>
-    /// <param name="progressCallback">Optional callback for progress updates.</param>
-    /// <param name="cancellationToken">Cancellation token to stop execution.</param>
-    /// <returns>The extension execution result.</returns>
-    /// <exception cref="ArgumentException">Thrown when extension name, session ID, or command ID is invalid.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when extension validation fails or script type is unsupported.</exception>
     public string ExecuteAsync(
         string extensionName,
         string sessionId,

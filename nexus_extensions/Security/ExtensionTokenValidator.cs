@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 
 using NLog;
 
-namespace Nexus.Extensions.Security;
+namespace Nexus.Engine.Extensions.Security;
 
 /// <summary>
 /// Implementation of extension token validator.

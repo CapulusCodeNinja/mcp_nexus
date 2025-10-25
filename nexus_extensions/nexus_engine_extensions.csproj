@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>nexus_extensions</AssemblyName>
-    <RootNamespace>nexus.extensions</RootNamespace>
+    <AssemblyName>nexus_engine_extensions</AssemblyName>
+    <RootNamespace>Nexus.Engine.Extensions</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

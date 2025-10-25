@@ -46,6 +46,9 @@ public interface IDebugEngine : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when the session is not active or the command queue is full.</exception>
     string EnqueueCommand(string sessionId, string command);
 
+
+    string EnqueueExtensioScript(string sessionId, string command);
+
     /// <summary>
     /// Gets the information about a command.
     /// </summary>

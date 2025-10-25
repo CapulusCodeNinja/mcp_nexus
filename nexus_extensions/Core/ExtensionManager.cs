@@ -5,7 +5,7 @@ using Nexus.Extensions.Models;
 
 using NLog;
 
-namespace Nexus.Extensions.Core;
+namespace Nexus.Engine.Extensions.Core;
 
 /// <summary>
 /// Manages discovery, loading, and validation of extension scripts.

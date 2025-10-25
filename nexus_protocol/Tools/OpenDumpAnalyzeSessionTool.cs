@@ -9,6 +9,8 @@ using Nexus.Engine;
 using Nexus.External.Apis.FileSystem;
 using Nexus.Protocol.Utilities;
 
+using NLog;
+
 namespace Nexus.Protocol.Tools;
 
 /// <summary>
@@ -31,10 +33,11 @@ internal static class OpenDumpAnalyzeSessionTool
         [Description("Full path to the crash dump file (.dmp)")] string dumpPath,
         [Description("Optional path to symbol files directory")] string? symbolsPath = null)
     {
-        var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("OpenDumpAnalyzeSessionTool");
+        var logger = LogManager.GetCurrentClassLogger();
+
         IFileSystem fileSystem = new FileSystem();
 
-        logger.LogInformation("Opening debugging session for dump: {DumpPath}", dumpPath);
+        logger.Info("Opening debugging session for dump: {DumpPath}", dumpPath);
 
         try
         {
@@ -45,10 +48,10 @@ internal static class OpenDumpAnalyzeSessionTool
 
             if (!fileSystem.FileExists(dumpPath))
             {
-                logger.LogError("Dump file not found: {DumpPath}", dumpPath);
+                logger.Error("Dump file not found: {DumpPath}", dumpPath);
                 return MarkdownFormatter.CreateSessionResult(
                     "N/A",
-                    fileSystem.GetFileName(dumpPath) ?? "Unknown" ?? "Unknown",
+                    fileSystem.GetFileName(dumpPath) ?? "Unknown",
                     "Failed",
                     null,
                     $"Dump file not found: {dumpPath}");
@@ -56,18 +59,18 @@ internal static class OpenDumpAnalyzeSessionTool
 
             var sessionId = await DebugEngine.Instance.CreateSessionAsync(dumpPath, symbolsPath);
 
-            logger.LogInformation("Successfully created session: {SessionId}", sessionId);
+            logger.Info("Successfully created session: {SessionId}", sessionId);
 
             return MarkdownFormatter.CreateSessionResult(
                 sessionId,
-                fileSystem.GetFileName(dumpPath) ?? "Unknown" ?? "Unknown",
+                fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Success",
                 symbolsPath,
                 $"Session {sessionId} created successfully");
         }
         catch (FileNotFoundException ex)
         {
-            logger.LogError(ex, "Dump file not found: {DumpPath}", dumpPath);
+            logger.Error(ex, "Dump file not found: {DumpPath}", dumpPath);
             return MarkdownFormatter.CreateSessionResult(
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
@@ -77,7 +80,7 @@ internal static class OpenDumpAnalyzeSessionTool
         }
         catch (InvalidOperationException ex)
         {
-            logger.LogError(ex, "Cannot create session: {Message}", ex.Message);
+            logger.Error(ex, "Cannot create session: {Message}", ex.Message);
             return MarkdownFormatter.CreateSessionResult(
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
@@ -87,7 +90,7 @@ internal static class OpenDumpAnalyzeSessionTool
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error creating session");
+            logger.Error(ex, "Unexpected error creating session");
             return MarkdownFormatter.CreateSessionResult(
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",

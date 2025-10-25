@@ -8,6 +8,8 @@ using ModelContextProtocol.Server;
 using Nexus.Engine;
 using Nexus.Protocol.Utilities;
 
+using NLog;
+
 namespace Nexus.Protocol.Tools;
 
 /// <summary>
@@ -28,9 +30,9 @@ internal static class GetDumpAnalyzeCommandsStatusTool
         IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
     {
-        var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("GetDumpAnalyzeCommandsStatusTool");
+        var logger = LogManager.GetCurrentClassLogger();
 
-        logger.LogInformation("Getting all command statuses for session: {SessionId}", sessionId);
+        logger.Info("Getting all command statuses for session: {SessionId}", sessionId);
 
         try
         {
@@ -50,21 +52,21 @@ internal static class GetDumpAnalyzeCommandsStatusTool
                 hasOutput = !string.IsNullOrEmpty(cmd.Output)
             }).ToArray();
 
-            logger.LogInformation("Retrieved status for {Count} commands in session {SessionId}", commandStatuses.Length, sessionId);
+            logger.Info("Retrieved status for {Count} commands in session {SessionId}", commandStatuses.Length, sessionId);
 
             var markdown = MarkdownFormatter.CreateCommandStatusSummary(sessionId, commandStatuses);
             return Task.FromResult<object>(markdown);
         }
         catch (ArgumentException ex)
         {
-            logger.LogError(ex, "Invalid session ID: {Message}", ex.Message);
+            logger.Error(ex, "Invalid session ID: {Message}", ex.Message);
             var markdown = MarkdownFormatter.CreateCommandStatusSummary(sessionId, Array.Empty<object>());
             markdown += MarkdownFormatter.CreateCodeBlock(ex.Message, "Error");
             return Task.FromResult<object>(markdown);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error getting command statuses");
+            logger.Error(ex, "Unexpected error getting command statuses");
             var markdown = MarkdownFormatter.CreateCommandStatusSummary(sessionId, Array.Empty<object>());
             markdown += MarkdownFormatter.CreateCodeBlock($"Unexpected error: {ex.Message}", "Error");
             return Task.FromResult<object>(markdown);

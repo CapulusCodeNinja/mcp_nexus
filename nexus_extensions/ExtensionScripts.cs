@@ -1,7 +1,7 @@
 ﻿using Nexus.Extensions.Core;
 using Nexus.Extensions.Models;
 
-namespace nexus.extensions
+namespace Nexus.Engine.Extensions
 {
     public class ExtensionScripts : IExtensionScripts
     {

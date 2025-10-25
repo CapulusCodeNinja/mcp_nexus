@@ -1,12 +1,11 @@
 using System.ComponentModel;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
 using ModelContextProtocol.Server;
 
 using Nexus.Engine;
 using Nexus.Protocol.Utilities;
+
+using NLog;
 
 namespace Nexus.Protocol.Tools;
 
@@ -28,15 +27,15 @@ internal static class CloseDumpAnalyzeSessionTool
         IServiceProvider serviceProvider,
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
     {
-        var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CloseDumpAnalyzeSessionTool");
+        var logger = LogManager.GetCurrentClassLogger();
 
-        logger.LogInformation("Closing debugging session: {SessionId}", sessionId);
+        logger.Info("Closing debugging session: {SessionId}", sessionId);
 
         try
         {
             await DebugEngine.Instance.CloseSessionAsync(sessionId);
 
-            logger.LogInformation("Successfully closed session: {SessionId}", sessionId);
+            logger.Info("Successfully closed session: {SessionId}", sessionId);
 
             var keyValues = new Dictionary<string, object?>
             {
@@ -52,7 +51,7 @@ internal static class CloseDumpAnalyzeSessionTool
         }
         catch (ArgumentException ex)
         {
-            logger.LogError(ex, "Invalid session ID: {Message}", ex.Message);
+            logger.Error(ex, "Invalid session ID: {Message}", ex.Message);
             var keyValues = new Dictionary<string, object?>
             {
                 { "Session ID", sessionId },
@@ -67,7 +66,7 @@ internal static class CloseDumpAnalyzeSessionTool
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error closing session");
+            logger.Error(ex, "Unexpected error closing session");
             var keyValues = new Dictionary<string, object?>
             {
                 { "Session ID", sessionId },

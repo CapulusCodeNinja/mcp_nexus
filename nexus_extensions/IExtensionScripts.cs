@@ -1,6 +1,6 @@
 ﻿using Nexus.Extensions.Models;
 
-namespace nexus.extensions
+namespace Nexus.Engine.Extensions
 {
     public interface IExtensionScripts
     {

@@ -8,6 +8,8 @@ using ModelContextProtocol.Server;
 using Nexus.Engine;
 using Nexus.Protocol.Utilities;
 
+using NLog;
+
 namespace Nexus.Protocol.Tools;
 
 /// <summary>
@@ -30,15 +32,15 @@ internal static class ReadDumpAnalyzeCommandResultTool
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("Command ID from nexus_enqueue_async_dump_analyze_command")] string commandId)
     {
-        var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("ReadDumpAnalyzeCommandResultTool");
+        var logger = LogManager.GetCurrentClassLogger();
 
-        logger.LogInformation("Reading command result: {CommandId} in session {SessionId}", commandId, sessionId);
+        logger.Info("Reading command result: {CommandId} in session {SessionId}", commandId, sessionId);
 
         try
         {
             var commandInfo = await DebugEngine.Instance.GetCommandInfoAsync(sessionId, commandId);
 
-            logger.LogInformation("Command {CommandId} result retrieved: State={State}", commandId, commandInfo.State);
+            logger.Info("Command {CommandId} result retrieved: State={State}", commandId, commandInfo.State);
 
             var markdown = MarkdownFormatter.CreateCommandResult(
                 commandInfo.CommandId,
@@ -66,7 +68,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
         }
         catch (ArgumentException ex)
         {
-            logger.LogError(ex, "Invalid argument: {Message}", ex.Message);
+            logger.Error(ex, "Invalid argument: {Message}", ex.Message);
             var markdown = MarkdownFormatter.CreateCommandResult(
                 commandId,
                 sessionId,
@@ -80,7 +82,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
         }
         catch (KeyNotFoundException ex)
         {
-            logger.LogError(ex, "Command not found: {CommandId}", commandId);
+            logger.Error(ex, "Command not found: {CommandId}", commandId);
             var markdown = MarkdownFormatter.CreateCommandResult(
                 commandId,
                 sessionId,
@@ -94,7 +96,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error reading command result");
+            logger.Error(ex, "Unexpected error reading command result");
             var markdown = MarkdownFormatter.CreateCommandResult(
                 commandId,
                 sessionId,

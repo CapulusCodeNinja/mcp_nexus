@@ -193,6 +193,11 @@ public class DebugEngine : IDebugEngine
         return commandId;
     }
 
+    public string EnqueueExtensioScript(string sessionId, string command)
+    {
+
+    }
+
     /// <summary>
     /// Gets the information about a command.
     /// </summary>

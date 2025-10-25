@@ -1,12 +1,11 @@
 using System.ComponentModel;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
 using ModelContextProtocol.Server;
 
 using Nexus.Engine;
 using Nexus.Protocol.Utilities;
+
+using NLog;
 
 namespace Nexus.Protocol.Tools;
 
@@ -30,15 +29,15 @@ internal static class CancelCommandTool
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("Command ID to cancel")] string commandId)
     {
-        var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CancelCommandTool");
+        var logger = LogManager.GetCurrentClassLogger();
 
-        logger.LogInformation("Cancelling command {CommandId} in session {SessionId}", commandId, sessionId);
+        logger.Info("Cancelling command {CommandId} in session {SessionId}", commandId, sessionId);
 
         try
         {
             var cancelled = DebugEngine.Instance.CancelCommand(sessionId, commandId);
 
-            logger.LogInformation("Command {CommandId} cancellation: {Result}", commandId, cancelled ? "Success" : "NotFound");
+            logger.Info("Command {CommandId} cancellation: {Result}", commandId, cancelled ? "Success" : "NotFound");
 
             var keyValues = new Dictionary<string, object?>
             {
@@ -62,7 +61,7 @@ internal static class CancelCommandTool
         }
         catch (ArgumentException ex)
         {
-            logger.LogError(ex, "Invalid argument: {Message}", ex.Message);
+            logger.Error(ex, "Invalid argument: {Message}", ex.Message);
             var keyValues = new Dictionary<string, object?>
             {
                 { "Command ID", commandId },
@@ -79,7 +78,7 @@ internal static class CancelCommandTool
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error cancelling command");
+            logger.Error(ex, "Unexpected error cancelling command");
             var keyValues = new Dictionary<string, object?>
             {
                 { "Command ID", commandId },

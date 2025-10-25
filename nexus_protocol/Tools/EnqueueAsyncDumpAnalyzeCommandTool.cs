@@ -1,12 +1,11 @@
 using System.ComponentModel;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
 using ModelContextProtocol.Server;
 
 using Nexus.Engine;
 using Nexus.Protocol.Utilities;
+
+using NLog;
 
 namespace Nexus.Protocol.Tools;
 
@@ -30,9 +29,9 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("WinDbg/CDB command to execute (e.g., 'k', '!analyze -v', 'lm')")] string command)
     {
-        var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("EnqueueAsyncDumpAnalyzeCommandTool");
+        var logger = LogManager.GetCurrentClassLogger();
 
-        logger.LogInformation("Enqueuing command in session {SessionId}: {Command}", sessionId, command);
+        logger.Info("Enqueuing command in session {SessionId}: {Command}", sessionId, command);
 
         try
         {
@@ -48,7 +47,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
 
             var commandId = DebugEngine.Instance.EnqueueCommand(sessionId, command);
 
-            logger.LogInformation("Command enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
+            logger.Info("Command enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
 
             var keyValues = new Dictionary<string, object?>
             {
@@ -68,7 +67,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
         }
         catch (ArgumentException ex)
         {
-            logger.LogError(ex, "Invalid argument: {Message}", ex.Message);
+            logger.Error(ex, "Invalid argument: {Message}", ex.Message);
             var keyValues = new Dictionary<string, object?>
             {
                 { "Command ID", "N/A" },
@@ -87,7 +86,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
         }
         catch (InvalidOperationException ex)
         {
-            logger.LogError(ex, "Cannot enqueue command: {Message}", ex.Message);
+            logger.Error(ex, "Cannot enqueue command: {Message}", ex.Message);
             var keyValues = new Dictionary<string, object?>
             {
                 { "Command ID", "N/A" },
@@ -106,7 +105,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error enqueuing command");
+            logger.Error(ex, "Unexpected error enqueuing command");
             var keyValues = new Dictionary<string, object?>
             {
                 { "Command ID", "N/A" },
