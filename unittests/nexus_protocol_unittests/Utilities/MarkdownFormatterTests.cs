@@ -1,11 +1,6 @@
-using FluentAssertions;
 using Nexus.Protocol.Utilities;
 
 namespace Nexus.Protocol.Unittests.Utilities;
-
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning disable IDE0005 // Using directive is unnecessary
-#pragma warning disable IDE0005
 
 /// <summary>
 /// Unit tests for MarkdownFormatter utility class.
@@ -22,9 +17,12 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateHeader("Test Title");
 
         // Assert
-        result.Should().Be("## Test Title\n\n");
+        result.Should().Be($"## Test Title{Environment.NewLine}{Environment.NewLine}");
     }
 
+    /// <summary>
+    /// Tests that CreateHeader with title and subtitle returns formatted header.
+    /// </summary>
     [Fact]
     public void CreateHeader_WithTitleAndSubtitle_ReturnsFormattedHeader()
     {
@@ -32,9 +30,12 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateHeader("Test Title", "Test Subtitle");
 
         // Assert
-        result.Should().Be("## Test Title\n\nTest Subtitle\n\n");
+        result.Should().Be($"## Test Title{Environment.NewLine}{Environment.NewLine}Test Subtitle{Environment.NewLine}{Environment.NewLine}");
     }
 
+    /// <summary>
+    /// Tests that CreateKeyValue with code format returns formatted key-value pair.
+    /// </summary>
     [Fact]
     public void CreateKeyValue_WithCodeFormat_ReturnsFormattedKeyValue()
     {
@@ -45,6 +46,9 @@ public class MarkdownFormatterTests
         result.Should().Be("**Test Key:** `Test Value`");
     }
 
+    /// <summary>
+    /// Tests that CreateKeyValue without code format returns formatted key-value pair.
+    /// </summary>
     [Fact]
     public void CreateKeyValue_WithoutCodeFormat_ReturnsFormattedKeyValue()
     {
@@ -55,6 +59,9 @@ public class MarkdownFormatterTests
         result.Should().Be("**Test Key:** Test Value");
     }
 
+    /// <summary>
+    /// Tests that CreateKeyValue with null value returns N/A.
+    /// </summary>
     [Fact]
     public void CreateKeyValue_WithNullValue_ReturnsN_A()
     {
@@ -65,6 +72,9 @@ public class MarkdownFormatterTests
         result.Should().Be("**Test Key:** N/A");
     }
 
+    /// <summary>
+    /// Tests that CreateCodeBlock with content returns formatted code block.
+    /// </summary>
     [Fact]
     public void CreateCodeBlock_WithContent_ReturnsFormattedCodeBlock()
     {
@@ -72,9 +82,12 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateCodeBlock("test content");
 
         // Assert
-        result.Should().Be("```\ntest content\n```\n");
+        result.Should().Be($"```{Environment.NewLine}test content{Environment.NewLine}```{Environment.NewLine}");
     }
 
+    /// <summary>
+    /// Tests that CreateCodeBlock with title returns formatted code block with title.
+    /// </summary>
     [Fact]
     public void CreateCodeBlock_WithTitle_ReturnsFormattedCodeBlockWithTitle()
     {
@@ -82,9 +95,12 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateCodeBlock("test content", "Test Title");
 
         // Assert
-        result.Should().Be("### Test Title\n\n```\ntest content\n```\n");
+        result.Should().Be($"### Test Title{Environment.NewLine}{Environment.NewLine}```{Environment.NewLine}test content{Environment.NewLine}```{Environment.NewLine}");
     }
 
+    /// <summary>
+    /// Tests that CreateCodeBlock with empty content returns empty string.
+    /// </summary>
     [Fact]
     public void CreateCodeBlock_WithEmptyContent_ReturnsEmptyString()
     {
@@ -95,6 +111,9 @@ public class MarkdownFormatterTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that CreateSuccessMessage returns formatted success message.
+    /// </summary>
     [Fact]
     public void CreateSuccessMessage_ReturnsFormattedMessage()
     {
@@ -105,6 +124,9 @@ public class MarkdownFormatterTests
         result.Should().Be("✓ Operation completed");
     }
 
+    /// <summary>
+    /// Tests that CreateWarningMessage returns formatted warning message.
+    /// </summary>
     [Fact]
     public void CreateWarningMessage_ReturnsFormattedMessage()
     {
@@ -115,6 +137,9 @@ public class MarkdownFormatterTests
         result.Should().Be("⚠ Warning message");
     }
 
+    /// <summary>
+    /// Tests that CreateErrorMessage returns formatted error message.
+    /// </summary>
     [Fact]
     public void CreateErrorMessage_ReturnsFormattedMessage()
     {
@@ -125,6 +150,9 @@ public class MarkdownFormatterTests
         result.Should().Be("❌ Error message");
     }
 
+    /// <summary>
+    /// Tests that CreateTable with headers and rows returns formatted table.
+    /// </summary>
     [Fact]
     public void CreateTable_WithHeadersAndRows_ReturnsFormattedTable()
     {
@@ -140,13 +168,16 @@ public class MarkdownFormatterTests
         var result = MarkdownFormatter.CreateTable(headers, rows);
 
         // Assert
-        var expected = "| ID | Name | Status |\n" +
-                      "| --- | --- | --- |\n" +
-                      "| 1 | Test1 | Active |\n" +
-                      "| 2 | Test2 | Inactive |\n";
+        var expected = $"| ID | Name | Status |{Environment.NewLine}" +
+                      $"| --- | --- | --- |{Environment.NewLine}" +
+                      $"| 1 | Test1 | Active |{Environment.NewLine}" +
+                      $"| 2 | Test2 | Inactive |{Environment.NewLine}";
         result.Should().Be(expected);
     }
 
+    /// <summary>
+    /// Tests that CreateTable with empty headers returns empty string.
+    /// </summary>
     [Fact]
     public void CreateTable_WithEmptyHeaders_ReturnsEmptyString()
     {
@@ -157,6 +188,9 @@ public class MarkdownFormatterTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that CreateCommandResult with all fields returns formatted result.
+    /// </summary>
     [Fact]
     public void CreateCommandResult_WithAllFields_ReturnsFormattedResult()
     {
@@ -191,6 +225,9 @@ public class MarkdownFormatterTests
         result.Should().Contain("**Total Time:** 120.00s");
     }
 
+    /// <summary>
+    /// Tests that CreateCommandResult with minimal fields returns formatted result.
+    /// </summary>
     [Fact]
     public void CreateCommandResult_WithMinimalFields_ReturnsFormattedResult()
     {
@@ -220,6 +257,9 @@ public class MarkdownFormatterTests
         result.Should().NotContain("**Total Time:**");
     }
 
+    /// <summary>
+    /// Tests that CreateSessionResult with all fields returns formatted result.
+    /// </summary>
     [Fact]
     public void CreateSessionResult_WithAllFields_ReturnsFormattedResult()
     {
@@ -236,6 +276,9 @@ public class MarkdownFormatterTests
         result.Should().Contain("✓ Session created");
     }
 
+    /// <summary>
+    /// Tests that CreateSessionResult with minimal fields returns formatted result.
+    /// </summary>
     [Fact]
     public void CreateSessionResult_WithMinimalFields_ReturnsFormattedResult()
     {
@@ -251,6 +294,9 @@ public class MarkdownFormatterTests
         result.Should().NotContain("**Symbols Path:**");
     }
 
+    /// <summary>
+    /// Tests that CreateCommandStatusSummary with commands returns formatted summary.
+    /// </summary>
     [Fact]
     public void CreateCommandStatusSummary_WithCommands_ReturnsFormattedSummary()
     {
@@ -275,6 +321,9 @@ public class MarkdownFormatterTests
         result.Should().Contain("| cmd-2 | kL | Running | N/A | N/A |");
     }
 
+    /// <summary>
+    /// Tests that CreateCommandStatusSummary with no commands returns formatted summary.
+    /// </summary>
     [Fact]
     public void CreateCommandStatusSummary_WithNoCommands_ReturnsFormattedSummary()
     {
@@ -288,6 +337,9 @@ public class MarkdownFormatterTests
         result.Should().Contain("No commands found.");
     }
 
+    /// <summary>
+    /// Tests that CreateOperationResult with success returns formatted result.
+    /// </summary>
     [Fact]
     public void CreateOperationResult_WithSuccess_ReturnsFormattedResult()
     {
@@ -311,6 +363,9 @@ public class MarkdownFormatterTests
         result.Should().Contain("✓ Command queued successfully");
     }
 
+    /// <summary>
+    /// Tests that CreateOperationResult with failure returns formatted result.
+    /// </summary>
     [Fact]
     public void CreateOperationResult_WithFailure_ReturnsFormattedResult()
     {
@@ -328,12 +383,15 @@ public class MarkdownFormatterTests
 
         // Assert
         result.Should().Contain("## Command Enqueue Failed");
-        result.Should().Contain("**Command ID:** N/A");
+        result.Should().Contain("**Command ID:** `N/A`");
         result.Should().Contain("**Session ID:** `sess-456`");
         result.Should().Contain("**Status:** Failed");
         result.Should().Contain("❌ Invalid command");
     }
 
+    /// <summary>
+    /// Tests that CreateOperationResult without message returns formatted result.
+    /// </summary>
     [Fact]
     public void CreateOperationResult_WithoutMessage_ReturnsFormattedResult()
     {
@@ -356,6 +414,9 @@ public class MarkdownFormatterTests
         result.Should().NotContain("❌");
     }
 
+    /// <summary>
+    /// Tests that CreateTable with short rows pads with empty strings.
+    /// </summary>
     [Fact]
     public void CreateTable_WithShortRows_PadsWithEmptyStrings()
     {
@@ -375,6 +436,9 @@ public class MarkdownFormatterTests
         result.Should().Contain("| 2 | Test2 | Active |  |");
     }
 
+    /// <summary>
+    /// Tests that CreateTable with long rows truncates to header length.
+    /// </summary>
     [Fact]
     public void CreateTable_WithLongRows_TruncatesToHeaderLength()
     {
