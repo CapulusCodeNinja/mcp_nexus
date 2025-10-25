@@ -104,21 +104,21 @@ public class ExtensionScripts : IExtensionScripts
                 // Execute the extension
                 var result = await m_Executor.ExecuteAsync(extensionName, sessionId, parameters, commandId, null, cts.Token);
 
-                    // Store the process ID for cancellation support
-                    if (result.ProcessId.HasValue)
+                // Store the process ID for cancellation support
+                if (result.ProcessId.HasValue)
+                {
+                    var status = new ExtensionStatus
                     {
-                        var status = new ExtensionStatus
-                        {
-                            CommandId = commandId,
-                            SessionId = sessionId,
-                            ExtensionName = extensionName,
-                            ProcessId = result.ProcessId.Value,
-                            StartTime = startTime,
-                            CancellationTokenSource = cts,
-                            Parameters = parameters
-                        };
-                        m_RunningExtensions[commandId] = status;
-                    }
+                        CommandId = commandId,
+                        SessionId = sessionId,
+                        ExtensionName = extensionName,
+                        ProcessId = result.ProcessId.Value,
+                        StartTime = startTime,
+                        CancellationTokenSource = cts,
+                        Parameters = parameters
+                    };
+                    m_RunningExtensions[commandId] = status;
+                }
 
                 // Update to completed/failed state
                 var endTime = DateTime.Now;

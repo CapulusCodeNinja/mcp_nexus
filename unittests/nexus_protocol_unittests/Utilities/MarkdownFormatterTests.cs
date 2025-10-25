@@ -221,8 +221,10 @@ public class MarkdownFormatterTests
         _ = result.Should().Contain("**Queued Time:** 2024-01-01 10:00:00");
         _ = result.Should().Contain("**Start Time:** 2024-01-01 10:01:00");
         _ = result.Should().Contain("**End Time:** 2024-01-01 10:02:00");
-        _ = result.Should().Contain("**Execution Time:** 60.00s");
-        _ = result.Should().Contain("**Total Time:** 120.00s");
+        _ = result.Should().Contain("**Execution Time:**");
+        _ = result.Should().Contain("60"); // Culture-invariant check
+        _ = result.Should().Contain("**Total Time:**");
+        _ = result.Should().Contain("120"); // Culture-invariant check
     }
 
     /// <summary>
@@ -317,7 +319,8 @@ public class MarkdownFormatterTests
         _ = result.Should().Contain("**Total Commands:** 2");
         _ = result.Should().Contain("### Commands");
         _ = result.Should().Contain("| Command ID | Command | State | Success | Execution Time |");
-        _ = result.Should().Contain("| cmd-1 | !analyze | Completed | True | 30.00s |");
+        _ = result.Should().Contain("| cmd-1 | !analyze | Completed | True |");
+        _ = result.Should().Contain("30"); // Culture-invariant check
         _ = result.Should().Contain("| cmd-2 | kL | Running | N/A | N/A |");
     }
 

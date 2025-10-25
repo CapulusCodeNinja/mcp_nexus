@@ -89,7 +89,10 @@ public class CommandResponse
     /// Gets or sets a value indicating whether the operation was successful.
     /// </summary>
     [JsonPropertyName("success")]
-    public bool Success { get; set; }
+    public bool Success
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the command ID.
@@ -107,7 +110,10 @@ public class CommandResponse
     /// Gets or sets the error message if any.
     /// </summary>
     [JsonPropertyName("error")]
-    public string? Error { get; set; }
+    public string? Error
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the command state.
@@ -125,7 +131,10 @@ public class BulkStatusResponse
     /// Gets or sets a value indicating whether the operation was successful.
     /// </summary>
     [JsonPropertyName("success")]
-    public bool Success { get; set; }
+    public bool Success
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the list of command statuses.
@@ -137,7 +146,10 @@ public class BulkStatusResponse
     /// Gets or sets the error message if any.
     /// </summary>
     [JsonPropertyName("error")]
-    public string? Error { get; set; }
+    public string? Error
+    {
+        get; set;
+    }
 }
 
 /// <summary>
@@ -167,17 +179,26 @@ public class CommandStatus
     /// Gets or sets the time when the command was queued.
     /// </summary>
     [JsonPropertyName("queuedTime")]
-    public DateTime QueuedTime { get; set; }
+    public DateTime QueuedTime
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the time when the command started executing.
     /// </summary>
     [JsonPropertyName("startTime")]
-    public DateTime? StartTime { get; set; }
+    public DateTime? StartTime
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the time when the command completed.
     /// </summary>
     [JsonPropertyName("endTime")]
-    public DateTime? EndTime { get; set; }
+    public DateTime? EndTime
+    {
+        get; set;
+    }
 }

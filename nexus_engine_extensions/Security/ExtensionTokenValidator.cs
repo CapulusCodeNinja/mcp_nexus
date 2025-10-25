@@ -43,7 +43,7 @@ public class ExtensionTokenValidator
             };
         }
 
-        m_Logger.Debug("Generated token for session {SessionId}, command {CommandId}, expires at {ExpiresAt}", 
+        m_Logger.Debug("Generated token for session {SessionId}, command {CommandId}, expires at {ExpiresAt}",
             sessionId, commandId, expiresAt);
 
         return token;
@@ -76,7 +76,7 @@ public class ExtensionTokenValidator
                 return (false, null, null);
             }
 
-            m_Logger.Debug("Valid token for session {SessionId}, command {CommandId}", 
+            m_Logger.Debug("Valid token for session {SessionId}, command {CommandId}",
                 tokenInfo.SessionId, tokenInfo.CommandId);
 
             return (true, tokenInfo.SessionId, tokenInfo.CommandId);
@@ -147,7 +147,10 @@ public class ExtensionTokenValidator
     {
         public string SessionId { get; set; } = string.Empty;
         public string CommandId { get; set; } = string.Empty;
-        public DateTime ExpiresAt { get; set; }
+        public DateTime ExpiresAt
+        {
+            get; set;
+        }
     }
 }
 

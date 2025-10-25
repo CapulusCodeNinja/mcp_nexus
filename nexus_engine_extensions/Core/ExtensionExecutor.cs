@@ -81,7 +81,7 @@ internal class ExtensionExecutor
         Action<string>? progressCallback = null,
         CancellationToken cancellationToken = default)
     {
-        m_Logger.Info("Executing extension {ExtensionName} with command ID {CommandId} in session {SessionId}", 
+        m_Logger.Info("Executing extension {ExtensionName} with command ID {CommandId} in session {SessionId}",
             extensionName, commandId, sessionId);
 
         var startTime = DateTime.Now;
@@ -128,7 +128,7 @@ internal class ExtensionExecutor
         }
         catch (Exception ex)
         {
-            m_Logger.Error(ex, "Error executing extension {ExtensionName} with command ID {CommandId}", 
+            m_Logger.Error(ex, "Error executing extension {ExtensionName} with command ID {CommandId}",
                 extensionName, commandId);
 
             return new ExtensionResult
@@ -160,7 +160,7 @@ internal class ExtensionExecutor
             {
                 ["MCP_NEXUS_SESSION_ID"] = metadata.Name, // This will be updated with actual session ID
                 ["MCP_NEXUS_COMMAND_ID"] = metadata.Name, // This will be updated with actual command ID
-            ["MCP_NEXUS_CALLBACK_URL"] = m_CallbackUrl,
+                ["MCP_NEXUS_CALLBACK_URL"] = m_CallbackUrl,
                 ["MCP_NEXUS_TOKEN"] = token
             };
 
@@ -269,7 +269,7 @@ internal class ExtensionExecutor
 
             if (!completed)
             {
-                m_Logger.Warn("Extension {ExtensionName} exceeded timeout of {TimeoutMs}ms - terminating process", 
+                m_Logger.Warn("Extension {ExtensionName} exceeded timeout of {TimeoutMs}ms - terminating process",
                     metadata.Name, timeoutMs);
 
                 process.Kill();
@@ -289,7 +289,7 @@ internal class ExtensionExecutor
             var executionTime = (long)(endTime - startTime).TotalMilliseconds;
             var success = process.ExitCode == 0;
 
-            m_Logger.Info("Extension {ExtensionName} completed with exit code {ExitCode} in {ExecutionTime}ms", 
+            m_Logger.Info("Extension {ExtensionName} completed with exit code {ExitCode} in {ExecutionTime}ms",
                 metadata.Name, process.ExitCode, executionTime);
 
             return new ExtensionResult
@@ -305,7 +305,7 @@ internal class ExtensionExecutor
         }
         catch (OperationCanceledException)
         {
-            m_Logger.Info("Extension {ExtensionName} was cancelled", 
+            m_Logger.Info("Extension {ExtensionName} was cancelled",
                 metadata.Name);
 
             if (!process.HasExited)

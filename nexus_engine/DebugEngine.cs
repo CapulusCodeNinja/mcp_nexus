@@ -287,9 +287,9 @@ public class DebugEngine : IDebugEngine
             }
         }
 
-            // If not found in session, check the extensions library
-            var extensionCommand = ExtensionScripts.Instance.GetCommandStatus(commandId);
-            return extensionCommand != null ? Internal.ExtensionCommandMapper.ToEngineCommandInfo(extensionCommand) : null;
+        // If not found in session, check the extensions library
+        var extensionCommand = ExtensionScripts.Instance.GetCommandStatus(commandId);
+        return extensionCommand != null ? Internal.ExtensionCommandMapper.ToEngineCommandInfo(extensionCommand) : null;
     }
 
     /// <summary>

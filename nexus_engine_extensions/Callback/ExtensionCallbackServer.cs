@@ -1,7 +1,9 @@
 using System.Text.Json;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+
 using Nexus.Engine.Extensions.Security;
 
 using NLog;
@@ -41,7 +43,7 @@ public class ExtensionCallbackServer
                 using var reader = new StreamReader(context.Request.Body);
                 var json = reader.ReadToEnd();
                 var request = JsonSerializer.Deserialize<ExecuteCommandRequest>(json);
-                
+
                 if (request == null)
                 {
                     return Results.BadRequest("Invalid request body");
@@ -81,7 +83,7 @@ public class ExtensionCallbackServer
                 using var reader = new StreamReader(context.Request.Body);
                 var json = reader.ReadToEnd();
                 var request = JsonSerializer.Deserialize<QueueCommandRequest>(json);
-                
+
                 if (request == null)
                 {
                     return Results.BadRequest("Invalid request body");
@@ -180,7 +182,7 @@ public class ExtensionCallbackServer
                 using var reader = new StreamReader(context.Request.Body);
                 var json = reader.ReadToEnd();
                 var request = JsonSerializer.Deserialize<LogRequest>(json);
-                
+
                 if (request == null)
                 {
                     return Results.BadRequest("Invalid request body");
@@ -195,7 +197,7 @@ public class ExtensionCallbackServer
                 }
 
                 // Log the message
-                m_Logger.Info("Extension log from session {SessionId}, command {CommandId}: {Message}", 
+                m_Logger.Info("Extension log from session {SessionId}, command {CommandId}: {Message}",
                     sessionId, commandId, request.Message);
 
                 return Results.Ok();
