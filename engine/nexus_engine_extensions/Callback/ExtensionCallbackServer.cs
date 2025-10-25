@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
 using Nexus.Engine.Extensions.Security;
+using Nexus.Engine.Share;
 
 using NLog;
 
@@ -16,15 +17,17 @@ namespace Nexus.Engine.Extensions.Callback;
 public class ExtensionCallbackServer
 {
     private readonly Logger m_Logger;
+    private readonly IDebugEngine m_Engine;
     private readonly ExtensionTokenValidator m_TokenValidator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionCallbackServer"/> class.
     /// </summary>
-    public ExtensionCallbackServer()
+    public ExtensionCallbackServer(IDebugEngine engine)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
         m_TokenValidator = new ExtensionTokenValidator();
+        m_Engine = engine;
     }
 
     /// <summary>
