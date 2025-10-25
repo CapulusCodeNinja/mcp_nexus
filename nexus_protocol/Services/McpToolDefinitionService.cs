@@ -71,6 +71,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
         [
             CreateOpenSessionTool(),
             CreateEnqueueCommandTool(),
+            CreateEnqueueExtensionCommandTool(),
             CreateReadResultTool(),
             CreateGetCommandsStatusTool(),
             CreateCloseSessionTool(),
@@ -134,6 +135,41 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     }
                 },
                 required = new[] { "sessionId", "command" }
+            }
+        };
+    }
+
+    /// <summary>
+    /// Creates the tool schema for enqueuing an extension command.
+    /// </summary>
+    private static McpToolSchema CreateEnqueueExtensionCommandTool()
+    {
+        return new McpToolSchema
+        {
+            Name = "nexus_enqueue_async_extension_command",
+            Description = "Enqueues an extension command for asynchronous execution. Returns commandId for tracking.",
+            InputSchema = new
+            {
+                type = "object",
+                properties = new
+                {
+                    sessionId = new
+                    {
+                        type = "string",
+                        description = "Session ID from nexus_open_dump_analyze_session"
+                    },
+                    extensionName = new
+                    {
+                        type = "string",
+                        description = "Name of the extension to execute"
+                    },
+                    parameters = new
+                    {
+                        type = "object",
+                        description = "Optional parameters to pass to the extension (JSON object)"
+                    }
+                },
+                required = new[] { "sessionId", "extensionName" }
             }
         };
     }
