@@ -70,7 +70,8 @@ internal class JsonRpcLoggingMiddleware
         m_Logger.Debug("JSON-RPC Request Body:{NewLine}{RequestBody}", Environment.NewLine, formattedRequest.Trim());
             foreach (var text in extractedTexts)
             {
-                var formattedText = FormatAndTruncateJson(text.Trim());
+                var unescapedText = UnescapeJsonInText(text.Trim());
+                var formattedText = FormatAndTruncateJson(unescapedText);
                 m_Logger.Debug("Extracted Text Field:{NewLine}{TextField}", Environment.NewLine, formattedText);
             }
 
@@ -92,7 +93,8 @@ internal class JsonRpcLoggingMiddleware
             m_Logger.Debug("JSON-RPC Response Body:{NewLine}{ResponseBody}", Environment.NewLine, formattedResponse.Trim());
             foreach (var text in extractedResponseTexts)
             {
-                var formattedText = FormatAndTruncateJson(text.Trim());
+                var unescapedText = UnescapeJsonInText(text.Trim());
+                var formattedText = FormatAndTruncateJson(unescapedText);
                 m_Logger.Debug("Extracted Text Field:{NewLine}{TextField}", Environment.NewLine, formattedText);
             }
 
