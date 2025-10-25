@@ -13,9 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "nexus_engine", "nexus_engin
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "nexus_engine_unittests", "unittests\nexus_engine_unittests\nexus_engine_unittests.csproj", "{1BFF4134-3C3D-448F-889E-3B93258BFF6E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "nexus_engine_extensions", "nexus_extensions\nexus_engine_extensions.csproj", "{8FE2D9A1-5B3C-4E7F-9A2D-1C8E6D4F5A9B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "nexus_engine_extensions", "nexus_engine_extensions\nexus_engine_extensions.csproj", "{8FE2D9A1-5B3C-4E7F-9A2D-1C8E6D4F5A9B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "nexus_engine_extensions_unittests", "unittests\nexus_extensions_unittests\nexus_engine_extensions_unittests.csproj", "{0C757A61-3186-4649-8D78-0A57F3D0EE7C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "nexus_engine_extensions_unittests", "unittests\nexus_engine_extensions_unittests\nexus_engine_extensions_unittests.csproj", "{0C757A61-3186-4649-8D78-0A57F3D0EE7C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "nexus_engine_batch", "nexus_engine_batch\nexus_engine_batch.csproj", "{6F789012-3456-7890-1DEF-345678901234}"
 EndProject
