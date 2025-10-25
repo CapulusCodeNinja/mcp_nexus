@@ -128,8 +128,10 @@ public static class HttpServerSetup
     {
         ArgumentNullException.ThrowIfNull(app);
 
-        // Add middleware
+        // Add middleware in correct order
+        _ = app.UseMiddleware<Middleware.JsonRpcLoggingMiddleware>();
         _ = app.UseMiddleware<Middleware.ContentTypeValidationMiddleware>();
+        _ = app.UseMiddleware<Middleware.ResponseFormattingMiddleware>();
         _ = app.UseCors();
         _ = app.UseRouting();
 

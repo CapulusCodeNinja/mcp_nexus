@@ -63,7 +63,7 @@ internal class JsonRpcLoggingMiddleware
 
         m_Logger.Debug("JSON-RPC Request: Method={Method}, Path={Path}, ContentType={ContentType}",
             context.Request.Method, context.Request.Path, context.Request.ContentType);
-        m_Logger.Trace("JSON-RPC Request Body: {RequestBody}", SanitizeForLogging(requestBody));
+        m_Logger.Debug("JSON-RPC Request Body: {RequestBody}", SanitizeForLogging(requestBody));
 
         var originalBodyStream = context.Response.Body;
         using var responseBody = new MemoryStream();
@@ -77,7 +77,7 @@ internal class JsonRpcLoggingMiddleware
 
             m_Logger.Debug("JSON-RPC Response: StatusCode={StatusCode}, ContentType={ContentType}",
                 context.Response.StatusCode, context.Response.ContentType);
-            m_Logger.Trace("JSON-RPC Response Body: {ResponseBody}", SanitizeForLogging(responseBodyText));
+            m_Logger.Debug("JSON-RPC Response Body: {ResponseBody}", SanitizeForLogging(responseBodyText));
 
             await CopyResponseBodyAsync(responseBody, originalBodyStream);
         }
