@@ -1,5 +1,4 @@
-﻿using Nexus.Extensions.Core;
-using Nexus.Extensions.Models;
+﻿using Nexus.Engine.Extensions.Core;
 
 namespace Nexus.Engine.Extensions
 {
