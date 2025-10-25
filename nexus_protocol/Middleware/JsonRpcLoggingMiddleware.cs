@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 
 using Microsoft.AspNetCore.Http;
 
@@ -63,7 +64,14 @@ internal class JsonRpcLoggingMiddleware
 
         m_Logger.Debug("JSON-RPC Request: Method={Method}, Path={Path}, ContentType={ContentType}",
             context.Request.Method, context.Request.Path, context.Request.ContentType);
-        m_Logger.Debug("JSON-RPC Request Body: {RequestBody}", SanitizeForLogging(requestBody));
+
+        var formattedRequest = FormatAndTruncateJson(requestBody);
+        var extractedTexts = ExtractTextFields(requestBody);
+        m_Logger.Debug("JSON-RPC Request Body:{NewLine}{RequestBody}", Environment.NewLine, formattedRequest.Trim());
+        foreach (var text in extractedTexts)
+        {
+            m_Logger.Debug("  Extracted Text Field: {TextField}", text);
+        }
 
         var originalBodyStream = context.Response.Body;
         using var responseBody = new MemoryStream();
@@ -77,7 +85,14 @@ internal class JsonRpcLoggingMiddleware
 
             m_Logger.Debug("JSON-RPC Response: StatusCode={StatusCode}, ContentType={ContentType}",
                 context.Response.StatusCode, context.Response.ContentType);
-            m_Logger.Debug("JSON-RPC Response Body: {ResponseBody}", SanitizeForLogging(responseBodyText));
+
+            var formattedResponse = FormatAndTruncateJson(responseBodyText);
+            var extractedResponseTexts = ExtractTextFields(responseBodyText);
+            m_Logger.Debug("JSON-RPC Response Body:{NewLine}{ResponseBody}", Environment.NewLine, formattedResponse.Trim());
+            foreach (var text in extractedResponseTexts)
+            {
+                m_Logger.Debug("  Extracted Text Field:{NewLine}{TextField}", Environment.NewLine, text.Trim());
+            }
 
             await CopyResponseBodyAsync(responseBody, originalBodyStream);
         }
@@ -122,6 +137,172 @@ internal class JsonRpcLoggingMiddleware
     private static async Task CopyResponseBodyAsync(MemoryStream responseBody, Stream originalBodyStream)
     {
         await responseBody.CopyToAsync(originalBodyStream);
+    }
+
+    /// <summary>
+    /// Formats JSON with indentation and truncates individual string fields to specified length.
+    /// </summary>
+    /// <param name="jsonString">The JSON string to format and truncate.</param>
+    /// <returns>The formatted and truncated JSON string.</returns>
+    private static string FormatAndTruncateJson(string jsonString)
+    {
+        if (string.IsNullOrEmpty(jsonString))
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(jsonString);
+            var truncatedJson = TruncateJsonElement(document.RootElement, 1000);
+            return JsonSerializer.Serialize(truncatedJson, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (JsonException)
+        {
+            // If JSON parsing fails, fall back to simple truncation
+            return TruncateString(jsonString, 1000);
+        }
+    }
+
+    /// <summary>
+    /// Extracts text fields from JSON and unescapes any nested JSON content.
+    /// </summary>
+    /// <param name="jsonString">The JSON string to extract text fields from.</param>
+    /// <returns>A list of extracted text content.</returns>
+    private static List<string> ExtractTextFields(string jsonString)
+    {
+        var extractedTexts = new List<string>();
+
+        if (string.IsNullOrEmpty(jsonString))
+        {
+            return extractedTexts;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(jsonString);
+            ExtractTextFieldsRecursive(document.RootElement, extractedTexts);
+        }
+        catch (JsonException)
+        {
+            // If JSON parsing fails, return empty list
+        }
+
+        return extractedTexts;
+    }
+
+    /// <summary>
+    /// Recursively extracts text fields from JSON elements.
+    /// </summary>
+    /// <param name="element">The JSON element to process.</param>
+    /// <param name="extractedTexts">The list to add extracted texts to.</param>
+    private static void ExtractTextFieldsRecursive(JsonElement element, List<string> extractedTexts)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                foreach (var property in element.EnumerateObject())
+                {
+                    if (property.Name.Equals("text", StringComparison.OrdinalIgnoreCase) && property.Value.ValueKind == JsonValueKind.String)
+                    {
+                        var textValue = property.Value.GetString();
+                        if (!string.IsNullOrEmpty(textValue))
+                        {
+                            // Unescape JSON within text fields
+                            var unescapedText = UnescapeJsonInText(textValue);
+                            extractedTexts.Add(TruncateString(unescapedText, 1000));
+                        }
+                    }
+                    else
+                    {
+                        ExtractTextFieldsRecursive(property.Value, extractedTexts);
+                    }
+                }
+                break;
+            case JsonValueKind.Array:
+                foreach (var item in element.EnumerateArray())
+                {
+                    ExtractTextFieldsRecursive(item, extractedTexts);
+                }
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Unescapes JSON content within text fields.
+    /// </summary>
+    /// <param name="text">The text that may contain escaped JSON.</param>
+    /// <returns>The unescaped text.</returns>
+    private static string UnescapeJsonInText(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return text;
+        }
+
+        // Replace common JSON escape sequences
+        return text
+            .Replace("\\u0022", "\"")
+            .Replace("\\u0027", "'")
+            .Replace("\\u005C", "\\")
+            .Replace("\\u002F", "/")
+            .Replace("\\u0008", "\b")
+            .Replace("\\u000C", "\f")
+            .Replace("\\u000A", "\n")
+            .Replace("\\u000D", "\r")
+            .Replace("\\u0009", "\t");
+    }
+
+    /// <summary>
+    /// Recursively truncates string values in JSON elements.
+    /// </summary>
+    /// <param name="element">The JSON element to process.</param>
+    /// <param name="maxLength">The maximum length for string values.</param>
+    /// <returns>A new JSON element with truncated strings.</returns>
+    private static object? TruncateJsonElement(JsonElement element, int maxLength)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.String:
+                return TruncateString(element.GetString() ?? string.Empty, maxLength);
+            case JsonValueKind.Number:
+                return element.GetDecimal();
+            case JsonValueKind.True:
+                return true;
+            case JsonValueKind.False:
+                return false;
+            case JsonValueKind.Null:
+                return null;
+            case JsonValueKind.Object:
+                var obj = new Dictionary<string, object?>();
+                foreach (var property in element.EnumerateObject())
+                {
+                    obj[property.Name] = TruncateJsonElement(property.Value, maxLength);
+                }
+                return obj;
+            case JsonValueKind.Array:
+                var arr = new List<object?>();
+                foreach (var item in element.EnumerateArray())
+                {
+                    arr.Add(TruncateJsonElement(item, maxLength));
+                }
+                return arr;
+            default:
+                return element.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Truncates a string to the specified maximum length with truncation indicator.
+    /// </summary>
+    /// <param name="value">The string to truncate.</param>
+    /// <param name="maxLength">The maximum length.</param>
+    /// <returns>The truncated string with indicator.</returns>
+    private static string TruncateString(string value, int maxLength)
+    {
+        return string.IsNullOrEmpty(value) || value.Length <= maxLength
+            ? value
+            : value[..maxLength] + $"... (truncated {value.Length - maxLength} chars)";
     }
 
     /// <summary>
