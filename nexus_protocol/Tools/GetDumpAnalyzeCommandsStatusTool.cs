@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -7,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 
 using Nexus.Engine;
+using Nexus.Protocol.Utilities;
 
 namespace Nexus.Protocol.Tools;
 
@@ -54,64 +54,22 @@ internal static class GetDumpAnalyzeCommandsStatusTool
 
             logger.LogInformation("Retrieved status for {Count} commands in session {SessionId}", commandStatuses.Length, sessionId);
 
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Status Summary");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Total Commands:** {commandStatuses.Length}");
-            markdown.AppendLine();
-
-            if (commandStatuses.Length > 0)
-            {
-                markdown.AppendLine("### Commands");
-                markdown.AppendLine();
-                markdown.AppendLine("| Command ID | Command | State | Success | Execution Time |");
-                markdown.AppendLine("|------------|---------|-------|---------|----------------|");
-                
-                foreach (var cmd in commandStatuses)
-                {
-                    var execTime = cmd.executionTime?.TotalSeconds.ToString("F2") ?? "N/A";
-                    var success = cmd.isSuccess?.ToString() ?? "N/A";
-                    var cmdText = cmd.command.Length > 50 ? cmd.command.Substring(0, 47) + "..." : cmd.command;
-                    markdown.AppendLine($"| `{cmd.commandId}` | `{cmdText}` | {cmd.state} | {success} | {execTime}s |");
-                }
-            }
-            else
-            {
-                markdown.AppendLine("No commands found.");
-            }
-
-            return Task.FromResult<object>(markdown.ToString());
+            var markdown = MarkdownFormatter.CreateCommandStatusSummary(sessionId, commandStatuses);
+            return Task.FromResult<object>(markdown);
         }
         catch (ArgumentException ex)
         {
             logger.LogError(ex, "Invalid session ID: {Message}", ex.Message);
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Status Summary");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Total Commands:** 0");
-            markdown.AppendLine();
-            markdown.AppendLine("### Error");
-            markdown.AppendLine("```");
-            markdown.AppendLine(ex.Message);
-            markdown.AppendLine("```");
-            return Task.FromResult<object>(markdown.ToString());
+            var markdown = MarkdownFormatter.CreateCommandStatusSummary(sessionId, Array.Empty<object>());
+            markdown += MarkdownFormatter.CreateCodeBlock(ex.Message, "Error");
+            return Task.FromResult<object>(markdown);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error getting command statuses");
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Status Summary");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Total Commands:** 0");
-            markdown.AppendLine();
-            markdown.AppendLine("### Error");
-            markdown.AppendLine("```");
-            markdown.AppendLine($"Unexpected error: {ex.Message}");
-            markdown.AppendLine("```");
-            return Task.FromResult<object>(markdown.ToString());
+            var markdown = MarkdownFormatter.CreateCommandStatusSummary(sessionId, Array.Empty<object>());
+            markdown += MarkdownFormatter.CreateCodeBlock($"Unexpected error: {ex.Message}", "Error");
+            return Task.FromResult<object>(markdown);
         }
     }
 }

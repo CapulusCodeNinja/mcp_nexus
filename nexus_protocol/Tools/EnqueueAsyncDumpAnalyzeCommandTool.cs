@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -7,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 
 using Nexus.Engine;
+using Nexus.Protocol.Utilities;
 
 namespace Nexus.Protocol.Tools;
 
@@ -52,68 +52,78 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
 
             logger.LogInformation("Command enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
 
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Enqueued");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Command ID:** `{commandId}`");
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Command:** `{command}`");
-            markdown.AppendLine($"**Status:** Queued");
-            markdown.AppendLine();
-            markdown.AppendLine($"✓ Command {commandId} queued successfully");
+            var keyValues = new Dictionary<string, object?>
+            {
+                { "Command ID", commandId },
+                { "Session ID", sessionId },
+                { "Command", command },
+                { "Status", "Queued" }
+            };
 
-            return Task.FromResult<object>(markdown.ToString());
+            var markdown = MarkdownFormatter.CreateOperationResult(
+                "Command Enqueued",
+                keyValues,
+                $"Command {commandId} queued successfully",
+                true);
+
+            return Task.FromResult<object>(markdown);
         }
         catch (ArgumentException ex)
         {
             logger.LogError(ex, "Invalid argument: {Message}", ex.Message);
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Enqueue Failed");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Command ID:** N/A");
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Command:** `{command}`");
-            markdown.AppendLine($"**Status:** Failed");
-            markdown.AppendLine();
-            markdown.AppendLine("### Error");
-            markdown.AppendLine("```");
-            markdown.AppendLine(ex.Message);
-            markdown.AppendLine("```");
-            return Task.FromResult<object>(markdown.ToString());
+            var keyValues = new Dictionary<string, object?>
+            {
+                { "Command ID", "N/A" },
+                { "Session ID", sessionId },
+                { "Command", command },
+                { "Status", "Failed" }
+            };
+
+            var markdown = MarkdownFormatter.CreateOperationResult(
+                "Command Enqueue Failed",
+                keyValues,
+                ex.Message,
+                false);
+
+            return Task.FromResult<object>(markdown);
         }
         catch (InvalidOperationException ex)
         {
             logger.LogError(ex, "Cannot enqueue command: {Message}", ex.Message);
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Enqueue Failed");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Command ID:** N/A");
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Command:** `{command}`");
-            markdown.AppendLine($"**Status:** Failed");
-            markdown.AppendLine();
-            markdown.AppendLine("### Error");
-            markdown.AppendLine("```");
-            markdown.AppendLine(ex.Message);
-            markdown.AppendLine("```");
-            return Task.FromResult<object>(markdown.ToString());
+            var keyValues = new Dictionary<string, object?>
+            {
+                { "Command ID", "N/A" },
+                { "Session ID", sessionId },
+                { "Command", command },
+                { "Status", "Failed" }
+            };
+
+            var markdown = MarkdownFormatter.CreateOperationResult(
+                "Command Enqueue Failed",
+                keyValues,
+                ex.Message,
+                false);
+
+            return Task.FromResult<object>(markdown);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error enqueuing command");
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Enqueue Failed");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Command ID:** N/A");
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Command:** `{command}`");
-            markdown.AppendLine($"**Status:** Failed");
-            markdown.AppendLine();
-            markdown.AppendLine("### Error");
-            markdown.AppendLine("```");
-            markdown.AppendLine($"Unexpected error: {ex.Message}");
-            markdown.AppendLine("```");
-            return Task.FromResult<object>(markdown.ToString());
+            var keyValues = new Dictionary<string, object?>
+            {
+                { "Command ID", "N/A" },
+                { "Session ID", sessionId },
+                { "Command", command },
+                { "Status", "Failed" }
+            };
+
+            var markdown = MarkdownFormatter.CreateOperationResult(
+                "Command Enqueue Failed",
+                keyValues,
+                $"Unexpected error: {ex.Message}",
+                false);
+
+            return Task.FromResult<object>(markdown);
         }
     }
 }

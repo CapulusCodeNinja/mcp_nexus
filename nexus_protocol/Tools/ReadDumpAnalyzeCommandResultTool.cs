@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -7,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 
 using Nexus.Engine;
+using Nexus.Protocol.Utilities;
 
 namespace Nexus.Protocol.Tools;
 
@@ -42,97 +42,71 @@ internal static class ReadDumpAnalyzeCommandResultTool
 
             logger.LogInformation("Command {CommandId} result retrieved: State={State}", commandId, commandInfo.State);
 
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Result");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Command ID:** `{commandInfo.CommandId}`");
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Command:** `{commandInfo.Command}`");
-            markdown.AppendLine($"**State:** {commandInfo.State}");
-            markdown.AppendLine($"**Success:** {commandInfo.IsSuccess}");
-            markdown.AppendLine($"**Queued Time:** {commandInfo.QueuedTime:yyyy-MM-dd HH:mm:ss}");
-            if (commandInfo.StartTime.HasValue)
-                markdown.AppendLine($"**Start Time:** {commandInfo.StartTime:yyyy-MM-dd HH:mm:ss}");
-            if (commandInfo.EndTime.HasValue)
-                markdown.AppendLine($"**End Time:** {commandInfo.EndTime:yyyy-MM-dd HH:mm:ss}");
-            if (commandInfo.ExecutionTime.HasValue)
-                markdown.AppendLine($"**Execution Time:** {commandInfo.ExecutionTime.Value.TotalSeconds:F2}s");
-            if (commandInfo.TotalTime.HasValue)
-                markdown.AppendLine($"**Total Time:** {commandInfo.TotalTime.Value.TotalSeconds:F2}s");
-            markdown.AppendLine();
+            var markdown = MarkdownFormatter.CreateCommandResult(
+                commandInfo.CommandId,
+                sessionId,
+                commandInfo.Command,
+                commandInfo.State.ToString(),
+                commandInfo.IsSuccess ?? false,
+                commandInfo.QueuedTime,
+                commandInfo.StartTime,
+                commandInfo.EndTime,
+                commandInfo.ExecutionTime,
+                commandInfo.TotalTime);
 
             if (!string.IsNullOrEmpty(commandInfo.Output))
             {
-                markdown.AppendLine("### Output");
-                markdown.AppendLine("```");
-                markdown.AppendLine(commandInfo.Output);
-                markdown.AppendLine("```");
+                markdown += MarkdownFormatter.CreateCodeBlock(commandInfo.Output, "Output");
             }
 
             if (!string.IsNullOrEmpty(commandInfo.ErrorMessage))
             {
-                markdown.AppendLine();
-                markdown.AppendLine("### Error");
-                markdown.AppendLine("```");
-                markdown.AppendLine(commandInfo.ErrorMessage);
-                markdown.AppendLine("```");
+                markdown += MarkdownFormatter.CreateCodeBlock(commandInfo.ErrorMessage, "Error");
             }
 
-            return markdown.ToString();
+            return markdown;
         }
         catch (ArgumentException ex)
         {
             logger.LogError(ex, "Invalid argument: {Message}", ex.Message);
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Result");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Command ID:** `{commandId}`");
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Command:** N/A");
-            markdown.AppendLine($"**State:** Failed");
-            markdown.AppendLine($"**Success:** False");
-            markdown.AppendLine();
-            markdown.AppendLine("### Error");
-            markdown.AppendLine("```");
-            markdown.AppendLine(ex.Message);
-            markdown.AppendLine("```");
-            return markdown.ToString();
+            var markdown = MarkdownFormatter.CreateCommandResult(
+                commandId,
+                sessionId,
+                "N/A",
+                "Failed",
+                false,
+                DateTime.Now);
+            
+            markdown += MarkdownFormatter.CreateCodeBlock(ex.Message, "Error");
+            return markdown;
         }
         catch (KeyNotFoundException ex)
         {
             logger.LogError(ex, "Command not found: {CommandId}", commandId);
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Result");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Command ID:** `{commandId}`");
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Command:** N/A");
-            markdown.AppendLine($"**State:** NotFound");
-            markdown.AppendLine($"**Success:** False");
-            markdown.AppendLine();
-            markdown.AppendLine("### Error");
-            markdown.AppendLine("```");
-            markdown.AppendLine("Command not found");
-            markdown.AppendLine("```");
-            return markdown.ToString();
+            var markdown = MarkdownFormatter.CreateCommandResult(
+                commandId,
+                sessionId,
+                "N/A",
+                "NotFound",
+                false,
+                DateTime.Now);
+            
+            markdown += MarkdownFormatter.CreateCodeBlock("Command not found", "Error");
+            return markdown;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error reading command result");
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Result");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Command ID:** `{commandId}`");
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Command:** N/A");
-            markdown.AppendLine($"**State:** Failed");
-            markdown.AppendLine($"**Success:** False");
-            markdown.AppendLine();
-            markdown.AppendLine("### Error");
-            markdown.AppendLine("```");
-            markdown.AppendLine($"Unexpected error: {ex.Message}");
-            markdown.AppendLine("```");
-            return markdown.ToString();
+            var markdown = MarkdownFormatter.CreateCommandResult(
+                commandId,
+                sessionId,
+                "N/A",
+                "Failed",
+                false,
+                DateTime.Now);
+            
+            markdown += MarkdownFormatter.CreateCodeBlock($"Unexpected error: {ex.Message}", "Error");
+            return markdown;
         }
     }
 }

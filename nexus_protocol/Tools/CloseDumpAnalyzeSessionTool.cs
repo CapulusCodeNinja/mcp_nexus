@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -7,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 
 using Nexus.Engine;
+using Nexus.Protocol.Utilities;
 
 namespace Nexus.Protocol.Tools;
 
@@ -40,44 +40,47 @@ internal static class CloseDumpAnalyzeSessionTool
 
             logger.LogInformation("Successfully closed session: {SessionId}", sessionId);
 
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Session Closed");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Status:** Success");
-            markdown.AppendLine();
-            markdown.AppendLine($"✓ Session {sessionId} closed successfully");
-            return markdown.ToString();
+            var keyValues = new Dictionary<string, object?>
+            {
+                { "Session ID", sessionId },
+                { "Status", "Success" }
+            };
+
+            return MarkdownFormatter.CreateOperationResult(
+                "Session Closed",
+                keyValues,
+                $"Session {sessionId} closed successfully",
+                true);
         }
         catch (ArgumentException ex)
         {
             logger.LogError(ex, "Invalid session ID: {Message}", ex.Message);
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Session Close Failed");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Status:** Failed");
-            markdown.AppendLine();
-            markdown.AppendLine("### Error");
-            markdown.AppendLine("```");
-            markdown.AppendLine(ex.Message);
-            markdown.AppendLine("```");
-            return markdown.ToString();
+            var keyValues = new Dictionary<string, object?>
+            {
+                { "Session ID", sessionId },
+                { "Status", "Failed" }
+            };
+
+            return MarkdownFormatter.CreateOperationResult(
+                "Session Close Failed",
+                keyValues,
+                ex.Message,
+                false);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error closing session");
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Session Close Failed");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Status:** Failed");
-            markdown.AppendLine();
-            markdown.AppendLine("### Error");
-            markdown.AppendLine("```");
-            markdown.AppendLine($"Unexpected error: {ex.Message}");
-            markdown.AppendLine("```");
-            return markdown.ToString();
+            var keyValues = new Dictionary<string, object?>
+            {
+                { "Session ID", sessionId },
+                { "Status", "Failed" }
+            };
+
+            return MarkdownFormatter.CreateOperationResult(
+                "Session Close Failed",
+                keyValues,
+                $"Unexpected error: {ex.Message}",
+                false);
         }
     }
 }

@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -7,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 
 using Nexus.Engine;
+using Nexus.Protocol.Utilities;
 
 namespace Nexus.Protocol.Tools;
 
@@ -42,54 +42,59 @@ internal static class CancelCommandTool
 
             logger.LogInformation("Command {CommandId} cancellation: {Result}", commandId, cancelled ? "Success" : "NotFound");
 
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Cancellation");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Command ID:** `{commandId}`");
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Cancelled:** {cancelled}");
-            markdown.AppendLine($"**Status:** {(cancelled ? "Cancelled" : "NotFound")}");
-            markdown.AppendLine();
-            if (cancelled)
-                markdown.AppendLine($"✓ Command {commandId} cancelled successfully");
-            else
-                markdown.AppendLine($"⚠ Command {commandId} not found or already completed");
+            var keyValues = new Dictionary<string, object?>
+            {
+                { "Command ID", commandId },
+                { "Session ID", sessionId },
+                { "Cancelled", cancelled },
+                { "Status", cancelled ? "Cancelled" : "NotFound" }
+            };
 
-            return Task.FromResult<object>(markdown.ToString());
+            var message = cancelled 
+                ? $"Command {commandId} cancelled successfully"
+                : $"Command {commandId} not found or already completed";
+
+            var markdown = MarkdownFormatter.CreateOperationResult(
+                "Command Cancellation",
+                keyValues,
+                message,
+                cancelled);
+
+            return Task.FromResult<object>(markdown);
         }
         catch (ArgumentException ex)
         {
             logger.LogError(ex, "Invalid argument: {Message}", ex.Message);
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Cancellation Failed");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Command ID:** `{commandId}`");
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Cancelled:** False");
-            markdown.AppendLine($"**Status:** Failed");
-            markdown.AppendLine();
-            markdown.AppendLine("### Error");
-            markdown.AppendLine("```");
-            markdown.AppendLine(ex.Message);
-            markdown.AppendLine("```");
-            return Task.FromResult<object>(markdown.ToString());
+            var keyValues = new Dictionary<string, object?>
+            {
+                { "Command ID", commandId },
+                { "Session ID", sessionId },
+                { "Cancelled", false },
+                { "Status", "Failed" }
+            };
+
+            return Task.FromResult<object>(MarkdownFormatter.CreateOperationResult(
+                "Command Cancellation Failed",
+                keyValues,
+                ex.Message,
+                false));
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error cancelling command");
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Command Cancellation Failed");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Command ID:** `{commandId}`");
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Cancelled:** False");
-            markdown.AppendLine($"**Status:** Failed");
-            markdown.AppendLine();
-            markdown.AppendLine("### Error");
-            markdown.AppendLine("```");
-            markdown.AppendLine($"Unexpected error: {ex.Message}");
-            markdown.AppendLine("```");
-            return Task.FromResult<object>(markdown.ToString());
+            var keyValues = new Dictionary<string, object?>
+            {
+                { "Command ID", commandId },
+                { "Session ID", sessionId },
+                { "Cancelled", false },
+                { "Status", "Failed" }
+            };
+
+            return Task.FromResult<object>(MarkdownFormatter.CreateOperationResult(
+                "Command Cancellation Failed",
+                keyValues,
+                $"Unexpected error: {ex.Message}",
+                false));
         }
     }
 }

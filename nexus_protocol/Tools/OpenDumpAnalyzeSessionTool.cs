@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,6 +7,7 @@ using ModelContextProtocol.Server;
 
 using Nexus.Engine;
 using Nexus.External.Apis.FileSystem;
+using Nexus.Protocol.Utilities;
 
 namespace Nexus.Protocol.Tools;
 
@@ -48,83 +48,54 @@ internal static class OpenDumpAnalyzeSessionTool
             if (!fileSystem.FileExists(dumpPath))
             {
                 logger.LogError("Dump file not found: {DumpPath}", dumpPath);
-                var errorMarkdown = new StringBuilder();
-                errorMarkdown.AppendLine("## Session Creation Failed");
-                errorMarkdown.AppendLine();
-                errorMarkdown.AppendLine($"**Session ID:** N/A");
-                errorMarkdown.AppendLine($"**Dump File:** `{fileSystem.GetFileName(dumpPath)}`");
-                errorMarkdown.AppendLine($"**Status:** Failed");
-                errorMarkdown.AppendLine();
-                errorMarkdown.AppendLine("### Error");
-                errorMarkdown.AppendLine("```");
-                errorMarkdown.AppendLine($"Dump file not found: {dumpPath}");
-                errorMarkdown.AppendLine("```");
-                return errorMarkdown.ToString();
+                return MarkdownFormatter.CreateSessionResult(
+                    "N/A",
+                    fileSystem.GetFileName(dumpPath) ?? "Unknown" ?? "Unknown",
+                    "Failed",
+                    null,
+                    $"Dump file not found: {dumpPath}");
             }
 
             var sessionId = await DebugEngine.Instance.CreateSessionAsync(dumpPath, symbolsPath);
 
             logger.LogInformation("Successfully created session: {SessionId}", sessionId);
 
-            var markdown = new StringBuilder();
-            markdown.AppendLine("## Session Created");
-            markdown.AppendLine();
-            markdown.AppendLine($"**Session ID:** `{sessionId}`");
-            markdown.AppendLine($"**Dump File:** `{fileSystem.GetFileName(dumpPath)}`");
-            markdown.AppendLine($"**Status:** Success");
-            if (!string.IsNullOrEmpty(symbolsPath))
-                markdown.AppendLine($"**Symbols Path:** `{symbolsPath}`");
-            markdown.AppendLine();
-            markdown.AppendLine($"✓ Session {sessionId} created successfully");
-            return markdown.ToString();
+            return MarkdownFormatter.CreateSessionResult(
+                sessionId,
+                fileSystem.GetFileName(dumpPath) ?? "Unknown" ?? "Unknown",
+                "Success",
+                symbolsPath,
+                $"Session {sessionId} created successfully");
         }
         catch (FileNotFoundException ex)
         {
             logger.LogError(ex, "Dump file not found: {DumpPath}", dumpPath);
-            var errorMarkdown = new StringBuilder();
-            errorMarkdown.AppendLine("## Session Creation Failed");
-            errorMarkdown.AppendLine();
-            errorMarkdown.AppendLine($"**Session ID:** N/A");
-            errorMarkdown.AppendLine($"**Dump File:** `{fileSystem.GetFileName(dumpPath)}`");
-            errorMarkdown.AppendLine($"**Status:** Failed");
-            errorMarkdown.AppendLine();
-            errorMarkdown.AppendLine("### Error");
-            errorMarkdown.AppendLine("```");
-            errorMarkdown.AppendLine(ex.Message);
-            errorMarkdown.AppendLine("```");
-            return errorMarkdown.ToString();
+            return MarkdownFormatter.CreateSessionResult(
+                "N/A",
+                fileSystem.GetFileName(dumpPath) ?? "Unknown",
+                "Failed",
+                null,
+                ex.Message);
         }
         catch (InvalidOperationException ex)
         {
             logger.LogError(ex, "Cannot create session: {Message}", ex.Message);
-            var errorMarkdown = new StringBuilder();
-            errorMarkdown.AppendLine("## Session Creation Failed");
-            errorMarkdown.AppendLine();
-            errorMarkdown.AppendLine($"**Session ID:** N/A");
-            errorMarkdown.AppendLine($"**Dump File:** `{fileSystem.GetFileName(dumpPath)}`");
-            errorMarkdown.AppendLine($"**Status:** Failed");
-            errorMarkdown.AppendLine();
-            errorMarkdown.AppendLine("### Error");
-            errorMarkdown.AppendLine("```");
-            errorMarkdown.AppendLine(ex.Message);
-            errorMarkdown.AppendLine("```");
-            return errorMarkdown.ToString();
+            return MarkdownFormatter.CreateSessionResult(
+                "N/A",
+                fileSystem.GetFileName(dumpPath) ?? "Unknown",
+                "Failed",
+                null,
+                ex.Message);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error creating session");
-            var errorMarkdown = new StringBuilder();
-            errorMarkdown.AppendLine("## Session Creation Failed");
-            errorMarkdown.AppendLine();
-            errorMarkdown.AppendLine($"**Session ID:** N/A");
-            errorMarkdown.AppendLine($"**Dump File:** `{fileSystem.GetFileName(dumpPath)}`");
-            errorMarkdown.AppendLine($"**Status:** Failed");
-            errorMarkdown.AppendLine();
-            errorMarkdown.AppendLine("### Error");
-            errorMarkdown.AppendLine("```");
-            errorMarkdown.AppendLine($"Unexpected error: {ex.Message}");
-            errorMarkdown.AppendLine("```");
-            return errorMarkdown.ToString();
+            return MarkdownFormatter.CreateSessionResult(
+                "N/A",
+                fileSystem.GetFileName(dumpPath) ?? "Unknown",
+                "Failed",
+                null,
+                $"Unexpected error: {ex.Message}");
         }
     }
 }
