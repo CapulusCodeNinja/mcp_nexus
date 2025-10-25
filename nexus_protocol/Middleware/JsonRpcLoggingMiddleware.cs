@@ -68,10 +68,11 @@ internal class JsonRpcLoggingMiddleware
         var formattedRequest = FormatAndTruncateJson(requestBody);
         var extractedTexts = ExtractTextFields(requestBody);
         m_Logger.Debug("JSON-RPC Request Body:{NewLine}{RequestBody}", Environment.NewLine, formattedRequest.Trim());
-        foreach (var text in extractedTexts)
-        {
-            m_Logger.Debug("Extracted Text Field:{NewLine}{TextField}", Environment.NewLine, text.Trim());
-        }
+            foreach (var text in extractedTexts)
+            {
+                var formattedText = FormatAndTruncateJson(text.Trim());
+                m_Logger.Debug("Extracted Text Field:{NewLine}{TextField}", Environment.NewLine, formattedText);
+            }
 
         var originalBodyStream = context.Response.Body;
         using var responseBody = new MemoryStream();
@@ -91,7 +92,8 @@ internal class JsonRpcLoggingMiddleware
             m_Logger.Debug("JSON-RPC Response Body:{NewLine}{ResponseBody}", Environment.NewLine, formattedResponse.Trim());
             foreach (var text in extractedResponseTexts)
             {
-                m_Logger.Debug("Extracted Text Field:{NewLine}{TextField}", Environment.NewLine, text.Trim());
+                var formattedText = FormatAndTruncateJson(text.Trim());
+                m_Logger.Debug("Extracted Text Field:{NewLine}{TextField}", Environment.NewLine, formattedText);
             }
 
             await CopyResponseBodyAsync(responseBody, originalBodyStream);
