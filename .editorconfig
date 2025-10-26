@@ -804,19 +804,19 @@ dotnet_naming_rule.public_constant_fields_should_be_pascalcase.style = pascalcas
 # Examples: MaxRetries, DefaultTimeout, BufferSize
 dotnet_naming_rule.private_constant_fields_should_be_pascalcase.severity = error
 dotnet_naming_rule.private_constant_fields_should_be_pascalcase.symbols = private_constant_fields
-dotnet_naming_rule.private_constant_fields_should_be_pascalcase.style = pascalcase
+dotnet_naming_rule.private_constant_fields_should_be_pascalcase.style = m_Camelcase
 
 # Public static readonly fields should use PascalCase
 # Examples: Empty, Default, None
 dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.severity = error
 dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.symbols = public_static_readonly_fields
-dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.style = pascalcase
+dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.style = m_Camelcase
 
 # Private static readonly fields should use PascalCase
 # Examples: EmptyArray, DefaultValue, None
 dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.severity = error
 dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.symbols = private_static_readonly_fields
-dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.style = pascalcase
+dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.style = m_Camelcase
 
 # Enums should use PascalCase
 # Examples: FileMode, DayOfWeek, HttpStatusCode

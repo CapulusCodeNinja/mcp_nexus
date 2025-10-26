@@ -667,8 +667,8 @@ public class JsonRpcLoggingMiddlewareTests
     [Fact]
     public void FormatAndTruncateJson_WithLongStrings_TruncatesCorrectly()
     {
-        // Arrange
-        var longString = new string('x', 2000);
+        // Arrange - Use 3000 chars to exceed the 2500 m_MaxLength threshold
+        var longString = new string('x', 3000);
         var jsonContent = $"{{\"longField\":\"{longString}\",\"shortField\":\"short\"}}";
 
         // Act

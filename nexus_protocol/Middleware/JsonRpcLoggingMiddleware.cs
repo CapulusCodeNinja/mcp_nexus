@@ -15,7 +15,7 @@ internal class JsonRpcLoggingMiddleware
 {
     private readonly RequestDelegate m_Next;
     private readonly Logger m_Logger;
-    private const int m_MaxLength = 2500;
+    private const int MaxLength = 2500;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonRpcLoggingMiddleware"/> class.
@@ -524,9 +524,9 @@ internal class JsonRpcLoggingMiddleware
     /// <returns>The truncated string with indicator.</returns>
     protected static string TruncateString(string value)
     {
-        return string.IsNullOrEmpty(value) || value.Length <= m_MaxLength
+        return string.IsNullOrEmpty(value) || value.Length <= MaxLength
             ? value
-            : value[..m_MaxLength] + $"... (truncated {value.Length - m_MaxLength} chars)";
+            : value[..MaxLength] + $"... (truncated {value.Length - MaxLength} chars)";
     }
 
     /// <summary>
@@ -549,7 +549,7 @@ internal class JsonRpcLoggingMiddleware
     /// <returns>The sanitized content.</returns>
     private static string SanitizeForLogging(string body)
     {
-        return string.IsNullOrEmpty(body) ? string.Empty : body.Length > m_MaxLength ? body[..m_MaxLength] + "... (truncated)" : body;
+        return string.IsNullOrEmpty(body) ? string.Empty : body.Length > MaxLength ? body[..MaxLength] + "... (truncated)" : body;
     }
 }
 

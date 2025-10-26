@@ -58,6 +58,16 @@ public class BatchResultParserTests
     [Fact]
     public void ParseResult_WithBatchResult_ExtractsIndividualResults()
     {
+        // Arrange - First batch the commands to register the mapping
+        var commands = new List<Command>
+        {
+            new() { CommandId = "cmd-1", CommandText = "k" },
+            new() { CommandId = "cmd-2", CommandText = "lm" }
+        };
+
+        var batchedCommands = BatchProcessor.Instance.BatchCommands("test-session", commands);
+        var batchId = batchedCommands[0].CommandId;
+
         var resultText = $@"
 {BatchSentinels.GetStartMarker("cmd-1")}
 Stack output for command 1
@@ -69,12 +79,14 @@ Module output for command 2
 
         var result = new CommandResult
         {
-            CommandId = "batch_cmd-1_cmd-2",
+            CommandId = batchId,
             ResultText = resultText
         };
 
+        // Act
         var results = m_Parser.ParseResult(result);
 
+        // Assert
         _ = results.Should().HaveCount(2);
         _ = results[0].CommandId.Should().Be("cmd-1");
         _ = results[0].ResultText.Should().Contain("Stack output for command 1");
@@ -88,6 +100,17 @@ Module output for command 2
     [Fact]
     public void ParseResult_WithThreeCommandBatch_ExtractsAllThree()
     {
+        // Arrange - First batch the commands to register the mapping
+        var commands = new List<Command>
+        {
+            new() { CommandId = "cmd-1", CommandText = "k" },
+            new() { CommandId = "cmd-2", CommandText = "lm" },
+            new() { CommandId = "cmd-3", CommandText = "!threads" }
+        };
+
+        var batchedCommands = BatchProcessor.Instance.BatchCommands("test-session", commands);
+        var batchId = batchedCommands[0].CommandId;
+
         var resultText = $@"
 {BatchSentinels.GetStartMarker("cmd-1")}
 Output 1
@@ -102,12 +125,14 @@ Output 3
 
         var result = new CommandResult
         {
-            CommandId = "batch_cmd-1_cmd-2_cmd-3",
+            CommandId = batchId,
             ResultText = resultText
         };
 
+        // Act
         var results = m_Parser.ParseResult(result);
 
+        // Assert
         _ = results.Should().HaveCount(3);
         _ = results[0].CommandId.Should().Be("cmd-1");
         _ = results[1].CommandId.Should().Be("cmd-2");
@@ -120,14 +145,26 @@ Output 3
     [Fact]
     public void ParseResult_WithBatchResultWithoutSentinels_ReturnsSingleResult()
     {
+        // Arrange - First batch the commands to register the mapping
+        var commands = new List<Command>
+        {
+            new() { CommandId = "cmd-1", CommandText = "k" },
+            new() { CommandId = "cmd-2", CommandText = "lm" }
+        };
+
+        var batchedCommands = BatchProcessor.Instance.BatchCommands("test-session", commands);
+        var batchId = batchedCommands[0].CommandId;
+
         var result = new CommandResult
         {
-            CommandId = "batch_cmd-1_cmd-2",
+            CommandId = batchId,
             ResultText = "Output without sentinels"
         };
 
+        // Act
         var results = m_Parser.ParseResult(result);
 
+        // Assert - When batch result has no sentinels, fallback returns first command with full output
         _ = results.Should().HaveCount(1);
         _ = results[0].CommandId.Should().Be("cmd-1");
         _ = results[0].ResultText.Should().Be("Output without sentinels");
@@ -139,6 +176,16 @@ Output 3
     [Fact]
     public void ParseResult_WithEmptyResultText_ExtractsEmptyResults()
     {
+        // Arrange - First batch the commands to register the mapping
+        var commands = new List<Command>
+        {
+            new() { CommandId = "cmd-1", CommandText = "k" },
+            new() { CommandId = "cmd-2", CommandText = "lm" }
+        };
+
+        var batchedCommands = BatchProcessor.Instance.BatchCommands("test-session", commands);
+        var batchId = batchedCommands[0].CommandId;
+
         var resultText = $@"
 {BatchSentinels.GetStartMarker("cmd-1")}
 
@@ -150,12 +197,14 @@ Output 3
 
         var result = new CommandResult
         {
-            CommandId = "batch_cmd-1_cmd-2",
+            CommandId = batchId,
             ResultText = resultText
         };
 
+        // Act
         var results = m_Parser.ParseResult(result);
 
+        // Assert
         _ = results.Should().HaveCount(2);
         _ = results[0].ResultText.Should().BeEmpty();
         _ = results[1].ResultText.Should().BeEmpty();
@@ -167,24 +216,41 @@ Output 3
     [Fact]
     public void ParseResult_ExtractsResults_TrimsWhitespace()
     {
+        // Arrange - First batch the commands to register the mapping
+        var commands = new List<Command>
+        {
+            new() { CommandId = "cmd-1", CommandText = "k" },
+            new() { CommandId = "cmd-2", CommandText = "lm" }
+        };
+
+        var batchedCommands = BatchProcessor.Instance.BatchCommands("test-session-trim", commands);
+        var batchId = batchedCommands[0].CommandId;
+
         var resultText = $@"
 {BatchSentinels.GetStartMarker("cmd-1")}
    
    Output with whitespace   
    
 {BatchSentinels.GetEndMarker("cmd-1")}
+{BatchSentinels.GetStartMarker("cmd-2")}
+More output
+{BatchSentinels.GetEndMarker("cmd-2")}
 ";
 
         var result = new CommandResult
         {
-            CommandId = "batch_cmd-1",
+            CommandId = batchId,
             ResultText = resultText
         };
 
+        // Act
         var results = m_Parser.ParseResult(result);
 
-        _ = results.Should().HaveCount(1);
+        // Assert
+        _ = results.Should().HaveCount(2);
+        _ = results[0].CommandId.Should().Be("cmd-1");
         _ = results[0].ResultText.Should().Be("Output with whitespace");
+        _ = results[1].CommandId.Should().Be("cmd-2");
     }
 
     /// <summary>
@@ -268,6 +334,17 @@ Output with special chars: !@#$%^&*()
     [Fact]
     public void ParseResult_MaintainsCommandOrder()
     {
+        // Arrange - First batch the commands to register the mapping
+        var commands = new List<Command>
+        {
+            new() { CommandId = "cmd-A", CommandText = "k" },
+            new() { CommandId = "cmd-B", CommandText = "lm" },
+            new() { CommandId = "cmd-C", CommandText = "!threads" }
+        };
+
+        var batchedCommands = BatchProcessor.Instance.BatchCommands("test-session-order", commands);
+        var batchId = batchedCommands[0].CommandId;
+
         var resultText = $@"
 {BatchSentinels.GetStartMarker("cmd-A")}
 First
@@ -282,12 +359,14 @@ Third
 
         var result = new CommandResult
         {
-            CommandId = "batch_cmd-A_cmd-B_cmd-C",
+            CommandId = batchId,
             ResultText = resultText
         };
 
+        // Act
         var results = m_Parser.ParseResult(result);
 
+        // Assert
         _ = results.Should().HaveCount(3);
         _ = results[0].CommandId.Should().Be("cmd-A");
         _ = results[0].ResultText.Should().Be("First");
