@@ -2,12 +2,12 @@
 
 **AI-Powered Windows Crash Dump Analysis Platform**
 
-[![Tests](https://img.shields.io/badge/tests-2,533%20total-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
-[![Coverage](https://img.shields.io/badge/coverage-75.65%25%20line%20%7C%2072.41%25%20branch-yellow?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
-[![Build](https://img.shields.io/badge/build-0%20warnings-brightgreen?style=flat-square)](https://github.com/CapulusCodeNinja/mcp_nexus)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
+![Tests](https://img.shields.io/badge/tests-442%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-9.7%25%20lines-red)
+![Build](https://img.shields.io/badge/build-passing-brightgreen)
+![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
-MCP Nexus is a comprehensive Model Context Protocol (MCP) server that provides AI systems with advanced Windows crash dump analysis capabilities. It combines the power of Microsoft's debugging tools (WinDBG/CDB) with intelligent analysis workflows to help identify root causes of system crashes, memory corruption, and application failures.
+MCP Nexus is a comprehensive Model Context Protocol (MCP) server that provides AI systems with advanced Windows crash dump analysis capabilities. It combines the power of Microsoft's debugging tools (WinDBG/CDB) with intelligent analysis workflows, making professional-grade crash investigation accessible to AI assistants.
 
 ## 🎯 What is MCP Nexus?
 
@@ -29,52 +29,22 @@ MCP Nexus is a platform that provides structured access to Windows debugging too
 - 🔄 **MCP Integration**: Works with AI clients through Model Context Protocol
 - 🛠️ **Professional Tools**: Built on Microsoft's industry-standard debugging infrastructure
 
-## 📑 Table of Contents
+## ✨ Key Features
 
-- [🌟 Key Features](#-key-features)
-- [🚀 Quick Start](#-quick-start)
-- [🔍 Analysis Capabilities](#-analysis-capabilities)
-- [📚 Documentation](#-documentation)
-- [🤖 AI Integration](#-ai-integration)
-- [🛠️ Available Tools](#️-available-tools)
-- [📊 Analysis Workflows](#-analysis-workflows)
-- [⚙️ Configuration](#️-configuration)
-- [🧪 Testing](#-testing)
-- [🛠️ Development](#-development)
+- 🔍 **Advanced Crash Analysis**: Leverage WinDBG/CDB for comprehensive dump analysis
+- 🤖 **AI-Native Design**: Built specifically for AI agent integration via MCP
+- ⚡ **Command Batching**: Intelligent command grouping for improved throughput
+- 🔄 **Real-time Notifications**: Live updates during analysis operations
+- 🛡️ **Session Management**: Robust session lifecycle with automatic cleanup
+- 🎯 **Extensible Architecture**: PowerShell-based extension system for custom workflows
+- 📊 **Structured Results**: Parse debugging output into AI-friendly formats
 
-## 🌟 Key Features
-
-### Core Analysis Capabilities
-- **📋 Crash Dump Analysis**: Comprehensive analysis of Windows crash dumps (.dmp files)
-- **🔍 Root Cause Detection**: Automated identification of crash causes and patterns
-- **📊 Memory Analysis**: Deep inspection of memory corruption and leaks
-- **🧵 Thread Analysis**: Thread deadlock and synchronization issue detection
-- **⚡ Performance Analysis**: System performance bottleneck identification
-- **🔧 Symbol Resolution**: Automatic symbol loading and debugging information
-
-### AI-Powered Features
-- **🤖 MCP Integration**: Native Model Context Protocol support for AI systems
-- **📡 Real-time Notifications**: Live progress updates during analysis
-- **📚 Structured Results**: AI-friendly analysis output formats
-- **🔄 Async Processing**: Non-blocking analysis with progress tracking
-- **📖 Intelligent Workflows**: Pre-built analysis patterns for common crash types
-
-### Professional Tools
-- **🛠️ WinDBG/CDB Integration**: Built on Microsoft's debugging tools
-- **📁 Multiple Dump Formats**: Support for various Windows dump types
-- **🔗 Symbol Server Support**: Automatic symbol downloading and caching
-- **⚙️ Configurable Analysis**: Customizable analysis parameters and timeouts
-- **📊 Rich Reporting**: Detailed analysis reports with actionable insights
-- **⚡ Command Batching**: Intelligent batching of multiple commands for improved throughput
-
-## 🚀 Quick Start
+## 🎯 Quick Start
 
 ### Prerequisites
 
-- **Windows 10/11** or **Windows Server 2016+**
-- **.NET 8.0** or later
-- **Windows Debugging Tools** (WinDBG/CDB)
-- **AI Client** (Cursor IDE, Claude Desktop, or compatible MCP client)
+- **.NET 8.0 Runtime** or SDK
+- **Windows Debugging Tools** (WinDBG/CDB) - [Download from Microsoft](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/debugger-download-tools)
 
 ### Installation
 
@@ -86,154 +56,22 @@ cd mcp_nexus
 # Build the project
 dotnet build
 
-# Run in stdio mode (recommended for AI integration)
-dotnet run --project mcp_nexus/mcp_nexus.csproj
-
-# Run in HTTP mode (for web integration)
-dotnet run --project mcp_nexus/mcp_nexus.csproj -- --http
+# Run the server
+dotnet run --project nexus/nexus.csproj
 ```
-
-### Basic Usage
-
-1. **Open a crash dump**:
-   ```json
-   {
-     "method": "tools/call",
-     "params": {
-       "name": "nexus_open_dump_analyze_session",
-       "arguments": {
-         "dumpPath": "C:\\crashes\\application.dmp"
-       }
-     }
-   }
-   ```
-
-2. **Queue multiple commands** (recommended for efficiency):
-   ```json
-   {
-     "method": "tools/call",
-     "params": {
-       "name": "nexus_enqueue_async_dump_analyze_command",
-       "arguments": {
-         "sessionId": "sess-123",
-         "command": "!analyze -v"
-       }
-     }
-   }
-   ```
-   ```json
-   {
-     "method": "tools/call",
-     "params": {
-       "name": "nexus_enqueue_async_dump_analyze_command",
-       "arguments": {
-         "sessionId": "sess-123",
-         "command": "kL"
-       }
-     }
-   }
-   ```
-   ```json
-   {
-     "method": "tools/call",
-     "params": {
-       "name": "nexus_enqueue_async_dump_analyze_command",
-       "arguments": {
-         "sessionId": "sess-123",
-         "command": "!threads"
-       }
-     }
-   }
-   ```
-
-3. **Monitor all commands efficiently** (bulk polling):
-   ```json
-   {
-     "method": "tools/call",
-     "params": {
-       "name": "nexus_get_dump_analyze_commands_status",
-       "arguments": {
-         "sessionId": "sess-123"
-       }
-     }
-   }
-   ```
-
-4. **Get individual results** when completed:
-   ```json
-   {
-     "method": "tools/call",
-     "params": {
-       "name": "nexus_read_dump_analyze_command_result",
-       "arguments": {
-         "sessionId": "sess-123",
-         "commandId": "cmd-456"
-       }
-     }
-   }
-   ```
-
-### Efficient Workflow Pattern
-
-**Recommended approach for multiple commands:**
-1. **Queue all commands** at once using `nexus_enqueue_async_dump_analyze_command`
-2. **Poll bulk status** using `nexus_get_dump_analyze_commands_status` (one call for all commands)
-3. **Get individual results** using `nexus_read_dump_analyze_command_result` when status shows "Completed"
-
-This pattern is much more efficient than polling each command individually!
-
-## 🔍 Analysis Capabilities
-
-### Crash Types Supported
-- **💥 Application Crashes**: Unhandled exceptions and access violations
-- **🔒 System Crashes**: Blue Screen of Death (BSOD) analysis
-- **💾 Memory Corruption**: Heap corruption, buffer overflows, use-after-free
-- **🧵 Thread Issues**: Deadlocks, race conditions, thread synchronization
-- **⚡ Performance Issues**: CPU spikes, memory leaks, resource exhaustion
-- **🔧 Driver Problems**: Kernel driver crashes and system instability
-
-### Analysis Techniques
-- **📊 Stack Trace Analysis**: Detailed call stack examination
-- **🔍 Memory Dump Inspection**: Heap and stack memory analysis
-- **📈 Performance Profiling**: System resource usage analysis
-- **🔗 Symbol Resolution**: Automatic debugging symbol loading
-- **📋 Pattern Recognition**: Common crash pattern identification
-- **🎯 Root Cause Analysis**: Systematic cause identification
-
-## 📚 Documentation
-
-### 📖 **[🔍 Analysis Overview](docs/OVERVIEW.md)**
-Comprehensive guide to AI-powered crash analysis workflows and capabilities
-
-### 🛠️ **[📋 Available Tools](docs/TOOLS.md)**
-Complete reference for all debugging tools and analysis commands
-
-### 📊 **[📚 Analysis Workflows](docs/USAGE_EXAMPLES.md)**
-Step-by-step crash analysis workflows with real-world examples
-
-### ⚙️ **[🔧 Configuration](docs/CONFIGURATION.md)**
-Setup guide for debugging tools, symbol servers, and analysis parameters
-
-### 🤖 **[🤖 AI Integration](docs/INTEGRATION.md)**
-Integration guide for Cursor IDE, Claude Desktop, and other AI clients
-
-### 💻 **[👨‍💻 Development](docs/DEVELOPMENT.md)**
-Architecture overview and contribution guide for developers
-
-### 📊 **[📚 Resources](docs/RESOURCES.md)**
-MCP Resources reference for session management and analysis data
 
 ## 🤖 AI Integration
 
 ### Cursor IDE Integration
 
-**Configuration** (`.cursor/mcp.json`):
+Add to `.cursor/mcp.json`:
+
 ```json
 {
-  "servers": {
+  "mcpServers": {
     "mcp-nexus": {
       "command": "dotnet",
-      "args": ["run", "--project", "./mcp_nexus/mcp_nexus.csproj"],
+      "args": ["run", "--project", "C:\\path\\to\\mcp_nexus\\nexus\\nexus.csproj"],
       "type": "stdio"
     }
   }
@@ -242,229 +80,238 @@ MCP Resources reference for session management and analysis data
 
 ### Claude Desktop Integration
 
-**Configuration** (`claude_desktop_config.json`):
+Add to `claude_desktop_config.json`:
+
 ```json
 {
   "mcpServers": {
     "mcp-nexus": {
       "command": "dotnet",
-      "args": ["run", "--project", "C:\\path\\to\\mcp_nexus\\mcp_nexus.csproj"],
+      "args": ["run", "--project", "C:\\path\\to\\mcp_nexus\\nexus\\nexus.csproj"],
       "cwd": "C:\\path\\to\\mcp_nexus"
     }
   }
 }
 ```
 
+
+### Integration using HTTP
+
+```json
+{
+  "mcpServers": {
+    "mcp-nexus": {
+      "type": "http",
+      "url": "http://0.0.0.0:5511/",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}
+```
+
+## 🛠️ Available MCP Tools
+
+### Core Analysis Tools
+
+- **`nexus_open_dump_analyze_session`** - Open a crash dump for analysis
+- **`nexus_enqueue_async_dump_analyze_command`** - Execute WinDBG commands asynchronously
+- **`nexus_get_dump_analyze_commands_status`** - Get status of all commands (bulk polling)
+- **`nexus_read_dump_analyze_command_result`** - Read individual command results
+- **`nexus_cancel_dump_analyze_command`** - Cancel a running command
+- **`nexus_close_dump_analyze_session`** - Close session and cleanup resources
+
+### MCP Resources
+
+- **`sessions`** - List all active debugging sessions
+- **`commands`** - List commands with filtering by session/state
+- **`extensions`** - List available PowerShell extension scripts
+- **`usage`** - Complete usage guide with examples
+- **`health`** - System health and metrics
+
+## 📊 Example Workflow
+
+**Typical AI-driven crash analysis workflow:**
+
+1. **Open Session**: `nexus_open_dump_analyze_session` with dump file path
+2. **Queue Commands**: Use `nexus_enqueue_async_dump_analyze_command` for:
+   - `!analyze -v` (automatic crash analysis)
+   - `kL` (stack trace with source lines)
+   - `!threads` (thread information)
+3. **Monitor Progress**: `nexus_get_dump_analyze_commands_status` (bulk polling)
+4. **Retrieve Results**: `nexus_read_dump_analyze_command_result` for each command
+5. **Close Session**: `nexus_close_dump_analyze_session` for cleanup
+
+**Example conversation with AI assistant:**
+
+```
+User: "Analyze the crash dump at C:\dumps\myapp.dmp"
+
+AI: I'll analyze that crash dump for you.
+    [Opens session, queues !analyze -v, kL, !threads commands]
+    
+    Analysis Results:
+    - Exception: Access Violation (0xC0000005)
+    - Faulting Module: myapp.exe
+    - Root Cause: Null pointer dereference in ProcessData()
+    - Stack shows: ProcessData+0x42 called with null buffer
+    
+    Recommendation: Add null check before buffer access.
+```
+
+## 🏗️ Architecture
+
+### Modular Structure
+
+```
+nexus/                      - Main application (entry point, hosting)
+nexus_config/               - Configuration and logging
+nexus_engine/               - Debug engine (CDB sessions, command queue)
+nexus_engine_batch/         - Command batching system
+nexus_protocol/             - MCP protocol layer (tools, resources)
+nexus_setup/                - Service installation and management
+nexus_external_apis/        - Shared utilities (file system, process, etc.)
+nexus_extensions/           - PowerShell extension system
+```
+
+### Key Design Patterns
+
+- **Modular Architecture**: Clear separation of concerns across libraries
+- **Singleton Pattern**: Core engine accessible without DI overhead
+- **Command Queue**: Asynchronous command processing with state management
+- **Batching**: Transparent command grouping for improved performance
+- **Event-Driven**: Real-time notifications for command state changes
+
+## 🧪 Testing & Quality
+
+### Test Statistics
+
+- ✅ **442 total tests** (all passing)
+- 📊 **9.7% line coverage** (target: 75%)
+- 🔀 **10.6% branch coverage** (target: 75%)
+- ⚡ **Fast execution** (~2 seconds for full suite)
+- 🎯 **Zero build warnings**
+
+## ⚙️ Configuration
+
+### Command Batching
+
+MCP Nexus intelligently batches commands for improved throughput:
+
+```json
+{
+  "McpNexus": {
+    "DebugEngine": {
+      "Batching": {
+        "Enabled": true,
+        "MinBatchSize": 2,
+        "MaxBatchSize": 5,
+        "ExcludedCommands": [
+          "!analyze", "!dump", "!heap", "!memusage"
+        ]
+      }
+    }
+  }
+}
+```
+
+### Session Management
+
+```json
+{
+  "McpNexus": {
+    "SessionManagement": {
+      "MaxConcurrentSessions": 10,
+      "SessionTimeoutMinutes": 30,
+      "DefaultCommandTimeoutSeconds": 300
+    }
+  }
+}
+```
+
+### Logging
+
+```json
+{
+  "Logging": {
+    "LogLevel": "Information"
+  }
+}
+```
+
+**Supported levels**: Trace, Debug, Information, Warning, Error, Critical
+
+## 🚀 Advanced Features
+
+### Extension System
+
+Create custom analysis workflows with PowerShell:
+
+```powershell
+# extensions/my-analysis/my-analysis.ps1
+Import-Module McpNexusExtensions
+
+$result1 = Invoke-NexusCommand -Command "!analyze -v"
+$result2 = Invoke-NexusCommand -Command "kL"
+
+# Process results and return structured data
+return @{
+    CrashType = "Access Violation"
+    RootCause = "Null pointer dereference"
+    Recommendations = @("Add null checks", "Review error handling")
+}
+```
+
 ### Real-time Notifications
 
-MCP Nexus provides live updates during analysis:
+Receive live updates during analysis:
 
 ```json
 {
   "jsonrpc": "2.0",
   "method": "notifications/commandStatus",
   "params": {
-    "commandId": "cmd-123",
-    "status": "executing",
-    "progress": 75,
-    "message": "Analyzing crash dump...",
-    "timestamp": "2024-01-15T10:30:00Z"
+    "commandId": "cmd-abc123",
+    "sessionId": "session-xyz789",
+    "state": "Executing",
+    "timestamp": "2025-01-15T10:30:00Z"
   }
 }
 ```
 
-## 🛠️ Available Tools
+## 🛡️ Service Mode
 
-### Core Analysis Tools
-- **`nexus_open_dump_analyze_session`**: Open a crash dump for analysis
-- **`nexus_close_dump_analyze_session`**: Close analysis session and cleanup
-- **`nexus_enqueue_async_dump_analyze_command`**: Execute debugging commands
-- **`nexus_get_dump_analyze_commands_status`**: Get status of ALL commands in a session (bulk polling)
-- **`nexus_read_dump_analyze_command_result`**: Get individual command results
-
-
-### MCP Resources
-- **`sessions`**: List all active analysis sessions
-- **`commands`**: List commands with filtering options
-- **`extensions`**: List available extension scripts with metadata
-- **`usage`**: Complete usage guide and examples
-- **`metrics`**: Performance metrics and statistics
-- **`health`**: System health status
-
-## 📊 Analysis Workflows
-
-### Basic Crash Analysis
-1. **Open dump** → **Run !analyze -v** → **Examine results** → **Identify root cause**
-2. **Check stack trace** → **Analyze memory state** → **Review error codes**
-3. **Generate report** → **Document findings** → **Recommend fixes**
-
-### Memory Corruption Analysis
-1. **Open dump** → **Run !heap -p -a** → **Check for corruption**
-2. **Analyze stack traces** → **Identify corrupted memory** → **Find source**
-3. **Review allocation patterns** → **Check for leaks** → **Document findings**
-
-### Thread Deadlock Analysis
-1. **Open dump** → **Run !locks** → **Check for deadlocks**
-2. **Analyze thread states** → **Identify waiting threads** → **Find blocking resources**
-3. **Review synchronization** → **Document deadlock chain** → **Recommend fixes**
-
-## ⚙️ Configuration
-
-### Quick Setup
-```bash
-# Install Windows Debugging Tools
-# Download from Microsoft or install via Windows SDK
-
-# Configure symbol path
-dotnet run --project mcp_nexus/mcp_nexus.csproj -- --cdb-path "C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe"
-```
-
-### Configuration Files
-- **`appsettings.json`** - Main configuration (Production defaults)
-- **`appsettings.Development.json`** - Development overrides
-- **`appsettings.Production.json`** - Production overrides  
-- **`appsettings.Service.json`** - Windows service overrides
-
-### Simplified Logging
-The logging system now uses a single `LogLevel` setting:
-
-```json
-{
-  "Logging": {
-    "LogLevel": "Information"  // Trace, Debug, Information, Warning, Error, Critical
-  }
-}
-```
-
-**Environment Defaults:**
-- **Development**: `"Debug"`
-- **Service/Production**: `"Information"`
-
-### Command Batching
-MCP Nexus intelligently batches multiple commands for improved throughput:
-
-```json
-{
-  "McpNexus": {
-    "Batching": {
-      "Enabled": true,
-      "MaxBatchSize": 5,
-      "BatchWaitTimeoutMs": 2000,
-      "BatchTimeoutMultiplier": 1.0,
-      "MaxBatchTimeoutMinutes": 30,
-      "ExcludedCommands": [
-        "!analyze", "!dump", "!heap", "!memusage", "!runaway",
-        "~*k", "!locks", "!cs", "!gchandles"
-      ]
-    }
-  }
-}
-```
-
-**Features:**
-- **Automatic Batching**: Commands are automatically grouped for execution
-- **Configurable Limits**: Set maximum batch size and timeout multipliers
-- **Smart Exclusions**: Long-running or resource-intensive commands execute individually
-- **Transparent to AI**: Batching happens internally, no changes needed in AI clients
-
-### 📖 **[Complete Configuration Guide](docs/CONFIGURATION.md)**
-For detailed configuration options, environment settings, and best practices, see the comprehensive configuration documentation.
-
-## 🧪 Testing
-
-### Test Suite Overview
-
-MCP Nexus maintains a comprehensive test suite ensuring reliability and quality:
+Run as a Windows Service for production environments:
 
 ```bash
-# Run all tests
-dotnet test
+# Install as service
+dotnet run --project nexus/nexus.csproj -- service install
 
-# Run with coverage
-dotnet test --collect:"XPlat Code Coverage"
+# Start service
+net start MCP-Nexus
 
-# Run specific test categories
-dotnet test --filter "FullyQualifiedName~CrashAnalysis"
-dotnet test --filter "FullyQualifiedName~MemoryAnalysis"
-dotnet test --filter "FullyQualifiedName~ThreadAnalysis"
-dotnet test --filter "Notification"
+# Stop service
+net stop MCP-Nexus
+
+# Uninstall service
+dotnet run --project nexus/nexus.csproj -- service uninstall
 ```
-
-### Test Statistics
-
-- ✅ **2,533 total tests** (all passing)
-- ⚠️ **75.65% line coverage** (meets ≥75% threshold)
-- ⚠️ **72.41% branch coverage** (below ≥75% threshold)
-- ✅ **0 warnings** in build (clean codebase)
-- ✅ **Fast execution** (~90 seconds for full suite)
-- ✅ **Comprehensive mocking** for reliable testing
-
-## 🛠️ Development
-
-### Architecture
-```
-MCP Nexus
-├── Core Analysis Engine
-│   ├── Crash Dump Processing
-│   ├── Memory Analysis
-│   ├── Thread Analysis
-│   └── Performance Analysis
-├── AI Integration Layer
-│   ├── MCP Protocol Handler
-│   ├── Real-time Notifications
-│   └── Structured Results
-├── Debugging Tools Integration
-│   ├── WinDBG/CDB Wrapper
-│   ├── Symbol Resolution
-│   └── Command Execution
-└── Analysis Workflows
-    ├── Pre-built Patterns
-    ├── Custom Analysis
-    └── Result Processing
-```
-
-### Adding New Analysis Tools
-1. **Define tool schema** in `McpToolDefinitionService`
-2. **Implement analysis logic** in `McpToolExecutionService`
-3. **Add notifications** for real-time updates
-4. **Write comprehensive tests**
-5. **Update documentation**
-
-## 🆘 Troubleshooting
-
-### Common Issues
-- **Symbol Loading**: Ensure symbol path is configured correctly
-- **Permission Errors**: Check file access permissions
-- **Timeout Issues**: Increase command timeout for large dumps
-- **Memory Issues**: Ensure sufficient RAM for large dump analysis
-
-### Getting Help
-1. **Check Logs**: Review application logs for detailed error information
-2. **Test Manually**: Use WinDBG directly to verify dump accessibility
-3. **Read Documentation**: Check [🔧 CONFIGURATION.md](docs/CONFIGURATION.md) for setup issues
-4. **Community Support**: Report issues on GitHub
 
 ## 📄 License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **Apache License 2.0** - see the [LICENSE](LICENSE) file for details.
 
-The Apache License 2.0 is a permissive open-source license that allows you to:
-- ✅ Use the software for any purpose
-- ✅ Distribute the software
-- ✅ Modify the software
-- ✅ Distribute modified versions
-- ✅ Use the software in commercial applications
-
-For more information, see the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) documentation.
+The Apache License 2.0 allows you to:
+- ✅ Use the software commercially
+- ✅ Modify and distribute
+- ✅ Sublicense
+- ✅ Use patent claims
+- ⚠️ Include copyright notice
 
 ## 🙏 Acknowledgments
 
-- [Model Context Protocol](https://modelcontextprotocol.io/) specification
-- [C# SDK for Model Context Protocol](https://github.com/modelcontextprotocol/csharp-sdk)
-- [ModelContextProtocol.AspNetCore NuGet package](https://www.nuget.org/packages/ModelContextProtocol.AspNetCore/absoluteLatest)
-- [Microsoft debugging tools](https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/)
-- [NLog](https://nlog-project.org/)
-
----
-
-**MCP Nexus** - Professional Windows crash dump analysis using Microsoft debugging tools.
+- [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
+- [C# SDK for MCP](https://github.com/modelcontextprotocol/csharp-sdk) - MCP implementation
+- [Microsoft Debugging Tools](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/) - WinDBG/CDB
+- [NLog](https://nlog-project.org/) - Logging framework

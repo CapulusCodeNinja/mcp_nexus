@@ -2,32 +2,209 @@
 
 ## Project Overview
 
-MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Windows crash dump analysis and debugging. It provides a comprehensive suite of tools for analyzing memory dumps using WinDBG/CDB debugger integration, with advanced features including session management, command queuing, circuit breakers, health monitoring, and intelligent caching.
+MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Windows crash dump analysis and debugging. Built with a modular architecture, it provides a comprehensive suite of tools for analyzing memory dumps using WinDBG/CDB debugger integration, with advanced features including session management, command queuing, command batching, and extension support.
 
-## Architecture
+## Modular Architecture
 
-### Core Components
-- **Session Management**: Multi-session debugging with isolated CDB processes
-- **Command Queue System**: Asynchronous command execution with resilience patterns
-- **Command Batching**: Intelligent batching of multiple commands for improved throughput
-- **Circuit Breaker Pattern**: Fault tolerance and failure recovery
-- **Health Monitoring**: Comprehensive system health checks and metrics
-- **Intelligent Caching**: Memory-efficient caching with eviction strategies
-- **Notification System**: Real-time status updates and progress tracking
+### Library Structure
+
+The project follows a strict modular architecture with clear separation of concerns:
+
+```
+nexus/                      - Main application (entry point, hosting, CLI)
+nexus_config/               - Configuration and logging infrastructure
+nexus_engine/               - Core debug engine (CDB sessions, command queue)
+nexus_engine_batch/         - Command batching system (self-contained)
+nexus_protocol/             - MCP protocol layer (tools, resources, HTTP/Stdio)
+nexus_setup/                - Service installation and management
+nexus_external_apis/            - Shared utilities (file system, process, registry, service)
+nexus_extensions/           - Extension system (PowerShell workflow support)
+```
+
+### Library Responsibilities
+
+#### `nexus` - Main Application
+**Purpose**: Application entry point, hosting, and server mode management.
+
+**Key Components**:
+- `Program.cs` - Application entry point
+- `CommandLine/` - CLI context and server mode definitions
+- `Hosting/` - Hosted services for HTTP, Stdio, and Service modes
+- `Startup/` - Application startup orchestration and banner
+
+**Dependencies**: All other libraries (top-level composition root)
+
+**Namespace**: `nexus.*`
+
+#### `nexus_config` - Configuration & Logging
+**Purpose**: Centralized configuration loading and logging infrastructure.
+
+**Key Components**:
+- `IConfigurationProvider` - Configuration abstraction
+- `ILoggingConfigurator` - Logging setup abstraction
+- `Internal/ConfigurationLoader.cs` - Configuration file loading
+- `Internal/LoggingConfiguration.cs` - NLog configuration
+- `Models/SharedConfiguration.cs` - Shared configuration models
+- `appsettings.json` - Main configuration file
+
+**Dependencies**: Microsoft.Extensions.Configuration, NLog
+
+**Namespace**: `nexus.config.*`
+
+#### `nexus_engine` - Debug Engine
+**Purpose**: Core debugging functionality with CDB session and command queue management.
+
+**Key Components**:
+- `DebugEngine.cs` - Main engine implementation (`IDebugEngine`)
+- `ICdbSession.cs` - CDB session abstraction
+- `Internal/DebugSession.cs` - Session implementation
+- `Internal/CdbSession.cs` - CDB process wrapper
+- `Internal/CommandQueue.cs` - Asynchronous command queue
+- `Internal/QueuedCommand.cs` - Command model
+- `Models/` - Command state, session state, command info
+- `Configuration/DebugEngineConfiguration.cs` - Engine settings
+
+**Dependencies**: `nexus_external_apis`, `nexus_config`, `nexus_engine_batch`
+
+**Namespace**: `nexus.engine.*`
+
+**Key Design**: The engine always delegates to the batching library for command processing. The batching library decides whether to batch commands or execute them individually based on configuration.
+
+#### `nexus_engine_batch` - Command Batching (NEW)
+**Purpose**: Self-contained command batching system for improved throughput.
+
+**Key Components**:
+- `IBatchProcessor` - Public batching interface
+- `Command.cs` - Command DTO
+- `CommandResult.cs` - Result DTO
+- `Internal/BatchProcessor.cs` - Batching orchestrator
+- `Internal/BatchCommandBuilder.cs` - Batch command construction
+- `Internal/BatchResultParser.cs` - Batch output parsing
+- `Internal/BatchCommandFilter.cs` - Batching eligibility logic
+- `Internal/BatchSentinels.cs` - Sentinel marker constants
+- `Configuration/BatchingConfiguration.cs` - Batching settings
+
+**Dependencies**: Microsoft.Extensions.Logging.Abstractions only
+
+**Namespace**: `nexus.engine.batch.*`
+
+**Key Design**: 
+- **Self-contained library** - No dependencies on other project libraries
+- **Simple public API**: `List<Command> BatchCommands(List<Command>)` and `List<CommandResult> UnbatchResults(List<CommandResult>)`
+- **Internal decision-making**: Decides whether to batch based on configuration, command count, and excluded command list
+- **Transparent to engine**: Engine treats batched commands as single commands
+- **Sentinel-based parsing**: Uses unique markers to split batch results
+
+#### `nexus_protocol` - MCP Protocol Layer
+**Purpose**: MCP protocol implementation with tools, resources, and transport (HTTP/Stdio).
+
+**Key Components**:
+- `ProtocolServer.cs` - MCP server lifecycle (`IProtocolServer`)
+- `Tools/` - MCP tool implementations
+  - `OpenSessionTool.cs` - `nexus_open_dump_analyze_session`
+  - `EnqueueCommandTool.cs` - `nexus_enqueue_async_dump_analyze_command`
+  - `GetCommandsStatusTool.cs` - `nexus_get_dump_analyze_commands_status`
+  - `ReadCommandResultTool.cs` - `nexus_read_dump_analyze_command_result`
+  - `CancelCommandTool.cs` - `nexus_cancel_dump_analyze_command`
+  - `CloseSessionTool.cs` - `nexus_close_dump_analyze_session`
+- `Resources/` - MCP resource implementations
+- `Configuration/HttpServerSetup.cs` - HTTP server configuration factory
+- `Middleware/` - HTTP middleware (logging, content-type validation)
+- `Models/` - MCP response models, notifications
+
+**Dependencies**: `nexus_engine`, `nexus_engine_batch`, `nexus_external_apis`, `nexus_config`, ModelContextProtocol SDKs
+
+**Namespace**: `nexus.protocol.*`
+
+**Key Design**: 
+- Protocol logic lives entirely in this library
+- Provides factory methods for creating configured WebApplication/Host
+- Tools are auto-discovered via `McpServerTool` attributes
+- Registers `IBatchProcessor` and `IDebugEngine` in DI
+
+#### `nexus_setup` - Service Management
+**Purpose**: Windows Service installation, update, and management.
+
+**Key Components**:
+- `Core/ServiceInstaller.cs` - Service installation logic
+- `Core/ServiceUpdater.cs` - Service update and backup
+- `Management/ServiceController.cs` - Service control operations
+- `Validation/` - Configuration and path validation
+- `Models/` - Service configuration models
+
+**Dependencies**: `nexus_external_apis`, `nexus_config`, `nexus_protocol`
+
+**Namespace**: `nexus.setup.*`
+
+#### `nexus_external_apis` - Shared Utilities
+**Purpose**: Cross-cutting utilities for file system, process management, registry, and service operations.
+
+**Key Components**:
+- `FileSystem/IFileSystem.cs` - File system abstraction
+- `ProcessManagement/IProcessManager.cs` - Process abstraction
+- `Registry/IRegistryManager.cs` - Registry abstraction
+- `ServiceManagement/IServiceController.cs` - Service control abstraction
+
+**Dependencies**: Microsoft.Extensions.Logging.Abstractions only
+
+**Namespace**: `nexus.external_apis.*`
+
+**Key Design**: All utilities are abstracted behind interfaces for testability
+
+**Testing Policy**: This library is **EXCLUDED from unit tests and coverage requirements**. These are thin wrappers around .NET framework classes (File, Directory, Process, Registry, ServiceController) used solely for dependency injection. They are tested indirectly through other components that mock these interfaces. See "Testing Requirements > Coverage Exclusions" for details.
+
+#### `nexus_extensions` - Extension System
+**Purpose**: PowerShell-based extension system for complex debugging workflows.
+
+**Key Components**:
+- `ExtensionManager.cs` - Extension discovery and loading (`IExtensionManager`)
+- `ExtensionExecutor.cs` - Extension process execution (`IExtensionExecutor`)
+- `ExtensionTokenValidator.cs` - Security token management (`IExtensionTokenValidator`)
+- `Infrastructure/ProcessWrapper.cs` - Process abstraction
+- `Models/` - Extension metadata, parameters, results
+- `Configuration/ExtensionConfiguration.cs` - Extension settings
+
+**Dependencies**: `nexus_external_apis`, `nexus_config`
+
+**Namespace**: `nexus.extensions.*`
 
 ### Key Design Patterns
-- **Dependency Injection**: Extensive use of DI container for loose coupling
-- **Circuit Breaker**: Resilience against failures in external dependencies
-- **Command Pattern**: Encapsulated command execution with queuing
-- **Observer Pattern**: Event-driven notifications and monitoring
-- **Factory Pattern**: Dynamic service creation and configuration
+
+- **Dependency Injection**: All libraries use constructor injection for loose coupling
+- **Interface Segregation**: Each library exposes minimal public interfaces
+- **Self-Contained Libraries**: No cross-usage of internal classes between libraries
+- **Single Responsibility**: Each library has one cohesive purpose
+- **Factory Pattern**: Protocol library provides configuration factories
+- **Abstraction**: All external dependencies (file system, process, etc.) are abstracted
+
+### Service Registration Architecture
+
+**CRITICAL**: Each library must register ONLY its own services. Cross-library service registration violates modular architecture.
+
+#### Common Violations to Avoid
+
+❌ **NEVER do this**:
+- Protocol library registering engine services
+- Engine library registering protocol services  
+- Forwarding configuration objects between libraries
+- Forwarding logger factories between libraries
+- Cross-library parameter passing
+
+✅ **ALWAYS do this**:
+- Each library registers only its own services
+- Libraries resolve dependencies from DI container
+- Configuration loaded by each library from IConfiguration
+- Follow established pattern from nexus_config
 
 ### Technology Stack
+
 - **.NET 8**: Primary framework
 - **ASP.NET Core**: HTTP server and middleware
 - **NLog**: Advanced logging framework
-- **System.CommandLine**: CLI argument parsing
-- **ModelContextProtocol**: MCP server implementation
+- **System.CommandLine**: CLI argument parsing (planned migration to new CLI library)
+- **ModelContextProtocol SDKs**: MCP server implementation
+  - `ModelContextProtocol.Server` - Core MCP functionality
+  - `ModelContextProtocol.AspNetCore` - ASP.NET Core integration
 - **WinDBG/CDB**: Windows debugging tools integration
 
 ## 🚨 CRITICAL: MANDATORY GROUND RULES - READ FIRST! 🚨
@@ -167,13 +344,13 @@ public ReturnType MethodName(ParameterType paramName)
 
 ### Code Organization
 - **One class per file**: Each class in its own file - ABSOLUTE REQUIREMENT
-- **Namespace structure**: `mcp_nexus.{Category}` (e.g., `mcp_nexus.Session`, `mcp_nexus.CommandQueue`) - MANDATORY
+- **Namespace structure**: Library-specific namespaces (e.g., `nexus.engine.*`, `nexus.protocol.*`, `nexus.engine.batch.*`) - MANDATORY
 - **Using statements**: Grouped by system, third-party, then project namespaces - NO EXCEPTIONS
 - **Member variable placement**: **ALL member variables (fields, properties, constants) MUST be declared at the TOP of the class definition, before any methods or constructors** - ABSOLUTE REQUIREMENT
 - **Method ordering**: Constructors, public methods, private methods, dispose pattern - MANDATORY
 
 ### Error Handling
-- **Exception types**: Use specific exception types (`SessionNotFoundException`, `CircuitBreakerOpenException`) - ABSOLUTE REQUIREMENT
+- **Exception types**: Use specific exception types (`ArgumentException`, `InvalidOperationException`, etc.) - ABSOLUTE REQUIREMENT
 - **Logging levels**: MANDATORY
   - `LogError` for exceptions and failures - NO EXCEPTIONS
   - `LogWarning` for recoverable issues - ABSOLUTE REQUIREMENT
@@ -184,39 +361,82 @@ public ReturnType MethodName(ParameterType paramName)
 ## Domain Knowledge
 
 ### MCP (Model Context Protocol) Integration
-- **Tools**: Expose debugging operations as MCP tools
-- **Resources**: Provide data access through MCP resources
-- **Standardized responses**: Always include `usage` field as last entry
-- **Session isolation**: Each debugging session is completely isolated
 
-### Windows Debugging
-- **CDB Process Management**: Each session gets its own CDB process
-- **Command Execution**: Asynchronous command queuing with timeout handling
-- **Symbol Paths**: Support for symbol file directories
-- **Dump Analysis**: Focus on crash dump (.dmp) file analysis
+The protocol layer (`nexus_protocol`) implements the MCP specification with auto-discovered tools and resources.
+
+**Key MCP Concepts**:
+- **Tools**: MCP tools are auto-discovered via `[McpServerTool]` attributes on static methods
+- **Resources**: MCP resources provide data access (sessions, commands)
+- **Transport**: Supports both HTTP and Stdio transport modes
+- **Standardized responses**: Always include `usage` field as last entry
+
+**MCP Tools Provided**:
+1. `nexus_open_dump_analyze_session` - Create debugging session with dump file
+2. `nexus_enqueue_async_dump_analyze_command` - Queue WinDBG command for execution
+3. `nexus_get_dump_analyze_commands_status` - Get status of all commands (bulk polling)
+4. `nexus_read_dump_analyze_command_result` - Read individual command result
+5. `nexus_cancel_dump_analyze_command` - Cancel queued/executing command
+6. `nexus_close_dump_analyze_session` - Close session and cleanup resources
+
+### Windows Debugging with CDB
+
+The engine library (`nexus_engine`) manages CDB (Console Debugger) processes for dump analysis.
+
+**Key Concepts**:
+- **One CDB process per session**: Complete isolation between debugging sessions
+- **Asynchronous command queue**: Commands execute sequentially per session
+- **Symbol path support**: Configure symbol server and local symbol directories
+- **Dump file analysis**: Focus on post-mortem debugging of `.dmp` files
+- **Command output parsing**: Extract structured information from CDB text output
+
+**Common WinDBG/CDB Commands**:
+- `!analyze -v` - Automated crash analysis
+- `kL` - Display call stack with source line information
+- `lm` - List loaded modules
+- `!threads` - Display all threads
+- `!peb` - Process Environment Block information
+- `lsa <address>` - Load source file for address
 
 ### Session Lifecycle
-1. **Create**: `nexus_open_dump_analyze_session` - Creates isolated session
-2. **Execute**: `nexus_enqueue_async_dump_analyze_command` - Queues commands
-3. **Monitor**: `nexus_get_dump_analyze_commands_status` - Bulk status polling (recommended)
-4. **Retrieve**: `nexus_read_dump_analyze_command_result` - Get individual results
-5. **Close**: `nexus_close_dump_analyze_session` - Clean up resources
 
-**Efficient Monitoring Pattern:**
-- Use `nexus_get_dump_analyze_commands_status` to poll ALL commands in a session at once
-- Much more efficient than individual command polling
-- Returns status, timing, and progress for all commands
-- Use `nexus_read_dump_analyze_command_result` only when status shows "Completed"
+**1. Create Session**
+```
+Tool: nexus_open_dump_analyze_session
+Input: { dumpFilePath, symbolPath }
+Output: { sessionId, status }
+```
 
-### Command Queue System
-- **Sequential execution**: Commands execute in FIFO order per session
-- **Timeout handling**: Configurable timeouts with heartbeat monitoring
-- **Recovery mechanisms**: Automatic retry and circuit breaker patterns
-- **Status tracking**: Real-time status updates and progress reporting
+**2. Queue Commands**
+```
+Tool: nexus_enqueue_async_dump_analyze_command
+Input: { sessionId, command, timeoutSeconds }
+Output: { commandId, sessionId, status }
+```
 
-### Efficient Command Monitoring
+**3. Monitor Progress (Bulk Polling - Recommended)**
+```
+Tool: nexus_get_dump_analyze_commands_status
+Input: { sessionId }
+Output: { commands: [ { commandId, state, queuedTime, startTime, endTime } ] }
+```
 
-**Bulk Status Polling Pattern (Recommended):**
+**4. Retrieve Results**
+```
+Tool: nexus_read_dump_analyze_command_result
+Input: { sessionId, commandId }
+Output: { commandId, command, output, success }
+```
+
+**5. Close Session**
+```
+Tool: nexus_close_dump_analyze_session
+Input: { sessionId }
+Output: { sessionId, closed: true }
+```
+
+### Efficient Monitoring Pattern
+
+**Bulk Status Polling (Recommended)**:
 ```json
 // 1. Queue multiple commands
 nexus_enqueue_async_dump_analyze_command(sessionId, "!analyze -v")
@@ -225,40 +445,65 @@ nexus_enqueue_async_dump_analyze_command(sessionId, "!threads")
 
 // 2. Poll ALL commands at once (efficient)
 nexus_get_dump_analyze_commands_status(sessionId)
-// Returns: Status of all commands with timing and progress
+// Returns: Status of all commands with timing info
 
-// 3. Get individual results when completed
+// 3. Read individual results when completed
 nexus_read_dump_analyze_command_result(sessionId, "cmd-123")
 ```
 
-**Benefits of Bulk Polling:**
-- **Single API call** instead of multiple individual polls
-- **Reduced network overhead** and latency
-- **Better performance** for monitoring multiple commands
-- **Unified view** of all command statuses in one response
-- **Easier to implement** efficient polling loops
+**Benefits**:
+- Single API call for all command statuses
+- Reduced network overhead
+- Better performance for monitoring multiple commands
+- Unified view of session progress
 
-**When to Use Individual Polling:**
-- Only when you need the **full command output** (not just status)
-- When a specific command shows "Completed" status
-- For **debugging** specific command issues
+### Command Batching System
 
-## Performance Considerations
+The batching library (`nexus_engine_batch`) transparently improves throughput by grouping commands.
 
-### Memory Management
-- **Intelligent caching**: LRU eviction with memory pressure monitoring
-- **Resource cleanup**: Proper disposal of CDB processes and sessions
-- **Memory limits**: Configurable limits with automatic cleanup
+**Key Principles**:
+- **Transparent to clients**: AI agents see no difference in behavior
+- **Engine-driven**: The engine always calls the batching library for every command set
+- **Library decides**: Batching library determines if commands should be batched
+- **Sequential execution**: Batched commands execute in order within the batch
+- **Individual results**: Each command gets its own result, as if executed separately
 
-### Concurrency
-- **Thread safety**: All public methods must be thread-safe
-- **Async patterns**: Use `async/await` for I/O operations
-- **Cancellation**: Support `CancellationToken` for long-running operations
+**How It Works**:
+1. Engine collects available commands from queue
+2. Engine passes commands to `IBatchProcessor.BatchCommands()`
+3. Batching library decides to batch or return as single commands based on:
+   - Batching enabled in configuration
+   - Minimum batch size (default: 2)
+   - Maximum batch size (default: 5)
+   - Excluded commands (e.g., `!analyze`, `!dump`, `!heap`)
+4. Engine executes the returned commands (batched or single)
+5. Engine passes results to `IBatchProcessor.UnbatchResults()`
+6. Batching library extracts individual results using sentinel markers
+7. Engine stores individual results in cache
 
-### Scalability
-- **Session limits**: Configurable maximum concurrent sessions
-- **Command queuing**: Prevents resource exhaustion
-- **Circuit breakers**: Prevents cascade failures
+**Configuration** (`appsettings.json`):
+```json
+{
+  "McpNexus": {
+    "DebugEngine": {
+      "Batching": {
+        "Enabled": true,
+        "MinBatchSize": 2,
+        "MaxBatchSize": 5,
+        "ExcludedCommands": [
+          "!analyze", "!dump", "!heap", "!memusage", 
+          "!runaway", "~*k", "!locks", "!cs", "!gchandles"
+        ]
+      }
+    }
+  }
+}
+```
+
+**Sentinel Markers**:
+The batching library uses unique sentinel markers to identify command boundaries:
+- `MCP_NEXUS_COMMAND_SEPARATOR_{commandId}_START`
+- `MCP_NEXUS_COMMAND_SEPARATOR_{commandId}_END`
 
 ## Testing Requirements
 
@@ -271,24 +516,38 @@ nexus_read_dump_analyze_command_result(sessionId, "cmd-123")
 
 #### Test Structure Requirements
 - **Test Project Mirroring**: **Test project structure MUST exactly mirror production code structure**. Test directories and namespaces must follow the same organization as production code. ABSOLUTE REQUIREMENT.
-- **Test Namespace Convention**: **Test namespaces must match production namespaces with `.Tests` suffix**. For example: `mcp_nexus.CommandQueue.Batching` → `mcp_nexus.CommandQueue.Batching.Tests`. NO EXCEPTIONS.
+- **Test Namespace Convention**: **Test namespaces must match production namespaces with `.Tests` suffix**. For example: `nexus.engine.batch` → `nexus.engine.batch.Tests`. NO EXCEPTIONS.
 - **Test Directory Alignment**: **Test directories must mirror production directories exactly**. If production has `CommandQueue/Batching/`, tests must have `CommandQueue/Batching/` with `.Tests` namespace. MANDATORY.
 - **Test Class Organization**: **Test classes must be organized in the same sub-namespaces as their production counterparts**. NO EXCEPTIONS.
 
-### Test Organization and Strategy
+### Test Project Structure
 
-The project maintains two separate test projects, each serving distinct purposes while following the same ground rules:
+The solution contains multiple test projects, each corresponding to a production library:
 
-#### Unit Tests (`mcp_nexus_unit_tests`)
+```
+unittests/
+  ├── nexus_unittests/              - Tests for nexus (main app)
+  ├── nexus_config_unittests/       - Tests for nexus_config
+  ├── nexus_engine_unittests/       - Tests for nexus_engine
+  ├── nexus_engine_batch_unittests/ - Tests for nexus_engine_batch
+  ├── nexus_protocol_unittests/     - Tests for nexus_protocol
+  ├── nexus_setup_unittests/        - Tests for nexus_setup
+  └── nexus_extensions_unittests/   - Tests for nexus_extensions
+
+Note: nexus_external_apis is EXCLUDED from testing (see Coverage Exclusions).
+```
+
+### Unit Test Strategy
+
 **Purpose**: Fast, isolated tests that verify individual component behavior with mocked dependencies.
 
 **Characteristics**:
 - **Execution Speed**: Fast (milliseconds to seconds per test) - MANDATORY
-- **Dependencies**: All external dependencies mocked (CDB, file system, network, etc.) - ABSOLUTE REQUIREMENT
+- **Dependencies**: All external dependencies mocked (file system, process, network, etc.) - ABSOLUTE REQUIREMENT
 - **Scope**: Individual classes, methods, and components in isolation - NO EXCEPTIONS
-- **Examples**: Service logic, command parsing, validation, state management - MANDATORY
-- **Naming Convention**: `{ProductionFileName}Tests.cs` (e.g., `CommandBatchBuilder.cs` → `CommandBatchBuilderTests.cs`) - ABSOLUTE REQUIREMENT
-- **Namespace Convention**: `mcp_nexus_unit_tests.{Category}` matching production namespace structure - NO EXCEPTIONS
+- **Examples**: Service logic, batching, parsing, validation, state management - MANDATORY
+- **Naming Convention**: `{ProductionFileName}Tests.cs` (e.g., `BatchProcessor.cs` → `BatchProcessorTests.cs`) - ABSOLUTE REQUIREMENT
+- **Namespace Convention**: Match production namespace with `.Tests` suffix (e.g., `nexus.engine.batch.Tests`) - NO EXCEPTIONS
 
 **When to Write Unit Tests**:
 - Testing business logic and algorithms - MANDATORY
@@ -296,113 +555,145 @@ The project maintains two separate test projects, each serving distinct purposes
 - Testing error handling and edge cases - NO EXCEPTIONS
 - Verifying state transitions and lifecycle management - MANDATORY
 
-#### Integration Tests (`mcp_nexus_integration_tests`)
-**Purpose**: Slower tests that verify component interactions and infrastructure behavior with real dependencies.
+**Mocking Requirements**:
+- Mock all external dependencies (IFileSystem, IProcessManager, etc.) - ABSOLUTE REQUIREMENT
+- Use Moq for mocking - MANDATORY
+- Ensure `InternalsVisibleTo` includes `DynamicProxyGenAssembly2` for Moq - NO EXCEPTIONS
 
-**Characteristics**:
-- **Execution Speed**: Slower (seconds to minutes per test, **maximum 5 minutes per test**) - ABSOLUTE REQUIREMENT
-- **Dependencies**: Real dependencies where feasible (actual CDB process, real file system, etc.) - MANDATORY
-- **Scope**: Multiple components working together, infrastructure failures, end-to-end scenarios - NO EXCEPTIONS
-- **Examples**: CDB session lifecycle, batch command execution with real debugger, task recovery mechanisms - MANDATORY
-- **Naming Convention**: `{ProductionFileName}Tests.cs` (same as unit tests) - ABSOLUTE REQUIREMENT
-- **Namespace Convention**: `mcp_nexus_integration_tests.{Category}` matching production namespace structure - NO EXCEPTIONS
+### Coverage Requirements
 
-**When to Write Integration Tests**:
-- Testing infrastructure resilience (task faulting, recovery, timeout handling) - MANDATORY
-- Verifying real CDB command execution and output parsing - ABSOLUTE REQUIREMENT
-- Testing file system operations and path handling - NO EXCEPTIONS
-- Validating cross-component workflows and data flow - MANDATORY
+**Mandatory Minimum Thresholds** - ABSOLUTE REQUIREMENT:
+- **Line Coverage**: Must be **≥75%** at all times. NO EXCEPTIONS.
+- **Branch Coverage**: Must be **≥75%** at all times. NO EXCEPTIONS.
+- Run `dotnet test --collect:"XPlat Code Coverage"` to verify coverage before submission. MANDATORY.
+- If any code change causes coverage to drop below these thresholds, additional tests MUST be added before submission. ABSOLUTE REQUIREMENT.
 
-#### Shared Ground Rules (Apply to BOTH Test Projects)
-**ALL ground rules from the "MANDATORY GROUND RULES" section apply equally to both unit tests and integration tests. NO EXCEPTIONS.**
+**Coverage Exclusions** - ABSOLUTE REQUIREMENT:
+- **`nexus_external_apis`**: This library is EXCLUDED from unit tests and coverage requirements. NO EXCEPTIONS.
+  - Rationale: `nexus_external_apis` contains thin wrappers around .NET framework classes (File, Directory, Process, Registry, ServiceController) that delegate directly to framework APIs with minimal logic.
+  - These wrappers exist solely for dependency injection and mocking in other projects' tests.
+  - Testing these wrappers would essentially test the .NET framework itself, providing minimal value.
+  - The library is thoroughly tested indirectly through integration with other components that mock these interfaces.
+- **DO NOT create `nexus_external_apis_unittests`** - MANDATORY
+- **DO NOT include `nexus_external_apis` in coverage calculations** - ABSOLUTE REQUIREMENT
+
+**Coverage Best Practices**:
+- Aim for 100% coverage where feasible
+- Focus on critical paths and error handling
+- Test all public APIs thoroughly
+- Cover edge cases and boundary conditions
+
+### Shared Ground Rules
+
+**ALL ground rules from the "MANDATORY GROUND RULES" section apply to all tests. NO EXCEPTIONS.**
 
 Specifically:
-- **Coverage Thresholds**: Both projects must maintain ≥75% line coverage and ≥75% branch coverage - ABSOLUTE REQUIREMENT
-- **No Flaky Tests**: Tests must pass consistently, every time, in both projects - NO EXCEPTIONS
-- **Test Isolation**: Tests must be completely isolated from each other in both projects - MANDATORY
-- **No Arbitrary Delays**: No `Task.Delay` or `Thread.Sleep` >100ms in either project - ABSOLUTE REQUIREMENT
-- **Proper Concurrency**: Use deterministic synchronization (TaskCompletionSource, SemaphoreSlim) in both projects - NO EXCEPTIONS
-- **Mocking**: Unit tests mock all dependencies; integration tests mock only what's necessary for test control - MANDATORY
-- **Naming Convention**: Both projects use `{ProductionFileName}Tests.cs` pattern - ABSOLUTE REQUIREMENT
-- **Namespace Alignment**: Both projects mirror production namespace structure with `.Tests` suffix - NO EXCEPTIONS
-- **Maximum Test Duration**: Integration tests must complete within 5 minutes - ABSOLUTE REQUIREMENT
+- **Coverage Thresholds**: All projects must maintain ≥75% line coverage and ≥75% branch coverage - ABSOLUTE REQUIREMENT
+- **No Flaky Tests**: Tests must pass consistently, every time - NO EXCEPTIONS
+- **Test Isolation**: Tests must be completely isolated from each other - MANDATORY
+- **No Arbitrary Delays**: No `Task.Delay` or `Thread.Sleep` >100ms - ABSOLUTE REQUIREMENT
+- **Proper Concurrency**: Use deterministic synchronization (TaskCompletionSource, SemaphoreSlim) - NO EXCEPTIONS
+- **Mocking**: Mock all external dependencies - MANDATORY
+- **Naming Convention**: Use `{ProductionFileName}Tests.cs` pattern - ABSOLUTE REQUIREMENT
+- **Namespace Alignment**: Mirror production namespace structure with `.Tests` suffix - NO EXCEPTIONS
 
-#### Test Selection Guidelines
-**Use Unit Tests When**:
-- Testing pure logic without external dependencies - MANDATORY
-- Execution speed is critical (CI/CD pipeline) - ABSOLUTE REQUIREMENT
-- Testing all code paths and edge cases exhaustively - NO EXCEPTIONS
+## Performance Considerations
 
-**Use Integration Tests When**:
-- Testing infrastructure failure scenarios (task faulting, process crashes) - MANDATORY
-- Verifying real external tool behavior (CDB syntax, output format) - ABSOLUTE REQUIREMENT
-- Testing recovery mechanisms and resilience patterns - NO EXCEPTIONS
-- Validating end-to-end workflows across multiple components - MANDATORY
+### Memory Management
+- **Resource cleanup**: Proper disposal of CDB processes and sessions
+- **Bounded queues**: Limit queue sizes to prevent memory exhaustion
+- **Careful with caching**: Only cache what's necessary
 
-**IMPORTANT**: The existence of integration tests does NOT reduce the requirement for comprehensive unit test coverage. Both are mandatory. ABSOLUTE REQUIREMENT.
+### Concurrency
+- **Thread safety**: All public methods must be thread-safe
+- **Async patterns**: Use `async/await` for I/O operations
+- **Cancellation**: Support `CancellationToken` for long-running operations
+- **No blocking**: Avoid `Thread.Sleep` and blocking synchronization primitives
 
-### Unit Tests
-- **Coverage Thresholds**: **Mandatory minimum coverage requirements** - ABSOLUTE REQUIREMENT
-  - **Line Coverage**: Must be **≥75%** at all times. NO EXCEPTIONS.
-  - **Branch Coverage**: Must be **≥75%** at all times. NO EXCEPTIONS.
-  - Aim for 100% coverage where feasible, but never drop below these mandatory thresholds. MANDATORY.
-- **Mocking**: Use mocks for external dependencies - MANDATORY
-- **Mocking is Mandatory**: **Mocking should be used for testing without exception**. All external dependencies, services, and collaborators must be mocked to ensure test isolation and deterministic behavior. NO EXCEPTIONS.
-- **Edge cases**: Test error conditions and boundary values - NO EXCEPTIONS
+### Scalability
+- **Session limits**: Configurable maximum concurrent sessions
+- **Command queuing**: Prevents resource exhaustion
+- **Batching**: Improves throughput for multiple commands
 
 ## Security Considerations
 
 ### Path Validation
-- **WSL path conversion**: Secure conversion between WSL and Windows paths
-- **Path traversal prevention**: Validate all file paths
-- **UNC path blocking**: Prevent network path access
+- **Absolute paths only**: Validate dump file paths are absolute
+- **File existence**: Check files exist before creating sessions
+- **Symbol path validation**: Validate symbol server URLs and local paths
 
 ### Input Validation
-- **Command sanitization**: Validate WinDBG commands
+- **Command validation**: Basic validation of WinDBG commands
 - **Parameter validation**: Check all input parameters
-- **Resource limits**: Prevent resource exhaustion attacks
+- **Timeout limits**: Enforce maximum timeout values
 
 ## Common Patterns and Anti-Patterns
 
 ### ✅ Good Patterns
 - Use dependency injection for testability
-- Implement proper disposal patterns
-- Use circuit breakers for external dependencies
+- Implement proper disposal patterns (IDisposable)
+- Abstract external dependencies behind interfaces
 - Provide comprehensive error messages
 - Log important events and errors
+- Use factory methods for complex object creation
+- Keep libraries self-contained with minimal dependencies
 
 ### ❌ Anti-Patterns to Avoid
-- Don't expose internal implementation details
-- Don't use generic exception types
+- Don't expose internal implementation details across libraries
+- Don't use generic exception types (use specific exceptions)
 - Don't ignore cancellation tokens
 - Don't create memory leaks with event handlers
 - Don't hardcode configuration values
+- Don't add cross-dependencies between peer libraries
+- Don't use static mutable state
 
-## Tools and Dependencies
+## Configuration
 
-### Key NuGet Packages
-- `ModelContextProtocol.Server` - MCP server implementation
-- `Microsoft.AspNetCore` - Web framework
-- `NLog.Web.AspNetCore` - Logging
-- `System.CommandLine` - CLI parsing
-- `AspNetCoreRateLimit` - Rate limiting
+### Main Configuration File
 
-### External Tools
-- **WinDBG/CDB**: Windows debugging tools (must be installed)
-- **Symbols**: Windows symbol files for proper debugging
+**Location**: `nexus_config/appsettings.json`
 
-### Configuration Files
-- `appsettings.json` - Main configuration
-- `nlog.config` - Logging configuration
-- `mcp_nexus.csproj` - Project dependencies
+**Key Sections**:
+```json
+{
+  "McpNexus": {
+    "Server": {
+      "Host": "localhost",
+      "Port": 5000
+    },
+    "DebugEngine": {
+      "MaxConcurrentSessions": 10,
+      "DefaultCommandTimeoutSeconds": 300,
+      "Batching": {
+        "Enabled": true,
+        "MinBatchSize": 2,
+        "MaxBatchSize": 5,
+        "ExcludedCommands": [ "!analyze", "!dump", "!heap" ]
+      }
+    },
+    "Extensions": {
+      "Enabled": true,
+      "ExtensionsPath": "extensions",
+      "CallbackPort": 0
+    }
+  }
+}
+```
+
+### Logging Configuration
+
+**Location**: `nexus_config/nlog.config`
+
+NLog is used for all logging with consistent formatting across the application.
 
 ## Development Workflow
 
 ### Before Making Changes
 1. Read and understand the existing code structure - MANDATORY
-2. Check for existing XML documentation - ABSOLUTE REQUIREMENT
-3. Verify test coverage for affected areas - NO EXCEPTIONS
-4. Consider impact on session isolation - MANDATORY
+2. Identify which library needs changes - ABSOLUTE REQUIREMENT
+3. Check for existing XML documentation - NO EXCEPTIONS
+4. Verify test coverage for affected areas - MANDATORY
+5. Consider impact on other libraries - ABSOLUTE REQUIREMENT
 
 ### During Development
 1. Follow the XML documentation standards strictly - ABSOLUTE REQUIREMENT
@@ -410,813 +701,77 @@ Specifically:
 3. Handle exceptions gracefully - NO EXCEPTIONS
 4. Consider performance implications - ABSOLUTE REQUIREMENT
 5. Maintain thread safety - MANDATORY
+6. Keep libraries self-contained - NO EXCEPTIONS
 
 ### After Changes
 1. Verify all XML documentation is complete - ABSOLUTE REQUIREMENT
 2. Run existing tests - MANDATORY
 3. Add new tests for new functionality - NO EXCEPTIONS
 4. Check for memory leaks - ABSOLUTE REQUIREMENT
-5. Verify session isolation is maintained - MANDATORY
-6. Run `dotnet format` (style, analyzers, whitespace) solution-wide and ensure no changes remain (`--verify-no-changes`) - ABSOLUTE REQUIREMENT.
+5. Run `dotnet format` (style, analyzers, whitespace) solution-wide - MANDATORY
+6. Verify zero compilation warnings/errors - ABSOLUTE REQUIREMENT
+7. Update version in project file - MANDATORY
+8. Update README.md if needed - NO EXCEPTIONS
 
-## Special Considerations
+## Key Architecture Principles
 
-### Session Management
-- **Isolation**: Each session must be completely isolated - ABSOLUTE REQUIREMENT
-- **Cleanup**: Always clean up resources when sessions close - MANDATORY
-- **Limits**: Respect maximum session limits - NO EXCEPTIONS
-- **Context**: Maintain session context for notifications - ABSOLUTE REQUIREMENT
+### Library Independence
+- **Self-contained**: Each library should be as self-contained as possible
+- **Minimal dependencies**: Only reference libraries you directly need
+- **No circular dependencies**: Dependency graph must be acyclic
+- **Interface-based contracts**: Libraries communicate via interfaces
 
-### Command Execution
-- **Asynchronous**: All command execution must be asynchronous - MANDATORY
-- **Timeout**: Implement proper timeout handling - NO EXCEPTIONS
-- **Recovery**: Provide recovery mechanisms for failures - ABSOLUTE REQUIREMENT
-- **Status**: Always provide clear status information - MANDATORY
-
-
-This project represents a sophisticated debugging platform that requires careful attention to documentation, error handling, and resource management. Every change should maintain the high standards established for XML documentation and system reliability. ALL REQUIREMENTS ARE ABSOLUTE - NO EXCEPTIONS ARE ALLOWED.
-
----
-
-## Extension System Architecture (v1.0.6.65)
-
-### Overview
-
-The extension system allows complex debugging workflows to be implemented as external PowerShell scripts that can make callbacks to the MCP server to execute WinDBG commands. This solves the problem of AI agents having difficulty orchestrating multi-step debugging sequences.
-
-### Core Problem Solved
-
-**Before:** AI agents would fail when trying to execute workflows like:
-1. Get stack trace with `kL`
-2. Parse output to extract return addresses
-3. Run `lsa` on each address to download sources
-4. Aggregate results
-
-**After:** These workflows are implemented as extension scripts that handle the orchestration internally while making callbacks to execute individual commands.
-
-### Session Lifecycle Coupling
-
-**Implemented:** Extensions are automatically killed when their session closes.
-
-**Behavior:**
-- When `SessionLifecycleManager.CloseSessionAsync` is called:
-  1. Queries `ExtensionCommandTracker` for all running extensions in the session
-  2. Calls `ExtensionExecutor.KillExtension` for each running extension
-  3. Logs a warning: `🔪 Killed extension script command {CommandId} ({ExtensionName}) due to session {SessionId} closure`
-  4. Cleans up tracking data with `ExtensionCommandTracker.RemoveSessionCommands`
-
-**Timeout Behavior:**
-- Extensions have a configurable timeout (default: 30 minutes, set in `metadata.json`)
-- When timeout expires:
-  1. Extension process is killed with `process.Kill(entireProcessTree: true)`
-  2. Logs a warning: `🔪 Killed extension script '{Extension}' (command {CommandId}) due to timeout after X seconds (timeout: Yms)`
-  3. Extension result is marked as failed with `OperationCanceledException`
-- To disable timeout, set `"timeout": 0` in `metadata.json`
-
-**Result Persistence:**
-- Extension results are stored in the same `SessionCommandResultCache` as standard commands
-- Results persist until the session closes (consistent with standard commands)
-- Automatic cleanup when session ends
-- Same memory management and LRU eviction as standard commands
-- Results are stored in both `ExtensionCommandTracker` (for state/progress) and `SessionCommandResultCache` (for persistence)
-
-### Key Design Decisions
-
-#### 1. **Extension Scripts Run as Separate Processes (NOT in Command Queue)**
-
-**Critical Architecture Point:**
-- Extensions execute as **standalone processes** (PowerShell, etc.)
-- They **do NOT** block the command queue
-- They **submit commands to the queue** like any other client
-- Each callback command goes through normal queue flow
-
-**Why this works:**
+### Dependency Flow
 ```
-Extension Process          Command Queue (Serial)
-     |                            |
-     |-- Callback: Execute "kL" -->|
-     |                          [kL executes]
-     |<--- Result of "kL" ---------|
-     |-- Parse output...
-     |-- Callback: Execute "lsa" ->|
-     |                          [lsa executes]
-     |<--- Result of "lsa" -------|
-     |-- Aggregate...
+nexus (entry point)
+  ↓
+nexus_protocol ←→ nexus_setup
+  ↓                ↓
+nexus_engine   nexus_external_apis
+  ↓                ↑
+nexus_engine_batch  |
+                    |
+nexus_config ←──────┘
+nexus_extensions ──→ nexus_external_apis
 ```
 
-**No Deadlock** because:
-- Extension is external → doesn't block queue
-- Each callback is a normal command in queue
-- Commands execute sequentially as designed
-
-#### 2. **Unified Command Tracking**
-
-Extensions get their own `commandId` (prefixed with `ext-`) which allows:
-- AI can track extension progress with `nexus_get_dump_analyze_commands_status(sessionId)` (bulk polling)
-- AI can get individual results with `nexus_read_dump_analyze_command_result(ext-xxx)`
-- Same polling mechanism as regular commands
-- Consistent UX for AI agents
-- **Efficient monitoring**: Use bulk status polling to monitor extension + regular commands together
-
-#### 3. **Security: Localhost-Only HTTP Callbacks with Token Authentication**
-
-**Callback Mechanism:**
-- Extensions use HTTP REST API to callback
-- API binds to `127.0.0.1` (localhost only)
-- Each extension gets a unique, short-lived token
-- Token is session-scoped and revoked after completion
-
-**Why HTTP over Named Pipes:**
-- Simple, standard protocol
-- Easy to debug with curl/Postman
-- Cross-platform (for future)
-- PowerShell has excellent HTTP support
-
-**AI Protection:**
-- AI **never sees** callback URLs or tokens
-- Tokens validated by server before execution
-- If AI tries to call callback endpoint directly → 403 with helpful message
-
-#### 4. **PowerShell-Only (No Python)**
-
-**Decision:** Support only PowerShell scripts initially.
-
-**Reasoning:**
-- PowerShell is standard on Windows
-- Excellent text parsing capabilities
-- Native JSON support
-- Good HTTP client (Invoke-RestMethod)
-- Users are Windows debugging experts (likely know PowerShell)
-
-**Implementation:** `ExtensionExecutor` validates `scriptType == "powershell"`
-
-#### 5. **Helper Module for Extension Developers**
-
-**File:** `mcp_nexus/extensions/modules/McpNexusExtensions.psm1`
-
-**Purpose:** Abstract callback complexity from extension developers.
-
-**Example:**
-```powershell
-Import-Module "$PSScriptRoot\..\modules\McpNexusExtensions.psm1"
-
-# Simple command execution - complexity hidden
-$stack = Invoke-NexusCommand "kL"
-
-# Parse and execute more commands
-$addresses = Parse-StackAddresses $stack
-foreach ($addr in $addresses) {
-    $source = Invoke-NexusCommand "lsa $addr"
-    # Process source...
-}
-```
-
-#### 6. **Extension Discovery: Convention over Configuration**
-
-**Structure:**
-```
-extensions/
-  ├── modules/
-  │   └── McpNexusExtensions.psm1    # Shared helper
-  ├── stack_with_sources/
-  │   ├── metadata.json               # Auto-discovered
-  │   └── stack_with_sources.ps1      # Script
-  ├── basic_crash_analysis/
-  │   ├── metadata.json
-  │   └── basic_crash_analysis.ps1
-  └── [extension_name]/
-      ├── metadata.json
-      └── [script].ps1
-```
-
-**Discovery:** 
-- `ExtensionManager` scans `extensions/` for `metadata.json`
-- Validates metadata and script file existence
-- Loads all extensions at startup
-
-**Deployment:**
-- Extensions auto-copy to `bin/` during build
-- Users can drop new extensions and restart server
-- No recompilation needed
-
-### Component Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         AI Agent                            │
-└───────────────┬─────────────────────────────────────────────┘
-                │ MCP Tool Call
-                ▼
-┌─────────────────────────────────────────────────────────────┐
-│  nexus_execute_extension(sessionId, "stack_with_sources")  │
-│  Returns: { commandId: "ext-xxx", status: "Queued" }       │
-└───────────────┬─────────────────────────────────────────────┘
-                │
-                ▼
-┌─────────────────────────────────────────────────────────────┐
-│              ExtensionCommandTracker                        │
-│  • Tracks: commandId → ExtensionCommandInfo                │
-│  • States: Queued → Executing → Completed                  │
-│  • Progress: callback count, progress messages             │
-└───────────────┬─────────────────────────────────────────────┘
-                │
-                ▼
-┌─────────────────────────────────────────────────────────────┐
-│              ExtensionExecutor                              │
-│  • Spawns: PowerShell process                              │
-│  • Injects: Environment variables (token, callback URL)    │
-│  • Monitors: Output, errors, progress                      │
-│  • Manages: Lifecycle (timeout, cancellation)              │
-└───────────────┬─────────────────────────────────────────────┘
-                │
-                ▼
-┌─────────────────────────────────────────────────────────────┐
-│         Extension Script (PowerShell Process)               │
-│  ┌───────────────────────────────────────────────┐         │
-│  │ Import-Module McpNexusExtensions.psm1         │         │
-│  │                                                 │         │
-│  │ $result1 = Invoke-NexusCommand "kL"           │─────┐   │
-│  │ # Parse...                                     │     │   │
-│  │ $result2 = Invoke-NexusCommand "lsa 0x..."    │─────┤   │
-│  │ # Aggregate...                                 │     │   │
-│  │                                                 │     │   │
-│  │ Return-Json $results                           │     │   │
-│  └───────────────────────────────────────────────┘     │   │
-└────────────────────────────────────────────────────────┼───┘
-                                                          │
-                 ┌────────────────────────────────────────┘
-                 │ HTTP POST (Bearer Token)
-                 ▼
-┌─────────────────────────────────────────────────────────────┐
-│         ExtensionCallbackController                         │
-│  POST /extension-callback/execute                          │
-│  • Validates: Token, Localhost-only                        │
-│  • Enqueues: Command in session queue                      │
-│  • Waits: For command completion                           │
-│  • Returns: Command result                                 │
-└───────────────┬─────────────────────────────────────────────┘
-                │
-                ▼
-┌─────────────────────────────────────────────────────────────┐
-│            ICommandQueueService (Session)                   │
-│  • Executes: Commands serially (one at a time)            │
-│  • CDB Process: Single-threaded command execution          │
-│  • Returns: Command result to callback                     │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Data Flow Example: Stack with Sources
-
-```
-1. AI calls: nexus_execute_extension("stack_with_sources")
-   ├─> ExtensionCommandTracker: Track "ext-123"
-   ├─> ExtensionTokenValidator: Create token
-   └─> ExtensionExecutor: Start PowerShell
-
-2. PowerShell script loads helper module
-   └─> Has access to: Invoke-NexusCommand function
-
-3. Script executes: Invoke-NexusCommand "kL"
-   ├─> HTTP POST to localhost:port/extension-callback/execute
-   ├─> Headers: Authorization: Bearer <token>
-   ├─> Body: { command: "kL", timeoutSeconds: 300 }
-   └─> Waits for response
-
-4. ExtensionCallbackController receives request
-   ├─> Validates: Token (session-scoped, time-limited)
-   ├─> Validates: Request from localhost only
-   ├─> Increments: Callback count in tracker
-   ├─> Enqueues: Command in session's queue
-   └─> Waits: For command completion (blocking for THIS request)
-
-5. Command executes in CDB session (serialized)
-   └─> Result returned to controller
-
-6. Controller returns result to script
-   └─> Script continues with next step
-
-7. Script completes, returns JSON output
-   └─> ExtensionCommandTracker stores result
-
-8. AI polls: nexus_get_dump_analyze_commands_status(sessionId)
-   ├─> Returns: Status of ALL commands including "ext-123"
-   └─> Shows progress for extension and any other commands
-
-9. AI gets result: nexus_read_dump_analyze_command_result("ext-123")
-   └─> Returns: Extension output when status shows "Completed"
-```
-
-### Key Files
-
-**Extension Infrastructure:**
-- `mcp_nexus/Extensions/ExtensionManager.cs` - Discovery and metadata loading
-- `mcp_nexus/Extensions/ExtensionExecutor.cs` - Script process management
-- `mcp_nexus/Extensions/ExtensionCommandTracker.cs` - Command lifecycle tracking
-- `mcp_nexus/Extensions/ExtensionTokenValidator.cs` - Security tokens
-- `mcp_nexus/Extensions/ExtensionCallbackController.cs` - HTTP callback API
-- `mcp_nexus/Extensions/ExtensionMetadata.cs` - Extension definition model
-
-**Extension Scripts:**
-- `mcp_nexus/extensions/modules/McpNexusExtensions.psm1` - Helper functions
-- `mcp_nexus/extensions/stack_with_sources/` - Downloads sources for stack frames
-- `mcp_nexus/extensions/basic_crash_analysis/` - Basic crash analysis workflow
-- `mcp_nexus/extensions/memory_corruption_analysis/` - Memory corruption patterns
-- `mcp_nexus/extensions/thread_deadlock_investigation/` - Deadlock analysis
-
-**Integration Points:**
-- `mcp_nexus/Tools/McpNexusTools.cs` - Added `nexus_execute_extension` tool
-- `mcp_nexus/Configuration/ServiceRegistration.cs` - DI registration
-- `mcp_nexus/appsettings.json` - Extension configuration
-
-**Tests:**
-- `mcp_nexus_tests/Extensions/ExtensionManagerTests.cs` - 28 tests
-- `mcp_nexus_tests/Extensions/ExtensionTokenValidatorTests.cs` - 19 tests
-- `mcp_nexus_tests/Extensions/ExtensionCommandTrackerTests.cs` - 21 tests
-- `mcp_nexus_tests/Extensions/ExtensionCallbackControllerTests.cs` - 8 tests
-- `mcp_nexus_tests/Extensions/ExtensionExecutorTests.cs` - 40 tests
-
-### Configuration
-
-**appsettings.json:**
-```json
-{
-  "McpNexus": {
-    "Extensions": {
-      "Enabled": true,
-      "ExtensionsPath": "extensions",
-      "CallbackPort": 0  // 0 = use MCP server port
-    }
-  }
-}
-```
-
-### Extension Metadata Format
-
-**metadata.json:**
-```json
-{
-  "name": "extension_name",
-  "description": "What this extension does",
-  "version": "1.0.0",
-  "author": "Author Name",
-  "scriptType": "powershell",
-  "scriptFile": "script.ps1",
-  "timeout": 1800000,
-  "requires": ["McpNexusExtensions"],
-  "parameters": [
-    {
-      "name": "paramName",
-      "type": "string",
-      "description": "Parameter description",
-      "required": false,
-      "default": "defaultValue"
-    }
-  ]
-}
-```
-
-### Creating a New Extension
-
-1. **Create folder:** `extensions/my_extension/`
-2. **Create metadata.json** (see format above)
-3. **Create PowerShell script:**
-```powershell
-# Import helper module
-Import-Module "$PSScriptRoot\..\modules\McpNexusExtensions.psm1" -Force
-
-# Write progress
-Write-NexusProgress "Starting analysis..."
-
-# Execute commands
-$output1 = Invoke-NexusCommand "!analyze -v"
-$output2 = Invoke-NexusCommand "lm"
-
-# Return structured result
-@{
-    success = $true
-    analysis = $output1
-    modules = $output2
-} | ConvertTo-Json
-```
-
-4. **Restart server** - Extension is auto-discovered
-
-### Timeout Behavior
-
-**Regular Commands:** 
-- Default: 300 seconds
-- Enforced by command queue
-
-**Extensions:**
-- No strict timeout (or very long)
-- Depends on callback timeouts
-- Individual callbacks have normal timeouts
-- Overall extension can run as long as needed
-
-### Security Considerations
-
-1. **Token-based authentication** - Short-lived, session-scoped
-2. **Localhost-only binding** - Callback API not network-accessible
-3. **AI isolation** - AI never sees tokens or callback URLs
-4. **Process isolation** - Extensions run in separate processes
-5. **Token revocation** - Automatic cleanup after completion
-
-### Testing Strategy
-
-**Unit Tests:** Test each component in isolation
-- Mock file system for ExtensionManager
-- Mock processes for ExtensionExecutor
-- Mock HTTP context for ExtensionCallbackController
-
-**Integration Tests:** Test full workflow (future)
-- Real PowerShell execution
-- Actual callback communication
-- End-to-end extension execution
-
-### Common Pitfalls to Avoid
-
-1. ❌ **Don't make extensions blocking commands in the queue**
-   - ✅ They are separate processes that submit commands
-
-2. ❌ **Don't expose callback URLs/tokens to AI**
-   - ✅ Use MCP tools, let server handle callbacks
-
-3. ❌ **Don't add Python support without discussion**
-   - ✅ PowerShell-only by design
-
-4. ❌ **Don't create extensions that bypass session isolation**
-   - ✅ All commands go through session's command queue
-
-5. ❌ **Don't add `*.py` files to build output**
-   - ✅ Only `*.ps1`, `*.psm1`, `*.json` files
-
-### Future Enhancements (Not Yet Implemented)
-
-- **Dynamic timeout:** Extend based on callback activity
-- **Progress streaming:** Real-time progress to AI
-- **Extension hot-reload:** Discover new extensions without restart
-- **Extension dependencies:** Extensions calling other extensions
-
----
-
-## Async Command Execution (v1.0.7.5)
-
-### Problem
-
-Extension scripts using synchronous `Invoke-NexusCommand` cannot leverage command batching because each command blocks until completion, preventing multiple commands from being queued together.
-
-### Solution
-
-Added async command execution functions that queue commands without blocking, enabling the internal command batching system to improve throughput.
-
-### New PowerShell Functions
-
-- `Start-NexusCommand` - Queue a command, returns command ID immediately
-- `Wait-NexusCommand` - Block until queued command completes
-- `Get-NexusCommandResult` - Check command status without blocking
-- `Start-NexusCommands` - Queue multiple commands at once
-
-### New HTTP Endpoint
-
-- `POST /extension-callback/queue` - Queue command without waiting (enables batching)
-
-### Usage Example
-
-```powershell
-# Queue multiple commands (enables batching)
-$ids = Start-NexusCommands -Commands @("lm", "!threads", "!peb")
-
-# Wait for all to complete
-foreach ($id in $ids) {
-    $result = Wait-NexusCommand -CommandId $id
-    Process-Result $result
-}
-```
-
-### Benefits
-
-- Commands queued together can be batched automatically by `BatchCommandProcessor`
-- Better throughput for bulk operations
-- Backward compatible with existing `Invoke-NexusCommand` (synchronous)
-
----
-
-## Command Batching System Architecture
-
-### Overview
-
-The command batching system improves throughput by intelligently grouping multiple commands into a single execution batch. This is transparent to AI clients and maintains command dependencies by executing batches sequentially within each session.
-
-### Core Problem Solved
-
-**Before Batching:**
-- Each command executed individually
-- High overhead from process communication
-- Slower throughput for multiple sequential commands
-- Timeouts set per command could be conservative
-
-**After Batching:**
-- Commands automatically grouped (up to configurable limit)
-- Single execution with multiple commands
-- Improved overall throughput
-- Adaptive timeouts based on batch size
-
-### Key Design Decisions
-
-#### 1. **Batching is Internal and Transparent**
-
-**Critical Architecture Point:**
-- Batching happens **inside** `IsolatedCommandQueueService`
-- AI clients see **no difference** in behavior
-- Commands still queued individually
-- Results stored and retrieved individually
-- No changes needed to MCP tools or AI integration
-
-**Why this works:**
-```
-AI Client                    IsolatedCommandQueueService
-   |                                   |
-   |-- Queue: Command A -------------->|
-   |-- Queue: Command B -------------->| [Batch: A, B, C]
-   |-- Queue: Command C -------------->|     |
-   |                                   |     v
-   |                                   | Execute Combined
-   |                                   |     |
-   |<-- Result A ----------------------|     v
-   |<-- Result B ----------------------| Parse & Distribute
-   |<-- Result C ----------------------|
-```
-
-**No Race Conditions** because:
-- Batching is session-scoped → isolated per session
-- Commands execute sequentially within batch
-- Results parsed and stored atomically
-- Cache is thread-safe
-
-#### 2. **Configurable Batching Behavior**
-
-Batching is fully configurable via `appsettings.json`:
-
-```json
-{
-  "McpNexus": {
-    "Batching": {
-      "Enabled": true,
-      "MaxBatchSize": 5,
-      "BatchWaitTimeoutMs": 2000,
-      "BatchTimeoutMultiplier": 1.0,
-      "MaxBatchTimeoutMinutes": 30,
-      "ExcludedCommands": [
-        "!analyze", "!dump", "!heap", "!memusage", "!runaway",
-        "~*k", "!locks", "!cs", "!gchandles"
-      ]
-    }
-  }
-}
-```
-
-**Configuration Parameters:**
-- **Enabled**: Enable/disable batching system-wide
-- **MaxBatchSize**: Maximum commands per batch (default: 5)
-- **BatchWaitTimeoutMs**: Max wait time to accumulate commands (default: 2000ms)
-- **BatchTimeoutMultiplier**: Multiplier for timeout calculation (default: 1.0)
-- **MaxBatchTimeoutMinutes**: Cap for batch timeout (default: 30 minutes)
-- **ExcludedCommands**: Commands that should never be batched
-
-#### 3. **Smart Command Filtering**
-
-**Exclusion List:**
-Commands that should **not** be batched:
-- `!analyze` - Complex, long-running analysis
-- `!dump`, `!heap`, `!memusage` - Memory-intensive operations
-- `!runaway` - Performance profiling
-- `~*k`, `!locks`, `!cs` - Thread analysis
-- `!gchandles` - Managed heap analysis
-
-**Why exclude these:**
-- They are **long-running** and batching adds no value
-- They may **change debugger state** significantly
-- They produce **large output** that's better processed alone
-- Batching them could exceed timeout limits
-
-**Prefix Matching:**
-The `BatchCommandFilter` uses prefix matching, so:
-- Exclusion `"!analyze"` blocks: `!analyze`, `!analyze -v`, `!analyzev`
-- Exclusion `"~*k"` blocks: `~*k`, `~*kv`, `~*kp`
-
-#### 4. **Adaptive Timeout Calculation**
-
-**Formula:**
-```csharp
-BatchTimeout = Min(
-    BaseCommandTimeout * CommandCount * BatchTimeoutMultiplier,
-    MaxBatchTimeoutMinutes
-)
-```
-
-**Example:**
-- Base command timeout: 10 minutes (600,000ms)
-- Commands in batch: 3
-- Multiplier: 1.0
-- **Calculated timeout**: 30 minutes (capped at MaxBatchTimeoutMinutes)
-
-**Why this works:**
-- Larger batches get more time
-- Cap prevents runaway timeouts
-- Multiplier allows tuning for specific environments
-
-#### 5. **Batch Parsing with Sentinel Markers**
-
-**Sentinel Markers:**
-```csharp
-public const string BatchStart = "MCP_NEXUS_BATCH_START";
-public const string BatchEnd = "MCP_NEXUS_BATCH_END";
-public const string CommandSeparator = "MCP_NEXUS_CMD_SEP";
-```
-
-**Batch Command Format:**
-```
-.echo MCP_NEXUS_BATCH_START; .echo MCP_NEXUS_CMD_SEP_CMD-123_START; <actual command>; .echo MCP_NEXUS_CMD_SEP_CMD-123_END; .echo MCP_NEXUS_CMD_SEP_CMD-456_START; <actual command>; .echo MCP_NEXUS_CMD_SEP_CMD-456_END; .echo MCP_NEXUS_BATCH_END
-```
-
-**Why this works:**
-- Each command's output is clearly delimited
-- Parser can reliably extract individual results
-- Unique IDs prevent cross-contamination
-- Robust against commands that produce special characters
-
-### Component Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│              IsolatedCommandQueueService                    │
-│  ┌───────────────────────────────────────────────┐         │
-│  │  ProcessCommandQueueAsync()                   │         │
-│  │    │                                           │         │
-│  │    ├──> Take command from queue               │         │
-│  │    │                                           │         │
-│  │    └──> BatchCommandProcessor.ProcessCommand()│         │
-│  └───────────────────────────────────────────────┘         │
-└───────────────────┬─────────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────────────────────────┐
-│              BatchCommandProcessor                          │
-│  ┌───────────────────────────────────────────────┐         │
-│  │  ProcessCommandAsync(command)                 │         │
-│  │    │                                           │         │
-│  │    ├──> BatchCommandFilter.CanBatchCommand()  │         │
-│  │    │      (Check exclusion list)              │         │
-│  │    │                                           │         │
-│  │    ├──> If batchable: Queue internally        │         │
-│  │    │    If not: ExecuteSingleCommandAsync()   │         │
-│  │    │                                           │         │
-│  │    └──> BatchProcessingLoopAsync()            │         │
-│  │           (Background loop)                   │         │
-│  └───────────────────────────────────────────────┘         │
-│                                                              │
-│  Background Loop:                                           │
-│  ┌───────────────────────────────────────────────┐         │
-│  │  1. Wait for commands or timeout              │         │
-│  │  2. Collect up to MaxBatchSize commands       │         │
-│  │  3. CommandBatchBuilder.CreateBatchCommand()  │         │
-│  │  4. BatchTimeoutCalculator.CalculateTimeout() │         │
-│  │  5. CdbSession.ExecuteCommand(batch)          │         │
-│  │  6. BatchResultParser.SplitBatchResults()     │         │
-│  │  7. Store results in SessionCommandResultCache│         │
-│  │  8. Complete QueuedCommand.SetResult()        │         │
-│  └───────────────────────────────────────────────┘         │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Key Files
-
-**Batching Infrastructure:**
-- `mcp_nexus/CommandQueue/BatchingConfiguration.cs` - Configuration model
-- `mcp_nexus/CommandQueue/BatchCommandBuilder.cs` - Builds combined command
-- `mcp_nexus/CommandQueue/BatchResultParser.cs` - Parses batch output
-- `mcp_nexus/CommandQueue/BatchCommandFilter.cs` - Exclusion list filtering
-- `mcp_nexus/CommandQueue/BatchTimeoutCalculator.cs` - Timeout calculation
-- `mcp_nexus/CommandQueue/BatchCommandProcessor.cs` - Main batching orchestration
-- `mcp_nexus/Debugger/CdbSentinels.cs` - Batch sentinel markers
-
-**Integration Points:**
-- `mcp_nexus/CommandQueue/IsolatedCommandQueueService.cs` - Integrated BatchCommandProcessor
-- `mcp_nexus/Session/SessionLifecycleManager.cs` - Passes batching config to queue service
-- `mcp_nexus/Configuration/ServiceRegistration.cs` - DI registration for batching config
-- `mcp_nexus/appsettings.json` - Batching configuration
-
-**Tests:**
-- `mcp_nexus_tests/CommandQueue/BatchCommandProcessorTests.cs` - 16 tests
-- `mcp_nexus_tests/CommandQueue/BatchCommandBuilderTests.cs` - 8 tests
-- `mcp_nexus_tests/CommandQueue/BatchResultParserTests.cs` - 8 tests
-- `mcp_nexus_tests/CommandQueue/BatchCommandFilterTests.cs` - 8 tests
-- `mcp_nexus_tests/CommandQueue/BatchTimeoutCalculatorTests.cs` - 8 tests
-
-**Total: 48 batching-specific tests**
-
-### Performance Considerations
-
-#### Memory Management
-- **Bounded queues**: Maximum batch size prevents unbounded growth
-- **Timeout-based flushing**: Commands don't wait indefinitely
-- **Per-session isolation**: Each session has its own batch processor
-- **Automatic cleanup**: Batch processor disposed with session
-
-#### Concurrency
-- **Thread safety**: All batch operations are thread-safe
-- **Background processing**: Batching happens on dedicated background task
-- **No blocking**: Queue operations don't block command submission
-- **Cancellation support**: Proper cancellation token handling
-
-### Batching Behavior Examples
-
-#### Example 1: Simple Batching
-```
-Time  | Event
-------|----------------------------------------------
-0ms   | AI queues: "lm"
-10ms  | AI queues: "!threads"
-20ms  | AI queues: "!peb"
-2000ms| Batch timeout reached
-      | → Execute batch: "lm", "!threads", "!peb"
-      | → Parse results
-      | → Store in cache
-```
-
-#### Example 2: Immediate Batch (Max Size Reached)
-```
-Time  | Event
-------|----------------------------------------------
-0ms   | AI queues 5 commands (all batchable)
-1ms   | MaxBatchSize (5) reached
-      | → Execute batch immediately
-      | → No wait for timeout
-```
-
-#### Example 3: Mixed Batchable/Non-Batchable
-```
-Time  | Event
-------|----------------------------------------------
-0ms   | AI queues: "lm" (batchable)
-10ms  | AI queues: "!analyze -v" (excluded)
-      | → "lm" added to batch queue
-      | → "!analyze -v" executed immediately (single)
-20ms  | AI queues: "!threads" (batchable)
-      | → Added to batch queue with "lm"
-2000ms| Batch timeout
-      | → Execute batch: "lm", "!threads"
-```
-
-### Common Pitfalls to Avoid
-
-1. ❌ **Don't add commands to exclusion list without reason**
-   - ✅ Only exclude truly long-running or state-changing commands
-
-2. ❌ **Don't set MaxBatchSize too high**
-   - ✅ Keep it reasonable (3-10) to avoid timeout issues
-
-3. ❌ **Don't disable batching to "fix" issues**
-   - ✅ Investigate root cause and adjust configuration
-
-4. ❌ **Don't assume batching changes command order**
-   - ✅ Commands within a batch execute in order
-
-5. ❌ **Don't forget to update BatchingConfiguration when changing appsettings.json**
-   - ✅ Keep model in sync with config file
-
-### Future Enhancements (Not Yet Implemented)
-
-- **Dynamic batch sizing**: Adjust based on command execution times
-- **Smart command grouping**: Group related commands together
-- **Batch statistics**: Track batch efficiency metrics
-- **Adaptive exclusion list**: Learn which commands batch poorly
-
----
-
-## For Future AI Assistants
-
-When working on this project:
-1. **Read AGENTS.md first** - Understand the architecture before making changes - ABSOLUTE REQUIREMENT
-2. **Follow the established patterns** - Especially for extensions and batching - MANDATORY
-3. **PowerShell-only for extension scripts** - No Python - NO EXCEPTIONS
-4. **Add tests for new features** - Maintain test coverage - ABSOLUTE REQUIREMENT
-5. **Zero-regression policy** - All existing tests must pass - MANDATORY
-6. **Update this document** - If architecture changes significantly - NO EXCEPTIONS
-
-### Extension System Key Principle
-
-**Extensions orchestrate workflows externally, using callbacks for individual commands. - ABSOLUTE REQUIREMENT**
-
-This design prevents deadlocks, maintains session isolation, and gives AI agents a reliable way to execute complex debugging workflows. NO EXCEPTIONS.
-
-### Command Batching Key Principle
-
-**Batching improves throughput internally, while being completely transparent to AI clients. - MANDATORY**
-
-This design maintains command dependencies, prevents race conditions, and provides configurable performance optimization without requiring changes to AI integration. ABSOLUTE REQUIREMENT.
-
----
+### Command Batching Integration
+
+**Critical Flow**:
+1. **Engine receives commands** → Collects from queue
+2. **Engine calls batching library** → `BatchCommands(commands)`
+3. **Batching library decides** → Batch or single based on configuration
+4. **Engine executes** → Treats batched commands as single commands
+5. **Engine gets results** → Raw output from CDB
+6. **Engine calls batching library** → `UnbatchResults(results)`
+7. **Batching library parses** → Extracts individual results using sentinels
+8. **Engine stores results** → Individual results in cache
+
+**Key Insight**: The engine doesn't know or care if batching happened. It just delegates to the batching library and processes what it gets back.
+
+## Extension System Architecture
+
+The extension system (`nexus_extensions`) allows complex debugging workflows to be implemented as external PowerShell scripts that make callbacks to execute individual commands.
+
+**Key Concepts**:
+- **External processes**: Extensions run as separate PowerShell processes
+- **HTTP callbacks**: Extensions call back to the server via HTTP REST API
+- **Token authentication**: Each extension gets a unique, short-lived security token
+- **Localhost-only**: Callback API only listens on 127.0.0.1
+- **Automatic cleanup**: Extensions are killed when their session closes
+
+**Extension Discovery**:
+- Extensions are stored in `extensions/` directory
+- Each extension has `metadata.json` and `<name>.ps1` files
+- Auto-discovered at startup
+- Can be added dynamically by restarting server
+
+**Helper Module**:
+- `extensions/modules/McpNexusExtensions.psm1` provides helper functions
+- `Invoke-NexusCommand` - Execute command and wait for result
+- `Start-NexusCommand` - Queue command without blocking
+- `Wait-NexusCommand` - Wait for queued command to complete
+- `Get-NexusCommandResult` - Check command status
 
 ## Logging Severity Policy (NO EXCEPTIONS)
 
@@ -1233,3 +788,37 @@ Enforcement:
 - Do not use ERROR for recoverable or expected conditions.
 - Prefer INFO for user-relevant milestones and state changes; prefer DEBUG/TRACE for internal details.
 - TRACE should be disabled by default in production configurations.
+
+---
+
+## For Future AI Assistants
+
+When working on this project:
+
+1. **Read this document first** - Understand the modular architecture before making changes - ABSOLUTE REQUIREMENT
+2. **Identify the correct library** - Changes should be made in the appropriate library - MANDATORY
+3. **Follow all ground rules** - Every rule is mandatory with NO EXCEPTIONS - ABSOLUTE REQUIREMENT
+4. **Maintain library independence** - Don't add cross-dependencies between peer libraries - NO EXCEPTIONS
+5. **Test thoroughly** - All tests must pass with ≥75% coverage - MANDATORY
+6. **Document everything** - Complete XML documentation for all public and private members - ABSOLUTE REQUIREMENT
+7. **Run dotnet format** - Format the entire solution before submission - MANDATORY
+8. **Update versions** - Increment build version in project file - ABSOLUTE REQUIREMENT
+
+### Modular Architecture Summary
+
+- **nexus**: Entry point and hosting
+- **nexus_config**: Configuration and logging
+- **nexus_engine**: Core debug engine
+- **nexus_engine_batch**: Command batching (self-contained)
+- **nexus_protocol**: MCP protocol layer
+- **nexus_setup**: Service management
+- **nexus_external_apis**: Shared utilities (EXCLUDED from testing - see Coverage Exclusions)
+- **nexus_extensions**: Extension system
+
+Each library is self-contained with minimal dependencies. The batching library is completely independent and the engine always delegates to it for command processing.
+
+**Note**: `nexus_external_apis` is excluded from unit testing and coverage requirements as it contains only thin wrappers around .NET framework APIs used for dependency injection.
+
+---
+
+This project represents a sophisticated, modular debugging platform that requires careful attention to architecture, documentation, testing, and reliability. Every change should maintain the high standards established for code quality and system reliability. ALL REQUIREMENTS ARE ABSOLUTE - NO EXCEPTIONS ARE ALLOWED.

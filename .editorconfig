@@ -1,0 +1,979 @@
+root = true
+
+# All files
+[*]
+# Use spaces instead of tabs for indentation
+# Options: space | tab
+indent_style = space
+
+# Xml files
+[*.xml]
+# XML files use 2 spaces for indentation
+indent_size = 2
+
+# C# files
+[*.cs]
+
+#### Core EditorConfig Options ####
+
+# Indentation and spacing
+# Number of spaces for each indentation level
+# Example: 4 means code is indented with 4 spaces
+indent_size = 4
+
+# Width of tab character (relevant when viewing files with tabs)
+tab_width = 4
+
+# New line preferences
+# Use Windows-style line endings (CRLF = Carriage Return + Line Feed)
+# Options: crlf | lf | cr
+# crlf = Windows (\r\n), lf = Unix/Mac (\n), cr = Old Mac (\r)
+end_of_line = crlf
+
+# Don't automatically add a newline at the end of files
+# Options: true | false
+insert_final_newline = true
+
+#### .NET Coding Conventions ####
+[*.{cs,vb}]
+
+# Linter preferences
+# Enable Roslyn analyzers for code quality checks
+omnisharp.enableRoslynAnalyzers = true
+
+# Enable EditorConfig support in OmniSharp
+omnisharp.enableEditorConfigSupport = true
+
+# Organize usings
+# Add blank line between different using directive groups (System vs others)
+# true:                          | false:
+# using System;                  | using System;
+# using System.Collections;      | using System.Collections;
+#                                | using MyNamespace;
+# using MyNamespace;             |
+dotnet_separate_import_directive_groups = true
+
+# Sort System.* using directives first, then others alphabetically
+# true:                          | false:
+# using System;                  | using MyNamespace;
+# using System.IO;               | using System;
+# using MyNamespace;             | using System.IO;
+dotnet_sort_system_directives_first = true
+
+# Don't require a file header template
+file_header_template = unset
+
+# this. and Me. preferences
+# Don't require "this." prefix for events
+# false:                         | true:
+# Click += Handler;              | this.Click += Handler;
+dotnet_style_qualification_for_event = false:error
+
+# Don't require "this." prefix for fields
+# false:                         | true:
+# _name = value;                 | this._name = value;
+dotnet_style_qualification_for_field = false:error
+
+# Don't require "this." prefix for methods
+# false:                         | true:
+# DoWork();                      | this.DoWork();
+dotnet_style_qualification_for_method = false:error
+
+# Don't require "this." prefix for properties
+# false:                         | true:
+# Name = value;                  | this.Name = value;
+dotnet_style_qualification_for_property = false:error
+
+# Language keywords vs BCL types preferences
+# Prefer language keywords for local variables, parameters, and members
+# true:                          | false:
+# int count = 0;                 | Int32 count = 0;
+# string name = "";              | String name = "";
+dotnet_style_predefined_type_for_locals_parameters_members = true:error
+
+# Prefer language keywords for member access
+# true:                          | false:
+# int.Parse(s);                  | Int32.Parse(s);
+# string.Empty;                  | String.Empty;
+dotnet_style_predefined_type_for_member_access = true:error
+
+# Parentheses preferences
+# Always use parentheses in arithmetic binary operators for clarity
+# always_for_clarity:            | never_if_unnecessary:
+# var result = (a + b) * c;      | var result = a + b * c;
+dotnet_style_parentheses_in_arithmetic_binary_operators = always_for_clarity:error
+
+# Always use parentheses in other binary operators for clarity
+# always_for_clarity:            | never_if_unnecessary:
+# var result = a && (b || c);    | var result = a && b || c;
+dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:error
+
+# Remove parentheses when unnecessary in other operators
+# never_if_unnecessary:          | always_for_clarity:
+# await task;                    | await (task);
+# var x = default;               | var x = (default);
+dotnet_style_parentheses_in_other_operators = never_if_unnecessary:error
+
+# Always use parentheses in relational binary operators for clarity
+# always_for_clarity:            | never_if_unnecessary:
+# var result = (a < b) == (c > d);| var result = a < b == c > d;
+dotnet_style_parentheses_in_relational_binary_operators = always_for_clarity:error
+
+# Modifier preferences
+# Require accessibility modifiers for non-interface members
+# for_non_interface_members:     | never:
+# private void Method() { }      | void Method() { }
+# Options: always | for_non_interface_members | never | omit_if_default
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:error
+
+# Expression-level preferences
+# Prefer null-coalescing expressions
+# true:                          | false:
+# var result = x ?? y;           | var result = x != null ? x : y;
+dotnet_style_coalesce_expression = true:error
+
+# Prefer collection initializers
+# true:                          | false:
+# var list = new List<int>       | var list = new List<int>();
+# {                              | list.Add(1);
+#     1, 2, 3                    | list.Add(2);
+# };                             | list.Add(3);
+dotnet_style_collection_initializer = true:error
+
+# Prefer explicit tuple names
+# true:                          | false:
+# var tuple = (name: "John",     | var tuple = ("John", 25);
+#              age: 25);         |
+# var n = tuple.name;            | var n = tuple.Item1;
+dotnet_style_explicit_tuple_names = true:error
+
+# Prefer null-propagating operators
+# true:                          | false:
+# var length = obj?.Property;    | var length = obj != null
+#                                |     ? obj.Property : null;
+dotnet_style_null_propagation = true:error
+
+# Prefer object initializers
+# true:                          | false:
+# var person = new Person        | var person = new Person();
+# {                              | person.Name = "John";
+#     Name = "John",             | person.Age = 25;
+#     Age = 25                   |
+# };                             |
+dotnet_style_object_initializer = true:error
+
+# Place operators at the beginning of wrapped lines
+# beginning_of_line:             | end_of_line:
+# var result = longExpression    | var result = longExpression +
+#     + anotherExpression        |     anotherExpression +
+#     + thirdExpression;         |     thirdExpression;
+dotnet_style_operator_placement_when_wrapping = beginning_of_line
+
+# Prefer auto-properties over properties with backing fields
+# true:                          | false:
+# public int Age { get; set; }   | private int _age;
+#                                | public int Age
+#                                | {
+#                                |     get { return _age; }
+#                                |     set { _age = value; }
+#                                | }
+dotnet_style_prefer_auto_properties = true:error
+
+# Prefer compound assignment
+# true:                          | false:
+# x += 1;                        | x = x + 1;
+# x *= 2;                        | x = x * 2;
+dotnet_style_prefer_compound_assignment = true:error
+
+# Prefer conditional expressions over if-else for assignments
+# true:                          | false:
+# var x = condition ? a : b;     | int x;
+#                                | if (condition)
+#                                |     x = a;
+#                                | else
+#                                |     x = b;
+dotnet_style_prefer_conditional_expression_over_assignment = true:error
+
+# Prefer conditional expressions over if-else for returns
+# true:                          | false:
+# return condition ? a : b;      | if (condition)
+#                                |     return a;
+#                                | else
+#                                |     return b;
+dotnet_style_prefer_conditional_expression_over_return = true:error
+
+# Prefer inferred anonymous type member names
+# true:                          | false:
+# var person = new { name };     | var person = new { name = name };
+dotnet_style_prefer_inferred_anonymous_type_member_names = true:error
+
+# Prefer inferred tuple names
+# true:                          | false:
+# var tuple = (name, age);       | var tuple = (Item1: name,
+#                                |              Item2: age);
+dotnet_style_prefer_inferred_tuple_names = true:error
+
+# Prefer "is null" over "== null" checks
+# true:                          | false:
+# if (obj is null) { }           | if (obj == null) { }
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:error
+
+# Prefer simplified boolean expressions
+# true:                          | false:
+# if (!flag) { }                 | if (flag == false) { }
+# if (flag) { }                  | if (flag == true) { }
+dotnet_style_prefer_simplified_boolean_expressions = true:error
+
+# Prefer simplified string interpolation
+# true:                          | false:
+# $"{x}"                         | $"{x.ToString()}"
+dotnet_style_prefer_simplified_interpolation = true:error
+
+# Field preferences
+# Prefer readonly fields when they're only assigned in constructor or declaration
+# true:                          | false:
+# private readonly int _value;   | private int _value;
+dotnet_style_readonly_field = true:error
+
+# Parameter preferences
+# Flag unused parameters
+# all:                           | non_public:
+# void Method(int unused) { }    | public void Method(int unused) { }
+# // error on unused            | // No error
+# Options: all | non_public
+dotnet_code_quality_unused_parameters = all:error
+
+# Suppression preferences
+# Don't exclude any diagnostic suppressions
+dotnet_remove_unnecessary_suppression_exclusions = none
+
+#### C# Coding Conventions ####
+[*.cs]
+
+# IDE0005: Remove unnecessary using directives
+dotnet_diagnostic.IDE0005.severity = error
+
+# var preferences
+# Don't use "var" for other types (use explicit type)
+# false:                         | true:
+# StringBuilder sb = new();      | var sb = new StringBuilder();
+csharp_style_var_elsewhere = true:error
+
+# Don't use "var" for built-in types
+# false:                         | true:
+# int count = 0;                 | var count = 0;
+# string name = "";              | var name = "";
+csharp_style_var_for_built_in_types = true:error
+
+# Don't use "var" even when type is apparent
+# false:                         | true:
+# Person person = new Person();  | var person = new Person();
+csharp_style_var_when_type_is_apparent = true:error
+
+# Expression-bodied members
+# Prefer expression bodies for property accessors
+# true:                          | false:
+# public int Age                 | public int Age
+# {                              | {
+#     get => _age;               |     get { return _age; }
+#     set => _age = value;       |     set { _age = value; }
+# }                              | }
+csharp_style_expression_bodied_accessors = true:error
+
+# Don't prefer expression bodies for constructors
+# false:                         | true:
+# public Person(string name)     | public Person(string name)
+# {                              |     => _name = name;
+#     _name = name;              |
+# }                              |
+csharp_style_expression_bodied_constructors = false:error
+
+# Prefer expression bodies for indexers
+# true:                          | false:
+# public int this[int i]         | public int this[int i]
+#     => _array[i];              | {
+#                                |     get { return _array[i]; }
+#                                | }
+csharp_style_expression_bodied_indexers = true:error
+
+# Prefer expression bodies for lambdas
+# true:                          | false:
+# Func<int, int> square =        | Func<int, int> square =
+#     x => x * 2;                |     x => { return x * 2; };
+csharp_style_expression_bodied_lambdas = true:error
+
+# Don't prefer expression bodies for local functions
+# false:                         | true:
+# int Square(int x)              | int Square(int x) => x * x;
+# {                              |
+#     return x * x;              |
+# }                              |
+csharp_style_expression_bodied_local_functions = false:error
+
+# Don't prefer expression bodies for methods
+# false:                         | true:
+# public int GetValue()          | public int GetValue()
+# {                              |     => _value;
+#     return _value;             |
+# }                              |
+csharp_style_expression_bodied_methods = false:error
+
+# Don't prefer expression bodies for operators
+# false:                         | true:
+# public static int operator +   | public static int operator +(
+#     (Point a, Point b)         |     Point a, Point b)
+# {                              |     => new Point(
+#     return new Point(          |         a.X + b.X,
+#         a.X + b.X, a.Y + b.Y); |         a.Y + b.Y);
+# }                              |
+csharp_style_expression_bodied_operators = false:error
+
+# Prefer expression bodies for properties
+# true:                          | false:
+# public int Age => _age;        | public int Age
+#                                | {
+#                                |     get { return _age; }
+#                                | }
+csharp_style_expression_bodied_properties = true:error
+
+# Pattern matching preferences
+# Prefer pattern matching over as-with-null-check
+# true:                          | false:
+# if (obj is string s)           | var s = obj as string;
+# {                              | if (s != null)
+#     // Use s                   | {
+# }                              |     // Use s
+#                                | }
+csharp_style_pattern_matching_over_as_with_null_check = true:error
+
+# Prefer pattern matching over is-with-cast-check
+# true:                          | false:
+# if (obj is string s)           | if (obj is string)
+# {                              | {
+#     // Use s                   |     var s = (string)obj;
+# }                              |     // Use s
+#                                | }
+csharp_style_pattern_matching_over_is_with_cast_check = true:error
+
+# Prefer "not" pattern
+# true:                          | false:
+# if (obj is not null) { }       | if (!(obj is null)) { }
+csharp_style_prefer_not_pattern = true:error
+
+# Prefer pattern matching in general
+csharp_style_prefer_pattern_matching = true:error
+
+# Prefer switch expressions over switch statements
+# true:                          | false:
+# var result = value switch      | string result;
+# {                              | switch (value)
+#     1 => "One",                | {
+#     2 => "Two",                |     case 1:
+#     _ => "Other"               |         result = "One";
+# };                             |         break;
+#                                |     case 2:
+#                                |         result = "Two";
+#                                |         break;
+#                                |     default:
+#                                |         result = "Other";
+#                                |         break;
+#                                | }
+csharp_style_prefer_switch_expression = true:error
+
+# Null-checking preferences
+# Prefer conditional delegate calls
+# true:                          | false:
+# action?.Invoke();              | if (action != null)
+#                                |     action.Invoke();
+csharp_style_conditional_delegate_call = true:error
+
+# Modifier preferences
+# Prefer static local functions when they don't capture variables
+# true:                          | false:
+# static int Square(int x)       | int Square(int x)
+# {                              | {
+#     return x * x;              |     return x * x;
+# }                              | }
+csharp_prefer_static_local_function = true:error
+
+# Preferred order for modifiers
+# Example: public static async void Method()
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:error
+
+# Code-block preferences
+# Prefer braces even for single-line blocks
+# true:                          | false:
+# if (condition)                 | if (condition)
+# {                              |     DoWork();
+#     DoWork();                  |
+# }                              |
+csharp_prefer_braces = true:error
+
+# Prefer simple using statements
+# true:                          | false:
+# using var stream =             | using (var stream =
+#     File.OpenRead(path);       |     File.OpenRead(path))
+# // Use stream                  | {
+#                                |     // Use stream
+#                                | }
+csharp_prefer_simple_using_statement = true:error
+
+# Expression-level preferences
+# Prefer simple default expressions
+# true:                          | false:
+# return default;                | return default(int);
+csharp_prefer_simple_default_expression = true:error
+
+# Prefer deconstructed variable declarations
+# true:                          | false:
+# var (x, y) = GetPoint();       | var point = GetPoint();
+#                                | var x = point.X;
+#                                | var y = point.Y;
+csharp_style_deconstructed_variable_declaration = true:error
+
+# Prefer inlined variable declarations
+# true:                          | false:
+# if (int.TryParse(s, out var r))| int result;
+# {                              | if (int.TryParse(s, out result))
+#     // Use r                   | {
+# }                              |     // Use result
+#                                | }
+csharp_style_inlined_variable_declaration = true:error
+
+# Prefer pattern local over anonymous function
+csharp_style_pattern_local_over_anonymous_function = true:error
+
+# Prefer index operator
+# true:                          | false:
+# var last = array[^1];          | var last = array[array.Length - 1];
+csharp_style_prefer_index_operator = true:error
+
+# Prefer range operator
+# true:                          | false:
+# var slice = array[1..^1];      | var slice = array.Skip(1)
+#                                |     .Take(array.Length - 2);
+csharp_style_prefer_range_operator = true:error
+
+# Prefer throw expressions
+# true:                          | false:
+# var x = obj ?? throw new       | if (obj == null)
+#     Exception();               |     throw new Exception();
+#                                | var x = obj;
+csharp_style_throw_expression = true:error
+
+# Prefer discard variable for unused value assignments
+# discard_variable:              | unused_local_variable:
+# _ = DoWork();                  | var unused = DoWork();
+# Options: discard_variable | unused_local_variable
+csharp_style_unused_value_assignment_preference = discard_variable:error
+
+# Prefer discard variable for unused expression statements
+csharp_style_unused_value_expression_statement_preference = discard_variable:error
+
+# 'using' directive preferences
+# Place using directives outside namespace declaration
+# outside_namespace:             | inside_namespace:
+# using System;                  | namespace MyApp
+#                                | {
+# namespace MyApp                |     using System;
+# {                              |
+#     class Program { }          |     class Program { }
+# }                              | }
+# Options: outside_namespace | inside_namespace
+csharp_using_directive_placement = outside_namespace:error
+
+#### C# Formatting Rules ####
+
+# New line preferences
+# Place catch statement on a new line
+# true:                          | false:
+# try { }                        | try { }
+# catch { }                      | catch { }
+csharp_new_line_before_catch = true
+
+# Place else statement on a new line
+# true:                          | false:
+# if (condition) { }             | if (condition) { }
+# else { }                       | else { }
+csharp_new_line_before_else = true
+
+# Place finally statement on a new line
+# true:                          | false:
+# try { }                        | try { }
+# finally { }                    | finally { }
+csharp_new_line_before_finally = true
+
+# Place members in anonymous types on new lines
+# true:                          | false:
+# var obj = new                  | var obj = new { Name = "John",
+# {                              |     Age = 25 };
+#     Name = "John",             |
+#     Age = 25                   |
+# };                             |
+csharp_new_line_before_members_in_anonymous_types = true
+
+# Place members in object initializers on new lines
+# true:                          | false:
+# var person = new Person        | var person = new Person {
+# {                              |     Name = "John", Age = 25 };
+#     Name = "John",             |
+#     Age = 25                   |
+# };                             |
+csharp_new_line_before_members_in_object_initializers = true
+
+# Place open brace on a new line for all constructs (Allman style)
+# all:                           | none:
+# void Method()                  | void Method() {
+# {                              |     // code
+#     // code                    | }
+# }                              |
+# Options: all | accessors | anonymous_methods | anonymous_types | control_blocks | events | indexers | lambdas | local_functions | methods | object_collection_array_initializers | properties | types | none
+csharp_new_line_before_open_brace = all
+
+# Place query expression clauses on new lines
+# true:                          | false:
+# var query = from item in list  | var query = from item in list
+#     where item > 0             |     where item > 0 select item;
+#     select item;               |
+csharp_new_line_between_query_expression_clauses = true
+
+# Indentation preferences
+# Indent block contents
+# true:                          | false:
+# {                              | {
+#     DoWork();                  | DoWork();
+# }                              | }
+csharp_indent_block_contents = true
+
+# Don't indent braces
+# false:                         | true:
+# {                              | {
+#     DoWork();                  |     {
+# }                              |     }
+csharp_indent_braces = false
+
+# Indent case contents in switch statements
+# true:                          | false:
+# switch (value)                 | switch (value)
+# {                              | {
+#     case 1:                    | case 1:
+#         DoWork();              | DoWork();
+#         break;                 | break;
+# }                              | }
+csharp_indent_case_contents = true
+
+# Indent case contents when block is used
+# true:                          | false:
+# switch (value)                 | switch (value)
+# {                              | {
+#     case 1:                    |     case 1:
+#     {                          |     {
+#         DoWork();              |     DoWork();
+#         break;                 |     break;
+#     }                          |     }
+# }                              | }
+csharp_indent_case_contents_when_block = true
+
+# Indent labels one less than current level
+# one_less_than_current:         | no_change:
+# void Method()                  | void Method()
+# {                              | {
+# Label:                         |     Label:
+#     DoWork();                  |     DoWork();
+# }                              | }
+# Options: flush_left | one_less_than_current | no_change
+csharp_indent_labels = one_less_than_current
+
+# Indent switch labels
+# true:                          | false:
+# switch (value)                 | switch (value)
+# {                              | {
+#     case 1:                    | case 1:
+#         break;                 |     break;
+# }                              | }
+csharp_indent_switch_labels = true
+
+# Space preferences
+# Don't insert space after cast
+# false:                         | true:
+# (int)x                         | (int) x
+csharp_space_after_cast = false
+
+# Insert space after colon in inheritance clause
+# true:                          | false:
+# class Derived : Base           | class Derived :Base
+csharp_space_after_colon_in_inheritance_clause = true
+
+# Insert space after comma
+# true:                          | false:
+# Method(a, b, c)                | Method(a,b,c)
+csharp_space_after_comma = true
+
+# Don't insert space after dot
+# false:                         | true:
+# obj.Property                   | obj. Property
+csharp_space_after_dot = false
+
+# Insert space after keywords in control flow statements
+# true:                          | false:
+# if (condition)                 | if(condition)
+# for (int i = 0; ...)           | for(int i = 0; ...)
+csharp_space_after_keywords_in_control_flow_statements = true
+
+# Insert space after semicolon in for statement
+# true:                          | false:
+# for (int i = 0; i < 10; i++)   | for (int i = 0;i < 10;i++)
+csharp_space_after_semicolon_in_for_statement = true
+
+# Insert space before and after binary operators
+# before_and_after:              | none:
+# a + b                          | a+b
+# x == y                         | x==y
+# Options: before_and_after | none | ignore
+csharp_space_around_binary_operators = before_and_after
+
+# Don't insert space around declaration statements
+csharp_space_around_declaration_statements = false
+
+# Insert space before colon in inheritance clause
+# true:                          | false:
+# class Derived : Base           | class Derived: Base
+csharp_space_before_colon_in_inheritance_clause = true
+
+# Don't insert space before comma
+# false:                         | true:
+# Method(a, b)                   | Method(a , b)
+csharp_space_before_comma = false
+
+# Don't insert space before dot
+# false:                         | true:
+# obj.Property                   | obj .Property
+csharp_space_before_dot = false
+
+# Don't insert space before open square brackets
+# false:                         | true:
+# array[0]                       | array [0]
+csharp_space_before_open_square_brackets = false
+
+# Don't insert space before semicolon in for statement
+# false:                         | true:
+# for (int i = 0; i < 10; i++)   | for (int i = 0 ; i < 10 ; i++)
+csharp_space_before_semicolon_in_for_statement = false
+
+# Don't insert space between empty square brackets
+# false:                         | true:
+# int[]                          | int[ ]
+csharp_space_between_empty_square_brackets = false
+
+# Don't insert space between method call name and empty parameter list
+# false:                         | true:
+# Method()                       | Method ()
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+
+# Don't insert space between method call name and opening parenthesis
+# false:                         | true:
+# Method()                       | Method ()
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+
+# Don't insert space between method call parameter list parentheses
+# false:                         | true:
+# Method(a, b)                   | Method( a, b )
+csharp_space_between_method_call_parameter_list_parentheses = false
+
+# Don't insert space between method declaration name and empty parameter list
+# false:                         | true:
+# void Method()                  | void Method ()
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+
+# Don't insert space between method declaration name and opening parenthesis
+# false:                         | true:
+# void Method()                  | void Method ()
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+
+# Don't insert space between method declaration parameter list parentheses
+# false:                         | true:
+# void Method(int a)             | void Method( int a )
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+
+# Don't insert space between parentheses
+# false:                         | true:
+# (x + y)                        | ( x + y )
+csharp_space_between_parentheses = false
+
+# Don't insert space between square brackets
+# false:                         | true:
+# array[0]                       | array[ 0 ]
+csharp_space_between_square_brackets = false
+
+# Wrapping preferences
+# Preserve single-line blocks (don't force them to multiple lines)
+# true:                          | false:
+# if (x) { DoWork(); }           | if (x)
+# // Stays on one line           | {
+#                                |     DoWork();
+#                                | }
+csharp_preserve_single_line_blocks = false
+
+# Preserve single-line statements (don't force them to multiple lines)
+# true:                          | false:
+# if (x) DoWork();               | if (x)
+# // Stays on one line           |     DoWork();
+csharp_preserve_single_line_statements = true
+
+#### Naming styles ####
+[*.{cs,vb}]
+
+# IDE0005: Remove unnecessary using directives
+dotnet_diagnostic.IDE0005.severity = error
+
+# Naming rules
+
+# Types and namespaces should use PascalCase
+# Examples: MyClass, PersonManager, DataAccess, MyNamespace
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.severity = error
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.symbols = types_and_namespaces
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.style = pascalcase
+
+# Interfaces should use IPascalCase with "I" prefix
+# Examples: IDisposable, IMyInterface, IRepository
+dotnet_naming_rule.interfaces_should_be_ipascalcase.severity = error
+dotnet_naming_rule.interfaces_should_be_ipascalcase.symbols = interfaces
+dotnet_naming_rule.interfaces_should_be_ipascalcase.style = ipascalcase
+
+# Methods should use PascalCase
+# Examples: GetValue, DoWork, CalculateTotal
+dotnet_naming_rule.methods_should_be_pascalcase.severity = error
+dotnet_naming_rule.methods_should_be_pascalcase.symbols = methods
+dotnet_naming_rule.methods_should_be_pascalcase.style = pascalcase
+
+# Properties should use PascalCase
+# Examples: FirstName, Age, IsValid
+dotnet_naming_rule.properties_should_be_pascalcase.severity = error
+dotnet_naming_rule.properties_should_be_pascalcase.symbols = properties
+dotnet_naming_rule.properties_should_be_pascalcase.style = pascalcase
+
+# Events should use PascalCase
+# Examples: Click, DataReceived, ValueChanged
+dotnet_naming_rule.events_should_be_pascalcase.severity = error
+dotnet_naming_rule.events_should_be_pascalcase.symbols = events
+dotnet_naming_rule.events_should_be_pascalcase.style = pascalcase
+
+# Local variables should use camelCase
+# Examples: firstName, totalCount, isValid
+dotnet_naming_rule.local_variables_should_be_camelcase.severity = error
+dotnet_naming_rule.local_variables_should_be_camelcase.symbols = local_variables
+dotnet_naming_rule.local_variables_should_be_camelcase.style = camelcase
+
+# Local constants should use camelCase
+# Examples: maxRetries, defaultTimeout, bufferSize
+dotnet_naming_rule.local_constants_should_be_camelcase.severity = error
+dotnet_naming_rule.local_constants_should_be_camelcase.symbols = local_constants
+dotnet_naming_rule.local_constants_should_be_camelcase.style = camelcase
+
+# Parameters should use camelCase
+# Examples: fileName, itemCount, userId
+dotnet_naming_rule.parameters_should_be_camelcase.severity = error
+dotnet_naming_rule.parameters_should_be_camelcase.symbols = parameters
+dotnet_naming_rule.parameters_should_be_camelcase.style = camelcase
+
+# Public fields should use PascalCase
+# Examples: MaxValue, DefaultName, EmptyArray
+dotnet_naming_rule.public_fields_should_be_pascalcase.severity = error
+dotnet_naming_rule.public_fields_should_be_pascalcase.symbols = public_fields
+dotnet_naming_rule.public_fields_should_be_pascalcase.style = pascalcase
+
+# Private fields should use _camelCase with underscore prefix
+# Examples: _firstName, _totalCount, _isValid
+dotnet_naming_rule.private_fields_should_be__camelcase.severity = error
+dotnet_naming_rule.private_fields_should_be__camelcase.symbols = private_fields
+dotnet_naming_rule.private_fields_should_be__camelcase.style = m_Camelcase
+
+# Private static fields should use s_camelCase with "s_" prefix
+# Examples: s_instance, s_defaultValue, s_emptyArray
+dotnet_naming_rule.private_static_fields_should_be_s_camelcase.severity = error
+dotnet_naming_rule.private_static_fields_should_be_s_camelcase.symbols = private_static_fields
+dotnet_naming_rule.private_static_fields_should_be_s_camelcase.style = m_Camelcase
+
+# Public constant fields should use PascalCase
+# Examples: MaxRetries, DefaultTimeout, BufferSize
+dotnet_naming_rule.public_constant_fields_should_be_pascalcase.severity = error
+dotnet_naming_rule.public_constant_fields_should_be_pascalcase.symbols = public_constant_fields
+dotnet_naming_rule.public_constant_fields_should_be_pascalcase.style = pascalcase
+
+# Private constant fields should use PascalCase
+# Examples: MaxRetries, DefaultTimeout, BufferSize
+dotnet_naming_rule.private_constant_fields_should_be_pascalcase.severity = error
+dotnet_naming_rule.private_constant_fields_should_be_pascalcase.symbols = private_constant_fields
+dotnet_naming_rule.private_constant_fields_should_be_pascalcase.style = pascalcase
+
+# Public static readonly fields should use PascalCase
+# Examples: Empty, Default, None
+dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.severity = error
+dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.symbols = public_static_readonly_fields
+dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.style = pascalcase
+
+# Private static readonly fields should use PascalCase
+# Examples: EmptyArray, DefaultValue, None
+dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.severity = error
+dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.symbols = private_static_readonly_fields
+dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.style = pascalcase
+
+# Enums should use PascalCase
+# Examples: FileMode, DayOfWeek, HttpStatusCode
+dotnet_naming_rule.enums_should_be_pascalcase.severity = error
+dotnet_naming_rule.enums_should_be_pascalcase.symbols = enums
+dotnet_naming_rule.enums_should_be_pascalcase.style = pascalcase
+
+# Local functions should use PascalCase
+# Examples: CalculateTotal, ValidateInput, FormatOutput
+dotnet_naming_rule.local_functions_should_be_pascalcase.severity = error
+dotnet_naming_rule.local_functions_should_be_pascalcase.symbols = local_functions
+dotnet_naming_rule.local_functions_should_be_pascalcase.style = pascalcase
+
+# Non-field members should use PascalCase
+# Examples: GetName, ValueChanged, Length
+dotnet_naming_rule.non_field_members_should_be_pascalcase.severity = error
+dotnet_naming_rule.non_field_members_should_be_pascalcase.symbols = non_field_members
+dotnet_naming_rule.non_field_members_should_be_pascalcase.style = pascalcase
+
+# Symbol specifications
+
+# Define interfaces (e.g., IDisposable, IEnumerable)
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_symbols.interfaces.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.interfaces.required_modifiers = 
+
+# Define enums (e.g., FileMode, DayOfWeek)
+dotnet_naming_symbols.enums.applicable_kinds = enum
+dotnet_naming_symbols.enums.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.enums.required_modifiers = 
+
+# Define events (e.g., Click, DataReceived)
+dotnet_naming_symbols.events.applicable_kinds = event
+dotnet_naming_symbols.events.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.events.required_modifiers = 
+
+# Define methods (e.g., GetValue, DoWork)
+dotnet_naming_symbols.methods.applicable_kinds = method
+dotnet_naming_symbols.methods.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.methods.required_modifiers = 
+
+# Define properties (e.g., Name, Age, Length)
+dotnet_naming_symbols.properties.applicable_kinds = property
+dotnet_naming_symbols.properties.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.properties.required_modifiers = 
+
+# Define public and internal fields
+dotnet_naming_symbols.public_fields.applicable_kinds = field
+dotnet_naming_symbols.public_fields.applicable_accessibilities = public, internal
+dotnet_naming_symbols.public_fields.required_modifiers = 
+
+# Define private, protected, and protected internal fields
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private, protected, protected_internal, private_protected
+dotnet_naming_symbols.private_fields.required_modifiers = 
+
+# Define private static fields (e.g., static instance holders)
+dotnet_naming_symbols.private_static_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_fields.applicable_accessibilities = private, protected, protected_internal, private_protected
+dotnet_naming_symbols.private_static_fields.required_modifiers = static
+
+# Define types and namespaces (classes, structs, interfaces, enums, namespaces)
+dotnet_naming_symbols.types_and_namespaces.applicable_kinds = namespace, class, struct, interface, enum
+dotnet_naming_symbols.types_and_namespaces.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.types_and_namespaces.required_modifiers = 
+
+# Define non-field members (properties, events, methods)
+dotnet_naming_symbols.non_field_members.applicable_kinds = property, event, method
+dotnet_naming_symbols.non_field_members.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.non_field_members.required_modifiers = 
+
+# Define type parameters (generic type parameters like TKey, TValue)
+dotnet_naming_symbols.type_parameters.applicable_kinds = namespace
+dotnet_naming_symbols.type_parameters.applicable_accessibilities = *
+dotnet_naming_symbols.type_parameters.required_modifiers = 
+
+# Define private constant fields
+dotnet_naming_symbols.private_constant_fields.applicable_kinds = field
+dotnet_naming_symbols.private_constant_fields.applicable_accessibilities = private, protected, protected_internal, private_protected
+dotnet_naming_symbols.private_constant_fields.required_modifiers = const
+
+# Define local variables (variables inside methods)
+dotnet_naming_symbols.local_variables.applicable_kinds = local
+dotnet_naming_symbols.local_variables.applicable_accessibilities = local
+dotnet_naming_symbols.local_variables.required_modifiers = 
+
+# Define local constants (constants inside methods)
+dotnet_naming_symbols.local_constants.applicable_kinds = local
+dotnet_naming_symbols.local_constants.applicable_accessibilities = local
+dotnet_naming_symbols.local_constants.required_modifiers = const
+
+# Define parameters (method and constructor parameters)
+dotnet_naming_symbols.parameters.applicable_kinds = parameter
+dotnet_naming_symbols.parameters.applicable_accessibilities = *
+dotnet_naming_symbols.parameters.required_modifiers = 
+
+# Define public constant fields
+dotnet_naming_symbols.public_constant_fields.applicable_kinds = field
+dotnet_naming_symbols.public_constant_fields.applicable_accessibilities = public, internal
+dotnet_naming_symbols.public_constant_fields.required_modifiers = const
+
+# Define public static readonly fields (e.g., String.Empty)
+dotnet_naming_symbols.public_static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.public_static_readonly_fields.applicable_accessibilities = public, internal
+dotnet_naming_symbols.public_static_readonly_fields.required_modifiers = readonly, static
+
+# Define private static readonly fields
+dotnet_naming_symbols.private_static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_readonly_fields.applicable_accessibilities = private, protected, protected_internal, private_protected
+dotnet_naming_symbols.private_static_readonly_fields.required_modifiers = readonly, static
+
+# Define local functions (functions defined inside methods)
+dotnet_naming_symbols.local_functions.applicable_kinds = local_function
+dotnet_naming_symbols.local_functions.applicable_accessibilities = *
+dotnet_naming_symbols.local_functions.required_modifiers = 
+
+# Naming styles
+
+# PascalCase style: First letter of each word capitalized
+# Examples: MyClassName, PersonManager, DataAccess
+dotnet_naming_style.pascalcase.required_prefix = 
+dotnet_naming_style.pascalcase.required_suffix = 
+dotnet_naming_style.pascalcase.word_separator = 
+dotnet_naming_style.pascalcase.capitalization = pascal_case
+
+# IPascalCase style: "I" prefix followed by PascalCase
+# Examples: IMyInterface, IDisposable, IRepository
+dotnet_naming_style.ipascalcase.required_prefix = I
+dotnet_naming_style.ipascalcase.required_suffix = 
+dotnet_naming_style.ipascalcase.word_separator = 
+dotnet_naming_style.ipascalcase.capitalization = pascal_case
+
+# TPascalCase style: "T" prefix followed by PascalCase
+# Examples: TKey, TValue, TResult
+dotnet_naming_style.tpascalcase.required_prefix = T
+dotnet_naming_style.tpascalcase.required_suffix = 
+dotnet_naming_style.tpascalcase.word_separator = 
+dotnet_naming_style.tpascalcase.capitalization = pascal_case
+
+# _camelCase style: Underscore prefix followed by camelCase
+# Examples: _firstName, _totalCount, _isValid
+dotnet_naming_style._camelcase.required_prefix = m_
+dotnet_naming_style._camelcase.required_suffix = 
+dotnet_naming_style._camelcase.word_separator = 
+dotnet_naming_style._camelcase.capitalization = Camel_case
+
+# camelCase style: First letter lowercase, subsequent words capitalized
+# Examples: firstName, totalCount, isValid
+dotnet_naming_style.camelcase.required_prefix = 
+dotnet_naming_style.camelcase.required_suffix = 
+dotnet_naming_style.camelcase.word_separator = 
+dotnet_naming_style.camelcase.capitalization = Camel_case
+
+# s_camelCase style: "s_" prefix followed by camelCase
+# Examples: s_instance, s_defaultValue, s_emptyArray
+dotnet_naming_style.s_camelcase.required_prefix = m_
+dotnet_naming_style.s_camelcase.required_suffix = 
+dotnet_naming_style.s_camelcase.word_separator = 
+dotnet_naming_style.s_camelcase.capitalization = Camel_case
+

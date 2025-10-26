@@ -1,0 +1,366 @@
+using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+
+using Nexus.Config;
+using Nexus.Engine.Extensions.Models;
+using Nexus.Engine.Extensions.Security;
+using Nexus.External.Apis.ProcessManagement;
+
+using NLog;
+
+namespace Nexus.Engine.Extensions.Core;
+
+/// <summary>
+/// Executes extension scripts and manages their lifecycle.
+/// </summary>
+internal class Executor
+{
+    private readonly Logger m_Logger;
+    private readonly Manager m_Manager;
+    private string m_CallbackUrl;
+    private readonly IProcessManager m_ProcessManager;
+    private readonly TokenValidator m_TokenValidator;
+
+    // Compiled regex to strip ANSI escape sequences from process output
+    private static readonly Regex AnsiRegex = new("\x1B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Executor"/> class with default dependencies.
+    /// </summary>
+    /// <param name="manager">The extension manager.</param>
+    /// <param name="tokenValidator">The token validator.</param>
+    public Executor(Manager manager, TokenValidator tokenValidator) : this(
+        manager,
+        tokenValidator,
+        new ProcessManager())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Executor"/> class with injected dependencies.
+    /// </summary>
+    /// <param name="manager">The extension manager.</param>
+    /// <param name="tokenValidator">The token validator.</param>
+    /// <param name="processManager">The process manager.</param>
+    internal Executor(
+        Manager manager,
+        TokenValidator tokenValidator,
+        IProcessManager processManager)
+    {
+        m_Logger = LogManager.GetCurrentClassLogger();
+        m_Manager = manager ?? throw new ArgumentNullException(nameof(manager));
+        m_TokenValidator = tokenValidator ?? throw new ArgumentNullException(nameof(tokenValidator));
+        m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
+
+        // Get callback URL from configuration
+        var config = Settings.GetInstance().Get();
+        var callbackPort = config.McpNexus.Extensions.CallbackPort;
+        if (callbackPort == 0)
+        {
+            callbackPort = config.McpNexus.Server.Port;
+        }
+        m_CallbackUrl = $"http://127.0.0.1:{callbackPort}/extension-callback";
+    }
+
+    /// <summary>
+    /// Executes an extension script asynchronously.
+    /// </summary>
+    /// <param name="extensionName">The name of the extension to execute.</param>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="parameters">Optional parameters to pass to the extension.</param>
+    /// <param name="commandId">The command ID for tracking this execution.</param>
+    /// <param name="progressCallback">Optional progress callback.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The result of the extension execution.</returns>
+    public async Task<ExtensionResult> ExecuteAsync(
+        string extensionName,
+        string sessionId,
+        object? parameters,
+        string commandId,
+        Action<string>? progressCallback = null,
+        CancellationToken cancellationToken = default)
+    {
+        m_Logger.Info("Executing extension {ExtensionName} with command ID {CommandId} in session {SessionId}",
+            extensionName, commandId, sessionId);
+
+        var startTime = DateTime.Now;
+
+        try
+        {
+            // Get extension metadata
+            var metadata = m_Manager.GetExtension(extensionName);
+            if (metadata == null)
+            {
+                m_Logger.Error("Extension {ExtensionName} not found", extensionName);
+
+                return new ExtensionResult
+                {
+                    Success = false,
+                    Error = $"Extension '{extensionName}' not found",
+                    ExitCode = -1,
+                    StartTime = startTime,
+                    EndTime = DateTime.Now
+                };
+            }
+
+            // Generate security token
+            var token = m_TokenValidator.GenerateToken(sessionId, commandId);
+
+            // Start the PowerShell process
+            var process = await StartProcessAsync(metadata, parameters, token, sessionId);
+            if (process == null)
+            {
+                m_Logger.Error("Failed to create process for extension {ExtensionName}", extensionName);
+
+                return new ExtensionResult
+                {
+                    Success = false,
+                    Error = "Failed to create process",
+                    ExitCode = -1,
+                    StartTime = startTime,
+                    EndTime = DateTime.Now
+                };
+            }
+
+            // Monitor script execution (attach handlers and wait for completion)
+            var result = await MonitorScriptAsync(process, metadata, progressCallback, cancellationToken);
+            result.StartTime = startTime;
+            result.ProcessId = process.Id;
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Error(ex, "Error executing extension {ExtensionName} with command ID {CommandId}",
+                extensionName, commandId);
+
+            return new ExtensionResult
+            {
+                Success = false,
+                Error = ex.Message,
+                ExitCode = -1,
+                StartTime = startTime,
+                EndTime = DateTime.Now
+            };
+        }
+    }
+
+    /// <summary>
+    /// Starts the PowerShell process for the extension script and returns the running process.
+    /// </summary>
+    private Task<Process?> StartProcessAsync(
+        ExtensionMetadata metadata,
+        object? parameters,
+        string token,
+        string sessionId)
+    {
+        try
+        {
+            var scriptPath = metadata.FullScriptPath;
+            var workingDirectory = Path.GetDirectoryName(scriptPath);
+
+            // Serialize parameters if provided
+            string? parametersJson = null;
+            if (parameters != null)
+            {
+                parametersJson = JsonSerializer.Serialize(parameters);
+            }
+
+            // Determine the command to run based on script type
+            string fileName;
+            string arguments;
+
+            if (metadata.ScriptType.Equals("PowerShell", StringComparison.OrdinalIgnoreCase))
+            {
+                fileName = "powershell.exe";
+                arguments = $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -SessionId \"{sessionId}\" -Token \"{token}\" -CallbackUrl \"{m_CallbackUrl}\"";
+
+                // Add parameters if provided
+                if (!string.IsNullOrEmpty(parametersJson))
+                {
+                    arguments += $" -Parameters '{parametersJson}'";
+                }
+            }
+            else
+            {
+                // Default to PowerShell
+                fileName = "powershell.exe";
+                arguments = $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -SessionId \"{sessionId}\" -Token \"{token}\" -CallbackUrl \"{m_CallbackUrl}\"";
+
+                // Add parameters if provided
+                if (!string.IsNullOrEmpty(parametersJson))
+                {
+                    arguments += $" -Parameters '{parametersJson}'";
+                }
+            }
+
+            m_Logger.Debug("Creating process: {FileName} {Arguments} ({WorkingDirectory})", fileName, arguments, workingDirectory);
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            if (!string.IsNullOrEmpty(workingDirectory))
+            {
+                startInfo.WorkingDirectory = workingDirectory;
+            }
+
+            var process = m_ProcessManager.StartProcess(startInfo);
+            if (process == null)
+            {
+                m_Logger.Error("Failed to start extensions script for extension {ExtensionName}", metadata.Name);
+            }
+            else
+            {
+                m_Logger.Debug("Successfully started extensions script {ProcessId} for extension {ExtensionName}",
+                    process.Id, metadata.Name);
+            }
+            return Task.FromResult<Process?>(process);
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Error(ex, "Error creating process for extension {ExtensionName}", metadata.Name);
+            return Task.FromResult<Process?>(null);
+        }
+    }
+
+    /// <summary>
+    /// Attaches output/error handlers to the running process and waits for completion.
+    /// </summary>
+    private async Task<ExtensionResult> MonitorScriptAsync(
+        Process process,
+        ExtensionMetadata metadata,
+        Action<string>? progressCallback,
+        CancellationToken cancellationToken)
+    {
+        var startTime = DateTime.Now;
+        var output = new StringBuilder();
+        var error = new StringBuilder();
+
+        try
+        {
+            // Set up output and error handling
+            process.OutputDataReceived += (sender, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                {
+                    var cleanOutput = AnsiRegex.Replace(e.Data, string.Empty);
+                    _ = output.AppendLine(cleanOutput);
+                    progressCallback?.Invoke(cleanOutput);
+                }
+            };
+
+            process.ErrorDataReceived += (sender, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                {
+                    var cleanError = AnsiRegex.Replace(e.Data, string.Empty);
+                    _ = error.AppendLine(cleanError);
+                    m_Logger.Error("Extension {ExtensionName} error: {Error}", metadata.Name, cleanError);
+                }
+            };
+
+            // Process was already started; attach readers now
+            m_Logger.Debug("Monitoring PowerShell process for extension {ExtensionName}, PID: {ProcessId}",
+                metadata.Name, process.Id);
+
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            // Wait for completion with timeout
+            var timeoutMs = metadata.TimeoutMs;
+            m_Logger.Debug("Waiting for extensions script process completion for extension {ExtensionName}, timeout: {TimeoutMs}ms",
+                metadata.Name, timeoutMs);
+            var completed = await Task.Run(() => process.WaitForExit(timeoutMs), cancellationToken);
+
+            if (!completed)
+            {
+                m_Logger.Warn("Extension {ExtensionName} exceeded timeout of {TimeoutMs}ms - terminating process",
+                    metadata.Name, timeoutMs);
+
+                process.Kill();
+                return new ExtensionResult
+                {
+                    Success = false,
+                    Error = $"Extension exceeded timeout of {timeoutMs}ms",
+                    Output = output.ToString(),
+                    ExitCode = -1,
+                    StartTime = startTime,
+                    EndTime = DateTime.Now,
+                    ExecutionTimeMs = (long)(DateTime.Now - startTime).TotalMilliseconds
+                };
+            }
+
+            var endTime = DateTime.Now;
+            var executionTime = (long)(endTime - startTime).TotalMilliseconds;
+            var success = process.ExitCode == 0;
+
+            m_Logger.Info("Extension {ExtensionName} completed with exit code {ExitCode} in {ExecutionTime}ms",
+                metadata.Name, process.ExitCode, executionTime);
+
+            return new ExtensionResult
+            {
+                Success = success,
+                Output = output.ToString(),
+                Error = error.ToString(),
+                ExitCode = process.ExitCode,
+                StartTime = startTime,
+                EndTime = endTime,
+                ExecutionTimeMs = executionTime
+            };
+        }
+        catch (OperationCanceledException)
+        {
+            m_Logger.Info("Extension {ExtensionName} was cancelled",
+                metadata.Name);
+
+            if (!process.HasExited)
+            {
+                process.Kill();
+            }
+            return new ExtensionResult
+            {
+                Success = false,
+                Error = "Extension execution was cancelled",
+                Output = output.ToString(),
+                ExitCode = -1,
+                StartTime = startTime,
+                EndTime = DateTime.Now,
+                ExecutionTimeMs = (long)(DateTime.Now - startTime).TotalMilliseconds
+            };
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Error(ex, "Error executing extension {ExtensionName}", metadata.Name);
+            return new ExtensionResult
+            {
+                Success = false,
+                Error = ex.Message,
+                Output = output.ToString(),
+                ExitCode = -1,
+                StartTime = startTime,
+                EndTime = DateTime.Now,
+                ExecutionTimeMs = (long)(DateTime.Now - startTime).TotalMilliseconds
+            };
+        }
+    }
+
+    /// <summary>
+    /// Updates the callback URL used by extensions to communicate back to the server.
+    /// </summary>
+    /// <param name="callbackUrl">The new callback URL.</param>
+    public void UpdateCallbackUrl(string callbackUrl)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(callbackUrl);
+        m_CallbackUrl = callbackUrl;
+        m_Logger.Info("Updated extension callback URL to: {CallbackUrl}", m_CallbackUrl);
+    }
+}

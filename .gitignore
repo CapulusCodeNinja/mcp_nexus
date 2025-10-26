@@ -167,6 +167,7 @@ coverage*.info
 
 # Coverage report output directory
 CoverageReport/
+coverage/
 
 # Visual Studio code coverage results
 *.coverage
@@ -421,3 +422,6 @@ FodyWeavers.xsd
 # Code coverage reports
 coverage-report/
 TestResults/
+
+# Shared build output directory
+build/
