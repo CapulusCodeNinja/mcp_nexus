@@ -4,7 +4,8 @@ Downloads stack trace with source code for all frames.
 
 .DESCRIPTION
 This extension gets the stack trace for a specified thread and downloads
-source files for all frames using the lsa command.
+source files for frames that have symbols using the lsa command. Optimization:
+uses 'ln' to filter addresses before downloading sources, reducing command count.
 
 .PARAMETER ThreadId
 Thread ID to analyze (e.g., '8' or '.' for current thread). Defaults to current thread ('.').
@@ -16,7 +17,9 @@ Thread ID to analyze (e.g., '8' or '.' for current thread). Defaults to current 
 .\stack_with_sources.ps1
 
 .NOTES
-This is the workflow we discussed - gets stack with kL and runs lsa on each return address.
+Optimization: Uses 'ln' to quickly filter addresses with symbols before downloading sources.
+This reduces the number of 'lsa' commands from 2*N to N+filtered_count, significantly
+improving performance. Commands: kL -> ln -> lsa (filtered).
 #>
 
 param(
@@ -102,8 +105,10 @@ try {
         if ($line -match '^\s*[0-9a-f`]+\s+([0-9a-f`]+)\s+') {
             $retAddr = $matches[1]
             
-            # Skip inline functions and invalid addresses
-            if ($retAddr -notmatch 'Inline' -and $retAddr -match '[0-9a-f`]{8,}') {
+            # Skip inline functions, invalid addresses, and null addresses
+            # Filter out null addresses like 00000000`00000000
+            $isNullAddress = $retAddr -match '^[0`]+$'
+            if ($retAddr -notmatch 'Inline' -and $retAddr -match '[0-9a-f`]{8,}' -and -not $isNullAddress) {
                 $addresses += $retAddr
             }
         }
@@ -126,45 +131,74 @@ try {
 
     Write-NexusLog "Found $($addresses.Count) return addresses to process" -Level Information
 
-    # Step 3: Download sources for each address (first pass) - using async batching
-    Write-NexusLog "[$threadDisplay] Queueing source downloads for $($addresses.Count) addresses..." -Level Information
+    # Step 3: Filter addresses to those with symbols using ln (fast lookup)
+    Write-NexusLog "[$threadDisplay] Filtering addresses with symbols using ln command..." -Level Information
+    $lnCommands = @()
+    for ($i = 0; $i -lt $addresses.Count; $i++) {
+        $lnCommands += "ln $($addresses[$i])"
+    }
+    
+    $lnCommandIds = Start-NexusCommand -Command $lnCommands
+    $addressesWithSymbols = @()
+    
+    for ($i = 0; $i -lt $addresses.Count; $i++) {
+        try {
+            $lnOutput = Wait-NexusCommand -CommandId $lnCommandIds[$i]
+                  
+            if ($lnOutput[0] -match '\!' -or $lnOutput[0] -match '\.(cpp|c|h|hpp)\([0-9]+\)' -or $lnOutput[0] -match '\+\s*0x[0-9a-fA-F]+') {
+                $addressesWithSymbols += $addresses[$i]
+            }
+            else {
+                Write-NexusLog "Address $($addresses[$i]) has no symbols" -Level Debug
+            }
+        }
+        catch {
+            Write-NexusLog "Extension failed with exception:`r`n$_" -Level Warning
+        }
+    }
+    
+    Write-NexusLog "[$threadDisplay] Found $($addressesWithSymbols.Count) addresses with symbols (filtered from $($addresses.Count) total)" -Level Information
+    
+    if ($addressesWithSymbols.Count -eq 0) {
+        Write-NexusLog "No addresses with symbols found to download sources for" -Level Warning
+        $result = @{
+            success = $true
+            threadId = $ThreadId
+            totalFrames = $addresses.Count
+            framesWithSymbols = 0
+            sourcesDownloaded = 0
+            sourcesMissing = 0
+            successRate = 0
+            addresses = $addresses
+            failedAddresses = @()
+            message = "No addresses with symbols found, nothing to download"
+            stackTrace = $stackOutput
+            sourceOutputs = @{}
+        } | ConvertTo-Json -Depth 10
+        Write-Output $result
+        exit 0
+    }
+
+    # Step 4: Download sources for filtered addresses - using async batching
+    Write-NexusLog "[$threadDisplay] Queueing source downloads for $($addressesWithSymbols.Count) addresses with symbols..." -Level Information
     $downloadCommands = @()
-    foreach ($addr in $addresses) {
+    foreach ($addr in $addressesWithSymbols) {
         $downloadCommands += "lsa $addr"
     }
     
-    Write-NexusLog "[$threadDisplay] Executing first pass source downloads using async batching..." -Level Information
-    $downloadCommandIds = Start-NexusCommand -Command $downloadCommands
-    
-    Write-NexusLog "[$threadDisplay] Waiting for first pass downloads to complete..." -Level Information
-    try {
-        $null = Wait-NexusCommand -CommandId $downloadCommandIds -ReturnResults $false
-        Write-NexusLog "First pass source downloads completed successfully" -Level Information
-    }
-    catch {
-        Write-NexusLog "Failed to execute lsa commands in first pass: $_" -Level Warning
-    }
-    
-    # Step 4: Verify downloaded sources (second pass) - using async batching
-    Write-NexusLog "[$threadDisplay] Queueing source verification for $($addresses.Count) addresses..." -Level Information
-    $verifyCommands = @()
-    foreach ($addr in $addresses) {
-        $verifyCommands += "lsa $addr"
-    }
-    
-    Write-NexusLog "[$threadDisplay] Executing second pass source verification using async batching..." -Level Information
-    $verifyCommandIds = Start-NexusCommand -Command $verifyCommands
+    Write-NexusLog "[$threadDisplay] Executing source downloads using async batching..." -Level Information
+    $verifyCommandIds = Start-NexusCommand -Command $downloadCommands
     
     Write-NexusLog "[$threadDisplay] Waiting for verification to complete and processing results..." -Level Information
     $downloadedCount = 0
     $failedAddresses = @()
     $sourceOutputs = @{}  # Collect all lsa outputs
     
-    for ($i = 0; $i -lt $addresses.Count; $i++) {
-        $addr = $addresses[$i]
+    for ($i = 0; $i -lt $addressesWithSymbols.Count; $i++) {
+        $addr = $addressesWithSymbols[$i]
         $cmdId = $verifyCommandIds[$i]
-        $percent = [int]((($i + 1) / $addresses.Count) * 100)
-        Write-NexusLog "[$threadDisplay] Processing verification result for address $addr ($($i + 1) of $($addresses.Count), $percent%)" -Level Information
+        $percent = [int]((($i + 1) / $addressesWithSymbols.Count) * 100)
+        Write-NexusLog "[$threadDisplay] Processing verification result for address $addr ($($i + 1) of $($addressesWithSymbols.Count), $percent%)" -Level Information
         
         try {
             $verifyOutput = Wait-NexusCommand -CommandId $cmdId
@@ -172,8 +206,8 @@ try {
             
             # Check if source was found in cache (with .srcnoisy 3, should show "already loaded")
             # Also accept if output shows line numbers (source is displayed)
-            if ($verifyOutput -match 'Found already loaded file:|already loaded' -or
-                $verifyOutput -match '^\s*\d+:') {
+            if ($verifyOutput[0] -match 'Found already loaded file:|already loaded' -or
+                $verifyOutput[0] -match '^\s*\d+:') {
                 $downloadedCount++
                 Write-NexusLog "[$threadDisplay] Verified source for address $addr (cached)" -Level Debug
             }
@@ -189,10 +223,10 @@ try {
         }
     }
 
-    Write-NexusLog "[$threadDisplay] Source download complete: $downloadedCount of $($addresses.Count) sources verified" -Level Information
+    Write-NexusLog "[$threadDisplay] Source download complete: $downloadedCount of $($addressesWithSymbols.Count) sources verified" -Level Information
     
-    $successRate = [math]::Round(($downloadedCount / $addresses.Count) * 100, 2)
-    Write-NexusLog "[$threadDisplay] Source download completed: $downloadedCount/$($addresses.Count) sources verified ($successRate% success rate)" -Level Information
+    $successRate = [math]::Round(($downloadedCount / $addressesWithSymbols.Count) * 100, 2)
+    Write-NexusLog "[$threadDisplay] Source download completed: $downloadedCount/$($addressesWithSymbols.Count) sources verified ($successRate% success rate)" -Level Information
     
     if ($failedAddresses.Count -gt 0) {
         Write-NexusLog "Failed to download sources for $($failedAddresses.Count) addresses" -Level Warning
@@ -203,12 +237,14 @@ try {
         success = $true
         threadId = $ThreadId
         totalFrames = $addresses.Count
+        framesWithSymbols = $addressesWithSymbols.Count
         sourcesDownloaded = $downloadedCount
         sourcesMissing = $failedAddresses.Count
         successRate = $successRate
         addresses = $addresses
+        addressesWithSymbols = $addressesWithSymbols
         failedAddresses = $failedAddresses
-        message = "Successfully downloaded and verified $downloadedCount of $($addresses.Count) source files using async batching"
+        message = "Successfully downloaded and verified $downloadedCount of $($addressesWithSymbols.Count) source files (filtered from $($addresses.Count) total addresses)"
         stackTrace = $stackOutput
         sourceOutputs = $sourceOutputs
     } | ConvertTo-Json -Depth 10
@@ -217,13 +253,7 @@ try {
     exit 0
 }
 catch {
-    $errorResult = @{
-        success = $false
-        threadId = $ThreadId
-        error = $_.Exception.Message
-        stackTrace = $_.ScriptStackTrace
-    } | ConvertTo-Json
-    Write-NexusLog "Extension failed with exception:`r`n$errorResult" -Level Error
+    Write-NexusLog "Extension failed with exception:`r`n$_" -Level Error
     exit 1
 }
 

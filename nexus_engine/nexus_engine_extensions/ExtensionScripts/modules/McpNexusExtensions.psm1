@@ -90,7 +90,7 @@ function Invoke-NexusCommand {
     )
 
     if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
-        Initialize-McpNexusExtension
+        throw "MCP Nexus environment not initialized. Call Initialize-McpNexusExtension first."
     }
 
     $script:RequestCounter++
@@ -181,7 +181,7 @@ function Start-NexusCommand {
     )
 
     if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
-        Initialize-McpNexusExtension
+        throw "MCP Nexus environment not initialized. Call Initialize-McpNexusExtension first."
     }
 
     $commandIds = @()
@@ -262,7 +262,7 @@ function Get-NexusCommandResult {
     )
 
     if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
-        Initialize-McpNexusExtension
+        throw "MCP Nexus environment not initialized. Call Initialize-McpNexusExtension first."
     }
 
     try {
@@ -322,8 +322,7 @@ String - The output from the WinDBG command.
 
 .NOTES
 This function blocks until the command completes. For non-blocking checks, use Get-NexusCommandResult.
-#>
-function Wait-NexusCommand {
+#>function Wait-NexusCommand {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
@@ -334,69 +333,49 @@ function Wait-NexusCommand {
         [int]$TimeoutSeconds = 300,
 
         [Parameter(Mandatory=$false)]
-        [int]$PollIntervalMs = 1000,
-
-        [Parameter(Mandatory=$false)]
-        [bool]$ReturnResults = $false
+        [int]$PollIntervalMs = 1000
     )
 
     if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
-        Initialize-McpNexusExtension
+        throw "MCP Nexus environment not initialized. Call Initialize-McpNexusExtension first."
     }
 
     if ($CommandId.Count -eq 0) {
-        return if ($ReturnResults) { @{} } else { @() }
+        return @()  # Always return array
     }
-
-    $isSingleCommand = $CommandId.Count -eq 1
-    $commandDisplay = if ($isSingleCommand) { $CommandId[0] } else { "$($CommandId.Count) commands" }
-    Write-NexusLog "Waiting for $commandDisplay to complete (timeout: ${TimeoutSeconds}s)..." -Level Debug
 
     $startTime = Get-Date
     $timeout = [TimeSpan]::FromSeconds($TimeoutSeconds)
     $completedCommands = @{}
-    $results = if ($ReturnResults) { @{} } else { @() }
+    $results = @()  # Always array
 
     do {
         $allCompleted = $true
         $remainingCommands = @()
 
         try {
-            # Use bulk status endpoint for efficient polling
             $bulkResults = Get-NexusCommandStatus -CommandIds $CommandId
 
             foreach ($cmdId in $CommandId) {
-                if ($completedCommands.ContainsKey($cmdId)) {
-                    continue
-                }
+                if ($completedCommands.ContainsKey($cmdId)) { continue }
 
                 if ($bulkResults.ContainsKey($cmdId)) {
                     $result = $bulkResults[$cmdId]
-
                     if ($result.isCompleted) {
                         $completedCommands[$cmdId] = $true
-                        
+
                         if ($result.state -eq "Success" -or $result.state -eq "Completed") {
-                            Write-NexusLog "Command $cmdId completed successfully" -Level Trace
-                            if ($ReturnResults) {
-                                $results[$cmdId] = $result.output
-                            } else {
-                                $results += $result.output
-                            }
+                            $results += $result.output
                         }
                         else {
                             $errorMsg = if ($result.error) { $result.error } else { "Command failed with state: $($result.state)" }
-                            Write-NexusLog "Command $cmdId failed: $errorMsg" -Level Error
                             throw "Command $cmdId failed: $errorMsg"
                         }
-                    }
-                    else {
+                    } else {
                         $allCompleted = $false
                         $remainingCommands += $cmdId
                     }
-                }
-                else {
-                    Write-NexusLog "Command $cmdId not found in state response" -Level Warning
+                } else {
                     $allCompleted = $false
                     $remainingCommands += $cmdId
                 }
@@ -408,24 +387,15 @@ function Wait-NexusCommand {
         }
 
         if ($allCompleted) {
-            Write-NexusLog "All $($CommandId.Count) commands completed successfully" -Level Debug
-            # For single command, return just the output; for multiple, return array/hashtable
-            if ($isSingleCommand) {
-                return if ($ReturnResults) { $results[$CommandId[0]] } else { $results[0] }
-            }
-            return $results
+            return ,$results  # <— COMMA forces array even if 1 element
         }
 
-        $completedCount = $completedCommands.Count
-        Write-NexusLog "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')" -Level Debug
         Start-Sleep -Milliseconds $PollIntervalMs
-
     } while ((Get-Date) - $startTime -lt $timeout)
 
-    $completedCount = $completedCommands.Count
-    $remainingCount = $CommandId.Count - $completedCount
-    throw "Timeout: Only $completedCount of $($CommandId.Count) commands completed within $TimeoutSeconds seconds. $remainingCount commands still running."
+    throw "Timeout waiting for commands."
 }
+
 
 <#
 .SYNOPSIS
@@ -514,7 +484,7 @@ function Write-NexusLog {
                 Write-Debug $Message
             }
             'Information' {
-                Write-Host $Message
+                Write-Information $Message
             }
             'Warning' {
                 Write-Warning $Message
@@ -524,9 +494,6 @@ function Write-NexusLog {
             }
             'Fatal' {
                 Write-Error $Message
-            }
-            Default {
-                Write-Error "Invalid log level: $level - $Message"
             }
         }
     }
@@ -576,7 +543,7 @@ function Get-NexusCommandStatus {
     )
 
     if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
-        Initialize-McpNexusExtension
+        throw "MCP Nexus environment not initialized. Call Initialize-McpNexusExtension first."
     }
 
     if ($CommandIds.Count -eq 0) {
@@ -599,6 +566,10 @@ function Get-NexusCommandStatus {
             -Headers $headers `
             -Body $body `
             -TimeoutSec 10
+
+        if (-not $response.results) {
+            throw "Bulk status response missing 'results' property"
+        }
 
         # Convert PSCustomObject results to a Hashtable so callers can use ContainsKey/indexing reliably
         $resultsTable = @{}

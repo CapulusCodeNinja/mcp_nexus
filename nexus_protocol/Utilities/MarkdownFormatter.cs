@@ -189,12 +189,12 @@ internal static class MarkdownFormatter
 
         if (executionTime.HasValue)
         {
-            _ = markdown.AppendLine(CreateKeyValue("Execution Time", $"{executionTime.Value.TotalSeconds:F2}s"));
+            _ = markdown.AppendLine(CreateKeyValue("Execution Time", $"{executionTime}"));
         }
 
         if (totalTime.HasValue)
         {
-            _ = markdown.AppendLine(CreateKeyValue("Total Time", $"{totalTime.Value.TotalSeconds:F2}s"));
+            _ = markdown.AppendLine(CreateKeyValue("Total Time", $"{totalTime}"));
         }
 
         _ = markdown.AppendLine();
@@ -337,7 +337,7 @@ internal static class MarkdownFormatter
     /// </summary>
     private static string FormatExecutionTime(object? executionTime)
     {
-        return executionTime is TimeSpan ts ? $"{ts.TotalSeconds:F2}s" : "N/A";
+        return executionTime is TimeSpan ts ? $"{ts}" : "N/A";
     }
 
     /// <summary>

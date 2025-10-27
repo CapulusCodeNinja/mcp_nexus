@@ -47,7 +47,7 @@ try {
     Write-NexusLog "Waiting for $($commandIds.Count) commands to complete..." -Level Information
 
     # Wait for all results efficiently using bulk polling
-    $outputs = Wait-NexusCommand -CommandId $commandIds -ReturnResults $false
+    $outputs = Wait-NexusCommand -CommandId $commandIds
     $results["threads"] = $outputs[0]
     $results["allStacks"] = $outputs[1]
     $results["locks"] = $outputs[2]
@@ -88,13 +88,7 @@ try {
     exit 0
 }
 catch {
-    $errorResult = @{
-        success = $false
-        threadId = $ThreadId
-        error = $_.Exception.Message
-        stackTrace = $_.ScriptStackTrace
-    } | ConvertTo-Json
-    Write-NexusLog "Extension failed with exception:`r`n$errorResult" -Level Error
+    Write-NexusLog "Extension failed with exception:`r`n$_" -Level Error
     exit 1
 }
 

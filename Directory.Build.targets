@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>
+      $(MSBuildThisFileDirectory)build\bin\$(Configuration)\$(TargetFramework)\documentation\$(MSBuildProjectName).xml
+    </DocumentationFile>
+  </PropertyGroup>
+</Project>

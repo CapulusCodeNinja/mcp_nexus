@@ -26,17 +26,6 @@
 
   <PropertyGroup Label="Documentation">
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DocumentationFile>$(MSBuildThisFileDirectory)build\bin\$(Configuration)\$(TargetFramework)\$(MSBuildProjectName).xml</DocumentationFile>
-    <!-- Enforce XML documentation for ALL members (public, internal, protected, private) -->
-    <NoWarn>$(NoWarn)</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Label="Documentation Rules">
-    <!-- CS1591: Missing XML comment for publicly visible type or member -->
-    <!-- This is already enforced by GenerateDocumentationFile=true -->
-    <!-- But we also want to enforce it for internal/protected/private members -->
-    <!-- Note: C# compiler only enforces CS1591 for public members by default -->
-    <!-- For internal/protected/private, we rely on code review and this comprehensive check -->
   </PropertyGroup>
 
   <PropertyGroup Label="Company Information">
@@ -47,7 +36,7 @@
   <PropertyGroup Label="Default Versioning">
     <!-- Default version for all projects (can be overridden per project) -->
     <VersionPrefix>1.1.0</VersionPrefix>
-        <VersionSuffix>42</VersionSuffix>
+        <VersionSuffix>47</VersionSuffix>
     
     <!-- Calculated version -->
     <Version Condition="'$(Version)' == ''">$(VersionPrefix).$(VersionSuffix)</Version>
