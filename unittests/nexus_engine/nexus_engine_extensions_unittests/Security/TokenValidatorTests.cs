@@ -2,6 +2,8 @@ using FluentAssertions;
 
 using Nexus.Engine.Extensions.Security;
 
+using Xunit;
+
 namespace Nexus.Engine.Extensions.Tests.Security;
 
 /// <summary>

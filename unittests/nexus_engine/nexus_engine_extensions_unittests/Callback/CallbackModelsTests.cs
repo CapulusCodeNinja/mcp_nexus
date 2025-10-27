@@ -2,6 +2,8 @@ using FluentAssertions;
 
 using Nexus.Engine.Extensions.Callback;
 
+using Xunit;
+
 namespace Nexus.Engine.Extensions.Tests.Callback;
 
 /// <summary>

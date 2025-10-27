@@ -5,6 +5,8 @@ using Moq;
 using Nexus.Engine.Extensions.Core;
 using Nexus.External.Apis.FileSystem;
 
+using Xunit;
+
 namespace Nexus.Engine.Extensions.Tests.Core;
 
 /// <summary>

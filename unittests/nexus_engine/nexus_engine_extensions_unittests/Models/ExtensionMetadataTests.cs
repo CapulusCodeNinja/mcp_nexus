@@ -2,6 +2,8 @@ using FluentAssertions;
 
 using Nexus.Engine.Extensions.Models;
 
+using Xunit;
+
 namespace Nexus.Engine.Extensions.Tests.Models;
 
 /// <summary>

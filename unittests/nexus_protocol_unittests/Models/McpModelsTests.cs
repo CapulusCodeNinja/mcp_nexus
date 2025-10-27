@@ -1,6 +1,10 @@
 using System.Text.Json;
 
+using FluentAssertions;
+
 using Nexus.Protocol.Models;
+
+using Xunit;
 
 namespace Nexus.Protocol.Unittests.Models;
 

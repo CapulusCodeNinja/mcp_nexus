@@ -3,6 +3,8 @@ using Microsoft.Extensions.Hosting;
 
 using Nexus.Protocol.Configuration;
 
+using Xunit;
+
 namespace Nexus.Protocol.Unittests.Configuration;
 
 /// <summary>

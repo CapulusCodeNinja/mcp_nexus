@@ -3,7 +3,8 @@
 # ---------------------------
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $solutionRoot = (Resolve-Path (Join-Path $scriptDir '..')).Path
-$coverageReportDir = Join-Path $solutionRoot 'bin\coverage_report'
+$coverageReportDir = Join-Path $solutionRoot 'build\bin\coverage_report'
+$testResultsDir = Join-Path $solutionRoot 'build\bin\TestResults'
 $runSettings = (Resolve-Path (Join-Path $solutionRoot 'coverlet.runsettings')).Path
 
 # ---------------------------
@@ -13,20 +14,24 @@ if (Test-Path $coverageReportDir) {
     Remove-Item -Recurse -Force $coverageReportDir
 }
 
-# Remove any old TestResults directories under the solution root
-Get-ChildItem -Directory -Recurse -Filter 'TestResults' -Path $solutionRoot | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+if (Test-Path $testResultsDir) {
+    Remove-Item -Recurse -Force $testResultsDir
+}
 
 # ---------------------------
 # Run tests with coverage
 # ---------------------------
 Push-Location $solutionRoot
-dotnet test --settings $runSettings --collect:"XPlat Code Coverage"
+dotnet test `
+  --settings $runSettings `
+  --collect "XPlat Code Coverage" `
+  --results-directory $testResultsDir
 Pop-Location
 
 # ---------------------------
 # Find coverage files
 # ---------------------------
-$coverageFiles = (Get-ChildItem -File -Recurse -Filter 'coverage.cobertura.xml' -Path $solutionRoot).FullName -join ';'
+$coverageFiles = (Get-ChildItem -File -Recurse -Filter 'coverage.cobertura.xml' -Path $testResultsDir).FullName -join ';'
 
 # ---------------------------
 # Generate report
