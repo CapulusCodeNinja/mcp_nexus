@@ -264,7 +264,6 @@ internal class Executor
                 {
                     var cleanError = AnsiRegex.Replace(e.Data, string.Empty);
                     _ = error.AppendLine(cleanError);
-                    m_Logger.Error("Extension {ExtensionName} error: {Error}", metadata.Name, cleanError);
                 }
             };
 
@@ -286,7 +285,8 @@ internal class Executor
                 m_Logger.Warn("Extension {ExtensionName} exceeded timeout of {TimeoutMs}ms - terminating process",
                     metadata.Name, timeoutMs);
 
-                process.Kill();
+                EndScriptExecution(process, metadata);
+
                 return new ExtensionResult
                 {
                     Success = false,
@@ -322,15 +322,13 @@ internal class Executor
             m_Logger.Info("Extension {ExtensionName} was cancelled",
                 metadata.Name);
 
-            if (!process.HasExited)
-            {
-                process.Kill();
-            }
+            EndScriptExecution(process, metadata, true);
+
             return new ExtensionResult
             {
                 Success = false,
-                Error = "Extension execution was cancelled",
                 Output = output.ToString(),
+                Error = "Extension execution was cancelled" + Environment.NewLine + error.ToString(),
                 ExitCode = -1,
                 StartTime = startTime,
                 EndTime = DateTime.Now,
@@ -343,13 +341,35 @@ internal class Executor
             return new ExtensionResult
             {
                 Success = false,
-                Error = ex.Message,
                 Output = output.ToString(),
+                Error = ex.Message + Environment.NewLine + error.ToString(),
                 ExitCode = -1,
                 StartTime = startTime,
                 EndTime = DateTime.Now,
                 ExecutionTimeMs = (long)(DateTime.Now - startTime).TotalMilliseconds
             };
+        }
+    }
+
+    /// <summary>
+    /// Ends the script execution by killing the process if it is not already exited.
+    /// </summary>
+    /// <param name="process">The process to end</param>
+    /// <param name="metadata">The metadata of the extension</param>
+    /// <param name="force">Whether to force the process to exit</param>
+    private void EndScriptExecution(Process process, ExtensionMetadata metadata, bool force = false)
+    {
+        if (process.HasExited)
+        {
+            return;
+        }
+        
+        // Graceperiod for the script to exit gracefully before killing it
+        // The scripts should be designed to handle e.g. timeouts gracefully.
+        if (!force && !process.WaitForExit(2000))
+        {
+            m_Logger.Warn("Extension {ExtensionName} process did not exit gracefully after 1 second - terminating process", metadata.Name);
+            process.Kill();
         }
     }
 

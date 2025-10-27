@@ -16,49 +16,53 @@ public static class Statistics
     /// <param name="status">The current status of the command.</param>
     /// <param name="sessionId">The session identifier associated with the command.</param>
     /// <param name="commandId">The unique command identifier.</param>
+    /// <param name="batchCommandId">The unique batch command identifier.</param>
     /// <param name="command">The command text that was executed.</param>
     /// <param name="queuedAt">When the command was queued (local time).</param>
     /// <param name="startedAt">When execution started (local time).</param>
     /// <param name="completedAt">When execution completed (local time).</param>
-    /// <param name="timeInQueueMs">Milliseconds spent in the queue before execution began.</param>
-    /// <param name="timeExecutionMs">Milliseconds spent executing the command.</param>
-    /// <param name="totalDurationMs">Total milliseconds from queue entry to completion.</param>
+    /// <param name="timeInQueue">Time spent in the queue before execution began.</param>
+    /// <param name="timeExecution">Time spent executing the command.</param>
+    /// <param name="totalDuration">Total time from queue entry to completion.</param>
     public static void EmitCommandStats(
         Logger logger,
         CommandState status,
         string sessionId,
         string? commandId,
+        string? batchCommandId,
         string? command,
         DateTime queuedAt,
         DateTime startedAt,
         DateTime completedAt,
-        double timeInQueueMs,
-        double timeExecutionMs,
-        double totalDurationMs)
+        TimeSpan timeInQueue,
+        TimeSpan timeExecution,
+        TimeSpan totalDuration)
     {
         logger.Info("\r\n" +
             "    ┌─ Command Statistics ──────────────────────────────────────────────\r\n" +
             "    │ SessionId: {0}\r\n" +
             "    │ CommandId: {1}\r\n" +
-            "    │ Status: {2}\r\n" +
-            "    │ Command: {3}\r\n" +
-            "    │ QueuedAt: {4:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
-            "    │ StartedAt: {5:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
-            "    │ CompletedAt: {6:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
-            "    │ TimeInQueue: {7}ms\r\n" +
-            "    │ TimeExecution: {8}ms\r\n" +
-            "    │ TotalDuration: {9}ms\r\n" +
+            "    │ BatchCommandId: {2}\r\n" +
+            "    │ Status: {3}\r\n" +
+            "    │ Command: {4}\r\n" +
+            "    │ QueuedAt: {5:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
+            "    │ StartedAt: {6:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
+            "    │ CompletedAt: {7:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
+            "    │ TimeInQueue: {8}\r\n" +
+            "    │ TimeExecution: {9}\r\n" +
+            "    │ TotalDuration: {10}\r\n" +
             "    └───────────────────────────────────────────────────────────────────",
             sessionId,
             commandId,
+            batchCommandId,
             status,
             command,
             queuedAt,
             startedAt,
             completedAt,
-            timeInQueueMs,
-            timeExecutionMs,
-            totalDurationMs);
+            timeInQueue,
+            timeExecution,
+            totalDuration);
     }
 
     /// <summary>
@@ -68,7 +72,7 @@ public static class Statistics
     /// <param name="sessionId">The session identifier.</param>
     /// <param name="openedAt">When the session was opened (local time).</param>
     /// <param name="closedAt">When the session was closed (local time).</param>
-    /// <param name="totalDurationMs">Total session duration in milliseconds.</param>
+    /// <param name="totalDuration">Total session duration</param>
     /// <param name="totalCommands">Total number of commands executed in the session.</param>
     /// <param name="completedCommands">Number of successfully completed commands.</param>
     /// <param name="failedCommands">Number of failed commands.</param>
@@ -79,7 +83,7 @@ public static class Statistics
         string sessionId,
         DateTime openedAt,
         DateTime closedAt,
-        double totalDurationMs,
+        TimeSpan totalDuration,
         int totalCommands,
         int completedCommands,
         int failedCommands,
@@ -91,7 +95,7 @@ public static class Statistics
             "    ║ SessionId: {0}\r\n" +
             "    ║ OpenedAt: {1:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
             "    ║ ClosedAt: {2:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
-            "    ║ TotalDuration: {3}ms\r\n" +
+            "    ║ TotalDuration: {3}\r\n" +
             "    ║ ────────────────────────────────────────────────────────────────────\r\n" +
             "    ║ TotalCommands: {4}\r\n" +
             "    ║ CompletedCommands: {5}\r\n" +
@@ -102,7 +106,7 @@ public static class Statistics
             sessionId,
             openedAt,
             closedAt,
-            totalDurationMs,
+            totalDuration,
             totalCommands,
             completedCommands,
             failedCommands,

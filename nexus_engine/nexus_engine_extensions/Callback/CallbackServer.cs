@@ -63,10 +63,10 @@ internal class CallbackServer
 
                 var callbackCounter = context.Request.Headers["X-Callback-Counter"].FirstOrDefault() ?? "0";
                 var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
-                var scriptUniqueID = context.Request.Headers["X-Script-Unique-ID"].FirstOrDefault() ?? string.Empty;
+                var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-                m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{ScriptUniqueID}]: Execute request received",
-                    extensionPid, callbackCounter, extensionCommandId, scriptUniqueID);
+                m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Execute request received",
+                    extensionPid, callbackCounter, extensionCommandId, extensionName);
 
                 // Enqueue the command and wait for completion
                 var newCommandId = m_Engine.EnqueueCommand(extensionSessionId, request.Command);
@@ -114,10 +114,10 @@ internal class CallbackServer
 
                 var callbackCounter = context.Request.Headers["X-Callback-Counter"].FirstOrDefault() ?? "0";
                 var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
-                var scriptUniqueID = context.Request.Headers["X-Script-Unique-ID"].FirstOrDefault() ?? string.Empty;
+                var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-                m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{ScriptUniqueID}]: Enqueue request received",
-                    extensionPid, callbackCounter, extensionCommandId, scriptUniqueID);
+                m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Enqueue request received",
+                    extensionPid, callbackCounter, extensionCommandId, extensionName);
 
                 // Enqueue the command without waiting
                 var newCommandId = m_Engine.EnqueueCommand(extensionSessionId, request.Command);
@@ -154,10 +154,10 @@ internal class CallbackServer
 
                 var callbackCounter = context.Request.Headers["X-Callback-Counter"].FirstOrDefault() ?? "0";
                 var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
-                var scriptUniqueID = context.Request.Headers["X-Script-Unique-ID"].FirstOrDefault() ?? string.Empty;
+                var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-                m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{ScriptUniqueID}]: Read request received for command {CommandId}",
-                    extensionPid, callbackCounter, extensionCommandId, scriptUniqueID, commandId);
+                m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Read request received for command {CommandId}",
+                    extensionPid, callbackCounter, extensionCommandId, extensionName, commandId);
 
                 // Get command info and wait for completion
                 var commandInfo = await m_Engine.GetCommandInfoAsync(extensionSessionId, commandId, CancellationToken.None);
@@ -195,10 +195,10 @@ internal class CallbackServer
 
                 var callbackCounter = context.Request.Headers["X-Callback-Counter"].FirstOrDefault() ?? "0";
                 var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
-                var scriptUniqueID = context.Request.Headers["X-Script-Unique-ID"].FirstOrDefault() ?? string.Empty;
+                var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-                m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{ScriptUniqueID}]: Status request received for command {CommandId}",
-                    extensionPid, callbackCounter, extensionCommandId, scriptUniqueID, commandId);
+                m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Status request received for command {CommandId}",
+                    extensionPid, callbackCounter, extensionCommandId, extensionName, commandId);
 
                 // Get command info without waiting
                 var commandInfo = m_Engine.GetCommandInfo(extensionSessionId, commandId);
@@ -250,10 +250,10 @@ internal class CallbackServer
 
                 var callbackCounter = context.Request.Headers["X-Callback-Counter"].FirstOrDefault() ?? "0";
                 var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
-                var scriptUniqueID = context.Request.Headers["X-Script-Unique-ID"].FirstOrDefault() ?? string.Empty;
+                var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-                m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{ScriptUniqueID}]: Status request received",
-                    extensionPid, callbackCounter, extensionCommandId, scriptUniqueID);
+                m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Status request received",
+                    extensionPid, callbackCounter, extensionCommandId, extensionName);
 
                 var results = new Dictionary<string, object>();
 
@@ -327,11 +327,11 @@ internal class CallbackServer
 
                 var callbackCounter = context.Request.Headers["X-Callback-Counter"].FirstOrDefault() ?? "0";
                 var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
-                var scriptUniqueID = context.Request.Headers["X-Script-Unique-ID"].FirstOrDefault() ?? string.Empty;
+                var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-                // Log the message
-                m_Logger.Info("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{ScriptUniqueID}]: {Message}",
-                    extensionPid, callbackCounter, extensionCommandId, scriptUniqueID, request.Message);
+                // Log the message with the specified level
+                LogMessageWithLevel(m_Logger, request.Level, "[EXT] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: {Message}",
+                    extensionPid, callbackCounter, extensionCommandId, extensionName, request.Message);
 
                 return Results.Ok();
             }
@@ -343,5 +343,42 @@ internal class CallbackServer
         });
 
         m_Logger.Info("Extension callback server routes configured successfully");
+    }
+
+    /// <summary>
+    /// Logs a message with the specified level.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="level">The log level (case-insensitive).</param>
+    /// <param name="messageTemplate">The message template.</param>
+    /// <param name="args">The message arguments.</param>
+    private static void LogMessageWithLevel(Logger logger, string level, string messageTemplate, params object[] args)
+    {
+        var normalizedLevel = level.ToUpperInvariant();
+        switch (normalizedLevel)
+        {
+            case "TRACE":
+                logger.Trace(messageTemplate, args);
+                break;
+            case "DEBUG":
+                logger.Debug(messageTemplate, args);
+                break;
+            case "INFORMATION":
+                logger.Info(messageTemplate, args);
+                break;
+            case "WARNING":
+                logger.Warn(messageTemplate, args);
+                break;
+            case "ERROR":
+                logger.Error(messageTemplate, args);
+                break;
+            case "FATAL":
+                logger.Fatal(messageTemplate, args);
+                break;
+            default:
+                // Default to Info for unknown levels
+                logger.Fatal("Invalid log level: " + level + " - " + messageTemplate, args);
+                break;
+        }
     }
 }

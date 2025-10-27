@@ -47,23 +47,22 @@ Write-NexusLog "Starting stack_with_sources extension with ThreadId: $ThreadId" 
 # Display user-friendly thread description
 $threadDisplay = if ($ThreadId -eq ".") { "current thread" } else { "thread $ThreadId" }
 
-Write-NexusProgress "Starting stack analysis with source download for $threadDisplay"
+Write-NexusLog "Starting stack analysis with source download for $threadDisplay" -Level Information
 
 try {
-    Write-NexusProgress "Enable source verbosity for $threadDisplay..."
+    Write-NexusLog "Enable source verbosity for $threadDisplay..." -Level Information
     $stackOutput = Invoke-NexusCommand ".srcnoisy 3"
     
-    Write-NexusProgress "Enable the source server for $threadDisplay..."
+    Write-NexusLog "Enable the source server for $threadDisplay..." -Level Information
     $stackOutput = Invoke-NexusCommand ".srcfix+"
 
     # Step 1: Get stack with line numbers
-    Write-NexusProgress "Retrieving stack trace for $threadDisplay..."
+    Write-NexusLog "Retrieving stack trace for $threadDisplay..." -Level Information
     $stackCommand = if ($ThreadId -eq ".") { "kL" } else { "~${ThreadId}kL" }
     $stackOutput = Invoke-NexusCommand $stackCommand
 
     if ([string]::IsNullOrWhiteSpace($stackOutput)) {
         Write-NexusLog "Failed to retrieve stack trace - output was empty" -Level Error
-        Write-Error "Failed to get stack trace - output was empty"
         exit 1
     }
 
@@ -75,7 +74,6 @@ try {
         $stackOutput -match "Couldn't resolve error") {
         
         Write-NexusLog "[$threadDisplay] Thread not found or invalid (ThreadId: $ThreadId)" -Level Error
-        Write-Error "[$threadDisplay] not found or invalid"
         
         $result = @{
             success = $false
@@ -91,10 +89,10 @@ try {
         exit 0
     }
 
-    Write-NexusProgress "Stack trace retrieved successfully"
+    Write-NexusLog "Stack trace retrieved successfully" -Level Information
 
     # Step 2: Parse stack to extract return addresses (middle column)
-    Write-NexusProgress "Parsing stack to extract return addresses..."
+    Write-NexusLog "Parsing stack to extract return addresses..." -Level Information
     $addresses = @()
     $stackLines = $stackOutput -split "`n"
 
@@ -113,7 +111,6 @@ try {
 
     if ($addresses.Count -eq 0) {
         Write-NexusLog "No valid return addresses found in stack trace" -Level Warning
-        Write-Warning "No valid return addresses found in stack trace"
         $result = @{
             success = $false
             threadId = $ThreadId
@@ -128,19 +125,18 @@ try {
     }
 
     Write-NexusLog "Found $($addresses.Count) return addresses to process" -Level Information
-    Write-NexusProgress "Found $($addresses.Count) return addresses to process"
 
     # Step 3: Download sources for each address (first pass) - using async batching
-    Write-NexusProgress "[$threadDisplay] Queueing source downloads for $($addresses.Count) addresses..."
+    Write-NexusLog "[$threadDisplay] Queueing source downloads for $($addresses.Count) addresses..." -Level Information
     $downloadCommands = @()
     foreach ($addr in $addresses) {
         $downloadCommands += "lsa $addr"
     }
     
-    Write-NexusProgress "[$threadDisplay] Executing first pass source downloads using async batching..."
+    Write-NexusLog "[$threadDisplay] Executing first pass source downloads using async batching..." -Level Information
     $downloadCommandIds = Start-NexusCommand -Command $downloadCommands
     
-    Write-NexusProgress "[$threadDisplay] Waiting for first pass downloads to complete..."
+    Write-NexusLog "[$threadDisplay] Waiting for first pass downloads to complete..." -Level Information
     try {
         $null = Wait-NexusCommand -CommandId $downloadCommandIds -ReturnResults $false
         Write-NexusLog "First pass source downloads completed successfully" -Level Information
@@ -150,16 +146,16 @@ try {
     }
     
     # Step 4: Verify downloaded sources (second pass) - using async batching
-    Write-NexusProgress "[$threadDisplay] Queueing source verification for $($addresses.Count) addresses..."
+    Write-NexusLog "[$threadDisplay] Queueing source verification for $($addresses.Count) addresses..." -Level Information
     $verifyCommands = @()
     foreach ($addr in $addresses) {
         $verifyCommands += "lsa $addr"
     }
     
-    Write-NexusProgress "[$threadDisplay] Executing second pass source verification using async batching..."
-    $verifyCommandIds = Start-NexusCommands -Commands $verifyCommands
+    Write-NexusLog "[$threadDisplay] Executing second pass source verification using async batching..." -Level Information
+    $verifyCommandIds = Start-NexusCommand -Command $verifyCommands
     
-    Write-NexusProgress "[$threadDisplay] Waiting for verification to complete and processing results..."
+    Write-NexusLog "[$threadDisplay] Waiting for verification to complete and processing results..." -Level Information
     $downloadedCount = 0
     $failedAddresses = @()
     $sourceOutputs = @{}  # Collect all lsa outputs
@@ -168,7 +164,7 @@ try {
         $addr = $addresses[$i]
         $cmdId = $verifyCommandIds[$i]
         $percent = [int]((($i + 1) / $addresses.Count) * 100)
-        Write-NexusProgress "[$threadDisplay] Processing verification result for address $addr ($($i + 1) of $($addresses.Count), $percent%)"
+        Write-NexusLog "[$threadDisplay] Processing verification result for address $addr ($($i + 1) of $($addresses.Count), $percent%)" -Level Information
         
         try {
             $verifyOutput = Wait-NexusCommand -CommandId $cmdId
@@ -193,7 +189,7 @@ try {
         }
     }
 
-    Write-NexusProgress "[$threadDisplay] Source download complete: $downloadedCount of $($addresses.Count) sources verified"
+    Write-NexusLog "[$threadDisplay] Source download complete: $downloadedCount of $($addresses.Count) sources verified" -Level Information
     
     $successRate = [math]::Round(($downloadedCount / $addresses.Count) * 100, 2)
     Write-NexusLog "[$threadDisplay] Source download completed: $downloadedCount/$($addresses.Count) sources verified ($successRate% success rate)" -Level Information
@@ -221,15 +217,13 @@ try {
     exit 0
 }
 catch {
-    Write-NexusLog "Extension failed with exception: $($_.Exception.Message)" -Level Error
-    Write-Error "Extension failed: $_"
     $errorResult = @{
         success = $false
         threadId = $ThreadId
         error = $_.Exception.Message
         stackTrace = $_.ScriptStackTrace
     } | ConvertTo-Json
-    Write-Output $errorResult
+    Write-NexusLog "Extension failed with exception:`r`n$errorResult" -Level Error
     exit 1
 }
 

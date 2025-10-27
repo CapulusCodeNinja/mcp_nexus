@@ -641,19 +641,23 @@ internal class CommandQueue : IDisposable
         SetCommandResult(queuedCommand, commandInfo);
         UpdateCommandState(queuedCommand, finalState);
 
+        // Get batch command ID efficiently using the batch processor's cache
+        var batchCommandId = BatchProcessor.Instance.GetBatchCommandId(result.CommandId);
+
         // Emit detailed statistics
         Statistics.EmitCommandStats(
             m_Logger,
             finalState,
             m_SessionId,
             queuedCommand.Id,
+            batchCommandId,
             queuedCommand.Command,
             queuedCommand.QueuedTime,
             startTime,
             endTime,
-            queueTime.TotalMilliseconds,
-            executionTime.TotalMilliseconds,
-            totalTime.TotalMilliseconds);
+            queueTime,
+            executionTime,
+            totalTime);
     }
 
     /// <summary>
@@ -835,13 +839,14 @@ internal class CommandQueue : IDisposable
             CommandState.Completed,
             m_SessionId,
             command.Id,
+            null, // Not part of a batch
             command.Command,
             command.QueuedTime,
             startTime,
             endTime,
-            queueTime.TotalMilliseconds,
-            executionTime.TotalMilliseconds,
-            totalTime.TotalMilliseconds);
+            queueTime,
+            executionTime,
+            totalTime);
 
         return Task.CompletedTask;
     }
@@ -878,13 +883,14 @@ internal class CommandQueue : IDisposable
             CommandState.Cancelled,
             m_SessionId,
             command.Id,
+            null, // Not part of a batch
             command.Command,
             command.QueuedTime,
             startTime,
             endTime,
-            queueTime.TotalMilliseconds,
-            executionTime.TotalMilliseconds,
-            totalTime.TotalMilliseconds);
+            queueTime,
+            executionTime,
+            totalTime);
 
         return Task.CompletedTask;
     }
@@ -923,13 +929,14 @@ internal class CommandQueue : IDisposable
             CommandState.Timeout,
             m_SessionId,
             command.Id,
+            null, // Not part of a batch
             command.Command,
             command.QueuedTime,
             startTime,
             endTime,
-            queueTime.TotalMilliseconds,
-            executionTime.TotalMilliseconds,
-            totalTime.TotalMilliseconds);
+            queueTime,
+            executionTime,
+            totalTime);
 
         return Task.CompletedTask;
     }
@@ -970,13 +977,14 @@ internal class CommandQueue : IDisposable
             CommandState.Failed,
             m_SessionId,
             command.Id,
+            null, // Not part of a batch
             command.Command,
             command.QueuedTime,
             startTime,
             endTime,
-            queueTime.TotalMilliseconds,
-            executionTime.TotalMilliseconds,
-            totalTime.TotalMilliseconds);
+            queueTime,
+            executionTime,
+            totalTime);
 
         return Task.CompletedTask;
     }

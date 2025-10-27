@@ -402,13 +402,14 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
             finalState,
             sessionId,
             commandId,
+            null, // Extensions are never batched
             $"Extension: {extensionName}",
             queuedTime,
             startTime,
             endTime,
-            queueTime.TotalMilliseconds,
-            executionTime.TotalMilliseconds,
-            totalTime.TotalMilliseconds);
+            queueTime,
+            executionTime,
+            totalTime);
     }
 
     /// <summary>

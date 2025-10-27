@@ -159,6 +159,26 @@ public class BatchProcessor : IBatchProcessor
     }
 
     /// <summary>
+    /// Gets the batch command ID for a given individual command ID, if it was part of a batch.
+    /// </summary>
+    /// <param name="individualCommandId">The individual command ID.</param>
+    /// <returns>The batch command ID if part of a batch, null otherwise.</returns>
+    public string? GetBatchCommandId(string individualCommandId)
+    {
+        // Search through all batch mappings to find which batch contains this command
+        foreach (var kvp in m_BatchCommandMapping)
+        {
+            if (kvp.Value.Contains(individualCommandId))
+            {
+                return kvp.Key;
+            }
+        }
+
+        // Not part of any batch
+        return null;
+    }
+
+    /// <summary>
     /// Clears all batch mappings for a specific session.
     /// </summary>
     /// <param name="sessionId">The session ID to clear mappings for.</param>

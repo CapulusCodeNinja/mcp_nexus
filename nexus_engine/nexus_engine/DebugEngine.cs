@@ -196,7 +196,7 @@ public class DebugEngine : IDebugEngine
                     sessionId,
                     openedAt,
                     closedAt,
-                    totalDuration.TotalMilliseconds,
+                    totalDuration,
                     totalCount,
                     completedCount,
                     failedCount,

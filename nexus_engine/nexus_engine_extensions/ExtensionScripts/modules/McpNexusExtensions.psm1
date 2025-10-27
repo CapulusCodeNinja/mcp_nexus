@@ -17,7 +17,7 @@ $script:CallbackToken = $null
 $script:SessionId = $null
 $script:RequestCounter = 0
 $script:RollingCallbackCounter = 0
-$script:ScriptUniqueID = $null
+$script:ExtensionName = $null
 
 <#
 .SYNOPSIS
@@ -49,9 +49,7 @@ function Initialize-McpNexusExtension {
     $script:CallbackToken = $Token
     $script:SessionId = $SessionId
     $script:RollingCallbackCounter = 1
-    $script:ScriptUniqueID = "$ScriptName-$([guid]::NewGuid().ToString())"
-
-    Write-Verbose "MCP Nexus Extension initialized: SessionId=$script:SessionId"
+    $script:ExtensionName = $ScriptName
 }
 
 <#
@@ -96,10 +94,7 @@ function Invoke-NexusCommand {
     }
 
     $script:RequestCounter++
-    Write-Verbose "Executing command #$script:RequestCounter`: $Command"
-
-    # Output marker for MCP Nexus to count callbacks
-    Write-Output "[CALLBACK] Executing: $Command"
+    Write-NexusLog "Executing command #$script:RequestCounter`: $Command" -Level Debug
 
     try {
         $body = @{
@@ -111,7 +106,7 @@ function Invoke-NexusCommand {
             "Authorization" = "Bearer $script:CallbackToken"
             "Content-Type" = "application/json"
             "X-Extension-PID" = $PID
-            "X-Script-Unique-ID" = $script:ScriptUniqueID
+            "X-Script-Extension-Name" = $script:ExtensionName
             "X-Callback-Counter" = $script:RollingCallbackCounter
         }
 
@@ -123,17 +118,17 @@ function Invoke-NexusCommand {
             -TimeoutSec ($TimeoutSeconds + 10)
 
         if ($response.state -eq "Completed" -or $response.state -eq "Success") {
-            Write-Verbose "Command completed successfully"
+            Write-NexusLog "Command completed successfully" -Level Debug
             return $response.output
         }
         else {
             $errorMsg = if ($response.error) { $response.error } else { "Command failed with state: $($response.state)" }
-            Write-Error "Command execution failed: $errorMsg"
+            Write-NexusLog "Command execution failed: $errorMsg" -Level Error
             throw $errorMsg
         }
     }
     catch {
-        Write-Error "Failed to execute command '$Command': $_"
+        Write-NexusLog "Failed to execute command '$Command': $_" -Level Error
         throw
     } finally {
         ++$script:RollingCallbackCounter
@@ -193,10 +188,6 @@ function Start-NexusCommand {
     
     foreach ($cmd in $Command) {
         $script:RequestCounter++
-        Write-Verbose "Queueing command #$script:RequestCounter: $cmd"
-
-        # Output marker for MCP Nexus to count callbacks
-        Write-Output "[CALLBACK] Queueing: $cmd"
 
         try {
             $body = @{
@@ -208,7 +199,7 @@ function Start-NexusCommand {
                 "Authorization" = "Bearer $script:CallbackToken"
                 "Content-Type" = "application/json"
                 "X-Extension-PID" = $PID
-                "X-Script-Unique-ID" = $script:ScriptUniqueID
+                "X-Script-Extension-Name" = $script:ExtensionName
                 "X-Callback-Counter" = $script:RollingCallbackCounter
             }
         
@@ -219,11 +210,11 @@ function Start-NexusCommand {
                 -Body $body `
                 -TimeoutSec 30
 
-            Write-Verbose "Command queued with ID: $($response.commandId)"
+            Write-NexusLog "Command '$cmd' queued with ID: $($response.commandId)" -Level Debug
             $commandIds += $response.commandId
         }
         catch {
-            Write-Error "Failed to queue command '$cmd': $_"
+            Write-NexusLog "Failed to queue command '$cmd': $_" -Level Error
             throw
         } finally {
             ++$script:RollingCallbackCounter
@@ -280,7 +271,7 @@ function Get-NexusCommandResult {
             "Authorization" = "Bearer $script:CallbackToken"
             "Content-Type" = "application/json"
             "X-Extension-PID" = $PID
-            "X-Script-Unique-ID" = $script:ScriptUniqueID
+            "X-Script-Extension-Name" = $script:ExtensionName
             "X-Callback-Counter" = $script:RollingCallbackCounter
         }
 
@@ -294,7 +285,7 @@ function Get-NexusCommandResult {
         return $response
     }
     catch {
-        Write-Error "Failed to get result for command '$CommandId': $_"
+        Write-NexusLog "Failed to get result for command '$CommandId': $_" -Level Error
         throw
     } finally {
         ++$script:RollingCallbackCounter
@@ -359,7 +350,7 @@ function Wait-NexusCommand {
 
     $isSingleCommand = $CommandId.Count -eq 1
     $commandDisplay = if ($isSingleCommand) { $CommandId[0] } else { "$($CommandId.Count) commands" }
-    Write-Verbose "Waiting for $commandDisplay to complete (timeout: ${TimeoutSeconds}s)..."
+    Write-NexusLog "Waiting for $commandDisplay to complete (timeout: ${TimeoutSeconds}s)..." -Level Debug
 
     $startTime = Get-Date
     $timeout = [TimeSpan]::FromSeconds($TimeoutSeconds)
@@ -386,7 +377,7 @@ function Wait-NexusCommand {
                         $completedCommands[$cmdId] = $true
                         
                         if ($result.state -eq "Success" -or $result.state -eq "Completed") {
-                            Write-Verbose "Command $cmdId completed successfully"
+                            Write-NexusLog "Command $cmdId completed successfully" -Level Trace
                             if ($ReturnResults) {
                                 $results[$cmdId] = $result.output
                             } else {
@@ -395,7 +386,7 @@ function Wait-NexusCommand {
                         }
                         else {
                             $errorMsg = if ($result.error) { $result.error } else { "Command failed with state: $($result.state)" }
-                            Write-Error "Command $cmdId failed: $errorMsg"
+                            Write-NexusLog "Command $cmdId failed: $errorMsg" -Level Error
                             throw "Command $cmdId failed: $errorMsg"
                         }
                     }
@@ -405,19 +396,19 @@ function Wait-NexusCommand {
                     }
                 }
                 else {
-                    Write-Warning "Command $cmdId not found in state response"
+                    Write-NexusLog "Command $cmdId not found in state response" -Level Warning
                     $allCompleted = $false
                     $remainingCommands += $cmdId
                 }
             }
         }
         catch {
-            Write-Error "Error while checking bulk command state: $_"
+            Write-NexusLog "Error while checking bulk command state: $_" -Level Error
             throw
         }
 
         if ($allCompleted) {
-            Write-Verbose "All $($CommandId.Count) commands completed successfully"
+            Write-NexusLog "All $($CommandId.Count) commands completed successfully" -Level Debug
             # For single command, return just the output; for multiple, return array/hashtable
             if ($isSingleCommand) {
                 return if ($ReturnResults) { $results[$CommandId[0]] } else { $results[0] }
@@ -426,7 +417,7 @@ function Wait-NexusCommand {
         }
 
         $completedCount = $completedCommands.Count
-        Write-Verbose "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')"
+        Write-NexusLog "Commands completed: $completedCount/$($CommandId.Count), remaining: $($remainingCommands -join ', ')" -Level Debug
         Start-Sleep -Milliseconds $PollIntervalMs
 
     } while ((Get-Date) - $startTime -lt $timeout)
@@ -434,33 +425,6 @@ function Wait-NexusCommand {
     $completedCount = $completedCommands.Count
     $remainingCount = $CommandId.Count - $completedCount
     throw "Timeout: Only $completedCount of $($CommandId.Count) commands completed within $TimeoutSeconds seconds. $remainingCount commands still running."
-}
-
-
-<#
-.SYNOPSIS
-Writes a progress message that will be tracked by MCP Nexus.
-
-.DESCRIPTION
-Outputs a progress message in a format that MCP Nexus recognizes and reports to the AI.
-
-.PARAMETER Message
-The progress message to report.
-
-.EXAMPLE
-Write-NexusProgress "Downloading sources: 5 of 40 completed"
-
-.NOTES
-Progress messages are visible in the extension command status.
-#>
-function Write-NexusProgress {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true, Position=0)]
-        [string]$Message
-    )
-
-    Write-Output "[PROGRESS] $Message"
 }
 
 <#
@@ -514,14 +478,10 @@ function Write-NexusLog {
         [ValidateNotNullOrEmpty()]
         [string]$Message,
 
-        [Parameter(Mandatory=$false)]
-        [ValidateSet('Debug', 'Information', 'Warning', 'Error')]
-        [string]$Level = 'Information'
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Trace', 'Debug', 'Information', 'Warning', 'Error', 'Fatal')]
+        [string]$Level
     )
-
-    if ([string]::IsNullOrWhiteSpace($script:CallbackUrl)) {
-        Initialize-McpNexusExtension
-    }
 
     try {
         $body = @{
@@ -533,7 +493,7 @@ function Write-NexusLog {
             "Authorization" = "Bearer $script:CallbackToken"
             "Content-Type" = "application/json"
             "X-Extension-PID" = $PID
-            "X-Script-Unique-ID" = $script:ScriptUniqueID
+            "X-Script-Extension-Name" = $script:ExtensionName
             "X-Callback-Counter" = $script:RollingCallbackCounter
         }
 
@@ -545,27 +505,37 @@ function Write-NexusLog {
             -Body $body `
             -TimeoutSec 5 `
             -ErrorAction SilentlyContinue
+
+        switch ($level) {
+            'Trace' {
+                Write-Debug $Message
+            }
+            'Debug' {
+                Write-Debug $Message
+            }
+            'Information' {
+                Write-Host $Message
+            }
+            'Warning' {
+                Write-Warning $Message
+            }
+            'Error' {
+                Write-Error $Message
+            }
+            'Fatal' {
+                Write-Error $Message
+            }
+            Default {
+                Write-Error "Invalid log level: $level - $Message"
+            }
+        }
     }
     catch {
         # Silently ignore logging errors to avoid breaking extension execution
-        Write-Verbose "Failed to send log to server: $_"
+        Write-Error "Failed to send log to server: $_"
     } finally {
         ++$script:RollingCallbackCounter
     }
-}
-
-<#
-.SYNOPSIS
-Gets the session ID for the current extension execution.
-
-.OUTPUTS
-String - The session ID.
-#>
-function Get-NexusSessionId {
-    if ([string]::IsNullOrWhiteSpace($script:SessionId)) {
-        Initialize-McpNexusExtension
-    }
-    return $script:SessionId
 }
 
 # Auto-initialize when module is imported
@@ -619,7 +589,7 @@ function Get-NexusCommandStatus {
             "Authorization" = "Bearer $script:CallbackToken"
             "Content-Type" = "application/json"
             "X-Extension-PID" = $PID
-            "X-Script-Unique-ID" = $script:ScriptUniqueID
+            "X-Script-Extension-Name" = $script:ExtensionName
             "X-Callback-Counter" = $script:RollingCallbackCounter
         }
 
@@ -639,7 +609,7 @@ function Get-NexusCommandStatus {
         return $resultsTable
     }
     catch {
-        Write-Error "Failed to get bulk status for commands: $_"
+        Write-NexusLog "Failed to get bulk status for commands: $_" -Level Error
         throw
     } finally {
         ++$script:RollingCallbackCounter
@@ -654,9 +624,6 @@ Export-ModuleMember -Function @(
     'Get-NexusCommandResult',
     'Get-NexusCommandStatus',
     'Wait-NexusCommand',
-    'Write-NexusProgress',
-    'Write-NexusLog',
-    'Get-NexusSessionId',
-    'Get-NexusCommandId'
+    'Write-NexusLog'
 )
 
