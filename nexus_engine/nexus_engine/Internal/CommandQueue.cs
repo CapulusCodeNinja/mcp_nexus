@@ -435,6 +435,23 @@ internal class CommandQueue : IDisposable
     {
         ValidateCdbSession();
 
+        // Prepare commands for batching
+        var commandsToExecute = PrepareCommandsForBatching(queuedCommands);
+
+        // Execute commands and track timing
+        var (executionResults, commandStartTimes) = await ExecuteCommandsWithTiming(commandsToExecute, queuedCommands, cancellationToken);
+
+        // Process results and complete commands
+        ProcessCommandResults(executionResults, queuedCommands, commandStartTimes);
+    }
+
+    /// <summary>
+    /// Prepares queued commands for batching by converting them to batch commands and applying batching logic.
+    /// </summary>
+    /// <param name="queuedCommands">The original queued commands.</param>
+    /// <returns>Commands ready for execution (batched or individual).</returns>
+    private List<Command> PrepareCommandsForBatching(List<QueuedCommand> queuedCommands)
+    {
         // Convert to batch commands
         var batchCommands = queuedCommands.Select(qc => new Command
         {
@@ -448,86 +465,272 @@ internal class CommandQueue : IDisposable
         m_Logger.Debug("Processing {OriginalCount} commands as {ExecutionCount} execution units",
             queuedCommands.Count, commandsToExecute.Count);
 
-        // Execute each command (batched or not)
+        return commandsToExecute;
+    }
+
+    /// <summary>
+    /// Executes commands and tracks start times for each command.
+    /// </summary>
+    /// <param name="commandsToExecute">Commands to execute.</param>
+    /// <param name="queuedCommands">Original queued commands for state updates.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Tuple containing execution results and command start times.</returns>
+    private async Task<(List<CommandResult> executionResults, Dictionary<string, DateTime> commandStartTimes)> ExecuteCommandsWithTiming(
+        List<Command> commandsToExecute,
+        List<QueuedCommand> queuedCommands,
+        CancellationToken cancellationToken)
+    {
+        var commandStartTimes = new Dictionary<string, DateTime>();
         var executionResults = new List<CommandResult>();
+
         foreach (var cmd in commandsToExecute)
         {
-            // Mark corresponding queued commands as executing
-            var originalCommandIds = BatchProcessor.Instance.GetOriginalCommandIds(cmd.CommandId);
-            foreach (var commandId in originalCommandIds)
-            {
-                var queuedCommand = queuedCommands.FirstOrDefault(qc => qc.Id == commandId);
-                if (queuedCommand != null)
-                {
-                    UpdateCommandState(queuedCommand, CommandState.Executing);
-                }
-            }
+            // Mark commands as executing and record start time
+            var batchStartTime = DateTime.Now;
+            MarkCommandsAsExecuting(cmd, queuedCommands, commandStartTimes, batchStartTime);
 
-            try
-            {
-                // Execute the command
-                var result = await m_CdbSession!.ExecuteCommandAsync(cmd.CommandText, cancellationToken);
-
-                executionResults.Add(new CommandResult
-                {
-                    CommandId = cmd.CommandId,
-                    ResultText = result
-                });
-            }
-            catch (Exception ex)
-            {
-                m_Logger.Error(ex, "Error executing command {CommandId}", cmd.CommandId);
-
-                // Add error result
-                executionResults.Add(new CommandResult
-                {
-                    CommandId = cmd.CommandId,
-                    ResultText = $"ERROR: {ex.Message}"
-                });
-            }
+            // Execute the command and handle results
+            var result = await ExecuteSingleCommand(cmd, cancellationToken);
+            executionResults.Add(result);
         }
 
+        return (executionResults, commandStartTimes);
+    }
+
+    /// <summary>
+    /// Marks queued commands as executing and records their start times.
+    /// </summary>
+    /// <param name="cmd">The command being executed.</param>
+    /// <param name="queuedCommands">Original queued commands.</param>
+    /// <param name="commandStartTimes">Dictionary to store start times.</param>
+    /// <param name="batchStartTime">The start time for this batch.</param>
+    private void MarkCommandsAsExecuting(Command cmd, List<QueuedCommand> queuedCommands, Dictionary<string, DateTime> commandStartTimes, DateTime batchStartTime)
+    {
+        var originalCommandIds = BatchProcessor.Instance.GetOriginalCommandIds(cmd.CommandId);
+        foreach (var commandId in originalCommandIds)
+        {
+            var queuedCommand = queuedCommands.FirstOrDefault(qc => qc.Id == commandId);
+            if (queuedCommand != null)
+            {
+                UpdateCommandState(queuedCommand, CommandState.Executing);
+                commandStartTimes[commandId] = batchStartTime;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Executes a single command and handles all exception scenarios.
+    /// </summary>
+    /// <param name="cmd">The command to execute.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Command result with appropriate state flags.</returns>
+    private async Task<CommandResult> ExecuteSingleCommand(Command cmd, CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Execute the command
+            var result = await m_CdbSession!.ExecuteCommandAsync(cmd.CommandText, cancellationToken);
+
+            return new CommandResult
+            {
+                CommandId = cmd.CommandId,
+                ResultText = result
+            };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            m_Logger.Warn("Command {CommandId} was cancelled", cmd.CommandId);
+
+            return new CommandResult
+            {
+                CommandId = cmd.CommandId,
+                ResultText = "Command was cancelled",
+                IsCancelled = true
+            };
+        }
+        catch (TimeoutException ex)
+        {
+            m_Logger.Warn("Command {CommandId} timed out", cmd.CommandId);
+
+            return new CommandResult
+            {
+                CommandId = cmd.CommandId,
+                ResultText = $"Command timed out: {ex.Message}",
+                IsTimeout = true
+            };
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Error(ex, "Error executing command {CommandId}", cmd.CommandId);
+
+            return new CommandResult
+            {
+                CommandId = cmd.CommandId,
+                ResultText = $"ERROR: {ex.Message}",
+                IsFailed = true
+            };
+        }
+    }
+
+    /// <summary>
+    /// Processes command results, unbatch them, and complete the original commands with statistics.
+    /// </summary>
+    /// <param name="executionResults">Raw execution results.</param>
+    /// <param name="queuedCommands">Original queued commands.</param>
+    /// <param name="commandStartTimes">Command start times.</param>
+    private void ProcessCommandResults(List<CommandResult> executionResults, List<QueuedCommand> queuedCommands, Dictionary<string, DateTime> commandStartTimes)
+    {
         // Unbatch results (library decides whether to unbatch or pass through)
         var individualResults = BatchProcessor.Instance.UnbatchResults(executionResults);
 
-        if (executionResults.Count == individualResults.Count)
+        LogUnbatchingResults(executionResults.Count, individualResults.Count);
+
+        // Complete each original command with statistics
+        foreach (var result in individualResults)
+        {
+            CompleteCommandWithStatistics(result, queuedCommands, commandStartTimes);
+        }
+    }
+
+    /// <summary>
+    /// Logs unbatching results for debugging purposes.
+    /// </summary>
+    /// <param name="executionCount">Number of execution results.</param>
+    /// <param name="individualCount">Number of individual results.</param>
+    private void LogUnbatchingResults(int executionCount, int individualCount)
+    {
+        if (executionCount == individualCount)
         {
             m_Logger.Trace("Unbatched {ExecutionCount} execution results into {IndividualCount} individual results",
-                executionResults.Count, individualResults.Count);
+                executionCount, individualCount);
         }
         else
         {
             m_Logger.Debug("Unbatched {ExecutionCount} execution results into {IndividualCount} individual results",
-                executionResults.Count, individualResults.Count);
+                executionCount, individualCount);
         }
+    }
 
-
-        // Complete each original command
-        foreach (var result in individualResults)
+    /// <summary>
+    /// Completes a single command with appropriate state and statistics.
+    /// </summary>
+    /// <param name="result">The command result.</param>
+    /// <param name="queuedCommands">Original queued commands.</param>
+    /// <param name="commandStartTimes">Command start times.</param>
+    private void CompleteCommandWithStatistics(CommandResult result, List<QueuedCommand> queuedCommands, Dictionary<string, DateTime> commandStartTimes)
+    {
+        var queuedCommand = queuedCommands.FirstOrDefault(qc => qc.Id == result.CommandId);
+        if (queuedCommand == null)
         {
-            var queuedCommand = queuedCommands.FirstOrDefault(qc => qc.Id == result.CommandId);
-            if (queuedCommand != null)
-            {
-                var endTime = DateTime.Now;
-                var commandInfo = CommandInfo.Completed(
-                    queuedCommand.Id,
-                    queuedCommand.Command,
-                    queuedCommand.QueuedTime,
-                    queuedCommand.QueuedTime, // Use queued time as approximate start
-                    endTime,
-                    result.ResultText,
-                    true);
-
-                SetCommandResult(queuedCommand, commandInfo);
-                UpdateCommandState(queuedCommand, CommandState.Completed);
-
-                m_Logger.Debug("Updated state for command {CommandId} to Completed", queuedCommand.Id);
-            }
-            else
-            {
-                m_Logger.Warn("No queued command found for result {CommandId}", result.CommandId);
-            }
+            m_Logger.Warn("No queued command found for result {CommandId}", result.CommandId);
+            return;
         }
+
+        var endTime = DateTime.Now;
+        var startTime = commandStartTimes.TryGetValue(result.CommandId, out var start) ? start : queuedCommand.QueuedTime;
+
+        // Calculate timings
+        var executionTime = endTime - startTime;
+        var queueTime = startTime - queuedCommand.QueuedTime;
+        var totalTime = endTime - queuedCommand.QueuedTime;
+
+        // Determine final state and create command info
+        var (commandInfo, finalState) = CreateCommandInfoFromResult(result, queuedCommand, startTime, endTime);
+
+        // Complete the command
+        SetCommandResult(queuedCommand, commandInfo);
+        UpdateCommandState(queuedCommand, finalState);
+
+        // Emit detailed statistics
+        Statistics.EmitCommandStats(
+            m_Logger,
+            finalState,
+            m_SessionId,
+            queuedCommand.Id,
+            queuedCommand.Command,
+            queuedCommand.QueuedTime,
+            startTime,
+            endTime,
+            queueTime.TotalMilliseconds,
+            executionTime.TotalMilliseconds,
+            totalTime.TotalMilliseconds);
+    }
+
+    /// <summary>
+    /// Creates appropriate CommandInfo and CommandState based on the command result.
+    /// </summary>
+    /// <param name="result">The command result.</param>
+    /// <param name="queuedCommand">The original queued command.</param>
+    /// <param name="startTime">Command start time.</param>
+    /// <param name="endTime">Command end time.</param>
+    /// <returns>Tuple containing CommandInfo and CommandState.</returns>
+    private (CommandInfo commandInfo, CommandState finalState) CreateCommandInfoFromResult(CommandResult result, QueuedCommand queuedCommand, DateTime startTime, DateTime endTime)
+    {
+        if (result.IsCancelled)
+        {
+            var commandInfo = CommandInfo.Cancelled(
+                queuedCommand.Id,
+                queuedCommand.Command,
+                queuedCommand.QueuedTime,
+                startTime,
+                endTime);
+            return (commandInfo, CommandState.Cancelled);
+        }
+
+        if (result.IsTimeout)
+        {
+            var commandInfo = CommandInfo.TimedOut(
+                queuedCommand.Id,
+                queuedCommand.Command,
+                queuedCommand.QueuedTime,
+                startTime,
+                endTime,
+                result.ResultText);
+            return (commandInfo, CommandState.Timeout);
+        }
+
+        if (result.IsFailed)
+        {
+            var commandInfo = CommandInfo.Completed(
+                queuedCommand.Id,
+                queuedCommand.Command,
+                queuedCommand.QueuedTime,
+                startTime,
+                endTime,
+                result.ResultText,
+                false,
+                result.ResultText);
+            return (commandInfo, CommandState.Failed);
+        }
+
+        if (!result.IsCancelled && !result.IsTimeout && !result.IsFailed)
+        {
+            // Explicitly check for successful completion
+            var commandInfo = CommandInfo.Completed(
+                queuedCommand.Id,
+                queuedCommand.Command,
+                queuedCommand.QueuedTime,
+                startTime,
+                endTime,
+                result.ResultText,
+                true);
+            return (commandInfo, CommandState.Completed);
+        }
+
+        // Default to failed for any unexpected state - this will make missing cases obvious
+        m_Logger.Error("Unexpected command result state for command {CommandId}: Cancelled={IsCancelled}, Timeout={IsTimeout}, Failed={IsFailed}",
+            result.CommandId, result.IsCancelled, result.IsTimeout, result.IsFailed);
+
+        var errorCommandInfo = CommandInfo.Completed(
+            queuedCommand.Id,
+            queuedCommand.Command,
+            queuedCommand.QueuedTime,
+            startTime,
+            endTime,
+            $"UNEXPECTED STATE: {result.ResultText}",
+            false,
+            "Command result in unexpected state");
+        return (errorCommandInfo, CommandState.Failed);
     }
 
 

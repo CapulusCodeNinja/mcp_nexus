@@ -22,7 +22,7 @@ public class CommandPreprocessorTests
     public CommandPreprocessorTests()
     {
         m_FileSystemMock = new Mock<IFileSystem>();
-        
+
         // Setup default behavior - all directories exist, no creation needed
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
     }
