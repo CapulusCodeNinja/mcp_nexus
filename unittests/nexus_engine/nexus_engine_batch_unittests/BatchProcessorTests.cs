@@ -591,5 +591,211 @@ public class BatchProcessorTests
     }
 
     #endregion
+
+    #region GetBatchCommandId Tests
+
+    /// <summary>
+    /// Verifies that GetBatchCommandId returns null for a non-existent command ID.
+    /// </summary>
+    [Fact]
+    public void GetBatchCommandId_NonExistentCommand_ReturnsNull()
+    {
+        // Arrange
+        var processor = BatchProcessor.Instance;
+
+        // Act
+        var result = processor.GetBatchCommandId("non-existent-cmd");
+
+        // Assert
+        _ = result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that GetBatchCommandId returns batch ID for a batched command.
+    /// </summary>
+    [Fact]
+    public void GetBatchCommandId_BatchedCommand_ReturnsBatchId()
+    {
+        // Arrange
+        var processor = BatchProcessor.Instance;
+        var sessionId = "test-session-batch";
+        var commands = new List<Command>
+        {
+            new() { CommandId = "cmd-1", CommandText = "lm" },
+            new() { CommandId = "cmd-2", CommandText = "dt" },
+            new() { CommandId = "cmd-3", CommandText = "kL" }
+        };
+
+        // Act - Batch the commands
+        var batchedCommands = processor.BatchCommands(sessionId, commands);
+
+        // Get the batch command ID
+        var batchCommandId = batchedCommands.First().CommandId;
+
+        // Assert - Verify that individual commands can find their batch
+        foreach (var command in commands)
+        {
+            var foundBatchId = processor.GetBatchCommandId(command.CommandId);
+            _ = foundBatchId.Should().Be(batchCommandId);
+        }
+    }
+
+    /// <summary>
+    /// Verifies that GetBatchCommandId returns null for an excluded (non-batched) command.
+    /// </summary>
+    [Fact]
+    public void GetBatchCommandId_ExcludedCommand_ReturnsNull()
+    {
+        // Arrange
+        var processor = BatchProcessor.Instance;
+        var sessionId = "test-session-excluded";
+        var commands = new List<Command>
+        {
+            new() { CommandId = "cmd-excluded", CommandText = "!analyze -v" }
+        };
+
+        // Act - Process the excluded command
+        var batchedCommands = processor.BatchCommands(sessionId, commands);
+
+        // The excluded command should NOT be in the batch mapping
+        var foundBatchId = processor.GetBatchCommandId("cmd-excluded");
+
+        // Assert
+        _ = foundBatchId.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that GetBatchCommandId returns null for a single command that wasn't batched.
+    /// </summary>
+    [Fact]
+    public void GetBatchCommandId_SingleCommand_ReturnsNull()
+    {
+        // Arrange
+        var processor = BatchProcessor.Instance;
+        var sessionId = "test-session-single";
+        var commands = new List<Command>
+        {
+            new() { CommandId = "cmd-single", CommandText = "lm" }
+        };
+
+        // Act - Process the single command
+        var batchedCommands = processor.BatchCommands(sessionId, commands);
+
+        // A single command should not have a batch ID
+        var foundBatchId = processor.GetBatchCommandId("cmd-single");
+
+        // Assert
+        _ = foundBatchId.Should().BeNull();
+    }
+
+
+    #endregion
+
+    #region ClearSessionBatchMappings Tests
+
+    /// <summary>
+    /// Verifies that ClearSessionBatchMappings removes mappings for the specified session.
+    /// </summary>
+    [Fact]
+    public void ClearSessionBatchMappings_RemovesSessionMappings()
+    {
+        // Arrange
+        var processor = BatchProcessor.Instance;
+        var sessionId = "test-session-clear";
+        var commands = new List<Command>
+        {
+            new() { CommandId = $"cmd-session-{sessionId}-1", CommandText = "lm" },
+            new() { CommandId = $"cmd-session-{sessionId}-2", CommandText = "dt" },
+            new() { CommandId = $"cmd-session-{sessionId}-3", CommandText = "kL" }
+        };
+
+        // Batch the commands to create mappings
+        _ = processor.BatchCommands(sessionId, commands);
+
+        // Verify mappings exist
+        var beforeClear = processor.GetBatchCommandId(commands[0].CommandId);
+        _ = beforeClear.Should().NotBeNull();
+
+        // Act - Clear session mappings
+        processor.ClearSessionBatchMappings(sessionId);
+
+        // Assert - Mappings should be gone
+        var afterClear = processor.GetBatchCommandId(commands[0].CommandId);
+        _ = afterClear.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that ClearSessionBatchMappings does not affect other sessions.
+    /// </summary>
+    [Fact]
+    public void ClearSessionBatchMappings_DoesNotAffectOtherSessions()
+    {
+        // Arrange
+        var processor = BatchProcessor.Instance;
+        
+        // Create mappings for two different sessions
+        var session1 = "session-1";
+        var session2 = "session-2";
+        
+        var commands1 = new List<Command>
+        {
+            new() { CommandId = $"cmd-{session1}-1", CommandText = "lm" },
+            new() { CommandId = $"cmd-{session1}-2", CommandText = "dt" }
+        };
+        
+        var commands2 = new List<Command>
+        {
+            new() { CommandId = $"cmd-{session2}-1", CommandText = "lm" },
+            new() { CommandId = $"cmd-{session2}-2", CommandText = "dt" }
+        };
+
+        // Batch commands for both sessions
+        _ = processor.BatchCommands(session1, commands1);
+        _ = processor.BatchCommands(session2, commands2);
+
+        // Act - Clear only session1
+        processor.ClearSessionBatchMappings(session1);
+
+        // Assert - Session1 mappings should be gone
+        _ = processor.GetBatchCommandId(commands1[0].CommandId).Should().BeNull();
+        
+        // Assert - Session2 mappings should still exist
+        _ = processor.GetBatchCommandId(commands2[0].CommandId).Should().NotBeNull();
+    }
+
+    /// <summary>
+    /// Verifies that ClearSessionBatchMappings handles non-existent session gracefully.
+    /// </summary>
+    [Fact]
+    public void ClearSessionBatchMappings_NonExistentSession_HandlesGracefully()
+    {
+        // Arrange
+        var processor = BatchProcessor.Instance;
+        var nonExistentSession = "non-existent-session";
+
+        // Act - Should not throw
+        var action = () => processor.ClearSessionBatchMappings(nonExistentSession);
+
+        // Assert
+        _ = action.Should().NotThrow();
+    }
+
+    /// <summary>
+    /// Verifies that ClearSessionBatchMappings handles null session ID gracefully.
+    /// </summary>
+    [Fact]
+    public void ClearSessionBatchMappings_NullSessionId_HandlesGracefully()
+    {
+        // Arrange
+        var processor = BatchProcessor.Instance;
+
+        // Act - Should not throw
+        var action = () => processor.ClearSessionBatchMappings(null!);
+
+        // Assert
+        _ = action.Should().NotThrow();
+    }
+
+    #endregion
 }
 

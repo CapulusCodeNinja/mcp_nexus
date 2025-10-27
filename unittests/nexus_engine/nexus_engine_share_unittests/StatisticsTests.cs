@@ -43,13 +43,14 @@ public class StatisticsTests
             CommandState.Completed,
             sessionId,
             commandId,
+            null, // batchCommandId
             command,
             queuedAt,
             startedAt,
             completedAt,
-            100,
-            500,
-            600);
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(500),
+            TimeSpan.FromMilliseconds(600));
     }
 
     /// <summary>
@@ -72,13 +73,14 @@ public class StatisticsTests
             CommandState.Failed,
             sessionId,
             commandId,
+            null, // batchCommandId
             command,
             queuedAt,
             startedAt,
             completedAt,
-            100,
-            500,
-            600);
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(500),
+            TimeSpan.FromMilliseconds(600));
     }
 
     /// <summary>
@@ -99,13 +101,14 @@ public class StatisticsTests
             CommandState.Completed,
             sessionId,
             null,
+            null, // batchCommandId
             "test command",
             queuedAt,
             startedAt,
             completedAt,
-            100,
-            500,
-            600);
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(500),
+            TimeSpan.FromMilliseconds(600));
     }
 
     /// <summary>
@@ -127,13 +130,45 @@ public class StatisticsTests
             CommandState.Completed,
             sessionId,
             commandId,
+            null, // batchCommandId
             null,
             queuedAt,
             startedAt,
             completedAt,
-            100,
-            500,
-            600);
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(500),
+            TimeSpan.FromMilliseconds(600));
+    }
+
+    /// <summary>
+    /// Verifies that EmitCommandStats with batch command ID succeeds.
+    /// </summary>
+    [Fact]
+    public void EmitCommandStats_WithBatchCommandId_Succeeds()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var commandId = "cmd-456";
+        var batchCommandId = "batch-789";
+        var command = "lsa 0x123";
+        var queuedAt = DateTime.Now;
+        var startedAt = queuedAt.AddMilliseconds(100);
+        var completedAt = startedAt.AddMilliseconds(500);
+
+        // Act & Assert (should not throw)
+        Statistics.EmitCommandStats(
+            m_Logger,
+            CommandState.Completed,
+            sessionId,
+            commandId,
+            batchCommandId,
+            command,
+            queuedAt,
+            startedAt,
+            completedAt,
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(500),
+            TimeSpan.FromMilliseconds(600));
     }
 
     #endregion
@@ -157,7 +192,7 @@ public class StatisticsTests
             sessionId,
             openedAt,
             closedAt,
-            300000,
+            TimeSpan.FromMilliseconds(300000),
             10,
             8,
             1,
@@ -182,7 +217,7 @@ public class StatisticsTests
             sessionId,
             openedAt,
             closedAt,
-            60000,
+            TimeSpan.FromMilliseconds(60000),
             0,
             0,
             0,
@@ -207,7 +242,7 @@ public class StatisticsTests
             sessionId,
             openedAt,
             closedAt,
-            120000,
+            TimeSpan.FromMilliseconds(120000),
             5,
             0,
             5,
