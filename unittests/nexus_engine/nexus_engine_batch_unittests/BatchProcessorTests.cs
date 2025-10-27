@@ -732,17 +732,17 @@ public class BatchProcessorTests
     {
         // Arrange
         var processor = BatchProcessor.Instance;
-        
+
         // Create mappings for two different sessions
         var session1 = "session-1";
         var session2 = "session-2";
-        
+
         var commands1 = new List<Command>
         {
             new() { CommandId = $"cmd-{session1}-1", CommandText = "lm" },
             new() { CommandId = $"cmd-{session1}-2", CommandText = "dt" }
         };
-        
+
         var commands2 = new List<Command>
         {
             new() { CommandId = $"cmd-{session2}-1", CommandText = "lm" },
@@ -758,7 +758,7 @@ public class BatchProcessorTests
 
         // Assert - Session1 mappings should be gone
         _ = processor.GetBatchCommandId(commands1[0].CommandId).Should().BeNull();
-        
+
         // Assert - Session2 mappings should still exist
         _ = processor.GetBatchCommandId(commands2[0].CommandId).Should().NotBeNull();
     }

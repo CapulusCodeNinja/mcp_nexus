@@ -47,6 +47,9 @@
   <PropertyGroup Label="NuGet Package Versions">
     <!-- Microsoft Extensions -->
     <MicrosoftExtensionsLoggingAbstractionsVersion>8.0.3</MicrosoftExtensionsLoggingAbstractionsVersion>
+    <MicrosoftExtensionsLoggingVersion>8.0.0</MicrosoftExtensionsLoggingVersion>
+    <MicrosoftExtensionsConfigurationVersion>8.0.0</MicrosoftExtensionsConfigurationVersion>
+    <MicrosoftExtensionsHostingAbstractionsVersion>8.0.1</MicrosoftExtensionsHostingAbstractionsVersion>
     <MicrosoftExtensionsDependencyInjectionVersion>8.0.0</MicrosoftExtensionsDependencyInjectionVersion>
     <MicrosoftExtensionsDependencyInjectionAbstractionsVersion>8.0.2</MicrosoftExtensionsDependencyInjectionAbstractionsVersion>
     
@@ -64,6 +67,8 @@
     <XunitVersion>2.9.2</XunitVersion>
     <XunitRunnerVisualStudioVersion>2.8.2</XunitRunnerVisualStudioVersion>
     <MoqVersion>4.20.72</MoqVersion>
+    <FluentAssertionsVersion>6.12.0</FluentAssertionsVersion>
+    <CoverletCollectorVersion>6.0.0</CoverletCollectorVersion>
   </PropertyGroup>
 
 </Project>

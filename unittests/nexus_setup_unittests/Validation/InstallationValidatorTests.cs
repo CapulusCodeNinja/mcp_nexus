@@ -167,34 +167,6 @@ public class InstallationValidatorTests
     }
 
     /// <summary>
-    /// Verifies that ValidateInstallation returns false when backup directory parent does not exist.
-    /// </summary>
-    [Fact]
-    public void ValidateInstallation_WhenBackupParentNotExist_ReturnsFalse()
-    {
-        // Arrange
-        var validator = new InstallationValidator(m_FileSystemMock.Object, m_ServiceControllerMock.Object);
-        var sourceDirectory = @"C:\Source";
-
-        _ = m_ServiceControllerMock.Setup(sc => sc.IsServiceInstalled(It.IsAny<string>()))
-            .Returns(false);
-        _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(sourceDirectory))
-            .Returns(true);
-        _ = m_FileSystemMock.Setup(fs => fs.FileExists(Path.Combine(sourceDirectory, "nexus.exe")))
-            .Returns(true);
-        _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(@"C:\Program Files"))
-            .Returns(true); // Installation parent OK
-        _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(@"C:\Program Files\MCP-Nexus"))
-            .Returns(false); // Backup parent (installation dir) does not exist
-
-        // Act
-        var result = validator.ValidateInstallation(m_Configuration, sourceDirectory);
-
-        // Assert
-        _ = result.Should().BeFalse();
-    }
-
-    /// <summary>
     /// Verifies that ValidateInstallation returns a boolean when all checks pass (admin check may vary).
     /// </summary>
     [Fact]

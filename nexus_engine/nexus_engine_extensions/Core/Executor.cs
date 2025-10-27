@@ -363,7 +363,7 @@ internal class Executor
         {
             return;
         }
-        
+
         // Graceperiod for the script to exit gracefully before killing it
         // The scripts should be designed to handle e.g. timeouts gracefully.
         if (!force && !process.WaitForExit(2000))

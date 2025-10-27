@@ -228,8 +228,8 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
             // Store process for cancellation support
             StoreRunningExtension(commandId, sessionId, extensionName, parameters, startTime, cts, result);
 
-                // Handle extension result
-                HandleExtensionResult(extensionName, sessionId, commandId, queuedTime, startTime, result);
+            // Handle extension result
+            HandleExtensionResult(extensionName, sessionId, commandId, queuedTime, startTime, result);
         }
         catch (OperationCanceledException)
         {
