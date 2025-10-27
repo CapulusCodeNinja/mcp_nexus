@@ -196,175 +196,303 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
                 return set;
             });
 
+        // Create cancellation token source for this extension
+        var cts = new CancellationTokenSource();
+
         // Start the extension execution asynchronously
-        _ = Task.Run(async () =>
-        {
-            var cts = new CancellationTokenSource();
-
-            try
-            {
-                // Update to executing state
-                var startTime = DateTime.Now;
-                m_CommandCache[commandId] = CommandInfo.Executing(commandId, $"Extension: {extensionName}", queuedTime, startTime);
-
-                // Execute the extension
-                var result = await m_Executor.ExecuteAsync(extensionName, sessionId, parameters, commandId, null, cts.Token);
-
-                // Store the process ID for cancellation support
-                if (result.ProcessId.HasValue)
-                {
-                    var status = new ExtensionStatus
-                    {
-                        CommandId = commandId,
-                        SessionId = sessionId,
-                        ExtensionName = extensionName,
-                        ProcessId = result.ProcessId.Value,
-                        StartTime = startTime,
-                        CancellationTokenSource = cts,
-                        Parameters = parameters
-                    };
-                    m_RunningExtensions[commandId] = status;
-                }
-
-                // Update to completed/failed state
-                var endTime = DateTime.Now;
-                m_CommandCache[commandId] = CommandInfo.Completed(
-                    commandId,
-                    $"Extension: {extensionName}",
-                    queuedTime,
-                    startTime,
-                    endTime,
-                    result.Output ?? string.Empty,
-                    result.Success,
-                    result.Success ? null : (result.Error ?? "Extension execution failed"));
-
-                // Emit statistics
-                var executionTime = endTime - startTime;
-                var queueTime = startTime - queuedTime;
-                var totalTime = endTime - queuedTime;
-
-                Statistics.EmitCommandStats(
-                    m_Logger,
-                    result.Success ? CommandState.Completed : CommandState.Failed,
-                    sessionId,
-                    commandId,
-                    $"Extension: {extensionName}",
-                    queuedTime,
-                    startTime,
-                    endTime,
-                    queueTime.TotalMilliseconds,
-                    executionTime.TotalMilliseconds,
-                    totalTime.TotalMilliseconds);
-            }
-            catch (OperationCanceledException)
-            {
-                // Extension was cancelled
-                var endTime = DateTime.Now;
-                var cancelStartTime = commandInfo.StartTime ?? queuedTime;
-                m_CommandCache[commandId] = CommandInfo.Cancelled(
-                    commandId,
-                    $"Extension: {extensionName}",
-                    queuedTime,
-                    cancelStartTime,
-                    endTime);
-
-                m_Logger.Warn("Extension script {ExtensionName} with command ID {CommandId} was cancelled", extensionName, commandId);
-
-                // Emit statistics
-                var executionTime = endTime - cancelStartTime;
-                var queueTime = cancelStartTime - queuedTime;
-                var totalTime = endTime - queuedTime;
-
-                Statistics.EmitCommandStats(
-                    m_Logger,
-                    CommandState.Cancelled,
-                    sessionId,
-                    commandId,
-                    $"Extension: {extensionName}",
-                    queuedTime,
-                    cancelStartTime,
-                    endTime,
-                    queueTime.TotalMilliseconds,
-                    executionTime.TotalMilliseconds,
-                    totalTime.TotalMilliseconds);
-            }
-            catch (TimeoutException ex)
-            {
-                // Extension timed out
-                var endTime = DateTime.Now;
-                var timeoutStartTime = commandInfo.StartTime ?? queuedTime;
-                m_CommandCache[commandId] = CommandInfo.TimedOut(
-                    commandId,
-                    $"Extension: {extensionName}",
-                    queuedTime,
-                    timeoutStartTime,
-                    endTime,
-                    ex.Message);
-
-                m_Logger.Warn("Extension script {ExtensionName} with command ID {CommandId} timed out: {Message}", extensionName, commandId, ex.Message);
-
-                // Emit statistics
-                var executionTime = endTime - timeoutStartTime;
-                var queueTime = timeoutStartTime - queuedTime;
-                var totalTime = endTime - queuedTime;
-
-                Statistics.EmitCommandStats(
-                    m_Logger,
-                    CommandState.Timeout,
-                    sessionId,
-                    commandId,
-                    $"Extension: {extensionName}",
-                    queuedTime,
-                    timeoutStartTime,
-                    endTime,
-                    queueTime.TotalMilliseconds,
-                    executionTime.TotalMilliseconds,
-                    totalTime.TotalMilliseconds);
-            }
-            catch (Exception ex)
-            {
-                // Extension failed with error
-                var endTime = DateTime.Now;
-                var failStartTime = commandInfo.StartTime ?? queuedTime;
-                m_CommandCache[commandId] = CommandInfo.Completed(
-                    commandId,
-                    $"Extension: {extensionName}",
-                    queuedTime,
-                    failStartTime,
-                    endTime,
-                    string.Empty,
-                    false,
-                    ex.Message);
-
-                m_Logger.Error(ex, "Extension script {ExtensionName} with command ID {CommandId} failed", extensionName, commandId);
-
-                // Emit statistics
-                var executionTime = endTime - failStartTime;
-                var queueTime = failStartTime - queuedTime;
-                var totalTime = endTime - queuedTime;
-
-                Statistics.EmitCommandStats(
-                    m_Logger,
-                    CommandState.Failed,
-                    sessionId,
-                    commandId,
-                    $"Extension: {extensionName}",
-                    queuedTime,
-                    failStartTime,
-                    endTime,
-                    queueTime.TotalMilliseconds,
-                    executionTime.TotalMilliseconds,
-                    totalTime.TotalMilliseconds);
-            }
-            finally
-            {
-                // Remove from running extensions
-                _ = m_RunningExtensions.TryRemove(commandId, out _);
-                cts.Dispose();
-            }
-        });
+        _ = Task.Run(async () => await ExecuteExtensionAsync(extensionName, sessionId, parameters, commandId, queuedTime, cts));
 
         return commandId;
+    }
+
+    /// <summary>
+    /// Executes an extension script and handles all outcome scenarios.
+    /// </summary>
+    /// <param name="extensionName">The name of the extension.</param>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="parameters">Extension parameters.</param>
+    /// <param name="commandId">The command ID.</param>
+    /// <param name="queuedTime">When the command was queued.</param>
+    /// <param name="cts">Cancellation token source.</param>
+    private async Task ExecuteExtensionAsync(string extensionName, string sessionId, object? parameters, string commandId, DateTime queuedTime, CancellationTokenSource cts)
+    {
+        try
+        {
+            // Update to executing state
+            var startTime = DateTime.Now;
+            MarkExtensionAsExecuting(commandId, extensionName, queuedTime, startTime);
+
+            // Execute the extension
+            var result = await m_Executor.ExecuteAsync(extensionName, sessionId, parameters, commandId, null, cts.Token);
+
+            // Store process for cancellation support
+            StoreRunningExtension(commandId, sessionId, extensionName, parameters, startTime, cts, result);
+
+                // Handle extension result
+                HandleExtensionResult(extensionName, sessionId, commandId, queuedTime, startTime, result);
+        }
+        catch (OperationCanceledException)
+        {
+            HandleExtensionCancellation(extensionName, sessionId, commandId, queuedTime);
+        }
+        catch (TimeoutException ex)
+        {
+            HandleExtensionTimeout(extensionName, sessionId, commandId, queuedTime, ex);
+        }
+        catch (Exception ex)
+        {
+            HandleExtensionFailure(extensionName, sessionId, commandId, queuedTime, ex);
+        }
+        finally
+        {
+            // Cleanup
+            _ = m_RunningExtensions.TryRemove(commandId, out _);
+            cts.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Marks the extension as executing.
+    /// </summary>
+    /// <param name="commandId">The command ID.</param>
+    /// <param name="extensionName">The extension name.</param>
+    /// <param name="queuedTime">When the command was queued.</param>
+    /// <param name="startTime">When execution started.</param>
+    private void MarkExtensionAsExecuting(string commandId, string extensionName, DateTime queuedTime, DateTime startTime)
+    {
+        m_CommandCache[commandId] = CommandInfo.Executing(commandId, $"Extension: {extensionName}", queuedTime, startTime);
+    }
+
+    /// <summary>
+    /// Stores the running extension for cancellation support.
+    /// </summary>
+    /// <param name="commandId">The command ID.</param>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="extensionName">The extension name.</param>
+    /// <param name="parameters">Extension parameters.</param>
+    /// <param name="startTime">When execution started.</param>
+    /// <param name="cts">Cancellation token source.</param>
+    /// <param name="result">The extension result.</param>
+    private void StoreRunningExtension(string commandId, string sessionId, string extensionName, object? parameters, DateTime startTime, CancellationTokenSource cts, ExtensionResult result)
+    {
+        if (result.ProcessId.HasValue)
+        {
+            var status = new ExtensionStatus
+            {
+                CommandId = commandId,
+                SessionId = sessionId,
+                ExtensionName = extensionName,
+                ProcessId = result.ProcessId.Value,
+                StartTime = startTime,
+                CancellationTokenSource = cts,
+                Parameters = parameters
+            };
+            m_RunningExtensions[commandId] = status;
+        }
+    }
+
+    /// <summary>
+    /// Handles the extension execution result and emits statistics.
+    /// </summary>
+    /// <param name="extensionName">The extension name.</param>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="commandId">The command ID.</param>
+    /// <param name="queuedTime">When the command was queued.</param>
+    /// <param name="startTime">When execution started.</param>
+    /// <param name="result">The extension result.</param>
+    private void HandleExtensionResult(string extensionName, string sessionId, string commandId, DateTime queuedTime, DateTime startTime, ExtensionResult result)
+    {
+        var endTime = DateTime.Now;
+        var commandInfo = CreateCommandInfoFromResult(commandId, extensionName, queuedTime, startTime, endTime, result);
+        var finalState = DetermineCommandState(result);
+
+        // Store in cache
+        m_CommandCache[commandId] = commandInfo;
+
+        // Emit statistics
+        EmitExtensionStatistics(finalState, sessionId, commandId, extensionName, queuedTime, startTime, endTime);
+    }
+
+    /// <summary>
+    /// Creates a CommandInfo from the extension result.
+    /// </summary>
+    /// <param name="commandId">The command ID.</param>
+    /// <param name="extensionName">The extension name.</param>
+    /// <param name="queuedTime">When the command was queued.</param>
+    /// <param name="startTime">When execution started.</param>
+    /// <param name="endTime">When execution ended.</param>
+    /// <param name="result">The extension result.</param>
+    /// <returns>The created CommandInfo.</returns>
+    private CommandInfo CreateCommandInfoFromResult(string commandId, string extensionName, DateTime queuedTime, DateTime startTime, DateTime endTime, ExtensionResult result)
+    {
+        if (result.Success)
+        {
+            return CommandInfo.Completed(
+                commandId,
+                $"Extension: {extensionName}",
+                queuedTime,
+                startTime,
+                endTime,
+                result.Output ?? string.Empty,
+                true);
+        }
+        else if (result.Error?.Contains("exceeded timeout") == true)
+        {
+            return CommandInfo.TimedOut(
+                commandId,
+                $"Extension: {extensionName}",
+                queuedTime,
+                startTime,
+                endTime,
+                result.Error);
+        }
+        else
+        {
+            return CommandInfo.Completed(
+                commandId,
+                $"Extension: {extensionName}",
+                queuedTime,
+                startTime,
+                endTime,
+                result.Output ?? string.Empty,
+                false,
+                result.Error ?? "Extension execution failed");
+        }
+    }
+
+    /// <summary>
+    /// Determines the final CommandState from the extension result.
+    /// </summary>
+    /// <param name="result">The extension result.</param>
+    /// <returns>The CommandState.</returns>
+    private CommandState DetermineCommandState(ExtensionResult result)
+    {
+        if (result.Success)
+        {
+            return CommandState.Completed;
+        }
+        else if (result.Error?.Contains("exceeded timeout") == true)
+        {
+            return CommandState.Timeout;
+        }
+        else
+        {
+            return CommandState.Failed;
+        }
+    }
+
+    /// <summary>
+    /// Emits command statistics for the extension execution.
+    /// </summary>
+    /// <param name="finalState">The final command state.</param>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="commandId">The command ID.</param>
+    /// <param name="extensionName">The extension name.</param>
+    /// <param name="queuedTime">When the command was queued.</param>
+    /// <param name="startTime">When execution started.</param>
+    /// <param name="endTime">When execution ended.</param>
+    private void EmitExtensionStatistics(CommandState finalState, string sessionId, string commandId, string extensionName, DateTime queuedTime, DateTime startTime, DateTime endTime)
+    {
+        var executionTime = endTime - startTime;
+        var queueTime = startTime - queuedTime;
+        var totalTime = endTime - queuedTime;
+
+        Statistics.EmitCommandStats(
+            m_Logger,
+            finalState,
+            sessionId,
+            commandId,
+            $"Extension: {extensionName}",
+            queuedTime,
+            startTime,
+            endTime,
+            queueTime.TotalMilliseconds,
+            executionTime.TotalMilliseconds,
+            totalTime.TotalMilliseconds);
+    }
+
+    /// <summary>
+    /// Handles extension cancellation.
+    /// </summary>
+    /// <param name="extensionName">The extension name.</param>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="commandId">The command ID.</param>
+    /// <param name="queuedTime">When the command was queued.</param>
+    private void HandleExtensionCancellation(string extensionName, string sessionId, string commandId, DateTime queuedTime)
+    {
+        var endTime = DateTime.Now;
+        var commandInfo = m_CommandCache.TryGetValue(commandId, out var existingInfo) ? existingInfo : null;
+        var cancelStartTime = commandInfo?.StartTime ?? queuedTime;
+
+        m_CommandCache[commandId] = CommandInfo.Cancelled(
+            commandId,
+            $"Extension: {extensionName}",
+            queuedTime,
+            cancelStartTime,
+            endTime);
+
+        m_Logger.Warn("Extension script {ExtensionName} with command ID {CommandId} was cancelled", extensionName, commandId);
+
+        // Emit statistics
+        EmitExtensionStatistics(CommandState.Cancelled, sessionId, commandId, extensionName, queuedTime, cancelStartTime, endTime);
+    }
+
+    /// <summary>
+    /// Handles extension timeout.
+    /// </summary>
+    /// <param name="extensionName">The extension name.</param>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="commandId">The command ID.</param>
+    /// <param name="queuedTime">When the command was queued.</param>
+    /// <param name="ex">The timeout exception.</param>
+    private void HandleExtensionTimeout(string extensionName, string sessionId, string commandId, DateTime queuedTime, TimeoutException ex)
+    {
+        var endTime = DateTime.Now;
+        var commandInfo = m_CommandCache.TryGetValue(commandId, out var existingInfo) ? existingInfo : null;
+        var timeoutStartTime = commandInfo?.StartTime ?? queuedTime;
+
+        m_CommandCache[commandId] = CommandInfo.TimedOut(
+            commandId,
+            $"Extension: {extensionName}",
+            queuedTime,
+            timeoutStartTime,
+            endTime,
+            ex.Message);
+
+        m_Logger.Warn("Extension script {ExtensionName} with command ID {CommandId} timed out: {Message}", extensionName, commandId, ex.Message);
+
+        // Emit statistics
+        EmitExtensionStatistics(CommandState.Timeout, sessionId, commandId, extensionName, queuedTime, timeoutStartTime, endTime);
+    }
+
+    /// <summary>
+    /// Handles extension failure.
+    /// </summary>
+    /// <param name="extensionName">The extension name.</param>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="commandId">The command ID.</param>
+    /// <param name="queuedTime">When the command was queued.</param>
+    /// <param name="ex">The exception.</param>
+    private void HandleExtensionFailure(string extensionName, string sessionId, string commandId, DateTime queuedTime, Exception ex)
+    {
+        var endTime = DateTime.Now;
+        var commandInfo = m_CommandCache.TryGetValue(commandId, out var existingInfo) ? existingInfo : null;
+        var failStartTime = commandInfo?.StartTime ?? queuedTime;
+
+        m_CommandCache[commandId] = CommandInfo.Completed(
+            commandId,
+            $"Extension: {extensionName}",
+            queuedTime,
+            failStartTime,
+            endTime,
+            string.Empty,
+            false,
+            ex.Message);
+
+        m_Logger.Error(ex, "Extension script {ExtensionName} with command ID {CommandId} failed", extensionName, commandId);
+
+        // Emit statistics
+        EmitExtensionStatistics(CommandState.Failed, sessionId, commandId, extensionName, queuedTime, failStartTime, endTime);
     }
 
     /// <summary>
