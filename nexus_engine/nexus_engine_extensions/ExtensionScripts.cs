@@ -346,18 +346,16 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
                 endTime,
                 result.Error);
         }
-        else
-        {
-            return CommandInfo.Completed(
-                commandId,
-                $"Extension: {extensionName}",
-                queuedTime,
-                startTime,
-                endTime,
-                result.Output ?? string.Empty,
-                false,
-                result.Error ?? "Extension execution failed");
-        }
+
+        return CommandInfo.Completed(
+            commandId,
+            $"Extension: {extensionName}",
+            queuedTime,
+            startTime,
+            endTime,
+            result.Output ?? string.Empty,
+            false,
+            result.Error ?? "Extension execution failed");
     }
 
     /// <summary>
@@ -375,10 +373,8 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         {
             return CommandState.Timeout;
         }
-        else
-        {
-            return CommandState.Failed;
-        }
+
+        return CommandState.Failed;
     }
 
     /// <summary>

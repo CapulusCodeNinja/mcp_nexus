@@ -655,7 +655,7 @@ public class BatchProcessorTests
         };
 
         // Act - Process the excluded command
-        var batchedCommands = processor.BatchCommands(sessionId, commands);
+        _ = processor.BatchCommands(sessionId, commands);
 
         // The excluded command should NOT be in the batch mapping
         var foundBatchId = processor.GetBatchCommandId("cmd-excluded");
@@ -679,7 +679,7 @@ public class BatchProcessorTests
         };
 
         // Act - Process the single command
-        var batchedCommands = processor.BatchCommands(sessionId, commands);
+        _ = processor.BatchCommands(sessionId, commands);
 
         // A single command should not have a batch ID
         var foundBatchId = processor.GetBatchCommandId("cmd-single");

@@ -222,9 +222,9 @@ public class MarkdownFormatterTests
         _ = result.Should().Contain("**Start Time:** 2024-01-01 10:01:00");
         _ = result.Should().Contain("**End Time:** 2024-01-01 10:02:00");
         _ = result.Should().Contain("**Execution Time:**");
-        _ = result.Should().Contain("60"); // Culture-invariant check
+        _ = result.Should().Contain(executionTime.ToString());
         _ = result.Should().Contain("**Total Time:**");
-        _ = result.Should().Contain("120"); // Culture-invariant check
+        _ = result.Should().Contain(totalTime.ToString());
     }
 
     /// <summary>
