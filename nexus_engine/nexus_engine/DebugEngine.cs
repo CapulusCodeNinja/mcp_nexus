@@ -184,11 +184,31 @@ public class DebugEngine : IDebugEngine
                 var allCommands = new List<CommandInfo>(sessionCommands.Values);
                 allCommands.AddRange(extensionCommands);
 
-                // Count commands by state
-                var completedCount = allCommands.Count(c => c.State == CommandState.Completed);
-                var failedCount = allCommands.Count(c => c.State == CommandState.Failed);
-                var cancelledCount = allCommands.Count(c => c.State == CommandState.Cancelled);
-                var timedOutCount = allCommands.Count(c => c.State == CommandState.Timeout);
+                // Count commands by state in a single pass
+                var completedCount = 0;
+                var failedCount = 0;
+                var cancelledCount = 0;
+                var timedOutCount = 0;
+
+                foreach (var cmd in allCommands)
+                {
+                    switch (cmd.State)
+                    {
+                        case CommandState.Completed:
+                            completedCount++;
+                            break;
+                        case CommandState.Failed:
+                            failedCount++;
+                            break;
+                        case CommandState.Cancelled:
+                            cancelledCount++;
+                            break;
+                        case CommandState.Timeout:
+                            timedOutCount++;
+                            break;
+                    }
+                }
+
                 var totalCount = allCommands.Count;
 
                 // Emit session statistics

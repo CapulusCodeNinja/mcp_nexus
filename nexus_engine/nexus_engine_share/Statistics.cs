@@ -12,6 +12,27 @@ namespace Nexus.Engine.Share;
 public static class Statistics
 {
     /// <summary>
+    /// Static lookup array for command state sort order.
+    /// Indexed by CommandState enum value for O(1) access.
+    /// </summary>
+    private static readonly int[] m_StatusSortOrder;
+
+    /// <summary>
+    /// Static constructor to initialize the status sort order array.
+    /// </summary>
+    static Statistics()
+    {
+        // Initialize sort order array based on CommandState enum (6 values: 0-5)
+        m_StatusSortOrder = new int[6];
+        m_StatusSortOrder[(int)CommandState.Completed] = 1;
+        m_StatusSortOrder[(int)CommandState.Failed] = 2;
+        m_StatusSortOrder[(int)CommandState.Cancelled] = 3;
+        m_StatusSortOrder[(int)CommandState.Timeout] = 4;
+        m_StatusSortOrder[(int)CommandState.Queued] = 5;
+        m_StatusSortOrder[(int)CommandState.Executing] = 6;
+    }
+
+    /// <summary>
     /// Emits standardized command performance statistics at INFO level.
     /// </summary>
     /// <param name="logger">Logger to write the statistics to.</param>
@@ -109,24 +130,14 @@ public static class Statistics
         _ = sb.AppendLine($"    ║ TimedOutCommands: {timedOutCommands}");
 
         // Add command table if there are any commands
-        if (commands.Any())
+        if (totalCommands > 0)
         {
             _ = sb.AppendLine("    ║ ────────────────────────────────────────────────────────────────────");
             _ = sb.AppendLine("    ║ CommandId | Command                  | Status    | ReadCount | TimeInQueue         | ExecutionTime         | TotalTime         |");
             _ = sb.AppendLine("    ║ ----------|--------------------------|-----------|-----------|---------------------|-----------------------|-------------------|");
 
-            // Sort commands by status: Completed, Failed, Cancelled, Timeout, Queued, Executing
-            var statusOrder = new Dictionary<CommandState, int>
-            {
-                { CommandState.Completed, 1 },
-                { CommandState.Failed, 2 },
-                { CommandState.Cancelled, 3 },
-                { CommandState.Timeout, 4 },
-                { CommandState.Queued, 5 },
-                { CommandState.Executing, 6 }
-            };
-
-            var sortedCommands = commands.OrderBy(c => statusOrder[c.State]).ThenBy(c => c.CommandNumber);
+            // Sort commands by status using static array: Completed, Failed, Cancelled, Timeout, Queued, Executing
+            var sortedCommands = commands.OrderBy(c => m_StatusSortOrder[(int)c.State]).ThenBy(c => c.CommandNumber);
 
             foreach (var cmd in sortedCommands)
             {
