@@ -16,12 +16,26 @@ public class CommandResult
     /// <summary>
     /// Gets or sets the command identifier.
     /// </summary>
-    public string CommandId { get; set; } = string.Empty;
+    public required string SessionId
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Gets or sets the command identifier.
+    /// </summary>
+    public required string CommandId
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Gets or sets the result text.
     /// </summary>
-    public string ResultText { get; set; } = string.Empty;
+    public required string ResultText
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Gets or sets a value indicating whether the command was cancelled.

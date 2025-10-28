@@ -45,6 +45,7 @@ public class BatchResultParserTests
         var result = new CommandResult
         {
             CommandId = "cmd-1",
+            SessionId = "test-session",
             ResultText = "Stack trace output"
         };
 
@@ -83,6 +84,7 @@ Module output for command 2
         var result = new CommandResult
         {
             CommandId = batchId,
+            SessionId = sessionId,
             ResultText = resultText
         };
 
@@ -130,6 +132,7 @@ Output 3
         var result = new CommandResult
         {
             CommandId = batchId,
+            SessionId = sessionId,
             ResultText = resultText
         };
 
@@ -163,6 +166,7 @@ Output 3
         var result = new CommandResult
         {
             CommandId = batchId,
+            SessionId = sessionId,
             ResultText = "Output without sentinels"
         };
 
@@ -204,6 +208,7 @@ Output 3
         var result = new CommandResult
         {
             CommandId = batchId,
+            SessionId = sessionId,
             ResultText = resultText
         };
 
@@ -247,6 +252,7 @@ More output
         var result = new CommandResult
         {
             CommandId = batchId,
+            SessionId = sessionId,
             ResultText = resultText
         };
 
@@ -277,6 +283,7 @@ Line 3
         var result = new CommandResult
         {
             CommandId = "batch_cmd-1",
+            SessionId = "test-session",
             ResultText = resultText
         };
 
@@ -302,6 +309,7 @@ Output continues without end marker
         var result = new CommandResult
         {
             CommandId = "batch_cmd-1",
+            SessionId = "test-session",
             ResultText = resultText
         };
 
@@ -326,6 +334,7 @@ Output with special chars: !@#$%^&*()
         var result = new CommandResult
         {
             CommandId = "batch_cmd-1",
+            SessionId = "test-session",
             ResultText = resultText
         };
 
@@ -368,6 +377,7 @@ Third
         var result = new CommandResult
         {
             CommandId = batchId,
+            SessionId = sessionId,
             ResultText = resultText
         };
 

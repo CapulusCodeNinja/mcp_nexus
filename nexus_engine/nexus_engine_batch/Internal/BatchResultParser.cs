@@ -29,7 +29,7 @@ internal class BatchResultParser
         }
 
         // Check if this is a batch result by looking it up in the cache
-        var originalCommandIds = m_BatchProcessor.GetOriginalCommandIds(result.CommandId);
+        var originalCommandIds = m_BatchProcessor.GetOriginalCommandIds(result.SessionId, result.CommandId);
 
         // If we get more than one command ID back, it's a batch
         if (originalCommandIds.Count <= 1)
@@ -49,13 +49,14 @@ internal class BatchResultParser
                 new CommandResult
                 {
                     CommandId = originalCommandIds[0],
+                    SessionId = result.SessionId,
                     ResultText = result.ResultText
                 }
             };
         }
 
         // Split by sentinels using the original command IDs from cache
-        return SplitBatchResult(originalCommandIds, result.ResultText);
+        return SplitBatchResult(result.SessionId, originalCommandIds, result.ResultText);
     }
 
 
@@ -72,10 +73,11 @@ internal class BatchResultParser
     /// <summary>
     /// Splits a batched result into individual command results.
     /// </summary>
+    /// <param name="sessionId">The session ID.</param>
     /// <param name="commandIds">The command IDs in order.</param>
     /// <param name="resultText">The batched result text.</param>
     /// <returns>List of individual command results.</returns>
-    private List<CommandResult> SplitBatchResult(List<string> commandIds, string resultText)
+    private List<CommandResult> SplitBatchResult(string sessionId, List<string> commandIds, string resultText)
     {
         var results = new List<CommandResult>();
 
@@ -89,6 +91,7 @@ internal class BatchResultParser
             results.Add(new CommandResult
             {
                 CommandId = commandId,
+                SessionId = sessionId,
                 ResultText = individualResult
             });
 

@@ -303,7 +303,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var results = new List<CommandResult>
         {
-            new() { CommandId = "cmd-1", ResultText = "Output 1" }
+            new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "Output 1" }
         };
 
         // Act
@@ -330,9 +330,9 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var results = new List<CommandResult>
         {
-            new() { CommandId = "cmd-1", ResultText = "Output 1" },
-            new() { CommandId = "cmd-2", ResultText = "Output 2" },
-            new() { CommandId = "cmd-3", ResultText = "Output 3" }
+            new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "Output 1" },
+            new() { CommandId = "cmd-2", SessionId = "test-session", ResultText = "Output 2" },
+            new() { CommandId = "cmd-3", SessionId = "test-session", ResultText = "Output 3" }
         };
 
         // Act
@@ -356,9 +356,9 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var results = new List<CommandResult>
         {
-            new() { CommandId = "cmd-1", ResultText = "First" },
-            new() { CommandId = "cmd-2", ResultText = "Second" },
-            new() { CommandId = "cmd-3", ResultText = "Third" }
+            new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "First" },
+            new() { CommandId = "cmd-2", SessionId = "test-session", ResultText = "Second" },
+            new() { CommandId = "cmd-3", SessionId = "test-session", ResultText = "Third" }
         };
 
         // Act
@@ -397,6 +397,7 @@ public class BatchProcessorTests
         var results = batchedCommands.Select(cmd => new CommandResult
         {
             CommandId = cmd.CommandId,
+            SessionId = "test-session",
             ResultText = $"Result for {cmd.CommandId}"
         }).ToList();
 
@@ -428,6 +429,7 @@ public class BatchProcessorTests
         var results = batchedCommands.Select(cmd => new CommandResult
         {
             CommandId = cmd.CommandId,
+            SessionId = "test-session",
             ResultText = "Analysis output"
         }).ToList();
 
@@ -496,7 +498,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var results = new List<CommandResult>
         {
-            new() { CommandId = "cmd-1", ResultText = string.Empty }
+            new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = string.Empty }
         };
 
         // Act
@@ -517,7 +519,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var results = new List<CommandResult>
         {
-            new() { CommandId = "cmd-1", ResultText = "   " }
+            new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "   " }
         };
 
         // Act
@@ -571,8 +573,8 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var results = new List<CommandResult>
         {
-            new() { CommandId = "cmd-1", ResultText = "Output 1" },
-            new() { CommandId = "cmd-2", ResultText = "Output 2" }
+            new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "Output 1" },
+            new() { CommandId = "cmd-2", SessionId = "test-session", ResultText = "Output 2" }
         };
 
         // Act
@@ -602,9 +604,10 @@ public class BatchProcessorTests
     {
         // Arrange
         var processor = new BatchProcessor();
+        var sessionId = "test-session";
 
         // Act
-        var result = processor.GetBatchCommandId("non-existent-cmd");
+        var result = processor.GetBatchCommandId(sessionId, "non-existent-cmd");
 
         // Assert
         _ = result.Should().BeNull();
@@ -638,7 +641,7 @@ public class BatchProcessorTests
         // Assert - Verify that individual commands can find their batch
         foreach (var command in commands)
         {
-            var foundBatchId = processor.GetBatchCommandId(command.CommandId);
+            var foundBatchId = processor.GetBatchCommandId(sessionId, command.CommandId);
             _ = foundBatchId.Should().Be(batchCommandId);
         }
     }
@@ -661,7 +664,7 @@ public class BatchProcessorTests
         _ = processor.BatchCommands(sessionId, commands);
 
         // The excluded command should NOT be in the batch mapping
-        var foundBatchId = processor.GetBatchCommandId("cmd-excluded");
+        var foundBatchId = processor.GetBatchCommandId(sessionId, "cmd-excluded");
 
         // Assert
         _ = foundBatchId.Should().BeNull();
@@ -685,7 +688,7 @@ public class BatchProcessorTests
         _ = processor.BatchCommands(sessionId, commands);
 
         // A single command should not have a batch ID
-        var foundBatchId = processor.GetBatchCommandId("cmd-single");
+        var foundBatchId = processor.GetBatchCommandId(sessionId, "cmd-single");
 
         // Assert
         _ = foundBatchId.Should().BeNull();
@@ -716,14 +719,14 @@ public class BatchProcessorTests
         _ = processor.BatchCommands(sessionId, commands);
 
         // Verify mappings exist
-        var beforeClear = processor.GetBatchCommandId(commands[0].CommandId);
+        var beforeClear = processor.GetBatchCommandId(sessionId, commands[0].CommandId);
         _ = beforeClear.Should().NotBeNull();
 
         // Act - Clear session mappings
         processor.ClearSessionBatchMappings(sessionId);
 
         // Assert - Mappings should be gone
-        var afterClear = processor.GetBatchCommandId(commands[0].CommandId);
+        var afterClear = processor.GetBatchCommandId(sessionId, commands[0].CommandId);
         _ = afterClear.Should().BeNull();
     }
 
@@ -760,10 +763,10 @@ public class BatchProcessorTests
         processor.ClearSessionBatchMappings(session1);
 
         // Assert - Session1 mappings should be gone
-        _ = processor.GetBatchCommandId(commands1[0].CommandId).Should().BeNull();
+        _ = processor.GetBatchCommandId(session1, commands1[0].CommandId).Should().BeNull();
 
         // Assert - Session2 mappings should still exist
-        _ = processor.GetBatchCommandId(commands2[0].CommandId).Should().NotBeNull();
+        _ = processor.GetBatchCommandId(session2, commands2[0].CommandId).Should().NotBeNull();
     }
 
     /// <summary>

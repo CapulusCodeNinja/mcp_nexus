@@ -3,8 +3,8 @@
 # ---------------------------
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $solutionRoot = (Resolve-Path (Join-Path $scriptDir '..')).Path
-$coverageReportDir = Join-Path $solutionRoot 'build\bin\coverage_report'
-$testResultsDir = Join-Path $solutionRoot 'build\bin\TestResults'
+$coverageReportDir = Join-Path $solutionRoot 'build\tests\coverage_report'
+$testResultsDir = Join-Path $solutionRoot 'build\tests\TestResults'
 $runSettings = (Resolve-Path (Join-Path $solutionRoot 'coverlet.runsettings')).Path
 
 # ---------------------------
@@ -23,8 +23,6 @@ if (Test-Path $testResultsDir) {
 # ---------------------------
 Push-Location $solutionRoot
 try {
-    dotnet clean
-
     dotnet build
 
     dotnet test `

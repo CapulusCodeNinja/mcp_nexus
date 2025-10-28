@@ -17,8 +17,10 @@ public class BatchProcessor : IBatchProcessor
 
     private readonly Logger m_Logger;
 
-    // Cache to track which original command IDs are in each batch
-    private readonly ConcurrentDictionary<string, List<string>> m_BatchCommandMapping = new();
+    /// <summary>
+    /// Per-session batch caches for fast lookups and cleanup.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, SessionBatchCache> m_SessionCaches = new();
 
     /// <summary>
     /// Gets the singleton instance of the batch processor.
@@ -73,14 +75,17 @@ public class BatchProcessor : IBatchProcessor
             {
                 var batchedCommand = m_Builder.BuildBatch(sessionId, batch);
 
-                // Store the mapping of batch ID to original command IDs
+                // Get or create session cache
+                var sessionCache = m_SessionCaches.GetOrAdd(sessionId, _ => new SessionBatchCache());
+
+                // Store batch mappings in session cache
                 var commandIds = new List<string>();
                 foreach (var cmd in batch)
                 {
                     commandIds.Add(cmd.CommandId);
                 }
-                m_BatchCommandMapping[batchedCommand.CommandId] = commandIds;
 
+                sessionCache.AddBatch(batchedCommand.CommandId, commandIds);
                 batchedCommands.Add(batchedCommand);
 
                 m_Logger.Info("Batched {Count} commands into {BatchId}",
@@ -144,37 +149,34 @@ public class BatchProcessor : IBatchProcessor
     /// <summary>
     /// Gets the original command IDs that were batched into the given batch command ID.
     /// </summary>
+    /// <param name="sessionId">The session ID.</param>
     /// <param name="batchCommandId">The batch command ID or single command ID.</param>
     /// <returns>List of original command IDs (single item if not a batch).</returns>
-    public List<string> GetOriginalCommandIds(string batchCommandId)
+    public List<string> GetOriginalCommandIds(string sessionId, string batchCommandId)
     {
-        if (m_BatchCommandMapping.TryGetValue(batchCommandId, out var commandIds))
+        if (m_SessionCaches.TryGetValue(sessionId, out var cache))
         {
-            // Return a copy to avoid shared mutable state
-            return new List<string>(commandIds);
+            return cache.GetOriginalCommandIds(batchCommandId);
         }
 
-        // Not a batch, return the single command ID
+        // No cache = not a batch
         return new List<string> { batchCommandId };
     }
 
     /// <summary>
     /// Gets the batch command ID for a given individual command ID, if it was part of a batch.
     /// </summary>
+    /// <param name="sessionId">The session ID.</param>
     /// <param name="individualCommandId">The individual command ID.</param>
     /// <returns>The batch command ID if part of a batch, null otherwise.</returns>
-    public string? GetBatchCommandId(string individualCommandId)
+    public string? GetBatchCommandId(string sessionId, string individualCommandId)
     {
-        // Search through all batch mappings to find which batch contains this command
-        foreach (var kvp in m_BatchCommandMapping)
+        if (m_SessionCaches.TryGetValue(sessionId, out var cache))
         {
-            if (kvp.Value.Contains(individualCommandId))
-            {
-                return kvp.Key;
-            }
+            return cache.GetBatchCommandId(individualCommandId);
         }
 
-        // Not part of any batch
+        // No cache = not part of any batch
         return null;
     }
 
@@ -184,19 +186,15 @@ public class BatchProcessor : IBatchProcessor
     /// <param name="sessionId">The session ID to clear mappings for.</param>
     public void ClearSessionBatchMappings(string sessionId)
     {
-        // Remove all batch mappings that start with the session ID
-        var keysToRemove = new List<string>();
-        foreach (var kvp in m_BatchCommandMapping)
+        if (string.IsNullOrWhiteSpace(sessionId))
         {
-            if (kvp.Key.StartsWith($"cmd-{sessionId}-", StringComparison.Ordinal))
-            {
-                keysToRemove.Add(kvp.Key);
-            }
+            return; // Handle null/empty session ID gracefully
         }
 
-        foreach (var key in keysToRemove)
+        // O(1) removal - just remove the entire session cache
+        if (m_SessionCaches.TryRemove(sessionId, out var cache))
         {
-            _ = m_BatchCommandMapping.TryRemove(key, out _);
+            cache.Clear(); // Help GC
         }
     }
 }

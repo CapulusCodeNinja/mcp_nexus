@@ -484,7 +484,7 @@ internal class CommandQueue : IDisposable
     /// <param name="batchStartTime">The start time for this batch.</param>
     private void MarkCommandsAsExecuting(Command cmd, List<QueuedCommand> queuedCommands, Dictionary<string, DateTime> commandStartTimes, DateTime batchStartTime)
     {
-        var originalCommandIds = BatchProcessor.Instance.GetOriginalCommandIds(cmd.CommandId);
+        var originalCommandIds = BatchProcessor.Instance.GetOriginalCommandIds(m_SessionId, cmd.CommandId);
         foreach (var commandId in originalCommandIds)
         {
             var queuedCommand = queuedCommands.FirstOrDefault(qc => qc.Id == commandId);
@@ -512,6 +512,7 @@ internal class CommandQueue : IDisposable
             return new CommandResult
             {
                 CommandId = cmd.CommandId,
+                SessionId = m_SessionId,
                 ProcessId = m_CdbSession.ProcessId,
                 ResultText = result
             };
@@ -523,6 +524,7 @@ internal class CommandQueue : IDisposable
             return new CommandResult
             {
                 CommandId = cmd.CommandId,
+                SessionId = m_SessionId,
                 ProcessId = m_CdbSession?.ProcessId ?? null,
                 ResultText = "Command was cancelled",
                 IsCancelled = true
@@ -535,6 +537,7 @@ internal class CommandQueue : IDisposable
             return new CommandResult
             {
                 CommandId = cmd.CommandId,
+                SessionId = m_SessionId,
                 ProcessId = m_CdbSession?.ProcessId ?? null,
                 ResultText = $"Command timed out: {ex.Message}",
                 IsTimeout = true
@@ -547,6 +550,7 @@ internal class CommandQueue : IDisposable
             return new CommandResult
             {
                 CommandId = cmd.CommandId,
+                SessionId = m_SessionId,
                 ProcessId = m_CdbSession?.ProcessId ?? null,
                 ResultText = $"ERROR: {ex.Message}",
                 IsFailed = true
@@ -624,7 +628,7 @@ internal class CommandQueue : IDisposable
         UpdateCommandState(queuedCommand, finalState);
 
         // Get batch command ID efficiently using the batch processor's cache
-        var batchCommandId = BatchProcessor.Instance.GetBatchCommandId(result.CommandId);
+        var batchCommandId = BatchProcessor.Instance.GetBatchCommandId(m_SessionId, result.CommandId);
 
         // Emit detailed statistics
         Statistics.EmitCommandStats(

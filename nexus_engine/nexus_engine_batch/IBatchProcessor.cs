@@ -34,16 +34,18 @@ public interface IBatchProcessor
     /// <summary>
     /// Gets the original command IDs that were batched into the given batch command ID.
     /// </summary>
+    /// <param name="sessionId">The session ID.</param>
     /// <param name="batchCommandId">The batch command ID or single command ID.</param>
     /// <returns>List of original command IDs (single item if not a batch).</returns>
-    List<string> GetOriginalCommandIds(string batchCommandId);
+    List<string> GetOriginalCommandIds(string sessionId, string batchCommandId);
 
     /// <summary>
     /// Gets the batch command ID for a given individual command ID, if it was part of a batch.
     /// </summary>
+    /// <param name="sessionId">The session ID.</param>
     /// <param name="individualCommandId">The individual command ID.</param>
     /// <returns>The batch command ID if part of a batch, null otherwise.</returns>
-    string? GetBatchCommandId(string individualCommandId);
+    string? GetBatchCommandId(string sessionId, string individualCommandId);
 
     /// <summary>
     /// Clears all batch mappings for a specific session.
