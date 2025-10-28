@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using Nexus.Config;
 using Nexus.Engine.Extensions.Models;
 using Nexus.Engine.Extensions.Security;
+using Nexus.Engine.Share.Models;
 using Nexus.External.Apis.ProcessManagement;
 
 using NLog;
@@ -74,7 +75,7 @@ internal class Executor
     /// <param name="progressCallback">Optional progress callback.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The result of the extension execution.</returns>
-    public async Task<ExtensionResult> ExecuteAsync(
+    public async Task<CommandInfo> ExecuteAsync(
         string extensionName,
         string sessionId,
         object? parameters,
@@ -95,14 +96,16 @@ internal class Executor
             {
                 m_Logger.Error("Extension {ExtensionName} not found", extensionName);
 
-                return new ExtensionResult
-                {
-                    Success = false,
-                    Error = $"Extension '{extensionName}' not found",
-                    ExitCode = -1,
-                    StartTime = startTime,
-                    EndTime = DateTime.Now
-                };
+                return CommandInfo.Failed(
+                    sessionId,
+                    commandId,
+                    $"Extension: {extensionName}",
+                    startTime,
+                    startTime,
+                    DateTime.Now,
+                    string.Empty,
+                    $"Extension '{extensionName}' not found",
+                    null);
             }
 
             // Generate security token
@@ -114,36 +117,36 @@ internal class Executor
             {
                 m_Logger.Error("Failed to create process for extension {ExtensionName}", extensionName);
 
-                return new ExtensionResult
-                {
-                    Success = false,
-                    Error = "Failed to create process",
-                    ExitCode = -1,
-                    StartTime = startTime,
-                    EndTime = DateTime.Now
-                };
+                return CommandInfo.Failed(
+                    sessionId,
+                    commandId,
+                    $"Extension: {extensionName}",
+                    startTime,
+                    startTime,
+                    DateTime.Now,
+                    string.Empty,
+                    "Failed to create process",
+                    null);
             }
 
             // Monitor script execution (attach handlers and wait for completion)
-            var result = await MonitorScriptAsync(process, metadata, progressCallback, cancellationToken);
-            result.StartTime = startTime;
-            result.ProcessId = process.Id;
-
-            return result;
+            return await MonitorScriptAsync(process, sessionId, commandId, extensionName, metadata, progressCallback, cancellationToken);
         }
         catch (Exception ex)
         {
             m_Logger.Error(ex, "Error executing extension {ExtensionName} with command ID {CommandId}",
                 extensionName, commandId);
 
-            return new ExtensionResult
-            {
-                Success = false,
-                Error = ex.Message,
-                ExitCode = -1,
-                StartTime = startTime,
-                EndTime = DateTime.Now
-            };
+            return CommandInfo.Failed(
+                sessionId,
+                commandId,
+                $"Extension: {extensionName}",
+                startTime,
+                startTime,
+                DateTime.Now,
+                string.Empty,
+                ex.Message,
+                null);
         }
     }
 
@@ -235,8 +238,11 @@ internal class Executor
     /// <summary>
     /// Attaches output/error handlers to the running process and waits for completion.
     /// </summary>
-    private async Task<ExtensionResult> MonitorScriptAsync(
+    private async Task<CommandInfo> MonitorScriptAsync(
         Process process,
+        string sessionId,
+        string commandId,
+        string extensionName,
         ExtensionMetadata metadata,
         Action<string>? progressCallback,
         CancellationToken cancellationToken)
@@ -287,16 +293,16 @@ internal class Executor
 
                 EndScriptExecution(process, metadata);
 
-                return new ExtensionResult
-                {
-                    Success = false,
-                    Error = $"Extension exceeded timeout of {timeoutMs}ms",
-                    Output = output.ToString(),
-                    ExitCode = -1,
-                    StartTime = startTime,
-                    EndTime = DateTime.Now,
-                    ExecutionTimeMs = (long)(DateTime.Now - startTime).TotalMilliseconds
-                };
+                return CommandInfo.TimedOut(
+                    sessionId,
+                    commandId,
+                    $"Extension: {extensionName}",
+                    startTime,
+                    startTime,
+                    DateTime.Now,
+                    string.Empty,
+                    $"Extension exceeded timeout of {timeoutMs}ms",
+                    process.Id);
             }
 
             var endTime = DateTime.Now;
@@ -306,16 +312,16 @@ internal class Executor
             m_Logger.Info("Extension {ExtensionName} completed with exit code {ExitCode} in {ExecutionTime}ms",
                 metadata.Name, process.ExitCode, executionTime);
 
-            return new ExtensionResult
-            {
-                Success = success,
-                Output = output.ToString(),
-                Error = error.ToString(),
-                ExitCode = process.ExitCode,
-                StartTime = startTime,
-                EndTime = endTime,
-                ExecutionTimeMs = executionTime
-            };
+            return CommandInfo.Completed(   
+                sessionId,
+                commandId,
+                $"Extension: {extensionName}",
+                startTime,
+                startTime,
+                DateTime.Now,
+                output.ToString(),
+                error.ToString(),
+                process.Id);
         }
         catch (OperationCanceledException)
         {
@@ -323,31 +329,31 @@ internal class Executor
                 metadata.Name);
 
             EndScriptExecution(process, metadata, true);
-
-            return new ExtensionResult
-            {
-                Success = false,
-                Output = output.ToString(),
-                Error = "Extension execution was cancelled" + Environment.NewLine + error.ToString(),
-                ExitCode = -1,
-                StartTime = startTime,
-                EndTime = DateTime.Now,
-                ExecutionTimeMs = (long)(DateTime.Now - startTime).TotalMilliseconds
-            };
+            return CommandInfo.Cancelled(
+                sessionId,
+                commandId,
+                $"Extension: {extensionName}",
+                startTime,
+                startTime,
+                DateTime.Now,
+                string.Empty,
+                "Extension execution was cancelled",
+                process.Id);
         }
         catch (Exception ex)
         {
             m_Logger.Error(ex, "Error executing extension {ExtensionName}", metadata.Name);
-            return new ExtensionResult
-            {
-                Success = false,
-                Output = output.ToString(),
-                Error = ex.Message + Environment.NewLine + error.ToString(),
-                ExitCode = -1,
-                StartTime = startTime,
-                EndTime = DateTime.Now,
-                ExecutionTimeMs = (long)(DateTime.Now - startTime).TotalMilliseconds
-            };
+
+            return CommandInfo.Failed(
+                sessionId,
+                commandId,
+                $"Extension: {extensionName}",
+                startTime,
+                startTime,
+                DateTime.Now,
+                string.Empty,
+                ex.Message,
+                process.Id);
         }
     }
 

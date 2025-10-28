@@ -74,7 +74,7 @@ internal sealed class ProcessOutputAggregator : IDisposable
         }
         finally
         {
-            m_Channel.Writer.TryComplete();
+            _ = m_Channel.Writer.TryComplete();
             m_Disposed = true;
         }
     }

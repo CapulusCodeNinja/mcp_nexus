@@ -19,12 +19,18 @@ internal sealed class ProcessOutputLine
     /// <summary>
     /// Gets the text content of the line.
     /// </summary>
-    public string Text { get; }
+    public string Text
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether the line originated from the error stream.
     /// </summary>
-    public bool IsError { get; }
+    public bool IsError
+    {
+        get;
+    }
 }
 
 

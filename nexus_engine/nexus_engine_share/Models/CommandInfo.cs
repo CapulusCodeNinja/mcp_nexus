@@ -6,6 +6,14 @@ namespace Nexus.Engine.Share.Models;
 public class CommandInfo
 {
     /// <summary>
+    /// Gets the process identifier.
+    /// </summary>
+    public int? ProcessId
+    {
+        get; private set;
+    }
+
+    /// <summary>
     /// Gets the session identifier.
     /// </summary>
     public string SessionId
@@ -127,16 +135,18 @@ public class CommandInfo
     /// <param name="command">The command text.</param>
     /// <param name="state">The state of the command.</param>
     /// <param name="queuedTime">The time when the command was queued.</param>
+    /// <param name="processId">The process identifier.</param>
     /// <param name="startTime">The time when the command started.</param>
     /// <param name="endTime">The time when the command completed.</param>
     /// <param name="aggregatedOutput">The aggregated output.</param>
     /// <param name="errorMessage">The error message if failed.</param>
-    public CommandInfo(string sessionId, string commandId, string command, CommandState state, DateTime queuedTime, 
+    public CommandInfo(string sessionId, string commandId, string command, CommandState state, DateTime queuedTime, int? processId, 
         DateTime? startTime, DateTime? endTime, string? aggregatedOutput, string? errorMessage)
     {
         SessionId = sessionId;
         CommandId = commandId;
         CommandNumber = GetCommandNumber(sessionId, commandId);
+        ProcessId = processId;
         Command = command;
         State = state;
         QueuedTime = queuedTime;
@@ -153,14 +163,16 @@ public class CommandInfo
     /// <param name="commandId">The command identifier.</param>
     /// <param name="command">The command text.</param>
     /// <param name="queuedTime">The time when the command was queued.</param>
+    /// <param name="processId">The process identifier.</param>
     /// <returns>A command info for a queued command.</returns>
     public static CommandInfo Enqueued(
         string sessionId,
         string commandId,
         string command,
-        DateTime queuedTime)
+        DateTime queuedTime,
+        int? processId)
     {
-        return new CommandInfo(sessionId, commandId, command, CommandState.Queued, queuedTime, null, null, string.Empty, string.Empty);
+        return new CommandInfo(sessionId, commandId, command, CommandState.Queued, queuedTime, processId, null, null, string.Empty, string.Empty);
     }
 
     /// <summary>
@@ -171,15 +183,17 @@ public class CommandInfo
     /// <param name="command">The command text.</param>
     /// <param name="queuedTime">The time when the command was queued.</param>
     /// <param name="startTime">The time when the command started.</param>
+    /// <param name="processId">The process identifier.</param>
     /// <returns>A command info for an executing command.</returns>
     public static CommandInfo Executing(
         string sessionId,
         string commandId,
         string command,
         DateTime queuedTime,
-        DateTime startTime)
+        DateTime startTime,
+        int? processId)
     {
-        return new CommandInfo(sessionId, commandId, command, CommandState.Executing, queuedTime, startTime, null, string.Empty, string.Empty);
+        return new CommandInfo(sessionId, commandId, command, CommandState.Executing, queuedTime, processId, startTime, null, string.Empty, string.Empty);
     }
 
     /// <summary>
@@ -192,7 +206,8 @@ public class CommandInfo
     /// <param name="startTime">The time when the command started.</param>
     /// <param name="endTime">The time when the command completed.</param>
     /// <param name="aggregatedOutput">The output stream.</param>
-    /// <param name="errorMessage"></param>
+    /// <param name="errorMessage">The error message if failed.</param>
+    /// <param name="processId">The process identifier.</param>
     /// <returns>A command info for a completed command.</returns>
     public static CommandInfo Completed(
         string sessionId,
@@ -202,9 +217,10 @@ public class CommandInfo
         DateTime startTime,
         DateTime endTime,
         string aggregatedOutput,
-        string errorMessage)
+        string errorMessage,
+        int? processId)
     {
-        return new CommandInfo(sessionId, commandId, command, CommandState.Completed, queuedTime, startTime, endTime, aggregatedOutput, errorMessage);
+        return new CommandInfo(sessionId, commandId, command, CommandState.Completed, queuedTime, processId, startTime, endTime, aggregatedOutput, errorMessage);
     }
 
     /// <summary>
@@ -218,6 +234,7 @@ public class CommandInfo
     /// <param name="endTime">The time when the command completed.</param>
     /// <param name="aggregatedOutput">The aggregated output.</param>
     /// <param name="errorMessage">The error message if failed.</param>
+    /// <param name="processId">The process identifier.</param>
     /// <returns>A command info for a completed command.</returns>
     public static CommandInfo Failed(
         string sessionId,
@@ -227,9 +244,10 @@ public class CommandInfo
         DateTime startTime,
         DateTime endTime,
         string aggregatedOutput,
-        string errorMessage)
+        string errorMessage,
+        int? processId)
     {
-        return new CommandInfo(sessionId, commandId, command, CommandState.Failed, queuedTime, startTime, endTime, aggregatedOutput, errorMessage);
+        return new CommandInfo(sessionId, commandId, command, CommandState.Failed, queuedTime, processId, startTime, endTime, aggregatedOutput, errorMessage);
     }
 
     /// <summary>
@@ -243,6 +261,7 @@ public class CommandInfo
     /// <param name="endTime">The time when the command was cancelled.</param>
     /// <param name="aggregatedOutput">The aggregated output.</param>
     /// <param name="errorMessage">The error message if failed.</param>
+    /// <param name="processId">The process identifier.</param>
     /// <returns>A command info for a cancelled command.</returns>
     public static CommandInfo Cancelled(
         string sessionId,
@@ -252,9 +271,10 @@ public class CommandInfo
         DateTime startTime,
         DateTime endTime,
         string aggregatedOutput,
-        string errorMessage)
+        string errorMessage,
+        int? processId)  
     {
-        return new CommandInfo(sessionId, commandId, command, CommandState.Cancelled, queuedTime, startTime, endTime, aggregatedOutput, $"Command was cancelled: {errorMessage}");
+        return new CommandInfo(sessionId, commandId, command, CommandState.Cancelled, queuedTime, processId, startTime, endTime, aggregatedOutput, $"Command was cancelled: {errorMessage}");
     }
 
     /// <summary>
@@ -268,6 +288,7 @@ public class CommandInfo
     /// <param name="endTime">The time when the command timed out.</param>
     /// <param name="aggregatedOutput">The aggregated output.</param>
     /// <param name="errorMessage">The error message if failed.</param>
+    /// <param name="processId">The process identifier.</param>
     /// <returns>A command info for a timed out command.</returns>
     public static CommandInfo TimedOut(
         string sessionId,
@@ -277,9 +298,10 @@ public class CommandInfo
         DateTime startTime,
         DateTime endTime,
         string aggregatedOutput,
-        string errorMessage)
+        string errorMessage,
+        int? processId)
     {
-        return new CommandInfo(sessionId, commandId, command, CommandState.Timeout, queuedTime, startTime, endTime, aggregatedOutput, $"Command timed out: {errorMessage}");
+        return new CommandInfo(sessionId, commandId, command, CommandState.Timeout, queuedTime, processId, startTime, endTime, aggregatedOutput, $"Command timed out: {errorMessage}");
     }
 }
 

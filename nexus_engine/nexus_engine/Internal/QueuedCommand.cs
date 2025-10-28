@@ -24,6 +24,14 @@ internal class QueuedCommand : IDisposable
     }
 
     /// <summary>
+    /// Gets or sets the process identifier.
+    /// </summary>
+    public required int? ProcessId
+    {
+        get; set;
+    }
+
+    /// <summary>
     /// Gets or sets the time when the command was queued.
     /// </summary>
     public required DateTime QueuedTime
