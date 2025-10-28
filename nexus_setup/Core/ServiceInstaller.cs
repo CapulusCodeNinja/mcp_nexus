@@ -105,12 +105,12 @@ internal class ServiceInstaller : IServiceInstaller
                 }
             }
 
-            var (Success, Output, ErrorDetails) = await ExecuteScCommandAsync(arguments, cancellationToken);
+            var (success, output, errorDetails) = await ExecuteScCommandAsync(arguments, cancellationToken);
 
-            if (!Success)
+            if (!success)
             {
-                m_Logger.Error("Failed to install service: {Error}", ErrorDetails);
-                return ServiceInstallationResult.CreateFailure(options.ServiceName, "Failed to install service", ErrorDetails);
+                m_Logger.Error("Failed to install service: {Error}", errorDetails);
+                return ServiceInstallationResult.CreateFailure(options.ServiceName, "Failed to install service", errorDetails);
             }
 
             // Set service description
@@ -181,12 +181,12 @@ internal class ServiceInstaller : IServiceInstaller
 
             // Delete the service
             var arguments = $"delete \"{serviceName}\"";
-            var (Success, Output, ErrorDetails) = await ExecuteScCommandAsync(arguments, cancellationToken);
+            var (success, output, errorDetails) = await ExecuteScCommandAsync(arguments, cancellationToken);
 
-            if (!Success)
+            if (!success)
             {
-                m_Logger.Error("Failed to uninstall service: {Error}", ErrorDetails);
-                return ServiceInstallationResult.CreateFailure(serviceName, "Failed to uninstall service", ErrorDetails);
+                m_Logger.Error("Failed to uninstall service: {Error}", errorDetails);
+                return ServiceInstallationResult.CreateFailure(serviceName, "Failed to uninstall service", errorDetails);
             }
 
             m_Logger.Info("Service {ServiceName} uninstalled successfully", serviceName);
