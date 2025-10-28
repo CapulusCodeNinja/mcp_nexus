@@ -213,6 +213,8 @@ internal class CommandQueue : IDisposable
         return m_ActiveCommands.TryGetValue(commandId, out var command)
             ? new CommandInfo
             {
+                SessionId = m_SessionId,
+                CommandNumber = GetCommandNumber(m_SessionId, command.Id),
                 CommandId = command.Id,
                 Command = command.Command,
                 State = command.State,

@@ -437,7 +437,7 @@ public class DebugEngine : IDebugEngine
         }
 
         // If not found in session, try to cancel in the extensions library
-        return m_ExtensionScripts.CancelCommand(commandId);
+        return m_ExtensionScripts.CancelCommand(sessionId, commandId);
     }
 
     /// <summary>

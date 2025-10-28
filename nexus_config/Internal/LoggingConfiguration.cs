@@ -57,10 +57,9 @@ internal class LoggingConfiguration
                 AutoFlush = true,
                 CreateDirs = true,
                 WriteBom = true,
-                ArchiveOldFileOnStartup = true,
                 Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}",
                 Encoding = System.Text.Encoding.UTF8,
-                
+
             };
             nlogConfig.AddTarget(fileTarget);
             nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, fileTarget));

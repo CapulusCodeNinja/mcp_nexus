@@ -6,35 +6,51 @@ namespace Nexus.Engine.Share.Models;
 public class CommandInfo
 {
     /// <summary>
+    /// Gets the session identifier.
+    /// </summary>
+    public string SessionId
+    {
+        get; private set;
+    }
+
+    /// <summary>
     /// Gets the unique identifier of the command.
     /// </summary>
-    public required string CommandId
+    public string CommandId
     {
-        get; init;
+        get; private set;
+    }
+
+    /// <summary>
+    /// Gets the command number.
+    /// </summary>
+    public int CommandNumber
+    {
+        get; private set;
     }
 
     /// <summary>
     /// Gets the command text that was executed.
     /// </summary>
-    public required string Command
+    public string Command
     {
-        get; init;
+        get; private set;
     }
 
     /// <summary>
     /// Gets the current state of the command.
     /// </summary>
-    public required CommandState State
+    public CommandState State
     {
-        get; init;
+        get; private set;
     }
 
     /// <summary>
     /// Gets the time when the command was queued.
     /// </summary>
-    public required DateTime QueuedTime
+    public DateTime QueuedTime
     {
-        get; init;
+        get; private set;
     }
 
     /// <summary>
@@ -42,7 +58,7 @@ public class CommandInfo
     /// </summary>
     public DateTime? StartTime
     {
-        get; init;
+        get; private set;
     }
 
     /// <summary>
@@ -50,31 +66,36 @@ public class CommandInfo
     /// </summary>
     public DateTime? EndTime
     {
-        get; init;
+        get; private set;
     }
 
     /// <summary>
-    /// Gets the output from the command execution, or null if not completed.
+    /// Gets the standard output stream from the command execution, or null if not completed.
     /// </summary>
-    public string? Output
+    public string? StandardOutputStream
     {
-        get; init;
+        get; private set;
+    }
+
+    /// <summary>
+    /// Gets the error output stream from the command execution, or null if not completed.
+    /// </summary>
+    public string? ErrorOutputStream
+    {
+        get; private set;
     }
 
     /// <summary>
     /// Gets a value indicating whether the command executed successfully, or null if not completed.
     /// </summary>
-    public bool? IsSuccess
-    {
-        get; init;
-    }
+    public bool? IsSuccess => State == CommandState.Completed;
 
     /// <summary>
     /// Gets the error message if the command failed, or null if not failed.
     /// </summary>
     public string? ErrorMessage
     {
-        get; init;
+        get; private set;
     }
 
     /// <summary>
@@ -93,137 +114,190 @@ public class CommandInfo
     public TimeSpan? TotalTime => EndTime.HasValue ? EndTime.Value - QueuedTime : null;
 
     /// <summary>
-    /// Creates a command info for a queued command.
+    /// Gets the command number from the command identifier.
     /// </summary>
+    /// <param name="sessionId">The session identifier.</param>
     /// <param name="commandId">The command identifier.</param>
-    /// <param name="command">The command text.</param>
-    /// <param name="queuedTime">The time when the command was queued.</param>
-    /// <returns>A command info for a queued command.</returns>
-    public static CommandInfo Queued(string commandId, string command, DateTime queuedTime)
+    /// <returns>The command number.</returns>
+    private static int GetCommandNumber(string sessionId, string commandId)
     {
-        return new CommandInfo
-        {
-            CommandId = commandId,
-            Command = command,
-            State = CommandState.Queued,
-            QueuedTime = queuedTime
-        };
-    }
+        var prefix = $"cmd-{sessionId}-";
+        var indexString = commandId.Replace(prefix, "");
 
-    /// <summary>
-    /// Creates a command info for an executing command.
-    /// </summary>
-    /// <param name="commandId">The command identifier.</param>
-    /// <param name="command">The command text.</param>
-    /// <param name="queuedTime">The time when the command was queued.</param>
-    /// <param name="startTime">The time when the command started.</param>
-    /// <returns>A command info for an executing command.</returns>
-    public static CommandInfo Executing(string commandId, string command, DateTime queuedTime, DateTime startTime)
-    {
-        return new CommandInfo
-        {
-            CommandId = commandId,
-            Command = command,
-            State = CommandState.Executing,
-            QueuedTime = queuedTime,
-            StartTime = startTime
-        };
+        return int.TryParse(indexString, out var index) ? index : 0;
     }
 
     /// <summary>
     /// Creates a command info for a completed command.
     /// </summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="commandId">The command identifier.</param>
+    /// <param name="command">The command text.</param>
+    /// <param name="state">The state of the command.</param>
+    /// <param name="queuedTime">The time when the command was queued.</param>
+    /// <param name="startTime">The time when the command started.</param>
+    /// <param name="endTime">The time when the command completed.</param>
+    /// <param name="standardOutputStream">The standard output stream.</param>
+    /// <param name="errorOutputStream">The error output stream.</param>
+    /// <param name="errorMessage">The error message if failed.</param>
+        private CommandInfo(string sessionId, string commandId, string command, CommandState state, DateTime queuedTime, 
+        DateTime? startTime, DateTime? endTime, string? standardOutputStream, string? errorOutputStream, string? errorMessage)
+    {
+        SessionId = sessionId;
+        CommandId = commandId;
+        CommandNumber = GetCommandNumber(sessionId, commandId);
+        Command = command;
+        State = state;
+        QueuedTime = queuedTime;
+        StartTime = startTime ?? null;
+        EndTime = endTime ?? null;
+        StandardOutputStream = standardOutputStream ?? string.Empty;
+        ErrorOutputStream = errorOutputStream ?? string.Empty;
+        ErrorMessage = errorMessage ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Creates a command info for a queued command.
+    /// </summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="commandId">The command identifier.</param>
+    /// <param name="command">The command text.</param>
+    /// <param name="queuedTime">The time when the command was queued.</param>
+    /// <returns>A command info for a queued command.</returns>
+    public static CommandInfo Enqueued(
+        string sessionId,
+        string commandId,
+        string command,
+        DateTime queuedTime)
+    {
+        return new CommandInfo(sessionId, commandId, command, CommandState.Queued, queuedTime, null, null, string.Empty, string.Empty, string.Empty);
+    }
+
+    /// <summary>
+    /// Creates a command info for a queued command.
+    /// </summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="commandId">The command identifier.</param>
+    /// <param name="command">The command text.</param>
+    /// <param name="queuedTime">The time when the command was queued.</param>
+    /// <param name="startTime">The time when the command started.</param>
+    /// <returns>A command info for a queued command.</returns>
+    public static CommandInfo Executing(
+        string sessionId,
+        string commandId,
+        string command,
+        DateTime queuedTime,
+        DateTime startTime)
+    {
+        return new CommandInfo(sessionId, commandId, command, CommandState.Queued, queuedTime, startTime, null, string.Empty, string.Empty, string.Empty);
+    }
+
+    /// <summary>
+    /// Creates a command info for a completed command.
+    /// </summary>
+    /// <param name="sessionId">The session identifier.</param>
     /// <param name="commandId">The command identifier.</param>
     /// <param name="command">The command text.</param>
     /// <param name="queuedTime">The time when the command was queued.</param>
     /// <param name="startTime">The time when the command started.</param>
     /// <param name="endTime">The time when the command completed.</param>
-    /// <param name="output">The command output.</param>
-    /// <param name="isSuccess">Whether the command succeeded.</param>
-    /// <param name="errorMessage">The error message if failed.</param>
+    /// <param name="standardOutputStream">The standard output stream.</param>
+    /// <param name="errorOutputStream">The error output stream.</param>
+    /// <param name="errorMessage"></param>
     /// <returns>A command info for a completed command.</returns>
     public static CommandInfo Completed(
+        string sessionId,
         string commandId,
         string command,
         DateTime queuedTime,
         DateTime startTime,
         DateTime endTime,
-        string output,
-        bool isSuccess,
-        string? errorMessage = null)
+        string standardOutputStream,
+        string errorOutputStream,
+        string errorMessage)
     {
-        return new CommandInfo
-        {
-            CommandId = commandId,
-            Command = command,
-            State = isSuccess ? CommandState.Completed : CommandState.Failed,
-            QueuedTime = queuedTime,
-            StartTime = startTime,
-            EndTime = endTime,
-            Output = output,
-            IsSuccess = isSuccess,
-            ErrorMessage = errorMessage
-        };
+        return new CommandInfo(sessionId, commandId, command, CommandState.Completed, queuedTime, startTime, endTime, standardOutputStream, errorOutputStream, errorMessage);
+    }
+
+    /// <summary>
+    /// Creates a command info for a completed command.
+    /// </summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="commandId">The command identifier.</param>
+    /// <param name="command">The command text.</param>
+    /// <param name="queuedTime">The time when the command was queued.</param>
+    /// <param name="startTime">The time when the command started.</param>
+    /// <param name="endTime">The time when the command completed.</param>
+    /// <param name="standardOutputStream">The standard output stream.</param>
+    /// <param name="errorOutputStream">The error output stream.</param>
+    /// <param name="errorMessage">The error message if failed.</param>
+    /// <returns>A command info for a completed command.</returns>
+    public static CommandInfo Failed(
+        string sessionId,
+        string commandId,
+        string command,
+        DateTime queuedTime,
+        DateTime startTime,
+        DateTime endTime,
+        string standardOutputStream,
+        string errorOutputStream,
+        string errorMessage)
+    {
+        return new CommandInfo(sessionId, commandId, command, CommandState.Failed, queuedTime, startTime, endTime, standardOutputStream, errorOutputStream, errorMessage);
     }
 
     /// <summary>
     /// Creates a command info for a cancelled command.
     /// </summary>
+    /// <param name="sessionId">The session identifier.</param>
     /// <param name="commandId">The command identifier.</param>
     /// <param name="command">The command text.</param>
     /// <param name="queuedTime">The time when the command was queued.</param>
     /// <param name="startTime">The time when the command started.</param>
     /// <param name="endTime">The time when the command was cancelled.</param>
+    /// <param name="standardOutputStream">The standard output stream.</param>
+    /// <param name="errorOutputStream">The error output stream.</param>
+    /// <param name="errorMessage"></param>
     /// <returns>A command info for a cancelled command.</returns>
     public static CommandInfo Cancelled(
-        string commandId,
-        string command,
-        DateTime queuedTime,
-        DateTime? startTime = null,
-        DateTime? endTime = null)
-    {
-        return new CommandInfo
-        {
-            CommandId = commandId,
-            Command = command,
-            State = CommandState.Cancelled,
-            QueuedTime = queuedTime,
-            StartTime = startTime,
-            EndTime = endTime,
-            IsSuccess = false,
-            ErrorMessage = "Command was cancelled"
-        };
-    }
-
-    /// <summary>
-    /// Creates a command info for a timed out command.
-    /// </summary>
-    /// <param name="commandId">The command identifier.</param>
-    /// <param name="command">The command text.</param>
-    /// <param name="queuedTime">The time when the command was queued.</param>
-    /// <param name="startTime">The time when the command started.</param>
-    /// <param name="endTime">The time when the command timed out.</param>
-    /// <param name="errorMessage">The timeout error message.</param>
-    /// <returns>A command info for a timed out command.</returns>
-    public static CommandInfo TimedOut(
+        string sessionId,
         string commandId,
         string command,
         DateTime queuedTime,
         DateTime startTime,
         DateTime endTime,
+        string standardOutputStream,
+        string errorOutputStream,
         string errorMessage)
     {
-        return new CommandInfo
-        {
-            CommandId = commandId,
-            Command = command,
-            State = CommandState.Timeout,
-            QueuedTime = queuedTime,
-            StartTime = startTime,
-            EndTime = endTime,
-            IsSuccess = false,
-            ErrorMessage = errorMessage
-        };
+        return new CommandInfo(sessionId, commandId, command, CommandState.Cancelled, queuedTime, startTime, endTime, standardOutputStream, errorOutputStream, $"Command was cancelled: {errorMessage}");
+    }
+
+    /// <summary>
+    /// Creates a command info for a timed out command.
+    /// </summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="commandId">The command identifier.</param>
+    /// <param name="command">The command text.</param>
+    /// <param name="queuedTime">The time when the command was queued.</param>
+    /// <param name="startTime">The time when the command started.</param>
+    /// <param name="endTime">The time when the command timed out.</param>
+    /// <param name="standardOutputStream">The standard output stream.</param>
+    /// <param name="errorOutputStream">The error output stream.</param>
+    /// <param name="errorMessage">The error message if failed.</param>
+    /// <returns>A command info for a timed out command.</returns>
+    public static CommandInfo TimedOut(
+        string sessionId,
+        string commandId,
+        string command,
+        DateTime queuedTime,
+        DateTime startTime,
+        DateTime endTime,
+        string standardOutputStream,
+        string errorOutputStream,
+        string errorMessage)
+    {
+        return new CommandInfo(sessionId, commandId, command, CommandState.Timeout, queuedTime, startTime, endTime, standardOutputStream, errorOutputStream, $"Command timed out: {errorMessage}");
     }
 }
 
