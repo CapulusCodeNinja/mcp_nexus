@@ -10,32 +10,19 @@ namespace Nexus.Config
     /// </summary>
     public class Settings : ISettings
     {
-        private static Settings? m_Instance;
-        private static readonly object m_Lock = new();
-
         private ConfigurationLoader m_ConfigurationLoader;
         private readonly LoggingConfiguration m_LoggingConfiguration;
+        private SharedConfiguration? m_CachedConfiguration;
+
+        /// <summary>
+        /// Gets the singleton instance of the settings.
+        /// </summary>
+        public static ISettings Instance { get; } = new Settings();
 
         private Settings()
         {
             m_ConfigurationLoader = new ConfigurationLoader();
             m_LoggingConfiguration = new LoggingConfiguration();
-        }
-
-        /// <summary>
-        /// Gets a singleton instance exposing the <see cref="ISettings"/> API.
-        /// </summary>
-        /// <returns>The singleton <see cref="ISettings"/> instance.</returns>
-        public static ISettings GetInstance()
-        {
-            if (m_Instance == null)
-            {
-                lock (m_Lock)
-                {
-                    m_Instance ??= new Settings();
-                }
-            }
-            return m_Instance;
         }
 
         /// <summary>
@@ -59,12 +46,13 @@ namespace Nexus.Config
 
         /// <summary>
         /// Returns the shared configuration. Requires <see cref="LoadConfiguration"/> to be called first.
+        /// Configuration is cached after first access for performance.
         /// </summary>
         /// <returns>The shared configuration model.</returns>
         /// <exception cref="InvalidOperationException">Thrown if configuration wasn't loaded.</exception>
         public SharedConfiguration Get()
         {
-            return m_ConfigurationLoader!.GetSharedConfiguration();
+            return m_CachedConfiguration ??= m_ConfigurationLoader!.GetSharedConfiguration();
         }
     }
 }

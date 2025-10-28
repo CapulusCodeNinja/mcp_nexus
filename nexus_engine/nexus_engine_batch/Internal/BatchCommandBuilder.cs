@@ -65,7 +65,7 @@ internal class BatchCommandBuilder
         {
             currentBatch.Add(command);
 
-            if (currentBatch.Count >= Settings.GetInstance().Get().McpNexus.Batching.MaxBatchSize)
+            if (currentBatch.Count >= Settings.Instance.Get().McpNexus.Batching.MaxBatchSize)
             {
                 batches.Add(currentBatch);
                 currentBatch = new List<Command>();

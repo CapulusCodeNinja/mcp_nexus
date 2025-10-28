@@ -79,7 +79,7 @@ public class DebugEngine : IDebugEngine
         m_ExtensionScripts = new ExtensionScripts(this);
 
         m_Logger = LogManager.GetCurrentClassLogger();
-        m_Logger.Info("DebugEngine initialized with max {MaxSessions} concurrent sessions", Settings.GetInstance().Get().McpNexus.SessionManagement.MaxConcurrentSessions);
+        m_Logger.Info("DebugEngine initialized with max {MaxSessions} concurrent sessions", Settings.Instance.Get().McpNexus.SessionManagement.MaxConcurrentSessions);
     }
 
     /// <summary>
@@ -112,9 +112,9 @@ public class DebugEngine : IDebugEngine
             throw new FileNotFoundException($"Dump file not found: {dumpFilePath}", dumpFilePath);
         }
 
-        if (m_Sessions.Count >= Settings.GetInstance().Get().McpNexus.SessionManagement.MaxConcurrentSessions)
+        if (m_Sessions.Count >= Settings.Instance.Get().McpNexus.SessionManagement.MaxConcurrentSessions)
         {
-            throw new InvalidOperationException($"Maximum number of concurrent sessions ({Settings.GetInstance().Get().McpNexus.SessionManagement.MaxConcurrentSessions}) reached");
+            throw new InvalidOperationException($"Maximum number of concurrent sessions ({Settings.Instance.Get().McpNexus.SessionManagement.MaxConcurrentSessions}) reached");
         }
 
         var sessionId = SessionIdGenerator.Instance.GenerateSessionId();

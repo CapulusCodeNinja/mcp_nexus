@@ -67,7 +67,7 @@ internal class CallbackServerManager : ICallbackServerManager
         m_TokenValidator = tokenValidator ?? throw new ArgumentNullException(nameof(tokenValidator));
 
         // Read configuration
-        var config = Settings.GetInstance().Get();
+        var config = Settings.Instance.Get();
         m_ConfiguredPort = config.McpNexus.Extensions.CallbackPort;
         m_Host = "127.0.0.1"; // Localhost only for security
 

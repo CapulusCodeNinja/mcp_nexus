@@ -29,7 +29,7 @@ internal class LoggingConfiguration
     /// <returns>The configured log level.</returns>
     protected virtual Microsoft.Extensions.Logging.LogLevel GetLogLevelFromConfiguration()
     {
-        var logLevelString = Settings.GetInstance().Get().Logging.LogLevel;
+        var logLevelString = Settings.Instance.Get().Logging.LogLevel;
         return ParseLogLevel(logLevelString);
     }
 

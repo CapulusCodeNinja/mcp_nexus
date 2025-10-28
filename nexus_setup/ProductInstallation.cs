@@ -80,19 +80,19 @@ namespace Nexus.Setup
         /// <returns>True if installation succeeded, false otherwise.</returns>
         internal async Task<bool> InstallServiceAsync(IServiceController serviceController)
         {
-            var serviceName = Settings.GetInstance().Get().McpNexus.Service.ServiceName;
-            var displayName = Settings.GetInstance().Get().McpNexus.Service.DisplayName;
+            var serviceName = Settings.Instance.Get().McpNexus.Service.ServiceName;
+            var displayName = Settings.Instance.Get().McpNexus.Service.DisplayName;
             var startMode = ServiceStartMode.Automatic; // Fixed value, not configurable
 
             m_Logger.Info("Installing {ServiceName} as Windows Service...", serviceName);
 
-            var installationDirectory = Settings.GetInstance().Get().McpNexus.Service.InstallPath;
-            var backupDirectory = Settings.GetInstance().Get().McpNexus.Service.BackupPath;
+            var installationDirectory = Settings.Instance.Get().McpNexus.Service.InstallPath;
+            var backupDirectory = Settings.Instance.Get().McpNexus.Service.BackupPath;
             var installedExecutablePath = Path.Combine(installationDirectory, "nexus.exe");
             var sourceDirectory = AppContext.BaseDirectory;
 
             // PHASE 1: Pre-installation validation
-            if (!m_InstallationValidator.ValidateInstallation(Settings.GetInstance().Get(), sourceDirectory))
+            if (!m_InstallationValidator.ValidateInstallation(Settings.Instance.Get(), sourceDirectory))
             {
                 return false;
             }
@@ -184,7 +184,7 @@ namespace Nexus.Setup
         /// <returns>True if update succeeded, false otherwise.</returns>
         public async Task<bool> UpdateServiceAsync()
         {
-            var serviceName = Settings.GetInstance().Get().McpNexus.Service.ServiceName;
+            var serviceName = Settings.Instance.Get().McpNexus.Service.ServiceName;
 
             m_Logger.Info("Updating Windows Service '{ServiceName}'...", serviceName);
 
@@ -223,14 +223,14 @@ namespace Nexus.Setup
         /// <returns>True if uninstall succeeded, false otherwise.</returns>
         internal async Task<bool> UninstallServiceAsync(IServiceController serviceController)
         {
-            var serviceName = Settings.GetInstance().Get().McpNexus.Service.ServiceName;
-            var installationDirectory = Settings.GetInstance().Get().McpNexus.Service.InstallPath;
-            var backupDirectory = Settings.GetInstance().Get().McpNexus.Service.BackupPath;
+            var serviceName = Settings.Instance.Get().McpNexus.Service.ServiceName;
+            var installationDirectory = Settings.Instance.Get().McpNexus.Service.InstallPath;
+            var backupDirectory = Settings.Instance.Get().McpNexus.Service.BackupPath;
 
             m_Logger.Info("Uninstalling {ServiceName} Windows Service...", serviceName);
 
             // PHASE 1: Pre-uninstall validation
-            if (!m_UninstallValidator.ValidateUninstall(Settings.GetInstance().Get()))
+            if (!m_UninstallValidator.ValidateUninstall(Settings.Instance.Get()))
             {
                 // Check if it's the "nothing to uninstall" case (success)
                 var isServiceInstalled = serviceController.IsServiceInstalled(serviceName);

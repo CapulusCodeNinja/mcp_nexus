@@ -163,8 +163,8 @@ public static class HttpServerSetup
         bool isServiceMode)
     {
         // Read host and port from configuration
-        var host = Settings.GetInstance().Get().McpNexus.Server.Host ?? "localhost";
-        var port = Settings.GetInstance().Get().McpNexus.Server.Port;
+        var host = Settings.Instance.Get().McpNexus.Server.Host ?? "localhost";
+        var port = Settings.Instance.Get().McpNexus.Server.Port;
 
         var url = $"http://{host}:{port}";
 
@@ -175,7 +175,7 @@ public static class HttpServerSetup
         _ = webBuilder.WebHost.UseUrls(url);
 
         // Configure logging
-        Settings.GetInstance().ConfigureLogging(webBuilder.Logging, isServiceMode);
+        Settings.Instance.ConfigureLogging(webBuilder.Logging, isServiceMode);
 
         // Configure services
         ConfigureHttpServices(webBuilder.Services);
@@ -200,7 +200,7 @@ public static class HttpServerSetup
         var hostBuilder = Host.CreateApplicationBuilder();
 
         // Configure logging
-        Settings.GetInstance().ConfigureLogging(hostBuilder.Logging, isServiceMode);
+        Settings.Instance.ConfigureLogging(hostBuilder.Logging, isServiceMode);
 
         // Configure stdio services
         ConfigureStdioServices(hostBuilder.Services);

@@ -50,7 +50,7 @@ internal partial class CommandPreprocessor
             return command;
         }
 
-        var preprocessingEnabled = Settings.GetInstance().Get().McpNexus.Debugging.EnableCommandPreprocessing;
+        var preprocessingEnabled = Settings.Instance.Get().McpNexus.Debugging.EnableCommandPreprocessing;
         if (!preprocessingEnabled)
         {
             return command;

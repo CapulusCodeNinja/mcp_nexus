@@ -28,16 +28,16 @@ internal class BatchCommandFilter
             return false;
         }
 
-        if (!Settings.GetInstance().Get().McpNexus.Batching.Enabled)
+        if (!Settings.Instance.Get().McpNexus.Batching.Enabled)
         {
             m_Logger.Debug("Batching is disabled");
             return false;
         }
 
-        if (commands.Count < Settings.GetInstance().Get().McpNexus.Batching.MinBatchSize)
+        if (commands.Count < Settings.Instance.Get().McpNexus.Batching.MinBatchSize)
         {
             m_Logger.Trace("Not enough commands to batch (count: {Count}, min: {Min})",
-                commands.Count, Settings.GetInstance().Get().McpNexus.Batching.MinBatchSize);
+                commands.Count, Settings.Instance.Get().McpNexus.Batching.MinBatchSize);
             return false;
         }
 
@@ -68,7 +68,7 @@ internal class BatchCommandFilter
 
         var trimmedCommand = commandText.Trim();
 
-        foreach (var excludedCommand in Settings.GetInstance().Get().McpNexus.Batching.ExcludedCommands)
+        foreach (var excludedCommand in Settings.Instance.Get().McpNexus.Batching.ExcludedCommands)
         {
             // Prefix matching: if command starts with excluded prefix, it's excluded
             if (trimmedCommand.StartsWith(excludedCommand, StringComparison.OrdinalIgnoreCase))

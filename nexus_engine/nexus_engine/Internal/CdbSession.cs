@@ -284,7 +284,7 @@ internal class CdbSession : ICdbSession
         {
             try
             {
-                if (!m_CdbProcess.WaitForExit((int)Settings.GetInstance().Get().McpNexus.SessionManagement.GetCleanupInterval().TotalMilliseconds))
+                if (!m_CdbProcess.WaitForExit((int)Settings.Instance.Get().McpNexus.SessionManagement.GetCleanupInterval().TotalMilliseconds))
                 {
                     m_Logger.Warn("CDB process did not exit within timeout, killing process");
                     KillProcess();
@@ -354,10 +354,10 @@ internal class CdbSession : ICdbSession
     public Task<string> FindCdbExecutableAsync()
     {
         // If configured path exists, use it
-        if (!string.IsNullOrEmpty(Settings.GetInstance().Get().McpNexus.Debugging.CdbPath) &&
-            m_FileSystem.FileExists(Settings.GetInstance().Get().McpNexus.Debugging.CdbPath ?? string.Empty))
+        if (!string.IsNullOrEmpty(Settings.Instance.Get().McpNexus.Debugging.CdbPath) &&
+            m_FileSystem.FileExists(Settings.Instance.Get().McpNexus.Debugging.CdbPath ?? string.Empty))
         {
-            return Task.FromResult(Settings.GetInstance().Get().McpNexus.Debugging.CdbPath)!;
+            return Task.FromResult(Settings.Instance.Get().McpNexus.Debugging.CdbPath)!;
         }
 
         // Try common CDB locations
@@ -433,7 +433,7 @@ internal class CdbSession : ICdbSession
         }
 
         string sessionsDirectory;
-        if (Settings.GetInstance().Get().McpNexus.Transport.ServiceMode)
+        if (Settings.Instance.Get().McpNexus.Transport.ServiceMode)
         {
             // Service mode: C:\ProgramData\MCP-Nexus\Sessions\
             sessionsDirectory = Path.Combine(Path.GetDirectoryName(directory)!, "Sessions");
@@ -608,7 +608,7 @@ internal class CdbSession : ICdbSession
 
         var output = new StringBuilder();
         var startMarkerFound = false;
-        var timeout = Settings.GetInstance().Get().McpNexus.AutomatedRecovery.GetDefaultCommandTimeout();
+        var timeout = Settings.Instance.Get().McpNexus.AutomatedRecovery.GetDefaultCommandTimeout();
 
         using var timeoutCts = new CancellationTokenSource(timeout);
         using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);

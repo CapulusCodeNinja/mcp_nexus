@@ -43,7 +43,7 @@ internal class Manager : IDisposable
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_Logger = LogManager.GetCurrentClassLogger();
 
-        m_ExtensionsPath = Settings.GetInstance().Get().McpNexus.Extensions.ExtensionsPath;
+        m_ExtensionsPath = Settings.Instance.Get().McpNexus.Extensions.ExtensionsPath;
         if (!Path.IsPathRooted(m_ExtensionsPath))
         {
             m_ExtensionsPath = Path.Combine(AppContext.BaseDirectory, m_ExtensionsPath);

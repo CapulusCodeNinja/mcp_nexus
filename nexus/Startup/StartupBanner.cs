@@ -145,8 +145,8 @@ internal class StartupBanner
     /// </summary>
     private void DisplayServerConfiguration()
     {
-        var host = Settings.GetInstance().Get().McpNexus.Server.Host ?? "0.0.0.0";
-        var port = Settings.GetInstance().Get().McpNexus.Server.Port;
+        var host = Settings.Instance.Get().McpNexus.Server.Host ?? "0.0.0.0";
+        var port = Settings.Instance.Get().McpNexus.Server.Port;
 
         m_Logger.Info("┌─ Server Configuration ─────────────────────────────────────────────");
         m_Logger.Info("│ Host: {Host}", host);
@@ -159,7 +159,7 @@ internal class StartupBanner
     /// </summary>
     private void DisplayTransportConfiguration()
     {
-        var transportMode = Settings.GetInstance().Get().McpNexus.Transport.Mode ?? "http";
+        var transportMode = Settings.Instance.Get().McpNexus.Transport.Mode ?? "http";
 
         m_Logger.Info("┌─ Transport Configuration ──────────────────────────────────────────");
         m_Logger.Info("│ Mode:         {TransportMode}", transportMode);
@@ -172,11 +172,11 @@ internal class StartupBanner
     /// </summary>
     private void DisplayDebuggingConfiguration()
     {
-        var cdbPath = Settings.GetInstance().Get().McpNexus.Debugging.CdbPath ?? "";
-        var commandTimeout = Settings.GetInstance().Get().McpNexus.Debugging.CommandTimeoutMs;
-        var symbolRetries = Settings.GetInstance().Get().McpNexus.Debugging.SymbolServerMaxRetries;
-        var symbolPath = Settings.GetInstance().Get().McpNexus.Debugging.SymbolSearchPath ?? "";
-        var startupDelay = Settings.GetInstance().Get().McpNexus.Debugging.StartupDelayMs;
+        var cdbPath = Settings.Instance.Get().McpNexus.Debugging.CdbPath ?? "";
+        var commandTimeout = Settings.Instance.Get().McpNexus.Debugging.CommandTimeoutMs;
+        var symbolRetries = Settings.Instance.Get().McpNexus.Debugging.SymbolServerMaxRetries;
+        var symbolPath = Settings.Instance.Get().McpNexus.Debugging.SymbolSearchPath ?? "";
+        var startupDelay = Settings.Instance.Get().McpNexus.Debugging.StartupDelayMs;
 
         m_Logger.Info("┌─ Debugging Configuration ──────────────────────────────────────────");
         m_Logger.Info("│ CDB Path:                 {CdbPath}", string.IsNullOrEmpty(cdbPath) ? "Not specified" : cdbPath);
@@ -193,8 +193,8 @@ internal class StartupBanner
     /// </summary>
     private void DisplayServiceConfiguration()
     {
-        var installPath = Settings.GetInstance().Get().McpNexus.Service.InstallPath ?? "";
-        var backupPath = Settings.GetInstance().Get().McpNexus.Service.BackupPath ?? "";
+        var installPath = Settings.Instance.Get().McpNexus.Service.InstallPath ?? "";
+        var backupPath = Settings.Instance.Get().McpNexus.Service.BackupPath ?? "";
 
         if (!string.IsNullOrEmpty(installPath))
         {
@@ -210,7 +210,7 @@ internal class StartupBanner
     /// </summary>
     private void DisplayLoggingConfiguration()
     {
-        var logLevel = Settings.GetInstance().Get().Logging.LogLevel ?? "Information";
+        var logLevel = Settings.Instance.Get().Logging.LogLevel ?? "Information";
 
         m_Logger.Info("┌─ Logging Configuration ────────────────────────────────────────────");
         m_Logger.Info("│ Log Level:         {LogLevel}", logLevel);

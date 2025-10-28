@@ -56,7 +56,7 @@ internal class Executor
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
 
         // Get callback URL from configuration
-        var config = Settings.GetInstance().Get();
+        var config = Settings.Instance.Get();
         var callbackPort = config.McpNexus.Extensions.CallbackPort;
         if (callbackPort == 0)
         {

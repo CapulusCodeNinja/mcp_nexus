@@ -70,7 +70,7 @@ public class BatchProcessor : IBatchProcessor
         {
             // Check if this specific batch should be batched
             // (may have commands that should be excluded)
-            if (batch.Count >= Settings.GetInstance().Get().McpNexus.Batching.MinBatchSize &&
+            if (batch.Count >= Settings.Instance.Get().McpNexus.Batching.MinBatchSize &&
                 batch.All(cmd => !m_Filter.IsCommandExcluded(cmd.CommandText)))
             {
                 var batchedCommand = m_Builder.BuildBatch(sessionId, batch);

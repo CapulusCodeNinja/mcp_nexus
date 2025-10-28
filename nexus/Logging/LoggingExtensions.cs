@@ -20,7 +20,7 @@ public static class LoggingExtensions
         bool isServiceMode)
     {
         // Configure logging
-        Settings.GetInstance().ConfigureLogging(logging, isServiceMode);
+        Settings.Instance.ConfigureLogging(logging, isServiceMode);
 
         return logging;
     }
