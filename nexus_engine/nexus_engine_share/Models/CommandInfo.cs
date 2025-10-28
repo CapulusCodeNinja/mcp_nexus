@@ -86,6 +86,14 @@ public class CommandInfo
     }
 
     /// <summary>
+    /// Gets how often this command was read from external APIs.
+    /// </summary>
+    public uint ReadCount
+    {
+        get; set;
+    } = 0;
+
+    /// <summary>
     /// Gets a value indicating whether the command executed successfully, or null if not completed.
     /// </summary>
     public bool? IsSuccess => State == CommandState.Completed;
