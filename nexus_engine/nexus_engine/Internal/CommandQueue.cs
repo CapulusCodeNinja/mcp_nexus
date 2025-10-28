@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 
+using Nexus.Config;
 using Nexus.Engine.Batch;
 using Nexus.Engine.Share;
 using Nexus.Engine.Share.Events;
@@ -392,16 +393,30 @@ internal class CommandQueue : IDisposable
             { firstCommand.Id, firstCommand }
         };
 
-        // Short timeout to avoid blocking - collect immediately available commands
-        var timeout = TimeSpan.FromMilliseconds(100);
+        // Get configured wait time
+        var waitMs = Settings.Instance.Get().McpNexus.Batching.CommandCollectionWaitMs;
 
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(timeout);
-
-        // Collect all immediately available commands without blocking
-        while (!cts.Token.IsCancellationRequested && m_CommandChannel.Reader.TryRead(out var nextCommand))
+        // If no wait configured, collect immediately available commands only
+        if (waitMs == 0)
         {
-            commands[nextCommand.Id] = nextCommand;
+            // Fast path: no timeout, just drain what's immediately available
+            while (!cancellationToken.IsCancellationRequested &&
+                   m_CommandChannel.Reader.TryRead(out var nextCommand))
+            {
+                commands[nextCommand.Id] = nextCommand;
+            }
+        }
+        else
+        {
+            // Timeout configured: wait for additional commands
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromMilliseconds(waitMs));
+
+            while (!cts.Token.IsCancellationRequested &&
+                   m_CommandChannel.Reader.TryRead(out var nextCommand))
+            {
+                commands[nextCommand.Id] = nextCommand;
+            }
         }
 
         return commands;

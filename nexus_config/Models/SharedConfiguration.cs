@@ -392,4 +392,12 @@ public class BatchingSettings
     /// Gets or sets the list of excluded commands from batching.
     /// </summary>
     public List<string> ExcludedCommands { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the command collection wait timeout in milliseconds.
+    /// This controls how long to wait for additional commands before processing a batch.
+    /// Set to 0 for no artificial delay (only natural batching).
+    /// Default: 0 (instant, no wait)
+    /// </summary>
+    public int CommandCollectionWaitMs { get; set; } = 0;
 }
