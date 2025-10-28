@@ -53,10 +53,10 @@ public interface IDebugEngine : IDisposable
     /// <param name="sessionId">The session ID to execute the extension script in.</param>
     /// <param name="extensionName">The name of the extension to execute.</param>
     /// <param name="parameters">Optional parameters to pass to the extension.</param>
-    /// <returns>The unique command ID for tracking the extension execution.</returns>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the unique command ID for tracking the extension execution.</returns>
     /// <exception cref="ArgumentException">Thrown when sessionId or extensionName is null or empty.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the session is not active or the extension is not found.</exception>
-    string EnqueueExtensionScript(string sessionId, string extensionName, object? parameters = null);
+    Task<string> EnqueueExtensionScriptAsync(string sessionId, string extensionName, object? parameters = null);
 
     /// <summary>
     /// Gets the information about a command.

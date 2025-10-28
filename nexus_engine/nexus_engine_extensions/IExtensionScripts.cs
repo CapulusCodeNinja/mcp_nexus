@@ -13,8 +13,8 @@ public interface IExtensionScripts
     /// <param name="sessionId">The session ID.</param>
     /// <param name="extensionName">The name of the extension to execute.</param>
     /// <param name="parameters">Optional parameters to pass to the extension.</param>
-    /// <returns>The command ID for tracking this execution.</returns>
-    string EnqueueExtensionScript(string sessionId, string extensionName, object? parameters = null);
+    /// <returns>A task that represents the asynchronous operation. The task result contains the command ID for tracking this execution.</returns>
+    Task<string> EnqueueExtensionScriptAsync(string sessionId, string extensionName, object? parameters = null);
 
     /// <summary>
     /// Gets the status of a specific extension command.

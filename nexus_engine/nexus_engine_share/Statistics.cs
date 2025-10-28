@@ -22,8 +22,9 @@ public static class Statistics
     /// </summary>
     static Statistics()
     {
-        // Initialize sort order array based on CommandState enum (6 values: 0-5)
-        m_StatusSortOrder = new int[6];
+        // Initialize sort order array based on CommandState enum - dynamic sizing
+        var maxEnumValue = (int)Enum.GetValues(typeof(CommandState)).Cast<CommandState>().Max();
+        m_StatusSortOrder = new int[maxEnumValue + 1];
         m_StatusSortOrder[(int)CommandState.Completed] = 1;
         m_StatusSortOrder[(int)CommandState.Failed] = 2;
         m_StatusSortOrder[(int)CommandState.Cancelled] = 3;
@@ -149,7 +150,7 @@ public static class Statistics
                     ? cmd.ExecutionTime.Value.ToString()
                     : "N/A";
 
-                var quueTime = cmd.TimeInQueue.HasValue
+                var queueTime = cmd.TimeInQueue.HasValue
                     ? cmd.TimeInQueue.Value.ToString()
                     : "N/A";
 
@@ -157,7 +158,7 @@ public static class Statistics
                     ? cmd.Command
                     : cmd.Command[..25];
 
-                _ = sb.AppendLine($"    ║ {cmd.CommandNumber,-10} | {commandText,-26} | {cmd.State,-9} | {cmd.ReadCount,-9} | {quueTime,-18} | {executionTime,-18} | {totalTime,-18} |");
+                _ = sb.AppendLine($"    ║ {cmd.CommandNumber,-10} | {commandText,-26} | {cmd.State,-9} | {cmd.ReadCount,-9} | {queueTime,-18} | {executionTime,-18} | {totalTime,-18} |");
             }
         }
 

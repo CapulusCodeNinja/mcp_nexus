@@ -300,10 +300,10 @@ public class DebugEngine : IDebugEngine
     /// <param name="sessionId">The session ID to execute the extension script in.</param>
     /// <param name="extensionName">The name of the extension to execute.</param>
     /// <param name="parameters">Optional parameters to pass to the extension.</param>
-    /// <returns>The unique command ID for tracking the extension execution.</returns>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the unique command ID for tracking the extension execution.</returns>
     /// <exception cref="ArgumentException">Thrown when sessionId or extensionName is null or empty.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the session is not active or the extension is not found.</exception>
-    public string EnqueueExtensionScript(string sessionId, string extensionName, object? parameters = null)
+    public async Task<string> EnqueueExtensionScriptAsync(string sessionId, string extensionName, object? parameters = null)
     {
         ThrowIfDisposed();
         ValidateSessionId(sessionId, nameof(sessionId));
@@ -320,7 +320,7 @@ public class DebugEngine : IDebugEngine
         }
 
         // Delegate to the extensions library - it will handle all context management internally
-        var commandId = m_ExtensionScripts.EnqueueExtensionScript(sessionId, extensionName, parameters);
+        var commandId = await m_ExtensionScripts.EnqueueExtensionScriptAsync(sessionId, extensionName, parameters);
 
         // Fire state changed event for the engine's tracking
         OnSessionCommandStateChanged(this, new CommandStateChangedEventArgs
@@ -506,6 +506,7 @@ public class DebugEngine : IDebugEngine
         m_Logger.Info("Disposing DebugEngine with {SessionCount} active sessions", m_Sessions.Count);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var failedSessions = new List<string>();
 
         // Close all sessions with proper async handling
         var closeTasks = m_Sessions.Values.Select(async session =>
@@ -519,6 +520,10 @@ public class DebugEngine : IDebugEngine
             }
             catch (Exception ex)
             {
+                lock (failedSessions)
+                {
+                    failedSessions.Add(session.SessionId);
+                }
                 m_Logger.Error(ex, "Error disposing session {SessionId}", session.SessionId);
             }
         }).ToArray();
@@ -529,14 +534,19 @@ public class DebugEngine : IDebugEngine
         }
         catch (OperationCanceledException)
         {
-            m_Logger.Warn("Session disposal timed out after 30 seconds");
+            m_Logger.Warn("Session disposal timed out after 30 seconds. Failed sessions: {FailedSessions}",
+                string.Join(", ", failedSessions));
         }
         catch (Exception ex)
         {
             m_Logger.Error(ex, "Error waiting for sessions to close during disposal");
         }
 
-        m_Sessions.Clear();
+        // Only clear sessions that were successfully disposed
+        foreach (var session in m_Sessions.Values.Where(s => !failedSessions.Contains(s.SessionId)).ToList())
+        {
+            _ = m_Sessions.TryRemove(session.SessionId, out _);
+        }
         m_Logger.Info("DebugEngine disposed");
     }
 

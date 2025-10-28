@@ -527,7 +527,7 @@ internal class CdbSession : ICdbSession
     /// <exception cref="InvalidOperationException">Thrown when CDB process exits during initialization.</exception>
     protected async Task WaitForCdbInitializationAsync(CancellationToken cancellationToken)
     {
-        var timeout = TimeSpan.FromMilliseconds(5000);
+        var timeout = TimeSpan.FromMilliseconds(Settings.Instance.Get().McpNexus.Debugging.StartupDelayMs);
         var stopwatch = Stopwatch.StartNew();
 
         while (stopwatch.Elapsed < timeout && !cancellationToken.IsCancellationRequested)

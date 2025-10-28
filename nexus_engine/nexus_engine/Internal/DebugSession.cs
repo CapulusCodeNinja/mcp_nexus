@@ -18,8 +18,8 @@ internal class DebugSession : IDisposable
     private readonly string? m_SymbolPath;
     private readonly CdbSession m_CdbSession;
     private readonly CommandQueue m_CommandQueue;
-    private readonly object m_StateLock = new();
-    private volatile SessionState m_State = SessionState.Initializing;
+    private readonly ReaderWriterLockSlim m_StateLock = new();
+    private SessionState m_State = SessionState.Initializing;
     private volatile bool m_Disposed = false;
 
     /// <summary>
@@ -37,9 +37,14 @@ internal class DebugSession : IDisposable
     {
         get
         {
-            lock (m_StateLock)
+            m_StateLock.EnterReadLock();
+            try
             {
                 return m_State;
+            }
+            finally
+            {
+                m_StateLock.ExitReadLock();
             }
         }
     }
@@ -251,6 +256,10 @@ internal class DebugSession : IDisposable
         {
             m_Logger.Error(ex, "Error during synchronous disposal of session {SessionId}", SessionId);
         }
+        finally
+        {
+            m_StateLock?.Dispose();
+        }
     }
 
     /// <summary>
@@ -281,10 +290,15 @@ internal class DebugSession : IDisposable
     protected void SetState(SessionState newState)
     {
         SessionState oldState;
-        lock (m_StateLock)
+        m_StateLock.EnterWriteLock();
+        try
         {
             oldState = m_State;
             m_State = newState;
+        }
+        finally
+        {
+            m_StateLock.ExitWriteLock();
         }
 
         if (oldState != newState)

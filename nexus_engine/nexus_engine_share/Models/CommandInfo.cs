@@ -86,12 +86,18 @@ public class CommandInfo
     }
 
     /// <summary>
+    /// Backing field for read count.
+    /// </summary>
+    private int m_ReadCount = 0;
+
+    /// <summary>
     /// Gets how often this command was read from external APIs.
     /// </summary>
-    public uint ReadCount
+    public int ReadCount
     {
-        get; set;
-    } = 0;
+        get => m_ReadCount;
+        set => m_ReadCount = value;
+    }
 
     /// <summary>
     /// Gets a value indicating whether the command executed successfully, or null if not completed.
@@ -120,6 +126,14 @@ public class CommandInfo
     /// Gets the total time from queuing to completion, or null if not completed.
     /// </summary>
     public TimeSpan? TotalTime => EndTime.HasValue ? EndTime.Value - QueuedTime : null;
+
+    /// <summary>
+    /// Increments the read count atomically.
+    /// </summary>
+    public void IncrementReadCount()
+    {
+        _ = Interlocked.Increment(ref m_ReadCount);
+    }
 
     /// <summary>
     /// Gets the command number from the command identifier.

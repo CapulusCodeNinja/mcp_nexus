@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Diagnostics;
 
 using Nexus.Engine.Extensions.Callback;
 using Nexus.Engine.Extensions.Core;
@@ -42,7 +41,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// <summary>
     /// Mapping of session IDs to their associated command IDs.
     /// </summary>
-    private readonly ConcurrentDictionary<string, HashSet<string>> m_SessionCommands;
+    private readonly ConcurrentDictionary<string, ConcurrentBag<string>> m_SessionCommands;
 
     /// <summary>
     /// Status of currently running extensions keyed by command ID.
@@ -110,7 +109,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         m_Manager = new Manager(fileSystem);
         m_Executor = new Executor(m_Manager, tokenValidator, processManager);
         m_CommandCache = new ConcurrentDictionary<string, CommandInfo>();
-        m_SessionCommands = new ConcurrentDictionary<string, HashSet<string>>();
+        m_SessionCommands = new ConcurrentDictionary<string, ConcurrentBag<string>>();
         m_RunningExtensions = new ConcurrentDictionary<string, ExtensionStatus>();
         m_Disposed = false;
 
@@ -163,14 +162,13 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// <param name="sessionId">The session ID.</param>
     /// <param name="extensionName">The name of the extension to execute.</param>
     /// <param name="parameters">Optional parameters to pass to the extension.</param>
-    /// <returns>The command ID for tracking this execution.</returns>
-    public string EnqueueExtensionScript(string sessionId, string extensionName, object? parameters = null)
+    /// <returns>A task that represents the asynchronous operation. The task result contains the command ID for tracking this execution.</returns>
+    public async Task<string> EnqueueExtensionScriptAsync(string sessionId, string extensionName, object? parameters = null)
     {
         m_Logger.Info("Starting extension script '{ExtensionName}' in session {SessionId}", extensionName, sessionId);
 
-        // Ensure callback server is ready (await synchronously since this is a sync method)
-        // The initialization task will be awaited in the background execution
-        EnsureCallbackServerInitializedAsync().GetAwaiter().GetResult();
+        // Ensure callback server is ready
+        await EnsureCallbackServerInitializedAsync();
 
         // Generate unique command ID using centralized generator
         var commandId = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
@@ -183,17 +181,11 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         // Track session → command mapping
         _ = m_SessionCommands.AddOrUpdate(
             sessionId,
-            _ => new HashSet<string> { commandId },
-            (_, set) =>
+            _ => new ConcurrentBag<string> { commandId },
+            (_, bag) =>
             {
-                lock (set)
-                {
-                    // Add commandId to the set
-                    var added = set.Add(commandId);
-                    // We don't need the return value, but this satisfies the compiler
-                    if (added) { /* Command was added */ }
-                }
-                return set;
+                bag.Add(commandId);
+                return bag;
             });
 
         // Create cancellation token source for this extension
@@ -516,10 +508,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     public CommandInfo? GetCommandStatus(string commandId)
     {
         _ = m_CommandCache.TryGetValue(commandId, out var commandInfo);
-        if (commandInfo != null)
-        {
-            commandInfo.ReadCount++;
-        }
+        commandInfo?.IncrementReadCount();
         return commandInfo;
     }
 
@@ -536,14 +525,11 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         }
 
         var commands = new List<CommandInfo>();
-        lock (commandIds)
+        foreach (var commandId in commandIds)
         {
-            foreach (var commandId in commandIds)
+            if (m_CommandCache.TryGetValue(commandId, out var commandInfo))
             {
-                if (m_CommandCache.TryGetValue(commandId, out var commandInfo))
-                {
-                    commands.Add(commandInfo);
-                }
+                commands.Add(commandInfo);
             }
         }
 
@@ -567,13 +553,12 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
             return false;
         }
 
-        Process? process = null;
         try
         {
             // Kill the process using process ID
             try
             {
-                process = System.Diagnostics.Process.GetProcessById(status.ProcessId);
+                using var process = System.Diagnostics.Process.GetProcessById(status.ProcessId);
                 if (!process.HasExited)
                 {
                     process.Kill();
@@ -583,11 +568,6 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
             {
                 // Process already exited or doesn't exist
                 m_Logger.Debug("Process {ProcessId} for command {CommandId} already exited", status.ProcessId, commandId);
-            }
-            finally
-            {
-                // Always dispose the process handle
-                process?.Dispose();
             }
 
             // Cancel the token
@@ -638,11 +618,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         }
 
         // Cancel all running extensions for this session
-        List<string> commandIdList;
-        lock (commandIds)
-        {
-            commandIdList = commandIds.ToList();
-        }
+        var commandIdList = commandIds.ToList();
 
         foreach (var commandId in commandIdList)
         {

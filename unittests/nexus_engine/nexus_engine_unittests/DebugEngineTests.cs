@@ -292,59 +292,59 @@ public class DebugEngineTests : IDisposable
 
     #endregion
 
-    #region EnqueueExtensionScript Tests
+    #region EnqueueExtensionScriptAsync Tests
 
     /// <summary>
-    /// Verifies that EnqueueExtensionScript throws when sessionId is null.
+    /// Verifies that EnqueueExtensionScriptAsync throws when sessionId is null.
     /// </summary>
     [Fact]
-    public void EnqueueExtensionScript_WithNullSessionId_ThrowsArgumentException()
+    public async Task EnqueueExtensionScriptAsync_WithNullSessionId_ThrowsArgumentException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentException>(() => m_Engine.EnqueueExtensionScript(null!, "test-extension"));
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () => await m_Engine.EnqueueExtensionScriptAsync(null!, "test-extension"));
     }
 
     /// <summary>
-    /// Verifies that EnqueueExtensionScript throws when extensionName is null.
+    /// Verifies that EnqueueExtensionScriptAsync throws when extensionName is null.
     /// </summary>
     [Fact]
-    public void EnqueueExtensionScript_WithNullExtensionName_ThrowsArgumentException()
+    public async Task EnqueueExtensionScriptAsync_WithNullExtensionName_ThrowsArgumentException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentException>(() => m_Engine.EnqueueExtensionScript("test-session", null!));
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () => await m_Engine.EnqueueExtensionScriptAsync("test-session", null!));
     }
 
     /// <summary>
-    /// Verifies that EnqueueExtensionScript throws when extensionName is empty.
+    /// Verifies that EnqueueExtensionScriptAsync throws when extensionName is empty.
     /// </summary>
     [Fact]
-    public void EnqueueExtensionScript_WithEmptyExtensionName_ThrowsArgumentException()
+    public async Task EnqueueExtensionScriptAsync_WithEmptyExtensionName_ThrowsArgumentException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentException>(() => m_Engine.EnqueueExtensionScript("test-session", string.Empty));
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () => await m_Engine.EnqueueExtensionScriptAsync("test-session", string.Empty));
     }
 
     /// <summary>
-    /// Verifies that EnqueueExtensionScript throws when session not found.
+    /// Verifies that EnqueueExtensionScriptAsync throws when session not found.
     /// </summary>
     [Fact]
-    public void EnqueueExtensionScript_WithNonExistentSession_ThrowsInvalidOperationException()
+    public async Task EnqueueExtensionScriptAsync_WithNonExistentSession_ThrowsInvalidOperationException()
     {
         // Act & Assert
-        _ = Assert.Throws<InvalidOperationException>(() => m_Engine.EnqueueExtensionScript("non-existent-session", "test-extension"));
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(async () => await m_Engine.EnqueueExtensionScriptAsync("non-existent-session", "test-extension"));
     }
 
     /// <summary>
-    /// Verifies that EnqueueExtensionScript throws when disposed.
+    /// Verifies that EnqueueExtensionScriptAsync throws when disposed.
     /// </summary>
     [Fact]
-    public void EnqueueExtensionScript_WhenDisposed_ThrowsObjectDisposedException()
+    public async Task EnqueueExtensionScriptAsync_WhenDisposed_ThrowsObjectDisposedException()
     {
         // Arrange
         m_Engine.Dispose();
 
         // Act & Assert
-        _ = Assert.Throws<ObjectDisposedException>(() => m_Engine.EnqueueExtensionScript("test-session", "test-extension"));
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(async () => await m_Engine.EnqueueExtensionScriptAsync("test-session", "test-extension"));
     }
 
     #endregion

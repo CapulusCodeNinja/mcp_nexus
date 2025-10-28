@@ -24,7 +24,7 @@ internal static class EnqueueAsyncExtensionCommandTool
     /// <returns>Command enqueue result with commandId.</returns>
     [McpServerTool, Description("Enqueues an extension script for asynchronous execution. Returns commandId for tracking.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    public static Task<object> nexus_enqueue_async_extension_command(
+    public static async Task<object> nexus_enqueue_async_extension_command(
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("Name of the extension script to execute")] string extensionName,
         [Description("Optional parameters to pass to the extension script")] object? parameters = null)
@@ -45,7 +45,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 throw new ArgumentException("extensionName cannot be empty", nameof(extensionName));
             }
 
-            var commandId = DebugEngine.Instance.EnqueueExtensionScript(sessionId, extensionName, parameters);
+            var commandId = await DebugEngine.Instance.EnqueueExtensionScriptAsync(sessionId, extensionName, parameters);
 
             logger.Info("Extension Script enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
 
@@ -64,7 +64,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 $"Extension Script '{extensionName}' with command ID {commandId} queued successfully",
                 true);
 
-            return Task.FromResult<object>(markdown);
+            return markdown;
         }
         catch (ArgumentException ex)
         {
@@ -84,7 +84,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 ex.Message,
                 false);
 
-            return Task.FromResult<object>(markdown);
+            return markdown;
         }
         catch (InvalidOperationException ex)
         {
@@ -104,7 +104,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 ex.Message,
                 false);
 
-            return Task.FromResult<object>(markdown);
+            return markdown;
         }
         catch (Exception ex)
         {
@@ -124,7 +124,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 $"Unexpected error: {ex.Message}",
                 false);
 
-            return Task.FromResult<object>(markdown);
+            return markdown;
         }
     }
 }

@@ -8,11 +8,13 @@ namespace Nexus.Config
     /// <summary>
     /// Concrete settings facade providing access to configuration and logging setup.
     /// </summary>
-    public class Settings : ISettings
+    public class Settings : ISettings, IDisposable
     {
         private ConfigurationLoader m_ConfigurationLoader;
         private readonly LoggingConfiguration m_LoggingConfiguration;
+        private readonly ReaderWriterLockSlim m_ConfigLock = new();
         private SharedConfiguration? m_CachedConfiguration;
+        private bool m_Disposed;
 
         /// <summary>
         /// Gets the singleton instance of the settings.
@@ -41,7 +43,16 @@ namespace Nexus.Config
         /// <param name="configPath">Optional configuration path.</param>
         public void LoadConfiguration(string? configPath = null)
         {
-            m_ConfigurationLoader = new ConfigurationLoader(configPath);
+            m_ConfigLock.EnterWriteLock();
+            try
+            {
+                m_ConfigurationLoader = new ConfigurationLoader(configPath);
+                m_CachedConfiguration = null; // Clear cache
+            }
+            finally
+            {
+                m_ConfigLock.ExitWriteLock();
+            }
         }
 
         /// <summary>
@@ -52,7 +63,55 @@ namespace Nexus.Config
         /// <exception cref="InvalidOperationException">Thrown if configuration wasn't loaded.</exception>
         public SharedConfiguration Get()
         {
-            return m_CachedConfiguration ??= m_ConfigurationLoader!.GetSharedConfiguration();
+            m_ConfigLock.EnterReadLock();
+            try
+            {
+                if (m_CachedConfiguration != null)
+                {
+                    return m_CachedConfiguration;
+                }
+            }
+            finally
+            {
+                m_ConfigLock.ExitReadLock();
+            }
+
+            m_ConfigLock.EnterWriteLock();
+            try
+            {
+                if (m_CachedConfiguration != null)
+                {
+                    return m_CachedConfiguration;
+                }
+
+                if (m_ConfigurationLoader == null)
+                {
+                    throw new InvalidOperationException("Configuration not loaded. Call LoadConfiguration() first.");
+                }
+
+                // We know it's null here, so just assign
+                m_CachedConfiguration = m_ConfigurationLoader.GetSharedConfiguration();
+                
+                return m_CachedConfiguration;
+            }
+            finally
+            {
+                m_ConfigLock.ExitWriteLock();
+            }
+        }
+
+        /// <summary>
+        /// Disposes of the settings and releases all resources.
+        /// </summary>
+        public void Dispose()
+        {
+            if (m_Disposed)
+            {
+                return;
+            }
+
+            m_ConfigLock?.Dispose();
+            m_Disposed = true;
         }
     }
 }
