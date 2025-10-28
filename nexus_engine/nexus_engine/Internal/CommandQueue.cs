@@ -347,10 +347,10 @@ internal class CommandQueue : IDisposable
                 try
                 {
                     // Collect available commands for potential batching
-                    var commandsToProcess = CollectAvailableCommands(command, cancellationToken);
+                    var queuedCommandsById = CollectAvailableCommands(command, cancellationToken);
 
                     // Process commands (with or without batching)
-                    await ProcessCommandsAsync(commandsToProcess, cancellationToken);
+                    await ProcessCommandsAsync(queuedCommandsById, cancellationToken);
                 }
                 catch (Exception ex)
                 {
@@ -384,10 +384,13 @@ internal class CommandQueue : IDisposable
     /// </summary>
     /// <param name="firstCommand">The first command already read from the channel.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>List of commands to process.</returns>
-    private List<QueuedCommand> CollectAvailableCommands(QueuedCommand firstCommand, CancellationToken cancellationToken)
+    /// <returns>Dictionary of commands by ID for O(1) lookups.</returns>
+    private Dictionary<string, QueuedCommand> CollectAvailableCommands(QueuedCommand firstCommand, CancellationToken cancellationToken)
     {
-        var commands = new List<QueuedCommand> { firstCommand };
+        var commands = new Dictionary<string, QueuedCommand>
+        {
+            { firstCommand.Id, firstCommand }
+        };
 
         // Short timeout to avoid blocking - collect immediately available commands
         var timeout = TimeSpan.FromMilliseconds(100);
@@ -398,7 +401,7 @@ internal class CommandQueue : IDisposable
         // Collect all immediately available commands without blocking
         while (!cts.Token.IsCancellationRequested && m_CommandChannel.Reader.TryRead(out var nextCommand))
         {
-            commands.Add(nextCommand);
+            commands[nextCommand.Id] = nextCommand;
         }
 
         return commands;
@@ -407,31 +410,31 @@ internal class CommandQueue : IDisposable
     /// <summary>
     /// Processes a batch of commands using the batch processor.
     /// </summary>
-    /// <param name="queuedCommands">The commands to process.</param>
+    /// <param name="queuedCommandsById">Dictionary of commands by ID for O(1) lookups.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    private async Task ProcessCommandsAsync(List<QueuedCommand> queuedCommands, CancellationToken cancellationToken)
+    private async Task ProcessCommandsAsync(Dictionary<string, QueuedCommand> queuedCommandsById, CancellationToken cancellationToken)
     {
         ValidateCdbSession();
 
         // Prepare commands for batching
-        var commandsToExecute = PrepareCommandsForBatching(queuedCommands);
+        var commandsToExecute = PrepareCommandsForBatching(queuedCommandsById);
 
         // Execute commands and track timing
-        var (executionResults, commandStartTimes) = await ExecuteCommandsWithTiming(commandsToExecute, queuedCommands, cancellationToken);
+        var (executionResults, commandStartTimes) = await ExecuteCommandsWithTiming(commandsToExecute, queuedCommandsById, cancellationToken);
 
         // Process results and complete commands
-        ProcessCommandResults(executionResults, queuedCommands, commandStartTimes);
+        ProcessCommandResults(executionResults, queuedCommandsById, commandStartTimes);
     }
 
     /// <summary>
     /// Prepares queued commands for batching by converting them to batch commands and applying batching logic.
     /// </summary>
-    /// <param name="queuedCommands">The original queued commands.</param>
+    /// <param name="queuedCommandsById">Dictionary of commands by ID.</param>
     /// <returns>Commands ready for execution (batched or individual).</returns>
-    private List<Command> PrepareCommandsForBatching(List<QueuedCommand> queuedCommands)
+    private List<Command> PrepareCommandsForBatching(Dictionary<string, QueuedCommand> queuedCommandsById)
     {
         // Convert to batch commands
-        var batchCommands = queuedCommands.Select(qc => new Command
+        var batchCommands = queuedCommandsById.Values.Select(qc => new Command
         {
             CommandId = qc.Id,
             CommandText = qc.Command
@@ -441,7 +444,7 @@ internal class CommandQueue : IDisposable
         var commandsToExecute = BatchProcessor.Instance.BatchCommands(m_SessionId, batchCommands);
 
         m_Logger.Debug("Processing {OriginalCount} commands as {ExecutionCount} execution units",
-            queuedCommands.Count, commandsToExecute.Count);
+            queuedCommandsById.Count, commandsToExecute.Count);
 
         return commandsToExecute;
     }
@@ -450,12 +453,12 @@ internal class CommandQueue : IDisposable
     /// Executes commands and tracks start times for each command.
     /// </summary>
     /// <param name="commandsToExecute">Commands to execute.</param>
-    /// <param name="queuedCommands">Original queued commands for state updates.</param>
+    /// <param name="queuedCommandsById">Dictionary of queued commands by ID for O(1) lookups.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Tuple containing execution results and command start times.</returns>
     private async Task<(List<CommandResult> executionResults, Dictionary<string, DateTime> commandStartTimes)> ExecuteCommandsWithTiming(
         List<Command> commandsToExecute,
-        List<QueuedCommand> queuedCommands,
+        Dictionary<string, QueuedCommand> queuedCommandsById,
         CancellationToken cancellationToken)
     {
         var commandStartTimes = new Dictionary<string, DateTime>();
@@ -465,7 +468,7 @@ internal class CommandQueue : IDisposable
         {
             // Mark commands as executing and record start time
             var batchStartTime = DateTime.Now;
-            MarkCommandsAsExecuting(cmd, queuedCommands, commandStartTimes, batchStartTime);
+            MarkCommandsAsExecuting(cmd, queuedCommandsById, commandStartTimes, batchStartTime);
 
             // Execute the command and handle results
             var result = await ExecuteSingleCommand(cmd, cancellationToken);
@@ -479,16 +482,15 @@ internal class CommandQueue : IDisposable
     /// Marks queued commands as executing and records their start times.
     /// </summary>
     /// <param name="cmd">The command being executed.</param>
-    /// <param name="queuedCommands">Original queued commands.</param>
+    /// <param name="queuedCommandsById">Dictionary of queued commands by ID for O(1) lookups.</param>
     /// <param name="commandStartTimes">Dictionary to store start times.</param>
     /// <param name="batchStartTime">The start time for this batch.</param>
-    private void MarkCommandsAsExecuting(Command cmd, List<QueuedCommand> queuedCommands, Dictionary<string, DateTime> commandStartTimes, DateTime batchStartTime)
+    private void MarkCommandsAsExecuting(Command cmd, Dictionary<string, QueuedCommand> queuedCommandsById, Dictionary<string, DateTime> commandStartTimes, DateTime batchStartTime)
     {
         var originalCommandIds = BatchProcessor.Instance.GetOriginalCommandIds(m_SessionId, cmd.CommandId);
         foreach (var commandId in originalCommandIds)
         {
-            var queuedCommand = queuedCommands.FirstOrDefault(qc => qc.Id == commandId);
-            if (queuedCommand != null)
+            if (queuedCommandsById.TryGetValue(commandId, out var queuedCommand))
             {
                 UpdateCommandState(queuedCommand, CommandState.Executing);
                 commandStartTimes[commandId] = batchStartTime;
@@ -562,9 +564,9 @@ internal class CommandQueue : IDisposable
     /// Processes command results, unbatch them, and complete the original commands with statistics.
     /// </summary>
     /// <param name="executionResults">Raw execution results.</param>
-    /// <param name="queuedCommands">Original queued commands.</param>
+    /// <param name="queuedCommandsById">Dictionary of queued commands by ID for O(1) lookups.</param>
     /// <param name="commandStartTimes">Command start times.</param>
-    private void ProcessCommandResults(List<CommandResult> executionResults, List<QueuedCommand> queuedCommands, Dictionary<string, DateTime> commandStartTimes)
+    private void ProcessCommandResults(List<CommandResult> executionResults, Dictionary<string, QueuedCommand> queuedCommandsById, Dictionary<string, DateTime> commandStartTimes)
     {
         // Unbatch results (library decides whether to unbatch or pass through)
         var individualResults = BatchProcessor.Instance.UnbatchResults(executionResults);
@@ -574,7 +576,7 @@ internal class CommandQueue : IDisposable
         // Complete each original command with statistics
         foreach (var result in individualResults)
         {
-            CompleteCommandWithStatistics(result, queuedCommands, commandStartTimes);
+            CompleteCommandWithStatistics(result, queuedCommandsById, commandStartTimes);
         }
     }
 
@@ -601,12 +603,11 @@ internal class CommandQueue : IDisposable
     /// Completes a single command with appropriate state and statistics.
     /// </summary>
     /// <param name="result">The command result.</param>
-    /// <param name="queuedCommands">Original queued commands.</param>
+    /// <param name="queuedCommandsById">Dictionary of queued commands by ID for O(1) lookups.</param>
     /// <param name="commandStartTimes">Command start times.</param>
-    private void CompleteCommandWithStatistics(CommandResult result, List<QueuedCommand> queuedCommands, Dictionary<string, DateTime> commandStartTimes)
+    private void CompleteCommandWithStatistics(CommandResult result, Dictionary<string, QueuedCommand> queuedCommandsById, Dictionary<string, DateTime> commandStartTimes)
     {
-        var queuedCommand = queuedCommands.FirstOrDefault(qc => qc.Id == result.CommandId);
-        if (queuedCommand == null)
+        if (!queuedCommandsById.TryGetValue(result.CommandId, out var queuedCommand))
         {
             m_Logger.Warn("No queued command found for result {CommandId}", result.CommandId);
             return;
