@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 
 using Nexus.Config;
 using Nexus.Engine.Extensions;
+using Nexus.Engine.Internal;
 using Nexus.Engine.Preprocessing;
 using Nexus.Engine.Share;
 using Nexus.Engine.Share.Events;
@@ -40,7 +41,7 @@ public class DebugEngine : IDebugEngine
     /// <summary>
     /// Dictionary of active debug sessions keyed by session ID.
     /// </summary>
-    private readonly ConcurrentDictionary<string, Internal.DebugSession> m_Sessions = new();
+    private readonly ConcurrentDictionary<string, DebugSession> m_Sessions = new();
 
     /// <summary>
     /// Dictionary tracking session creation timestamps keyed by session ID.

@@ -43,6 +43,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nexus_engine", "nexus_engin
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nexus_engine", "nexus_engine", "{FB7CA8C1-5996-4474-8221-182FE7513C93}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution_files", "solution_files", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		AGENTS.md = AGENTS.md
+		coverlet.runsettings = coverlet.runsettings
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -262,7 +274,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{C3BCE4B3-4D38-48B3-A422-7DEF98E64F6F} = {05BC2E2D-7790-4032-9B57-68823DF5CEDE}
 		{20DBA9AC-4231-42CD-9708-92BDE33214F3} = {1C19CD4A-A4CD-4EF5-856B-7C8E8E8D11D6}
 		{71A5B02F-7C5A-4595-BACE-E6E4EDD67AD0} = {05BC2E2D-7790-4032-9B57-68823DF5CEDE}
 		{1BFF4134-3C3D-448F-889E-3B93258BFF6E} = {FB7CA8C1-5996-4474-8221-182FE7513C93}

@@ -78,6 +78,11 @@ public class CommandInfo
     }
 
     /// <summary>
+    /// Gets the time spent in the queue before execution started, or null if not started.
+    /// </summary>
+    public TimeSpan? TimeInQueue => StartTime.HasValue ? StartTime.Value - QueuedTime : null;
+
+    /// <summary>
     /// Gets the execution time if the command has completed, otherwise null.
     /// </summary>
     public TimeSpan? ExecutionTime => EndTime.HasValue && StartTime.HasValue ? EndTime.Value - StartTime.Value : null;

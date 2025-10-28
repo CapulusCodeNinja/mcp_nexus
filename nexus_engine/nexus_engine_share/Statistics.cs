@@ -108,14 +108,16 @@ public static class Statistics
         _ = sb.AppendLine($"    ║ CancelledCommands: {cancelledCommands}");
         _ = sb.AppendLine($"    ║ TimedOutCommands: {timedOutCommands}");
 
+        var commandPrefix = $"cmd-{sessionId}-";
+
         // Add command table if there are any commands
         if (commands.Any())
         {
             _ = sb.AppendLine("    ║ ────────────────────────────────────────────────────────────────────");
             _ = sb.AppendLine("    ║ Commands:");
             _ = sb.AppendLine("    ║");
-            _ = sb.AppendLine("    ║ CommandId                               | Command                  | Status    | Duration         |");
-            _ = sb.AppendLine("    ║ ------------------------------------------|--------------------------|-----------|--------------------|");
+            _ = sb.AppendLine("    ║ CommandId                                 | Command                  | Status    | TimeInQueue         | ExecutionTime         | TotalTime         |");
+            _ = sb.AppendLine("    ║ ------------------------------------------|--------------------------|-----------|---------------------|-----------------------|-------------------|");
 
             // Sort commands by status: Completed, Failed, Cancelled, Timeout, Queued, Executing
             var statusOrder = new Dictionary<CommandState, int>
@@ -128,19 +130,27 @@ public static class Statistics
                 { CommandState.Executing, 6 }
             };
 
-            var sortedCommands = commands.OrderBy(c => statusOrder[c.State]).ThenBy(c => c.CommandId);
+            var sortedCommands = commands.OrderBy(c => statusOrder[c.State]).ThenBy(c => c.StartTime);
 
             foreach (var cmd in sortedCommands)
             {
-                var duration = cmd.TotalTime.HasValue
+                var totalTime = cmd.TotalTime.HasValue
                     ? cmd.TotalTime.Value.ToString()
+                    : "N/A";
+
+                var executionTime = cmd.ExecutionTime.HasValue
+                    ? cmd.ExecutionTime.Value.ToString()
+                    : "N/A";
+
+                var quueTime = cmd.TimeInQueue.HasValue
+                    ? cmd.TimeInQueue.Value.ToString()
                     : "N/A";
 
                 var commandText = cmd.Command.Length <= 25
                     ? cmd.Command
                     : cmd.Command[..25];
 
-                _ = sb.AppendLine($"    ║ {cmd.CommandId,-40} | {commandText,-24} | {cmd.State,-9} | {duration,-18} |");
+                _ = sb.AppendLine($"    ║ {cmd.CommandId.Replace(commandPrefix, ""),-40} | {commandText,-24} | {cmd.State,-9} | {quueTime,-18} | {executionTime,-18} | {totalTime,-18} |");
             }
         }
 
