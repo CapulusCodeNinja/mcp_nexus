@@ -516,6 +516,10 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     public CommandInfo? GetCommandStatus(string commandId)
     {
         _ = m_CommandCache.TryGetValue(commandId, out var commandInfo);
+        if (commandInfo != null)
+        {
+            commandInfo.ReadCount++;
+        }
         return commandInfo;
     }
 

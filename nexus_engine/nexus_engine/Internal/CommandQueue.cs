@@ -171,7 +171,7 @@ internal class CommandQueue : IDisposable
         // Check cache first
         if (m_ResultCache.TryGetValue(commandId, out var cachedResult))
         {
-            result.ReadCount++;
+            cachedResult.ReadCount++;
             return cachedResult;
         }
 
