@@ -6,6 +6,11 @@ namespace Nexus.Engine.Batch;
 public class CommandResult
 {
     /// <summary>
+    /// Gets the process identifier.
+    /// </summary>
+    public int? ProcessId { get; set; }
+
+    /// <summary>
     /// Gets or sets the command identifier.
     /// </summary>
     public string CommandId { get; set; } = string.Empty;

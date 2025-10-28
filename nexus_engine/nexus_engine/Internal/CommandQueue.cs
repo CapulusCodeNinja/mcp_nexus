@@ -510,6 +510,7 @@ internal class CommandQueue : IDisposable
             return new CommandResult
             {
                 CommandId = cmd.CommandId,
+                ProcessId = m_CdbSession.ProcessId,
                 ResultText = result
             };
         }
@@ -520,6 +521,7 @@ internal class CommandQueue : IDisposable
             return new CommandResult
             {
                 CommandId = cmd.CommandId,
+                ProcessId = m_CdbSession?.ProcessId ?? null,
                 ResultText = "Command was cancelled",
                 IsCancelled = true
             };
@@ -531,6 +533,7 @@ internal class CommandQueue : IDisposable
             return new CommandResult
             {
                 CommandId = cmd.CommandId,
+                ProcessId = m_CdbSession?.ProcessId ?? null,
                 ResultText = $"Command timed out: {ex.Message}",
                 IsTimeout = true
             };
@@ -542,6 +545,7 @@ internal class CommandQueue : IDisposable
             return new CommandResult
             {
                 CommandId = cmd.CommandId,
+                ProcessId = m_CdbSession?.ProcessId ?? null,
                 ResultText = $"ERROR: {ex.Message}",
                 IsFailed = true
             };
