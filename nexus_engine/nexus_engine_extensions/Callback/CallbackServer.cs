@@ -75,7 +75,7 @@ internal class CallbackServer
                 var response = new CommandResponse
                 {
                     Success = commandInfo.IsSuccess ?? false,
-                    Output = commandInfo.Output ?? string.Empty,
+                    Output = commandInfo.AggregatedOutput ?? string.Empty,
                     CommandId = newCommandId,
                     State = commandInfo.State.ToString(),
                     Error = commandInfo.ErrorMessage
@@ -165,7 +165,7 @@ internal class CallbackServer
                 var response = new CommandResponse
                 {
                     Success = commandInfo.IsSuccess ?? false,
-                    Output = commandInfo.Output ?? string.Empty,
+                    Output = commandInfo.AggregatedOutput ?? string.Empty,
                     CommandId = commandId,
                     State = commandInfo.State.ToString(),
                     Error = commandInfo.ErrorMessage
@@ -211,7 +211,7 @@ internal class CallbackServer
                 var response = new CommandResponse
                 {
                     Success = commandInfo.IsSuccess ?? true,
-                    Output = commandInfo.Output ?? string.Empty,
+                    Output = commandInfo.AggregatedOutput ?? string.Empty,
                     CommandId = commandId,
                     State = commandInfo.State.ToString(),
                     Error = commandInfo.ErrorMessage
@@ -283,7 +283,7 @@ internal class CallbackServer
                             command = commandInfo.Command,
                             state = status,
                             isCompleted,
-                            output = commandInfo.Output ?? string.Empty,
+                            output = commandInfo.AggregatedOutput ?? string.Empty,
                             error = commandInfo.ErrorMessage,
                             queuedTime = commandInfo.QueuedTime,
                             startTime = commandInfo.StartTime,

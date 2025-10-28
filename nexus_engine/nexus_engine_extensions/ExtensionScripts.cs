@@ -177,7 +177,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         var queuedTime = DateTime.Now;
 
         // Store initial queued state
-        var commandInfo = CommandInfo.Queued(commandId, $"Extension: {extensionName}", queuedTime);
+        var commandInfo = CommandInfo.Enqueued(sessionId, commandId, $"Extension: {extensionName}", queuedTime);
         m_CommandCache[commandId] = commandInfo;
 
         // Track session → command mapping
@@ -220,7 +220,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         {
             // Update to executing state
             var startTime = DateTime.Now;
-            MarkExtensionAsExecuting(commandId, extensionName, queuedTime, startTime);
+            MarkExtensionAsExecuting(sessionId, commandId, extensionName, queuedTime, startTime);
 
             // Execute the extension
             var result = await m_Executor.ExecuteAsync(extensionName, sessionId, parameters, commandId, null, cts.Token);
@@ -254,13 +254,14 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// <summary>
     /// Marks the extension as executing.
     /// </summary>
+    /// <param name="sessionId">The session ID.</param>
     /// <param name="commandId">The command ID.</param>
     /// <param name="extensionName">The extension name.</param>
     /// <param name="queuedTime">When the command was queued.</param>
     /// <param name="startTime">When execution started.</param>
-    private void MarkExtensionAsExecuting(string commandId, string extensionName, DateTime queuedTime, DateTime startTime)
+    private void MarkExtensionAsExecuting(string sessionId, string commandId, string extensionName, DateTime queuedTime, DateTime startTime)
     {
-        m_CommandCache[commandId] = CommandInfo.Executing(commandId, $"Extension: {extensionName}", queuedTime, startTime);
+        m_CommandCache[commandId] = CommandInfo.Executing(sessionId, commandId, $"Extension: {extensionName}", queuedTime, startTime);
     }
 
     /// <summary>
@@ -303,7 +304,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     private void HandleExtensionResult(string extensionName, string sessionId, string commandId, DateTime queuedTime, DateTime startTime, ExtensionResult result)
     {
         var endTime = DateTime.Now;
-        var commandInfo = CreateCommandInfoFromResult(commandId, extensionName, queuedTime, startTime, endTime, result);
+        var commandInfo = CreateCommandInfoFromResult(sessionId, commandId, extensionName, queuedTime, startTime, endTime, result);
         var finalState = DetermineCommandState(result);
 
         // Store in cache
@@ -316,6 +317,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// <summary>
     /// Creates a CommandInfo from the extension result.
     /// </summary>
+    /// <param name="sessionId">The session ID.</param>
     /// <param name="commandId">The command ID.</param>
     /// <param name="extensionName">The extension name.</param>
     /// <param name="queuedTime">When the command was queued.</param>
@@ -323,38 +325,41 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// <param name="endTime">When execution ended.</param>
     /// <param name="result">The extension result.</param>
     /// <returns>The created CommandInfo.</returns>
-    private CommandInfo CreateCommandInfoFromResult(string commandId, string extensionName, DateTime queuedTime, DateTime startTime, DateTime endTime, ExtensionResult result)
+    private CommandInfo CreateCommandInfoFromResult(string sessionId, string commandId, string extensionName, DateTime queuedTime, DateTime startTime, DateTime endTime, ExtensionResult result)
     {
         if (result.Success)
         {
             return CommandInfo.Completed(
+                sessionId,
                 commandId,
                 $"Extension: {extensionName}",
                 queuedTime,
                 startTime,
                 endTime,
                 result.Output ?? string.Empty,
-                true);
+                result.Error ?? string.Empty);
         }
         else if (result.Error?.Contains("exceeded timeout") == true)
         {
             return CommandInfo.TimedOut(
+                sessionId,
                 commandId,
                 $"Extension: {extensionName}",
                 queuedTime,
                 startTime,
                 endTime,
-                result.Error);
+                result.Output ?? string.Empty,
+                result.Error ?? string.Empty);
         }
 
-        return CommandInfo.Completed(
+        return CommandInfo.Completed(   
+            sessionId,
             commandId,
             $"Extension: {extensionName}",
             queuedTime,
             startTime,
             endTime,
             result.Output ?? string.Empty,
-            false,
             result.Error ?? "Extension execution failed");
     }
 
@@ -422,11 +427,14 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         var cancelStartTime = commandInfo?.StartTime ?? queuedTime;
 
         m_CommandCache[commandId] = CommandInfo.Cancelled(
+            sessionId,
             commandId,
             $"Extension: {extensionName}",
             queuedTime,
             cancelStartTime,
-            endTime);
+            endTime,
+            string.Empty,
+            "Extension execution was cancelled");
 
         m_Logger.Warn("Extension script {ExtensionName} with command ID {CommandId} was cancelled", extensionName, commandId);
 
@@ -449,11 +457,13 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         var timeoutStartTime = commandInfo?.StartTime ?? queuedTime;
 
         m_CommandCache[commandId] = CommandInfo.TimedOut(
+            sessionId,
             commandId,
             $"Extension: {extensionName}",
             queuedTime,
             timeoutStartTime,
             endTime,
+            string.Empty,
             ex.Message);
 
         m_Logger.Warn("Extension script {ExtensionName} with command ID {CommandId} timed out: {Message}", extensionName, commandId, ex.Message);
@@ -477,13 +487,13 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         var failStartTime = commandInfo?.StartTime ?? queuedTime;
 
         m_CommandCache[commandId] = CommandInfo.Completed(
+            sessionId,
             commandId,
             $"Extension: {extensionName}",
             queuedTime,
             failStartTime,
             endTime,
             string.Empty,
-            false,
             ex.Message);
 
         m_Logger.Error(ex, "Extension script {ExtensionName} with command ID {CommandId} failed", extensionName, commandId);
@@ -533,9 +543,10 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// <summary>
     /// Cancels a running extension command.
     /// </summary>
+    /// <param name="sessionId">The session ID.</param>
     /// <param name="commandId">The command ID to cancel.</param>
     /// <returns>True if the command was cancelled, false if not found or already completed.</returns>
-    public bool CancelCommand(string commandId)
+    public bool CancelCommand(string sessionId, string commandId)
     {
         m_Logger.Info("Cancelling extension command {CommandId}", commandId);
 
@@ -577,11 +588,14 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
             if (m_CommandCache.TryGetValue(commandId, out var commandInfo))
             {
                 m_CommandCache[commandId] = CommandInfo.Cancelled(
+                    sessionId,
                     commandId,
                     commandInfo.Command,
                     commandInfo.QueuedTime,
-                    commandInfo.StartTime,
-                    endTime);
+                    commandInfo.StartTime ?? DateTime.Now,
+                    endTime,
+                    string.Empty,
+                    "Extension execution was cancelled");
             }
 
             m_Logger.Info("Extension command {CommandId} cancelled successfully", commandId);
@@ -623,7 +637,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         {
             if (m_RunningExtensions.ContainsKey(commandId))
             {
-                _ = CancelCommand(commandId);
+                _ = CancelCommand(sessionId, commandId);
             }
         }
 

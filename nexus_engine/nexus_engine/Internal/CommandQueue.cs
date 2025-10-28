@@ -211,17 +211,7 @@ internal class CommandQueue : IDisposable
 
         // Check if command is still active
         return m_ActiveCommands.TryGetValue(commandId, out var command)
-            ? new CommandInfo
-            {
-                SessionId = m_SessionId,
-                CommandNumber = GetCommandNumber(m_SessionId, command.Id),
-                CommandId = command.Id,
-                Command = command.Command,
-                State = command.State,
-                QueuedTime = command.QueuedTime,
-                StartTime = null, // We don't track this in QueuedCommand anymore
-                EndTime = null
-            }
+            ? new CommandInfo(m_SessionId, command.Id, command.Command, command.State, command.QueuedTime, null, null, string.Empty, string.Empty)
             : null;
     }
 
@@ -244,15 +234,7 @@ internal class CommandQueue : IDisposable
         // Add active commands
         foreach (var command in m_ActiveCommands.Values)
         {
-            infos[command.Id] = new CommandInfo
-            {
-                CommandId = command.Id,
-                Command = command.Command,
-                State = command.State,
-                QueuedTime = command.QueuedTime,
-                StartTime = null, // We don't track this in QueuedCommand anymore
-                EndTime = null
-            };
+            infos[command.Id] = new CommandInfo(m_SessionId, command.Id, command.Command, command.State, command.QueuedTime, null, null, string.Empty, string.Empty);
         }
 
         return infos;
@@ -375,16 +357,7 @@ internal class CommandQueue : IDisposable
                     // Mark command as failed
                     UpdateCommandState(command, CommandState.Failed);
                     var endTime = DateTime.Now;
-                    var commandInfo = CommandInfo.Completed(
-                        command.Id,
-                        command.Command,
-                        command.QueuedTime,
-                        command.QueuedTime, // Use queued time as start time if not available
-                        endTime,
-                        string.Empty,
-                        false,
-                        $"Command processing failed: {ex.Message}");
-
+                    var commandInfo = new CommandInfo(m_SessionId, command.Id, command.Command, CommandState.Failed, command.QueuedTime, null, endTime, string.Empty, $"Command processing failed: {ex.Message}");
                     SetCommandResult(command, commandInfo);
                 }
             }
@@ -674,52 +647,26 @@ internal class CommandQueue : IDisposable
     {
         if (result.IsCancelled)
         {
-            var commandInfo = CommandInfo.Cancelled(
-                queuedCommand.Id,
-                queuedCommand.Command,
-                queuedCommand.QueuedTime,
-                startTime,
-                endTime);
+            var commandInfo = new CommandInfo(m_SessionId, queuedCommand.Id, queuedCommand.Command, CommandState.Cancelled, queuedCommand.QueuedTime, startTime, endTime, string.Empty, "Command was cancelled");
             return (commandInfo, CommandState.Cancelled);
         }
 
         if (result.IsTimeout)
         {
-            var commandInfo = CommandInfo.TimedOut(
-                queuedCommand.Id,
-                queuedCommand.Command,
-                queuedCommand.QueuedTime,
-                startTime,
-                endTime,
-                result.ResultText);
+            var commandInfo = new CommandInfo(m_SessionId, queuedCommand.Id, queuedCommand.Command, CommandState.Timeout, queuedCommand.QueuedTime, startTime, endTime, string.Empty, $"Command timed out: {result.ResultText}");
             return (commandInfo, CommandState.Timeout);
         }
 
         if (result.IsFailed)
         {
-            var commandInfo = CommandInfo.Completed(
-                queuedCommand.Id,
-                queuedCommand.Command,
-                queuedCommand.QueuedTime,
-                startTime,
-                endTime,
-                result.ResultText,
-                false,
-                result.ResultText);
+            var commandInfo = new CommandInfo(m_SessionId, queuedCommand.Id, queuedCommand.Command, CommandState.Failed, queuedCommand.QueuedTime, startTime, endTime, string.Empty, $"Command failed: {result.ResultText}");
             return (commandInfo, CommandState.Failed);
         }
 
         if (!result.IsCancelled && !result.IsTimeout && !result.IsFailed)
         {
             // Explicitly check for successful completion
-            var commandInfo = CommandInfo.Completed(
-                queuedCommand.Id,
-                queuedCommand.Command,
-                queuedCommand.QueuedTime,
-                startTime,
-                endTime,
-                result.ResultText,
-                true);
+            var commandInfo = new CommandInfo(m_SessionId, queuedCommand.Id, queuedCommand.Command, CommandState.Completed, queuedCommand.QueuedTime, startTime, endTime, result.ResultText, string.Empty);
             return (commandInfo, CommandState.Completed);
         }
 
@@ -727,15 +674,7 @@ internal class CommandQueue : IDisposable
         m_Logger.Error("Unexpected command result state for command {CommandId}: Cancelled={IsCancelled}, Timeout={IsTimeout}, Failed={IsFailed}",
             result.CommandId, result.IsCancelled, result.IsTimeout, result.IsFailed);
 
-        var errorCommandInfo = CommandInfo.Completed(
-            queuedCommand.Id,
-            queuedCommand.Command,
-            queuedCommand.QueuedTime,
-            startTime,
-            endTime,
-            $"UNEXPECTED STATE: {result.ResultText}",
-            false,
-            "Command result in unexpected state");
+        var errorCommandInfo = new CommandInfo(m_SessionId, queuedCommand.Id, queuedCommand.Command, CommandState.Failed, queuedCommand.QueuedTime, startTime, endTime, $"UNEXPECTED STATE: {result.ResultText}", "Command result in unexpected state");
         return (errorCommandInfo, CommandState.Failed);
     }
 
@@ -817,14 +756,7 @@ internal class CommandQueue : IDisposable
         UpdateCommandState(command, CommandState.Completed);
         var endTime = DateTime.Now;
 
-        var commandInfo = CommandInfo.Completed(
-            command.Id,
-            command.Command,
-            command.QueuedTime,
-            startTime,
-            endTime,
-            result,
-            true);
+        var commandInfo = new CommandInfo(m_SessionId, command.Id, command.Command, CommandState.Completed, command.QueuedTime, startTime, endTime, result, string.Empty);
 
         SetCommandResult(command, commandInfo);
 
@@ -865,11 +797,14 @@ internal class CommandQueue : IDisposable
         var endTime = DateTime.Now;
 
         var commandInfo = CommandInfo.Cancelled(
+            m_SessionId,
             command.Id,
             command.Command,
             command.QueuedTime,
             startTime,
-            endTime);
+            endTime,
+            string.Empty,
+            "Command was cancelled");
 
         SetCommandResult(command, commandInfo);
 
@@ -910,11 +845,13 @@ internal class CommandQueue : IDisposable
         var endTime = DateTime.Now;
 
         var commandInfo = CommandInfo.TimedOut(
+            m_SessionId,
             command.Id,
             command.Command,
             command.QueuedTime,
             startTime,
             endTime,
+            string.Empty,
             $"Command timed out: {ex.Message}");
 
         SetCommandResult(command, commandInfo);
@@ -956,13 +893,13 @@ internal class CommandQueue : IDisposable
         var endTime = DateTime.Now;
 
         var commandInfo = CommandInfo.Completed(
+            m_SessionId,
             command.Id,
             command.Command,
             command.QueuedTime,
             startTime,
             endTime,
             string.Empty,
-            false,
             $"Command failed: {ex.Message}");
 
         SetCommandResult(command, commandInfo);

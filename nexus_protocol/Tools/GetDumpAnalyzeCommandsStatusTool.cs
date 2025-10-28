@@ -44,7 +44,7 @@ internal static class GetDumpAnalyzeCommandsStatusTool
                 executionTime = cmd.ExecutionTime,
                 totalTime = cmd.TotalTime,
                 isSuccess = cmd.IsSuccess,
-                hasOutput = !string.IsNullOrEmpty(cmd.Output)
+                hasOutput = !string.IsNullOrEmpty(cmd.AggregatedOutput)
             }).ToArray();
 
             logger.Info("Retrieved status for {Count} commands in session {SessionId}", commandStatuses.Length, sessionId);

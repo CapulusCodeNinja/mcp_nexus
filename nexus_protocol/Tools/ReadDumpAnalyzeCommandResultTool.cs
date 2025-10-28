@@ -49,9 +49,9 @@ internal static class ReadDumpAnalyzeCommandResultTool
                 commandInfo.ExecutionTime,
                 commandInfo.TotalTime);
 
-            if (!string.IsNullOrEmpty(commandInfo.Output))
+            if (!string.IsNullOrEmpty(commandInfo.AggregatedOutput))
             {
-                markdown += MarkdownFormatter.CreateCodeBlock(commandInfo.Output, "Output");
+                markdown += MarkdownFormatter.CreateCodeBlock(commandInfo.AggregatedOutput, "Output");
             }
 
             if (!string.IsNullOrEmpty(commandInfo.ErrorMessage))

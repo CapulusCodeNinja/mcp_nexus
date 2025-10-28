@@ -24,8 +24,7 @@ internal class CdbSession : ICdbSession
 
     private Process? m_CdbProcess;
     private StreamWriter? m_InputWriter;
-    private StreamReader? m_OutputReader;
-    private StreamReader? m_ErrorReader;
+    private ProcessOutputAggregator? m_OutputAggregator;
     private volatile bool m_Disposed = false;
     private volatile bool m_Initialized = false;
 
@@ -309,8 +308,7 @@ internal class CdbSession : ICdbSession
     protected virtual void DisposeResources()
     {
         m_InputWriter?.Dispose();
-        m_OutputReader?.Dispose();
-        m_ErrorReader?.Dispose();
+        m_OutputAggregator?.Dispose();
         m_CdbProcess?.Dispose();
     }
 
@@ -507,8 +505,10 @@ internal class CdbSession : ICdbSession
         }
 
         m_InputWriter = m_CdbProcess.StandardInput;
-        m_OutputReader = m_CdbProcess.StandardOutput;
-        m_ErrorReader = m_CdbProcess.StandardError;
+
+        // Attach event-based aggregator to merge stdout and stderr into a single stream
+        m_OutputAggregator = new ProcessOutputAggregator();
+        m_OutputAggregator.Attach(m_CdbProcess);
 
         m_Logger.Debug("CDB process started with PID: {ProcessId}", m_CdbProcess.Id);
         return Task.CompletedTask;
@@ -596,7 +596,7 @@ internal class CdbSession : ICdbSession
     /// <exception cref="TimeoutException">Thrown when command execution exceeds the configured timeout.</exception>
     protected async Task<string> ReadCommandOutputAsync(CancellationToken cancellationToken)
     {
-        if (m_OutputReader == null)
+        if (m_OutputAggregator == null)
         {
             throw new InvalidOperationException("CDB output stream is not available");
         }
@@ -610,15 +610,12 @@ internal class CdbSession : ICdbSession
 
         try
         {
+            var reader = m_OutputAggregator.Reader;
             while (!combinedCts.Token.IsCancellationRequested)
             {
-                var line = await ReadLineFromOutputAsync();
-                if (line == null)
-                {
-                    break;
-                }
+                var next = await reader.ReadAsync(combinedCts.Token);
 
-                var (shouldContinue, shouldBreak) = ProcessOutputLine(line, ref startMarkerFound, output);
+                var (shouldContinue, shouldBreak) = ProcessOutputLine(next.Text, ref startMarkerFound, output);
                 if (shouldBreak)
                 {
                     break;
@@ -627,7 +624,10 @@ internal class CdbSession : ICdbSession
         }
         catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
         {
-            throw new TimeoutException($"Command execution timed out after {timeout.TotalMinutes:F1} minutes");
+            // Include partial output and attempt to re-sync to the next end marker to avoid misalignment
+            var partial = output.ToString().TrimEnd();
+            await DrainUntilEndMarkerAsync(TimeSpan.FromMilliseconds(750), cancellationToken);
+            throw new TimeoutException($"Command execution timed out after {timeout.TotalMinutes:F1} minutes{Environment.NewLine}{partial}");
         }
 
         return output.ToString().TrimEnd();
@@ -639,7 +639,48 @@ internal class CdbSession : ICdbSession
     /// <returns>The line read from the output stream, or null if no more lines.</returns>
     protected virtual async Task<string?> ReadLineFromOutputAsync()
     {
-        return await m_OutputReader!.ReadLineAsync();
+        if (m_OutputAggregator == null)
+        {
+            return null;
+        }
+
+        var next = await m_OutputAggregator.Reader.ReadAsync(CancellationToken.None);
+        return next.Text;
+    }
+
+    /// <summary>
+    /// Drains the merged output stream until the end sentinel is observed or the maximum duration elapses.
+    /// This helps re-synchronize the stream after a timeout.
+    /// </summary>
+    /// <param name="maxDuration">Maximum time to drain.</param>
+    /// <param name="cancellationToken">External cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected virtual async Task DrainUntilEndMarkerAsync(TimeSpan maxDuration, CancellationToken cancellationToken)
+    {
+        if (m_OutputAggregator == null)
+        {
+            return;
+        }
+
+        using var drainCts = new CancellationTokenSource(maxDuration);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, drainCts.Token);
+
+        try
+        {
+            var reader = m_OutputAggregator.Reader;
+            while (!linked.Token.IsCancellationRequested)
+            {
+                var next = await reader.ReadAsync(linked.Token);
+                if (next.Text.Contains(CdbSentinels.EndMarker))
+                {
+                    break;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Best-effort drain; safe to ignore
+        }
     }
 
     /// <summary>

@@ -33,9 +33,10 @@ public interface IExtensionScripts
     /// <summary>
     /// Cancels a running extension command.
     /// </summary>
+    /// <param name="sessionId">The session ID.</param>
     /// <param name="commandId">The command ID to cancel.</param>
     /// <returns>True if the command was cancelled, false if not found or already completed.</returns>
-    bool CancelCommand(string commandId);
+    bool CancelCommand(string sessionId,string commandId);
 
     /// <summary>
     /// Closes all extension scripts for a session.
