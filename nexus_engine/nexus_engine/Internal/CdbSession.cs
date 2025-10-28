@@ -26,7 +26,7 @@ internal class CdbSession : ICdbSession
     private StreamWriter? m_InputWriter;
     private ProcessOutputAggregator? m_OutputAggregator;
     private volatile bool m_Disposed = false;
-    private volatile bool m_Initialized = false;
+    protected volatile bool m_Initialized = false;
 
     /// <summary>
     /// Gets a value indicating whether the session is active.

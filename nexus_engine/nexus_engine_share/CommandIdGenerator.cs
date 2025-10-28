@@ -20,7 +20,7 @@ public class CommandIdGenerator
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandIdGenerator"/> class.
     /// </summary>
-    internal CommandIdGenerator()
+    protected CommandIdGenerator()
     {
     }
 

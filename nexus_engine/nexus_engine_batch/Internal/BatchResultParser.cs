@@ -8,10 +8,12 @@ namespace Nexus.Engine.Batch.Internal;
 internal class BatchResultParser
 {
     private readonly Logger m_Logger;
+    private readonly BatchProcessor m_BatchProcessor;
 
-    public BatchResultParser()
+    public BatchResultParser(BatchProcessor batchProcessor)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
+        m_BatchProcessor = batchProcessor ?? throw new ArgumentNullException(nameof(batchProcessor));
     }
 
     /// <summary>
@@ -27,7 +29,7 @@ internal class BatchResultParser
         }
 
         // Check if this is a batch result by looking it up in the cache
-        var originalCommandIds = BatchProcessor.Instance.GetOriginalCommandIds(result.CommandId);
+        var originalCommandIds = m_BatchProcessor.GetOriginalCommandIds(result.CommandId);
 
         // If we get more than one command ID back, it's a batch
         if (originalCommandIds.Count <= 1)

@@ -26,17 +26,17 @@ public class BatchProcessorTests
     }
 
     /// <summary>
-    /// Verifies that Instance returns the same instance on multiple calls.
+    /// Verifies that creating new instances returns different objects (not a singleton).
     /// </summary>
     [Fact]
-    public void Instance_ReturnsSameInstanceOnMultipleCalls()
+    public void NewInstance_CreatesDifferentInstances()
     {
         // Act
         var instance1 = new BatchProcessor();
         var instance2 = new BatchProcessor();
 
         // Assert
-        _ = instance1.Should().BeSameAs(instance2);
+        _ = instance1.Should().NotBeSameAs(instance2);
     }
 
     #endregion

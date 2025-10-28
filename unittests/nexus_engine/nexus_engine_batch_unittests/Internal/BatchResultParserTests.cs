@@ -12,6 +12,7 @@ namespace Nexus.Engine.Batch.Tests.Internal;
 /// </summary>
 public class BatchResultParserTests
 {
+    private readonly BatchProcessor m_Processor;
     private readonly BatchResultParser m_Parser;
 
     /// <summary>
@@ -19,7 +20,8 @@ public class BatchResultParserTests
     /// </summary>
     public BatchResultParserTests()
     {
-        m_Parser = new BatchResultParser();
+        m_Processor = new BatchProcessor();
+        m_Parser = new BatchResultParser(m_Processor);
     }
 
     /// <summary>
@@ -59,13 +61,14 @@ public class BatchResultParserTests
     public void ParseResult_WithBatchResult_ExtractsIndividualResults()
     {
         // Arrange - First batch the commands to register the mapping
+        var sessionId = "test-session-parse-11";
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "k" },
             new() { CommandId = "cmd-2", CommandText = "lm" }
         };
 
-        var batchedCommands = new BatchProcessor().BatchCommands("test-session", commands);
+        var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
         var batchId = batchedCommands[0].CommandId;
 
         var resultText = $@"
@@ -101,6 +104,7 @@ Module output for command 2
     public void ParseResult_WithThreeCommandBatch_ExtractsAllThree()
     {
         // Arrange - First batch the commands to register the mapping
+        var sessionId = "test-session-parse-6";
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "k" },
@@ -108,7 +112,7 @@ Module output for command 2
             new() { CommandId = "cmd-3", CommandText = "!threads" }
         };
 
-        var batchedCommands = new BatchProcessor().BatchCommands("test-session", commands);
+        var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
         var batchId = batchedCommands[0].CommandId;
 
         var resultText = $@"
@@ -146,13 +150,14 @@ Output 3
     public void ParseResult_WithBatchResultWithoutSentinels_ReturnsSingleResult()
     {
         // Arrange - First batch the commands to register the mapping
+        var sessionId = "test-session-parse-12";
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "k" },
             new() { CommandId = "cmd-2", CommandText = "lm" }
         };
 
-        var batchedCommands = new BatchProcessor().BatchCommands("test-session", commands);
+        var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
         var batchId = batchedCommands[0].CommandId;
 
         var result = new CommandResult
@@ -177,13 +182,14 @@ Output 3
     public void ParseResult_WithEmptyResultText_ExtractsEmptyResults()
     {
         // Arrange - First batch the commands to register the mapping
+        var sessionId = "test-session-parse-10";
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "k" },
             new() { CommandId = "cmd-2", CommandText = "lm" }
         };
 
-        var batchedCommands = new BatchProcessor().BatchCommands("test-session", commands);
+        var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
         var batchId = batchedCommands[0].CommandId;
 
         var resultText = $@"
@@ -217,13 +223,14 @@ Output 3
     public void ParseResult_ExtractsResults_TrimsWhitespace()
     {
         // Arrange - First batch the commands to register the mapping
+        var sessionId = "test-session-trim-1";
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "k" },
             new() { CommandId = "cmd-2", CommandText = "lm" }
         };
 
-        var batchedCommands = new BatchProcessor().BatchCommands("test-session-trim", commands);
+        var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
         var batchId = batchedCommands[0].CommandId;
 
         var resultText = $@"
@@ -335,14 +342,15 @@ Output with special chars: !@#$%^&*()
     public void ParseResult_MaintainsCommandOrder()
     {
         // Arrange - First batch the commands to register the mapping
+        var sessionId = "test-session-order-1";
         var commands = new List<Command>
         {
-            new() { CommandId = "cmd-A", CommandText = "k" },
-            new() { CommandId = "cmd-B", CommandText = "lm" },
-            new() { CommandId = "cmd-C", CommandText = "!threads" }
+            new() { CommandId = "cmd-A", CommandText = "first" },
+            new() { CommandId = "cmd-B", CommandText = "second" },
+            new() { CommandId = "cmd-C", CommandText = "third" }
         };
 
-        var batchedCommands = new BatchProcessor().BatchCommands("test-session-order", commands);
+        var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
         var batchId = batchedCommands[0].CommandId;
 
         var resultText = $@"

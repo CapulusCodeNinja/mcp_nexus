@@ -40,6 +40,16 @@ public class CdbSessionTests
         return new Nexus.Engine.Preprocessing.CommandPreprocessor(m_MockFileSystem.Object);
     }
 
+    /// <summary>
+    /// Creates an initialized CdbSessionTestAccessor for testing.
+    /// </summary>
+    private CdbSessionTestAccessor CreateInitializedAccessor()
+    {
+        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        accessor.SetInitializedForTesting(true);
+        return accessor;
+    }
+
     #region Constructor Tests
 
     /// <summary>

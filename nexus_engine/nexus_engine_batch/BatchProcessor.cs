@@ -35,7 +35,7 @@ public class BatchProcessor : IBatchProcessor
 
         m_Filter = new BatchCommandFilter();
         m_Builder = new BatchCommandBuilder();
-        m_Parser = new BatchResultParser();
+        m_Parser = new BatchResultParser(this);
     }
 
     /// <summary>

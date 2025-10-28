@@ -176,5 +176,14 @@ internal class CdbSessionTestAccessor : CdbSession
     {
         return CdbSession.CreateCommandWithSentinels(command);
     }
+
+    /// <summary>
+    /// Sets the initialized state directly for testing purposes.
+    /// </summary>
+    /// <param name="initialized">The initialized state to set.</param>
+    public void SetInitializedForTesting(bool initialized)
+    {
+        m_Initialized = initialized;
+    }
 }
 

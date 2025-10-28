@@ -13,7 +13,7 @@ public class SessionIdGenerator
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionIdGenerator"/> class.
     /// </summary>
-    private SessionIdGenerator()
+    protected SessionIdGenerator()
     {
     }
 
