@@ -188,16 +188,16 @@ public class StatisticsTests
 
         var commands = new List<CommandInfo>
         {
-            CommandInfo.Completed("cmd-1", "!analyze -v", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "output1", true),
-            CommandInfo.Completed("cmd-2", "kL", openedAt, openedAt.AddSeconds(2), openedAt.AddSeconds(3), "output2", true),
-            CommandInfo.Completed("cmd-3", "lm", openedAt, openedAt.AddSeconds(3), openedAt.AddSeconds(4), "output3", true),
-            CommandInfo.Completed("cmd-4", "!threads", openedAt, openedAt.AddSeconds(4), openedAt.AddSeconds(5), "output4", true),
-            CommandInfo.Completed("cmd-5", "!peb", openedAt, openedAt.AddSeconds(5), openedAt.AddSeconds(6), "output5", true),
-            CommandInfo.Completed("cmd-6", "dt", openedAt, openedAt.AddSeconds(6), openedAt.AddSeconds(7), "output6", true),
-            CommandInfo.Completed("cmd-7", "dv", openedAt, openedAt.AddSeconds(7), openedAt.AddSeconds(8), "output7", true),
-            CommandInfo.Completed("cmd-8", "u", openedAt, openedAt.AddSeconds(8), openedAt.AddSeconds(9), "output8", true),
-            CommandInfo.Completed("cmd-9", "!error", openedAt, openedAt.AddSeconds(9), openedAt.AddSeconds(10), "", false, "Command failed"),
-            CommandInfo.Cancelled("cmd-10", "!runaway", openedAt, openedAt.AddSeconds(10), openedAt.AddSeconds(11))
+            CommandInfo.Completed(sessionId, "cmd-1", "!analyze -v", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "output1", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-2", "kL", openedAt, openedAt.AddSeconds(2), openedAt.AddSeconds(3), "output2", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-3", "lm", openedAt, openedAt.AddSeconds(3), openedAt.AddSeconds(4), "output3", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-4", "!threads", openedAt, openedAt.AddSeconds(4), openedAt.AddSeconds(5), "output4", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-5", "!peb", openedAt, openedAt.AddSeconds(5), openedAt.AddSeconds(6), "output5", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-6", "dt", openedAt, openedAt.AddSeconds(6), openedAt.AddSeconds(7), "output6", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-7", "dv", openedAt, openedAt.AddSeconds(7), openedAt.AddSeconds(8), "output7", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-8", "u", openedAt, openedAt.AddSeconds(8), openedAt.AddSeconds(9), "output8", string.Empty, null),
+            CommandInfo.Failed(sessionId, "cmd-9", "!error", openedAt, openedAt.AddSeconds(9), openedAt.AddSeconds(10), string.Empty, "Command failed", null),
+            CommandInfo.Cancelled(sessionId, "cmd-10", "!runaway", openedAt, openedAt.AddSeconds(10), openedAt.AddSeconds(11), string.Empty, string.Empty, null)
         };
 
         // Act & Assert (should not throw)
@@ -255,11 +255,11 @@ public class StatisticsTests
 
         var commands = new List<CommandInfo>
         {
-            CommandInfo.Completed("cmd-1", "!invalid1", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "", false, "Error 1"),
-            CommandInfo.Completed("cmd-2", "!invalid2", openedAt, openedAt.AddSeconds(2), openedAt.AddSeconds(3), "", false, "Error 2"),
-            CommandInfo.Completed("cmd-3", "!invalid3", openedAt, openedAt.AddSeconds(3), openedAt.AddSeconds(4), "", false, "Error 3"),
-            CommandInfo.Completed("cmd-4", "!invalid4", openedAt, openedAt.AddSeconds(4), openedAt.AddSeconds(5), "", false, "Error 4"),
-            CommandInfo.Completed("cmd-5", "!invalid5", openedAt, openedAt.AddSeconds(5), openedAt.AddSeconds(6), "", false, "Error 5")
+            CommandInfo.Failed(sessionId, "cmd-1", "!invalid1", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), string.Empty, "Error 1", null),
+            CommandInfo.Failed(sessionId, "cmd-2", "!invalid2", openedAt, openedAt.AddSeconds(2), openedAt.AddSeconds(3), string.Empty, "Error 2", null),
+            CommandInfo.Failed(sessionId, "cmd-3", "!invalid3", openedAt, openedAt.AddSeconds(3), openedAt.AddSeconds(4), string.Empty, "Error 3", null),
+            CommandInfo.Failed(sessionId, "cmd-4", "!invalid4", openedAt, openedAt.AddSeconds(4), openedAt.AddSeconds(5), string.Empty, "Error 4", null),
+            CommandInfo.Failed(sessionId, "cmd-5", "!invalid5", openedAt, openedAt.AddSeconds(5), openedAt.AddSeconds(6), string.Empty, "Error 5", null)
         };
 
         // Act & Assert (should not throw)
@@ -291,13 +291,13 @@ public class StatisticsTests
         // Create commands in mixed order to verify sorting by status
         var commands = new List<CommandInfo>
         {
-            CommandInfo.Queued("cmd-queued-1", "!pending", openedAt),
-            CommandInfo.Completed("cmd-completed-1", "!analyze -v", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "output1", true),
-            CommandInfo.TimedOut("cmd-timeout-1", "!slow", openedAt, openedAt.AddSeconds(3), openedAt.AddSeconds(300), "Timeout error"),
-            CommandInfo.Cancelled("cmd-cancelled-1", "!cancelled", openedAt, openedAt.AddSeconds(4), openedAt.AddSeconds(5)),
-            CommandInfo.Completed("cmd-failed-1", "!error", openedAt, openedAt.AddSeconds(6), openedAt.AddSeconds(7), "", false, "Command failed"),
-            CommandInfo.Executing("cmd-executing-1", "!running", openedAt, openedAt.AddSeconds(8)),
-            CommandInfo.Completed("cmd-completed-2", "kL", openedAt, openedAt.AddSeconds(9), openedAt.AddSeconds(10), "output2", true)
+            CommandInfo.Enqueued(sessionId, "cmd-queued-1", "!pending", openedAt, null),
+            CommandInfo.Completed(sessionId, "cmd-completed-1", "!analyze -v", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "output1", string.Empty, null),
+            CommandInfo.TimedOut(sessionId, "cmd-timeout-1", "!slow", openedAt, openedAt.AddSeconds(3), openedAt.AddSeconds(300), string.Empty, "Timeout error", null),
+            CommandInfo.Cancelled(sessionId, "cmd-cancelled-1", "!cancelled", openedAt, openedAt.AddSeconds(4), openedAt.AddSeconds(5), string.Empty, string.Empty, null),
+            CommandInfo.Failed(sessionId, "cmd-failed-1", "!error", openedAt, openedAt.AddSeconds(6), openedAt.AddSeconds(7), string.Empty, "Command failed", null),
+            CommandInfo.Executing(sessionId, "cmd-executing-1", "!running", openedAt, openedAt.AddSeconds(8), null),
+            CommandInfo.Completed(sessionId, "cmd-completed-2", "kL", openedAt, openedAt.AddSeconds(9), openedAt.AddSeconds(10), "output2", string.Empty, null)
         };
 
         // Act & Assert (should not throw)

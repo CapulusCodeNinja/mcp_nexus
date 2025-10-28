@@ -373,7 +373,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// <returns>The CommandState.</returns>
     private CommandState DetermineCommandState(CommandInfo result)
     {
-        if (result.State == CommandState.Completed)	
+        if (result.State == CommandState.Completed)
         {
             return CommandState.Completed;
         }

@@ -148,7 +148,7 @@ public class CommandInfo
     /// <param name="endTime">The time when the command completed.</param>
     /// <param name="aggregatedOutput">The aggregated output.</param>
     /// <param name="errorMessage">The error message if failed.</param>
-    public CommandInfo(string sessionId, string commandId, string command, CommandState state, DateTime queuedTime, int? processId, 
+    public CommandInfo(string sessionId, string commandId, string command, CommandState state, DateTime queuedTime, int? processId,
         DateTime? startTime, DateTime? endTime, string? aggregatedOutput, string? errorMessage)
     {
         SessionId = sessionId;
@@ -280,7 +280,7 @@ public class CommandInfo
         DateTime endTime,
         string aggregatedOutput,
         string errorMessage,
-        int? processId)  
+        int? processId)
     {
         return new CommandInfo(sessionId, commandId, command, CommandState.Cancelled, queuedTime, processId, startTime, endTime, aggregatedOutput, $"Command was cancelled: {errorMessage}");
     }

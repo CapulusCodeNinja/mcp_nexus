@@ -618,13 +618,16 @@ public class BatchProcessorTests
     {
         // Arrange
         var processor = BatchProcessor.Instance;
-        var sessionId = "test-session-batch";
+        var sessionId = "test-session-batch-getid";
         var commands = new List<Command>
         {
-            new() { CommandId = "cmd-1", CommandText = "lm" },
-            new() { CommandId = "cmd-2", CommandText = "dt" },
-            new() { CommandId = "cmd-3", CommandText = "kL" }
+            new() { CommandId = "cmd-batch-test-1", CommandText = "lm" },
+            new() { CommandId = "cmd-batch-test-2", CommandText = "dt" },
+            new() { CommandId = "cmd-batch-test-3", CommandText = "kL" }
         };
+
+        // Clear any existing mappings for this session
+        processor.ClearSessionBatchMappings(sessionId);
 
         // Act - Batch the commands
         var batchedCommands = processor.BatchCommands(sessionId, commands);

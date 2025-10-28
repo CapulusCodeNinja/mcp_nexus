@@ -54,13 +54,7 @@ internal class CdbSession : ICdbSession
     /// <summary>
     /// Gets the process identifier.
     /// </summary>
-    public int? ProcessId 
-    { 
-        get
-        {
-            return m_CdbProcess?.Id ?? null;
-        } 
-    }
+    public int? ProcessId => m_CdbProcess?.Id ?? null;
 
     /// <summary>
     /// Gets a value indicating whether the session is initialized.

@@ -13,29 +13,31 @@ namespace Nexus.Engine.Unittests.Models;
 public class CommandInfoTests
 {
     /// <summary>
-    /// Verifies that Queued factory method creates correct state.
+    /// Verifies that Enqueued factory method creates correct state.
     /// </summary>
     [Fact]
-    public void Queued_CreatesCommandInfoWithQueuedState()
+    public void Enqueued_CreatesCommandInfoWithQueuedState()
     {
         // Arrange
+        var sessionId = "session-123";
         var commandId = "cmd-123";
         var command = "k";
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
 
         // Act
-        var result = CommandInfo.Queued(commandId, command, queuedTime);
+        var result = CommandInfo.Enqueued(sessionId, commandId, command, queuedTime, null);
 
         // Assert
+        _ = result.SessionId.Should().Be(sessionId);
         _ = result.CommandId.Should().Be(commandId);
         _ = result.Command.Should().Be(command);
         _ = result.State.Should().Be(CommandState.Queued);
         _ = result.QueuedTime.Should().Be(queuedTime);
         _ = result.StartTime.Should().BeNull();
         _ = result.EndTime.Should().BeNull();
-        _ = result.Output.Should().BeNull();
-        _ = result.IsSuccess.Should().BeNull();
-        _ = result.ErrorMessage.Should().BeNull();
+        _ = result.AggregatedOutput.Should().Be(string.Empty);
+        _ = result.IsSuccess.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Be(string.Empty);
     }
 
     /// <summary>
@@ -45,15 +47,17 @@ public class CommandInfoTests
     public void Executing_CreatesCommandInfoWithExecutingState()
     {
         // Arrange
+        var sessionId = "session-123";
         var commandId = "cmd-123";
         var command = "lm";
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
         var startTime = new DateTime(2025, 1, 15, 10, 30, 5);
 
         // Act
-        var result = CommandInfo.Executing(commandId, command, queuedTime, startTime);
+        var result = CommandInfo.Executing(sessionId, commandId, command, queuedTime, startTime, null);
 
         // Assert
+        _ = result.SessionId.Should().Be(sessionId);
         _ = result.CommandId.Should().Be(commandId);
         _ = result.Command.Should().Be(command);
         _ = result.State.Should().Be(CommandState.Executing);
@@ -69,6 +73,7 @@ public class CommandInfoTests
     public void Completed_WithSuccess_CreatesCommandInfoWithCompletedState()
     {
         // Arrange
+        var sessionId = "session-123";
         var commandId = "cmd-123";
         var command = "!analyze -v";
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
@@ -77,26 +82,28 @@ public class CommandInfoTests
         var output = "Analysis output";
 
         // Act
-        var result = CommandInfo.Completed(commandId, command, queuedTime, startTime, endTime, output, true);
+        var result = CommandInfo.Completed(sessionId, commandId, command, queuedTime, startTime, endTime, output, string.Empty, null);
 
         // Assert
+        _ = result.SessionId.Should().Be(sessionId);
         _ = result.CommandId.Should().Be(commandId);
         _ = result.State.Should().Be(CommandState.Completed);
         _ = result.QueuedTime.Should().Be(queuedTime);
         _ = result.StartTime.Should().Be(startTime);
         _ = result.EndTime.Should().Be(endTime);
-        _ = result.Output.Should().Be(output);
+        _ = result.AggregatedOutput.Should().Be(output);
         _ = result.IsSuccess.Should().BeTrue();
-        _ = result.ErrorMessage.Should().BeNull();
+        _ = result.ErrorMessage.Should().Be(string.Empty);
     }
 
     /// <summary>
-    /// Verifies that Completed factory method with failure creates correct state.
+    /// Verifies that Failed factory method with failure creates correct state.
     /// </summary>
     [Fact]
-    public void Completed_WithFailure_CreatesCommandInfoWithFailedState()
+    public void Failed_WithFailure_CreatesCommandInfoWithFailedState()
     {
         // Arrange
+        var sessionId = "session-123";
         var commandId = "cmd-123";
         var command = "invalid";
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
@@ -106,9 +113,10 @@ public class CommandInfoTests
         var errorMessage = "Command not recognized";
 
         // Act
-        var result = CommandInfo.Completed(commandId, command, queuedTime, startTime, endTime, output, false, errorMessage);
+        var result = CommandInfo.Failed(sessionId, commandId, command, queuedTime, startTime, endTime, output, errorMessage, null);
 
         // Assert
+        _ = result.SessionId.Should().Be(sessionId);
         _ = result.CommandId.Should().Be(commandId);
         _ = result.State.Should().Be(CommandState.Failed);
         _ = result.IsSuccess.Should().BeFalse();
@@ -122,19 +130,23 @@ public class CommandInfoTests
     public void Cancelled_CreatesCommandInfoWithCancelledState()
     {
         // Arrange
+        var sessionId = "session-123";
         var commandId = "cmd-123";
         var command = "k";
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
+        var startTime = new DateTime(2025, 1, 15, 10, 30, 5);
+        var endTime = new DateTime(2025, 1, 15, 10, 30, 7);
 
         // Act
-        var result = CommandInfo.Cancelled(commandId, command, queuedTime);
+        var result = CommandInfo.Cancelled(sessionId, commandId, command, queuedTime, startTime, endTime, string.Empty, string.Empty, null);
 
         // Assert
+        _ = result.SessionId.Should().Be(sessionId);
         _ = result.CommandId.Should().Be(commandId);
         _ = result.State.Should().Be(CommandState.Cancelled);
         _ = result.QueuedTime.Should().Be(queuedTime);
         _ = result.IsSuccess.Should().BeFalse();
-        _ = result.ErrorMessage.Should().Be("Command was cancelled");
+        _ = result.ErrorMessage.Should().Contain("Command was cancelled");
     }
 
     /// <summary>
@@ -144,6 +156,7 @@ public class CommandInfoTests
     public void Cancelled_WithStartAndEndTimes_SetsTimesCorrectly()
     {
         // Arrange
+        var sessionId = "session-123";
         var commandId = "cmd-123";
         var command = "k";
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
@@ -151,7 +164,7 @@ public class CommandInfoTests
         var endTime = new DateTime(2025, 1, 15, 10, 30, 7);
 
         // Act
-        var result = CommandInfo.Cancelled(commandId, command, queuedTime, startTime, endTime);
+        var result = CommandInfo.Cancelled(sessionId, commandId, command, queuedTime, startTime, endTime, string.Empty, string.Empty, null);
 
         // Assert
         _ = result.StartTime.Should().Be(startTime);
@@ -165,6 +178,7 @@ public class CommandInfoTests
     public void TimedOut_CreatesCommandInfoWithTimeoutState()
     {
         // Arrange
+        var sessionId = "session-123";
         var commandId = "cmd-123";
         var command = "!analyze -v";
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
@@ -173,16 +187,17 @@ public class CommandInfoTests
         var errorMessage = "Command timed out after 300 seconds";
 
         // Act
-        var result = CommandInfo.TimedOut(commandId, command, queuedTime, startTime, endTime, errorMessage);
+        var result = CommandInfo.TimedOut(sessionId, commandId, command, queuedTime, startTime, endTime, string.Empty, errorMessage, null);
 
         // Assert
+        _ = result.SessionId.Should().Be(sessionId);
         _ = result.CommandId.Should().Be(commandId);
         _ = result.State.Should().Be(CommandState.Timeout);
         _ = result.QueuedTime.Should().Be(queuedTime);
         _ = result.StartTime.Should().Be(startTime);
         _ = result.EndTime.Should().Be(endTime);
         _ = result.IsSuccess.Should().BeFalse();
-        _ = result.ErrorMessage.Should().Be(errorMessage);
+        _ = result.ErrorMessage.Should().Contain(errorMessage);
     }
 
     /// <summary>
@@ -192,7 +207,7 @@ public class CommandInfoTests
     public void ExecutionTime_WhenNotStarted_ReturnsNull()
     {
         // Arrange
-        var info = CommandInfo.Queued("cmd-123", "k", DateTime.Now);
+        var info = CommandInfo.Enqueued("session-123", "cmd-123", "k", DateTime.Now, null);
 
         // Act
         var result = info.ExecutionTime;
@@ -208,7 +223,7 @@ public class CommandInfoTests
     public void ExecutionTime_WhenStartedButNotEnded_ReturnsNull()
     {
         // Arrange
-        var info = CommandInfo.Executing("cmd-123", "k", DateTime.Now, DateTime.Now.AddSeconds(5));
+        var info = CommandInfo.Executing("session-123", "cmd-123", "k", DateTime.Now, DateTime.Now.AddSeconds(5), null);
 
         // Act
         var result = info.ExecutionTime;
@@ -227,7 +242,7 @@ public class CommandInfoTests
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
         var startTime = new DateTime(2025, 1, 15, 10, 30, 5);
         var endTime = new DateTime(2025, 1, 15, 10, 30, 15);
-        var info = CommandInfo.Completed("cmd-123", "k", queuedTime, startTime, endTime, "output", true);
+        var info = CommandInfo.Completed("session-123", "cmd-123", "k", queuedTime, startTime, endTime, "output", string.Empty, null);
 
         // Act
         var result = info.ExecutionTime;
@@ -244,7 +259,7 @@ public class CommandInfoTests
     public void TotalTime_WhenNotCompleted_ReturnsNull()
     {
         // Arrange
-        var info = CommandInfo.Queued("cmd-123", "k", DateTime.Now);
+        var info = CommandInfo.Enqueued("session-123", "cmd-123", "k", DateTime.Now, null);
 
         // Act
         var result = info.TotalTime;
@@ -263,7 +278,7 @@ public class CommandInfoTests
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
         var startTime = new DateTime(2025, 1, 15, 10, 30, 5);
         var endTime = new DateTime(2025, 1, 15, 10, 30, 15);
-        var info = CommandInfo.Completed("cmd-123", "k", queuedTime, startTime, endTime, "output", true);
+        var info = CommandInfo.Completed("session-123", "cmd-123", "k", queuedTime, startTime, endTime, "output", string.Empty, null);
 
         // Act
         var result = info.TotalTime;
@@ -283,7 +298,7 @@ public class CommandInfoTests
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
         var startTime = new DateTime(2025, 1, 15, 10, 30, 10);
         var endTime = new DateTime(2025, 1, 15, 10, 30, 15);
-        var info = CommandInfo.Completed("cmd-123", "k", queuedTime, startTime, endTime, "output", true);
+        var info = CommandInfo.Completed("session-123", "cmd-123", "k", queuedTime, startTime, endTime, "output", string.Empty, null);
 
         // Act
         var executionTime = info.ExecutionTime;
@@ -295,30 +310,31 @@ public class CommandInfoTests
     }
 
     /// <summary>
-    /// Verifies that Completed without error message sets null.
+    /// Verifies that Completed without error message sets empty string.
     /// </summary>
     [Fact]
-    public void Completed_WithoutErrorMessage_SetsErrorMessageToNull()
+    public void Completed_WithoutErrorMessage_SetsErrorMessageToEmptyString()
     {
         // Arrange & Act
-        var result = CommandInfo.Completed("cmd-123", "k", DateTime.Now, DateTime.Now, DateTime.Now, "output", true);
+        var result = CommandInfo.Completed("session-123", "cmd-123", "k", DateTime.Now, DateTime.Now, DateTime.Now, "output", string.Empty, null);
 
         // Assert
-        _ = result.ErrorMessage.Should().BeNull();
+        _ = result.ErrorMessage.Should().Be(string.Empty);
     }
 
     /// <summary>
-    /// Verifies that Cancelled without times sets null values.
+    /// Verifies that Cancelled sets error message correctly.
     /// </summary>
     [Fact]
-    public void Cancelled_WithoutTimes_SetsNullTimes()
+    public void Cancelled_SetsErrorMessageCorrectly()
     {
         // Arrange & Act
-        var result = CommandInfo.Cancelled("cmd-123", "k", DateTime.Now);
+        var result = CommandInfo.Cancelled("session-123", "cmd-123", "k", DateTime.Now, DateTime.Now, DateTime.Now, string.Empty, string.Empty, null);
 
         // Assert
-        _ = result.StartTime.Should().BeNull();
-        _ = result.EndTime.Should().BeNull();
+        _ = result.StartTime.Should().NotBeNull();
+        _ = result.EndTime.Should().NotBeNull();
+        _ = result.ErrorMessage.Should().Contain("Command was cancelled");
     }
 
     /// <summary>
@@ -331,7 +347,7 @@ public class CommandInfoTests
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
         var startTime = new DateTime(2025, 1, 15, 10, 30, 0);
         var endTime = new DateTime(2025, 1, 15, 10, 31, 0);
-        var info = CommandInfo.Completed("cmd-123", "k", queuedTime, startTime, endTime, "output", true);
+        var info = CommandInfo.Completed("session-123", "cmd-123", "k", queuedTime, startTime, endTime, "output", string.Empty, null);
 
         // Act
         var result = info.ExecutionTime;
@@ -351,7 +367,7 @@ public class CommandInfoTests
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0, 0);
         var startTime = new DateTime(2025, 1, 15, 10, 30, 0, 100);
         var endTime = new DateTime(2025, 1, 15, 10, 30, 0, 500);
-        var info = CommandInfo.Completed("cmd-123", "k", queuedTime, startTime, endTime, "output", true);
+        var info = CommandInfo.Completed("session-123", "cmd-123", "k", queuedTime, startTime, endTime, "output", string.Empty, null);
 
         // Act
         var result = info.TotalTime;
@@ -367,14 +383,16 @@ public class CommandInfoTests
     public void FactoryMethods_PreserveAllParameters()
     {
         // Arrange
+        var sessionId = "session-very-long-id-12345";
         var commandId = "cmd-very-long-id-12345";
         var command = "!analyze -v -hang -f";
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
 
         // Act
-        var result = CommandInfo.Queued(commandId, command, queuedTime);
+        var result = CommandInfo.Enqueued(sessionId, commandId, command, queuedTime, null);
 
         // Assert - Verify no truncation or modification
+        _ = result.SessionId.Should().Be(sessionId);
         _ = result.CommandId.Should().Be(commandId);
         _ = result.Command.Should().Be(command);
     }

@@ -8,7 +8,10 @@ public class CommandResult
     /// <summary>
     /// Gets the process identifier.
     /// </summary>
-    public int? ProcessId { get; set; }
+    public int? ProcessId
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets or sets the command identifier.

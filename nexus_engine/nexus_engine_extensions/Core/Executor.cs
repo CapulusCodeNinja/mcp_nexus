@@ -312,7 +312,7 @@ internal class Executor
             m_Logger.Info("Extension {ExtensionName} completed with exit code {ExitCode} in {ExecutionTime}ms",
                 metadata.Name, process.ExitCode, executionTime);
 
-            return CommandInfo.Completed(   
+            return CommandInfo.Completed(
                 sessionId,
                 commandId,
                 $"Extension: {extensionName}",

@@ -30,7 +30,8 @@ public class QueuedCommandTests
         {
             Id = id,
             Command = command,
-            QueuedTime = queuedTime
+            QueuedTime = queuedTime,
+            ProcessId = null
         };
 
         // Assert
@@ -55,6 +56,7 @@ public class QueuedCommandTests
             Id = "cmd-123",
             Command = "test",
             QueuedTime = DateTime.Now,
+            ProcessId = null,
             State = CommandState.Executing
         };
 
@@ -75,6 +77,7 @@ public class QueuedCommandTests
             Id = "cmd-123",
             Command = "test",
             QueuedTime = DateTime.Now,
+            ProcessId = null,
             CompletionSource = newCompletionSource
         };
 
@@ -95,6 +98,7 @@ public class QueuedCommandTests
             Id = "cmd-123",
             Command = "test",
             QueuedTime = DateTime.Now,
+            ProcessId = null,
             CancellationTokenSource = newCancellationTokenSource
         };
 
@@ -117,7 +121,8 @@ public class QueuedCommandTests
         {
             Id = "cmd-123",
             Command = "test",
-            QueuedTime = DateTime.Now
+            QueuedTime = DateTime.Now,
+            ProcessId = null
         };
 
         // Act & Assert (should not throw)
@@ -135,7 +140,8 @@ public class QueuedCommandTests
         {
             Id = "cmd-123",
             Command = "test",
-            QueuedTime = DateTime.Now
+            QueuedTime = DateTime.Now,
+            ProcessId = null
         };
 
         // Act & Assert (should not throw)
@@ -156,6 +162,7 @@ public class QueuedCommandTests
             Id = "cmd-123",
             Command = "test",
             QueuedTime = DateTime.Now,
+            ProcessId = null,
             CancellationTokenSource = null!
         };
 
