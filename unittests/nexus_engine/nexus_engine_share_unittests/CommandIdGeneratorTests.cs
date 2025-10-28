@@ -8,27 +8,8 @@ namespace Nexus.Engine.Share.Tests;
 /// Unit tests for CommandIdGenerator class.
 /// Tests command ID generation, session counter management, and thread safety.
 /// </summary>
-public class CommandIdGeneratorTests : IDisposable
+public class CommandIdGeneratorTests
 {
-    /// <summary>
-    /// Initializes a new instance of the CommandIdGeneratorTests class.
-    /// </summary>
-    public CommandIdGeneratorTests()
-    {
-        // Clear any existing state before each test
-        CommandIdGenerator.Instance.Clear();
-    }
-
-    /// <summary>
-    /// Disposes test resources.
-    /// </summary>
-    public void Dispose()
-    {
-        // Clean up after each test
-        CommandIdGenerator.Instance.Clear();
-        GC.SuppressFinalize(this);
-    }
-
     /// <summary>
     /// Verifies that GenerateCommandId throws ArgumentException when sessionId is null.
     /// </summary>
@@ -36,7 +17,7 @@ public class CommandIdGeneratorTests : IDisposable
     public void GenerateCommandId_WithNullSessionId_ThrowsArgumentException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentException>(() => CommandIdGenerator.Instance.GenerateCommandId(null!));
+        _ = Assert.Throws<ArgumentException>(() => new CommandIdGenerator().GenerateCommandId(null!));
     }
 
     /// <summary>
@@ -46,7 +27,7 @@ public class CommandIdGeneratorTests : IDisposable
     public void GenerateCommandId_WithEmptySessionId_ThrowsArgumentException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentException>(() => CommandIdGenerator.Instance.GenerateCommandId(string.Empty));
+        _ = Assert.Throws<ArgumentException>(() => new CommandIdGenerator().GenerateCommandId(string.Empty));
     }
 
     /// <summary>
@@ -56,7 +37,7 @@ public class CommandIdGeneratorTests : IDisposable
     public void GenerateCommandId_WithWhitespaceSessionId_ThrowsArgumentException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentException>(() => CommandIdGenerator.Instance.GenerateCommandId("   "));
+        _ = Assert.Throws<ArgumentException>(() => new CommandIdGenerator().GenerateCommandId("   "));
     }
 
     /// <summary>
@@ -69,7 +50,7 @@ public class CommandIdGeneratorTests : IDisposable
         const string sessionId = "test-session-1";
 
         // Act
-        var commandId = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
+        var commandId = new CommandIdGenerator().GenerateCommandId(sessionId);
 
         // Assert - Should be cmd-{sessionId}-{number}
         _ = commandId.Should().MatchRegex(@"^cmd-test-session-1-\d+$");
@@ -85,7 +66,7 @@ public class CommandIdGeneratorTests : IDisposable
         const string sessionId = "new-session";
 
         // Act
-        var commandId = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
+        var commandId = new CommandIdGenerator().GenerateCommandId(sessionId);
 
         // Assert
         _ = commandId.Should().Be("cmd-new-session-1");
@@ -101,9 +82,9 @@ public class CommandIdGeneratorTests : IDisposable
         const string sessionId = "test-session";
 
         // Act
-        var commandId1 = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
-        var commandId2 = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
-        var commandId3 = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
+        var commandId1 = new CommandIdGenerator().GenerateCommandId(sessionId);
+        var commandId2 = new CommandIdGenerator().GenerateCommandId(sessionId);
+        var commandId3 = new CommandIdGenerator().GenerateCommandId(sessionId);
 
         // Assert
         _ = commandId1.Should().Be("cmd-test-session-1");
@@ -122,10 +103,10 @@ public class CommandIdGeneratorTests : IDisposable
         const string sessionId2 = "session-2";
 
         // Act
-        var cmd1_1 = CommandIdGenerator.Instance.GenerateCommandId(sessionId1);
-        var cmd2_1 = CommandIdGenerator.Instance.GenerateCommandId(sessionId2);
-        var cmd1_2 = CommandIdGenerator.Instance.GenerateCommandId(sessionId1);
-        var cmd2_2 = CommandIdGenerator.Instance.GenerateCommandId(sessionId2);
+        var cmd1_1 = new CommandIdGenerator().GenerateCommandId(sessionId1);
+        var cmd2_1 = new CommandIdGenerator().GenerateCommandId(sessionId2);
+        var cmd1_2 = new CommandIdGenerator().GenerateCommandId(sessionId1);
+        var cmd2_2 = new CommandIdGenerator().GenerateCommandId(sessionId2);
 
         // Assert
         _ = cmd1_1.Should().Be("cmd-session-1-1");
@@ -142,15 +123,15 @@ public class CommandIdGeneratorTests : IDisposable
     {
         // Arrange
         const string sessionId = "test-session";
-        _ = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
-        _ = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
+        _ = new CommandIdGenerator().GenerateCommandId(sessionId);
+        _ = new CommandIdGenerator().GenerateCommandId(sessionId);
 
         // Act
-        var result = CommandIdGenerator.Instance.ResetSession(sessionId);
+        var result = new CommandIdGenerator().ResetSession(sessionId);
 
         // Assert
         _ = result.Should().BeTrue();
-        _ = CommandIdGenerator.Instance.GetCurrentCount(sessionId).Should().Be(0);
+        _ = new CommandIdGenerator().GetCurrentCount(sessionId).Should().Be(0);
     }
 
     /// <summary>
@@ -160,7 +141,7 @@ public class CommandIdGeneratorTests : IDisposable
     public void ResetSession_WithNonExistentSession_ReturnsFalse()
     {
         // Act
-        var result = CommandIdGenerator.Instance.ResetSession("non-existent-session");
+        var result = new CommandIdGenerator().ResetSession("non-existent-session");
 
         // Assert
         _ = result.Should().BeFalse();
@@ -173,7 +154,7 @@ public class CommandIdGeneratorTests : IDisposable
     public void ResetSession_WithNullSessionId_ReturnsFalse()
     {
         // Act
-        var result = CommandIdGenerator.Instance.ResetSession(null!);
+        var result = new CommandIdGenerator().ResetSession(null!);
 
         // Assert
         _ = result.Should().BeFalse();
@@ -187,12 +168,12 @@ public class CommandIdGeneratorTests : IDisposable
     {
         // Arrange
         const string sessionId = "test-session";
-        _ = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
-        _ = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
-        _ = CommandIdGenerator.Instance.ResetSession(sessionId);
+        _ = new CommandIdGenerator().GenerateCommandId(sessionId);
+        _ = new CommandIdGenerator().GenerateCommandId(sessionId);
+        _ = new CommandIdGenerator().ResetSession(sessionId);
 
         // Act
-        var commandId = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
+        var commandId = new CommandIdGenerator().GenerateCommandId(sessionId);
 
         // Assert
         _ = commandId.Should().Be("cmd-test-session-1");
@@ -206,11 +187,11 @@ public class CommandIdGeneratorTests : IDisposable
     {
         // Arrange
         const string sessionId = "test-session";
-        _ = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
-        _ = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
+        _ = new CommandIdGenerator().GenerateCommandId(sessionId);
+        _ = new CommandIdGenerator().GenerateCommandId(sessionId);
 
         // Act
-        var count = CommandIdGenerator.Instance.GetCurrentCount(sessionId);
+        var count = new CommandIdGenerator().GetCurrentCount(sessionId);
 
         // Assert
         _ = count.Should().Be(2);
@@ -223,7 +204,7 @@ public class CommandIdGeneratorTests : IDisposable
     public void GetCurrentCount_WithNonExistentSession_ReturnsZero()
     {
         // Act
-        var count = CommandIdGenerator.Instance.GetCurrentCount("non-existent-session");
+        var count = new CommandIdGenerator().GetCurrentCount("non-existent-session");
 
         // Assert
         _ = count.Should().Be(0);
@@ -236,7 +217,7 @@ public class CommandIdGeneratorTests : IDisposable
     public void GetCurrentCount_WithNullSessionId_ReturnsZero()
     {
         // Act
-        var count = CommandIdGenerator.Instance.GetCurrentCount(null!);
+        var count = new CommandIdGenerator().GetCurrentCount(null!);
 
         // Assert
         _ = count.Should().Be(0);
@@ -249,12 +230,12 @@ public class CommandIdGeneratorTests : IDisposable
     public void GetActiveSessionCount_ReturnsCorrectCount()
     {
         // Arrange
-        _ = CommandIdGenerator.Instance.GenerateCommandId("session-1");
-        _ = CommandIdGenerator.Instance.GenerateCommandId("session-2");
-        _ = CommandIdGenerator.Instance.GenerateCommandId("session-3");
+        _ = new CommandIdGenerator().GenerateCommandId("session-1");
+        _ = new CommandIdGenerator().GenerateCommandId("session-2");
+        _ = new CommandIdGenerator().GenerateCommandId("session-3");
 
         // Act
-        var count = CommandIdGenerator.Instance.GetActiveSessionCount();
+        var count = new CommandIdGenerator().GetActiveSessionCount();
 
         // Assert
         _ = count.Should().Be(3);
@@ -267,12 +248,12 @@ public class CommandIdGeneratorTests : IDisposable
     public void GetActiveSessionCount_DecreasesAfterReset()
     {
         // Arrange
-        _ = CommandIdGenerator.Instance.GenerateCommandId("session-1");
-        _ = CommandIdGenerator.Instance.GenerateCommandId("session-2");
-        _ = CommandIdGenerator.Instance.ResetSession("session-1");
+        _ = new CommandIdGenerator().GenerateCommandId("session-1");
+        _ = new CommandIdGenerator().GenerateCommandId("session-2");
+        _ = new CommandIdGenerator().ResetSession("session-1");
 
         // Act
-        var count = CommandIdGenerator.Instance.GetActiveSessionCount();
+        var count = new CommandIdGenerator().GetActiveSessionCount();
 
         // Assert
         _ = count.Should().Be(1);
@@ -295,7 +276,7 @@ public class CommandIdGeneratorTests : IDisposable
         {
             for (var i = 0; i < commandsPerThread; i++)
             {
-                var commandId = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
+                var commandId = new CommandIdGenerator().GenerateCommandId(sessionId);
                 commandIds.Add(commandId);
             }
         });
@@ -304,7 +285,7 @@ public class CommandIdGeneratorTests : IDisposable
         var expectedCount = threadCount * commandsPerThread;
         _ = commandIds.Should().HaveCount(expectedCount);
         _ = commandIds.Should().OnlyHaveUniqueItems(); // All IDs should be unique
-        _ = CommandIdGenerator.Instance.GetCurrentCount(sessionId).Should().Be(expectedCount);
+        _ = new CommandIdGenerator().GetCurrentCount(sessionId).Should().Be(expectedCount);
     }
 
     /// <summary>
@@ -324,7 +305,7 @@ public class CommandIdGeneratorTests : IDisposable
             var sessionId = $"session-{sessionIndex}";
             for (var i = 0; i < commandsPerSession; i++)
             {
-                var commandId = CommandIdGenerator.Instance.GenerateCommandId(sessionId);
+                var commandId = new CommandIdGenerator().GenerateCommandId(sessionId);
                 commandIds.Add(commandId);
             }
         });
@@ -333,13 +314,13 @@ public class CommandIdGeneratorTests : IDisposable
         var expectedCount = sessionCount * commandsPerSession;
         _ = commandIds.Should().HaveCount(expectedCount);
         _ = commandIds.Should().OnlyHaveUniqueItems(); // All IDs should be unique across all sessions
-        _ = CommandIdGenerator.Instance.GetActiveSessionCount().Should().Be(sessionCount);
+        _ = new CommandIdGenerator().GetActiveSessionCount().Should().Be(sessionCount);
 
         // Verify each session has the correct count
         for (var i = 0; i < sessionCount; i++)
         {
             var sessionId = $"session-{i}";
-            _ = CommandIdGenerator.Instance.GetCurrentCount(sessionId).Should().Be(commandsPerSession);
+            _ = new CommandIdGenerator().GetCurrentCount(sessionId).Should().Be(commandsPerSession);
         }
     }
 
@@ -350,18 +331,18 @@ public class CommandIdGeneratorTests : IDisposable
     public void Clear_RemovesAllSessionCounters()
     {
         // Arrange
-        _ = CommandIdGenerator.Instance.GenerateCommandId("session-1");
-        _ = CommandIdGenerator.Instance.GenerateCommandId("session-2");
-        _ = CommandIdGenerator.Instance.GenerateCommandId("session-3");
+        _ = new CommandIdGenerator().GenerateCommandId("session-1");
+        _ = new CommandIdGenerator().GenerateCommandId("session-2");
+        _ = new CommandIdGenerator().GenerateCommandId("session-3");
 
         // Act
-        CommandIdGenerator.Instance.Clear();
+        new CommandIdGenerator().Clear();
 
         // Assert
-        _ = CommandIdGenerator.Instance.GetActiveSessionCount().Should().Be(0);
-        _ = CommandIdGenerator.Instance.GetCurrentCount("session-1").Should().Be(0);
-        _ = CommandIdGenerator.Instance.GetCurrentCount("session-2").Should().Be(0);
-        _ = CommandIdGenerator.Instance.GetCurrentCount("session-3").Should().Be(0);
+        _ = new CommandIdGenerator().GetActiveSessionCount().Should().Be(0);
+        _ = new CommandIdGenerator().GetCurrentCount("session-1").Should().Be(0);
+        _ = new CommandIdGenerator().GetCurrentCount("session-2").Should().Be(0);
+        _ = new CommandIdGenerator().GetCurrentCount("session-3").Should().Be(0);
     }
 }
 

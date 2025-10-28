@@ -17,7 +17,7 @@ public class SessionIdGeneratorTests
     public void GenerateSessionId_GeneratesCorrectFormat()
     {
         // Act
-        var sessionId = SessionIdGenerator.Instance.GenerateSessionId();
+        var sessionId = new SessionIdGenerator().GenerateSessionId();
 
         // Assert - Should be sess-YYYY-MM-DD-HH-mm-ss-fffffff (7 digits for ticks)
         _ = sessionId.Should().MatchRegex(@"^sess-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{7}$");
@@ -30,7 +30,7 @@ public class SessionIdGeneratorTests
     public void GenerateSessionId_StartsWithCorrectPrefix()
     {
         // Act
-        var sessionId = SessionIdGenerator.Instance.GenerateSessionId();
+        var sessionId = new SessionIdGenerator().GenerateSessionId();
 
         // Assert
         _ = sessionId.Should().StartWith("sess-");
@@ -46,7 +46,7 @@ public class SessionIdGeneratorTests
         var now = DateTime.Now;
 
         // Act
-        var sessionId = SessionIdGenerator.Instance.GenerateSessionId();
+        var sessionId = new SessionIdGenerator().GenerateSessionId();
 
         // Assert - Should contain current year, month, and day
         _ = sessionId.Should().Contain($"{now:yyyy}");
@@ -64,7 +64,7 @@ public class SessionIdGeneratorTests
         var sessionIds = new List<string>();
         for (var i = 0; i < 100; i++)
         {
-            sessionIds.Add(SessionIdGenerator.Instance.GenerateSessionId());
+            sessionIds.Add(new SessionIdGenerator().GenerateSessionId());
         }
 
         // Assert - With tick precision, all should be unique
@@ -87,7 +87,7 @@ public class SessionIdGeneratorTests
         {
             for (var i = 0; i < sessionsPerThread; i++)
             {
-                var sessionId = SessionIdGenerator.Instance.GenerateSessionId();
+                var sessionId = new SessionIdGenerator().GenerateSessionId();
                 sessionIds.Add(sessionId);
             }
         });
@@ -117,7 +117,7 @@ public class SessionIdGeneratorTests
         // Act
         for (var i = 0; i < sessionCount; i++)
         {
-            var sessionId = SessionIdGenerator.Instance.GenerateSessionId();
+            var sessionId = new SessionIdGenerator().GenerateSessionId();
             _ = sessionIds.Add(sessionId);
             // Small delay to ensure different timestamps
             if (i % 10 == 0)
@@ -140,7 +140,7 @@ public class SessionIdGeneratorTests
         var sessionIds = new List<string>();
         for (var i = 0; i < 10; i++)
         {
-            sessionIds.Add(SessionIdGenerator.Instance.GenerateSessionId());
+            sessionIds.Add(new SessionIdGenerator().GenerateSessionId());
         }
 
         // Assert - All should match the timestamp pattern
@@ -157,7 +157,7 @@ public class SessionIdGeneratorTests
     public void GenerateSessionId_ContainsValidDateTimeComponents()
     {
         // Act
-        var sessionId = SessionIdGenerator.Instance.GenerateSessionId();
+        var sessionId = new SessionIdGenerator().GenerateSessionId();
 
         // Assert - Extract and validate components
         var parts = sessionId.Replace("sess-", "").Split('-');
@@ -192,7 +192,7 @@ public class SessionIdGeneratorTests
         // Act - Generate IDs with small delays
         for (var i = 0; i < 10; i++)
         {
-            sessionIds.Add(SessionIdGenerator.Instance.GenerateSessionId());
+            sessionIds.Add(new SessionIdGenerator().GenerateSessionId());
             Thread.Sleep(2); // Ensure different timestamps
         }
 
@@ -221,7 +221,7 @@ public class SessionIdGeneratorTests
         // Act - Generate IDs as fast as possible
         for (var i = 0; i < 1000; i++)
         {
-            sessionIds.Add(SessionIdGenerator.Instance.GenerateSessionId());
+            sessionIds.Add(new SessionIdGenerator().GenerateSessionId());
         }
 
         // Assert - With tick precision, most should be unique (allow for some duplicates in extremely rapid calls)
@@ -236,8 +236,8 @@ public class SessionIdGeneratorTests
     public void GenerateSessionId_MultipleInstances_UseSameSingleton()
     {
         // Act
-        var id1 = SessionIdGenerator.Instance.GenerateSessionId();
-        var id2 = SessionIdGenerator.Instance.GenerateSessionId();
+        var id1 = new SessionIdGenerator().GenerateSessionId();
+        var id2 = new SessionIdGenerator().GenerateSessionId();
 
         // Assert - Both should use the same singleton and generate valid IDs
         _ = id1.Should().MatchRegex(@"^sess-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{7}$");

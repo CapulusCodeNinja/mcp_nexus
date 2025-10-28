@@ -65,7 +65,7 @@ public class BatchResultParserTests
             new() { CommandId = "cmd-2", CommandText = "lm" }
         };
 
-        var batchedCommands = BatchProcessor.Instance.BatchCommands("test-session", commands);
+        var batchedCommands = new BatchProcessor().BatchCommands("test-session", commands);
         var batchId = batchedCommands[0].CommandId;
 
         var resultText = $@"
@@ -108,7 +108,7 @@ Module output for command 2
             new() { CommandId = "cmd-3", CommandText = "!threads" }
         };
 
-        var batchedCommands = BatchProcessor.Instance.BatchCommands("test-session", commands);
+        var batchedCommands = new BatchProcessor().BatchCommands("test-session", commands);
         var batchId = batchedCommands[0].CommandId;
 
         var resultText = $@"
@@ -152,7 +152,7 @@ Output 3
             new() { CommandId = "cmd-2", CommandText = "lm" }
         };
 
-        var batchedCommands = BatchProcessor.Instance.BatchCommands("test-session", commands);
+        var batchedCommands = new BatchProcessor().BatchCommands("test-session", commands);
         var batchId = batchedCommands[0].CommandId;
 
         var result = new CommandResult
@@ -183,7 +183,7 @@ Output 3
             new() { CommandId = "cmd-2", CommandText = "lm" }
         };
 
-        var batchedCommands = BatchProcessor.Instance.BatchCommands("test-session", commands);
+        var batchedCommands = new BatchProcessor().BatchCommands("test-session", commands);
         var batchId = batchedCommands[0].CommandId;
 
         var resultText = $@"
@@ -223,7 +223,7 @@ Output 3
             new() { CommandId = "cmd-2", CommandText = "lm" }
         };
 
-        var batchedCommands = BatchProcessor.Instance.BatchCommands("test-session-trim", commands);
+        var batchedCommands = new BatchProcessor().BatchCommands("test-session-trim", commands);
         var batchId = batchedCommands[0].CommandId;
 
         var resultText = $@"
@@ -342,7 +342,7 @@ Output with special chars: !@#$%^&*()
             new() { CommandId = "cmd-C", CommandText = "!threads" }
         };
 
-        var batchedCommands = BatchProcessor.Instance.BatchCommands("test-session-order", commands);
+        var batchedCommands = new BatchProcessor().BatchCommands("test-session-order", commands);
         var batchId = batchedCommands[0].CommandId;
 
         var resultText = $@"

@@ -736,24 +736,5 @@ public class CdbSessionTests
     }
 
     #endregion
-
-    #region Helper Methods
-
-    /// <summary>
-    /// Creates an initialized test accessor for testing.
-    /// </summary>
-    /// <returns>An initialized CdbSessionTestAccessor instance.</returns>
-    private CdbSessionTestAccessor CreateInitializedAccessor()
-    {
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
-
-        // Use reflection to set the initialized flag for testing purposes
-        var initializedField = typeof(CdbSession).GetField("m_Initialized", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        initializedField?.SetValue(accessor, true);
-
-        return accessor;
-    }
-
-    #endregion
 }
 
