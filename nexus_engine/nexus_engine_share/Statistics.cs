@@ -1,3 +1,5 @@
+using System.Text;
+
 using Nexus.Engine.Share.Models;
 
 using NLog;
@@ -78,6 +80,7 @@ public static class Statistics
     /// <param name="failedCommands">Number of failed commands.</param>
     /// <param name="cancelledCommands">Number of cancelled commands.</param>
     /// <param name="timedOutCommands">Number of timed out commands.</param>
+    /// <param name="commands">Collection of all commands in the session.</param>
     public static void EmitSessionStats(
         Logger logger,
         string sessionId,
@@ -88,30 +91,62 @@ public static class Statistics
         int completedCommands,
         int failedCommands,
         int cancelledCommands,
-        int timedOutCommands)
+        int timedOutCommands,
+        IEnumerable<CommandInfo> commands)
     {
-        logger.Info("\r\n" +
-            "    ╔═ Session Statistics ══════════════════════════════════════════════\r\n" +
-            "    ║ SessionId: {0}\r\n" +
-            "    ║ OpenedAt: {1:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
-            "    ║ ClosedAt: {2:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
-            "    ║ TotalDuration: {3}\r\n" +
-            "    ║ ────────────────────────────────────────────────────────────────────\r\n" +
-            "    ║ TotalCommands: {4}\r\n" +
-            "    ║ CompletedCommands: {5}\r\n" +
-            "    ║ FailedCommands: {6}\r\n" +
-            "    ║ CancelledCommands: {7}\r\n" +
-            "    ║ TimedOutCommands: {8}\r\n" +
-            "    ╚═══════════════════════════════════════════════════════════════════",
-            sessionId,
-            openedAt,
-            closedAt,
-            totalDuration,
-            totalCommands,
-            completedCommands,
-            failedCommands,
-            cancelledCommands,
-            timedOutCommands);
+        var sb = new StringBuilder();
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("    ╔═ Session Statistics ══════════════════════════════════════════════");
+        _ = sb.AppendLine($"    ║ SessionId: {sessionId}");
+        _ = sb.AppendLine($"    ║ OpenedAt: {openedAt:yyyy-MM-dd HH:mm:ss.fff}");
+        _ = sb.AppendLine($"    ║ ClosedAt: {closedAt:yyyy-MM-dd HH:mm:ss.fff}");
+        _ = sb.AppendLine($"    ║ TotalDuration: {totalDuration}");
+        _ = sb.AppendLine("    ║ ────────────────────────────────────────────────────────────────────");
+        _ = sb.AppendLine($"    ║ TotalCommands: {totalCommands}");
+        _ = sb.AppendLine($"    ║ CompletedCommands: {completedCommands}");
+        _ = sb.AppendLine($"    ║ FailedCommands: {failedCommands}");
+        _ = sb.AppendLine($"    ║ CancelledCommands: {cancelledCommands}");
+        _ = sb.AppendLine($"    ║ TimedOutCommands: {timedOutCommands}");
+
+        // Add command table if there are any commands
+        if (commands.Any())
+        {
+            _ = sb.AppendLine("    ║ ────────────────────────────────────────────────────────────────────");
+            _ = sb.AppendLine("    ║ Commands:");
+            _ = sb.AppendLine("    ║");
+            _ = sb.AppendLine("    ║ CommandId                               | Command                  | Status    | Duration         |");
+            _ = sb.AppendLine("    ║ ------------------------------------------|--------------------------|-----------|--------------------|");
+
+            // Sort commands by status: Completed, Failed, Cancelled, Timeout, Queued, Executing
+            var statusOrder = new Dictionary<CommandState, int>
+            {
+                { CommandState.Completed, 1 },
+                { CommandState.Failed, 2 },
+                { CommandState.Cancelled, 3 },
+                { CommandState.Timeout, 4 },
+                { CommandState.Queued, 5 },
+                { CommandState.Executing, 6 }
+            };
+
+            var sortedCommands = commands.OrderBy(c => statusOrder[c.State]).ThenBy(c => c.CommandId);
+
+            foreach (var cmd in sortedCommands)
+            {
+                var duration = cmd.TotalTime.HasValue
+                    ? cmd.TotalTime.Value.ToString()
+                    : "N/A";
+
+                var commandText = cmd.Command.Length <= 25
+                    ? cmd.Command
+                    : cmd.Command[..25];
+
+                _ = sb.AppendLine($"    ║ {cmd.CommandId,-40} | {commandText,-24} | {cmd.State,-9} | {duration,-18} |");
+            }
+        }
+
+        _ = sb.Append("    ╚═══════════════════════════════════════════════════════════════════");
+
+        logger.Info(sb.ToString());
     }
 }
 

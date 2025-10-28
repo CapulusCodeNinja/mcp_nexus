@@ -15,7 +15,7 @@ internal class JsonRpcLoggingMiddleware
 {
     private readonly RequestDelegate m_Next;
     private readonly Logger m_Logger;
-    private const int MaxLength = 2500;
+    private const int MaxLength = 1000;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonRpcLoggingMiddleware"/> class.

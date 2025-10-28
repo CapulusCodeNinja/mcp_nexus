@@ -19,14 +19,22 @@ if (Test-Path $testResultsDir) {
 }
 
 # ---------------------------
-# Run tests with coverage
+# Build projects and run tests with coverage
 # ---------------------------
 Push-Location $solutionRoot
-dotnet test `
-  --settings $runSettings `
-  --collect "XPlat Code Coverage" `
-  --results-directory $testResultsDir
-Pop-Location
+try {
+    dotnet clean
+
+    dotnet build
+
+    dotnet test `
+    --no-build `
+    --settings $runSettings `
+    --collect "XPlat Code Coverage" `
+    --results-directory $testResultsDir
+} finally {
+    Pop-Location
+}
 
 # ---------------------------
 # Find coverage files

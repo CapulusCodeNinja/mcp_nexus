@@ -201,7 +201,8 @@ public class DebugEngine : IDebugEngine
                     completedCount,
                     failedCount,
                     cancelledCount,
-                    timedOutCount);
+                    timedOutCount,
+                    allCommands);
 
                 // Close all extension scripts for this session
                 m_ExtensionScripts.CloseSession(sessionId);
