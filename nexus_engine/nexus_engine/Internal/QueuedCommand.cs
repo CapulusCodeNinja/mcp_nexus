@@ -47,7 +47,7 @@ internal class QueuedCommand : IDisposable
     /// <summary>
     /// Gets or sets the completion source for the command result.
     /// </summary>
-    public TaskCompletionSource<CommandInfo> CompletionSource { get; set; } = new();
+    public TaskCompletionSource<CommandInfo> CompletionSource { get; set; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>
     /// Gets or sets the cancellation token source for the command.

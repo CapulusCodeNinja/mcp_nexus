@@ -74,6 +74,7 @@ internal class Executor
     /// <param name="commandId">The command ID for tracking this execution.</param>
     /// <param name="progressCallback">Optional progress callback.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="onProcessStarted">Optional callback invoked with the process ID right after process start.</param>
     /// <returns>The result of the extension execution.</returns>
     public async Task<CommandInfo> ExecuteAsync(
         string extensionName,
@@ -81,6 +82,7 @@ internal class Executor
         object? parameters,
         string commandId,
         Action<string>? progressCallback = null,
+        Action<int>? onProcessStarted = null,
         CancellationToken cancellationToken = default)
     {
         m_Logger.Info("Executing extension {ExtensionName} with command ID {CommandId} in session {SessionId}",
@@ -128,6 +130,9 @@ internal class Executor
                     "Failed to create process",
                     null);
             }
+
+            // Notify PID immediately for external tracking/cancellation support
+            onProcessStarted?.Invoke(process.Id);
 
             // Monitor script execution (attach handlers and wait for completion)
             return await MonitorScriptAsync(process, sessionId, commandId, extensionName, metadata, progressCallback, cancellationToken);
@@ -250,11 +255,13 @@ internal class Executor
         var startTime = DateTime.Now;
         var output = new StringBuilder();
         var error = new StringBuilder();
+        DataReceivedEventHandler? outHandler = null;
+        DataReceivedEventHandler? errHandler = null;
 
         try
         {
             // Set up output and error handling
-            process.OutputDataReceived += (sender, e) =>
+            outHandler = (sender, e) =>
             {
                 if (!string.IsNullOrEmpty(e.Data))
                 {
@@ -264,7 +271,7 @@ internal class Executor
                 }
             };
 
-            process.ErrorDataReceived += (sender, e) =>
+            errHandler = (sender, e) =>
             {
                 if (!string.IsNullOrEmpty(e.Data))
                 {
@@ -272,6 +279,9 @@ internal class Executor
                     _ = error.AppendLine(cleanError);
                 }
             };
+
+            process.OutputDataReceived += outHandler;
+            process.ErrorDataReceived += errHandler;
 
             // Process was already started; attach readers now
             m_Logger.Debug("Monitoring PowerShell process for extension {ExtensionName}, PID: {ProcessId}",
@@ -284,7 +294,7 @@ internal class Executor
             var timeoutMs = metadata.TimeoutMs;
             m_Logger.Debug("Waiting for extensions script process completion for extension {ExtensionName}, timeout: {TimeoutMs}ms",
                 metadata.Name, timeoutMs);
-            var completed = await Task.Run(() => process.WaitForExit(timeoutMs), cancellationToken);
+            var completed = await m_ProcessManager.WaitForProcessExitAsync(process, timeoutMs, cancellationToken);
 
             if (!completed)
             {
@@ -354,6 +364,25 @@ internal class Executor
                 string.Empty,
                 ex.Message,
                 process.Id);
+        }
+        finally
+        {
+            try
+            {
+                // Detach handlers and dispose process
+                try { process.CancelOutputRead(); } catch { }
+                try { process.CancelErrorRead(); } catch { }
+                try { process.OutputDataReceived -= outHandler; } catch { }
+                try { process.ErrorDataReceived -= errHandler; } catch { }
+            }
+            catch
+            {
+                // ignore
+            }
+            finally
+            {
+                try { process.Dispose(); } catch { }
+            }
         }
     }
 

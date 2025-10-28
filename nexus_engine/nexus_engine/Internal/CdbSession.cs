@@ -388,7 +388,7 @@ internal class CdbSession : ICdbSession
     /// <returns>A task that represents the asynchronous operation.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the session has been disposed.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the session is not initialized with a dump file.</exception>
-    public Task StartCdbProcessAsync(CancellationToken cancellationToken = default)
+    public async Task StartCdbProcessAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         ThrowIfNotInitialized();
@@ -398,10 +398,11 @@ internal class CdbSession : ICdbSession
             throw new InvalidOperationException("Session not initialized with dump file");
         }
 
-        var cdbPath = FindCdbExecutableAsync().Result;
+        var cdbPath = await FindCdbExecutableAsync();
         var arguments = BuildCommandLineArguments();
 
-        return StartCdbProcessAsync(cdbPath, arguments);
+        await StartCdbProcessAsync(cdbPath, arguments);
+        return;
     }
 
 

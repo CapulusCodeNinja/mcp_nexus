@@ -59,6 +59,11 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     private readonly ICallbackServerManager m_CallbackServerManager;
 
     /// <summary>
+    /// Process manager for consistent and testable process control.
+    /// </summary>
+    private readonly IProcessManager m_ProcessManager;
+
+    /// <summary>
     /// Flag indicating if resources have been disposed.
     /// </summary>
     private bool m_Disposed;
@@ -108,6 +113,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         m_CallbackServerManager = callbackServerManager ?? throw new ArgumentNullException(nameof(callbackServerManager));
         m_Manager = new Manager(fileSystem);
         m_Executor = new Executor(m_Manager, tokenValidator, processManager);
+        m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
         m_CommandCache = new ConcurrentDictionary<string, CommandInfo>();
         m_SessionCommands = new ConcurrentDictionary<string, ConcurrentBag<string>>();
         m_RunningExtensions = new ConcurrentDictionary<string, ExtensionStatus>();
@@ -215,7 +221,14 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
             MarkExtensionAsExecuting(sessionId, commandId, extensionName, queuedTime, startTime);
 
             // Execute the extension
-            var result = await m_Executor.ExecuteAsync(extensionName, sessionId, parameters, commandId, null, cts.Token);
+        var result = await m_Executor.ExecuteAsync(
+            extensionName,
+            sessionId,
+            parameters,
+            commandId,
+            null,
+            pid => StoreRunningExtension(commandId, sessionId, extensionName, parameters, startTime, cts, pid),
+            cts.Token);
 
             // Store process for cancellation support
             StoreRunningExtension(commandId, sessionId, extensionName, parameters, startTime, cts, result);
@@ -282,6 +295,31 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
             };
             m_RunningExtensions[commandId] = status;
         }
+    }
+
+    /// <summary>
+    /// Stores the running extension immediately after process start.
+    /// </summary>
+    /// <param name="commandId">The command ID.</param>
+    /// <param name="sessionId">The session ID.</param>
+    /// <param name="extensionName">The extension name.</param>
+    /// <param name="parameters">Extension parameters.</param>
+    /// <param name="startTime">When execution started.</param>
+    /// <param name="cts">Cancellation token source.</param>
+    /// <param name="processId">The started process ID.</param>
+    private void StoreRunningExtension(string commandId, string sessionId, string extensionName, object? parameters, DateTime startTime, CancellationTokenSource cts, int processId)
+    {
+        var status = new ExtensionStatus
+        {
+            CommandId = commandId,
+            SessionId = sessionId,
+            ExtensionName = extensionName,
+            ProcessId = processId,
+            StartTime = startTime,
+            CancellationTokenSource = cts,
+            Parameters = parameters
+        };
+        m_RunningExtensions[commandId] = status;
     }
 
     /// <summary>
@@ -555,19 +593,14 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
 
         try
         {
-            // Kill the process using process ID
+            // Kill the process using injected process manager
             try
             {
-                using var process = System.Diagnostics.Process.GetProcessById(status.ProcessId);
-                if (!process.HasExited)
-                {
-                    process.Kill();
-                }
+                m_ProcessManager.KillProcess(status.ProcessId);
             }
-            catch (ArgumentException)
+            catch (Exception ex)
             {
-                // Process already exited or doesn't exist
-                m_Logger.Debug("Process {ProcessId} for command {CommandId} already exited", status.ProcessId, commandId);
+                m_Logger.Debug(ex, "Process {ProcessId} for command {CommandId} kill attempt had no effect", status.ProcessId, commandId);
             }
 
             // Cancel the token

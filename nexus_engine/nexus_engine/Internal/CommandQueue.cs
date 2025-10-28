@@ -68,8 +68,10 @@ internal class CommandQueue : IDisposable
 
         m_Logger.Debug("Starting command queue for session {SessionId}", m_SessionId);
 
-        // Start the processing task
-        m_ProcessingTask = Task.Run(() => ProcessCommandsAsync(cancellationToken), cancellationToken);
+        // Start the processing task with a linked token so StopAsync can cancel
+        var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, m_CancellationTokenSource.Token);
+        var linkedToken = linked.Token;
+        m_ProcessingTask = Task.Run(() => ProcessCommandsAsync(linkedToken), linkedToken);
 
         m_Logger.Debug("Command queue started for session {SessionId}", m_SessionId);
         return Task.CompletedTask;
@@ -412,10 +414,28 @@ internal class CommandQueue : IDisposable
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(TimeSpan.FromMilliseconds(waitMs));
 
-            while (!cts.Token.IsCancellationRequested &&
-                   m_CommandChannel.Reader.TryRead(out var nextCommand))
+            try
             {
-                commands[nextCommand.Id] = nextCommand;
+                while (true)
+                {
+                    // Wait until there is data to read or timeout/cancellation occurs
+                    var canRead = m_CommandChannel.Reader.WaitToReadAsync(cts.Token).AsTask();
+                    canRead.Wait(cts.Token);
+
+                    if (!canRead.Result)
+                    {
+                        break;
+                    }
+
+                    while (m_CommandChannel.Reader.TryRead(out var nextCommand))
+                    {
+                        commands[nextCommand.Id] = nextCommand;
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Timeout reached or cancelled: proceed with collected commands
             }
         }
 
@@ -486,7 +506,7 @@ internal class CommandQueue : IDisposable
             MarkCommandsAsExecuting(cmd, queuedCommandsById, commandStartTimes, batchStartTime);
 
             // Execute the command and handle results
-            var result = await ExecuteSingleCommand(cmd, cancellationToken);
+            var result = await ExecuteSingleCommand(cmd, cancellationToken, queuedCommandsById);
             executionResults.Add(result);
         }
 
@@ -518,23 +538,56 @@ internal class CommandQueue : IDisposable
     /// </summary>
     /// <param name="cmd">The command to execute.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="queuedCommandsById">Lookup of original queued commands by ID for cancellation linkage.</param>
     /// <returns>Command result with appropriate state flags.</returns>
-    private async Task<CommandResult> ExecuteSingleCommand(Command cmd, CancellationToken cancellationToken)
+    private async Task<CommandResult> ExecuteSingleCommand(Command cmd, CancellationToken cancellationToken, Dictionary<string, QueuedCommand> queuedCommandsById)
     {
         try
         {
-            // Execute the command
-            var result = await m_CdbSession!.ExecuteCommandAsync(cmd.CommandText, cancellationToken);
-
-            return new CommandResult
+            // Build a linked cancellation token that considers per-command cancellations in the batch
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var registrations = new List<IDisposable>();
+            var originalCommandIds = BatchProcessor.Instance.GetOriginalCommandIds(m_SessionId, cmd.CommandId);
+            foreach (var commandId in originalCommandIds)
             {
-                CommandId = cmd.CommandId,
-                SessionId = m_SessionId,
-                ProcessId = m_CdbSession.ProcessId,
-                ResultText = result
-            };
+                if (queuedCommandsById.TryGetValue(commandId, out var qc))
+                {
+                    if (qc.CancellationTokenSource.IsCancellationRequested)
+                    {
+                        linkedCts.Cancel();
+                        break;
+                    }
+                    // Link tokens by registering cancellation propagation
+                    var reg = qc.CancellationTokenSource.Token.Register(() =>
+                    {
+                        try { linkedCts.Cancel(); } catch { }
+                    });
+                    registrations.Add(reg);
+                }
+            }
+
+            // Execute the command
+            try
+            {
+                var result = await m_CdbSession!.ExecuteCommandAsync(cmd.CommandText, linkedCts.Token);
+
+                return new CommandResult
+                {
+                    CommandId = cmd.CommandId,
+                    SessionId = m_SessionId,
+                    ProcessId = m_CdbSession.ProcessId,
+                    ResultText = result
+                };
+            }
+            finally
+            {
+                foreach (var r in registrations)
+                {
+                    try { r.Dispose(); } catch { }
+                }
+            }
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
             m_Logger.Warn("Command {CommandId} was cancelled", cmd.CommandId);
 
@@ -721,10 +774,11 @@ internal class CommandQueue : IDisposable
 
         try
         {
-            var result = await ExecuteCommandWithCdbSession(command, cancellationToken);
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, command.CancellationTokenSource.Token);
+            var result = await ExecuteCommandWithCdbSession(command, linked.Token);
             await HandleSuccessfulCommandExecution(command, startTime, result);
         }
-        catch (OperationCanceledException) when (command.CancellationTokenSource.Token.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
             await HandleCancelledCommand(command, startTime);
         }
@@ -921,7 +975,7 @@ internal class CommandQueue : IDisposable
         UpdateCommandState(command, CommandState.Failed);
         var endTime = DateTime.Now;
 
-        var commandInfo = CommandInfo.Completed(
+        var commandInfo = CommandInfo.Failed(
             m_SessionId,
             command.Id,
             command.Command,
