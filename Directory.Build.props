@@ -35,7 +35,7 @@
 
   <PropertyGroup Label="Default Versioning">
     <!-- Default version for all projects (can be overridden per project) -->
-    <VersionPrefix>1.1.0</VersionPrefix>
+    <VersionPrefix>1.1.1</VersionPrefix>
         <VersionSuffix>62</VersionSuffix>
     
     <!-- Calculated version -->
