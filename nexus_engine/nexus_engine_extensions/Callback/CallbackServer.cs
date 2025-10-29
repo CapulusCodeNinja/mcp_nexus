@@ -329,9 +329,11 @@ internal class CallbackServer
                 var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
                 var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
+                var commandNumber = GetCommandNumber(extensionSessionId, extensionCommandId);
+
                 // Log the message with the specified level
                 LogMessageWithLevel(m_Logger, request.Level, "[EXT] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: {Message}",
-                    extensionPid, callbackCounter, extensionCommandId, extensionName, request.Message);
+                    extensionPid, callbackCounter, commandNumber, extensionName, request.Message);
 
                 return Results.Ok();
             }
@@ -380,5 +382,19 @@ internal class CallbackServer
                 logger.Fatal("Invalid log level: " + level + " - " + messageTemplate, args);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Gets the command number from the command identifier.
+    /// </summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="commandId">The command identifier.</param>
+    /// <returns>The command number.</returns>
+    private static int GetCommandNumber(string sessionId, string commandId)
+    {
+        var prefix = $"cmd-{sessionId}-";
+        var indexString = commandId.Replace(prefix, "");
+
+        return int.TryParse(indexString, out var index) ? index : 0;
     }
 }
