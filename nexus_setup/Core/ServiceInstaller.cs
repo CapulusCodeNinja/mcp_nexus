@@ -265,7 +265,9 @@ internal class ServiceInstaller : IServiceInstaller
 
                 m_Logger.Debug(
                     "Service {ServiceName} status: {CurrentStatus}, waiting for {TargetStatus}",
-                    serviceName, currentStatus, targetStatus);
+                    serviceName,
+                    currentStatus,
+                    targetStatus);
             }
             catch (Exception ex)
             {
@@ -277,7 +279,9 @@ internal class ServiceInstaller : IServiceInstaller
 
         m_Logger.Warn(
             "Service {ServiceName} did not reach status {Status} within {Timeout}ms",
-            serviceName, targetStatus, timeout.TotalMilliseconds);
+            serviceName,
+            targetStatus,
+            timeout.TotalMilliseconds);
         return false;
     }
 
@@ -346,7 +350,9 @@ internal class ServiceInstaller : IServiceInstaller
             {
                 m_Logger.Error(
                     "Build failed with exit code {ExitCode}. Output: {Output}. Error: {Error}",
-                    process.ExitCode, output, error);
+                    process.ExitCode,
+                    output,
+                    error);
                 return false;
             }
         }

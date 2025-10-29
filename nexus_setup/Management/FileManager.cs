@@ -51,7 +51,8 @@ namespace Nexus.Setup.Management
             {
                 m_Logger.Info(
                     "Copying application files from {SourceDirectory} to {DestinationDirectory}",
-                    sourceDirectory, destinationDirectory);
+                    sourceDirectory,
+                    destinationDirectory);
 
                 // Create destination directory if it doesn't exist
                 m_FileSystem.CreateDirectory(destinationDirectory);

@@ -461,9 +461,11 @@ internal static class MarkdownFormatter
     }
 
     /// <summary>
-    /// Helper method to get property value from anonymous object.
+    /// Helper method to get a property value from an object via reflection.
     /// </summary>
-    /// <returns></returns>
+    /// <param name="obj">The object that contains the property.</param>
+    /// <param name="propertyName">The name of the property to read.</param>
+    /// <returns>The value of the property, or <c>null</c> if the property is not found.</returns>
     private static object? GetPropertyValue(object obj, string propertyName)
     {
         var property = obj.GetType().GetProperty(propertyName);
@@ -471,18 +473,20 @@ internal static class MarkdownFormatter
     }
 
     /// <summary>
-    /// Helper method to determine if a key should be code-formatted.
+    /// Helper method to determine if a key should be formatted as inline code.
     /// </summary>
-    /// <returns></returns>
+    /// <param name="key">The key to evaluate.</param>
+    /// <returns><c>true</c> if the key indicates code formatting; otherwise, <c>false</c>.</returns>
     private static bool ShouldCodeFormat(string key)
     {
         return key.Contains("ID") || key.Contains("Command") || key.Contains("Path") || key.Contains("File");
     }
 
     /// <summary>
-    /// Helper method to format execution time.
+    /// Helper method to format an execution time value.
     /// </summary>
-    /// <returns></returns>
+    /// <param name="executionTime">A value that may be a <see cref="TimeSpan"/>.</param>
+    /// <returns>The formatted time if a <see cref="TimeSpan"/> is provided; otherwise, "N/A".</returns>
     private static string FormatExecutionTime(object? executionTime)
     {
         return executionTime is TimeSpan ts ? $"{ts}" : "N/A";
@@ -491,7 +495,12 @@ internal static class MarkdownFormatter
     /// <summary>
     /// Helper method to truncate long strings.
     /// </summary>
-    /// <returns></returns>
+    /// <param name="value">The string to truncate.</param>
+    /// <param name="maxLength">The maximum allowed length including the ellipsis.</param>
+    /// <returns>
+    /// The original string if it is shorter than or equal to <paramref name="maxLength"/>;
+    /// otherwise, a truncated version ending with "...".
+    /// </returns>
     private static string TruncateString(string value, int maxLength)
     {
         return string.IsNullOrEmpty(value) || value.Length <= maxLength ? value : value[..(maxLength - 3)] + "...";

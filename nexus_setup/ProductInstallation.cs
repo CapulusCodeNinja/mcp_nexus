@@ -78,6 +78,7 @@ namespace Nexus.Setup
         /// <summary>
         /// Installs a Windows service using configuration settings.
         /// </summary>
+        /// <param name="serviceController">Service controller abstraction.</param>
         /// <returns>True if installation succeeded, false otherwise.</returns>
         internal async Task<bool> InstallServiceAsync(IServiceController serviceController)
         {
@@ -223,6 +224,7 @@ namespace Nexus.Setup
         /// <summary>
         /// Uninstalls the Windows service and removes application files.
         /// </summary>
+        /// <param name="serviceController">Service controller abstraction.</param>
         /// <returns>True if uninstall succeeded, false otherwise.</returns>
         internal async Task<bool> UninstallServiceAsync(IServiceController serviceController)
         {

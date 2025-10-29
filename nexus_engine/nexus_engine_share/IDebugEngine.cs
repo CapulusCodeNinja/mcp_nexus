@@ -9,6 +9,16 @@ namespace Nexus.Engine.Share;
 public interface IDebugEngine : IDisposable
 {
     /// <summary>
+    /// Occurs when a command's state changes.
+    /// </summary>
+    event EventHandler<CommandStateChangedEventArgs>? CommandStateChanged;
+
+    /// <summary>
+    /// Occurs when a session's state changes.
+    /// </summary>
+    event EventHandler<SessionStateChangedEventArgs>? SessionStateChanged;
+
+    /// <summary>
     /// Creates a new debug session for analyzing a dump file.
     /// </summary>
     /// <param name="dumpFilePath">The path to the dump file to analyze.</param>
@@ -112,14 +122,4 @@ public interface IDebugEngine : IDisposable
     /// <returns>The session state, or null if the session is not found.</returns>
     /// <exception cref="ArgumentException">Thrown when sessionId is null or empty.</exception>
     SessionState? GetSessionState(string sessionId);
-
-    /// <summary>
-    /// Occurs when a command's state changes.
-    /// </summary>
-    event EventHandler<CommandStateChangedEventArgs>? CommandStateChanged;
-
-    /// <summary>
-    /// Occurs when a session's state changes.
-    /// </summary>
-    event EventHandler<SessionStateChangedEventArgs>? SessionStateChanged;
 }

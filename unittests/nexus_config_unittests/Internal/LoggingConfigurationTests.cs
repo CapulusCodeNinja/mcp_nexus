@@ -35,6 +35,8 @@ public class LoggingConfigurationTests
     /// <summary>
     /// Tests that ParseLogLevel handles various log level strings correctly.
     /// </summary>
+    /// <param name="logLevelString">Input string representation of the Microsoft log level.</param>
+    /// <param name="expectedLevel">The expected parsed Microsoft log level.</param>
     [Theory]
     [InlineData("trace", MELogLevel.Trace)]
     [InlineData("debug", MELogLevel.Debug)]
@@ -63,6 +65,8 @@ public class LoggingConfigurationTests
     /// <summary>
     /// Tests that GetNLogLevel converts Microsoft LogLevel to NLog LogLevel correctly.
     /// </summary>
+    /// <param name="microsoftLevelName">The Microsoft.Extensions.Logging.LogLevel name.</param>
+    /// <param name="expectedNLogLevelName">The expected NLog.LogLevel name.</param>
     [Theory]
     [InlineData("Trace", "Trace")]
     [InlineData("Debug", "Debug")]
