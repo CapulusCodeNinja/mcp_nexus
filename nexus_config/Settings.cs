@@ -91,7 +91,7 @@ namespace Nexus.Config
 
                 // We know it's null here, so just assign
                 m_CachedConfiguration = m_ConfigurationLoader.GetSharedConfiguration();
-                
+
                 return m_CachedConfiguration;
             }
             finally

@@ -221,14 +221,14 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
             MarkExtensionAsExecuting(sessionId, commandId, extensionName, queuedTime, startTime);
 
             // Execute the extension
-        var result = await m_Executor.ExecuteAsync(
-            extensionName,
-            sessionId,
-            parameters,
-            commandId,
-            null,
-            pid => StoreRunningExtension(commandId, sessionId, extensionName, parameters, startTime, cts, pid),
-            cts.Token);
+            var result = await m_Executor.ExecuteAsync(
+                extensionName,
+                sessionId,
+                parameters,
+                commandId,
+                null,
+                pid => StoreRunningExtension(commandId, sessionId, extensionName, parameters, startTime, cts, pid),
+                cts.Token);
 
             // Store process for cancellation support
             StoreRunningExtension(commandId, sessionId, extensionName, parameters, startTime, cts, result);

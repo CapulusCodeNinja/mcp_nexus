@@ -40,22 +40,22 @@ internal class CallbackServer
         m_Logger.Info("Configuring extension callback server routes");
 
         // Execute command endpoint
-        _ = app.MapPost("/extension-callback/execute", HandleExecuteAsync);
+        _ = app.MapPost("/extension-callback/execute", (Delegate)HandleExecuteAsync);
 
         // Queue command endpoint
-        _ = app.MapPost("/extension-callback/queue", HandleQueueAsync);
+        _ = app.MapPost("/extension-callback/queue", (Delegate)HandleQueueAsync);
 
         // Read command result endpoint
-        _ = app.MapGet("/extension-callback/read/{commandId}", HandleReadAsync);
+        _ = app.MapGet("/extension-callback/read/{commandId}", (Delegate)HandleReadAsync);
 
         // Get command status endpoint
-        _ = app.MapGet("/extension-callback/status/{commandId}", HandleStatus);
+        _ = app.MapGet("/extension-callback/status/{commandId}", (Delegate)HandleStatus);
 
         // Bulk status endpoint
-        _ = app.MapPost("/extension-callback/status", HandleBulkStatusAsync);
+        _ = app.MapPost("/extension-callback/status", (Delegate)HandleBulkStatusAsync);
 
         // Log endpoint
-        _ = app.MapPost("/extension-callback/log", HandleLogAsync);
+        _ = app.MapPost("/extension-callback/log", (Delegate)HandleLogAsync);
 
         m_Logger.Info("Extension callback server routes configured successfully");
     }
